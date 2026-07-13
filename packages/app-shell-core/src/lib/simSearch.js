@@ -1,13 +1,19 @@
 /**
- * Thin client for the Etendo SimSearch webhook
- * ({@link https://docs.etendo.software/ webhook name "SimSearch"}). Performs
- * a similarity search across an Etendo entity (BusinessPartner, Product,
- * Organization, Currency, UOM, ProductCategory, ...) and returns the best
- * matching record id, plus every other candidate the webhook found.
+ * Thin client for NEO Headless's global similarity-search endpoint
+ * (`GET /sws/neo/simsearch`). Performs a similarity search across an Etendo
+ * entity (BusinessPartner, Product, Organization, Currency, UOM,
+ * ProductCategory, ...) and returns the best matching record id, plus every
+ * other candidate the endpoint found.
  *
- * The webhook is mounted at `/webhooks/?name=SimSearch` on the Etendo server.
- * It accepts GET with query params and returns a JSON envelope whose `message`
- * field is a stringified JSON mapping each item index to its search result.
+ * Reached through NEO's own JWT bearer auth rather than the "SimSearch"
+ * Webhook this used to call — the Webhooks module requires a per-(webhook,
+ * role) grant row in SMFWHE_DEFINEDWEBHOOK_ROLE, provisioned by hand per role
+ * per environment; every NEO-authenticated caller can already reach this
+ * endpoint with no extra grant (see NeoSimSearchEndpoint in com.etendoerp.go
+ * for the full rationale). It accepts GET with query params and returns the
+ * matching-results JSON directly — no `{ message: "..." }` wrapper, since
+ * that wrapper was the Webhooks module's own envelope, not part of the
+ * matching logic itself.
  */
 
 /**
@@ -47,8 +53,8 @@ function mapRow(row) {
 }
 
 /**
- * Parse a SimSearch response envelope. The webhook returns:
- *   { message: "{ \"item_0\": {...}, \"item_1\": {...} }" }
+ * Parse a `/sws/neo/simsearch` response body:
+ *   { "item_0": {...}, "item_1": {...} }
  * where each value is a WSResult-shaped object whose `data` is an array of
  * `{ id, name, similarity_percent }`, best match first.
  *
@@ -56,24 +62,17 @@ function mapRow(row) {
  * request) of `{ id, name, similarityPercent, candidates } | null`. The
  * top-level `id`/`name`/`similarityPercent` mirror the best candidate — kept
  * for callers that only ever read the single best match. `candidates` carries
- * every match the webhook returned (best-first) for callers that need to
+ * every match the endpoint returned (best-first) for callers that need to
  * disambiguate between close alternatives.
  *
  * @param {object} envelope - Parsed JSON body returned by fetch.
  * @param {number} itemCount - Number of items the request asked about.
  */
 export function parseSimSearchEnvelope(envelope, itemCount) {
-  const raw = envelope?.message;
-  if (!raw || typeof raw !== 'string') return Array(itemCount).fill(null);
-  let parsed;
-  try {
-    parsed = JSON.parse(raw);
-  } catch {
-    return Array(itemCount).fill(null);
-  }
+  if (!envelope || typeof envelope !== 'object') return Array(itemCount).fill(null);
   const results = [];
   for (let i = 0; i < itemCount; i += 1) {
-    const entry = parsed[`item_${i}`];
+    const entry = envelope[`item_${i}`];
     const data = entry?.data || entry?.response?.data;
     if (!Array.isArray(data) || data.length === 0) {
       results.push(null);
@@ -103,13 +102,12 @@ export async function simSearch({ token, entityName, items, minSimPercent = 30, 
   }
   const base = detectEtendoBase();
   const qs = new URLSearchParams({
-    name: 'SimSearch',
     entityName,
     items: JSON.stringify(items),
     minSimPercent: String(minSimPercent),
     qtyResults: String(qtyResults),
   });
-  const url = `${base}/webhooks/?${qs.toString()}`;
+  const url = `${base}/sws/neo/simsearch?${qs.toString()}`;
   try {
     const res = await fetch(url, {
       method: 'GET',

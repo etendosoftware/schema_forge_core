@@ -32,6 +32,48 @@ describe('sendRow', () => {
     assert.equal(result.status, SEND_STATUS.DUPLICATE);
   });
 
+  it('regression: a real /batch failure nests the duplicate-key message under error.detail.error.message, not error.message — must still classify as DUPLICATE and surface the real message', async () => {
+    // BatchService.java's real shape: the top-level error.message is ALWAYS the generic
+    // "Operation 'x' rejected by server" wrapper — never the actual diagnostic text. The
+    // real message (Etendo's own duplicate-key text) lives one level deeper, at
+    // error.detail.error.message, for this specific write-rejection failure path.
+    const postBatch = async () => ({
+      committed: false,
+      failedAt: { index: 0, id: 'bp' },
+      error: {
+        status: 500,
+        message: "Operation 'bp' rejected by server",
+        detail: {
+          error: {
+            message: 'There is already a Business Partner with the same (Client, Organization, Search Key). (Client, Organization, Search Key) must be unique. You must change the values entered.',
+            status: 500,
+          },
+        },
+      },
+    });
+    const result = await sendRow([{ id: 'bp' }], { postBatch });
+    assert.equal(result.status, SEND_STATUS.DUPLICATE);
+    assert.equal(
+      result.error.message,
+      'There is already a Business Partner with the same (Client, Organization, Search Key). (Client, Organization, Search Key) must be unique. You must change the values entered.',
+    );
+  });
+
+  it('regression: a real /batch failure with a non-duplicate nested message surfaces that message and stays FAILED', async () => {
+    const postBatch = async () => ({
+      committed: false,
+      failedAt: { index: 0, id: 'bp' },
+      error: {
+        status: 500,
+        message: "Operation 'bp' rejected by server",
+        detail: { error: { message: 'Could not find Sequence for: EM_Etgo_Identifier', status: 500 } },
+      },
+    });
+    const result = await sendRow([{ id: 'bp' }], { postBatch });
+    assert.equal(result.status, SEND_STATUS.FAILED);
+    assert.equal(result.error.message, 'Could not find Sequence for: EM_Etgo_Identifier');
+  });
+
   it('regression: a genuinely different failure message is still classified as FAILED, not DUPLICATE', async () => {
     const postBatch = async () => ({ committed: false, failedAt: { index: 0 }, error: { message: 'Could not find Sequence for: EM_Etgo_Identifier' } });
     const result = await sendRow([{ id: 'row' }], { postBatch });
@@ -103,6 +145,74 @@ describe('sendRow', () => {
     const result = await sendRow([{ id: 'row' }], { postBatch });
     assert.equal(result.status, SEND_STATUS.UNKNOWN);
     assert.equal(result.error.raw, 'Gateway error: upstream connection reset');
+  });
+
+  it('regression: a validation-error op (NEO status -4) nests its message under error.detail.response.errors — must surface the joined field message, not the generic wrapper', async () => {
+    // Reproduced via a real import row whose commercial name exceeded C_BPartner.Value's
+    // 40-char limit — this is a THIRD shape, distinct from both error.detail.error.message
+    // (plain failure) and the flat error.message wrapper: a map of field name -> message
+    // under error.detail.response.errors.
+    const postBatch = async () => ({
+      committed: false,
+      failedAt: { index: 0, id: 'bp' },
+      error: {
+        status: 400,
+        message: "Operation 'bp' rejected by server",
+        detail: { response: { status: -4, errors: { searchKey: 'BusinessPartner.searchKey: Value too long. Length 48, maximum allowed 40 [Guajardo Dávila, Lugo Paz y Muro Serna Asociados]' } } },
+      },
+    });
+    const result = await sendRow([{ id: 'bp' }], { postBatch });
+    assert.equal(result.status, SEND_STATUS.FAILED);
+    assert.ok(result.error.message.includes('searchKey'), `expected message to include the field name, got: ${result.error.message}`);
+    assert.ok(result.error.message.includes('Value too long'), `expected message to include the validation text, got: ${result.error.message}`);
+    assert.ok(!result.error.message.includes("rejected by server"), `expected the generic wrapper text to be replaced, got: ${result.error.message}`);
+  });
+
+  it('regression: joins multiple field validation messages from error.detail.response.errors into one readable string', async () => {
+    const postBatch = async () => ({
+      committed: false,
+      failedAt: { index: 0, id: 'bp' },
+      error: {
+        status: 400,
+        message: "Operation 'bp' rejected by server",
+        detail: {
+          response: {
+            status: -4,
+            errors: {
+              searchKey: 'BusinessPartner.searchKey: Value too long. Length 48, maximum allowed 40',
+              email: 'Invalid email format',
+            },
+          },
+        },
+      },
+    });
+    const result = await sendRow([{ id: 'bp' }], { postBatch });
+    assert.equal(result.status, SEND_STATUS.FAILED);
+    assert.ok(result.error.message.includes('searchKey'), `expected message to include searchKey, got: ${result.error.message}`);
+    assert.ok(result.error.message.includes('Value too long'), `expected message to include the searchKey text, got: ${result.error.message}`);
+    assert.ok(result.error.message.includes('email'), `expected message to include email, got: ${result.error.message}`);
+    assert.ok(result.error.message.includes('Invalid email format'), `expected message to include the email text, got: ${result.error.message}`);
+  });
+
+  it('regression: prefers error.detail.error.message over error.detail.response.errors when both happen to be present (documented priority order)', async () => {
+    const postBatch = async () => ({
+      committed: false,
+      failedAt: { index: 0, id: 'bp' },
+      error: {
+        status: 500,
+        message: "Operation 'bp' rejected by server",
+        detail: {
+          error: { message: 'There is already a Business Partner with the same (Client, Organization, Search Key). (Client, Organization, Search Key) must be unique.', status: 500 },
+          response: { status: -4, errors: { searchKey: 'Value too long. Length 48, maximum allowed 40' } },
+        },
+      },
+    });
+    const result = await sendRow([{ id: 'bp' }], { postBatch });
+    assert.equal(result.status, SEND_STATUS.DUPLICATE);
+    assert.equal(
+      result.error.message,
+      'There is already a Business Partner with the same (Client, Organization, Search Key). (Client, Organization, Search Key) must be unique.',
+    );
   });
 });
 

@@ -21,6 +21,24 @@ function isDuplicateKeyError(message) {
 }
 
 /**
+ * A validation-error op response (NEO status -4, e.g. a field over its AD column length)
+ * carries its message under a THIRD shape, distinct from the plain-failure one above:
+ * `detail.response.errors` — a map of field name to message (`checkJsonServiceResponse`'s
+ * `NeoResponse.error(SC_BAD_REQUEST, responseJson)` passes the whole raw Etendo response
+ * through as-is, not a single translated string). Reproduced via a real import row whose
+ * commercial name exceeded `C_BPartner.Value`'s 40-char limit: `{"response":{"status":-4,
+ * "errors":{"searchKey":"...Value too long..."}}}`. Joins every field's message (usually
+ * just one) into a single readable line rather than picking only the first, in case a row
+ * fails several field validations at once.
+ */
+function firstValidationMessage(errors) {
+  if (!errors || typeof errors !== 'object') return null;
+  const entries = Object.entries(errors);
+  if (entries.length === 0) return null;
+  return entries.map(([field, msg]) => `${field}: ${msg}`).join('; ');
+}
+
+/**
  * Send one row's operations through the injected postBatch and classify the
  * outcome. `/batch` has no idempotency key (verified against
  * `BatchService.java`), so any failure to get a definite response — a
@@ -64,8 +82,23 @@ export async function sendRow(operations, { postBatch }) {
   // debugged (per the user's explicit ask: capture uncontrolled backend errors with their
   // full trace, one at a time, until the pipeline stabilizes).
   const raw = error.raw ?? (error.detail ? JSON.stringify(error.detail, null, 2) : JSON.stringify(response, null, 2));
-  const status = isDuplicateKeyError(error.message) ? SEND_STATUS.DUPLICATE : SEND_STATUS.FAILED;
-  return { status, error: { ...error, raw } };
+  // error.message is BatchService.java's own generic wrapper ("Operation 'bp' rejected by
+  // server") — always the same text regardless of cause, so isDuplicateKeyError's
+  // /must be unique/i check against it can never match. The real diagnostic text (e.g.
+  // Etendo's own "... must be unique." message) lives one level deeper, at
+  // error.detail.error.message, whenever NeoCrudHandler attached the underlying NEO
+  // response as `detail` (verified against a real capture of a duplicate-key /batch
+  // failure). Prefer that nested message everywhere this result's error surfaces —
+  // both for classification and for what the review queue actually shows the user —
+  // falling back to the wrapper text only when there's no nested detail to read. A
+  // validation-error op (NEO status -4) uses a third shape instead — detail.response.errors
+  // — checked second since a plain-failure op never has both.
+  const diagnosticMessage =
+    error.detail?.error?.message
+    || firstValidationMessage(error.detail?.response?.errors)
+    || error.message;
+  const status = isDuplicateKeyError(diagnosticMessage) ? SEND_STATUS.DUPLICATE : SEND_STATUS.FAILED;
+  return { status, error: { ...error, message: diagnosticMessage, raw } };
 }
 
 /**

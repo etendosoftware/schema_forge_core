@@ -9,15 +9,21 @@ describe('parseSimSearchEnvelope', () => {
     assert.deepEqual(parseSimSearchEnvelope({}, 2), [null, null]);
   });
 
-  it('returns nulls when message is not a JSON string', () => {
-    assert.deepEqual(parseSimSearchEnvelope({ message: 'not json' }, 1), [null]);
+  it('returns nulls when envelope is a non-object primitive (guard clause)', () => {
+    assert.deepEqual(parseSimSearchEnvelope('not an object', 1), [null]);
+    assert.deepEqual(parseSimSearchEnvelope(42, 1), [null]);
+  });
+
+  it('returns nulls when envelope is an array (typeof object, but no item_N keys)', () => {
+    // Arrays pass `typeof envelope === 'object'` so the guard clause does not
+    // short-circuit; each `envelope[`item_${i}`]` lookup is simply undefined,
+    // which falls through to the same null-per-item result.
+    assert.deepEqual(parseSimSearchEnvelope(['array', 'is', 'typeof-object'], 2), [null, null]);
   });
 
   it('parses a single-item match envelope', () => {
     const envelope = {
-      message: JSON.stringify({
-        item_0: { data: [{ id: 'P-1', name: 'Widget', similarity_percent: '85' }] },
-      }),
+      item_0: { data: [{ id: 'P-1', name: 'Widget', similarity_percent: '85' }] },
     };
     const result = parseSimSearchEnvelope(envelope, 1);
     assert.equal(result.length, 1);
@@ -28,9 +34,7 @@ describe('parseSimSearchEnvelope', () => {
 
   it('preserves similarity_percent === 0 (does not coerce to null)', () => {
     const envelope = {
-      message: JSON.stringify({
-        item_0: { data: [{ id: 'P-2', name: 'Zero match', similarity_percent: 0 }] },
-      }),
+      item_0: { data: [{ id: 'P-2', name: 'Zero match', similarity_percent: 0 }] },
     };
     const [first] = parseSimSearchEnvelope(envelope, 1);
     assert.equal(first.similarityPercent, 0);
@@ -38,9 +42,7 @@ describe('parseSimSearchEnvelope', () => {
 
   it('falls back to _identifier or id when name is missing', () => {
     const envelope = {
-      message: JSON.stringify({
-        item_0: { data: [{ id: 'P-3', _identifier: 'IDENT-3' }] },
-      }),
+      item_0: { data: [{ id: 'P-3', _identifier: 'IDENT-3' }] },
     };
     const [first] = parseSimSearchEnvelope(envelope, 1);
     assert.equal(first.name, 'IDENT-3');
@@ -48,10 +50,8 @@ describe('parseSimSearchEnvelope', () => {
 
   it('returns null for items with no data', () => {
     const envelope = {
-      message: JSON.stringify({
-        item_0: { data: [{ id: 'P-1' }] },
-        item_1: { data: [] },
-      }),
+      item_0: { data: [{ id: 'P-1' }] },
+      item_1: { data: [] },
     };
     const result = parseSimSearchEnvelope(envelope, 2);
     assert.equal(result[0]?.id, 'P-1');
@@ -60,16 +60,14 @@ describe('parseSimSearchEnvelope', () => {
 
   it('reads data from response.data when top-level data is missing', () => {
     const envelope = {
-      message: JSON.stringify({
-        item_0: { response: { data: [{ id: 'P-9', name: 'Nested' }] } },
-      }),
+      item_0: { response: { data: [{ id: 'P-9', name: 'Nested' }] } },
     };
     const [first] = parseSimSearchEnvelope(envelope, 1);
     assert.equal(first.id, 'P-9');
   });
 
   it('pads missing items with null', () => {
-    const envelope = { message: JSON.stringify({ item_0: { data: [{ id: 'A' }] } }) };
+    const envelope = { item_0: { data: [{ id: 'A' }] } };
     const result = parseSimSearchEnvelope(envelope, 3);
     assert.equal(result.length, 3);
     assert.equal(result[1], null);
@@ -78,14 +76,12 @@ describe('parseSimSearchEnvelope', () => {
 
   it('includes every match in .candidates, best-first', () => {
     const envelope = {
-      message: JSON.stringify({
-        item_0: {
-          data: [
-            { id: 'C-1', name: 'Kilogramo', similarity_percent: '92' },
-            { id: 'C-2', name: 'Kilograma', similarity_percent: '78' },
-          ],
-        },
-      }),
+      item_0: {
+        data: [
+          { id: 'C-1', name: 'Kilogramo', similarity_percent: '92' },
+          { id: 'C-2', name: 'Kilograma', similarity_percent: '78' },
+        ],
+      },
     };
     const [first] = parseSimSearchEnvelope(envelope, 1);
     assert.equal(first.candidates.length, 2);
@@ -95,14 +91,12 @@ describe('parseSimSearchEnvelope', () => {
 
   it('top-level id/name/similarityPercent mirror candidates[0] (back-compat)', () => {
     const envelope = {
-      message: JSON.stringify({
-        item_0: {
-          data: [
-            { id: 'C-1', name: 'Kilogramo', similarity_percent: '92' },
-            { id: 'C-2', name: 'Kilograma', similarity_percent: '78' },
-          ],
-        },
-      }),
+      item_0: {
+        data: [
+          { id: 'C-1', name: 'Kilogramo', similarity_percent: '92' },
+          { id: 'C-2', name: 'Kilograma', similarity_percent: '78' },
+        ],
+      },
     };
     const [first] = parseSimSearchEnvelope(envelope, 1);
     assert.equal(first.id, first.candidates[0].id);
@@ -111,7 +105,7 @@ describe('parseSimSearchEnvelope', () => {
   });
 
   it('a null result (no data) has no candidates to read', () => {
-    const envelope = { message: JSON.stringify({ item_0: { data: [] } }) };
+    const envelope = { item_0: { data: [] } };
     const [first] = parseSimSearchEnvelope(envelope, 1);
     assert.equal(first, null);
   });
@@ -125,9 +119,7 @@ describe('parseSimSearchEnvelope', () => {
     // always false, so every real candidate silently passed as "confident
     // enough" regardless of actual match quality.
     const envelope = {
-      message: JSON.stringify({
-        item_0: { data: [{ id: '119', name: 'Argentina', similarity_percent: '100.0000%' }] },
-      }),
+      item_0: { data: [{ id: '119', name: 'Argentina', similarity_percent: '100.0000%' }] },
     };
     const [first] = parseSimSearchEnvelope(envelope, 1);
     assert.equal(first.similarityPercent, '100.0000');
@@ -136,9 +128,7 @@ describe('parseSimSearchEnvelope', () => {
 
   it('regression: a bare numeric string (no "%") is left byte-for-byte unchanged', () => {
     const envelope = {
-      message: JSON.stringify({
-        item_0: { data: [{ id: 'P-1', name: 'Widget', similarity_percent: '85' }] },
-      }),
+      item_0: { data: [{ id: 'P-1', name: 'Widget', similarity_percent: '85' }] },
     };
     const [first] = parseSimSearchEnvelope(envelope, 1);
     assert.equal(first.similarityPercent, '85');
