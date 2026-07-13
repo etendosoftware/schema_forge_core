@@ -5,7 +5,7 @@ import { LocaleFlagIcon } from './LocaleFlagIcon.jsx';
 
 export function OnboardingLanguageSelect({ label, locale, onChange, options }) {
   return (
-    <div className="min-w-[132px]">
+    <div className="w-[152px]">
       <Label
         htmlFor="onboarding-language"
         className="sr-only"
@@ -22,7 +22,7 @@ export function OnboardingLanguageSelect({ label, locale, onChange, options }) {
           aria-label={label}
           value={locale}
           onChange={(event) => onChange(event.target.value)}
-          className="h-10 w-full appearance-none rounded-full border border-slate-200 bg-white pl-9 pr-8 text-sm text-slate-900 shadow-sm focus:outline-none focus:ring-4 focus:ring-slate-900/5"
+          className="h-10 w-full appearance-none rounded-lg border border-[#D1D4DB] bg-white pl-9 pr-8 text-sm text-[#121217] shadow-sm focus:outline-none focus:ring-4 focus:ring-slate-900/5"
         >
           {options.map((option) => (
             // Native <option> elements can only render plain text (no HTML/SVG),
@@ -35,7 +35,7 @@ export function OnboardingLanguageSelect({ label, locale, onChange, options }) {
         </select>
         <ChevronDown
           aria-hidden="true"
-          className="pointer-events-none absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-500"
+          className="pointer-events-none absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[#828FA3]"
           data-testid="ChevronDown__79cf84"
         />
       </div>
