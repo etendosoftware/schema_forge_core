@@ -23,7 +23,6 @@ import {
   Calendar,
   SlidersHorizontal,
   PanelLeftClose,
-  Check,
 } from 'lucide-react';
 
 // Figma-exact skeleton tokens (see docs/... onboarding right-panel mockup).
@@ -101,18 +100,30 @@ function RailMenuItem({ icon: Icon, width, hasChevron }) {
   );
 }
 
+// Static replica of the Core Checkbox (app-shell-core/components/ui/checkbox.jsx)
+// so the preview's rows use the same box + check mark as the real app.
+function Checkbox({ checked }) {
+  return (
+    <div
+      className={`flex h-4 w-4 shrink-0 items-center justify-center rounded border-[1.5px] ${
+        checked
+          ? 'border-[#121217] bg-[#121217]'
+          : 'border-[#D1D4DB] bg-white shadow-[0px_1px_2px_rgba(18,18,23,0.05)]'
+      }`}>
+      {checked && (
+        <svg width="8" height="6" viewBox="-0.5 -0.5 8 6" fill="none">
+          <path d="M0.5 2.5 L2.5 4.5 L6.5 0.5" stroke="white" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+        </svg>
+      )}
+    </div>
+  );
+}
+
 function TableRow({ widths, tall, checked }) {
   return (
     <div className={`flex items-center border-b border-[#E8EAEF] ${tall ? 'h-[52px]' : 'h-10'}`}>
       <div className="flex w-8 flex-none justify-center pl-2">
-        <div
-          className={
-            checked
-              ? 'flex h-[18px] w-[18px] items-center justify-center rounded border border-[#121217] bg-[#121217] shadow-[0px_1px_2px_rgba(18,18,23,0.05)]'
-              : 'h-[18px] w-[18px] rounded border-[1.5px] border-[#D1D4DB] bg-white shadow-[0px_1px_2px_rgba(18,18,23,0.05)]'
-          }>
-          {checked && <Check className="h-[11px] w-[11px] text-white" strokeWidth={3} />}
-        </div>
+        <Checkbox checked={checked} />
       </div>
       {widths.map((barWidth, i) => (
         <div key={i} className="flex flex-none items-center px-3" style={{ width: `${CELL_WIDTHS[i]}px` }}>
@@ -275,7 +286,7 @@ export function SetupPreviewMockup({ userName, orgName, variant = 'profile', ...
                 {Array.from({ length: EMPTY_ROW_COUNT }).map((_, i) => (
                   <div key={i} className="flex h-[52px] items-center border-b border-[#E8EAEF]">
                     <div className="flex w-8 flex-none justify-center pl-2">
-                      <div className="h-[18px] w-[18px] rounded border-[1.5px] border-[#D1D4DB] bg-white shadow-[0px_1px_2px_rgba(18,18,23,0.05)]" />
+                      <Checkbox checked={false} />
                     </div>
                   </div>
                 ))}
