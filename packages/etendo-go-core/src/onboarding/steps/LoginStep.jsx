@@ -1,18 +1,20 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { Lock, Mail, Eye, EyeOff, Loader2 } from 'lucide-react';
 import { Button } from '@etendosoftware/app-shell-core/components/ui/button';
-import { useUI } from '@etendosoftware/app-shell-core/i18n';
+import { useUI, useLocaleSwitch } from '@etendosoftware/app-shell-core/i18n';
 import { loginAccount, loginWithSsoProvider, requestPasswordReset, confirmPasswordReset, fetchAccount, fetchEnvironments } from '../api.js';
 import { getConfiguredSsoProviders, renderSsoProviderButton } from '../sso.js';
 import { trackOnboarding } from '../tracking.js';
 import { AuthShell } from '../components/AuthShell.jsx';
 import { AuthField } from '../components/AuthField.jsx';
 import { AuthSsoOptions } from '../components/AuthSsoOptions.jsx';
+import { OnboardingLanguageSelect } from '../components/OnboardingLanguageSelect.jsx';
 
 const AUTH_FEATURE_KEYS = ['onboardingAuthFeatureNoCard', 'onboardingAuthFeatureTrial', 'onboardingAuthFeatureInstantAccess'];
 
 export function LoginStep({ config, stepData, onNext, onBack, goToStep, setToken, setAccountName, routeByEnvironments }) {
   const ui = useUI();
+  const { locale, setLocale } = useLocaleSwitch();
 
   const resetTokenFromUrl = new URLSearchParams(window.location.search).get('resetToken') || '';
   const [view, setView] = useState(resetTokenFromUrl ? 'reset-password' : 'login'); // 'login' | 'forgot-password' | 'reset-password'
@@ -212,6 +214,24 @@ export function LoginStep({ config, stepData, onNext, onBack, goToStep, setToken
     }
   };
 
+  const setOnboardingLocale = (nextLocale) => {
+    if (setLocale) setLocale(nextLocale);
+  };
+
+  const languageOptions = (config.localeCodes || []).map((code) => ({
+    value: code,
+    label: code.startsWith('es') ? ui('onboardingLanguageSpanish') : ui('onboardingLanguageEnglish'),
+  }));
+
+  const localeControl = setLocale ? (
+    <OnboardingLanguageSelect
+      label={ui('language')}
+      locale={locale}
+      onChange={setOnboardingLocale}
+      options={languageOptions}
+      data-testid="OnboardingLanguageSelect__79cf84" />
+  ) : null;
+
   const authFeatureLabels = AUTH_FEATURE_KEYS.map((key) => ui(key));
 
   if (view === 'reset-password') {
@@ -226,6 +246,7 @@ export function LoginStep({ config, stepData, onNext, onBack, goToStep, setToken
           setView('login');
         }}
         brandLabel={config.brandLabel || 'Etendo GO'}
+        headerContent={localeControl}
         marketingTitle={ui('onboardingMarketingTitle')}
         marketingDescription={ui('onboardingMarketingDescription')}
         featureLabels={authFeatureLabels}
@@ -315,6 +336,7 @@ export function LoginStep({ config, stepData, onNext, onBack, goToStep, setToken
           setView('login');
         }}
         brandLabel={config.brandLabel || 'Etendo GO'}
+        headerContent={localeControl}
         marketingTitle={ui('onboardingMarketingTitle')}
         marketingDescription={ui('onboardingMarketingDescription')}
         featureLabels={authFeatureLabels}
@@ -378,6 +400,7 @@ export function LoginStep({ config, stepData, onNext, onBack, goToStep, setToken
         if (goToStep) goToStep('register');
       }}
       brandLabel={config.brandLabel || 'Etendo GO'}
+      headerContent={localeControl}
       marketingTitle={ui('onboardingMarketingTitle')}
       marketingDescription={ui('onboardingMarketingDescription')}
       featureLabels={authFeatureLabels}
