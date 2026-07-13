@@ -718,6 +718,7 @@ const WINDOW_BOOLEAN_TRUE_PROPS = [
   'autoSaveOnBlur',
   'hideDetailForm',
   'hideDelete',
+  'hideDeleteButton',
 ];
 
 // `attachments` is defined-only (not truthy) so an explicit `false` from
@@ -734,7 +735,7 @@ export const WINDOW_KEY_ORDER = [
   'sidebarLayout', 'templateConfig',
   'documentPreview', 'notesField', 'relatedDocuments',
   'hideDeleteWhenComplete', 'customTabsAfterBottom', 'hidePrint', 'hideCreate', 'hideSaveStatuses',
-  'hideMoreMenu', 'hideMoreDetails', 'hideDetailForm', 'hideDelete', 'contentBg',
+  'hideMoreMenu', 'hideMoreDetails', 'hideDetailForm', 'hideDelete', 'hideDeleteButton', 'contentBg',
   'hideListFilters', 'hideStatusFilter', 'hideLink', 'hideEyeCount', 'customListIcons', 'breadcrumb',
   'customComponents', 'menuActions', 'processOverrides',
   'entityLabel', 'detailLabel', 'detailTabIndex', 'secondaryTabs',
