@@ -1,44 +1,44 @@
 import React from 'react';
-import { ChevronDown } from 'lucide-react';
 import { Label } from '@etendosoftware/app-shell-core/components/ui/label';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@etendosoftware/app-shell-core/components/ui/select';
 import { LocaleFlagIcon } from './LocaleFlagIcon.jsx';
 
-export function OnboardingLanguageSelect({ label, locale, onChange, options }) {
+export function OnboardingLanguageSelect({ label, locale, onChange, options, 'data-testid': testId }) {
   return (
-    <div className="w-[152px]">
+    <div className="w-[152px]" data-testid={testId}>
       <Label
         htmlFor="onboarding-language"
         className="sr-only"
         data-testid="Label__79cf84">
         {label}
       </Label>
-      <div className="relative">
-        <LocaleFlagIcon
-          locale={locale}
-          className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2"
-        />
-        <select
+      <Select value={locale} onValueChange={onChange}>
+        <SelectTrigger
           id="onboarding-language"
           aria-label={label}
-          value={locale}
-          onChange={(event) => onChange(event.target.value)}
-          className="h-10 w-full appearance-none rounded-lg border border-[#D1D4DB] bg-white pl-9 pr-8 text-sm text-[#121217] shadow-sm focus:outline-none focus:ring-4 focus:ring-slate-900/5"
-        >
+          className="h-10 bg-white text-[#121217]">
+          <SelectValue />
+        </SelectTrigger>
+        <SelectContent>
           {options.map((option) => (
-            // Native <option> elements can only render plain text (no HTML/SVG),
-            // so the open dropdown list cannot show flag icons — only the closed
-            // control does, via the LocaleFlagIcon overlay above.
-            <option key={option.value} value={option.value}>
-              {option.label}
-            </option>
+            // Rendered inside Select.ItemText, whose children Radix automatically
+            // projects into the closed trigger's Select.Value — so the flag shows
+            // in both the open list AND the closed control from this single source.
+            <SelectItem key={option.value} value={option.value} textValue={option.label}>
+              <span className="flex items-center gap-2">
+                <LocaleFlagIcon locale={option.value} />
+                {option.label}
+              </span>
+            </SelectItem>
           ))}
-        </select>
-        <ChevronDown
-          aria-hidden="true"
-          className="pointer-events-none absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[#828FA3]"
-          data-testid="ChevronDown__79cf84"
-        />
-      </div>
+        </SelectContent>
+      </Select>
     </div>
   );
 }
