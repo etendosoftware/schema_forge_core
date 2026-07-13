@@ -91,6 +91,7 @@ export function SetupProgressStep({ config, stepData, onNext, onBack, goToStep, 
 
     const formPayload = {
       clientName: stepData.clientName,
+      fullName: stepData.fullName,
       address: stepData.address,
       countryCode: stepData.countryCode || config.defaultForm?.countryCode || '',
       language: stepData.language || config.defaultForm?.language || '',
