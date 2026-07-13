@@ -29,8 +29,16 @@ const useLocaleState = readFileSync(
 // restored spec was incomplete in two ways — it was missing a flag icon, and
 // it was over-applied to 4 steps that should never have shown it. Login is
 // the only screen where the selector belongs; this is a scope narrowing, not
-// a bug fix on top of the restore. These tests pin the new spec down so it
-// doesn't drift again in either direction.
+// a bug fix on top of the restore.
+//
+// Follow-up within the same ticket: the selector was further reworked from a
+// native <select> to a Radix-based Select/SelectTrigger/SelectContent/
+// SelectItem (from app-shell-core's ui/select), explicitly reversing the
+// earlier "native-select-only, no flag in options" decision — the flag now
+// renders per-option via LocaleFlagIcon inside each SelectItem, and Radix
+// projects the selected item's content into the closed trigger automatically.
+// These tests pin the new spec down so it doesn't drift again in either
+// direction.
 describe('OnboardingLanguageSelect wiring (ETP-4444, Login-only scope)', () => {
   it('imports OnboardingLanguageSelect in LoginStep', () => {
     assert.match(
@@ -81,7 +89,9 @@ describe('OnboardingLanguageSelect wiring (ETP-4444, Login-only scope)', () => {
   });
 
   it('the underlying <select> forwards the chosen value via onChange', () => {
-    assert.match(languageSelect, /onChange=\{\(event\) => onChange\(event\.target\.value\)\}/);
+    // Radix's Select hands the new value directly (no DOM event object), so
+    // the wiring is onValueChange={onChange} on the <Select> root itself.
+    assert.match(languageSelect, /<Select\s+value=\{locale\}\s+onValueChange=\{onChange\}>/);
   });
 
   it('the locale change is persisted to localStorage (via useLocaleState)', () => {
@@ -95,19 +105,29 @@ describe('OnboardingLanguageSelect wiring (ETP-4444, Login-only scope)', () => {
   it('renders the current locale flag via the dedicated LocaleFlagIcon component', () => {
     // Flag rendering was extracted out of OnboardingLanguageSelect.jsx into its
     // own component, so a real circular SVG can be used instead of an emoji glyph.
+    // It's rendered per-option inside each SelectItem — Radix automatically
+    // projects the selected item's content into the closed trigger's
+    // SelectValue, so a single usage covers both the open list and the
+    // closed control.
     assert.match(
       languageSelect,
       /import\s*\{\s*LocaleFlagIcon\s*\}\s*from\s*'\.\/LocaleFlagIcon\.jsx'/,
     );
-    assert.match(languageSelect, /<LocaleFlagIcon\s+locale=\{locale\}/);
+    assert.match(languageSelect, /<LocaleFlagIcon\s+locale=\{option\.value\}\s*\/>/);
   });
 
-  it('does not prefix <option> labels with a flag glyph (native <option> is text-only)', () => {
-    // <option> elements cannot render HTML/SVG, so the option text must be the
-    // plain label — no emoji concatenation, no countryFlagEmoji reference here.
+  it('prefixes each option with a flag icon (Radix SelectItem supports rich content)', () => {
+    // Unlike native <option>, Radix's SelectItem can render arbitrary JSX, so
+    // the earlier "no flag in options" decision was explicitly reversed: each
+    // option now shows LocaleFlagIcon alongside the label text.
     assert.doesNotMatch(languageSelect, /countryFlagEmoji/);
-    assert.doesNotMatch(languageSelect, /optionFlag/);
-    assert.match(languageSelect, /<option key=\{option\.value\} value=\{option\.value\}>\s*\{option\.label\}\s*<\/option>/);
+    const optionsBlock = languageSelect.slice(
+      languageSelect.indexOf('{options.map((option) =>'),
+      languageSelect.indexOf('</SelectContent>'),
+    );
+    assert.match(optionsBlock, /<SelectItem/);
+    assert.match(optionsBlock, /<LocaleFlagIcon\s+locale=\{option\.value\}\s*\/>/);
+    assert.match(optionsBlock, /\{option\.label\}/);
   });
 
   it('LocaleFlagIcon covers ES, US, and falls back gracefully for unknown regions', () => {
@@ -124,9 +144,19 @@ describe('OnboardingLanguageSelect wiring (ETP-4444, Login-only scope)', () => {
     assert.match(localeFlagIcon, /countryFlagEmoji\(region\)/);
   });
 
-  it('keeps native <select> semantics (no Radix/custom listbox)', () => {
-    assert.match(languageSelect, /<select/);
-    assert.doesNotMatch(languageSelect, /SelectPrimitive/);
+  it('uses the Radix-based Select (no native <select> element)', () => {
+    // Explicit reversal of the earlier native-select-only decision: the
+    // component now imports the shared Radix Select primitives from
+    // app-shell-core instead of rendering a raw <select>.
+    assert.match(
+      languageSelect,
+      /import\s*\{\s*\n?\s*Select,\s*\n?\s*SelectContent,\s*\n?\s*SelectItem,\s*\n?\s*SelectTrigger,\s*\n?\s*SelectValue,\s*\n?\s*\}\s*from\s*'@etendosoftware\/app-shell-core\/components\/ui\/select'/,
+    );
+    assert.match(languageSelect, /<Select\b/);
+    assert.match(languageSelect, /<SelectTrigger\b/);
+    assert.match(languageSelect, /<SelectContent\b/);
+    assert.match(languageSelect, /<SelectItem\b/);
+    assert.doesNotMatch(languageSelect, /<select/);
   });
 
   it('keeps the country field fixed (a static label, not a selector) in ProfileStep', () => {
