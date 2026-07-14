@@ -153,8 +153,8 @@ export function ImportDialog({ open, onOpenChange, config, token, postBatch, sim
   // so undoing an edit back to an already-resolved raw value is recognized immediately.
   // Deliberately does NOT re-run resolveForeignKeyColumn here — this fires on every
   // keystroke (wired to the row input's onChange), and a SimSearch call per keystroke
-  // would be both wasteful and slow. "Re-validate" (handleRetryEntryPreSend) is the
-  // explicit, button-triggered point where a genuinely new value gets re-resolved.
+  // would be both wasteful and slow. An edited FK value only gets re-resolved once the
+  // row is applied via handleApplyFkValue (the FK-mismatch popover), not on every keystroke.
   const handleEditField = useCallback((index, targetField, value) => {
     setEntries((prev) => {
       const next = [...prev];
@@ -164,42 +164,6 @@ export function ImportDialog({ open, onOpenChange, config, token, postBatch, sim
       return next;
     });
   }, [requiredTargets, emailTargets, fkTargets, fkResolutions]);
-
-  // "Re-validate" in the preview review queue — the one explicit, user-triggered point
-  // where an edited FK value is actually worth a network round-trip: re-resolves just
-  // this row's current FK column values (single-value lookups, not a full-file batch)
-  // and merges them into the persisted fkResolutions before validating. Without this,
-  // fkColumns being empty was masking that this path never resolved anything — passing
-  // an empty Map meant a row flagged for an unmatched country could never be fixed here
-  // at all, only by editing the source file and re-uploading.
-  const handleRetryEntryPreSend = useCallback(async (index) => {
-    const row = entries[index].row;
-    let resolutions = fkResolutions;
-    if (fkColumns.length > 0) {
-      resolutions = new Map(fkResolutions);
-      for (const column of fkColumns) {
-        const rawValue = String(row[column.target] ?? '').trim();
-        if (!rawValue) continue;
-        const valueMap = await resolveForeignKeyColumn({
-          values: [rawValue],
-          matchEntity: column.matchEntity,
-          simSearchFn,
-          token,
-          qtyResults: column.qtyResults,
-        });
-        const columnMap = new Map(resolutions.get(column.target) ?? []);
-        for (const [key, resolution] of valueMap) columnMap.set(key, resolution);
-        resolutions.set(column.target, columnMap);
-      }
-      setFkResolutions(resolutions);
-    }
-    setEntries((prev) => {
-      const next = [...prev];
-      const { valid, errors } = validateRow(next[index].row, { requiredTargets, emailTargets, fkTargets, fkResolutions: resolutions });
-      next[index] = { ...next[index], errors: valid ? [] : errors };
-      return next;
-    });
-  }, [entries, requiredTargets, emailTargets, fkTargets, fkColumns, fkResolutions, simSearchFn, token]);
 
   // A candidate picked (or freeform text accepted) from the FK-mismatch popover — applies
   // it to one or more rows in one shot: merges the resolution into fkResolutions and
@@ -376,12 +340,11 @@ export function ImportDialog({ open, onOpenChange, config, token, postBatch, sim
                 statusFilter={statusFilterPreSend}
                 onStatusFilterChange={setStatusFilterPreSend}
                 onEditField={handleEditField}
-                onRetryEntry={handleRetryEntryPreSend}
+                showRetry={false}
                 onSkipEntry={handleSkipEntry}
                 onUnskipEntry={handleUnskipEntry}
                 onApplyFkValue={handleApplyFkValue}
                 onDownloadErrors={() => downloadCsv(buildErrorsCsv(entries), 'import-errors.csv')}
-                retryLabel="Re-validate"
                 simSearchFn={simSearchFn}
                 token={token}
                 data-testid="ImportReviewQueue__38a6c3" />

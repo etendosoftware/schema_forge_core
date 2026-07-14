@@ -414,3 +414,20 @@ describe('ImportReviewQueue', () => {
     });
   });
 });
+
+describe('showRetry prop', () => {
+  it('hides the Retry button on an OK row when showRetry is false', () => {
+    render(<ImportReviewQueue entries={[okEntry]} showRetry={false} statusFilter="all" onStatusFilterChange={() => {}} onEditField={() => {}} onRetryEntry={() => {}} onSkipEntry={() => {}} onDownloadErrors={() => {}} />);
+    expect(screen.queryByTestId('ImportReviewQueue__retry-0')).toBeNull();
+  });
+
+  it('hides the Retry button on an error row when showRetry is false', () => {
+    render(<ImportReviewQueue entries={[errorEntry]} showRetry={false} statusFilter="error" onStatusFilterChange={() => {}} onEditField={() => {}} onRetryEntry={() => {}} onSkipEntry={() => {}} onDownloadErrors={() => {}} />);
+    expect(screen.queryByTestId('ImportReviewQueue__retry-0')).toBeNull();
+  });
+
+  it('shows the Retry button by default (showRetry defaults to true)', () => {
+    render(<ImportReviewQueue entries={[errorEntry]} statusFilter="error" onStatusFilterChange={() => {}} onEditField={() => {}} onRetryEntry={() => {}} onSkipEntry={() => {}} onDownloadErrors={() => {}} />);
+    expect(screen.getByTestId('ImportReviewQueue__retry-0')).toBeDefined();
+  });
+});

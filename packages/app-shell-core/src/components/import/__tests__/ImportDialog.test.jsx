@@ -260,4 +260,11 @@ describe('ImportDialog', () => {
       expect(stillOnProgress).toBeNull();
     });
   });
+
+  it('does not show a Retry/Re-validate button in the pre-send mapping step', async () => {
+    render(<ImportDialog open config={config} token="t" postBatch={vi.fn()} simSearchFn={vi.fn()} onImported={() => {}} />);
+    await uploadFile('Name,Email\nLucia,not-an-email');
+    await waitFor(() => screen.getByTestId('ImportReviewQueue__fieldError-0-email'));
+    expect(screen.queryByTestId('ImportReviewQueue__retry-0')).toBeNull();
+  });
 });

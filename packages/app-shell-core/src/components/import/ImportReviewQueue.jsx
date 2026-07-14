@@ -297,6 +297,7 @@ export function ImportReviewQueue({
   onApplyFkValue,
   onDownloadErrors,
   retryLabel = 'Retry',
+  showRetry = true,
   labels,
   simSearchFn,
   token,
@@ -459,17 +460,19 @@ export function ImportReviewQueue({
                     <div className="flex items-center gap-2">
                       <StatusLineTag index={index} tag="success" data-testid="StatusLineTag__a73779">{text.statusOk}</StatusLineTag>
                       <div className="flex items-center gap-0.5">
-                        <Button
-                          type="button"
-                          size="icon"
-                          className="h-6 w-6"
-                          onClick={() => onRetryEntry(index)}
-                          data-testid={`ImportReviewQueue__retry-${index}`}
-                          title={retryLabel}
-                        >
-                          <RotateCw className="h-3 w-3" aria-hidden="true" data-testid="RotateCw__a73779" />
-                          <span className="sr-only">{retryLabel}</span>
-                        </Button>
+                        {showRetry && (
+                          <Button
+                            type="button"
+                            size="icon"
+                            className="h-6 w-6"
+                            onClick={() => onRetryEntry(index)}
+                            data-testid={`ImportReviewQueue__retry-${index}`}
+                            title={retryLabel}
+                          >
+                            <RotateCw className="h-3 w-3" aria-hidden="true" data-testid="RotateCw__a73779" />
+                            <span className="sr-only">{retryLabel}</span>
+                          </Button>
+                        )}
                         <Button
                           type="button"
                           variant="ghost"
@@ -541,17 +544,19 @@ export function ImportReviewQueue({
                         <span className="sr-only">{text.statusError}</span>
                       </StatusLineTag>
                       <div className="flex items-center gap-0.5">
-                        <Button
-                          type="button"
-                          size="icon"
-                          className="h-6 w-6"
-                          onClick={() => onRetryEntry(index)}
-                          data-testid={`ImportReviewQueue__retry-${index}`}
-                          title={retryLabel}
-                        >
-                          <RotateCw className="h-3 w-3" aria-hidden="true" data-testid="RotateCw__a73779" />
-                          <span className="sr-only">{retryLabel}</span>
-                        </Button>
+                        {showRetry && (
+                          <Button
+                            type="button"
+                            size="icon"
+                            className="h-6 w-6"
+                            onClick={() => onRetryEntry(index)}
+                            data-testid={`ImportReviewQueue__retry-${index}`}
+                            title={retryLabel}
+                          >
+                            <RotateCw className="h-3 w-3" aria-hidden="true" data-testid="RotateCw__a73779" />
+                            <span className="sr-only">{retryLabel}</span>
+                          </Button>
+                        )}
                         <Button
                           type="button"
                           variant="secondary"
