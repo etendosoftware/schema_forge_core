@@ -2509,3 +2509,37 @@ describe('buildProcessesArray labelToggle', () => {
     assert.ok(out.includes(`labelToggle: ${JSON.stringify(labelToggle)}`), 'labelToggle emitted for buttonField process');
   });
 });
+
+describe('resolveSecondaryTabDefs headerEntity collision (ETP-4482)', () => {
+  // A single-entity window whose own primary/header entity happens to be named
+  // 'accounting' (or any other key in the hardcoded knownSecondaryTabDefs list —
+  // orderTax, invoiceTax, basicDiscounts, paymentPlan, landedCost, reversedInvoices)
+  // and declares no window.secondaryTabs. The backward-compat fallback in
+  // resolveSecondaryTabDefs matched 'accounting' against the header entity itself
+  // and only excluded detailEntity from the result, so it re-emitted the header's
+  // own Table/Form as a bogus secondary tab — producing duplicate imports and a
+  // "Identifier already declared" parse error in the generated Page.jsx.
+  const accountingHeaderContract = {
+    frontendContract: {
+      window: { id: 'B5673F73F613496C8BEA22FB55E4E1E4', name: 'End Year Close', primaryEntity: 'accounting', category: 'finance', detailEntity: null },
+      entities: {
+        accounting: {
+          fields: [
+            { name: 'account', column: 'Account_ID', type: 'string', tsType: 'string', visibility: 'readOnly', required: false, grid: true, form: true },
+          ],
+          searchableFields: [],
+          computedFields: [],
+        },
+      },
+    },
+    backendContract: { processEndpoints: [] },
+  };
+
+  it('does not re-declare the header entity as its own secondary tab', () => {
+    const code = generatePageComponent('accounting', null, accountingHeaderContract);
+    const tableImportCount = (code.match(/import AccountingTable from '\.\/AccountingTable';/g) || []).length;
+    const formImportCount = (code.match(/import AccountingForm from '\.\/AccountingForm';/g) || []).length;
+    assert.equal(tableImportCount, 1, 'AccountingTable must be imported exactly once');
+    assert.equal(formImportCount, 1, 'AccountingForm must be imported exactly once');
+  });
+});
