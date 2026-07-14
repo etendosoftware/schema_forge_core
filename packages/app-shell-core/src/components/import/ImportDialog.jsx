@@ -145,8 +145,8 @@ export function ImportDialog({ open, onOpenChange, config, token, postBatch, sim
     }
   }, [config.fields, runValidation]);
 
-  const handleMappingChange = useCallback((header, target) => {
-    setMapping((prev) => ({ ...prev, [header]: target }));
+  const handleMappingChange = useCallback((newMapping) => {
+    setMapping(newMapping);
   }, []);
 
   // Reuses the already-resolved fkResolutions from runValidation (not a fresh empty Map)
@@ -332,7 +332,7 @@ export function ImportDialog({ open, onOpenChange, config, token, postBatch, sim
                 headers={headers}
                 importFields={config.fields}
                 mapping={mapping}
-                onMappingChange={handleMappingChange}
+                onApplyMapping={handleMappingChange}
                 data-testid="ImportColumnMapping__38a6c3" />
               <ImportReviewQueue
                 entries={entries}

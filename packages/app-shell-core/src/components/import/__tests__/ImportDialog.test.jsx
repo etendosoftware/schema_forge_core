@@ -25,7 +25,7 @@ async function uploadFile(content) {
   const input = screen.getByTestId('ImportDropzone__fileInput');
   const file = makeFile(content);
   fireEvent.change(input, { target: { files: [file] } });
-  await waitFor(() => screen.getByTestId('ImportColumnMapping__select-Name'));
+  await waitFor(() => screen.getByTestId('ImportColumnMapping__chip-Name'));
 }
 
 describe('ImportDialog', () => {
@@ -33,8 +33,8 @@ describe('ImportDialog', () => {
     const postBatch = vi.fn();
     render(<ImportDialog open config={config} token="t" postBatch={postBatch} simSearchFn={vi.fn()} onImported={() => {}} />);
     await uploadFile('Name,Email\nLucia,lucia@x.com');
-    expect(screen.getByTestId('ImportColumnMapping__select-Name').textContent).toContain('Name');
-    expect(screen.getByTestId('ImportColumnMapping__select-Email').textContent).toContain('Email');
+    expect(screen.getByTestId('ImportColumnMapping__chip-Name').textContent).toContain('Name');
+    expect(screen.getByTestId('ImportColumnMapping__chip-Email').textContent).toContain('Email');
   });
 
   it('regression: does not collapse distinct rows into duplicates of each other (config.dedupe.key, not a flat dedupeKeyTargets)', async () => {
