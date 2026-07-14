@@ -306,6 +306,27 @@ describe('ImportReviewQueue', () => {
     });
   });
 
+  describe('status filter pill counts', () => {
+    it('shows the count of each bucket next to its label', () => {
+      const okEntry2 = { row: { name: 'Marta', email: 'marta@x.com' }, errors: [], status: 'pending' };
+      const skipped = { row: { name: 'Old', email: 'old@x.com' }, errors: [], status: 'skipped' };
+      render(
+        <ImportReviewQueue
+          entries={[okEntry, okEntry2, errorEntry, skipped]}
+          statusFilter="all"
+          onStatusFilterChange={() => {}}
+          onEditField={() => {}}
+          onRetryEntry={() => {}}
+          onSkipEntry={() => {}}
+          onDownloadErrors={() => {}}
+        />,
+      );
+      expect(screen.getByTestId('ImportReviewQueue__statusFilterCount-all').textContent).toBe('4');
+      expect(screen.getByTestId('ImportReviewQueue__statusFilterCount-ok').textContent).toBe('2');
+      expect(screen.getByTestId('ImportReviewQueue__statusFilterCount-error').textContent).toBe('2');
+    });
+  });
+
   describe('Copy error', () => {
     // These server-side errors are frequently raw, uncontrolled messages
     // (BatchService's own generic "Operation 'x' rejected by server" wrapper) that the

@@ -309,6 +309,12 @@ export function ImportReviewQueue({
       return statusFilter === 'error' ? isAttentionNeeded : !isAttentionNeeded;
     });
 
+  const counts = {
+    all: entries.length,
+    ok: entries.filter((e) => e.status !== 'skipped' && e.errors.length === 0).length,
+    error: entries.filter((e) => e.status === 'skipped' || e.errors.length > 0).length,
+  };
+
   // Awaiting the user's yes/no on whether a just-picked FK fix should also apply to every
   // other row currently failing on the same raw value (e.g. every "Brazil" row, not just
   // this one) — null when no prompt is showing.
@@ -375,6 +381,12 @@ export function ImportReviewQueue({
               data-testid={`ImportReviewQueue__statusFilter-${opt.value}`}
             >
               {text[opt.labelKey]}
+              <span
+                className="ml-1.5 rounded-full bg-black/10 px-1.5 py-0.5 text-[10px] tabular-nums"
+                data-testid={`ImportReviewQueue__statusFilterCount-${opt.value}`}
+              >
+                {counts[opt.value]}
+              </span>
             </Button>
           ))}
         </div>
