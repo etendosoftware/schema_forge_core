@@ -1,5 +1,5 @@
 import { useRef, useState } from 'react';
-import { RotateCw, Ban, AlertCircle, ChevronDown, Pencil } from 'lucide-react';
+import { RotateCw, Ban, AlertCircle, ChevronDown, Check } from 'lucide-react';
 import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from '../ui/table.jsx';
 import { Input } from '../ui/input.jsx';
 import { Button } from '../ui/button.jsx';
@@ -435,7 +435,7 @@ export function ImportReviewQueue({
                           data-testid={`ImportReviewQueue__unskip-${index}`}
                           title={text.unskip}
                         >
-                          <Pencil className="h-3 w-3" aria-hidden="true" data-testid="Pencil__a73779" />
+                          <Check className="h-3 w-3" aria-hidden="true" data-testid="Check__a73779" />
                           <span className="sr-only">{text.unskip}</span>
                         </Button>
                       )}

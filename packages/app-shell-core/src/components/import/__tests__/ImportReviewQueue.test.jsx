@@ -149,6 +149,13 @@ describe('ImportReviewQueue', () => {
     expect(screen.queryByTestId('SkipForward__a73779')).toBeNull();
   });
 
+  it('uses a Check icon (not Pencil) for the unskip / "Edit again" action', () => {
+    const skipped = { row: { name: 'Old', email: 'old@x.com' }, errors: [], status: 'skipped' };
+    render(<ImportReviewQueue entries={[skipped]} statusFilter="all" onStatusFilterChange={() => {}} onEditField={() => {}} onRetryEntry={() => {}} onSkipEntry={() => {}} onUnskipEntry={() => {}} onDownloadErrors={() => {}} />);
+    expect(screen.getByTestId('Check__a73779')).toBeDefined();
+    expect(screen.queryByTestId('Pencil__a73779')).toBeNull();
+  });
+
   it('marks a skipped entry distinctly and does not offer edit/retry for it', () => {
     const skipped = { ...errorEntry, status: 'skipped' };
     render(<ImportReviewQueue entries={[skipped]} statusFilter="error" onStatusFilterChange={() => {}} onEditField={() => {}} onRetryEntry={() => {}} onSkipEntry={() => {}} onDownloadErrors={() => {}} />);
