@@ -165,6 +165,30 @@ describe('ImportReviewQueue', () => {
     expect(screen.getByTestId('ImportReviewQueue__input-0-email').value).toBe('lucia@x.com');
   });
 
+  it('regression: does not truncate a long row-level error message — it wraps in full instead of being hidden behind a hover tooltip', () => {
+    const longMessage = 'A user with the same name already exists for this organization and client combination; please choose a different search key or business partner name before retrying.';
+    const rowLevelEntry = {
+      row: { name: 'Lucia', email: 'lucia@x.com' },
+      errors: [{ target: '', message: longMessage }],
+      status: 'pending',
+    };
+    render(
+      <ImportReviewQueue
+        entries={[rowLevelEntry]}
+        fields={[{ target: 'name', label: 'Name' }, { target: 'email', label: 'Email' }]}
+        statusFilter="error"
+        onStatusFilterChange={() => {}}
+        onEditField={() => {}}
+        onRetryEntry={() => {}}
+        onSkipEntry={() => {}}
+        onDownloadErrors={() => {}}
+      />
+    );
+    const rowError = screen.getByTestId('ImportReviewQueue__rowError-0');
+    expect(rowError.textContent).toBe(longMessage);
+    expect(rowError.className).not.toMatch(/\btruncate\b/);
+  });
+
   it('edits the correct field when editing a row-level-error entry\'s full-row inputs', () => {
     const onEditField = vi.fn();
     const rowLevelEntry = {

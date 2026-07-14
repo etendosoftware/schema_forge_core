@@ -588,8 +588,7 @@ export function ImportReviewQueue({
                     </div>
                     {rowLevelError && (
                       <span
-                        className="truncate text-xs text-destructive"
-                        title={rowLevelError.message}
+                        className="text-xs text-destructive"
                         data-testid={`ImportReviewQueue__rowError-${index}`}
                       >
                         {rowLevelError.message}
