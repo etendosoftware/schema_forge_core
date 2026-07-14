@@ -55,14 +55,16 @@ function parseArgs(argv) {
   const opts = {
     window: null, all: false, core: true, dryRun: false, check: false, ...defaultPaths(process.cwd()),
   };
-  for (let i = 0; i < args.length; i += 1) {
+  let i = 0;
+  while (i < args.length) {
     const arg = args[i];
     const valueKey = VALUE_FLAGS[arg];
     if (valueKey && args[i + 1] !== undefined) {
       opts[valueKey] = args[i + 1];
-      i += 1;
+      i += 2;
     } else {
       BOOL_FLAGS[arg]?.(opts);
+      i += 1;
     }
   }
   return opts;
