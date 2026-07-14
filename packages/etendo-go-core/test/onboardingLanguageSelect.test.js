@@ -180,16 +180,20 @@ describe('OnboardingLanguageSelect wiring (ETP-4444, Login-only scope)', () => {
     // runtime (caught manually, no test had caught it). SelectGroup must
     // wrap both the label and the options.map block, nested inside
     // SelectContent.
+    //
+    // Note: SelectLabel now takes an explicit className (scoped override, see
+    // the test below), so it's no longer the exact literal
+    // `<SelectLabel>{label}</SelectLabel>` — match the opening tag instead.
     const contentOpenIndex = languageSelect.indexOf('<SelectContent>');
     const groupOpenIndex = languageSelect.indexOf('<SelectGroup>');
-    const selectLabelIndex = languageSelect.indexOf('<SelectLabel>{label}</SelectLabel>');
+    const selectLabelIndex = languageSelect.indexOf('<SelectLabel');
     const optionsMapIndex = languageSelect.indexOf('{options.map((option) =>');
     const groupCloseIndex = languageSelect.indexOf('</SelectGroup>');
     const contentCloseIndex = languageSelect.indexOf('</SelectContent>');
     for (const [name, index] of [
       ['<SelectContent>', contentOpenIndex],
       ['<SelectGroup>', groupOpenIndex],
-      ['<SelectLabel>{label}</SelectLabel>', selectLabelIndex],
+      ['<SelectLabel', selectLabelIndex],
       ['options.map(...)', optionsMapIndex],
       ['</SelectGroup>', groupCloseIndex],
       ['</SelectContent>', contentCloseIndex],
@@ -210,10 +214,10 @@ describe('OnboardingLanguageSelect wiring (ETP-4444, Login-only scope)', () => {
     // SelectGroup, per the Radix fix above) and BEFORE options.map, not just
     // anywhere in the file.
     const contentOpenIndex = languageSelect.indexOf('<SelectContent>');
-    const selectLabelIndex = languageSelect.indexOf('<SelectLabel>{label}</SelectLabel>');
+    const selectLabelIndex = languageSelect.indexOf('<SelectLabel');
     const optionsMapIndex = languageSelect.indexOf('{options.map((option) =>');
     assert.notEqual(contentOpenIndex, -1, '<SelectContent> not found');
-    assert.notEqual(selectLabelIndex, -1, '<SelectLabel>{label}</SelectLabel> not found');
+    assert.notEqual(selectLabelIndex, -1, '<SelectLabel opening tag not found');
     assert.notEqual(optionsMapIndex, -1, 'options.map(...) block not found');
     assert.ok(
       selectLabelIndex > contentOpenIndex,
@@ -223,6 +227,34 @@ describe('OnboardingLanguageSelect wiring (ETP-4444, Login-only scope)', () => {
       selectLabelIndex < optionsMapIndex,
       'SelectLabel must render before the options.map list, as a heading for it',
     );
+    // The heading text itself is still the `label` prop (e.g. "Idioma"/"Language").
+    const selectLabelBlock = languageSelect.slice(selectLabelIndex, languageSelect.indexOf('</SelectLabel>'));
+    assert.match(selectLabelBlock, /\{label\}/);
+  });
+
+  it('scopes the three ETP-4444 visual treatments to className overrides on THIS component, not the shared select.jsx primitive', () => {
+    // Design-review pushback: the visual fixes (open-state ring, checked-item
+    // background, Figma heading style) must not leak into the shared
+    // app-shell-core `select.jsx` primitive used app-wide (lookups, process
+    // param dialogs, forms, etc.) — they're scoped here via `className`
+    // overrides, which `cn()`/tailwind-merge safely layers on top of the
+    // shared defaults per element.
+    function extractOpeningTag(source, tagName) {
+      const start = source.indexOf(`<${tagName}`);
+      assert.notEqual(start, -1, `<${tagName}> not found`);
+      const end = source.indexOf('>', start);
+      assert.notEqual(end, -1, `<${tagName}> opening tag never closes`);
+      return source.slice(start, end + 1);
+    }
+
+    const triggerTag = extractOpeningTag(languageSelect, 'SelectTrigger');
+    assert.match(triggerTag, /className="[^"]*data-\[state=open\]:ring-1 data-\[state=open\]:ring-ring[^"]*"/);
+
+    const itemTag = extractOpeningTag(languageSelect, 'SelectItem');
+    assert.match(itemTag, /className="data-\[state=checked\]:bg-\[rgba\(18,18,23,0\.05\)\]"/);
+
+    const labelTag = extractOpeningTag(languageSelect, 'SelectLabel');
+    assert.match(labelTag, /className="px-4 py-1 text-xs font-normal leading-6 text-\[#6C6C89\]"/);
   });
 
   it('keeps the country field fixed (a static label, not a selector) in ProfileStep', () => {
