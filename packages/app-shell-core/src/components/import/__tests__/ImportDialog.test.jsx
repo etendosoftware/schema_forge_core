@@ -3,6 +3,16 @@ import { render, screen, fireEvent, waitFor, cleanup } from '@testing-library/re
 import { ImportDialog } from '../ImportDialog.jsx';
 import { registerImportDescriptor } from '../../../lib/import/buildOperations.js';
 
+if (!Element.prototype.hasPointerCapture) {
+  Element.prototype.hasPointerCapture = () => false;
+}
+if (!Element.prototype.releasePointerCapture) {
+  Element.prototype.releasePointerCapture = () => {};
+}
+if (!Element.prototype.scrollIntoView) {
+  Element.prototype.scrollIntoView = () => {};
+}
+
 afterEach(() => {
   cleanup();
 });
@@ -266,5 +276,29 @@ describe('ImportDialog', () => {
     await uploadFile('Name,Email\nLucia,not-an-email');
     await waitFor(() => screen.getByTestId('ImportReviewQueue__fieldError-0-email'));
     expect(screen.queryByTestId('ImportReviewQueue__retry-0')).toBeNull();
+  });
+
+  it('re-derives the grid from the raw file using the new mapping after Save in the edit-match modal', async () => {
+    render(<ImportDialog open config={config} token="t" postBatch={vi.fn()} simSearchFn={vi.fn()} onImported={() => {}} />);
+    await uploadFile('Name,Email\nLucia,not-an-email');
+    await waitFor(() => screen.getByTestId('ImportReviewQueue__fieldError-0-email'));
+    // Unmap the "Email" CSV header entirely — proves entries are rebuilt from the
+    // persisted raw rows with the new mapping, not just cosmetically relabeled: the
+    // invalid value is no longer read into the `email` target at all, so the email
+    // format check has nothing to flag.
+    fireEvent.click(screen.getByTestId('ImportColumnMapping__editButton'));
+    fireEvent.click(screen.getByTestId('ImportColumnMapping__select-Email'));
+    fireEvent.click(screen.getByText('Not imported'));
+    fireEvent.click(screen.getByTestId('ImportColumnMapping__saveButton'));
+    await waitFor(() => expect(screen.queryByTestId('ImportReviewQueue__fieldError-0-email')).toBeNull());
+  });
+
+  it('shows a loading overlay while revalidating after a mapping change, then hides it', async () => {
+    render(<ImportDialog open config={config} token="t" postBatch={vi.fn()} simSearchFn={vi.fn()} onImported={() => {}} />);
+    await uploadFile('Name,Email\nLucia,lucia@x.com');
+    fireEvent.click(screen.getByTestId('ImportColumnMapping__editButton'));
+    fireEvent.click(screen.getByTestId('ImportColumnMapping__saveButton'));
+    expect(screen.getByTestId('ImportDialog__revalidatingOverlay')).toBeDefined();
+    await waitFor(() => expect(screen.queryByTestId('ImportDialog__revalidatingOverlay')).toBeNull());
   });
 });

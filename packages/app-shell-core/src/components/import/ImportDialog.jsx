@@ -45,7 +45,9 @@ export function ImportDialog({ open, onOpenChange, config, token, postBatch, sim
   const [fileErrorMessage, setFileErrorMessage] = useState(null);
   const [mapping, setMapping] = useState({});
   const [headers, setHeaders] = useState([]);
+  const [rawRows, setRawRows] = useState([]);
   const [entries, setEntries] = useState([]);
+  const [isRevalidating, setIsRevalidating] = useState(false);
   // Two independent filters, not one shared value — the design spec is explicit that
   // the preview (pre-send) and result (post-send) review queues each remember their own
   // filter state. 'error' (errors + skipped) is the default, matching the original
@@ -136,6 +138,7 @@ export function ImportDialog({ open, onOpenChange, config, token, postBatch, sim
       const { headers: parsedHeaders, rows } = parseDelimited(text2);
       const { mapping: autoMapping } = mapColumns(parsedHeaders, config.fields);
       setHeaders(parsedHeaders);
+      setRawRows(rows);
       setMapping(autoMapping);
       await runValidation(rows.map((row) => renameRowKeys(row, autoMapping)));
       setStep(STEP.MAPPING);
@@ -145,9 +148,15 @@ export function ImportDialog({ open, onOpenChange, config, token, postBatch, sim
     }
   }, [config.fields, runValidation]);
 
-  const handleMappingChange = useCallback((newMapping) => {
+  const handleApplyMapping = useCallback(async (newMapping) => {
     setMapping(newMapping);
-  }, []);
+    setIsRevalidating(true);
+    try {
+      await runValidation(rawRows.map((row) => renameRowKeys(row, newMapping)));
+    } finally {
+      setIsRevalidating(false);
+    }
+  }, [rawRows, runValidation]);
 
   // Reuses the already-resolved fkResolutions from runValidation (not a fresh empty Map)
   // so undoing an edit back to an already-resolved raw value is recognized immediately.
@@ -332,22 +341,32 @@ export function ImportDialog({ open, onOpenChange, config, token, postBatch, sim
                 headers={headers}
                 importFields={config.fields}
                 mapping={mapping}
-                onApplyMapping={handleMappingChange}
+                onApplyMapping={handleApplyMapping}
                 data-testid="ImportColumnMapping__38a6c3" />
-              <ImportReviewQueue
-                entries={entries}
-                fields={config.fields}
-                statusFilter={statusFilterPreSend}
-                onStatusFilterChange={setStatusFilterPreSend}
-                onEditField={handleEditField}
-                showRetry={false}
-                onSkipEntry={handleSkipEntry}
-                onUnskipEntry={handleUnskipEntry}
-                onApplyFkValue={handleApplyFkValue}
-                onDownloadErrors={() => downloadCsv(buildErrorsCsv(entries), 'import-errors.csv')}
-                simSearchFn={simSearchFn}
-                token={token}
-                data-testid="ImportReviewQueue__38a6c3" />
+              <div className="relative flex min-h-0 flex-1 flex-col">
+                {isRevalidating && (
+                  <div
+                    className="absolute inset-0 z-20 flex items-center justify-center bg-background/70"
+                    data-testid="ImportDialog__revalidatingOverlay"
+                  >
+                    <span className="text-sm text-muted-foreground">Revalidating rows…</span>
+                  </div>
+                )}
+                <ImportReviewQueue
+                  entries={entries}
+                  fields={config.fields}
+                  statusFilter={statusFilterPreSend}
+                  onStatusFilterChange={setStatusFilterPreSend}
+                  onEditField={handleEditField}
+                  showRetry={false}
+                  onSkipEntry={handleSkipEntry}
+                  onUnskipEntry={handleUnskipEntry}
+                  onApplyFkValue={handleApplyFkValue}
+                  onDownloadErrors={() => downloadCsv(buildErrorsCsv(entries), 'import-errors.csv')}
+                  simSearchFn={simSearchFn}
+                  token={token}
+                  data-testid="ImportReviewQueue__38a6c3" />
+              </div>
               <div className="flex justify-end">
                 <Button
                   type="button"
