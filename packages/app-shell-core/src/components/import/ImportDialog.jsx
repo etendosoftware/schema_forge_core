@@ -17,7 +17,7 @@ import { validateRow } from '../../lib/import/validateRows.js';
 import { buildOperations } from '../../lib/import/buildOperations.js';
 import { runImport, sendRow, SEND_STATUS } from '../../lib/import/importEngine.js';
 
-const DEFAULT_LABELS = { title: 'Import' };
+const DEFAULT_LABELS = { title: 'Import', revalidating: 'Revalidating rows…' };
 
 const STEP = { DROPZONE: 'dropzone', MAPPING: 'mapping', CONFIRM: 'confirm', SENDING: 'sending', FILE_ERROR: 'fileError', RESULT: 'result' };
 
@@ -349,7 +349,7 @@ export function ImportDialog({ open, onOpenChange, config, token, postBatch, sim
                     className="absolute inset-0 z-20 flex items-center justify-center bg-background/70"
                     data-testid="ImportDialog__revalidatingOverlay"
                   >
-                    <span className="text-sm text-muted-foreground">Revalidating rows…</span>
+                    <span className="text-sm text-muted-foreground">{text.revalidating}</span>
                   </div>
                 )}
                 <ImportReviewQueue
