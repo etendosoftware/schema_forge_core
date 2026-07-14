@@ -1,6 +1,5 @@
 import { useRef, useState } from 'react';
-import { toast } from 'sonner';
-import { RotateCw, Copy, Ban, AlertCircle, ChevronDown, Pencil } from 'lucide-react';
+import { RotateCw, Ban, AlertCircle, ChevronDown, Pencil } from 'lucide-react';
 import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from '../ui/table.jsx';
 import { Input } from '../ui/input.jsx';
 import { Button } from '../ui/button.jsx';
@@ -17,9 +16,6 @@ const DEFAULT_LABELS = {
   skipped: 'Skipped',
   unskip: 'Edit again',
   downloadErrors: 'Download errors',
-  copyError: 'Copy error',
-  copied: 'Copied to clipboard',
-  copyFailed: 'Could not copy to clipboard',
   status: 'Status',
   statusOk: 'OK',
   statusError: 'Error',
@@ -82,17 +78,6 @@ const STATUS_TAG_COLORS = {
   destructive: 'bg-[#FEF0F4] text-[#D50B3E]',
   neutral: 'bg-[#F5F7F9] text-[#3F3F50]',
 };
-
-/**
- * Plain-text summary of one entry's errors, e.g. for pasting into a support
- * ticket. These are frequently raw, uncontrolled server messages (BatchService's
- * own generic "Operation 'x' rejected by server" wrapper, or a raw unhandled
- * exception) rather than a friendly validation message — the user can't fix
- * those themselves, only retry or hand the exact text to support.
- */
-function errorsToText(entry) {
-  return entry.errors.map((e) => (e.target ? `${e.target}: ${e.message}` : e.message)).join('\n');
-}
 
 function csvEscape(value) {
   const s = String(value ?? '');
@@ -372,15 +357,6 @@ export function ImportReviewQueue({
     setPendingBulkApply(null);
   };
 
-  const handleCopyError = async (entry) => {
-    try {
-      await navigator.clipboard.writeText(errorsToText(entry));
-      toast.success(text.copied);
-    } catch {
-      toast.error(text.copyFailed);
-    }
-  };
-
   // When the caller declares the import's fields, the preview renders one real
   // table column per field (a proper data grid) instead of collapsing the whole
   // row into a single cell. Without declared fields (isolated/legacy usage) we
@@ -590,18 +566,6 @@ export function ImportReviewQueue({
                             <span className="sr-only">{retryLabel}</span>
                           </Button>
                         )}
-                        <Button
-                          type="button"
-                          variant="secondary"
-                          size="icon"
-                          className="h-6 w-6"
-                          data-testid={`ImportReviewQueue__copy-${index}`}
-                          onClick={() => handleCopyError(entry)}
-                          title={text.copyError}
-                        >
-                          <Copy className="h-3 w-3" aria-hidden="true" data-testid="Copy__a73779" />
-                          <span className="sr-only">{text.copyError}</span>
-                        </Button>
                         <Button
                           type="button"
                           variant="ghost"

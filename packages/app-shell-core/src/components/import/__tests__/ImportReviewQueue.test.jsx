@@ -327,41 +327,6 @@ describe('ImportReviewQueue', () => {
     });
   });
 
-  describe('Copy error', () => {
-    // These server-side errors are frequently raw, uncontrolled messages
-    // (BatchService's own generic "Operation 'x' rejected by server" wrapper) that the
-    // user can't fix themselves — Retry already exists for the transient-failure case;
-    // this covers reporting the exact text to support instead of requiring the user to
-    // dig it out of the Network tab or select it manually from the on-screen span.
-    afterEach(() => {
-      delete navigator.clipboard;
-    });
-
-    it('copies a single-target error\'s message to the clipboard', async () => {
-      const writeText = vi.fn().mockResolvedValue(undefined);
-      Object.assign(navigator, { clipboard: { writeText } });
-      render(<ImportReviewQueue entries={[errorEntry]} statusFilter="error" onStatusFilterChange={() => {}} onEditField={() => {}} onRetryEntry={() => {}} onSkipEntry={() => {}} onDownloadErrors={() => {}} />);
-      fireEvent.click(screen.getByTestId('ImportReviewQueue__copy-0'));
-      await Promise.resolve();
-      expect(writeText).toHaveBeenCalledWith('email: Not a valid email address.');
-    });
-
-    it('copies a row-level error (no target) without a leading "undefined:" or empty label', async () => {
-      const writeText = vi.fn().mockResolvedValue(undefined);
-      Object.assign(navigator, { clipboard: { writeText } });
-      const rowLevelEntry = { row: { name: 'Lucia' }, errors: [{ target: '', message: "Operation 'bp' rejected by server" }], status: 'pending' };
-      render(<ImportReviewQueue entries={[rowLevelEntry]} fields={[{ target: 'name', label: 'Name' }]} statusFilter="error" onStatusFilterChange={() => {}} onEditField={() => {}} onRetryEntry={() => {}} onSkipEntry={() => {}} onDownloadErrors={() => {}} />);
-      fireEvent.click(screen.getByTestId('ImportReviewQueue__copy-0'));
-      await Promise.resolve();
-      expect(writeText).toHaveBeenCalledWith("Operation 'bp' rejected by server");
-    });
-
-    it('does not render a Copy button for an entry with no errors', () => {
-      render(<ImportReviewQueue entries={[okEntry]} statusFilter="all" onStatusFilterChange={() => {}} onEditField={() => {}} onRetryEntry={() => {}} onSkipEntry={() => {}} onDownloadErrors={() => {}} />);
-      expect(screen.queryByTestId('ImportReviewQueue__copy-0')).toBeNull();
-    });
-  });
-
   describe('off-screen field-error tooltip', () => {
     it('lists every field-level error by label in the Status cell tooltip', () => {
       const multiFieldError = {
