@@ -41,6 +41,16 @@ function computeAxisMetrics(scrollSize, clientSize, scrollOffset) {
  * (trackpad, wheel, keyboard, and any classic OS scrollbar that may also
  * render) is untouched.
  *
+ * The overlay lives in a non-scrolling outer wrapper, as a SIBLING of the
+ * actual `overflow-auto` node, not a child of it — an earlier version
+ * rendered it as a child and it scrolled away with the content the moment
+ * the user scrolled (confirmed live against the running app), defeating the
+ * entire point of an "always-visible" indicator. The wrapper carries the
+ * `relative` positioning context and the flex sizing this component's root
+ * used to carry directly; the inner node still gets `ref`/`onScroll`/
+ * `{...props}` exactly as before, so `ref`, `data-testid`, and any other
+ * forwarded prop still resolve to the real scrollable element.
+ *
  * Pass `onReachBottom` to get infinite-scroll behavior: it fires once scroll
  * position comes within `threshold`px of the bottom (mirrors ListView.jsx's
  * own handleScroll, so callers doing paginated loadMore() can reuse this
@@ -84,13 +94,15 @@ const ScrollPane = React.forwardRef(({ className, onScroll, onReachBottom, thres
   };
 
   return (
-    <div
-      ref={setRefs}
-      onScroll={handleScroll}
-      className={cn("relative min-h-0 flex-1 overflow-auto", className)}
-      {...props}
-    >
-      {children}
+    <div className="relative flex min-h-0 flex-1 flex-col">
+      <div
+        ref={setRefs}
+        onScroll={handleScroll}
+        className={cn("min-h-0 flex-1 overflow-auto", className)}
+        {...props}
+      >
+        {children}
+      </div>
       {axisMetrics.x && (
         <div
           className="pointer-events-none absolute bottom-0 left-0 right-0 z-30"
