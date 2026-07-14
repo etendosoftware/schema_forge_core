@@ -115,7 +115,13 @@ export function ImportColumnMapping({ headers, importFields, mapping, onApplyMap
           <DialogHeader data-testid="DialogHeader__columnMappingEdit">
             <DialogTitle data-testid="DialogTitle__columnMappingEdit">{text.editTitle}</DialogTitle>
           </DialogHeader>
-          <MappingGrid headers={headers} importFields={importFields} mapping={draftMapping} onMappingChange={handleDraftChange} text={text} />
+          <MappingGrid
+            headers={headers}
+            importFields={importFields}
+            mapping={draftMapping}
+            onMappingChange={handleDraftChange}
+            text={text}
+            data-testid="MappingGrid__bf9e7b" />
           <DialogFooter data-testid="DialogFooter__columnMappingEdit">
             <Button type="button" variant="outline" onClick={() => setOpen(false)} data-testid="ImportColumnMapping__cancelButton">
               {text.cancel}
