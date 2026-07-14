@@ -16,8 +16,9 @@ import { resolveForeignKeys, resolveForeignKeyColumn } from '../../lib/import/re
 import { validateRow } from '../../lib/import/validateRows.js';
 import { buildOperations } from '../../lib/import/buildOperations.js';
 import { runImport, sendRow, SEND_STATUS } from '../../lib/import/importEngine.js';
+import { buildTemplateCsv } from '../../lib/import/buildTemplateCsv.js';
 
-const DEFAULT_LABELS = { title: 'Import', revalidating: 'Revalidating rows…' };
+const DEFAULT_LABELS = { title: 'Import', revalidating: 'Revalidating rows…', downloadTemplate: 'Download CSV template' };
 
 const STEP = { DROPZONE: 'dropzone', MAPPING: 'mapping', CONFIRM: 'confirm', SENDING: 'sending', FILE_ERROR: 'fileError', RESULT: 'result' };
 
@@ -325,7 +326,19 @@ export function ImportDialog({ open, onOpenChange, config, token, postBatch, sim
             <DialogTitle data-testid="DialogTitle__38a6c3">{text.title}</DialogTitle>
           </DialogHeader>
 
-          {step === STEP.DROPZONE && <ImportDropzone onFileSelected={handleFileSelected} data-testid="ImportDropzone__38a6c3" />}
+          {step === STEP.DROPZONE && (
+            <div className="flex flex-col items-center gap-2">
+              <ImportDropzone onFileSelected={handleFileSelected} data-testid="ImportDropzone__38a6c3" />
+              <button
+                type="button"
+                className="text-xs text-muted-foreground underline underline-offset-2 hover:text-foreground"
+                onClick={() => downloadCsv(buildTemplateCsv(config.fields), `${config.spec}-import-template.csv`)}
+                data-testid="ImportDialog__downloadTemplate"
+              >
+                {text.downloadTemplate}
+              </button>
+            </div>
+          )}
 
           {step === STEP.FILE_ERROR && (
             <ImportFileErrorDialog

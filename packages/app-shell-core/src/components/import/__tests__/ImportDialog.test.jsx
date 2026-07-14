@@ -49,6 +49,26 @@ async function uploadFile(content) {
 }
 
 describe('ImportDialog', () => {
+  it('shows a download-template link on the dropzone step that downloads a header-only CSV of the window\'s import fields', () => {
+    const createObjectURLSpy = vi.fn().mockReturnValue('blob:mock-url');
+    const revokeObjectURLSpy = vi.fn();
+    const originalCreateObjectURL = URL.createObjectURL;
+    const originalRevokeObjectURL = URL.revokeObjectURL;
+    URL.createObjectURL = createObjectURLSpy;
+    URL.revokeObjectURL = revokeObjectURLSpy;
+    try {
+      render(<ImportDialog open config={config} token="t" postBatch={vi.fn()} simSearchFn={vi.fn()} onImported={() => {}} />);
+      const link = screen.getByTestId('ImportDialog__downloadTemplate');
+      fireEvent.click(link);
+      expect(createObjectURLSpy).toHaveBeenCalled();
+      const blobArg = createObjectURLSpy.mock.calls[0][0];
+      expect(blobArg.type).toBe('text/csv;charset=utf-8;');
+    } finally {
+      URL.createObjectURL = originalCreateObjectURL;
+      URL.revokeObjectURL = originalRevokeObjectURL;
+    }
+  });
+
   it('parses the file and shows the mapping step with auto-mapped columns', async () => {
     const postBatch = vi.fn();
     render(<ImportDialog open config={config} token="t" postBatch={postBatch} simSearchFn={vi.fn()} onImported={() => {}} />);
