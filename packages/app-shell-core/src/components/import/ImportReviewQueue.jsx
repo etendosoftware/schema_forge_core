@@ -396,7 +396,7 @@ export function ImportReviewQueue({
           {text.downloadErrors}
         </Button>
       </div>
-      <ScrollPane className="sf-scrollbar-visible" data-testid="ScrollPane__a73779">
+      <ScrollPane data-testid="ScrollPane__a73779">
       {/* Table.jsx's own wrapper div has an independent, unbounded-height
           overflow-auto — its horizontal scrollbar would render at the very
           bottom of the FULL (unclipped) content instead of the visible

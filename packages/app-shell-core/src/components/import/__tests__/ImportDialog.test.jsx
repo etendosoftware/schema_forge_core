@@ -3,6 +3,16 @@ import { render, screen, fireEvent, waitFor, cleanup } from '@testing-library/re
 import { ImportDialog } from '../ImportDialog.jsx';
 import { registerImportDescriptor } from '../../../lib/import/buildOperations.js';
 
+// ScrollPane (rendered inside ImportReviewQueue, which this dialog mounts)
+// observes its own size via ResizeObserver — jsdom doesn't implement it.
+// Same polyfill already used in ImportReviewQueue.test.jsx/ImportColumnMapping.test.jsx.
+if (!global.ResizeObserver) {
+  global.ResizeObserver = class ResizeObserver {
+    observe() {}
+    unobserve() {}
+    disconnect() {}
+  };
+}
 if (!Element.prototype.hasPointerCapture) {
   Element.prototype.hasPointerCapture = () => false;
 }
