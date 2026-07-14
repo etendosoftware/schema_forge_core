@@ -17,6 +17,7 @@ import {
   jsonWrapIf,
   pick,
   buildHeaderLogicMaps,
+  buildProcessesArray,
 } from '../src/generate-frontend.js';
 
 // ---------------------------------------------------------------------------
@@ -797,6 +798,43 @@ describe('generatePageComponent', () => {
     const code = generatePageComponent('contact', null, sidebarContract);
     assert.ok(code.includes('sidebarContent='), 'should render the sidebar slot');
     assert.ok(code.includes('token={props.token}'), 'sidebar custom component should receive token for legacy compatibility');
+  });
+});
+
+// ---------------------------------------------------------------------------
+// hideDeleteButton — unconditional Delete-button hide (ETP-4429)
+// ---------------------------------------------------------------------------
+
+describe('generatePageComponent — window.hideDeleteButton', () => {
+  function withWindow(overrides) {
+    const clone = JSON.parse(JSON.stringify(masterDetailContract));
+    clone.frontendContract.window = { ...clone.frontendContract.window, ...overrides };
+    return clone;
+  }
+
+  it('does NOT emit the hideDeleteButton prop when the flag is absent (no regression)', () => {
+    const code = generatePageComponent('order', 'orderLine', masterDetailContract);
+    assert.ok(!code.includes('hideDeleteButton'), 'unset flag must not emit any hideDeleteButton reference');
+  });
+
+  it('emits the hideDeleteButton prop on DetailView when the flag is true', () => {
+    const code = generatePageComponent('order', 'orderLine', withWindow({ hideDeleteButton: true }));
+    assert.ok(/\bhideDeleteButton\b/.test(code), 'should emit the hideDeleteButton DetailView prop');
+  });
+
+  it('injects hideDeleteButton into the rowQuickActions config when the flag is true', () => {
+    const code = generatePageComponent('order', 'orderLine', withWindow({ hideDeleteButton: true }));
+    const rqaMatch = code.match(/rowQuickActions=\{(\{.*?\})\}/s);
+    assert.ok(rqaMatch, 'should emit a rowQuickActions prop');
+    assert.ok(rqaMatch[1].includes('"hideDeleteButton":true'), 'rowQuickActions config should carry hideDeleteButton:true');
+  });
+
+  it('does NOT inject hideDeleteButton into rowQuickActions when the flag is absent', () => {
+    const code = generatePageComponent('order', 'orderLine', masterDetailContract);
+    const rqaMatch = code.match(/rowQuickActions=\{(\{.*?\})\}/s);
+    if (rqaMatch) {
+      assert.ok(!rqaMatch[1].includes('hideDeleteButton'), 'rowQuickActions must not carry the flag when unset');
+    }
   });
 });
 
@@ -2428,5 +2466,46 @@ describe('generatePageComponent — max entry prop (ETP-4277)', () => {
     const qtyLine = entryMatch[1].split('\n').find(l => l.includes("key: 'quantity'"));
     assert.ok(qtyLine, 'quantity entry present');
     assert.ok(!qtyLine.includes(', max:'), 'quantity entry must not include max');
+  });
+});
+
+describe('buildProcessesArray labelToggle', () => {
+  const labelToggle = { field: 'processed', equals: 'Y', label: 'Recalculate Amortization' };
+
+  it('emits labelToggle verbatim for an extra (add) process when present', () => {
+    const out = buildProcessesArray({
+      processes: [],
+      buttonFields: [],
+      processOverrides: { processAsset: { add: true, label: 'Create Amortization', labelToggle } },
+    });
+    assert.ok(out.includes("name: 'processAsset'"), 'extra process emitted');
+    assert.ok(
+      out.includes(`labelToggle: ${JSON.stringify(labelToggle)}`),
+      'labelToggle emitted verbatim as JSON',
+    );
+  });
+
+  it('omits labelToggle entirely when absent (byte-identical to legacy output)', () => {
+    const overrides = { processAsset: { add: true, label: 'Create Amortization' } };
+    const withKey = buildProcessesArray({ processes: [], buttonFields: [], processOverrides: overrides });
+    assert.ok(!withKey.includes('labelToggle'), 'no labelToggle key emitted when absent');
+  });
+
+  it('emits labelToggle for a backend contract process (generic across branches)', () => {
+    const out = buildProcessesArray({
+      processes: [{ name: 'processAsset', columnName: 'Processed' }],
+      buttonFields: [],
+      processOverrides: { processAsset: { label: 'Create Amortization', labelToggle } },
+    });
+    assert.ok(out.includes(`labelToggle: ${JSON.stringify(labelToggle)}`), 'labelToggle emitted for contract process');
+  });
+
+  it('emits labelToggle for a buttonField process (generic across branches)', () => {
+    const out = buildProcessesArray({
+      processes: [],
+      buttonFields: [{ name: 'processAsset', label: 'Create Amortization' }],
+      processOverrides: { processAsset: { labelToggle } },
+    });
+    assert.ok(out.includes(`labelToggle: ${JSON.stringify(labelToggle)}`), 'labelToggle emitted for buttonField process');
   });
 });
