@@ -34,25 +34,35 @@ function defaultPaths(cwd) {
   };
 }
 
+// Flags that consume the next argument as their value → target opts key.
+const VALUE_FLAGS = {
+  '--window': 'window',
+  '--locales-dir': 'localesDir',
+  '--artifacts-dir': 'artifactsDir',
+  '--generated-locales-dir': 'generatedLocalesDir',
+};
+
+// Boolean flags → mutation applied to opts.
+const BOOL_FLAGS = {
+  '--all': (o) => { o.all = true; },
+  '--no-core': (o) => { o.core = false; },
+  '--dry-run': (o) => { o.dryRun = true; },
+  '--check': (o) => { o.check = true; o.dryRun = true; },
+};
+
 function parseArgs(argv) {
   const args = argv.slice(2);
-  const paths = defaultPaths(process.cwd());
   const opts = {
-    window: null, all: false, core: true, dryRun: false, check: false, ...paths,
+    window: null, all: false, core: true, dryRun: false, check: false, ...defaultPaths(process.cwd()),
   };
-  let i = 0;
-  while (i < args.length) {
+  for (let i = 0; i < args.length; i += 1) {
     const arg = args[i];
-    if (arg === '--window' && args[i + 1]) { opts.window = args[i + 1]; i += 2; }
-    else if (arg === '--locales-dir' && args[i + 1]) { opts.localesDir = args[i + 1]; i += 2; }
-    else if (arg === '--artifacts-dir' && args[i + 1]) { opts.artifactsDir = args[i + 1]; i += 2; }
-    else if (arg === '--generated-locales-dir' && args[i + 1]) { opts.generatedLocalesDir = args[i + 1]; i += 2; }
-    else {
-      if (arg === '--all') opts.all = true;
-      else if (arg === '--no-core') opts.core = false;
-      else if (arg === '--dry-run') opts.dryRun = true;
-      else if (arg === '--check') { opts.check = true; opts.dryRun = true; }
+    const valueKey = VALUE_FLAGS[arg];
+    if (valueKey && args[i + 1] !== undefined) {
+      opts[valueKey] = args[i + 1];
       i += 1;
+    } else {
+      BOOL_FLAGS[arg]?.(opts);
     }
   }
   return opts;
