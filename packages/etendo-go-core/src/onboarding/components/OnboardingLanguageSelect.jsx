@@ -3,6 +3,7 @@ import { Label } from '@etendosoftware/app-shell-core/components/ui/label';
 import {
   Select,
   SelectContent,
+  SelectGroup,
   SelectItem,
   SelectLabel,
   SelectTrigger,
@@ -27,18 +28,20 @@ export function OnboardingLanguageSelect({ label, locale, onChange, options, 'da
           <SelectValue />
         </SelectTrigger>
         <SelectContent>
-          <SelectLabel>{label}</SelectLabel>
-          {options.map((option) => (
-            // Rendered inside Select.ItemText, whose children Radix automatically
-            // projects into the closed trigger's Select.Value — so the flag shows
-            // in both the open list AND the closed control from this single source.
-            <SelectItem key={option.value} value={option.value} textValue={option.label}>
-              <span className="flex items-center gap-2">
-                <LocaleFlagIcon locale={option.value} />
-                {option.label}
-              </span>
-            </SelectItem>
-          ))}
+          <SelectGroup>
+            <SelectLabel>{label}</SelectLabel>
+            {options.map((option) => (
+              // Rendered inside Select.ItemText, whose children Radix automatically
+              // projects into the closed trigger's Select.Value — so the flag shows
+              // in both the open list AND the closed control from this single source.
+              <SelectItem key={option.value} value={option.value} textValue={option.label}>
+                <span className="flex items-center gap-2">
+                  <LocaleFlagIcon locale={option.value} />
+                  {option.label}
+                </span>
+              </SelectItem>
+            ))}
+          </SelectGroup>
         </SelectContent>
       </Select>
     </div>

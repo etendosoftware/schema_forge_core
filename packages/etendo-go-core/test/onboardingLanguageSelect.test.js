@@ -147,12 +147,12 @@ describe('OnboardingLanguageSelect wiring (ETP-4444, Login-only scope)', () => {
   it('uses the Radix-based Select (no native <select> element)', () => {
     // Explicit reversal of the earlier native-select-only decision: the
     // component now imports the shared Radix Select primitives from
-    // app-shell-core instead of rendering a raw <select>. SelectLabel joined
-    // the import list (ETP-4444 design-review follow-up, see below) — this
-    // assertion pins the full import list including it.
+    // app-shell-core instead of rendering a raw <select>. SelectLabel and
+    // SelectGroup joined the import list (ETP-4444 design-review follow-up,
+    // see below) — this assertion pins the full import list including them.
     assert.match(
       languageSelect,
-      /import\s*\{\s*\n?\s*Select,\s*\n?\s*SelectContent,\s*\n?\s*SelectItem,\s*\n?\s*SelectLabel,\s*\n?\s*SelectTrigger,\s*\n?\s*SelectValue,\s*\n?\s*\}\s*from\s*'@etendosoftware\/app-shell-core\/components\/ui\/select'/,
+      /import\s*\{\s*\n?\s*Select,\s*\n?\s*SelectContent,\s*\n?\s*SelectGroup,\s*\n?\s*SelectItem,\s*\n?\s*SelectLabel,\s*\n?\s*SelectTrigger,\s*\n?\s*SelectValue,\s*\n?\s*\}\s*from\s*'@etendosoftware\/app-shell-core\/components\/ui\/select'/,
     );
     assert.match(languageSelect, /<Select\b/);
     assert.match(languageSelect, /<SelectTrigger\b/);
@@ -173,10 +173,42 @@ describe('OnboardingLanguageSelect wiring (ETP-4444, Login-only scope)', () => {
     assert.match(importBlock, /\bSelectLabel\b/);
   });
 
-  it('renders a SelectLabel heading as the first child of SelectContent, before the options list', () => {
+  it('wraps SelectLabel and the options list in a SelectGroup inside SelectContent', () => {
+    // Radix hard-requires SelectLabel to be a descendant of SelectGroup —
+    // rendering it as a direct sibling of SelectItem inside SelectContent
+    // throws `Error: \`SelectLabel\` must be used within \`SelectGroup\`` at
+    // runtime (caught manually, no test had caught it). SelectGroup must
+    // wrap both the label and the options.map block, nested inside
+    // SelectContent.
+    const contentOpenIndex = languageSelect.indexOf('<SelectContent>');
+    const groupOpenIndex = languageSelect.indexOf('<SelectGroup>');
+    const selectLabelIndex = languageSelect.indexOf('<SelectLabel>{label}</SelectLabel>');
+    const optionsMapIndex = languageSelect.indexOf('{options.map((option) =>');
+    const groupCloseIndex = languageSelect.indexOf('</SelectGroup>');
+    const contentCloseIndex = languageSelect.indexOf('</SelectContent>');
+    for (const [name, index] of [
+      ['<SelectContent>', contentOpenIndex],
+      ['<SelectGroup>', groupOpenIndex],
+      ['<SelectLabel>{label}</SelectLabel>', selectLabelIndex],
+      ['options.map(...)', optionsMapIndex],
+      ['</SelectGroup>', groupCloseIndex],
+      ['</SelectContent>', contentCloseIndex],
+    ]) {
+      assert.notEqual(index, -1, `${name} not found`);
+    }
+    assert.ok(
+      contentOpenIndex < groupOpenIndex && groupOpenIndex < selectLabelIndex,
+      'SelectGroup must open inside SelectContent, before SelectLabel',
+    );
+    assert.ok(optionsMapIndex < groupCloseIndex, 'options.map(...) must still be inside SelectGroup');
+    assert.ok(groupCloseIndex < contentCloseIndex, 'SelectGroup must close before SelectContent does');
+  });
+
+  it('renders a SelectLabel heading as the first meaningful child of SelectContent, before the options list', () => {
     // Gives the open dropdown context (e.g. "Idioma"/"Language") — must
-    // appear inside SelectContent and BEFORE options.map, not just anywhere
-    // in the file.
+    // appear inside SelectContent (nested one level deeper, inside
+    // SelectGroup, per the Radix fix above) and BEFORE options.map, not just
+    // anywhere in the file.
     const contentOpenIndex = languageSelect.indexOf('<SelectContent>');
     const selectLabelIndex = languageSelect.indexOf('<SelectLabel>{label}</SelectLabel>');
     const optionsMapIndex = languageSelect.indexOf('{options.map((option) =>');
