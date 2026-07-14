@@ -423,6 +423,16 @@ export function ImportDialog({ open, onOpenChange, config, token, postBatch, sim
                   token={token}
                   data-testid="ImportReviewQueue__38a6c3" />
               )}
+              <div className="flex justify-end">
+                <Button
+                  type="button"
+                  onClick={handleSend}
+                  disabled={validCount === 0}
+                  data-testid="ImportDialog__importButton"
+                >
+                  {`Import ${validCount}`}
+                </Button>
+              </div>
             </div>
           )}
         </DialogContent>
