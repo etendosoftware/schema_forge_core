@@ -143,6 +143,12 @@ describe('ImportReviewQueue', () => {
     expect(onSkipEntry).toHaveBeenCalledWith(0);
   });
 
+  it('uses the Ban icon (not SkipForward) for the skip action', () => {
+    render(<ImportReviewQueue entries={[okEntry]} statusFilter="all" onStatusFilterChange={() => {}} onEditField={() => {}} onRetryEntry={() => {}} onSkipEntry={() => {}} onDownloadErrors={() => {}} />);
+    expect(screen.getByTestId('Ban__a73779')).toBeDefined();
+    expect(screen.queryByTestId('SkipForward__a73779')).toBeNull();
+  });
+
   it('marks a skipped entry distinctly and does not offer edit/retry for it', () => {
     const skipped = { ...errorEntry, status: 'skipped' };
     render(<ImportReviewQueue entries={[skipped]} statusFilter="error" onStatusFilterChange={() => {}} onEditField={() => {}} onRetryEntry={() => {}} onSkipEntry={() => {}} onDownloadErrors={() => {}} />);

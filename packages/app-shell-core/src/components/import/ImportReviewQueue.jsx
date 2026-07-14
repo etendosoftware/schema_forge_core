@@ -1,6 +1,6 @@
 import { useRef, useState } from 'react';
 import { toast } from 'sonner';
-import { RotateCw, Copy, SkipForward, AlertCircle, ChevronDown, Pencil } from 'lucide-react';
+import { RotateCw, Copy, Ban, AlertCircle, ChevronDown, Pencil } from 'lucide-react';
 import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from '../ui/table.jsx';
 import { Input } from '../ui/input.jsx';
 import { Button } from '../ui/button.jsx';
@@ -466,7 +466,7 @@ export function ImportReviewQueue({
                           onClick={() => onSkipEntry(index)}
                           title={text.skip}
                         >
-                          <SkipForward className="h-3 w-3" aria-hidden="true" data-testid="SkipForward__a73779" />
+                          <Ban className="h-3 w-3" aria-hidden="true" data-testid="Ban__a73779" />
                           <span className="sr-only">{text.skip}</span>
                         </Button>
                       </div>
@@ -552,7 +552,7 @@ export function ImportReviewQueue({
                           onClick={() => onSkipEntry(index)}
                           title={text.skip}
                         >
-                          <SkipForward className="h-3 w-3" aria-hidden="true" data-testid="SkipForward__a73779" />
+                          <Ban className="h-3 w-3" aria-hidden="true" data-testid="Ban__a73779" />
                           <span className="sr-only">{text.skip}</span>
                         </Button>
                       </div>
