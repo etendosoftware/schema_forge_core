@@ -327,11 +327,11 @@ export function ImportDialog({ open, onOpenChange, config, token, postBatch, sim
           </DialogHeader>
 
           {step === STEP.DROPZONE && (
-            <div className="flex flex-col items-center gap-2">
+            <div className="flex flex-col gap-2">
               <ImportDropzone onFileSelected={handleFileSelected} data-testid="ImportDropzone__38a6c3" />
               <button
                 type="button"
-                className="text-xs text-muted-foreground underline underline-offset-2 hover:text-foreground"
+                className="self-center text-xs text-muted-foreground underline underline-offset-2 hover:text-foreground"
                 onClick={() => downloadCsv(buildTemplateCsv(config.fields), `${config.spec}-import-template.csv`)}
                 data-testid="ImportDialog__downloadTemplate"
               >
