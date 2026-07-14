@@ -36,10 +36,7 @@ function computeAxisMetrics(scrollSize, clientSize, scrollOffset) {
  * rendered in "overlay" mode (macOS's default) — verified live: the
  * scrollbar then consumes zero layout space (`offsetHeight === clientHeight`)
  * and completely ignores any `::-webkit-scrollbar` CSS, making genuinely
- * scrollable content look like it has no more content at all. This overlay
- * is visual-only (not draggable, `pointer-events-none`) — real scroll input
- * (trackpad, wheel, keyboard, and any classic OS scrollbar that may also
- * render) is untouched.
+ * scrollable content look like it has no more content at all.
  *
  * The overlay lives in a non-scrolling outer wrapper, as a SIBLING of the
  * actual `overflow-auto` node, not a child of it — an earlier version
@@ -50,6 +47,18 @@ function computeAxisMetrics(scrollSize, clientSize, scrollOffset) {
  * used to carry directly; the inner node still gets `ref`/`onScroll`/
  * `{...props}` exactly as before, so `ref`, `data-testid`, and any other
  * forwarded prop still resolve to the real scrollable element.
+ *
+ * This overlay's track is non-interactive (`pointer-events-none`) so it
+ * never blocks native scroll gestures over the content beneath it — but its
+ * thumb is independently draggable with the mouse/pointer (a
+ * `pointer-events-auto` hole punched through the track for just the thumb),
+ * using `setPointerCapture` so the drag keeps tracking even if the pointer
+ * leaves the thumb's bounds. Native scroll input (trackpad, wheel,
+ * keyboard, and any classic OS scrollbar that may also render) is
+ * untouched — dragging the thumb sets `scrollLeft`/`scrollTop` directly,
+ * which the existing `onScroll` → `measure()` pipeline picks up like any
+ * other scroll, so no separate render path exists for drag vs. native
+ * scroll.
  *
  * Pass `onReachBottom` to get infinite-scroll behavior: it fires once scroll
  * position comes within `threshold`px of the bottom (mirrors ListView.jsx's
@@ -93,6 +102,54 @@ const ScrollPane = React.forwardRef(({ className, onScroll, onReachBottom, thres
     if (el.scrollHeight - el.scrollTop - el.clientHeight < threshold) onReachBottom();
   };
 
+  // Tracks an in-progress thumb drag: which axis, which pointer, and the
+  // scroll/thumb geometry captured at drag start (so a drag computes its
+  // delta relative to where it began, not from zero, and stays correct even
+  // if content resizes mid-drag — geometry is captured once per drag, not
+  // re-read on every pointermove).
+  const dragStateRef = React.useRef(null);
+
+  const handleThumbPointerDown = (axis) => (event) => {
+    const el = innerRef.current;
+    const metrics = axisMetrics[axis];
+    if (!el || !metrics) return;
+    event.preventDefault();
+    const scrollSize = axis === 'x' ? el.scrollWidth : el.scrollHeight;
+    const clientSize = axis === 'x' ? el.clientWidth : el.clientHeight;
+    dragStateRef.current = {
+      axis,
+      pointerId: event.pointerId,
+      startPointerPos: axis === 'x' ? event.clientX : event.clientY,
+      startScrollOffset: axis === 'x' ? el.scrollLeft : el.scrollTop,
+      thumbSize: metrics.thumbSize,
+      scrollSize,
+      clientSize,
+    };
+    event.currentTarget.setPointerCapture(event.pointerId);
+  };
+
+  const handleThumbPointerMove = (event) => {
+    const drag = dragStateRef.current;
+    const el = innerRef.current;
+    if (!drag || !el || drag.pointerId !== event.pointerId) return;
+    const pointerPos = drag.axis === 'x' ? event.clientX : event.clientY;
+    const deltaPointer = pointerPos - drag.startPointerPos;
+    const trackRange = drag.clientSize - drag.thumbSize;
+    const scrollRange = drag.scrollSize - drag.clientSize;
+    if (trackRange <= 0 || scrollRange <= 0) return;
+    const deltaScroll = deltaPointer * (scrollRange / trackRange);
+    const nextOffset = Math.min(scrollRange, Math.max(0, drag.startScrollOffset + deltaScroll));
+    if (drag.axis === 'x') el.scrollLeft = nextOffset;
+    else el.scrollTop = nextOffset;
+  };
+
+  const handleThumbPointerUp = (event) => {
+    const drag = dragStateRef.current;
+    if (!drag || drag.pointerId !== event.pointerId) return;
+    event.currentTarget.releasePointerCapture(event.pointerId);
+    dragStateRef.current = null;
+  };
+
   return (
     <div className="relative flex min-h-0 flex-1 flex-col">
       <div
@@ -110,8 +167,11 @@ const ScrollPane = React.forwardRef(({ className, onScroll, onReachBottom, thres
           data-testid="ScrollPane__shadowScrollbarX"
         >
           <div
-            className="absolute bottom-0 rounded-full bg-[#C1C5CF]"
+            className="pointer-events-auto absolute bottom-0 cursor-grab touch-none rounded-full bg-[#C1C5CF] active:cursor-grabbing"
             style={{ height: SHADOW_SCROLLBAR_THICKNESS, width: axisMetrics.x.thumbSize, transform: `translateX(${axisMetrics.x.thumbOffset}px)` }}
+            onPointerDown={handleThumbPointerDown('x')}
+            onPointerMove={handleThumbPointerMove}
+            onPointerUp={handleThumbPointerUp}
             data-testid="ScrollPane__shadowScrollbarThumbX"
           />
         </div>
@@ -123,8 +183,11 @@ const ScrollPane = React.forwardRef(({ className, onScroll, onReachBottom, thres
           data-testid="ScrollPane__shadowScrollbarY"
         >
           <div
-            className="absolute right-0 rounded-full bg-[#C1C5CF]"
+            className="pointer-events-auto absolute right-0 cursor-grab touch-none rounded-full bg-[#C1C5CF] active:cursor-grabbing"
             style={{ width: SHADOW_SCROLLBAR_THICKNESS, height: axisMetrics.y.thumbSize, transform: `translateY(${axisMetrics.y.thumbOffset}px)` }}
+            onPointerDown={handleThumbPointerDown('y')}
+            onPointerMove={handleThumbPointerMove}
+            onPointerUp={handleThumbPointerUp}
             data-testid="ScrollPane__shadowScrollbarThumbY"
           />
         </div>
