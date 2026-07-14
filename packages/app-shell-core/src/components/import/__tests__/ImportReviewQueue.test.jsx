@@ -415,6 +415,67 @@ describe('ImportReviewQueue', () => {
   });
 });
 
+describe('click-to-scroll to first error', () => {
+  it('scrolls the first-in-column-order erroring cell into view when the alert icon is clicked, even if it is not first in the errors array', () => {
+    const scrollIntoViewMock = vi.fn();
+    const originalScrollIntoView = Element.prototype.scrollIntoView;
+    Element.prototype.scrollIntoView = scrollIntoViewMock;
+    try {
+      const multiFieldError = {
+        row: { name: 'Andres', email: 'not-an-email', country: 'Nowhereland' },
+        errors: [
+          { target: 'country', message: 'Could not be matched to an existing record.' },
+          { target: 'email', message: 'Not a valid email address.' },
+        ],
+        status: 'pending',
+      };
+      render(
+        <ImportReviewQueue
+          entries={[multiFieldError]}
+          fields={[
+            { target: 'name', label: 'Name' },
+            { target: 'email', label: 'Email' },
+            { target: 'country', label: 'Country' },
+          ]}
+          statusFilter="error"
+          onStatusFilterChange={() => {}}
+          onEditField={() => {}}
+          onRetryEntry={() => {}}
+          onSkipEntry={() => {}}
+          onDownloadErrors={() => {}}
+        />,
+      );
+      fireEvent.click(screen.getByTestId('ImportReviewQueue__jumpToFirstError-0'));
+      expect(scrollIntoViewMock).toHaveBeenCalledTimes(1);
+      const scrolledCell = screen.getByTestId(`ImportReviewQueue__input-0-email`).closest('td');
+      expect(scrollIntoViewMock.mock.instances[0]).toBe(scrolledCell);
+    } finally {
+      Element.prototype.scrollIntoView = originalScrollIntoView;
+    }
+  });
+
+  it('does not render a jump-to-error button when the only error is row-level', () => {
+    const rowLevelEntry = {
+      row: { name: 'Andres' },
+      errors: [{ target: '', message: 'Operation rejected by server.' }],
+      status: 'pending',
+    };
+    render(
+      <ImportReviewQueue
+        entries={[rowLevelEntry]}
+        fields={[{ target: 'name', label: 'Name' }]}
+        statusFilter="error"
+        onStatusFilterChange={() => {}}
+        onEditField={() => {}}
+        onRetryEntry={() => {}}
+        onSkipEntry={() => {}}
+        onDownloadErrors={() => {}}
+      />,
+    );
+    expect(screen.queryByTestId('ImportReviewQueue__jumpToFirstError-0')).toBeNull();
+  });
+});
+
 describe('showRetry prop', () => {
   it('hides the Retry button on an OK row when showRetry is false', () => {
     render(<ImportReviewQueue entries={[okEntry]} showRetry={false} statusFilter="all" onStatusFilterChange={() => {}} onEditField={() => {}} onRetryEntry={() => {}} onSkipEntry={() => {}} onDownloadErrors={() => {}} />);

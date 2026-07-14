@@ -322,6 +322,25 @@ export function ImportReviewQueue({
   // this one) — null when no prompt is showing.
   const [pendingBulkApply, setPendingBulkApply] = useState(null);
 
+  // One DOM node per (row index, field target) rendered in the error branch —
+  // populated via a callback ref on each error-row TableCell, read back by
+  // handleJumpToFirstError to scrollIntoView the first (in column order, not
+  // entry.errors order) cell that actually has a field-level error.
+  const cellRefs = useRef(new Map());
+
+  const registerCellRef = (index, target) => (el) => {
+    const key = `${index}:${target}`;
+    if (el) cellRefs.current.set(key, el);
+    else cellRefs.current.delete(key);
+  };
+
+  const handleJumpToFirstError = (index, rowColumns, entry) => {
+    const firstErrorField = rowColumns.find((field) => entry.errors.some((e) => e.target === field.target));
+    if (!firstErrorField) return;
+    const cell = cellRefs.current.get(`${index}:${firstErrorField.target}`);
+    cell?.scrollIntoView({ inline: 'nearest', block: 'nearest' });
+  };
+
   /** Other non-skipped rows whose `field` is failing on the exact same raw value. */
   const findMatchingIndices = (index, field, rawValue) => {
     const trimmed = String(rawValue ?? '').trim();
@@ -536,11 +555,25 @@ export function ImportReviewQueue({
                   <div className="flex min-w-[160px] flex-col gap-1 py-1">
                     <div className="flex items-center gap-2">
                       <StatusLineTag index={index} tag="destructive" data-testid="StatusLineTag__a73779">
-                        <AlertCircle
-                          className="h-3.5 w-3.5"
-                          aria-hidden="true"
-                          title={errorTooltip}
-                          data-testid="AlertCircle__a73779" />
+                        {fieldErrorLabels.length > 0 ? (
+                          <button
+                            type="button"
+                            className="inline-flex cursor-pointer items-center"
+                            onClick={() => handleJumpToFirstError(index, rowColumns, entry)}
+                            data-testid={`ImportReviewQueue__jumpToFirstError-${index}`}
+                          >
+                            <AlertCircle
+                              className="h-3.5 w-3.5"
+                              aria-hidden="true"
+                              title={errorTooltip}
+                              data-testid="AlertCircle__a73779" />
+                          </button>
+                        ) : (
+                          <AlertCircle
+                            className="h-3.5 w-3.5"
+                            aria-hidden="true"
+                            data-testid="AlertCircle__a73779" />
+                        )}
                         <span className="sr-only">{text.statusError}</span>
                       </StatusLineTag>
                       <div className="flex items-center gap-0.5">
@@ -602,7 +635,7 @@ export function ImportReviewQueue({
                   // a plain required/format error that just needs retyping.
                   const isFkMismatch = fieldError && !rowLevelError && fieldError.candidates !== undefined;
                   return (
-                    <TableCell key={field.target} data-testid={"TableCell__" + field.id}>
+                    <TableCell key={field.target} ref={registerCellRef(index, field.target)} data-testid={"TableCell__" + field.id}>
                       {isFkMismatch ? (
                         <FkMismatchCell
                           index={index}
