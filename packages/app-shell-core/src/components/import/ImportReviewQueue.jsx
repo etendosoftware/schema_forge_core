@@ -294,10 +294,21 @@ export function ImportReviewQueue({
   token,
 }) {
   const text = { ...DEFAULT_LABELS, ...labels };
+  // Which row/field's input currently has focus, if any — `{ index, target }` or null.
+  // Editing a cell re-validates its whole entry immediately (see ImportDialog's
+  // handleEditField), so the very first keystroke that fixes a row's last error can, in
+  // the same render, (a) drop it out of the "Errors" filter tab and (b) flip its row from
+  // the editable error branch to the read-only OK branch below — either one alone
+  // unmounts the input and steals focus from under the user's cursor mid-keystroke
+  // (reproduced live: typing one character into an error cell under the "Errors" tab
+  // silently dropped focus with no visible destination). Both `visibleEntries` and the OK
+  // vs. error branch choice below exempt the focused row until it blurs.
+  const [focusedCell, setFocusedCell] = useState(null);
   const visibleEntries = entries
     .map((entry, index) => ({ entry, index }))
-    .filter(({ entry }) => {
+    .filter(({ entry, index }) => {
       if (statusFilter === 'all') return true;
+      if (focusedCell?.index === index) return true;
       const isAttentionNeeded = entry.status === 'skipped' || entry.errors.length > 0;
       return statusFilter === 'error' ? isAttentionNeeded : !isAttentionNeeded;
     });
@@ -454,7 +465,7 @@ export function ImportReviewQueue({
               );
             }
 
-            if (entry.errors.length === 0) {
+            if (entry.errors.length === 0 && focusedCell?.index !== index) {
               return (
                 <TableRow key={index} data-testid="TableRow__a73779">
                   <TableCell className={STICKY_CELL_CLASS} data-testid="TableCell__a73779">
@@ -598,7 +609,8 @@ export function ImportReviewQueue({
                 </TableCell>
                 {rowColumns.map((field) => {
                   const fieldError = entry.errors.find((e) => e.target === field.target);
-                  const isEditable = Boolean(rowLevelError || fieldError);
+                  const isFocusedCell = focusedCell?.index === index && focusedCell?.target === field.target;
+                  const isEditable = Boolean(rowLevelError || fieldError || isFocusedCell);
                   // Only the FK-lookup validator attaches `candidates` (possibly empty) —
                   // that's the signal this is a "pick the right record" error rather than
                   // a plain required/format error that just needs retyping.
@@ -629,6 +641,10 @@ export function ImportReviewQueue({
                           <Input
                             value={entry.row[field.target] ?? ''}
                             onChange={(e) => onEditField(index, field.target, e.target.value)}
+                            onFocus={() => setFocusedCell({ index, target: field.target })}
+                            onBlur={() => setFocusedCell((prev) => (
+                              prev?.index === index && prev?.target === field.target ? null : prev
+                            ))}
                             className="h-8"
                             data-testid={`ImportReviewQueue__input-${index}-${field.target}`}
                           />

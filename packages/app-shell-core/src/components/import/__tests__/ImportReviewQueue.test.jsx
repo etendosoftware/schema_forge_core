@@ -277,6 +277,47 @@ describe('ImportReviewQueue', () => {
     });
   });
 
+  describe('focus retention while editing under the "Errors" filter', () => {
+    const fields = [{ target: 'name', label: 'Name' }, { target: 'email', label: 'Email' }];
+
+    it('regression: keeps a row visible (and its input focused) after an edit clears its error, instead of unmounting it out from under the user\'s cursor', () => {
+      const { rerender } = render(
+        <ImportReviewQueue entries={[errorEntry]} fields={fields} statusFilter="error" onStatusFilterChange={() => {}} onEditField={() => {}} onRetryEntry={() => {}} onSkipEntry={() => {}} onDownloadErrors={() => {}} />
+      );
+      const input = screen.getByTestId('ImportReviewQueue__input-0-email');
+      input.focus();
+      // Simulate the parent re-rendering with the freshly-validated (now error-free) entry —
+      // this is exactly what happens after onEditField -> validateRow clears entry.errors.
+      const fixedEntry = { row: { name: 'Andres', email: 'andres@x.com' }, errors: [], status: 'pending' };
+      rerender(
+        <ImportReviewQueue entries={[fixedEntry]} fields={fields} statusFilter="error" onStatusFilterChange={() => {}} onEditField={() => {}} onRetryEntry={() => {}} onSkipEntry={() => {}} onDownloadErrors={() => {}} />
+      );
+      const inputAfterFix = screen.getByTestId('ImportReviewQueue__input-0-email');
+      expect(inputAfterFix).toBe(document.activeElement);
+    });
+
+    it('removes the fixed row from the "Errors" filter once the input loses focus', () => {
+      const { rerender } = render(
+        <ImportReviewQueue entries={[errorEntry]} fields={fields} statusFilter="error" onStatusFilterChange={() => {}} onEditField={() => {}} onRetryEntry={() => {}} onSkipEntry={() => {}} onDownloadErrors={() => {}} />
+      );
+      const input = screen.getByTestId('ImportReviewQueue__input-0-email');
+      input.focus();
+      fireEvent.blur(input);
+      const fixedEntry = { row: { name: 'Andres', email: 'andres@x.com' }, errors: [], status: 'pending' };
+      rerender(
+        <ImportReviewQueue entries={[fixedEntry]} fields={fields} statusFilter="error" onStatusFilterChange={() => {}} onEditField={() => {}} onRetryEntry={() => {}} onSkipEntry={() => {}} onDownloadErrors={() => {}} />
+      );
+      expect(screen.queryByTestId('ImportReviewQueue__input-0-email')).toBeNull();
+    });
+
+    it('still hides an entry with no errors under the "Errors" filter when nothing has focus', () => {
+      render(
+        <ImportReviewQueue entries={[okEntry, errorEntry]} fields={fields} statusFilter="error" onStatusFilterChange={() => {}} onEditField={() => {}} onRetryEntry={() => {}} onSkipEntry={() => {}} onDownloadErrors={() => {}} />
+      );
+      expect(screen.queryByTestId(`ImportReviewQueue__value-0-name`)).toBeNull();
+    });
+  });
+
   describe('FK mismatch — apply value', () => {
     const fkFields = [{ target: 'country', label: 'Country', matchEntity: 'Country' }];
     const fkErrorEntry = (rawValue) => ({
