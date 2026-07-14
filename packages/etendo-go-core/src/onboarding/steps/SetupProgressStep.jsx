@@ -265,7 +265,7 @@ export function SetupProgressStep({ config, stepData, onNext, onBack, goToStep, 
   }
 
   return (
-    <SetupProgressShell data-testid="SetupProgressShell__79cf84">
+    <SetupProgressShell background={config.background} data-testid="SetupProgressShell__79cf84">
       <div className="w-full flex flex-col items-center gap-6">
         <SetupProgressCard data-testid="SetupProgressCard__79cf84" {...setupProgressState} />
         {result?.status === 'failed' && (
