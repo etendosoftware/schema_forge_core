@@ -12,8 +12,11 @@ const companyStep = readFileSync(join(onboardingSrc, 'steps', 'CompanyStep.jsx')
 const registerStep = readFileSync(join(onboardingSrc, 'steps', 'RegisterStep.jsx'), 'utf8');
 const envSelectStep = readFileSync(join(onboardingSrc, 'steps', 'EnvSelectStep.jsx'), 'utf8');
 const languageSelect = readFileSync(join(onboardingSrc, 'components', 'OnboardingLanguageSelect.jsx'), 'utf8');
-const localeFlagIconPath = join(onboardingSrc, 'components', 'LocaleFlagIcon.jsx');
-const localeFlagIcon = readFileSync(localeFlagIconPath, 'utf8');
+// LocaleFlagIcon's own internals (regionFromLocale, SpainFlag/UnitedStatesFlag/
+// FallbackFlag branches, colors, aria-hidden, className threading) are covered
+// in their own dedicated file: test/localeFlagIcon.test.js. Only the
+// integration-level wiring (does OnboardingLanguageSelect import and render
+// it correctly) stays in this file.
 // useLocaleState lives in the sibling app-shell-core package — it owns the
 // localStorage persistence that setLocale (returned by useLocaleSwitch) relies on.
 const useLocaleState = readFileSync(
@@ -128,20 +131,6 @@ describe('OnboardingLanguageSelect wiring (ETP-4444, Login-only scope)', () => {
     assert.match(optionsBlock, /<SelectItem/);
     assert.match(optionsBlock, /<LocaleFlagIcon\s+locale=\{option\.value\}\s*\/>/);
     assert.match(optionsBlock, /\{option\.label\}/);
-  });
-
-  it('LocaleFlagIcon covers ES, US, and falls back gracefully for unknown regions', () => {
-    // Known-locale circular SVG icons, hand-authored (no flag-icon dependency).
-    assert.match(localeFlagIcon, /region === 'ES'/);
-    assert.match(localeFlagIcon, /region === 'US'/);
-    assert.match(localeFlagIcon, /<svg/);
-    assert.match(localeFlagIcon, /<circle/);
-    // Any other region degrades to the shared emoji glyph instead of crashing.
-    assert.match(
-      localeFlagIcon,
-      /import\s*\{\s*countryFlagEmoji\s*\}\s*from\s*'\.\.\/countries\.js'/,
-    );
-    assert.match(localeFlagIcon, /countryFlagEmoji\(region\)/);
   });
 
   it('uses the Radix-based Select (no native <select> element)', () => {
