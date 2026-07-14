@@ -361,4 +361,56 @@ describe('ImportReviewQueue', () => {
       expect(screen.queryByTestId('ImportReviewQueue__copy-0')).toBeNull();
     });
   });
+
+  describe('off-screen field-error tooltip', () => {
+    it('lists every field-level error by label in the Status cell tooltip', () => {
+      const multiFieldError = {
+        row: { name: 'Andres', email: 'not-an-email', country: 'Nowhereland' },
+        errors: [
+          { target: 'email', message: 'Not a valid email address.' },
+          { target: 'country', message: 'Could not be matched to an existing record.' },
+        ],
+        status: 'pending',
+      };
+      render(
+        <ImportReviewQueue
+          entries={[multiFieldError]}
+          fields={[
+            { target: 'name', label: 'Name' },
+            { target: 'email', label: 'Email' },
+            { target: 'country', label: 'Country' },
+          ]}
+          statusFilter="error"
+          onStatusFilterChange={() => {}}
+          onEditField={() => {}}
+          onRetryEntry={() => {}}
+          onSkipEntry={() => {}}
+          onDownloadErrors={() => {}}
+        />,
+      );
+      expect(screen.getByTestId('AlertCircle__a73779').getAttribute('title'))
+        .toBe('Errors in: Email, Country — scroll right to see them.');
+    });
+
+    it('shows no tooltip when the only error is row-level (blank target)', () => {
+      const rowLevelEntry = {
+        row: { name: 'Andres' },
+        errors: [{ target: '', message: 'Operation rejected by server.' }],
+        status: 'pending',
+      };
+      render(
+        <ImportReviewQueue
+          entries={[rowLevelEntry]}
+          fields={[{ target: 'name', label: 'Name' }]}
+          statusFilter="error"
+          onStatusFilterChange={() => {}}
+          onEditField={() => {}}
+          onRetryEntry={() => {}}
+          onSkipEntry={() => {}}
+          onDownloadErrors={() => {}}
+        />,
+      );
+      expect(screen.getByTestId('AlertCircle__a73779').getAttribute('title')).toBeNull();
+    });
+  });
 });

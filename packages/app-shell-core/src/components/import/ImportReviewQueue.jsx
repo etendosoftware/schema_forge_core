@@ -23,6 +23,7 @@ const DEFAULT_LABELS = {
   status: 'Status',
   statusOk: 'OK',
   statusError: 'Error',
+  fieldErrorsTooltip: 'Errors in: {fields} — scroll right to see them.',
   bulkApplyTitle: 'Apply to similar rows?',
   bulkApplyDescription: '{count} other row(s) also have "{raw}". Apply "{value}" to all of them too?',
   bulkApplyOnlyThis: 'Just this row',
@@ -517,6 +518,13 @@ export function ImportReviewQueue({
             const rowLevelError = entry.errors.find((e) => !e.target);
             const rowColumns = dataColumns ?? entry.errors.map((e) => ({ target: e.target, label: e.target }));
 
+            const fieldErrorLabels = entry.errors
+              .filter((e) => e.target)
+              .map((e) => rowColumns.find((f) => f.target === e.target)?.label ?? e.target);
+            const errorTooltip = fieldErrorLabels.length > 0
+              ? formatTemplate(text.fieldErrorsTooltip, { fields: fieldErrorLabels.join(', ') })
+              : undefined;
+
             return (
               <TableRow key={index} data-testid="TableRow__a73779">
                 <TableCell
@@ -528,6 +536,7 @@ export function ImportReviewQueue({
                         <AlertCircle
                           className="h-3.5 w-3.5"
                           aria-hidden="true"
+                          title={errorTooltip}
                           data-testid="AlertCircle__a73779" />
                         <span className="sr-only">{text.statusError}</span>
                       </StatusLineTag>
