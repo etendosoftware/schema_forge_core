@@ -256,16 +256,22 @@ function FkMismatchCell({ index, field, value, error, onSelect, simSearchFn, tok
 
 /**
  * Builds a CSV of every currently-erroring or skipped entry, one row per
- * (entry, flagged field) pair — additive to the queue, never a replacement
- * for it (the mock's "download once, never revisit" behavior was explicitly
- * NOT adopted; see the design spec's UI divergences).
+ * entry (not per field) — columns are the ORIGINAL uploaded file's mapped
+ * headers (so a fixed copy can be re-uploaded through the same mapping),
+ * plus a trailing Error column combining every message for that row.
+ * Unmapped headers are omitted — they were never part of the import target
+ * set. Additive to the queue, never a replacement for it (the mock's
+ * "download once, never revisit" behavior was explicitly NOT adopted; see
+ * the design spec's UI divergences).
  */
-export function buildErrorsCsv(entries) {
-  const lines = ['target,value,reason'];
+export function buildErrorsCsv(entries, headers, mapping) {
+  const mappedHeaders = headers.filter((h) => mapping[h]);
+  const lines = [[...mappedHeaders, 'Error'].map(csvEscape).join(',')];
   for (const entry of entries) {
-    for (const error of entry.errors) {
-      lines.push([error.target, entry.row[error.target], error.message].map(csvEscape).join(','));
-    }
+    if (entry.errors.length === 0) continue;
+    const values = mappedHeaders.map((h) => entry.row[mapping[h]]);
+    const errorText = entry.errors.map((e) => (e.target ? `${e.target}: ${e.message}` : e.message)).join(' | ');
+    lines.push([...values, errorText].map(csvEscape).join(','));
   }
   return lines.join('\n');
 }

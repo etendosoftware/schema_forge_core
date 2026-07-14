@@ -28,15 +28,75 @@ const errorEntry = {
 };
 
 describe('buildErrorsCsv', () => {
-  it('builds a CSV with row target/value/reason columns for every erroring entry', () => {
-    const csv = buildErrorsCsv([errorEntry]);
-    expect(csv).toContain('target,value,reason');
-    expect(csv).toContain('email,not-an-email,Not a valid email address.');
+  const headers = ['Nombre Comercial', 'Correo', 'Pais'];
+  const mapping = { 'Nombre Comercial': 'name', 'Correo': 'email', 'Pais': null };
+
+  it('uses the original CSV headers as columns, in the original column order', () => {
+    const entry = {
+      row: { name: 'Andres', email: 'not-an-email' },
+      errors: [{ target: 'email', message: 'Not a valid email address.' }],
+      status: 'pending',
+    };
+    const csv = buildErrorsCsv([entry], headers, mapping);
+    const [headerLine] = csv.split('\n');
+    expect(headerLine).toBe('Nombre Comercial,Correo,Error');
+  });
+
+  it('fills each mapped column from the entry row and appends a combined Error column', () => {
+    const entry = {
+      row: { name: 'Andres', email: 'not-an-email' },
+      errors: [{ target: 'email', message: 'Not a valid email address.' }],
+      status: 'pending',
+    };
+    const csv = buildErrorsCsv([entry], headers, mapping);
+    const [, dataLine] = csv.split('\n');
+    expect(dataLine).toBe('Andres,not-an-email,email: Not a valid email address.');
+  });
+
+  it('joins multiple field errors into one combined Error cell', () => {
+    const entry = {
+      row: { name: 'Andres', email: 'not-an-email' },
+      errors: [
+        { target: 'email', message: 'Not a valid email address.' },
+        { target: 'name', message: 'Required field is missing.' },
+      ],
+      status: 'pending',
+    };
+    const csv = buildErrorsCsv([entry], headers, mapping);
+    const [, dataLine] = csv.split('\n');
+    expect(dataLine).toBe('Andres,not-an-email,email: Not a valid email address. | name: Required field is missing.');
+  });
+
+  it('formats a row-level (blank-target) error without a leading colon', () => {
+    const entry = {
+      row: { name: 'Andres', email: 'andres@x.com' },
+      errors: [{ target: '', message: 'Duplicate row (already in file).' }],
+      status: 'skipped',
+    };
+    const csv = buildErrorsCsv([entry], headers, mapping);
+    const [, dataLine] = csv.split('\n');
+    expect(dataLine).toBe('Andres,andres@x.com,Duplicate row (already in file).');
   });
 
   it('skips OK entries entirely', () => {
-    const csv = buildErrorsCsv([okEntry, errorEntry]);
+    const okEntry = { row: { name: 'Lucia', email: 'lucia@x.com' }, errors: [], status: 'pending' };
+    const errorEntry = {
+      row: { name: 'Andres', email: 'not-an-email' },
+      errors: [{ target: 'email', message: 'Not a valid email address.' }],
+      status: 'pending',
+    };
+    const csv = buildErrorsCsv([okEntry, errorEntry], headers, mapping);
     expect(csv.split('\n').filter((l) => l.trim()).length).toBe(2); // header + 1 error row
+  });
+
+  it('omits unmapped headers from the output columns', () => {
+    const entry = {
+      row: { name: 'Andres', email: 'not-an-email' },
+      errors: [{ target: 'email', message: 'Not a valid email address.' }],
+      status: 'pending',
+    };
+    const csv = buildErrorsCsv([entry], headers, mapping);
+    expect(csv).not.toContain('Pais');
   });
 });
 

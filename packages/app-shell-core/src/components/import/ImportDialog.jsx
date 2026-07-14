@@ -362,7 +362,7 @@ export function ImportDialog({ open, onOpenChange, config, token, postBatch, sim
                   onSkipEntry={handleSkipEntry}
                   onUnskipEntry={handleUnskipEntry}
                   onApplyFkValue={handleApplyFkValue}
-                  onDownloadErrors={() => downloadCsv(buildErrorsCsv(entries), 'import-errors.csv')}
+                  onDownloadErrors={() => downloadCsv(buildErrorsCsv(entries, headers, mapping), 'import-errors.csv')}
                   simSearchFn={simSearchFn}
                   token={token}
                   data-testid="ImportReviewQueue__38a6c3" />
@@ -404,7 +404,7 @@ export function ImportDialog({ open, onOpenChange, config, token, postBatch, sim
                   onSkipEntry={handleSkipEntry}
                   onUnskipEntry={handleUnskipEntry}
                   onApplyFkValue={handleApplyFkValue}
-                  onDownloadErrors={() => downloadCsv(buildErrorsCsv(entries), 'import-errors.csv')}
+                  onDownloadErrors={() => downloadCsv(buildErrorsCsv(entries, headers, mapping), 'import-errors.csv')}
                   retryLabel="Retry"
                   simSearchFn={simSearchFn}
                   token={token}
