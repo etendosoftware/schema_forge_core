@@ -4,6 +4,7 @@ import {
   Select,
   SelectContent,
   SelectItem,
+  SelectLabel,
   SelectTrigger,
   SelectValue,
 } from '@etendosoftware/app-shell-core/components/ui/select';
@@ -26,6 +27,7 @@ export function OnboardingLanguageSelect({ label, locale, onChange, options, 'da
           <SelectValue />
         </SelectTrigger>
         <SelectContent>
+          <SelectLabel>{label}</SelectLabel>
           {options.map((option) => (
             // Rendered inside Select.ItemText, whose children Radix automatically
             // projects into the closed trigger's Select.Value — so the flag shows

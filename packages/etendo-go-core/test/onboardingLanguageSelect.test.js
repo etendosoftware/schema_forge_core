@@ -147,16 +147,50 @@ describe('OnboardingLanguageSelect wiring (ETP-4444, Login-only scope)', () => {
   it('uses the Radix-based Select (no native <select> element)', () => {
     // Explicit reversal of the earlier native-select-only decision: the
     // component now imports the shared Radix Select primitives from
-    // app-shell-core instead of rendering a raw <select>.
+    // app-shell-core instead of rendering a raw <select>. SelectLabel joined
+    // the import list (ETP-4444 design-review follow-up, see below) — this
+    // assertion pins the full import list including it.
     assert.match(
       languageSelect,
-      /import\s*\{\s*\n?\s*Select,\s*\n?\s*SelectContent,\s*\n?\s*SelectItem,\s*\n?\s*SelectTrigger,\s*\n?\s*SelectValue,\s*\n?\s*\}\s*from\s*'@etendosoftware\/app-shell-core\/components\/ui\/select'/,
+      /import\s*\{\s*\n?\s*Select,\s*\n?\s*SelectContent,\s*\n?\s*SelectItem,\s*\n?\s*SelectLabel,\s*\n?\s*SelectTrigger,\s*\n?\s*SelectValue,\s*\n?\s*\}\s*from\s*'@etendosoftware\/app-shell-core\/components\/ui\/select'/,
     );
     assert.match(languageSelect, /<Select\b/);
     assert.match(languageSelect, /<SelectTrigger\b/);
     assert.match(languageSelect, /<SelectContent\b/);
     assert.match(languageSelect, /<SelectItem\b/);
     assert.doesNotMatch(languageSelect, /<select/);
+  });
+
+  it('imports SelectLabel from the same shared select primitives module', () => {
+    // SelectLabel was previously defined and exported by ui/select.jsx but
+    // had zero consumers anywhere in the repo — this component is its first
+    // consumer (design-review follow-up: a heading for context inside the
+    // open dropdown).
+    const importBlock = languageSelect.slice(
+      languageSelect.indexOf('import {'),
+      languageSelect.indexOf("from '@etendosoftware/app-shell-core/components/ui/select'"),
+    );
+    assert.match(importBlock, /\bSelectLabel\b/);
+  });
+
+  it('renders a SelectLabel heading as the first child of SelectContent, before the options list', () => {
+    // Gives the open dropdown context (e.g. "Idioma"/"Language") — must
+    // appear inside SelectContent and BEFORE options.map, not just anywhere
+    // in the file.
+    const contentOpenIndex = languageSelect.indexOf('<SelectContent>');
+    const selectLabelIndex = languageSelect.indexOf('<SelectLabel>{label}</SelectLabel>');
+    const optionsMapIndex = languageSelect.indexOf('{options.map((option) =>');
+    assert.notEqual(contentOpenIndex, -1, '<SelectContent> not found');
+    assert.notEqual(selectLabelIndex, -1, '<SelectLabel>{label}</SelectLabel> not found');
+    assert.notEqual(optionsMapIndex, -1, 'options.map(...) block not found');
+    assert.ok(
+      selectLabelIndex > contentOpenIndex,
+      'SelectLabel must be rendered inside SelectContent',
+    );
+    assert.ok(
+      selectLabelIndex < optionsMapIndex,
+      'SelectLabel must render before the options.map list, as a heading for it',
+    );
   });
 
   it('keeps the country field fixed (a static label, not a selector) in ProfileStep', () => {
