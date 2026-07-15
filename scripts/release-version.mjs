@@ -22,10 +22,10 @@ import { execSync } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
 import { dirname, join } from 'node:path';
 
-const REPO_ROOT = join(dirname(fileURLToPath(import.meta.url)), '..');
+export const REPO_ROOT = join(dirname(fileURLToPath(import.meta.url)), '..');
 
 // Every workspace that the publish job pushes to the registry, kept in lockstep.
-const PACKAGE_FILES = [
+export const PACKAGE_FILES = [
   'packages/schema-forge-core/package.json',
   'packages/app-shell-core/package.json',
   'packages/schema-forge-agent-context/package.json',
@@ -84,7 +84,11 @@ function lastReleasedTag() {
   return best;
 }
 
-function main() {
+/**
+ * Resolve the next lockstep release version (plain x.y.z), WITHOUT touching any
+ * file. This is the auto-patch / manual-floor policy described at the top.
+ */
+export function resolveNextVersion() {
   const floor = readVersion(REFERENCE_FILE);
   const lastTag = lastReleasedTag();
 
@@ -98,8 +102,18 @@ function main() {
     next = cmp(floor, autoPatch) > 0 ? floor : autoPatch;
   }
 
-  const version = next.join('.');
+  return next.join('.');
+}
 
+/**
+ * Write `version` into the `version` field of every publishable package AND into
+ * every internal cross-dependency range (in publishable + dep-only files), so the
+ * whole workspace stays in lockstep. Preserves formatting / key order.
+ *
+ * `version` may be a plain semver (release) OR a prerelease string such as
+ * `0.3.7-preview.<branch>.<ts>.<sha>` (preview) — the rewrite is identical.
+ */
+export function writeVersionEverywhere(version) {
   // Names of the packages we manage, so internal cross-dependencies between them
   // stay in lockstep (an internal dep pinned to an old version breaks npm's
   // workspace linking and forces a registry fetch).
@@ -136,9 +150,17 @@ function main() {
     }
     writeFileSync(abs, src);
   }
+}
 
+function main() {
+  const version = resolveNextVersion();
+  writeVersionEverywhere(version);
   process.stdout.write(`version=${version}\n`);
   process.stdout.write(`tag=${version}\n`);
 }
 
-main();
+// Only run when invoked directly (`node scripts/release-version.mjs`), so this
+// module can also be imported by preview-version.mjs without side effects.
+if (process.argv[1] && process.argv[1] === fileURLToPath(import.meta.url)) {
+  main();
+}
