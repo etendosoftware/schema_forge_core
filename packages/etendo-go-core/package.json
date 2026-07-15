@@ -24,6 +24,7 @@
     "test": "node --test test/*.test.js"
   },
   "peerDependencies": {
+    "@phosphor-icons/react": "^2.1.0",
     "lucide-react": "^0.400.0",
     "react": "^18.3.0",
     "react-dom": "^18.3.0",

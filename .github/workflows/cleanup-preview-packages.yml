@@ -1,0 +1,43 @@
+name: Cleanup stale feature previews
+
+# Sweeps preview (prerelease) versions of `feature/*` branches older than 7 days
+# (hardcoded retention) from GitHub Packages, across the 6 publishable packages.
+#
+# See docs/plans/2026-07-14-preview-package-publishing.md, D5b.
+#
+#   - Called by release.yml on every real release to main (workflow_call).
+#   - Also runnable on demand (workflow_dispatch), with an optional dry-run.
+#   - Only touches names containing "-preview.feature-"; real releases (plain
+#     semver, `latest`) are never eligible (hard guard in the script).
+
+on:
+  workflow_call:
+  workflow_dispatch:
+    inputs:
+      dry_run:
+        description: Log what would be deleted without deleting anything
+        type: boolean
+        default: false
+
+permissions:
+  contents: read
+  packages: write   # delete package versions
+
+jobs:
+  cleanup:
+    name: Sweep feature previews older than 7 days
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Delete stale feature previews
+        run: node scripts/cleanup-preview-packages.mjs
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          MODE: stale-feature
+          MAX_AGE_DAYS: '7'
+          DRY_RUN: ${{ inputs.dry_run && '1' || '' }}
