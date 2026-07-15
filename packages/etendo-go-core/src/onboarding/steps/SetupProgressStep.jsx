@@ -269,12 +269,24 @@ export function SetupProgressStep({ config, stepData, onNext, onBack, goToStep, 
       <div className="w-full flex flex-col items-center gap-6">
         <SetupProgressCard data-testid="SetupProgressCard__79cf84" {...setupProgressState} />
         {result?.status === 'failed' && (
-          <Button
-            onClick={onBack}
-            className="bg-[#121217] text-white rounded-lg h-12 px-6 hover:bg-accent-highlight hover:text-accent-highlight-foreground"
-            data-testid="Button__c76d30">
-            {ui('back')}
-          </Button>
+          <div className="flex gap-3">
+            {/* Retry re-runs the idempotent onboarding chain (ETP-4428): runOnboarding already
+                resets result/steps/progress, and the backend reconciles — repairing whatever a
+                partial run left missing and no-op'ing what already exists. */}
+            <Button
+              onClick={runOnboarding}
+              disabled={running}
+              className="bg-[#121217] text-white rounded-lg h-12 px-6 hover:bg-accent-highlight hover:text-accent-highlight-foreground"
+              data-testid="Button__retry">
+              {ui('onboardingRetry')}
+            </Button>
+            <Button
+              onClick={onBack}
+              className="bg-transparent text-[#121217] border border-[#121217] rounded-lg h-12 px-6 hover:bg-accent-highlight hover:text-accent-highlight-foreground"
+              data-testid="Button__c76d30">
+              {ui('back')}
+            </Button>
+          </div>
         )}
       </div>
     </SetupProgressShell>
