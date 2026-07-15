@@ -1155,10 +1155,16 @@ function getListKpiCardsParts(windowConfig, specName) {
   return { listKpiCardsImport, listKpiCardsProp };
 }
 
-function getRowQuickActionsProp(rowQuickActions) {
+function getRowQuickActionsProp(rowQuickActions, hideDeleteButton = false) {
   let rowQuickActionsProp = '';
   if (!rowQuickActions || rowQuickActions.enabled !== false) {
-    const declarativePart = rowQuickActions ?? {};
+    // Thread the window-level `hideDeleteButton` flag into the declarative config so the
+    // list-row hover Delete is hidden in lockstep with the detail toolbar. An explicit
+    // per-action override inside rowQuickActions still wins if the user set it.
+    const declarativePart = { ...(rowQuickActions ?? {}) };
+    if (hideDeleteButton && declarativePart.hideDeleteButton === undefined) {
+      declarativePart.hideDeleteButton = true;
+    }
     rowQuickActionsProp = `\n      rowQuickActions={${JSON.stringify(declarativePart)}}`;
   }
   return rowQuickActionsProp;
@@ -1241,7 +1247,8 @@ export function buildProcessesArray({ processes, buttonFields, processOverrides 
         ? `,\n    displayLogicRaw: "${ovr.displayLogicRaw.replace(/"/g, '\\"').replace(/\r?\n/g, '\\n')}"`
         : '';
       const confirmModalPart = fragmentIf(ovr.confirmModal, ', confirmModal: true');
-      return `  { name: '${p.name}', label: '${label.replace(/'/g, "\\'")}', style: '${style}'${colPart}${paramsPart}${dlRaw}${confirmModalPart} },`;
+      const labelTogglePart = ovr.labelToggle ? `, labelToggle: ${JSON.stringify(ovr.labelToggle)}` : '';
+      return `  { name: '${p.name}', label: '${label.replace(/'/g, "\\'")}', style: '${style}'${colPart}${paramsPart}${dlRaw}${confirmModalPart}${labelTogglePart} },`;
     }).filter(Boolean),
     ...buttonFields.map(f => {
       const ovr = processOverrides[f.name] || {};
@@ -1254,7 +1261,8 @@ export function buildProcessesArray({ processes, buttonFields, processOverrides 
       const requiresLinesPart = fragmentIf(ovr.requiresLines, ', requiresLines: true');
       const paramsPart = ovr.params?.length ? `, params: ${JSON.stringify(ovr.params)}` : '';
       const confirmModalPart = fragmentIf(ovr.confirmModal, ', confirmModal: true');
-      return `  { name: '${f.name}', label: '${label.replace(/'/g, "\\'")}', style: '${style}'${dlRaw}${requiresLinesPart}${paramsPart}${confirmModalPart} },`;
+      const labelTogglePart = ovr.labelToggle ? `, labelToggle: ${JSON.stringify(ovr.labelToggle)}` : '';
+      return `  { name: '${f.name}', label: '${label.replace(/'/g, "\\'")}', style: '${style}'${dlRaw}${requiresLinesPart}${paramsPart}${confirmModalPart}${labelTogglePart} },`;
     }).filter(Boolean),
     // Extra processes defined purely in decisions.json (not in backend contract)
     ...Object.entries(processOverrides)
@@ -1272,7 +1280,8 @@ export function buildProcessesArray({ processes, buttonFields, processOverrides 
           : '';
         const addParamsPart = ovr.params?.length ? `, params: ${JSON.stringify(ovr.params)}` : '';
         const confirmModalPart = fragmentIf(ovr.confirmModal, ', confirmModal: true');
-        return `  { name: '${name}', label: '${label.replace(/'/g, "\\'")}', style: '${style}'${colPart}${dlRaw}${requiresLinesPart}${fieldMaxPart}${addParamsPart}${confirmModalPart} },`;
+        const labelTogglePart = ovr.labelToggle ? `, labelToggle: ${JSON.stringify(ovr.labelToggle)}` : '';
+        return `  { name: '${name}', label: '${label.replace(/'/g, "\\'")}', style: '${style}'${colPart}${dlRaw}${requiresLinesPart}${fieldMaxPart}${addParamsPart}${confirmModalPart}${labelTogglePart} },`;
       }),
   ].join('\n');
 }
@@ -1661,7 +1670,7 @@ function resolveSecondaryTabDefs(secondaryTabsDecl, contract, headerEntity, deta
     return [
       ...knownSecondaryTabDefs.map(t => ({ ...t, isFormTab: false, addLineEntries: [] })),
       ...inferredSecondaryTabDefs,
-    ].filter(t => t.key !== detailEntity).slice(0, 4);
+    ].filter(t => t.key !== detailEntity && t.key !== headerEntity).slice(0, 4);
   }
   // Declarative config from decisions.json — sorted by tabOrder
   return Object.entries(secondaryTabsDecl)
@@ -1862,6 +1871,11 @@ export function generatePageComponent(headerEntity, detailEntity, contract) {
   const relatedDocuments = windowConfig.relatedDocuments ?? false;
   const hideDetailForm = windowConfig.hideDetailForm ?? false;
   const hideDeleteWhenComplete = windowConfig.hideDeleteWhenComplete ?? false;
+  // Unconditional per-window delete opt-out (decisions.json → window.hideDeleteButton).
+  // Distinct from `hideDelete` (which only disables the CRUD delete capability in the
+  // contract) — this hides the Delete button in BOTH the detail toolbar and the list-row
+  // hover actions, in every record state. Defaults to false → no behavior change when unset.
+  const hideDeleteButton = windowConfig.hideDeleteButton ?? false;
   const customTabsAfterBottom = windowConfig.customTabsAfterBottom ?? false;
   const hidePrint = windowConfig.hidePrint ?? false;
   const hideCreate = windowConfig.hideCreate ?? false;
@@ -1964,6 +1978,8 @@ export function generatePageComponent(headerEntity, detailEntity, contract) {
 
   // hideDeleteWhenComplete prop
   const hideDeleteProp = fragmentIf(hideDeleteWhenComplete, '\n        hideDeleteWhenComplete');
+  // hideDeleteButton prop — unconditional Delete-button hide in the detail toolbar.
+  const hideDeleteButtonProp = fragmentIf(hideDeleteButton, '\n        hideDeleteButton');
   // customTabsAfterBottom prop
   const customTabsAfterBottomProp = fragmentIf(customTabsAfterBottom, '\n        customTabsAfterBottom');
 
@@ -2160,7 +2176,7 @@ export function generatePageComponent(headerEntity, detailEntity, contract) {
   // The generator forwards whatever is declared verbatim; an empty `{}` is enough to
   // mount the overlay since DataTable + RowQuickActions resolve defaults at runtime.
   // We skip emission entirely only when the user explicitly set `enabled: false`.
-  let rowQuickActionsProp = getRowQuickActionsProp(rowQuickActions);
+  let rowQuickActionsProp = getRowQuickActionsProp(rowQuickActions, hideDeleteButton);
 
   // ETP-3914 — Send/Download envelope prop. ListView routes it into DataTable →
   // RowQuickActions to control the email quick action, and mounts the generic
@@ -2285,7 +2301,7 @@ ${menuActionStateStatements}`)}${fragmentIf(confirmModalName, `
         detailLabel="${entityDetailLabel}"` : ''}
         windowName={windowName}
         recordId={recordId}
-        breadcrumb={breadcrumb}${apiProp}${detailTabIndexProp}${secondaryTabsProp}${formFooterProp}${customLinesProp}${primaryTabsProp}${othersLabelProp}${documentPreviewProp}${hideDeleteProp}${customTabsAfterBottomProp}${hidePrintProp}${hideSaveStatusesProp}${hideMoreMenuProp}${hideMoreDetailsProp}${noHeaderBorderProp}${toolbarBorderBottomProp}${compactSidebarPaddingProp}${whiteFormBackgroundProp}${autoSaveOnBlurProp}${hideFormCardProp}${sidebarAboveTabsOnlyProp}${tabsSeparatorProp}${sidebarClassNameProp}${tabsBarPaddingXProp}${primaryTabsVariantProp}${toolbarPaddingXProp}${toolbarButtonSizeProp}${contentBgProp}${formCardPaddingProp}${formScrollPaddingXProp}${notesFieldProp}${customTabsProp}${customCompPropsBlock}${menuActionsProp}${draftModeProp}${requiredHeaderFieldsProp}${addLineGuardProp}${headerContentProp}${detailSortByProp}${titleFieldProp}${documentDateFieldProp}${salesThemeProp}${disableProcessedLockProp}${statusEnumLabelsProp}${statusFieldLabelProp}${lockedAlertProp}${showDetailFooterTotalsProp}${labelOverridesProp}${lineConfigProp}${linesLayoutProp}${balanceFooterProp}${sendDocumentDetailProp}${selectorPriceCurrencyProp}
+        breadcrumb={breadcrumb}${apiProp}${detailTabIndexProp}${secondaryTabsProp}${formFooterProp}${customLinesProp}${primaryTabsProp}${othersLabelProp}${documentPreviewProp}${hideDeleteProp}${hideDeleteButtonProp}${customTabsAfterBottomProp}${hidePrintProp}${hideSaveStatusesProp}${hideMoreMenuProp}${hideMoreDetailsProp}${noHeaderBorderProp}${toolbarBorderBottomProp}${compactSidebarPaddingProp}${whiteFormBackgroundProp}${autoSaveOnBlurProp}${hideFormCardProp}${sidebarAboveTabsOnlyProp}${tabsSeparatorProp}${sidebarClassNameProp}${tabsBarPaddingXProp}${primaryTabsVariantProp}${toolbarPaddingXProp}${toolbarButtonSizeProp}${contentBgProp}${formCardPaddingProp}${formScrollPaddingXProp}${notesFieldProp}${customTabsProp}${customCompPropsBlock}${menuActionsProp}${draftModeProp}${requiredHeaderFieldsProp}${addLineGuardProp}${headerContentProp}${detailSortByProp}${titleFieldProp}${documentDateFieldProp}${salesThemeProp}${disableProcessedLockProp}${statusEnumLabelsProp}${statusFieldLabelProp}${lockedAlertProp}${showDetailFooterTotalsProp}${labelOverridesProp}${lineConfigProp}${linesLayoutProp}${balanceFooterProp}${sendDocumentDetailProp}${selectorPriceCurrencyProp}
         {...props}${sidebarContentProp}
       />
 ${menuActionModals}${confirmModalName ? `

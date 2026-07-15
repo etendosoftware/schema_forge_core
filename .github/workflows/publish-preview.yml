@@ -1,0 +1,168 @@
+name: Publish preview packages
+
+# Publishes a throwaway PREVIEW (prerelease) of ALL publishable packages, in
+# lockstep, on every push to a feature branch — so the published-package path can
+# be tested without cutting a real `latest` release.
+#
+# See docs/plans/2026-07-14-preview-package-publishing.md (in etendo_schema_forge).
+#
+#   - Trigger: push to feature/** (auto) + manual workflow_dispatch.        (D4)
+#   - Version: <base>-preview.<branchid>.<timestamp>.<shortsha>.            (D3)
+#   - dist-tag: alpha — never `latest`, so consumers are unaffected.        (D2)
+#   - Scope: the 6 publishable packages, lockstep.                         (D6)
+#   - After publish: delete the OLDER previews of THIS branch (D5a).
+#   - Does NOT notify the functional repo → never triggers the pin-bump chore. (D7)
+
+on:
+  push:
+    branches:
+      - 'feature/**'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  packages: write
+  pull-requests: write   # sticky "preview published" comment on the branch's open PR
+  statuses: write        # commit status pinning the published version to the SHA
+
+concurrency:
+  # One preview run per branch at a time; a newer push supersedes an in-flight one.
+  group: publish-preview-${{ github.ref_name }}
+  cancel-in-progress: true
+
+jobs:
+  preview:
+    name: Build, test & publish preview
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0            # need full tag history for the version resolver
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          registry-url: https://npm.pkg.github.com
+          scope: '@etendosoftware'
+
+      - run: npm install
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      # --- Gates: same test suite as the real release -----------------------
+      - name: Schema Forge core tests
+        run: npm test --workspace=packages/schema-forge-core
+      - name: App shell core tests
+        run: npm test --workspace=packages/app-shell-core
+      - name: App shell core consumer smoke
+        run: npm run test:consumer --workspace=packages/app-shell-core
+      - name: Schema Forge agent context tests
+        run: npm test --workspace=packages/schema-forge-agent-context
+      - name: Schema Forge stack tests
+        run: npm test --workspace=packages/schema-forge-stack
+      - name: Schema Forge CLI tests
+        run: npm test --workspace=cli
+
+      # --- Resolve the preview version and write it into every package ------
+      - name: Resolve preview version
+        id: ver
+        run: node scripts/preview-version.mjs >> "$GITHUB_OUTPUT"
+        env:
+          BRANCH_NAME: ${{ github.ref_name }}
+          SHORT_SHA: ${{ github.sha }}
+
+      - name: Show resolved version
+        run: echo "Publishing preview ${{ steps.ver.outputs.version }}"
+
+      # --- Publish every workspace in lockstep under the `alpha` dist-tag ---
+      - name: Publish preview packages
+        run: |
+          set -e
+          for WS in \
+            packages/schema-forge-core \
+            packages/app-shell-core \
+            packages/schema-forge-agent-context \
+            packages/schema-forge-stack \
+            packages/etendo-go-core \
+            cli; do
+            NAME=$(node -p "require('./$WS/package.json').name")
+            VERSION=$(node -p "require('./$WS/package.json').version")
+            echo "↑ Publishing $NAME@$VERSION (alpha)"
+            npm publish --workspace="$WS" --tag alpha
+          done
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      # --- D5a: drop the older previews of THIS branch (keep the new one) ---
+      # Fail-soft: never blocks the publish. If deletes 403, verify the token
+      # scope (see docs plan — may need a PAT with delete:packages).
+      - name: Prune older previews of this branch
+        continue-on-error: true
+        run: node scripts/cleanup-preview-packages.mjs
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          MODE: same-branch
+          BRANCH_NAME: ${{ github.ref_name }}
+          KEEP_VERSION: ${{ steps.ver.outputs.version }}
+
+      # --- Make the published version "visible fácil" -----------------------
+      # A) Commit status: pins "alpha: <version>" to this SHA, so it shows as a
+      #    check on the commit AND in the PR's checks list — no need to open the
+      #    run to see what was published. Links back to this run.
+      # B) Sticky PR comment: if the branch has an open PR, upsert (never spam) a
+      #    single comment with the version and the exact pin snippet. Skipped
+      #    silently when there is no open PR (e.g. pre-PR pushes).
+      # Both are fail-soft: a comment/status hiccup must never fail the publish.
+      - name: Pin published version to the commit (status)
+        continue-on-error: true
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          VERSION: ${{ steps.ver.outputs.version }}
+        run: |
+          gh api "repos/${{ github.repository }}/statuses/${{ github.sha }}" \
+            -f state=success \
+            -f context="preview-package" \
+            -f description="alpha: ${VERSION}" \
+            -f target_url="${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
+
+      - name: Comment published version on the open PR (sticky)
+        continue-on-error: true
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          VERSION: ${{ steps.ver.outputs.version }}
+          BRANCH: ${{ github.ref_name }}
+          REPO: ${{ github.repository }}
+        run: |
+          set -euo pipefail
+          PR=$(gh pr list --repo "$REPO" --head "$BRANCH" --state open \
+                 --json number --jq '.[0].number // empty')
+          if [ -z "$PR" ]; then
+            echo "No open PR for $BRANCH — skipping comment."
+            exit 0
+          fi
+          MARKER='<!-- preview-packages-bot -->'
+          BODY="${MARKER}
+          📦 **Preview packages published** — dist-tag \`alpha\`
+
+          \`\`\`
+          ${VERSION}
+          \`\`\`
+
+          To exercise the **published-package** path (no \`LOCAL_CORE\`), bump all
+          core pins to this preview in the functional repo and reinstall:
+
+          \`\`\`bash
+          make bump-core-version VERSION=${VERSION}
+          \`\`\`
+
+          _Auto-updated on each push to this branch; supersedes older previews._"
+          CID=$(gh api "repos/${REPO}/issues/${PR}/comments" --paginate \
+                  --jq "map(select(.body | startswith(\"${MARKER}\"))) | .[0].id // empty")
+          if [ -n "$CID" ]; then
+            gh api "repos/${REPO}/issues/comments/${CID}" -X PATCH -f body="$BODY"
+            echo "Updated sticky comment #$CID on PR #$PR."
+          else
+            gh pr comment "$PR" --repo "$REPO" --body "$BODY"
+            echo "Created sticky comment on PR #$PR."
+          fi
