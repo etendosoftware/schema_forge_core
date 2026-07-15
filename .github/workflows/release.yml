@@ -130,3 +130,15 @@ jobs:
             -H "Accept: application/vnd.github+json" \
             https://api.github.com/repos/etendosoftware/etendo_schema_forge/dispatches \
             -d '{"event_type":"core-released","client_payload":{"version":"${{ steps.ver.outputs.tag }}"}}'
+
+  # --- D5b: sweep stale feature-branch previews after the real release ------
+  # Separate job (needs: release) so it can NEVER affect the release itself; the
+  # cleanup script is fail-soft on top of that. See
+  # docs/plans/2026-07-14-preview-package-publishing.md (in etendo_schema_forge).
+  cleanup-previews:
+    name: Sweep stale feature previews
+    needs: release
+    uses: ./.github/workflows/cleanup-preview-packages.yml
+    permissions:
+      contents: read
+      packages: write
