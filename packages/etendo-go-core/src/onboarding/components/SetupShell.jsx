@@ -1,7 +1,8 @@
 import React from 'react';
+import { Button } from '@etendosoftware/app-shell-core/components/ui/button';
 import AuthBrand from './AuthBrand.jsx';
 
-export function SetupShell({ brandLabel, progressLabel, progressValue, headerContent, children }) {
+export function SetupShell({ brandLabel, progressLabel, progressValue, headerContent, onLogout, logoutLabel, children }) {
   const baseUrl = import.meta.env?.BASE_URL || '/';
   return (
     <div className="min-h-screen bg-white">
@@ -10,6 +11,16 @@ export function SetupShell({ brandLabel, progressLabel, progressValue, headerCon
           <div className="flex items-start justify-between gap-6">
             <AuthBrand label={brandLabel} data-testid="AuthBrand__79cf84" />
             <div className="flex w-full max-w-[22rem] flex-col items-end gap-3 pt-1">
+              {onLogout && (
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={onLogout}
+                  className="text-slate-500 hover:text-slate-700"
+                  data-testid="onboarding-setup-logout">
+                  {logoutLabel}
+                </Button>
+              )}
               {headerContent}
               <div className="w-full">
                 <p className="text-right text-xs font-medium text-slate-500 sm:text-sm">
