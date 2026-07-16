@@ -17,6 +17,9 @@ test('public package exports the expected runtime entrypoints', async () => {
   assert.equal(pkg.exports['./styles.css'], './src/styles.css');
   assert.equal(pkg.exports['./hooks/useCurrency.jsx'], './src/hooks/useCurrency.jsx');
   assert.equal(pkg.exports['./hooks/use-mobile.jsx'], './src/hooks/use-mobile.jsx');
+  assert.equal(pkg.exports['./components/ui/*'], './src/components/ui/*');
+  assert.equal(pkg.exports['./components/import/*'], './src/components/import/*');
+  assert.equal(pkg.exports['./lib/*'], './src/lib/*');
 });
 
 async function listSourceFiles(dir) {
@@ -49,4 +52,10 @@ test('core package source does not import app-shell implementation or generated 
       assert.equal(pattern.test(source), false, `${file} should not match ${pattern}`);
     }
   }
+});
+
+test('fkResolvers.js is reachable at the documented subpath', async () => {
+  const mod = await import('../src/lib/import/fkResolvers.js');
+  assert.equal(typeof mod.registerFkResolver, 'function');
+  assert.equal(typeof mod.getFkResolver, 'function');
 });
