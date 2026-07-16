@@ -1225,6 +1225,13 @@ export function generateApiPrediction(schema, frontendContract, backendContract)
     // CRUD — NEO Headless enables all methods by default via PopulateSpec
     crud[entityName] = buildCrudPrediction(baseUrl, entityName, feEntity);
     if (frontendContract.window?.hideDelete) crud[entityName].delete = false;
+    // Read-only windows (GO view-only) expose no write methods at all.
+    if (frontendContract.window?.readOnly) {
+      crud[entityName].post = false;
+      crud[entityName].put = false;
+      crud[entityName].patch = false;
+      crud[entityName].delete = false;
+    }
 
     // Selectors — FK fields that are visible (editable or readOnly)
     selectors.push(...collectSelectorPredictions(feEntity, entityName, baseUrl, windowCategory, schema, frontendContract));
@@ -1253,9 +1260,12 @@ export function generateApiPrediction(schema, frontendContract, backendContract)
     },
   };
 
-  // Forward window.category so components can derive isSOTrx for selector filtering
-  if (schema.window.category) {
-    result.window = { category: schema.window.category };
+  // Forward window.category so components can derive isSOTrx for selector filtering,
+  // and window.readOnly so the runtime (DetailView) can force the whole window view-only.
+  if (schema.window.category || schema.window.readOnly) {
+    result.window = {};
+    if (schema.window.category) result.window.category = schema.window.category;
+    if (schema.window.readOnly) result.window.readOnly = true;
   }
 
   // Forward labelOverrides from the window config so generated components can apply per-window label overrides
