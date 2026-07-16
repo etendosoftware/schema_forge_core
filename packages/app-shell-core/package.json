@@ -29,7 +29,7 @@
     "!src/**/__tests__/**"
   ],
   "scripts": {
-    "test": "node --test test/*.test.js src/auth/__tests__/*.test.js src/i18n/__tests__/*.test.js src/runtime/__tests__/*.test.js src/components/ui/__tests__/*.test.js",
+    "test": "node --test test/*.test.js src/auth/__tests__/*.test.js src/i18n/__tests__/*.test.js src/runtime/__tests__/*.test.js src/components/ui/__tests__/*.test.js src/lib/__tests__/*.test.js",
     "test:vitest": "vitest run",
     "test:consumer": "node scripts/package-consumer-smoke.mjs"
   },
