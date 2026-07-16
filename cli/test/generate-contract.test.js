@@ -2267,3 +2267,92 @@ describe('generateFrontendContract — max field constraint (ETP-4277)', () => {
     assert.equal(discount.max, 100);
   });
 });
+
+describe('generateFrontendContract — window.import', () => {
+  it('passes through window.import.enabled unchanged when there are no fields to enrich', () => {
+    const schema = { ...minimalSchema, window: { ...minimalSchema.window, import: { enabled: false } } };
+    const fc = generateFrontendContract(schema);
+    assert.equal(fc.window.import.enabled, false);
+  });
+
+  it('enriches each import field with label/required/type/reference from the contract', () => {
+    const schema = {
+      ...minimalSchema,
+      window: {
+        ...minimalSchema.window,
+        import: {
+          enabled: true,
+          spec: 'sales',
+          entity: 'order',
+          fields: [{ target: 'documentNo', aliases: ['doc no'] }],
+        },
+      },
+    };
+    const fc = generateFrontendContract(schema);
+    const field = fc.window.import.fields[0];
+    assert.equal(field.target, 'documentNo');
+    assert.deepEqual(field.aliases, ['doc no']);
+    assert.equal(field.required, true);
+    assert.equal(field.type, 'string');
+  });
+
+  it('keeps an explicit decisions.json label over the auto-derived one for a matched field', () => {
+    // A composite import (e.g. Contacts splitting one row across businessPartner +
+    // contact) routinely maps two different targets whose underlying AD columns
+    // share the exact same auto-derived label — decisions.json disambiguates via
+    // an explicit label, which must survive contract generation, not get
+    // silently overwritten by the field's own match.label.
+    const schema = {
+      ...minimalSchema,
+      window: {
+        ...minimalSchema.window,
+        import: {
+          enabled: true,
+          spec: 'sales',
+          entity: 'order',
+          fields: [{ target: 'documentNo', aliases: ['doc no'], label: 'Document No. (Override)' }],
+        },
+      },
+    };
+    const fc = generateFrontendContract(schema);
+    const field = fc.window.import.fields[0];
+    assert.equal(field.label, 'Document No. (Override)');
+    // required/type still backfill from the matched field even when label doesn't.
+    assert.equal(field.required, true);
+    assert.equal(field.type, 'string');
+  });
+
+  it('accepts fields with no contract backing if they declare their own label inline', () => {
+    const schema = {
+      ...minimalSchema,
+      window: {
+        ...minimalSchema.window,
+        import: {
+          enabled: true,
+          spec: 'sales',
+          entity: 'order',
+          fields: [{ target: 'virtualField', aliases: ['virt'], label: 'Virtual Field' }],
+        },
+      },
+    };
+    const fc = generateFrontendContract(schema);
+    const field = fc.window.import.fields[0];
+    assert.equal(field.target, 'virtualField');
+    assert.deepEqual(field.aliases, ['virt']);
+    assert.equal(field.label, 'Virtual Field');
+    assert.equal(field.required, false);
+    assert.equal(field.type, 'string');
+  });
+
+  it('throws when import.fields references a field name absent from every entity and lacks inline label', () => {
+    const schema = {
+      ...minimalSchema,
+      window: {
+        ...minimalSchema.window,
+        import: { enabled: true, fields: [{ target: 'doesNotExist' }] },
+      },
+    };
+    assert.throws(() => generateFrontendContract(schema), /import\.fields references unknown field "doesNotExist"/);
+  });
+});
+

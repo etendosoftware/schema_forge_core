@@ -24,6 +24,7 @@
     "./hooks/use-mobile.jsx": "./src/hooks/use-mobile.jsx",
     "./styles.css": "./src/styles.css",
     "./components/ui/*": "./src/components/ui/*",
+    "./components/import/*": "./src/components/import/*",
     "./lib/*": "./src/lib/*",
     "./pages/*": "./src/pages/*"
   },
@@ -32,7 +33,7 @@
     "!src/**/__tests__/**"
   ],
   "scripts": {
-    "test": "node --test test/*.test.js src/auth/__tests__/*.test.js src/i18n/__tests__/*.test.js src/runtime/__tests__/*.test.js src/components/ui/__tests__/*.test.js",
+    "test": "node --test test/*.test.js src/auth/__tests__/*.test.js src/i18n/__tests__/*.test.js src/runtime/__tests__/*.test.js src/components/ui/__tests__/*.test.js src/lib/__tests__/*.test.js src/lib/import/__tests__/*.test.js",
     "test:vitest": "vitest run",
     "test:consumer": "node scripts/package-consumer-smoke.mjs"
   },
