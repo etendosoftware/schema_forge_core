@@ -622,4 +622,96 @@ describe('AdvancedFilterBuilder', () => {
       expect(options).toHaveLength(2);
     });
   });
+
+  // ================================================================
+  // ETP-4532 — DATE value input renders the shared DateField
+  // (react-day-picker) instead of a native <input type="date">.
+  // ================================================================
+
+  describe('date value input renders DateField (ETP-4532)', () => {
+    // Seeding the applied value with a field + non-nullish operator makes the
+    // value area render immediately, so we can assert on the rendered widget
+    // without driving the field/operator Select dropdowns.
+    const dateValue = (operator, value) => ({
+      rowOperator: 'and',
+      conditions: [{ field: 'orderDate', operator, value }],
+    });
+
+    it('single-value date mode renders DateField, not a native date input', () => {
+      render(<AdvancedFilterBuilder columns={COLUMNS} value={dateValue('equals', '')} />);
+      // The stable contract is the testid; DateField renders a masked text input.
+      expect(screen.getByTestId('AdvancedFilterBuilder__DateField')).toBeInTheDocument();
+      // Regression: the value area must NOT fall back to a native date input.
+      expect(document.querySelector('input[type="date"]')).toBeNull();
+    });
+
+    it('between date mode renders two DateFields (from + to)', () => {
+      render(
+        <AdvancedFilterBuilder columns={COLUMNS} value={dateValue('between', ['', ''])} />,
+      );
+      expect(screen.getByTestId('AdvancedFilterBuilder__DateField__from')).toBeInTheDocument();
+      expect(screen.getByTestId('AdvancedFilterBuilder__DateField__to')).toBeInTheDocument();
+      expect(document.querySelector('input[type="date"]')).toBeNull();
+    });
+
+    it('non-date mode still renders the plain Input (regression guard)', () => {
+      // A numeric column with a single-value operator must keep the old Input.
+      const value = {
+        rowOperator: 'and',
+        conditions: [{ field: 'amount', operator: 'equals', value: '' }],
+      };
+      render(<AdvancedFilterBuilder columns={COLUMNS} value={value} />);
+      expect(screen.getAllByTestId('Input__4eedf1').length).toBeGreaterThan(0);
+      expect(screen.queryByTestId('AdvancedFilterBuilder__DateField')).toBeNull();
+    });
+
+    it('single-value date onChange emits an ISO yyyy-mm-dd string into the condition', async () => {
+      const user = userEvent.setup();
+      const onApply = vi.fn();
+      render(
+        <AdvancedFilterBuilder
+          columns={COLUMNS}
+          value={dateValue('equals', '')}
+          onApply={onApply}
+        />,
+      );
+      // Locale mock resolves to en_US → month-first mask (mm/dd/yyyy). Typing the
+      // 8 digits auto-inserts separators; blur commits the parsed ISO value.
+      const input = screen.getByTestId('AdvancedFilterBuilder__DateField');
+      await user.type(input, '03152026');
+      await user.tab(); // blur → commitTypedValue → onChange('2026-03-15')
+      await user.click(screen.getByText('advancedFilterApply'));
+      expect(onApply).toHaveBeenCalledTimes(1);
+      expect(onApply.mock.calls[0][0].conditions[0]).toMatchObject({
+        field: 'orderDate',
+        operator: 'equals',
+        value: '2026-03-15',
+      });
+    });
+
+    it('between date onChange emits an ISO [from, to] pair into the condition', async () => {
+      const user = userEvent.setup();
+      const onApply = vi.fn();
+      render(
+        <AdvancedFilterBuilder
+          columns={COLUMNS}
+          value={dateValue('between', ['', ''])}
+          onApply={onApply}
+        />,
+      );
+      const from = screen.getByTestId('AdvancedFilterBuilder__DateField__from');
+      await user.type(from, '01012026');
+      await user.tab();
+      const to = screen.getByTestId('AdvancedFilterBuilder__DateField__to');
+      await user.type(to, '12312026');
+      await user.tab();
+      await user.click(screen.getByText('advancedFilterApply'));
+      expect(onApply).toHaveBeenCalledTimes(1);
+      expect(onApply.mock.calls[0][0].conditions[0]).toMatchObject({
+        field: 'orderDate',
+        operator: 'between',
+        value: ['2026-01-01', '2026-12-31'],
+      });
+    });
+  });
 });

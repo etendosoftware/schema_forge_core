@@ -1,6 +1,7 @@
 import { useState, useEffect, useMemo, useCallback, useRef } from 'react';
 import { Button } from '../ui/button.jsx';
 import { Input } from '../ui/input.jsx';
+import { DateField } from '../ui/date-field.jsx';
 import {
   Select,
   SelectContent,
@@ -269,9 +270,10 @@ export function AdvancedFilterBuilder({
   };
 
   const canSavePreset = hasActiveFilter || anyStarted;
+  const hasBetween = draft.conditions.some((c) => c.operator === 'between');
 
   return (
-    <div className="flex flex-col gap-3 min-w-[560px]">
+    <div className={`flex flex-col gap-3 ${hasBetween ? 'min-w-[640px]' : 'min-w-[560px]'}`}>
       <div className="flex items-center gap-2 text-sm font-semibold">
         <SlidersHorizontal className="h-4 w-4 text-primary" data-testid="SlidersHorizontal__4eedf1" />
         {ui('advancedFilterTitle')}
@@ -283,6 +285,7 @@ export function AdvancedFilterBuilder({
           const ops = mode ? (OPERATORS_BY_MODE[mode] ?? OPERATORS_BY_MODE.text) : [];
           const opLabels = mode === 'date' ? OP_LABEL_KEY_DATE : OP_LABEL_KEY;
           const showValue = !!row.operator && !NULLISH_OPS.has(row.operator);
+          const isBetween = row.operator === 'between';
 
           return (
             <div key={idx} className="flex items-start gap-2">
@@ -345,7 +348,7 @@ export function AdvancedFilterBuilder({
                 </Select>
               </div>
               {/* Value */}
-              <div className="flex-1 min-w-0">
+              <div className={isBetween ? 'flex-[2] min-w-0' : 'flex-1 min-w-0'}>
                 {showValue && col && (
                   <ValueInput
                     col={col}
@@ -561,7 +564,23 @@ export function AdvancedFilterBuilder({
 
 function betweenOperator(value, mode, onChange) {
   const pair = Array.isArray(value) ? value : ['', ''];
-  const inputType = mode === 'date' ? 'date' : mode === 'numeric' ? 'number' : 'text';
+  if (mode === 'date') {
+    return (
+      <div className="flex gap-1">
+        <DateField
+          value={pair[0] ?? ''}
+          onChange={(iso) => onChange([iso, pair[1] ?? ''])}
+          className="h-9 text-xs flex-1 min-w-0"
+          data-testid="AdvancedFilterBuilder__DateField__from" />
+        <DateField
+          value={pair[1] ?? ''}
+          onChange={(iso) => onChange([pair[0] ?? '', iso])}
+          className="h-9 text-xs flex-1 min-w-0"
+          data-testid="AdvancedFilterBuilder__DateField__to" />
+      </div>
+    );
+  }
+  const inputType = mode === 'numeric' ? 'number' : 'text';
   return (
     <div className="flex gap-1">
       <Input
@@ -661,7 +680,17 @@ function ValueInput({ col, mode, operator, value, onChange, ui, dictionary, rows
     );
   }
 
-  const inputType = mode === 'date' ? 'date' : mode === 'numeric' ? 'number' : 'text';
+  if (mode === 'date') {
+    return (
+      <DateField
+        value={value ?? ''}
+        onChange={onChange}
+        className="h-9 text-xs"
+        data-testid="AdvancedFilterBuilder__DateField" />
+    );
+  }
+
+  const inputType = mode === 'numeric' ? 'number' : 'text';
   return (
     <Input
       type={inputType}
