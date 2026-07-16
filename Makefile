@@ -15,7 +15,7 @@ test-all-coverage: ## Run ALL unit tests (Node + Vitest) with coverage reports
 	@echo "=== Schema Forge core package tests ==="
 	node --test --experimental-test-coverage --test-reporter=lcov --test-reporter-destination=coverage/schema-forge-core-lcov.info $(shell find packages/schema-forge-core/test -name '*.test.js')
 	@echo "=== App-shell core package tests ==="
-	node --test --experimental-test-coverage --test-reporter=lcov --test-reporter-destination=coverage/appshell-core-lcov.info $(shell find packages/app-shell-core/test packages/app-shell-core/src/auth/__tests__ packages/app-shell-core/src/i18n/__tests__ packages/app-shell-core/src/components/ui/__tests__ packages/app-shell-core/src/runtime/__tests__ -name '*.test.js' 2>/dev/null)
+	node --test --experimental-test-coverage --test-reporter=lcov --test-reporter-destination=coverage/appshell-core-lcov.info $(shell find packages/app-shell-core/test packages/app-shell-core/src/auth/__tests__ packages/app-shell-core/src/i18n/__tests__ packages/app-shell-core/src/components/ui/__tests__ packages/app-shell-core/src/runtime/__tests__ packages/app-shell-core/src/lib/__tests__ packages/app-shell-core/src/lib/import/__tests__ -name '*.test.js' 2>/dev/null)
 	@echo "=== App-shell core package Vitest ==="
 	cd packages/app-shell-core && npx vitest run --coverage --coverage.reporter=lcov && sed 's|^SF:src/|SF:packages/app-shell-core/src/|' coverage/lcov.info > ../../coverage/appshell-core-vitest-lcov.info
 	@echo "=== Merging LCOV reports ==="

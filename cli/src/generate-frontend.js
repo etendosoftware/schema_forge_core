@@ -1019,6 +1019,14 @@ function buildFormFooterParts(headerExtraConfig, specName) {
   return { formFooterImport, formFooterProp };
 }
 
+// window.import → <ListView import={...}> prop. Mirrors resolveAttachmentsConfig's
+// enabled/disabled gating, but import has no "opt-in by default" case — a window is
+// either explicitly configured for it or the button never appears.
+export function getImportProp(importConfig) {
+  if (!importConfig?.enabled) return '';
+  return `\n      import={${JSON.stringify(importConfig)}}`;
+}
+
 function resolveAttachmentsConfig(windowConfig, layoutType, headerTableName, headerEntity) {
   // Attachments tab — enabled by default on standard (default) layout windows.
   // Opt out per-window via `window.attachments: false` in decisions.json, or
@@ -2051,6 +2059,7 @@ export function generatePageComponent(headerEntity, detailEntity, contract) {
   const hideMoreMenuListProp = fragmentIf(hideMoreMenu, '\n      hideMoreMenu');
   const listSortBy = windowConfig.listSortBy ?? null;
   const listSortByProp = listSortBy ? `\n      listSortBy="${listSortBy}"` : '';
+  const importConfigProp = getImportProp(windowConfig.import);
   const hideListFiltersProp = fragmentIf(hideListFilters, '\n      hideListFilters');
   const hideStatusFilterProp = fragmentIf(hideStatusFilter, '\n      hideStatusFilter');
   const hideLinkProp = fragmentIf(hideLink, '\n      hideLink');
@@ -2328,7 +2337,7 @@ ${menuActionModals}${confirmModalName ? `
       entityLabel="${windowConfig.name || entityLabel}"
       windowName={windowName}
       breadcrumb={breadcrumb}${apiProp}${isGallery ? `
-      galleryRenderer={(gProps) => <${headerName}Gallery {...gProps} />}` : ''}${listKpiCardsProp}${listViewOptionsProp}${listBaseFilterProp}${quickFiltersProp}${subsetFiltersProp}${dateFilterKeyProp}${initialHiddenColumnsProp}${bulkActionsProp}${listbarPaddingXProp}${tablePaddingXProp}${hidePrintListProp}${hideCreateProp}${hideMoreMenuListProp}${hideListFiltersProp}${hideStatusFilterProp}${hideLinkProp}${hideEyeCountProp}${customListIconsProp}${labelOverridesListProp}${rowQuickActionsProp}${sendDocumentProp}${listSortByProp}
+      galleryRenderer={(gProps) => <${headerName}Gallery {...gProps} />}` : ''}${listKpiCardsProp}${listViewOptionsProp}${listBaseFilterProp}${quickFiltersProp}${subsetFiltersProp}${dateFilterKeyProp}${initialHiddenColumnsProp}${bulkActionsProp}${listbarPaddingXProp}${tablePaddingXProp}${hidePrintListProp}${hideCreateProp}${hideMoreMenuListProp}${hideListFiltersProp}${hideStatusFilterProp}${hideLinkProp}${hideEyeCountProp}${customListIconsProp}${labelOverridesListProp}${rowQuickActionsProp}${sendDocumentProp}${listSortByProp}${importConfigProp}
       {...props}${customComponents.newRecordComponent ? `
       onNew={() => setShowNewModal(true)}` : ''}${newActionsPropValue}
     />${customComponents.newRecordComponent ? `
