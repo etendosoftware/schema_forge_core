@@ -81,7 +81,10 @@ describe('Tabs primitives', () => {
         </TabsList>
       </Tabs>,
     );
-    expect(screen.getByTestId('trigger-icon')).toBeInTheDocument();
+    // TabsTrigger stamps its own data-testid="Icon__fa4214" on the icon (spread
+    // after caller props), so it overrides the stub's testid — assert on the
+    // stamped testid to confirm the icon element actually rendered.
+    expect(screen.getByTestId('Icon__fa4214')).toBeInTheDocument();
   });
 
   it('TabsContent without a matching value renders nothing (outside the active tab)', () => {
