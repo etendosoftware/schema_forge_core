@@ -31,6 +31,8 @@
   "scripts": {
     "test": "node --test test/*.test.js src/auth/__tests__/*.test.js src/i18n/__tests__/*.test.js src/runtime/__tests__/*.test.js src/components/ui/__tests__/*.test.js",
     "test:vitest": "vitest run",
+    "test:vitest:coverage": "vitest run --coverage",
+    "test:vitest:json": "vitest run --reporter=json --outputFile=../../artifacts/vitest-report.json",
     "test:consumer": "node scripts/package-consumer-smoke.mjs"
   },
   "devDependencies": {

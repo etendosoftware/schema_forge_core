@@ -1,4 +1,4 @@
-.PHONY: test test-all-coverage test-ci test-ci-coverage test-frontend test-e2e test-e2e-headless test-e2e-debug test-e2e-ui test-e2e-report test-e2e-record generate regen dev dev-with-shell dev-mock build install install-e2e deploy clean help report-serve report-serve-detach report-stop report-preview validate-pipeline method-budget window-leak-budget react-doctor quality-gate domain-boundary-check sonar sonar-coverage sonar-file-coverage menu-cache uuid test-xml-regeneration-check test-python xml-regeneration-check dump-delta regen-check regen-check-help regen-check-clean regen-help data-fixes data-fixes-help switch switch-to-es switch-to-ar ensure-locale project-status
+.PHONY: test test-all-coverage test-ci test-ci-coverage test-frontend test-e2e test-e2e-headless test-e2e-debug test-e2e-ui test-e2e-report test-e2e-record generate regen dev dev-with-shell dev-mock build install install-e2e deploy clean help report-serve report-serve-detach report-stop report-preview validate-pipeline method-budget window-leak-budget react-doctor quality-gate domain-boundary-check sonar sonar-coverage sonar-file-coverage menu-cache uuid test-xml-regeneration-check test-python xml-regeneration-check dump-delta regen-check regen-check-help regen-check-clean regen-help data-fixes data-fixes-help switch switch-to-es switch-to-ar ensure-locale project-status system-lab
 
 # --- Testing ---
 
@@ -465,6 +465,14 @@ project-status: ## Show active locale and module ID
 	fi
 
 # --- Cleanup ---
+
+# --- System Lab ---
+
+SYSTEM_LAB_PORT ?= 4182
+SYSTEM_LAB_BRAIN ?= claude
+
+system-lab: ## Open the System Lab explorer (SYSTEM_LAB_PORT=4182 SYSTEM_LAB_BRAIN=claude)
+	npx system-lab serve --allow-generate --port $(SYSTEM_LAB_PORT) --brain $(SYSTEM_LAB_BRAIN)
 
 clean: ## Remove generated artifacts and build output
 	rm -rf tools/app-shell/dist

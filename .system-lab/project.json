@@ -1,0 +1,17 @@
+{
+  "schemaVersion": "1",
+  "project": { "name": "Schema Forge Core" },
+  "sources": [
+    { "root": "cli", "adapterId": "node-test" },
+    { "root": "scripts", "adapterId": "node-test" },
+    { "root": "packages/app-shell-core", "adapterId": "vitest" },
+    { "root": "packages/apps-sdk", "adapterId": "node-test" },
+    { "root": "packages/apps-sdk-bff", "adapterId": "node-test" },
+    { "root": "packages/etendo-go-core", "adapterId": "node-test" },
+    { "root": "packages/schema-forge-agent-context", "adapterId": "node-test" },
+    { "root": "packages/schema-forge-core", "adapterId": "node-test" },
+    { "root": "packages/schema-forge-stack", "adapterId": "node-test" },
+    { "root": "tools/quick-order-app", "adapterId": "node-test" },
+    { "root": "tools/report-server", "adapterId": "node-test" }
+  ]
+}

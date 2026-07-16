@@ -75,3 +75,19 @@ paths:
 The package still expects the host app to provide React, React Router, Radix UI,
 Lucide, Tailwind/PostCSS, and the peer dependencies listed in `package.json`.
 Generated contracts and generated windows remain outside this package by design.
+
+## Vitest diagnostics
+
+Use the following commands for the JSX suites executed by Vitest:
+
+```sh
+npm run test:vitest:coverage
+npm run test:vitest:json
+```
+
+The coverage command uses V8 and writes JSON and HTML artifacts under
+`artifacts/vitest-coverage`. The JSON command writes the structured runner result
+to `artifacts/vitest-report.json`.
+
+Tests importing `node:test` remain Node test suites and must be run through the
+Node test runner rather than Vitest.

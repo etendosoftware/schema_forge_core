@@ -74,3 +74,4 @@ tools/etendo-go-ar/artifacts/*/raw-query-results/
 
 etendo_core_ar/
 tools/etendo-go-ar/app-shell/.env.local
+.system-lab/cache/
