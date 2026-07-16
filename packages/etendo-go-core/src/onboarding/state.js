@@ -90,5 +90,7 @@ export function isProfileStepValid(form) {
 }
 
 export function isCompanyStepValid(form) {
-  return Boolean(form.clientName?.trim() && form.fiscalIdValue?.trim());
+  // Tax ID (fiscalIdValue) is optional: it is not sent to provisioning, so it
+  // must not gate the step. Only the company name is required.
+  return Boolean(form.clientName?.trim());
 }

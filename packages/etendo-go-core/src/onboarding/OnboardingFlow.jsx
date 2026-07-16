@@ -5,6 +5,7 @@ import { fetchAccount, fetchEnvironments, loginEnvironment, fetchOnboardingDraft
 import { buildEnvironmentSessionStorage } from './state.js';
 import { buildAppReturnToHref, getSafeReturnTo } from './oauthReturnTo.js';
 import { trackOnboarding } from './tracking.js';
+import { SetupPreviewMockup } from './components/SetupPreviewMockup.jsx';
 
 export function OnboardingFlow({ steps = [], config = {} }) {
   const ui = useUI();
@@ -230,7 +231,7 @@ export function OnboardingFlow({ steps = [], config = {} }) {
 
   const StepComponent = currentStep.component;
 
-  return (
+  const stepElement = (
     <StepComponent
       config={config}
       stepData={stepData}
@@ -250,6 +251,31 @@ export function OnboardingFlow({ steps = [], config = {} }) {
       handleRegisterSuccess={handleRegisterSuccess}
       data-testid="StepComponent__5852c2" />
   );
+
+  // Setup steps (Profile / Company) share a persistent right-side preview.
+  // Rendering the preview HERE (outside the swapped StepComponent) keeps a single
+  // SetupPreviewMockup instance mounted across the profile→company change, so its
+  // variant/orgName/userName props change on the SAME DOM node — which is what
+  // makes the CSS scroll transition fire instead of a hard remount.
+  const isSetupStep = currentStep.id === 'profile' || currentStep.id === 'company';
+  if (isSetupStep) {
+    return (
+      <div className="min-h-screen bg-white">
+        <div className="flex min-h-screen w-full bg-white lg:grid lg:grid-cols-[minmax(0,1.12fr)_minmax(420px,0.88fr)]">
+          {stepElement}
+          <aside className="relative hidden overflow-hidden bg-[#f4f6fa] lg:flex lg:flex-col">
+            <SetupPreviewMockup
+              variant={currentStep.id === 'company' ? 'company' : 'profile'}
+              orgName={stepData.clientName}
+              userName={stepData.fullName || accountName || ''}
+              data-testid="SetupPreviewMockup__79cf84" />
+          </aside>
+        </div>
+      </div>
+    );
+  }
+
+  return stepElement;
 }
 
 export default OnboardingFlow;

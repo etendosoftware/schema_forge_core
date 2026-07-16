@@ -10,11 +10,10 @@ import { SetupShell } from '../components/SetupShell.jsx';
 import { SetupField } from '../components/SetupField.jsx';
 import { BusinessTypeCard } from '../components/BusinessTypeCard.jsx';
 import { buildCountryOptions } from '../countries.js';
-import { OnboardingLanguageSelect } from '../components/OnboardingLanguageSelect.jsx';
 
 export function ProfileStep({ config, stepData, onNext, onBack, goToStep, accountName, setToken, setAccountName, draftNotice, setDraftNotice, onChange }) {
   const ui = useUI();
-  const { locale, setLocale } = useLocaleSwitch();
+  const { locale } = useLocaleSwitch();
   const handleLogout = createOnboardingLogout({ config, setToken, setAccountName, goToStep });
 
   const [form, setForm] = useState(() => ({
@@ -42,11 +41,6 @@ export function ProfileStep({ config, stepData, onNext, onBack, goToStep, accoun
     if (onChange) onChange({ [field]: value });
   };
 
-  const setOnboardingLocale = (nextLocale) => {
-    if (setLocale) setLocale(nextLocale);
-    updateField('language', nextLocale);
-  };
-
   const handleContinue = () => {
     trackOnboarding(config, 'onboarding_setup_step_completed', {
       action: 'continue',
@@ -69,26 +63,6 @@ export function ProfileStep({ config, stepData, onNext, onBack, goToStep, accoun
     icon: value === 'company' ? Building2 : value === 'freelancer' ? User : MessageCircle,
   }));
 
-  const languageOptions = (config.localeCodes || []).map((code) => ({
-    value: code,
-    label: code.startsWith('es') ? ui('onboardingLanguageSpanish') : ui('onboardingLanguageEnglish'),
-  }));
-
-  const localeControl = setLocale ? (
-    <OnboardingLanguageSelect
-      label={ui('language')}
-      locale={locale}
-      onChange={setOnboardingLocale}
-      options={languageOptions}
-      data-testid="OnboardingLanguageSelect__79cf84" />
-  ) : null;
-
-  const setupHeaderContent = (
-    <div className="flex flex-wrap items-end justify-end gap-3">
-      {localeControl}
-    </div>
-  );
-
   const isValid = isProfileStepValid(form);
   const setupGreetingName = (form.fullName || accountName || ui('onboardingGreetingFallback')).trim().split(/\s+/)[0];
 
@@ -96,7 +70,6 @@ export function ProfileStep({ config, stepData, onNext, onBack, goToStep, accoun
     <SetupShell
       progressLabel={ui('onboardingProgressAlmostReady')}
       progressValue={50}
-      headerContent={setupHeaderContent}
       onLogout={handleLogout}
       logoutLabel={ui('logout')}
       brandLabel={config.brandLabel || 'Etendo GO'}

@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Loader2, Building2, Plus, RefreshCw } from 'lucide-react';
 import { Button } from '@etendosoftware/app-shell-core/components/ui/button';
-import { useUI, useLocaleSwitch } from '@etendosoftware/app-shell-core/i18n';
+import { useUI } from '@etendosoftware/app-shell-core/i18n';
 import { loginEnvironment, fetchEnvironments } from '../api.js';
 import { buildEnvironmentSessionStorage } from '../state.js';
 import { buildAppReturnToHref, getSafeReturnTo } from '../oauthReturnTo.js';
@@ -9,11 +9,9 @@ import { trackOnboarding } from '../tracking.js';
 import { createOnboardingLogout } from '../logout.js';
 import { PageHeader } from '../components/PageHeader.jsx';
 import { EnterEnvironmentButtonContent } from '../components/EnterEnvironmentButtonContent.jsx';
-import { OnboardingLanguageSelect } from '../components/OnboardingLanguageSelect.jsx';
 
 export function EnvSelectStep({ config, stepData, onNext, onBack, goToStep, token, setToken, accountName, setAccountName, environments = [], loadingEnvs = false, routeByEnvironments }) {
   const ui = useUI();
-  const { locale, setLocale } = useLocaleSwitch();
   const [loggingIn, setLoggingIn] = useState(null);
   const apiBase = config.apiBase || '';
 
@@ -75,24 +73,6 @@ export function EnvSelectStep({ config, stepData, onNext, onBack, goToStep, toke
       routeByEnvironments(token);
     }
   };
-
-  const setOnboardingLocale = (nextLocale) => {
-    if (setLocale) setLocale(nextLocale);
-  };
-
-  const languageOptions = (config.localeCodes || []).map((code) => ({
-    value: code,
-    label: code.startsWith('es') ? ui('onboardingLanguageSpanish') : ui('onboardingLanguageEnglish'),
-  }));
-
-  const localeControl = setLocale ? (
-    <OnboardingLanguageSelect
-      label={ui('language')}
-      locale={locale}
-      onChange={setOnboardingLocale}
-      options={languageOptions}
-      data-testid="OnboardingLanguageSelect__79cf84" />
-  ) : null;
 
   const renderEnvironmentListContent = () => {
     if (loadingEnvs) {
@@ -178,7 +158,6 @@ export function EnvSelectStep({ config, stepData, onNext, onBack, goToStep, toke
         <div className="max-w-2xl mx-auto px-6 py-3 flex items-center justify-between">
           <span className="text-sm text-gray-400">{ui('onboardingEnvironmentsShort')}</span>
           <div className="flex items-end gap-3">
-            {localeControl}
             <div className="flex gap-2">
               <Button
                 variant="ghost"

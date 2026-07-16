@@ -1670,7 +1670,7 @@ function resolveSecondaryTabDefs(secondaryTabsDecl, contract, headerEntity, deta
     return [
       ...knownSecondaryTabDefs.map(t => ({ ...t, isFormTab: false, addLineEntries: [] })),
       ...inferredSecondaryTabDefs,
-    ].filter(t => t.key !== detailEntity).slice(0, 4);
+    ].filter(t => t.key !== detailEntity && t.key !== headerEntity).slice(0, 4);
   }
   // Declarative config from decisions.json — sorted by tabOrder
   return Object.entries(secondaryTabsDecl)

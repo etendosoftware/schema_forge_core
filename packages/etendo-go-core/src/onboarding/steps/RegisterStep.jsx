@@ -9,13 +9,12 @@ import { trackOnboarding } from '../tracking.js';
 import { AuthShell } from '../components/AuthShell.jsx';
 import { AuthField } from '../components/AuthField.jsx';
 import { AuthSsoOptions } from '../components/AuthSsoOptions.jsx';
-import { OnboardingLanguageSelect } from '../components/OnboardingLanguageSelect.jsx';
 
 const AUTH_FEATURE_KEYS = ['onboardingAuthFeatureNoCard', 'onboardingAuthFeatureTrial', 'onboardingAuthFeatureInstantAccess'];
 
 export function RegisterStep({ config, stepData, onNext, onBack, goToStep, setToken, setAccountName, handleRegisterSuccess }) {
   const ui = useUI();
-  const { locale, setLocale } = useLocaleSwitch();
+  const { locale } = useLocaleSwitch();
 
   const [registerForm, setRegisterForm] = useState({ name: '', email: '', password: '' });
   const [registerError, setRegisterError] = useState(null);
@@ -162,24 +161,6 @@ export function RegisterStep({ config, stepData, onNext, onBack, goToStep, setTo
     }
   };
 
-  const setOnboardingLocale = (nextLocale) => {
-    if (setLocale) setLocale(nextLocale);
-  };
-
-  const languageOptions = (config.localeCodes || []).map((code) => ({
-    value: code,
-    label: code.startsWith('es') ? ui('onboardingLanguageSpanish') : ui('onboardingLanguageEnglish'),
-  }));
-
-  const localeControl = setLocale ? (
-    <OnboardingLanguageSelect
-      label={ui('language')}
-      locale={locale}
-      onChange={setOnboardingLocale}
-      options={languageOptions}
-      data-testid="OnboardingLanguageSelect__79cf84" />
-  ) : null;
-
   const authFeatureLabels = AUTH_FEATURE_KEYS.map((key) => ui(key));
 
   return (
@@ -194,7 +175,6 @@ export function RegisterStep({ config, stepData, onNext, onBack, goToStep, setTo
         if (goToStep) goToStep('login');
       }}
       brandLabel={config.brandLabel || 'Etendo GO'}
-      headerContent={localeControl}
       marketingTitle={ui('onboardingMarketingTitle')}
       marketingDescription={ui('onboardingMarketingDescription')}
       featureLabels={authFeatureLabels}
