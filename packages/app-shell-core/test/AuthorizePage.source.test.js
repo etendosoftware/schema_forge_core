@@ -91,3 +91,31 @@ test('AuthorizePage derives the MCP URL from the window origin', async () => {
   assert.match(src, /detectMcpUrl\(\)/);
   assert.match(src, /window\.location\.origin\s*\+\s*'\/mcp'/);
 });
+
+// ETP-4393 — user-selectable OAuth2 token validity period.
+test('AuthorizePage declares the VALIDITY_OPTIONS preset list', async () => {
+  const src = await readSource();
+  assert.match(src, /VALIDITY_OPTIONS\s*=/);
+  assert.match(src, /seconds:\s*86400,\s*labelKey:\s*'oauthValidity1Day'/);
+  assert.match(src, /seconds:\s*604800,\s*labelKey:\s*'oauthValidity1Week'/);
+  assert.match(src, /seconds:\s*2592000,\s*labelKey:\s*'oauthValidity1Month'/);
+  assert.match(src, /seconds:\s*0,\s*labelKey:\s*'oauthValidityNever'/);
+});
+
+test('AuthorizePage defaults the validity selector to 1 day (86400 seconds)', async () => {
+  const src = await readSource();
+  assert.match(src, /DEFAULT_VALIDITY\s*=\s*'86400'/);
+  assert.match(src, /useState\(DEFAULT_VALIDITY\)/);
+});
+
+test('AuthorizePage sends validity_seconds in the authorize POST body', async () => {
+  const src = await readSource();
+  assert.match(src, /validity_seconds:\s*selectedValidity\.seconds/);
+});
+
+test('AuthorizePage surfaces the token expiry as a finite date or "no expiration"', async () => {
+  const src = await readSource();
+  assert.match(src, /selectedValidity\.seconds\s*===\s*0/);
+  assert.match(src, /ui\('oauthValidityNever'\)/);
+  assert.match(src, /Date\.now\(\)\s*\+\s*selectedValidity\.seconds\s*\*\s*1000/);
+});

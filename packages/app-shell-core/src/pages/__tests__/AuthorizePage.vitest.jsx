@@ -29,6 +29,27 @@ vi.mock('../../components/ui/badge.jsx', () => ({
   Badge: ({ children, ...props }) => <span {...props} data-testid="badge">{children}</span>,
 }));
 
+// Select is a Radix compound component — not interactable as a native <select>
+// in jsdom (see src/components/ui/__tests__/select.test.js). Stub it with a
+// closure-based mock: SelectItem clicks call the onValueChange captured from
+// the enclosing Select, so tests can drive the validity selector by clicking
+// the option's data-testid without opening a real Radix popper.
+let selectOnValueChange;
+vi.mock('../../components/ui/select.jsx', () => ({
+  Select: ({ value, onValueChange, children }) => {
+    selectOnValueChange = onValueChange;
+    return <div data-value={value}>{children}</div>;
+  },
+  SelectTrigger: ({ children, ...props }) => <div {...props}>{children}</div>,
+  SelectValue: (props) => <span {...props} />,
+  SelectContent: ({ children, ...props }) => <div {...props}>{children}</div>,
+  SelectItem: ({ value, children, ...props }) => (
+    <div {...props} role="option" onClick={() => selectOnValueChange(value)}>
+      {children}
+    </div>
+  ),
+}));
+
 vi.mock('lucide-react', () => ({
   Shield: () => <span>Shield</span>,
   CheckCircle2: () => <span>CheckCircle2</span>,
@@ -310,6 +331,65 @@ describe('AuthorizePage', () => {
       });
       renderPage();
       expect(screen.getByText('custom:scope')).toBeInTheDocument();
+    });
+
+    // ETP-4393 — user-selectable OAuth2 token validity period.
+    describe('token validity selector', () => {
+      it('renders the validity selector defaulting to 1 day', () => {
+        renderPage();
+        const select = screen.getByTestId('oauth-validity-select');
+        expect(select).toBeInTheDocument();
+        expect(screen.getByText('oauthValidity1Day')).toBeInTheDocument();
+      });
+
+      it('sends validity_seconds: 86400 in the POST body by default', async () => {
+        const user = userEvent.setup();
+        globalThis.fetch = vi.fn().mockResolvedValue({
+          ok: true,
+          json: async () => ({ redirect_url: 'https://example.com/callback?code=abc' }),
+        });
+
+        renderPage();
+        await user.click(screen.getByTestId('oauth-authorize-submit'));
+
+        await waitFor(() => expect(globalThis.fetch).toHaveBeenCalled());
+        const [, options] = globalThis.fetch.mock.calls[0];
+        const body = JSON.parse(options.body);
+        expect(body.validity_seconds).toBe(86400);
+      });
+
+      it('sends the chosen validity_seconds after changing the select', async () => {
+        const user = userEvent.setup();
+        globalThis.fetch = vi.fn().mockResolvedValue({
+          ok: true,
+          json: async () => ({ redirect_url: 'https://example.com/callback?code=abc' }),
+        });
+
+        renderPage();
+        await user.click(screen.getByTestId('oauth-validity-option-0'));
+        await user.click(screen.getByTestId('oauth-authorize-submit'));
+
+        await waitFor(() => expect(globalThis.fetch).toHaveBeenCalled());
+        const [, options] = globalThis.fetch.mock.calls[0];
+        const body = JSON.parse(options.body);
+        expect(body.validity_seconds).toBe(0);
+      });
+
+      it('shows a finite expiry date for the default 1-day validity', () => {
+        renderPage();
+        const expiry = screen.getByTestId('oauth-validity-expiry');
+        expect(expiry).toHaveTextContent('oauthTokenExpiresLabel');
+        expect(expiry).not.toHaveTextContent('oauthValidityNever');
+      });
+
+      it('shows "no expiration" text when No expiration is selected', async () => {
+        const user = userEvent.setup();
+        renderPage();
+        await user.click(screen.getByTestId('oauth-validity-option-0'));
+
+        const expiry = screen.getByTestId('oauth-validity-expiry');
+        expect(expiry).toHaveTextContent('oauthValidityNever');
+      });
     });
   });
 
