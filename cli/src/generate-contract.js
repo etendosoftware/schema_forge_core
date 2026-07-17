@@ -421,6 +421,35 @@ export function generateFrontendContract(schema, rules = []) {
   // through so generate-frontend.js can emit the BalanceFooterPanel prop.
   if (schema.window.balanceFooter) win.balanceFooter = schema.window.balanceFooter;
 
+  // window.import passes through via the spread above for free (enabled, spec, entity,
+  // formats, limit, dedupe, descriptor, and each field's declared `target`/`aliases`).
+  // What it doesn't get for free is per-field label/required/type/reference — those
+  // live on the already-built `entities` fields, so backfill them here rather than
+  // making etendo_schema_forge's decisions.json duplicate metadata the contract already
+  // derives. Fails loudly on an unknown target, same posture as every other
+  // decisions.json/contract mismatch in this file.
+  //
+  // `label` is backfilled only when decisions.json didn't already declare one —
+  // a composite import (e.g. Contacts splitting one row across businessPartner +
+  // contact) routinely maps two DIFFERENT targets whose underlying Etendo AD
+  // columns happen to share the exact same label (e.g. both "First Name"), which
+  // is unreadable as two identically-labeled columns in the review grid. An
+  // explicit decisions.json label is how a window disambiguates that; silently
+  // overwriting it here would make that override impossible.
+  if (win.import?.fields) {
+    const allFields = Object.values(entities).flatMap((e) => e.fields);
+    win.import.fields = win.import.fields.map((f) => {
+      const match = allFields.find((ef) => ef.name === f.target);
+      if (!match) {
+        if (f.label) {
+          return { required: false, type: 'string', ...f };
+        }
+        throw new Error(`window.import.fields references unknown field "${f.target}"`);
+      }
+      return { ...f, label: f.label ?? match.label, required: !!match.required, type: match.type, reference: match.reference };
+    });
+  }
+
   return { window: reorderKeys(win, WINDOW_KEY_ORDER), entities };
 }
 
