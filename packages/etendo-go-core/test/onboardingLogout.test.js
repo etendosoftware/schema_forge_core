@@ -78,6 +78,24 @@ describe('createOnboardingLogout', () => {
     assert.equal(navigations, 1);
   });
 
+  it('flushes a pending draft before cleanup and still logs out when the flush fails', async () => {
+    const calls = [];
+    const onLogout = createOnboardingLogout({
+      flushDraft: async () => {
+        calls.push('flush');
+        throw new Error('HTTP 429');
+      },
+      cleanupSession: () => calls.push('cleanup'),
+      resetState: () => calls.push('reset'),
+      navigateToLogin: () => calls.push('login'),
+      track: () => calls.push('track'),
+    });
+
+    await onLogout();
+
+    assert.deepEqual(calls, ['flush', 'cleanup', 'reset', 'login', 'track']);
+  });
+
   it('provides the central callback to every onboarding step and leaves no concrete logout handler', () => {
     const flow = readFileSync(join(onboardingSrc, 'OnboardingFlow.jsx'), 'utf8');
     const envSelect = readFileSync(join(onboardingSrc, 'steps', 'EnvSelectStep.jsx'), 'utf8');
