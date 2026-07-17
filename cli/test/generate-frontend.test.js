@@ -214,6 +214,23 @@ describe('getReadOnlyFields', () => {
 // ---------------------------------------------------------------------------
 
 describe('generateTableComponent', () => {
+  it('emits semantic roles for depreciation progress', () => {
+    const contract = structuredClone(singleEntityContract);
+    contract.frontendContract.entities.item.fields.push({
+      name: 'etgoAmortizationStatus', column: 'EM_Etgo_Amortization_Status',
+      type: 'number', tsType: 'number', visibility: 'readOnly', grid: true,
+      form: false, cellType: 'depreciationProgress',
+    });
+
+    const code = generateTableComponent('item', contract);
+
+    assert.match(code, /var\(--status-success-fg\)/);
+    assert.match(code, /var\(--status-warning-fg\)/);
+    assert.match(code, /bg-muted/);
+    assert.match(code, /text-muted-foreground/);
+    assert.doesNotMatch(code, /#[0-9a-f]{3,8}|bg-gray-200/i);
+  });
+
   it('imports DataTable from contract-ui', () => {
     const code = generateTableComponent('order', masterDetailContract);
     assert.ok(code.includes("import { DataTable, InlineLinesPanel } from '@/components/contract-ui'"));
