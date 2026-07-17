@@ -561,6 +561,7 @@ Field keys use **camelCase from raw schema** (e.g., `"businessPartner"`, `"order
 | `form` | boolean | Per visibility | `true`/`false` | Show in detail/form view. |
 | `searchable` | boolean | `false` | `true`/`false` | Enable as filter parameter in list API. |
 | `section` | string | `null` | `"principal"`, `"other"`, custom | Group fields into form sections. |
+| `order` | number | `null` | Any number (ties broken by name) | Explicit form-field position within the entity. When at least one field in the entity declares `order`, all its fields are sorted by `order` (fields without it sort last, in their natural/raw relative order). See **Field order & the stability lock** below for how this interacts with `generate-contract.js`'s cross-run position lock. |
 | `inline` | boolean | `false` | `true`/`false` | When `true`, keeps the field in the normal form grid flow even if the generator would otherwise pull it out. Currently relevant for image-type fields: an image field with `inline: true` renders inside the form grid using `row-span-2`, spanning two rows for visual balance instead of being extracted to a separate slot. |
 | `skipDefault` | boolean | `false` | `true`/`false` | **HandleDefaults opt-out (per field).** When `true`, the line add-row never applies a backend-resolved default to this field (it stays empty / keeps its literal seed) even when the entity's `handlesDefaults` is on. Emitted to the contract / add-row literal only when `true`. |
 | `clearsField` | string | `null` | Sibling field key | **Mutual exclusion.** Names a sibling field that is cleared (set to `0`/empty) whenever this field gets a non-zero value — e.g. a journal line where entering a Debit clears the Credit, and vice versa. The two fields form a "one-of" group: in the inline add-row's required-field check, an empty member is **not** flagged as missing while its partner carries a value (so a debit-only line submits). A required boolean/checkbox is likewise never treated as missing (unchecked is valid). |
@@ -573,6 +574,34 @@ Field keys use **camelCase from raw schema** (e.g., `"businessPartner"`, `"order
 | `readOnly` | false | true | false |
 | `system` | false | false | false |
 | `discarded` | false | false | false |
+
+### Field order & the stability lock (ETP-4566)
+
+`resolve-curated.js`'s `orderCuratedFields()` sorts an entity's fields by their explicit
+`order` decision the moment ANY field in that entity declares one; fields without `order`
+keep their natural/raw relative sequence at the end. But `generate-contract.js` then runs a
+**field-order stability lock** (`lockFieldOrderToPreviousContract()`) that re-pins every field
+already present in the *previous* `contract.json` to its old position — so a raw re-extraction
+(column added/removed in AD) never causes unrelated fields to drift. This lock has precedence
+over the freshly resolved `order` **except** when the field's own state changed:
+
+- A field that existed in the previous contract **and** whose own `order` value or resolved
+  `visibility` is unchanged since that run → stays pinned to its old position (the common,
+  intended case — this is what keeps the UI stable across re-extractions).
+- A field that existed before **and** whose own `order` value changed (including gaining an
+  `order` it didn't have previously), **or** whose `visibility` changed → is freed from the
+  lock ("repositioned") and slots in at its newly resolved position instead.
+- A field with **no explicit `order` at all** in the current run is never repositioned by the
+  order dimension — it is always governed purely by the historical lock, and is never affected
+  by *other* fields' order changes in the same run (no unrelated position drift).
+- A field absent from the previous contract entirely (brand new) is unaffected by the lock, as
+  before.
+
+**Practical rule of thumb:** if a field's form position isn't updating after you change/add its
+`order` in `decisions.json`, check whether the field already existed with the *same* `order`
+value in `artifacts/{window}/contract.json` before your edit — if so, the change should already
+take effect on the next `--write`. If a field seems permanently stuck at an old position despite
+a real `order`/`visibility` change, that points at a generator bug, not a decisions.json issue.
 
 ### Grid cell flags
 
