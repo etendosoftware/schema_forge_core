@@ -31,15 +31,41 @@ export function getDatePattern(localeStr) {
 // caps at 8 digits and auto-inserts the separators so the user cannot type
 // arbitrary characters and never has to type them manually.
 //
-// KNOWN BUG (ETP-4544): this always flattens `raw` down to a bare digit
-// string and re-chunks it from scratch, with no notion of which segment an
-// edit touched. Deleting a single digit out of a middle segment (e.g. the
-// "0" in "16/07/2026" -> raw "16/7/2026") shifts every later digit backward,
-// redistributing them into the wrong segments ("16/72/026"). Fixed in the
-// next commit — see dateMask.test.js for the failing regression test.
+// FIX (ETP-4544, bug 2): the previous implementation always flattened `raw`
+// down to a bare digit string and re-chunked it from scratch, with no notion
+// of which segment an edit touched — deleting a single digit out of a middle
+// segment (e.g. the "0" in "16/07/2026" -> raw "16/7/2026") shifted every
+// later digit backward, redistributing them into the wrong segments
+// ("16/72/026").
+//
+// Chosen contract ("keep the cursor position, don't redistribute into an
+// invalid value"): if `raw` already has exactly one literal segment per
+// pattern position — i.e. every separator the mask would insert is still
+// present — treat it as a structured, segment-preserving edit. Clamp each
+// segment to its own max length independently and NEVER pull digits from a
+// later segment into an earlier one. This also means typing a 3rd digit
+// into an already-complete 2-digit segment is capped rather than reflowed
+// into the next segment — an acceptable trade-off for never corrupting an
+// unrelated segment.
+//
+// Only when `raw` has FEWER segments than the pattern expects (the user
+// hasn't reached a separator yet, or pasted a flat digit string) do we fall
+// back to the original flat rebuild, which is what auto-inserts separators
+// while the user types forward.
 export function formatDateInput(raw, pattern) {
-  const digits = (raw ?? '').replace(/\D/g, '').slice(0, 8);
   const segLengths = { day: 2, month: 2, year: 4 };
+  const rawSegments = (raw ?? '').split(pattern.sep);
+
+  if (rawSegments.length === pattern.order.length) {
+    return rawSegments
+      .map((segment, i) => {
+        const maxLen = segLengths[pattern.order[i]] ?? 4;
+        return segment.replace(/\D/g, '').slice(0, maxLen);
+      })
+      .join(pattern.sep);
+  }
+
+  const digits = (raw ?? '').replace(/\D/g, '').slice(0, 8);
   const chunks = [];
   let cursor = 0;
   for (const seg of pattern.order) {
@@ -74,14 +100,16 @@ export function parseDateInput(text, pattern) {
 // Builds the calendar header label ("Julio 2026" / "July 2026"): month name
 // + year, locale-aware.
 //
-// KNOWN BUG (ETP-4544): formatting month+year together in a single
+// FIX (ETP-4544, bug 1): formatting month+year together in a single
 // Intl.DateTimeFormat call lets locales apply their combined-format grammar
 // — es-ES inserts the "de" preposition, producing "julio de 2026" instead
-// of the expected "Julio 2026". Fixed in the next commit — see
-// dateMask.test.js for the failing regression test.
+// of the expected "Julio 2026". Formatting month and year SEPARATELY and
+// joining with a single space sidesteps that combined-format grammar
+// entirely. The month is also explicitly capitalized (Intl's long month
+// name is lowercase for es-ES, e.g. "julio") to match the expected label.
 export function formatMonthYearLabel(date, localeStr) {
-  return new Intl.DateTimeFormat(localeStr, {
-    month: 'long',
-    year: 'numeric',
-  }).format(date);
+  const rawMonth = new Intl.DateTimeFormat(localeStr, { month: 'long' }).format(date);
+  const month = rawMonth.charAt(0).toUpperCase() + rawMonth.slice(1);
+  const year = new Intl.DateTimeFormat(localeStr, { year: 'numeric' }).format(date);
+  return `${month} ${year}`;
 }
