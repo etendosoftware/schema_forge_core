@@ -260,6 +260,10 @@ function applyGridHints(f, mapped) {
   //  - inlineEdit   → render an editable input in the cell that PATCHes on commit.
   if (f.inlineToggle) mapped.inlineToggle = true;
   if (f.inlineEdit) mapped.inlineEdit = true;
+  // ETP-4529 — field is collected into the synthetic `dimensionsPanel` column
+  // instead of its own grid column (see generate-frontend.js). Passed through
+  // regardless of `grid`, so it must NOT be gated behind an `if (f.grid)` check.
+  if (f.dimensionsPanel) mapped.dimensionsPanel = true;
 }
 
 // Ordered hints emitted BEFORE applyGridHints. Order is significant (offline-regen

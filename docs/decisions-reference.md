@@ -587,6 +587,34 @@ Applied to fields with `grid: true` to control how the list cell renders.
 | `gridReadOnly` | boolean | `false` | Make an otherwise-editable column read-only in the grid. |
 | `grow` | boolean | `false` | Let the column grow to fill available width. |
 | `cellType` | string | `null` | Selects a cell renderer from the registry (see below). Generic to any grid; the `list-modal` layout ships a styled set. |
+| `dimensionsPanel` | boolean | `false` | Collect this field into the ONE synthetic `type: 'dimensionsPanel'` grid column instead of its own column — see below. Read regardless of the field's own `grid` value (typically `grid: false`, since the field renders inside the expand-row panel, not as a standalone column). |
+
+#### Accounting dimensions panel (`dimensionsPanel`)
+
+Fields flagged `dimensionsPanel: true` (any number, on any inline-editable-layout entity) are collected by `generateTableComponent` (`cli/src/generate-frontend.js`) into ONE synthetic column instead of individual grid columns:
+
+```js
+{
+  key: 'dimensions',
+  type: 'dimensionsPanel',
+  label: 'Accounting dimensions',
+  labels: { en_US: 'Accounting dimensions', es_ES: 'Dimensiones contables' },
+  dimensionFields: [
+    { key: 'project', column: 'C_Project_ID', type: 'selector', label: 'Project', reference: 'Project', inputMode: 'search' },
+    { key: 'costcenter', column: 'C_Costcenter_ID', type: 'selector', label: 'Cost Center', reference: 'Costcenter', inputMode: 'selector' },
+  ],
+}
+```
+
+The consuming React side (`InlineLinesPanel`, `DimensionsPanel.jsx`'s `DimSummary`/`DimensionGrid`) lives in the functional repo (`etendo_schema_forge`'s `tools/app-shell/src/components/contract-ui/`) — see that repo's `docs/ui-customization.md` §14b for the full UX.
+
+**Rules:**
+
+- Emitted **only** when at least one field on the entity has `dimensionsPanel: true`; otherwise the entity's `columns` array is byte-for-byte the same as before this feature existed (fully additive — verified against `physical-inventory`, an unaffected window, via checksum/diff).
+- Always emitted **last** in the `columns` array — `gridOrder` only reorders normal grid columns, not this synthetic one.
+- Each `dimensionFields` entry reuses the same per-field extraction as a normal grid column (`mapFieldType` for `type`, static baked `label`, FK `reference`/`inputMode`, `required`/`lookup`/`popup`) via `buildDimensionFieldLiteral`, trimmed to what the consuming components actually read.
+- Only affects the **grid/table** rendering (`generateTableComponent`). A field flagged `dimensionsPanel: true` still appears as its own field in the lines entity's `addLineFields` (the add-new-row form, built by `generatePageComponent`) if `form: true` — the add-row flow is a separate, flat-form UX not covered by this flag.
+- A field with `grid: true` AND `dimensionsPanel: true` is collected into the panel only — it is excluded from `gridFieldsRaw` regardless of its own `grid` value.
 
 #### Status column rendering (`columnType` and `enumValues`)
 
