@@ -25,6 +25,34 @@ const appShellCoreTailwindPreset = {
           DEFAULT: 'hsl(var(--destructive))',
           foreground: 'hsl(var(--destructive-foreground))',
         },
+        inverse: {
+          DEFAULT: 'hsl(var(--inverse))',
+          foreground: 'hsl(var(--inverse-foreground))',
+          muted: 'hsl(var(--inverse-muted))',
+          border: 'hsl(var(--inverse-border))',
+        },
+        status: {
+          success: {
+            DEFAULT: 'var(--status-success-bg)',
+            foreground: 'var(--status-success-fg)',
+            border: 'var(--status-success-border)',
+          },
+          warning: {
+            DEFAULT: 'var(--status-warning-bg)',
+            foreground: 'var(--status-warning-fg)',
+            border: 'var(--status-warning-border)',
+          },
+          info: {
+            DEFAULT: 'var(--status-info-bg)',
+            foreground: 'var(--status-info-fg)',
+            border: 'var(--status-info-border)',
+          },
+          neutral: {
+            DEFAULT: 'var(--status-neutral-bg)',
+            foreground: 'var(--status-neutral-fg)',
+            border: 'var(--status-neutral-border)',
+          },
+        },
         muted: {
           DEFAULT: 'hsl(var(--muted))',
           foreground: 'hsl(var(--muted-foreground))',

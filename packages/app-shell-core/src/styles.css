@@ -301,6 +301,10 @@
     --accent-foreground: 222 47% 11%;
     --destructive: 0 84% 60%;
     --destructive-foreground: 210 40% 98%;
+    --inverse: 222 47% 11%;
+    --inverse-foreground: 210 40% 98%;
+    --inverse-muted: 215 16% 72%;
+    --inverse-border: 215 20% 30%;
     /* Semantic accessibility contract v1 (ETP-4554). */
     --border-control: 215 16% 47%;
     --border-structural: 215 16% 47%;
@@ -336,12 +340,18 @@
     /* Status tag tokens — ETP-3835 */
     --status-success-bg: #EEFBF4;
     --status-success-fg: #17663A;
+    --status-success-border: #84E4AE;
     --status-warning-bg: #FFF9EB;
     --status-warning-fg: #8A6100;
+    --status-warning-border: #FFDA85;
+    --status-info-bg: #EFF6FF;
+    --status-info-fg: #1D4ED8;
+    --status-info-border: #BFDBFE;
     --status-destructive-bg: #FEF0F4;
     --status-destructive-fg: #D50B3E;
     --status-neutral-bg: #F5F7F9;
     --status-neutral-fg: #3F3F50;
+    --status-neutral-border: #E8EAEF;
   }
 
   .dark {
@@ -361,6 +371,10 @@
     --accent-foreground: 210 20% 98%;
     --destructive: 0 63% 50%;
     --destructive-foreground: 210 20% 98%;
+    --inverse: 0 0% 100%;
+    --inverse-foreground: 222 47% 11%;
+    --inverse-muted: 215 16% 35%;
+    --inverse-border: 215 16% 65%;
     /* Semantic accessibility contract v1 — full dark override. */
     --border-control: 215 16% 58%;
     --border-structural: 215 16% 60%;
@@ -390,6 +404,21 @@
     --search-bg: 215 20% 22%;
     --topbar-icon: var(--icon-secondary);
     --search-placeholder: 225 12% 55%;
+
+    --status-success-bg: #103B24;
+    --status-success-fg: #9AE6B4;
+    --status-success-border: #2F855A;
+    --status-warning-bg: #4A3300;
+    --status-warning-fg: #FDE68A;
+    --status-warning-border: #B7791F;
+    --status-info-bg: #172554;
+    --status-info-fg: #BFDBFE;
+    --status-info-border: #2563EB;
+    --status-destructive-bg: #4C0519;
+    --status-destructive-fg: #FECDD3;
+    --status-neutral-bg: #1F2937;
+    --status-neutral-fg: #D1D5DB;
+    --status-neutral-border: #4B5563;
   }
 
   .dark .bg-white {
