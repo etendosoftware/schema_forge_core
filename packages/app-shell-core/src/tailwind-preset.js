@@ -3,7 +3,12 @@ const appShellCoreTailwindPreset = {
   theme: {
     extend: {
       colors: {
-        border: 'hsl(var(--border))',
+        border: {
+          DEFAULT: 'hsl(var(--border))',
+          control: 'hsl(var(--border-control))',
+          structural: 'hsl(var(--border-structural))',
+          subtle: 'hsl(var(--border-subtle))',
+        },
         input: 'hsl(var(--input))',
         ring: 'hsl(var(--ring))',
         background: 'hsl(var(--background))',
@@ -56,6 +61,9 @@ const appShellCoreTailwindPreset = {
         'topbar-icon': 'hsl(var(--topbar-icon))',
         'topbar-breadcrumb': 'hsl(var(--topbar-breadcrumb))',
         'text-secondary': 'hsl(var(--text-secondary))',
+        'text-disabled': 'hsl(var(--text-disabled))',
+        'icon-secondary': 'hsl(var(--icon-secondary))',
+        'focus-ring': 'hsl(var(--focus-ring))',
         'search-placeholder': 'hsl(var(--search-placeholder))',
       },
       borderRadius: {

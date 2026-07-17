@@ -53,4 +53,8 @@ describe('detectBaseUrl', () => {
   it('falls back to VITE_API_BASE env variable', () => {
     assert.match(src, /VITE_API_BASE/);
   });
+
+  it('can be loaded by a local-core Node test without Vite injecting import.meta.env', () => {
+    assert.match(src, /import\.meta\.env\?\.VITE_API_BASE/);
+  });
 });
