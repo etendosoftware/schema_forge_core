@@ -8,6 +8,12 @@ import {
 import { Popover, PopoverContent, PopoverTrigger } from './popover.jsx';
 import { Calendar } from './calendar.jsx';
 import { parseCalendarDate, formatCalendarDate } from '../../lib/dateOnly.js';
+import {
+  getDatePattern,
+  formatDateInput,
+  parseDateInput,
+  formatMonthYearLabel,
+} from '../../lib/dateMask.js';
 import { useLocaleSwitch, useUI } from '../../i18n/index.js';
 import { cn } from '../../lib/utils.js';
 import { FIELD_HEIGHT } from './formDensity.js';
@@ -24,65 +30,12 @@ function intlLocale(appLocale) {
   return (appLocale || 'en-GB').replace('_', '-');
 }
 
-// Inspects the locale to learn the natural date order (en-US is month-first;
-// es-ES, en-GB and most others are day-first) plus the literal separator,
-// so the input mask, placeholder and parser all match the locale convention.
-function getDatePattern(localeStr) {
-  const sample = new Date(2026, 0, 8);
-  const parts = new Intl.DateTimeFormat(localeStr, {
-    day: '2-digit', month: '2-digit', year: 'numeric',
-  }).formatToParts(sample);
-  const order = parts
-    .filter((p) => p.type === 'day' || p.type === 'month' || p.type === 'year')
-    .map((p) => p.type);
-  const sepPart = parts.find((p) => p.type === 'literal' && p.value.trim());
-  const sep = sepPart ? sepPart.value.trim().charAt(0) : '/';
-  return { order, sep };
-}
-
 // Builds the visible placeholder hint (e.g. "dd/mm/aaaa", "mm/dd/yyyy") so the
 // user knows the expected order without trial and error.
 function buildDatePlaceholder(pattern, localeStr) {
   const yearLabel = (localeStr || '').toLowerCase().startsWith('es') ? 'aaaa' : 'yyyy';
   const labels = { day: 'dd', month: 'mm', year: yearLabel };
   return pattern.order.map((seg) => labels[seg]).join(pattern.sep);
-}
-
-// Masks raw keyboard input to the locale-specific shape: drops every non-digit,
-// caps at 8 digits and auto-inserts the separators so the user cannot type
-// arbitrary characters and never has to type them manually.
-function formatDateInput(raw, pattern) {
-  const digits = (raw ?? '').replace(/\D/g, '').slice(0, 8);
-  const segLengths = { day: 2, month: 2, year: 4 };
-  const chunks = [];
-  let cursor = 0;
-  for (const seg of pattern.order) {
-    if (cursor >= digits.length) break;
-    const len = segLengths[seg];
-    chunks.push(digits.slice(cursor, cursor + len));
-    cursor += len;
-  }
-  return chunks.join(pattern.sep);
-}
-
-// Parses a user-typed date according to the locale pattern. Returns
-// { ok: true, iso } when the value is a real calendar date,
-// { ok: true, iso: '' } when empty, { ok: false } otherwise.
-function parseDateInput(text, pattern) {
-  const trimmed = (text ?? '').trim();
-  if (!trimmed) return { ok: true, iso: '' };
-  const m = trimmed.match(/^(\d{1,4})[\/\-.](\d{1,2})[\/\-.](\d{1,4})$/);
-  if (!m) return { ok: false };
-  const monthFirst = pattern.order[0] === 'month';
-  const day = Number(monthFirst ? m[2] : m[1]);
-  const month = Number(monthFirst ? m[1] : m[2]);
-  const year = Number(m[3]);
-  if (year < 1000 || year > 9999) return { ok: false };
-  if (month < 1 || month > 12) return { ok: false };
-  const lastDay = new Date(year, month, 0).getDate();
-  if (day < 1 || day > lastDay) return { ok: false };
-  const iso = `${year}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
-  return { ok: true, iso };
 }
 
 // Generates "Ene Feb Mar Abr May Jun Jul Ago Sep Oct Nov Dic" / "Jan Feb…" per locale.
@@ -387,10 +340,7 @@ export function DateField({
   };
 
   const headerDate = view === 'calendar' ? displayedMonth : new Date(tempYear, tempMonth, 1);
-  const headerLabel = new Intl.DateTimeFormat(localeStr, {
-    month: 'long',
-    year: 'numeric',
-  }).format(headerDate);
+  const headerLabel = formatMonthYearLabel(headerDate, localeStr);
 
   // Month grid items for the picker (Ene/Feb/… per locale).
   const monthShortNames = React.useMemo(() => getMonthShortNames(localeStr), [localeStr]);
