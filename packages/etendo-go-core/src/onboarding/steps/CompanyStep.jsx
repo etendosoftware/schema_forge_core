@@ -7,6 +7,7 @@ import { isCompanyStepValid } from '../state.js';
 import { trackOnboarding } from '../tracking.js';
 import { SetupShell } from '../components/SetupShell.jsx';
 import { OnboardingSessionAction } from '../components/OnboardingSessionAction.jsx';
+import { DraftSaveWarning } from '../components/DraftSaveWarning.jsx';
 import { SetupField } from '../components/SetupField.jsx';
 import { SetupSelect } from '../components/SetupSelect.jsx';
 
@@ -69,15 +70,7 @@ export function CompanyStep({ config, stepData, onNext, onBack, goToStep, onChan
           {ui('onboardingDraftRestoredNotice')}
         </div>
       )}
-      {draftSaveWarning && (
-        <div
-          role="alert"
-          data-testid="draft-save-warning"
-          className="mb-6 rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm font-medium text-amber-800"
-        >
-          {ui('onboardingDraftSaveWarning')}
-        </div>
-      )}
+      <DraftSaveWarning show={draftSaveWarning} message={ui('onboardingDraftSaveWarning')} />
       <div>
         <div className="mb-10">
           <h1 className="text-3xl font-semibold tracking-[-0.06em] text-slate-900 sm:text-[2.7rem] sm:leading-[1.04]">

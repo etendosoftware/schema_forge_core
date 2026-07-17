@@ -7,6 +7,7 @@ import { isProfileStepValid } from '../state.js';
 import { trackOnboarding } from '../tracking.js';
 import { SetupShell } from '../components/SetupShell.jsx';
 import { OnboardingSessionAction } from '../components/OnboardingSessionAction.jsx';
+import { DraftSaveWarning } from '../components/DraftSaveWarning.jsx';
 import { SetupField } from '../components/SetupField.jsx';
 import { BusinessTypeCard } from '../components/BusinessTypeCard.jsx';
 import { buildCountryOptions } from '../countries.js';
@@ -83,15 +84,7 @@ export function ProfileStep({ config, stepData, onNext, onBack, goToStep, accoun
           {ui('onboardingDraftRestoredNotice')}
         </div>
       )}
-      {draftSaveWarning && (
-        <div
-          role="alert"
-          data-testid="draft-save-warning"
-          className="mb-6 rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm font-medium text-amber-800"
-        >
-          {ui('onboardingDraftSaveWarning')}
-        </div>
-      )}
+      <DraftSaveWarning show={draftSaveWarning} message={ui('onboardingDraftSaveWarning')} />
 
       <div>
         <div className="mb-10">

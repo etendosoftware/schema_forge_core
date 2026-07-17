@@ -8,6 +8,7 @@ import { trackOnboarding } from '../tracking.js';
 import { AuthShell } from '../components/AuthShell.jsx';
 import { AuthField } from '../components/AuthField.jsx';
 import { AuthSsoOptions } from '../components/AuthSsoOptions.jsx';
+import { DraftSaveWarning } from '../components/DraftSaveWarning.jsx';
 import { OnboardingLanguageSelect } from '../components/OnboardingLanguageSelect.jsx';
 
 const AUTH_FEATURE_KEYS = ['onboardingAuthFeatureNoCard', 'onboardingAuthFeatureTrial', 'onboardingAuthFeatureInstantAccess'];
@@ -480,15 +481,7 @@ export function LoginStep({ config, stepData, onNext, onBack, goToStep, setToken
         </p>
       </div>
 
-      {draftSaveWarning && (
-        <div
-          role="alert"
-          data-testid="draft-save-warning"
-          className="mb-6 rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm font-medium text-amber-800"
-        >
-          {ui('onboardingDraftSaveWarning')}
-        </div>
-      )}
+      <DraftSaveWarning show={draftSaveWarning} message={ui('onboardingDraftSaveWarning')} />
 
       {loginNotice && (
         <div
