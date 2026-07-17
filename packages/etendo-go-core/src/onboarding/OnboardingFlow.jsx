@@ -1,10 +1,12 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { Loader2 } from 'lucide-react';
 import { useUI } from '@etendosoftware/app-shell-core/i18n';
+import { createLocalAuthStorage } from '@etendosoftware/app-shell-core/auth';
 import { fetchAccount, fetchEnvironments, loginEnvironment, fetchOnboardingDraft, saveOnboardingDraft } from './api.js';
 import { buildEnvironmentSessionStorage } from './state.js';
 import { buildAppReturnToHref, getSafeReturnTo } from './oauthReturnTo.js';
 import { trackOnboarding } from './tracking.js';
+import { createOnboardingLogout } from './logout.js';
 import { SetupPreviewMockup } from './components/SetupPreviewMockup.jsx';
 
 export function OnboardingFlow({ steps = [], config = {} }) {
@@ -19,7 +21,14 @@ export function OnboardingFlow({ steps = [], config = {} }) {
 
   const draftReadyRef = useRef(false);
   const lastSavedDraftRef = useRef(null);
+  const authStorageRef = useRef(null);
+  const logoutContextRef = useRef(null);
+  const onLogoutRef = useRef(null);
   const apiBase = config.apiBase || '';
+
+  if (!authStorageRef.current) {
+    authStorageRef.current = createLocalAuthStorage();
+  }
 
   const currentStep = steps[stepIndex];
 
@@ -30,6 +39,28 @@ export function OnboardingFlow({ steps = [], config = {} }) {
       setStepIndex(idx);
     }
   }, [steps]);
+
+  logoutContextRef.current = {
+    resetState: () => {
+      setToken(null);
+      setAccountName(null);
+      setEnvironments([]);
+      setLoadingEnvs(false);
+    },
+    navigateToLogin: () => goToStep('login'),
+    track: (eventDefinition, properties) => trackOnboarding(config, eventDefinition, properties),
+  };
+
+  if (!onLogoutRef.current) {
+    onLogoutRef.current = createOnboardingLogout({
+      cleanupSession: () => authStorageRef.current.clear(),
+      resetState: () => logoutContextRef.current.resetState(),
+      navigateToLogin: () => logoutContextRef.current.navigateToLogin(),
+      track: (eventDefinition, properties) => logoutContextRef.current.track(eventDefinition, properties),
+    });
+  }
+
+  const onLogout = onLogoutRef.current;
 
   // Restore draft and set appropriate step index
   const restoreOnboardingDraft = useCallback(async (authToken) => {
@@ -151,8 +182,7 @@ export function OnboardingFlow({ steps = [], config = {} }) {
           routeByEnvironments(currentToken);
         })
         .catch(() => {
-          localStorage.removeItem('sf_platform_token');
-          localStorage.removeItem('sf_platform_auth_method');
+          authStorageRef.current.clear();
           setToken(null);
           goToStep('login');
         });
@@ -249,6 +279,7 @@ export function OnboardingFlow({ steps = [], config = {} }) {
       loadingEnvs={loadingEnvs}
       routeByEnvironments={routeByEnvironments}
       handleRegisterSuccess={handleRegisterSuccess}
+      onLogout={onLogout}
       data-testid="StepComponent__5852c2" />
   );
 

@@ -9,22 +9,10 @@ import { trackOnboarding } from '../tracking.js';
 import { PageHeader } from '../components/PageHeader.jsx';
 import { EnterEnvironmentButtonContent } from '../components/EnterEnvironmentButtonContent.jsx';
 
-export function EnvSelectStep({ config, stepData, onNext, onBack, goToStep, token, setToken, accountName, setAccountName, environments = [], loadingEnvs = false, routeByEnvironments }) {
+export function EnvSelectStep({ config, stepData, onNext, onBack, goToStep, token, accountName, environments = [], loadingEnvs = false, routeByEnvironments, onLogout }) {
   const ui = useUI();
   const [loggingIn, setLoggingIn] = useState(null);
   const apiBase = config.apiBase || '';
-
-  const handleLogout = () => {
-    trackOnboarding(config, 'onboarding_auth_logout', {
-      action: 'logout',
-      status: 'success',
-    });
-    localStorage.removeItem('sf_platform_token');
-    localStorage.removeItem('sf_platform_auth_method');
-    if (setToken) setToken(null);
-    if (setAccountName) setAccountName(null);
-    if (goToStep) goToStep('login');
-  };
 
   const loginToEnvironment = async (env) => {
     trackOnboarding(config, 'onboarding_environment_enter_submitted', {
@@ -158,7 +146,7 @@ export function EnvSelectStep({ config, stepData, onNext, onBack, goToStep, toke
       <PageHeader
         isAuthenticated
         accountName={accountName}
-        onLogout={handleLogout}
+        onLogout={onLogout}
         logoutLabel={ui('logout')}
         brandLabel={config.brandLabel || 'Etendo GO'}
         data-testid="PageHeader__79cf84" />
