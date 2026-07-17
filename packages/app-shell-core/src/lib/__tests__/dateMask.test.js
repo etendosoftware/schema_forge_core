@@ -23,6 +23,21 @@ describe('dateMask — getDatePattern', () => {
     const pattern = getDatePattern('en-US');
     assert.equal(pattern.order[0], 'month');
   });
+
+  it('detects day-first order with "." separator for de-DE', () => {
+    const pattern = getDatePattern('de-DE');
+    assert.deepEqual(pattern.order, ['day', 'month', 'year']);
+    assert.equal(pattern.sep, '.');
+  });
+
+  it('detects a year-first order for locales that use it (sv-SE)', () => {
+    // Documents that getDatePattern is fully Intl-driven and can produce
+    // year-first patterns too (not just day-first / month-first) -- the app
+    // currently only surfaces es_ES/en_US via useLocaleState, so this order
+    // is not reachable through the UI today, but the helper itself supports it.
+    const pattern = getDatePattern('sv-SE');
+    assert.equal(pattern.order[0], 'year');
+  });
 });
 
 describe('dateMask — formatDateInput (typing forward)', () => {
@@ -74,6 +89,84 @@ describe('dateMask — formatDateInput (ETP-4544 bug 2: mid-segment delete must 
   });
 });
 
+describe('dateMask — formatDateInput (QA: null/empty/whitespace raw input)', () => {
+  const esPattern = { order: ['day', 'month', 'year'], sep: '/' };
+
+  it('returns an empty string for an empty raw value', () => {
+    assert.equal(formatDateInput('', esPattern), '');
+  });
+
+  it('returns an empty string for a null raw value', () => {
+    assert.equal(formatDateInput(null, esPattern), '');
+  });
+
+  it('returns an empty string for an undefined raw value', () => {
+    assert.equal(formatDateInput(undefined, esPattern), '');
+  });
+
+  it('returns an empty string for a whitespace-only raw value', () => {
+    assert.equal(formatDateInput('   ', esPattern), '');
+  });
+});
+
+describe('dateMask — formatDateInput (QA: Alex S1a — fully-emptied segment)', () => {
+  const esPattern = { order: ['day', 'month', 'year'], sep: '/' };
+
+  it('preserves the edit when the WHOLE day segment is deleted', () => {
+    // "16/07/2026" -> user selects and deletes "16" entirely -> raw "/07/2026"
+    assert.equal(formatDateInput('/07/2026', esPattern), '/07/2026');
+  });
+
+  it('preserves the edit when the WHOLE month segment is deleted', () => {
+    // "16/07/2026" -> user selects and deletes "07" entirely -> raw "16//2026"
+    assert.equal(formatDateInput('16//2026', esPattern), '16//2026');
+  });
+
+  it('preserves the edit when the WHOLE year segment is deleted', () => {
+    // "16/07/2026" -> user selects and deletes "2026" entirely -> raw "16/07/"
+    assert.equal(formatDateInput('16/07/', esPattern), '16/07/');
+  });
+
+  it('preserves the edit when ALL three segments are emptied at once', () => {
+    // Only the two separators remain -> raw "//"
+    assert.equal(formatDateInput('//', esPattern), '//');
+  });
+});
+
+describe('dateMask — formatDateInput (QA: Alex S1b — pasted string with a non-matching separator)', () => {
+  const esPattern = { order: ['day', 'month', 'year'], sep: '/' };
+
+  it('rebuilds correctly when a dash-separated date is pasted into a "/" pattern', () => {
+    // Segment count from splitting on "/" is 1 (no "/" present), which does not
+    // match pattern.order.length (3), so this falls back to the flat digit
+    // rebuild path -- digits are extracted regardless of separator and
+    // re-chunked using the pattern's own separator.
+    assert.equal(formatDateInput('16-07-2026', esPattern), '16/07/2026');
+  });
+
+  it('rebuilds correctly when a dot-separated date is pasted into a "/" pattern', () => {
+    assert.equal(formatDateInput('16.07.2026', esPattern), '16/07/2026');
+  });
+});
+
+describe('dateMask — formatDateInput (QA: additional segment-preserving edge cases)', () => {
+  const esPattern = { order: ['day', 'month', 'year'], sep: '/' };
+
+  it('clamps a segment that overflows its max length instead of reflowing into the next segment', () => {
+    // Day segment somehow has 4 digits (e.g. IME/paste artifact) -- clamp to 2,
+    // never bleed into month/year.
+    assert.equal(formatDateInput('1666/07/2026', esPattern), '16/07/2026');
+  });
+
+  it('clamps an overflowing year segment to 4 digits', () => {
+    assert.equal(formatDateInput('16/07/20266', esPattern), '16/07/2026');
+  });
+
+  it('strips non-digit characters from within a segment without corrupting the others', () => {
+    assert.equal(formatDateInput('1a/07/2026', esPattern), '1/07/2026');
+  });
+});
+
 describe('dateMask — parseDateInput', () => {
   const esPattern = { order: ['day', 'month', 'year'], sep: '/' };
   const usPattern = { order: ['month', 'day', 'year'], sep: '/' };
@@ -103,6 +196,30 @@ describe('dateMask — parseDateInput', () => {
   it('rejects a non-existent day for the given month (e.g. Feb 31st)', () => {
     assert.deepEqual(parseDateInput('31/02/2026', esPattern), { ok: false });
   });
+
+  it('accepts Feb 29th on a leap year', () => {
+    assert.deepEqual(parseDateInput('29/02/2024', esPattern), { ok: true, iso: '2024-02-29' });
+  });
+
+  it('rejects Feb 29th on a non-leap year', () => {
+    assert.deepEqual(parseDateInput('29/02/2026', esPattern), { ok: false });
+  });
+
+  it('rejects day 0', () => {
+    assert.deepEqual(parseDateInput('00/07/2026', esPattern), { ok: false });
+  });
+
+  it('rejects month 0', () => {
+    assert.deepEqual(parseDateInput('16/00/2026', esPattern), { ok: false });
+  });
+
+  it('accepts a dash-separated date', () => {
+    assert.deepEqual(parseDateInput('16-07-2026', esPattern), { ok: true, iso: '2026-07-16' });
+  });
+
+  it('accepts a dot-separated date', () => {
+    assert.deepEqual(parseDateInput('16.07.2026', esPattern), { ok: true, iso: '2026-07-16' });
+  });
 });
 
 describe('dateMask — formatMonthYearLabel (ETP-4544 bug 1: no "de" preposition)', () => {
@@ -112,5 +229,15 @@ describe('dateMask — formatMonthYearLabel (ETP-4544 bug 1: no "de" preposition
 
   it('formats en-US month + year (no preposition to begin with)', () => {
     assert.equal(formatMonthYearLabel(new Date(2026, 6, 16), 'en-US'), 'July 2026');
+  });
+
+  it('formats fr-FR month + year, capitalized, without a preposition', () => {
+    // Sanity check for a 3rd locale beyond es-ES/en-US: Intl's long month name
+    // for fr-FR is lowercase ("juillet"), same capitalization edge as es-ES.
+    assert.equal(formatMonthYearLabel(new Date(2026, 6, 16), 'fr-FR'), 'Juillet 2026');
+  });
+
+  it('formats de-DE month + year, capitalized, without a preposition', () => {
+    assert.equal(formatMonthYearLabel(new Date(2026, 6, 16), 'de-DE'), 'Juli 2026');
   });
 });
