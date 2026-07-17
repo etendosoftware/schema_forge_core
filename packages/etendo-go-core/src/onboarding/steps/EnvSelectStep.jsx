@@ -144,7 +144,7 @@ export function EnvSelectStep({ config, stepData, onNext, onBack, goToStep, toke
   return (
     <div className="min-h-screen bg-gray-50">
       <PageHeader
-        isAuthenticated
+        isAuthenticated={Boolean(token)}
         accountName={accountName}
         onLogout={onLogout}
         logoutLabel={ui('logout')}

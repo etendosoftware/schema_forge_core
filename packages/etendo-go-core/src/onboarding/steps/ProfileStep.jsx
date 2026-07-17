@@ -6,11 +6,12 @@ import { useUI, useLocaleSwitch } from '@etendosoftware/app-shell-core/i18n';
 import { isProfileStepValid } from '../state.js';
 import { trackOnboarding } from '../tracking.js';
 import { SetupShell } from '../components/SetupShell.jsx';
+import { OnboardingSessionAction } from '../components/OnboardingSessionAction.jsx';
 import { SetupField } from '../components/SetupField.jsx';
 import { BusinessTypeCard } from '../components/BusinessTypeCard.jsx';
 import { buildCountryOptions } from '../countries.js';
 
-export function ProfileStep({ config, stepData, onNext, onBack, goToStep, accountName, draftNotice, draftSaveWarning, setDraftNotice, onChange }) {
+export function ProfileStep({ config, stepData, onNext, onBack, goToStep, accountName, draftNotice, draftSaveWarning, setDraftNotice, onChange, token, onLogout }) {
   const ui = useUI();
   const { locale } = useLocaleSwitch();
 
@@ -63,12 +64,16 @@ export function ProfileStep({ config, stepData, onNext, onBack, goToStep, accoun
 
   const isValid = isProfileStepValid(form);
   const setupGreetingName = (form.fullName || accountName || ui('onboardingGreetingFallback')).trim().split(/\s+/)[0];
+  const sessionAction = token && (
+    <OnboardingSessionAction onLogout={onLogout} label={ui('logout')} />
+  );
 
   return (
     <SetupShell
       progressLabel={ui('onboardingProgressAlmostReady')}
       progressValue={50}
       brandLabel={config.brandLabel || 'Etendo GO'}
+      headerContent={sessionAction}
       data-testid="SetupShell__79cf84">
       {draftNotice && (
         <div

@@ -6,10 +6,11 @@ import { useUI } from '@etendosoftware/app-shell-core/i18n';
 import { isCompanyStepValid } from '../state.js';
 import { trackOnboarding } from '../tracking.js';
 import { SetupShell } from '../components/SetupShell.jsx';
+import { OnboardingSessionAction } from '../components/OnboardingSessionAction.jsx';
 import { SetupField } from '../components/SetupField.jsx';
 import { SetupSelect } from '../components/SetupSelect.jsx';
 
-export function CompanyStep({ config, stepData, onNext, onBack, goToStep, onChange, draftNotice, draftSaveWarning, setDraftNotice, accountName }) {
+export function CompanyStep({ config, stepData, onNext, onBack, goToStep, onChange, draftNotice, draftSaveWarning, setDraftNotice, accountName, token, onLogout }) {
   const ui = useUI();
 
   const [form, setForm] = useState(() => ({
@@ -49,12 +50,16 @@ export function CompanyStep({ config, stepData, onNext, onBack, goToStep, onChan
   // Freelancers invoice under their personal tax id, captured elsewhere — hide the
   // company Tax ID field for them. businessType comes from the profile step.
   const showTaxId = stepData.businessType !== 'freelancer';
+  const sessionAction = token && (
+    <OnboardingSessionAction onLogout={onLogout} label={ui('logout')} />
+  );
 
   return (
     <SetupShell
       progressLabel={ui('onboardingProgressAlmostDone')}
       progressValue={90}
       brandLabel={config.brandLabel || 'Etendo GO'}
+      headerContent={sessionAction}
       data-testid="SetupShell__79cf84">
       {draftNotice && (
         <div
