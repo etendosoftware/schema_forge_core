@@ -9,7 +9,7 @@ import { SetupShell } from '../components/SetupShell.jsx';
 import { SetupField } from '../components/SetupField.jsx';
 import { SetupSelect } from '../components/SetupSelect.jsx';
 
-export function CompanyStep({ config, stepData, onNext, onBack, goToStep, onChange, draftNotice, setDraftNotice, accountName }) {
+export function CompanyStep({ config, stepData, onNext, onBack, goToStep, onChange, draftNotice, draftSaveWarning, setDraftNotice, accountName }) {
   const ui = useUI();
 
   const [form, setForm] = useState(() => ({
@@ -62,6 +62,15 @@ export function CompanyStep({ config, stepData, onNext, onBack, goToStep, onChan
           className="mb-6 rounded-2xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm font-medium text-emerald-700"
         >
           {ui('onboardingDraftRestoredNotice')}
+        </div>
+      )}
+      {draftSaveWarning && (
+        <div
+          role="alert"
+          data-testid="draft-save-warning"
+          className="mb-6 rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm font-medium text-amber-800"
+        >
+          {ui('onboardingDraftSaveWarning')}
         </div>
       )}
       <div>

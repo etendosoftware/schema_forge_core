@@ -10,7 +10,7 @@ import { SetupField } from '../components/SetupField.jsx';
 import { BusinessTypeCard } from '../components/BusinessTypeCard.jsx';
 import { buildCountryOptions } from '../countries.js';
 
-export function ProfileStep({ config, stepData, onNext, onBack, goToStep, accountName, draftNotice, setDraftNotice, onChange }) {
+export function ProfileStep({ config, stepData, onNext, onBack, goToStep, accountName, draftNotice, draftSaveWarning, setDraftNotice, onChange }) {
   const ui = useUI();
   const { locale } = useLocaleSwitch();
 
@@ -76,6 +76,15 @@ export function ProfileStep({ config, stepData, onNext, onBack, goToStep, accoun
           className="mb-6 rounded-2xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm font-medium text-emerald-700"
         >
           {ui('onboardingDraftRestoredNotice')}
+        </div>
+      )}
+      {draftSaveWarning && (
+        <div
+          role="alert"
+          data-testid="draft-save-warning"
+          className="mb-6 rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm font-medium text-amber-800"
+        >
+          {ui('onboardingDraftSaveWarning')}
         </div>
       )}
 

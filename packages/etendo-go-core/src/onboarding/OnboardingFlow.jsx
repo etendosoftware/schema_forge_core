@@ -7,6 +7,7 @@ import { buildEnvironmentSessionStorage } from './state.js';
 import { buildAppReturnToHref, getSafeReturnTo } from './oauthReturnTo.js';
 import { trackOnboarding } from './tracking.js';
 import { createOnboardingLogout } from './logout.js';
+import { createOnboardingDraftPersistence, restoreOnboardingDraft as restorePersistedOnboardingDraft } from './draftPersistence.js';
 import { SetupPreviewMockup } from './components/SetupPreviewMockup.jsx';
 
 export function OnboardingFlow({ steps = [], config = {} }) {
@@ -16,14 +17,16 @@ export function OnboardingFlow({ steps = [], config = {} }) {
   const [token, setToken] = useState(() => localStorage.getItem('sf_platform_token'));
   const [accountName, setAccountName] = useState(null);
   const [draftNotice, setDraftNotice] = useState(false);
+  const [draftSaveWarning, setDraftSaveWarning] = useState(false);
   const [environments, setEnvironments] = useState([]);
   const [loadingEnvs, setLoadingEnvs] = useState(false);
 
   const draftReadyRef = useRef(false);
-  const lastSavedDraftRef = useRef(null);
   const authStorageRef = useRef(null);
   const logoutContextRef = useRef(null);
   const onLogoutRef = useRef(null);
+  const draftPersistenceRef = useRef(null);
+  const draftContextRef = useRef(null);
   const apiBase = config.apiBase || '';
 
   if (!authStorageRef.current) {
@@ -31,6 +34,33 @@ export function OnboardingFlow({ steps = [], config = {} }) {
   }
 
   const currentStep = steps[stepIndex];
+
+  draftContextRef.current = {
+    apiBase,
+    token,
+    steps,
+    stepId: currentStep?.id,
+    form: stepData,
+  };
+
+  if (!draftPersistenceRef.current) {
+    draftPersistenceRef.current = createOnboardingDraftPersistence({
+      defaultForm: config.defaultForm || {},
+      saveDraft: (draft) => {
+        const context = draftContextRef.current;
+        return saveOnboardingDraft(fetch, context.apiBase, context.token, draft);
+      },
+      onSaveFailure: (error) => {
+        console.warn('Failed to save onboarding draft', error);
+        setDraftSaveWarning(true);
+        trackOnboarding(config, 'onboarding_draft_save_failed', {
+          action: 'save_draft',
+          status: 'failed',
+          httpStatus: error?.status,
+        });
+      },
+    });
+  }
 
   // Helper to jump to a specific step by id
   const goToStep = useCallback((stepId) => {
@@ -53,6 +83,7 @@ export function OnboardingFlow({ steps = [], config = {} }) {
 
   if (!onLogoutRef.current) {
     onLogoutRef.current = createOnboardingLogout({
+      flushDraft: () => draftPersistenceRef.current.flush(draftContextRef.current),
       cleanupSession: () => authStorageRef.current.clear(),
       resetState: () => logoutContextRef.current.resetState(),
       navigateToLogin: () => logoutContextRef.current.navigateToLogin(),
@@ -66,13 +97,17 @@ export function OnboardingFlow({ steps = [], config = {} }) {
   const restoreOnboardingDraft = useCallback(async (authToken) => {
     try {
       const draft = await fetchOnboardingDraft(fetch, apiBase, authToken);
-      if (draft?.form && typeof draft.form === 'object') {
-        const mergedForm = { ...config.defaultForm, ...draft.form };
-        setStepData(mergedForm);
+      const restored = restorePersistedOnboardingDraft({
+        draft,
+        defaultForm: config.defaultForm,
+        steps,
+      });
+      if (restored) {
+        setStepData(restored.form);
         setDraftNotice(true);
-        const targetStep = draft.step === 2 ? 'company' : 'profile';
-        goToStep(targetStep);
-        lastSavedDraftRef.current = JSON.stringify({ step: draft.step, form: mergedForm });
+        setDraftSaveWarning(false);
+        goToStep(restored.stepId);
+        draftPersistenceRef.current.restoreLastSaved({ step: draft.step, form: restored.form });
       } else {
         goToStep('profile');
       }
@@ -82,7 +117,7 @@ export function OnboardingFlow({ steps = [], config = {} }) {
     } finally {
       draftReadyRef.current = true;
     }
-  }, [apiBase, goToStep]);
+  }, [apiBase, goToStep, config.defaultForm, steps]);
 
   // Route by environments list: 0 -> profile (restore draft), 1+ -> loginEnvironment and redirect
   const routeByEnvironments = useCallback(async (authToken) => {
@@ -192,33 +227,13 @@ export function OnboardingFlow({ steps = [], config = {} }) {
     }
   }, []);
 
-  // Debounced wizard draft autosave
+  // Every persistable step follows the same debounce policy; no field names
+  // are special-cased, so future steps opt in through their definition.
   useEffect(() => {
-    if (!currentStep || (currentStep.id !== 'profile' && currentStep.id !== 'company')) return undefined;
     if (!token || !draftReadyRef.current) return undefined;
-
-    const currentStepNum = currentStep.id === 'company' ? 2 : 1;
-    const draft = { step: currentStepNum, form: stepData };
-    const serialized = JSON.stringify(draft);
-    if (serialized === lastSavedDraftRef.current) return undefined;
-
-    const hasUserContent = currentStepNum > 1 || Boolean(
-      stepData.clientName?.trim() ||
-      stepData.fiscalIdValue?.trim() ||
-      stepData.address?.trim()
-    );
-    if (!hasUserContent && lastSavedDraftRef.current === null) return undefined;
-
-    const timer = setTimeout(() => {
-      lastSavedDraftRef.current = serialized;
-      saveOnboardingDraft(fetch, apiBase, token, draft).catch(err => {
-        console.warn('Failed to save onboarding draft', err);
-        lastSavedDraftRef.current = null;
-      });
-    }, 1500);
-
-    return () => clearTimeout(timer);
-  }, [stepData, currentStep, token, apiBase]);
+    draftPersistenceRef.current.schedule({ steps, stepId: currentStep?.id, form: stepData });
+    return () => draftPersistenceRef.current.cancel();
+  }, [stepData, currentStep, token, steps]);
 
   // Handle register success: setup new state, redirect to profile
   const handleRegisterSuccess = (authToken, account) => {
@@ -229,7 +244,7 @@ export function OnboardingFlow({ steps = [], config = {} }) {
       fullName: account?.name || account?.email || '',
     });
     setDraftNotice(false);
-    lastSavedDraftRef.current = null;
+    draftPersistenceRef.current.restoreLastSaved(null);
     draftReadyRef.current = true;
     goToStep('profile');
   };
@@ -238,14 +253,17 @@ export function OnboardingFlow({ steps = [], config = {} }) {
     setStepData(prev => ({ ...prev, ...newData }));
   }, []);
 
-  const handleNext = (data) => {
-    if (data) {
-      setStepData(prev => ({ ...prev, ...data }));
-    }
-    setStepIndex(i => Math.min(i + 1, steps.length - 1));
+  const handleNext = async (data) => {
+    const nextData = data ? { ...stepData, ...data } : stepData;
+    const nextIndex = Math.min(stepIndex + 1, steps.length - 1);
+    const saveStepId = steps[nextIndex]?.persistable ? steps[nextIndex].id : currentStep?.id;
+    await draftPersistenceRef.current.flush({ steps, stepId: saveStepId, form: nextData });
+    setStepData(nextData);
+    setStepIndex(nextIndex);
   };
 
-  const handleBack = () => {
+  const handleBack = async () => {
+    await draftPersistenceRef.current.flush({ steps, stepId: currentStep?.id, form: stepData });
     setStepIndex(i => Math.max(i - 1, 0));
   };
 
@@ -275,6 +293,7 @@ export function OnboardingFlow({ steps = [], config = {} }) {
       setAccountName={setAccountName}
       draftNotice={draftNotice}
       setDraftNotice={setDraftNotice}
+      draftSaveWarning={draftSaveWarning}
       environments={environments}
       loadingEnvs={loadingEnvs}
       routeByEnvironments={routeByEnvironments}

@@ -18,7 +18,7 @@ function maskEmail(email) {
   return `${email[0]}******${email.slice(at)}`;
 }
 
-export function LoginStep({ config, stepData, onNext, onBack, goToStep, setToken, setAccountName, routeByEnvironments }) {
+export function LoginStep({ config, stepData, onNext, onBack, goToStep, setToken, setAccountName, routeByEnvironments, draftSaveWarning }) {
   const ui = useUI();
   const { locale, setLocale } = useLocaleSwitch();
 
@@ -479,6 +479,16 @@ export function LoginStep({ config, stepData, onNext, onBack, goToStep, setToken
           {ui('onboardingLoginSubtitle')}
         </p>
       </div>
+
+      {draftSaveWarning && (
+        <div
+          role="alert"
+          data-testid="draft-save-warning"
+          className="mb-6 rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm font-medium text-amber-800"
+        >
+          {ui('onboardingDraftSaveWarning')}
+        </div>
+      )}
 
       {loginNotice && (
         <div
