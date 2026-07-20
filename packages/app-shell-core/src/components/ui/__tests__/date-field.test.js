@@ -35,6 +35,17 @@ describe('DateField — exports and dependencies', () => {
     assert.match(src, /formatCalendarDate/);
   });
 
+  it('imports the date-mask helpers from lib/dateMask.js instead of defining them inline (ETP-4544)', () => {
+    assert.match(src, /from\s+['"]\.\.\/\.\.\/lib\/dateMask\.js['"]/);
+    assert.match(src, /getDatePattern/);
+    assert.match(src, /formatDateInput/);
+    assert.match(src, /parseDateInput/);
+    assert.match(src, /formatMonthYearLabel/);
+    assert.doesNotMatch(src, /function getDatePattern\(/);
+    assert.doesNotMatch(src, /function formatDateInput\(/);
+    assert.doesNotMatch(src, /function parseDateInput\(/);
+  });
+
   it('reads the active locale from useLocaleSwitch and useUI', () => {
     assert.match(src, /from\s+['"]\.\.\/\.\.\/i18n\/index\.js['"]/);
     assert.match(src, /useLocaleSwitch\(\)/);
@@ -81,9 +92,8 @@ describe('DateField — popover behavior', () => {
     assert.doesNotMatch(src, /<input[\s\S]*?readOnly/);
   });
 
-  it('masks input via formatDateInput (digits only, auto-inserts separators, caps at 8 digits)', () => {
-    assert.match(src, /function formatDateInput\(raw,\s*pattern\)/);
-    assert.match(src, /digits\s*=\s*\(raw\s*\?\?\s*''\)\.replace\(\/\\D\/g,\s*''\)\.slice\(0,\s*8\)/);
+  it('masks input via the imported formatDateInput, capped at 10 visible chars', () => {
+    assert.match(src, /onChange=\{\(e\)\s*=>\s*setInputText\(formatDateInput\(e\.target\.value,\s*datePattern\)\)\}/);
     assert.match(src, /maxLength=\{10\}/);
   });
 
@@ -149,8 +159,8 @@ describe('DateField — header row', () => {
     assert.match(src, /<ChevronRight/);
   });
 
-  it('renders the label as a button with capitalize and locale-aware month/year', () => {
-    assert.match(src, /Intl\.DateTimeFormat[\s\S]*?month:\s*'long'[\s\S]*?year:\s*'numeric'/);
+  it('renders the label via the imported formatMonthYearLabel (locale-aware month/year, ETP-4544)', () => {
+    assert.match(src, /const headerLabel\s*=\s*formatMonthYearLabel\(headerDate,\s*localeStr\)/);
     assert.match(src, /capitalize/);
   });
 
@@ -229,24 +239,14 @@ describe('DateField — footer buttons', () => {
 });
 
 describe('DateField — manual typing in the input', () => {
-  it('declares parseDateInput taking the locale pattern, accepting /, -, . separators', () => {
-    assert.match(src, /function parseDateInput\(text,\s*pattern\)/);
-    assert.match(src, /match\(\/\^\(\\d\{1,4\}\)\[\\\/\\-\.\]\(\\d\{1,2\}\)\[\\\/\\-\.\]\(\\d\{1,4\}\)\$\//);
-  });
-
-  it('honors locale-specific date order via getDatePattern (en-US month-first; rest day-first)', () => {
-    assert.match(src, /function getDatePattern\(localeStr\)/);
-    assert.match(src, /const monthFirst\s*=\s*pattern\.order\[0\]\s*===\s*'month'/);
+  it('uses the imported parseDateInput/getDatePattern to commit typed values (logic covered by dateMask.test.js)', () => {
+    assert.match(src, /commitTypedValue\s*=\s*\(\)\s*=>\s*\{[\s\S]*?parseDateInput\(inputText,\s*datePattern\)/);
+    assert.match(src, /const datePattern\s*=\s*React\.useMemo\(\(\)\s*=>\s*getDatePattern\(localeStr\),\s*\[localeStr\]\)/);
   });
 
   it('placeholder hint adapts to locale (dd/mm/aaaa vs mm/dd/yyyy) via buildDatePlaceholder', () => {
     assert.match(src, /function buildDatePlaceholder\(pattern,\s*localeStr\)/);
     assert.match(src, /\.toLowerCase\(\)\.startsWith\('es'\)\s*\?\s*'aaaa'\s*:\s*'yyyy'/);
-  });
-
-  it('rejects invalid month or day values (out-of-range or non-existent)', () => {
-    assert.match(src, /if\s*\(month < 1 \|\| month > 12\)\s*return\s*\{\s*ok:\s*false\s*\}/);
-    assert.match(src, /if\s*\(day < 1 \|\| day > lastDay\)\s*return\s*\{\s*ok:\s*false\s*\}/);
   });
 
   it('keeps inputText in local state separate from the value prop', () => {

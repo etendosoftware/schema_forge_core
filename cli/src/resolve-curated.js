@@ -214,6 +214,11 @@ const FIELD_DECISION_COPY_PROPS = [
   // reference in the fields array. EntityForm renders <ComponentName value={...}
   // onChange={...} record={data} readOnly={isReadOnly} /> instead of the default input.
   'customRenderer',
+  // Opt-in: render a single-FK field as a create/edit modal trigger instead of a
+  // pick-only lookup. Value is the modal kind (string), e.g. "location" → EntityForm
+  // renders LocationModalField, which opens the shared LocationEditorModal to
+  // create/edit the referenced record inline (ETP-4526, Warehouse Location/Address).
+  'editModal',
   // i18n key for the inline "+ create" action label (e.g. "+ New transaction type").
   'createLabelKey',
   // i18n keys for the inline-create modal: dialog title + name-input placeholder.
