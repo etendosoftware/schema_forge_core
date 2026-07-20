@@ -535,7 +535,8 @@ export function generateFormComponent(entityName, contract) {
     const rowsPart = f.rows != null ? `, rows: ${f.rows}` : '';
     const clearablePart = f.clearable === false ? ', clearable: false' : '';
     const customRendererPart = f.customRenderer ? `, customRenderer: ${f.customRenderer}` : '';
-    const fieldLine = `  { key: '${f.name}', column: '${f.column}', type: '${type}'${formLabelPart}${requiredPart}${lookupPart}${popupPart}${readOnlyPart}${inlinePart}${sectionPart}${referencePart}${inputModePart}${searchSelectPart}${allowCreatePart}${createPart}${dependsOnPart}${optionsPart}${valueTypePart}${defaultValuePart}${helpPart}${placeholderPart}${emptyOptionPart}${fieldGroupPart}${precisionPart}${displayLogicPart}${readOnlyLogicPart}${spanPart}${rowsPart}${clearablePart}${customRendererPart} },`;
+    const editModalPart = wrapIf(", editModal: '", f.editModal, "'");
+    const fieldLine = `  { key: '${f.name}', column: '${f.column}', type: '${type}'${formLabelPart}${requiredPart}${lookupPart}${popupPart}${readOnlyPart}${inlinePart}${sectionPart}${referencePart}${inputModePart}${searchSelectPart}${allowCreatePart}${createPart}${dependsOnPart}${optionsPart}${valueTypePart}${defaultValuePart}${helpPart}${placeholderPart}${emptyOptionPart}${fieldGroupPart}${precisionPart}${displayLogicPart}${readOnlyLogicPart}${spanPart}${rowsPart}${clearablePart}${customRendererPart}${editModalPart} },`;
     return [...slotLines, fieldLine].join('\n');
   }).join('\n');
 

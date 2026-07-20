@@ -23,11 +23,14 @@
     "./tailwind-preset": "./src/tailwind-preset.js",
     "./hooks/useCurrency.jsx": "./src/hooks/useCurrency.jsx",
     "./hooks/use-mobile.jsx": "./src/hooks/use-mobile.jsx",
+    "./hooks/useDistinctValues.js": "./src/hooks/useDistinctValues.js",
+    "./lib/gridQuery.js": "./src/lib/gridQuery.js",
     "./styles.css": "./src/styles.css",
     "./components/ui/*": "./src/components/ui/*",
     "./components/import/*": "./src/components/import/*",
     "./lib/*": "./src/lib/*",
-    "./pages/*": "./src/pages/*"
+    "./pages/*": "./src/pages/*",
+    "./components/contract-ui/*": "./src/components/contract-ui/*"
   },
   "files": [
     "src",
