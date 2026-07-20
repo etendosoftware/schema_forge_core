@@ -289,12 +289,17 @@ function applyFieldDecisionProps(field, fieldDecision) {
   if (fieldDecision.summable) field.summable = true;
   if (fieldDecision.businessCritical) field.businessCritical = true;
   if (fieldDecision.gridOrder != null) field.gridOrder = fieldDecision.gridOrder;
-  // ETP-4556 — `false` is the disable sentinel (see field-validation.js): omit the
-  // flat ETP-4277 bound entirely, matching the nested `validation` object, so it is
-  // never fed to the on-blur autocorrect as a bogus `false` limit.
-  if (fieldDecision.min !== undefined && fieldDecision.min !== false) field.min = fieldDecision.min;
-  if (fieldDecision.max !== undefined && fieldDecision.max !== false) field.max = fieldDecision.max;
+  applyFlatBound(field, fieldDecision, 'min');
+  applyFlatBound(field, fieldDecision, 'max');
   copyTruthyDecisionProps(field, fieldDecision, FIELD_DECISION_COPY_PROPS);
+}
+
+// ETP-4556 — `false` is the disable sentinel (see field-validation.js): omit the flat
+// ETP-4277 bound entirely, matching the nested `validation` object, so it is never fed
+// to the on-blur autocorrect as a bogus `false` limit.
+function applyFlatBound(field, fieldDecision, key) {
+  const v = fieldDecision[key];
+  if (v !== undefined && v !== false) field[key] = v;
 }
 
 function applyForeignKeyLookupProps(field, fieldDecision) {
