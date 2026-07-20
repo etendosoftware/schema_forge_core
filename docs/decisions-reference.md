@@ -713,6 +713,53 @@ instead of the default input when it detects this property.
 | `businessCritical` | boolean | `false` | Advisory-only metadata flag. When `true`, marks the field as business-critical data. This flag does **not** change any functional behavior (validation, read-only logic, visibility, etc.). It travels through the pipeline (`decisions.json` → `resolve-curated` → `contract.json` → `push-to-neo` → `ETGO_SF_FIELD.ISBUSINESSCRITICAL`) so that downstream consumers (e.g., AI agents reading `neo_schema`) know they must confirm with the user before creating or updating records that include this field. |
 | `agentPrompt` | string | `null` | Per-field guidance for AI agents. Carried into the curated field and persisted to `ETGO_SF_FIELD.AGENT_PROMPT`, from where `neo_schema` returns it inside each field object. Empty or whitespace-only values clear the persisted prompt and are omitted from the MCP response. |
 
+### Validation Constraints (`validation` object) — ETP-4555
+
+Declarative validation constraints are preserved through the whole pipeline
+(`schema-raw` / `decisions.json` → `resolve-curated` → `contract.json`) and emitted
+as a **single nested `validation` object** on each frontend contract field. The object
+is **additive** — the flat `min`/`max` keys above keep working unchanged (backward-compat).
+
+You do not write the `validation` object yourself; you supply its inputs (raw AD metadata
+or the per-field decision keys below) and the resolver assembles it. Contract shape:
+
+```jsonc
+"validation": {
+  "required": true,           // mirror of the field's resolved required flag (only when true)
+  "minLength": 1,             // decision only
+  "maxLength": 60,            // decision `maxLength`, else raw AD field length
+  "minimum": 0,               // decision `min`, else raw AD valueMin
+  "maximum": 100,             // decision `max`, else raw AD valueMax
+  "format": "email",          // decision only — NEVER inferred
+  "enum": ["A", "B"],         // decision only — explicit allowed values
+  "allowedSchemes": ["https"] // decision only — explicit configuration
+}
+```
+
+Per-field decision inputs (all optional):
+
+| Property | Type | Source of the contract value | Notes |
+|----------|------|------------------------------|-------|
+| `minLength` | number | `validation.minLength` | Decision only — no raw AD source. |
+| `maxLength` | number | `validation.maxLength` | Decision **overrides** the raw AD field length. |
+| `min` | number | `validation.minimum` | Decision **overrides** raw AD `valueMin`. Also still emitted flat (ETP-4277). |
+| `max` | number | `validation.maximum` | Decision **overrides** raw AD `valueMax`. Also still emitted flat (ETP-4277). |
+| `format` | string | `validation.format` | Semantic format hint (e.g. `email`, `uri`). Never guessed from column type. |
+| `enum` | string[] | `validation.enum` | Explicit allowed values. Empty array is ignored. |
+| `allowedSchemes` | string[] | `validation.allowedSchemes` | Explicit URL scheme allow-list. Empty array is ignored. |
+
+**Rules (non-negotiable):**
+
+1. **Precedence** — an explicit `decisions.json` value always wins over extracted raw AD metadata.
+2. **No guessed defaults** — a constraint absent from both raw and decision is **omitted**; the whole `validation` key is absent when nothing applies. Absence never fabricates a default.
+3. **Zero is valid** — `minimum: 0` and `maximum: 0` survive (presence is tested with `hasOwnProperty` / `!= null`, never truthiness).
+4. **String→Number coercion** — raw AD metadata arrives as strings (`maxLength: "60"`); numeric constraints are coerced to `Number` and NaN/blank values are dropped.
+5. **Deterministic key order** — keys are always emitted in the canonical order shown above (`required, minLength, maxLength, minimum, maximum, format, enum, allowedSchemes`).
+
+**Unicode length semantics:** `minLength`/`maxLength` count **UTF-16 code units** (JavaScript `String.length` / the AD field-length column), not Unicode grapheme clusters. A character outside the Basic Multilingual Plane (e.g. an emoji, a surrogate pair) counts as **2** toward the length. Constraints inherited from AD (`fieldlength`) follow the same column-length semantics the database enforces.
+
+The projection logic is centralized in `cli/src/lib/field-validation.js` (`buildFieldValidation`, `projectValidation`, `VALIDATION_KEY_ORDER`) and shared by `resolve-curated.js` (builds the object) and `generate-contract.js` (re-projects it into canonical order).
+
 ### Explicit null
 
 Setting a property to `null` removes it from the curated output and contracts:

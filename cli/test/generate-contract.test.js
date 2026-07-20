@@ -2356,3 +2356,61 @@ describe('generateFrontendContract — window.import', () => {
   });
 });
 
+// ─── ETP-4555 — validation constraint object in contract fields ───────────────
+describe('generateFrontendContract — validation constraint object (ETP-4555)', () => {
+  function makeSchema(fieldExtra = {}) {
+    return {
+      version: '0.1.0',
+      window: { id: '900', name: 'Contacts', primaryEntity: 'businessPartner', category: 'master' },
+      entities: [{
+        name: 'businessPartner',
+        table: 'C_BPartner',
+        level: 'header',
+        fields: [
+          { name: 'name', column: 'Name', type: 'string', visibility: 'editable',
+            required: false, searchable: false, grid: true, form: true, ...fieldExtra },
+          { name: 'note', column: 'Note', type: 'string', visibility: 'editable',
+            required: false, searchable: false, grid: true, form: true },
+        ],
+      }],
+    };
+  }
+
+  it('emits the validation object carried on the curated field', () => {
+    const fc = generateFrontendContract(makeSchema({ validation: { maxLength: 60 } }));
+    const name = fc.entities.businessPartner.fields.find(f => f.name === 'name');
+    assert.deepEqual(name.validation, { maxLength: 60 });
+  });
+
+  it('emits explicit format and allowedSchemes from the validation object', () => {
+    const fc = generateFrontendContract(makeSchema({
+      validation: { format: 'email', allowedSchemes: ['https'] },
+    }));
+    const name = fc.entities.businessPartner.fields.find(f => f.name === 'name');
+    assert.equal(name.validation.format, 'email');
+    assert.deepEqual(name.validation.allowedSchemes, ['https']);
+  });
+
+  it('emits validation keys in canonical order regardless of input key order', () => {
+    const fc = generateFrontendContract(makeSchema({
+      validation: { allowedSchemes: ['https'], maximum: 100, format: 'email', minimum: 0, maxLength: 60, minLength: 1, required: true, enum: ['A'] },
+    }));
+    const name = fc.entities.businessPartner.fields.find(f => f.name === 'name');
+    assert.deepEqual(Object.keys(name.validation),
+      ['required', 'minLength', 'maxLength', 'minimum', 'maximum', 'format', 'enum', 'allowedSchemes']);
+  });
+
+  it('does not emit a validation key when the curated field has none', () => {
+    const fc = generateFrontendContract(makeSchema());
+    const note = fc.entities.businessPartner.fields.find(f => f.name === 'note');
+    assert.equal(note.validation, undefined);
+  });
+
+  it('preserves minimum: 0 in the emitted validation object', () => {
+    const fc = generateFrontendContract(makeSchema({ validation: { minimum: 0 } }));
+    const name = fc.entities.businessPartner.fields.find(f => f.name === 'name');
+    assert.ok(Object.prototype.hasOwnProperty.call(name.validation, 'minimum'));
+    assert.equal(name.validation.minimum, 0);
+  });
+});
+

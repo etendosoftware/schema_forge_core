@@ -1,6 +1,7 @@
 import { createHash } from 'node:crypto';
 import { toSpecName } from './push-to-neo.js';
 import { autoSimplifyEntityName, reorderKeys, WINDOW_KEY_ORDER } from './resolve-curated.js';
+import { projectValidation } from './lib/field-validation.js';
 
 // Slug helper for deterministic test IDs: collapse non-alphanumerics to hyphens, trim.
 const slug = (s) => String(s ?? '')
@@ -301,6 +302,10 @@ function applyFieldUIHints(f, mapped) {
   if (f.dot === false) mapped.dot = false;
   if (f.min !== undefined) mapped.min = f.min;
   if (f.max !== undefined) mapped.max = f.max;
+  // ETP-4555 — canonical declarative validation object (re-projected into a fixed
+  // key order for deterministic output). Additive; absent when the field has none.
+  const validation = projectValidation(f.validation);
+  if (validation) mapped.validation = validation;
 }
 
 /**

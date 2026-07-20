@@ -15,6 +15,7 @@ import { dirname, join } from 'node:path';
 import { classifyRule } from './pre-classify.js';
 import { toCamelCase, isMainModule } from './utils.js';
 import { migrateDecisions, needsMigration, getVersion } from './migrations/index.js';
+import { buildFieldValidation } from './lib/field-validation.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -385,6 +386,11 @@ function buildCuratedField(rawField, fieldDecision, discardPatterns) {
   // for a classic stored-procedure process that NEO can actually execute).
   if (fieldDecision.processId) field.processId = fieldDecision.processId;
   if (fieldDecision.processType) field.processType = fieldDecision.processType;
+
+  // ETP-4555 — canonical declarative validation object (raw DB constraints merged
+  // with explicit decisions; decision wins). Additive to the flat min/max above.
+  const validation = buildFieldValidation({ raw: rawField, decision: fieldDecision, required: field.required });
+  if (validation) field.validation = validation;
 
   return field;
 }
