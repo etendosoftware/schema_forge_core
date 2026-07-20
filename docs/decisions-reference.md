@@ -754,11 +754,13 @@ Per-field decision inputs (all optional):
 2. **No guessed defaults** — a constraint absent from both raw and decision is **omitted**; the whole `validation` key is absent when nothing applies. Absence never fabricates a default.
 3. **Zero is valid** — `minimum: 0` and `maximum: 0` survive (presence is tested with `hasOwnProperty` / `!= null`, never truthiness).
 4. **String→Number coercion** — raw AD metadata arrives as strings (`maxLength: "60"`); numeric constraints are coerced to `Number` and NaN/blank values are dropped.
-5. **Deterministic key order** — keys are always emitted in the canonical order shown above (`required, minLength, maxLength, minimum, maximum, format, enum, allowedSchemes`).
+5. **Deterministic key order** — keys are always emitted in the canonical order shown above (`required, minLength, maxLength, minimum, maximum, format, enum, allowedSchemes`). The order is fixed so the offline regen-check (`generate-contract` re-projecting the resolved object) is byte-stable — a shuffled key order would surface as a spurious contract diff.
 
 **Unicode length semantics:** `minLength`/`maxLength` count **UTF-16 code units** (JavaScript `String.length` / the AD field-length column), not Unicode grapheme clusters. A character outside the Basic Multilingual Plane (e.g. an emoji, a surrogate pair) counts as **2** toward the length. Constraints inherited from AD (`fieldlength`) follow the same column-length semantics the database enforces.
 
 The projection logic is centralized in `cli/src/lib/field-validation.js` (`buildFieldValidation`, `projectValidation`, `VALIDATION_KEY_ORDER`) and shared by `resolve-curated.js` (builds the object) and `generate-contract.js` (re-projects it into canonical order).
+
+**Scope — frontend contract only.** The `validation` object is emitted on `frontendContract` fields and is consumed by the generated React SPA for client-side form validation. It is **not** pushed to NEO Headless and NEO does **not** enforce it at the API boundary — backend/runtime enforcement of these constraints is out of scope for ETP-4555 and may be addressed by a later SECURITY task. Until then, treat the object as an advisory client-side contract, not a server-enforced guarantee. See `docs/contract-field-distribution.md` and `docs/contract-generation-ownership.md` for the cross-system placement.
 
 ### Explicit null
 
