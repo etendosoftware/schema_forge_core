@@ -5,7 +5,6 @@ import { Card, CardContent } from '../components/ui/card.jsx';
 import { Button } from '../components/ui/button.jsx';
 import { Badge } from '../components/ui/badge.jsx';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '../components/ui/tabs.jsx';
-import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from '../components/ui/select.jsx';
 import { CopyBlock } from '../components/ui/copy-button.jsx';
 import { Shield, CheckCircle2, XCircle, Loader2, Plug, Download, Sparkles } from 'lucide-react';
 import { useUI } from '../i18n/index.js';
@@ -31,24 +30,12 @@ const SCOPE_LABELS = {
   'neo:*': { labelKey: 'oauthFullAccess', descriptionKey: 'oauthFullAccessDesc' },
 };
 
-// Token validity options offered on the consent screen. `seconds: 0` means no expiration.
-const VALIDITY_OPTIONS = [
-  { value: '86400', seconds: 86400, labelKey: 'oauthValidity1Day' },
-  { value: '604800', seconds: 604800, labelKey: 'oauthValidity1Week' },
-  { value: '2592000', seconds: 2592000, labelKey: 'oauthValidity1Month' },
-  { value: '0', seconds: 0, labelKey: 'oauthValidityNever' },
-];
-const DEFAULT_VALIDITY = '86400'; // 1 day
-
 export default function AuthorizePage() {
   const { token, username, logout } = useAuth();
   const [searchParams] = useSearchParams();
   const [status, setStatus] = useState('idle'); // idle | authorizing | success | error
   const [errorMessage, setErrorMessage] = useState('');
-  const [validity, setValidity] = useState(DEFAULT_VALIDITY);
   const ui = useUI();
-
-  const selectedValidity = VALIDITY_OPTIONS.find((o) => o.value === validity) || VALIDITY_OPTIONS[0];
   const isEmbedded = searchParams.get('embedded') === '1';
 
   const clientId = searchParams.get('client_id');
@@ -83,7 +70,6 @@ export default function AuthorizePage() {
           code_challenge: codeChallenge,
           state,
           scope,
-          validity_seconds: selectedValidity.seconds,
         }),
       });
 
@@ -177,42 +163,6 @@ export default function AuthorizePage() {
                   );
                 })}
               </div>
-            </div>
-
-            <div className="w-full">
-              <label
-                htmlFor="oauth-validity-select"
-                className="mb-2 block text-xs font-medium text-muted-foreground"
-              >
-                {ui('oauthTokenValidity')}
-              </label>
-              <Select value={validity} onValueChange={setValidity} data-testid="Select__9074d1">
-                <SelectTrigger id="oauth-validity-select" data-testid="oauth-validity-select">
-                  <SelectValue data-testid="SelectValue__96270f" />
-                </SelectTrigger>
-                <SelectContent data-testid="SelectContent__96270f">
-                  {VALIDITY_OPTIONS.map((opt) => (
-                    <SelectItem
-                      key={opt.value}
-                      value={opt.value}
-                      data-testid={`oauth-validity-option-${opt.value}`}
-                    >
-                      {ui(opt.labelKey)}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-              <p
-                className="mt-1.5 text-xs text-muted-foreground"
-                data-testid="oauth-validity-expiry"
-              >
-                {ui('oauthTokenExpiresLabel')}:{' '}
-                <span className="font-medium">
-                  {selectedValidity.seconds === 0
-                    ? ui('oauthValidityNever')
-                    : new Date(Date.now() + selectedValidity.seconds * 1000).toLocaleString()}
-                </span>
-              </p>
             </div>
 
             {status === 'error' && (
