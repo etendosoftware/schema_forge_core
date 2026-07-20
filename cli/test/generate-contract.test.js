@@ -2356,3 +2356,214 @@ describe('generateFrontendContract — window.import', () => {
   });
 });
 
+// ---------------------------------------------------------------------------
+// Field-order stability lock precedence (ETP-4566)
+//
+// lockFieldOrderToPreviousContract() re-pins fields that already existed in the
+// previous contract to their old position, so raw re-extractions stay stable.
+// That lock must NOT win over an intentional decisions.json order/visibility
+// change: a field whose own order or visibility changed since the previous run
+// must be "repositioned" to its newly resolved slot instead of staying pinned.
+// Fields with no explicit order at all must never be touched by this — they stay
+// governed purely by the historical lock, regardless of what other fields do.
+// ---------------------------------------------------------------------------
+
+describe('generateBackendContract — explicit order marker (ETP-4566)', () => {
+  const schemaWithExplicitOrder = {
+    version: '0.1.0',
+    window: { id: '143', name: 'Sales Order', primaryEntity: 'order', category: 'sales' },
+    entities: [{
+      name: 'order',
+      table: 'C_Order',
+      level: 'header',
+      fields: [
+        { name: 'documentNo', column: 'DocumentNo', type: 'string', visibility: 'editable',
+          required: false, grid: true, form: true, __explicitOrder: 3 },
+        { name: 'description', column: 'Description', type: 'string', visibility: 'editable',
+          required: false, grid: true, form: true },
+      ],
+    }],
+  };
+
+  it('field with an explicit decisions.json order includes order in backendContract', () => {
+    const bc = generateBackendContract(schemaWithExplicitOrder);
+    const documentNo = bc.entities.order.fields.find(f => f.name === 'documentNo');
+    assert.equal(documentNo.order, 3);
+  });
+
+  it('field without an explicit order does NOT have the key in backendContract', () => {
+    const bc = generateBackendContract(schemaWithExplicitOrder);
+    const description = bc.entities.order.fields.find(f => f.name === 'description');
+    assert.equal(description.order, undefined,
+      'absent explicit order must not appear in backendContract');
+  });
+});
+
+describe('generateContract — field-order stability lock precedence (ETP-4566)', () => {
+  // Baseline "previous run" fixture shared by the scenario tests below.
+  //   fieldNewlyOrdered — previously hidden (visibility: system, no order); this run
+  //                       becomes visible with a brand-new explicit order (case a).
+  //   fieldOrderChange  — previously visible with order:2; this run keeps the same
+  //                       visibility but its order changes to 5 (case b).
+  //   fieldP, fieldQ    — carry an explicit order that stays IDENTICAL across runs;
+  //                       must remain pinned like any other unchanged field.
+  //   fieldA, fieldB    — never had an explicit order (case d); must keep their exact
+  //                       relative sequence no matter what fieldNewlyOrdered/fieldOrderChange do.
+  function buildPreviousContract() {
+    return {
+      backendContract: {
+        entities: {
+          order: {
+            fields: [
+              { name: 'fieldP', visibility: 'editable', required: false, order: 1 },
+              { name: 'fieldNewlyOrdered', visibility: 'system', required: false },
+              { name: 'fieldQ', visibility: 'editable', required: false, order: 2 },
+              { name: 'fieldA', visibility: 'editable', required: false },
+              { name: 'fieldOrderChange', visibility: 'editable', required: false, order: 2 },
+              { name: 'fieldB', visibility: 'editable', required: false },
+            ],
+          },
+        },
+      },
+    };
+  }
+
+  // The current run's curated fields, already resolved by resolve-curated.js's
+  // orderCuratedFields() — i.e. already sorted by explicit order, with unordered
+  // fields keeping their natural relative sequence (fieldA before fieldB).
+  function buildCurrentSchema() {
+    return {
+      version: '0.1.0',
+      window: { id: '143', name: 'Sales Order', primaryEntity: 'order', category: 'sales' },
+      entities: [{
+        name: 'order',
+        table: 'C_Order',
+        level: 'header',
+        fields: [
+          { name: 'fieldP', column: 'FieldP', type: 'string', visibility: 'editable',
+            required: false, grid: true, form: true, __explicitOrder: 1 },
+          { name: 'fieldNewlyOrdered', column: 'FieldNewlyOrdered', type: 'string', visibility: 'editable',
+            required: false, grid: true, form: true, __explicitOrder: 1.5 },
+          { name: 'fieldQ', column: 'FieldQ', type: 'string', visibility: 'editable',
+            required: false, grid: true, form: true, __explicitOrder: 2 },
+          { name: 'fieldOrderChange', column: 'FieldOrderChange', type: 'string', visibility: 'editable',
+            required: false, grid: true, form: true, __explicitOrder: 5 },
+          { name: 'fieldA', column: 'FieldA', type: 'string', visibility: 'editable',
+            required: false, grid: true, form: true },
+          { name: 'fieldB', column: 'FieldB', type: 'string', visibility: 'editable',
+            required: false, grid: true, form: true },
+        ],
+      }],
+    };
+  }
+
+  function orderedNames(previousContract) {
+    const contract = generateContract(buildCurrentSchema(), [], [], null, previousContract);
+    return contract.backendContract.entities.order.fields.map(f => f.name);
+  }
+
+  it('(a) a field hidden previously that becomes visible with a new explicit order lands at that order', () => {
+    const names = orderedNames(buildPreviousContract());
+    // fieldNewlyOrdered gained order:1.5 (previously had none at all) -> repositioned
+    // right after fieldP (order:1) and before fieldQ (order:2), exactly where its new
+    // order places it — NOT stuck at its old (hidden) previous-contract position.
+    assert.ok(names.indexOf('fieldP') < names.indexOf('fieldNewlyOrdered'));
+    assert.ok(names.indexOf('fieldNewlyOrdered') < names.indexOf('fieldQ'));
+  });
+
+  it('(b) a field whose order value itself changes (without a visibility change) gets repositioned', () => {
+    const names = orderedNames(buildPreviousContract());
+    // Previously fieldOrderChange (order:2) was pinned right AFTER fieldA (prev position:
+    // fieldQ, fieldA, fieldOrderChange, fieldB). Its order changing to 5 must free it from
+    // that old absolute slot: it now lands right after fieldQ and BEFORE fieldA — reflecting
+    // the freshly resolved order (any explicit order still outranks fieldA/fieldB, which have
+    // none at all) instead of staying stuck at its previous-contract position after fieldA.
+    assert.ok(names.indexOf('fieldQ') < names.indexOf('fieldOrderChange'));
+    assert.ok(names.indexOf('fieldOrderChange') < names.indexOf('fieldA'));
+  });
+
+  it('(c) fields whose own order/visibility is unchanged keep their exact previous relative position', () => {
+    const names = orderedNames(buildPreviousContract());
+    // fieldP and fieldQ carry the same order (1 and 2) in both runs -> stay pinned,
+    // in the same relative sequence as the previous contract.
+    assert.ok(names.indexOf('fieldP') < names.indexOf('fieldQ'));
+  });
+
+  it('(d) fields with no explicit order at all are unaffected by other fields\' order changes', () => {
+    const unaffectedPrevious = buildPreviousContract();
+    const namesWithChanges = orderedNames(unaffectedPrevious);
+
+    // Re-run against a previous contract where NOTHING changed (order-stable baseline)
+    // to isolate fieldA/fieldB's relative order from fieldNewlyOrdered/fieldOrderChange churn.
+    const stablePrevious = {
+      backendContract: {
+        entities: {
+          order: {
+            fields: [
+              { name: 'fieldP', visibility: 'editable', required: false, order: 1 },
+              { name: 'fieldA', visibility: 'editable', required: false },
+              { name: 'fieldB', visibility: 'editable', required: false },
+            ],
+          },
+        },
+      },
+    };
+    const stableSchema = {
+      version: '0.1.0',
+      window: { id: '143', name: 'Sales Order', primaryEntity: 'order', category: 'sales' },
+      entities: [{
+        name: 'order',
+        table: 'C_Order',
+        level: 'header',
+        fields: [
+          { name: 'fieldP', column: 'FieldP', type: 'string', visibility: 'editable',
+            required: false, grid: true, form: true, __explicitOrder: 1 },
+          { name: 'fieldA', column: 'FieldA', type: 'string', visibility: 'editable',
+            required: false, grid: true, form: true },
+          { name: 'fieldB', column: 'FieldB', type: 'string', visibility: 'editable',
+            required: false, grid: true, form: true },
+        ],
+      }],
+    };
+    const stableContract = generateContract(stableSchema, [], [], null, stablePrevious);
+    const namesStable = stableContract.backendContract.entities.order.fields.map(f => f.name);
+
+    // fieldA before fieldB in both runs, regardless of the extra repositioned fields
+    // present (or not) in the churned run — no side effect leaks onto unrelated fields.
+    assert.ok(namesWithChanges.indexOf('fieldA') < namesWithChanges.indexOf('fieldB'));
+    assert.ok(namesStable.indexOf('fieldA') < namesStable.indexOf('fieldB'));
+  });
+
+  it('brand-new fields (absent from the previous contract) are unaffected by the lock', () => {
+    const previousContract = {
+      backendContract: {
+        entities: {
+          order: {
+            fields: [
+              { name: 'fieldA', visibility: 'editable', required: false },
+            ],
+          },
+        },
+      },
+    };
+    const schema = {
+      version: '0.1.0',
+      window: { id: '143', name: 'Sales Order', primaryEntity: 'order', category: 'sales' },
+      entities: [{
+        name: 'order',
+        table: 'C_Order',
+        level: 'header',
+        fields: [
+          { name: 'fieldA', column: 'FieldA', type: 'string', visibility: 'editable',
+            required: false, grid: true, form: true },
+          { name: 'brandNewField', column: 'BrandNewField', type: 'string', visibility: 'editable',
+            required: false, grid: true, form: true },
+        ],
+      }],
+    };
+    const contract = generateContract(schema, [], [], null, previousContract);
+    const names = contract.backendContract.entities.order.fields.map(f => f.name);
+    assert.deepEqual(names, ['fieldA', 'brandNewField']);
+  });
+});
+
