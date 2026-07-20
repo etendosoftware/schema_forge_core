@@ -522,6 +522,16 @@ function buildCuratedFields(rawEntity, fieldsDecisions, discardPatterns) {
 }
 
 function orderCuratedFields(curatedFields, fieldsDecisions) {
+  // Tag each field with its explicit decisions.json `order` (if any), in memory only.
+  // generate-contract.js's field-order stability lock reads this marker (persisted as
+  // `order` on backendContract fields) to tell an intentional order change apart from
+  // a field whose position is purely inherited from the historical lock — see
+  // lockFieldOrderToPreviousContract() in generate-contract.js.
+  for (const field of curatedFields) {
+    const explicitOrder = fieldsDecisions[field.name]?.order;
+    if (explicitOrder != null) field.__explicitOrder = explicitOrder;
+  }
+
   const hasOrderOverrides = Object.values(fieldsDecisions).some(decision => decision.order != null);
   if (!hasOrderOverrides) return curatedFields;
 
