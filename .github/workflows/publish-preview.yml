@@ -110,9 +110,12 @@ jobs:
       # A) Commit status: pins "alpha: <version>" to this SHA, so it shows as a
       #    check on the commit AND in the PR's checks list — no need to open the
       #    run to see what was published. Links back to this run.
-      # B) Sticky PR comment: if the branch has an open PR, upsert (never spam) a
-      #    single comment with the version and the exact pin snippet. Skipped
-      #    silently when there is no open PR (e.g. pre-PR pushes).
+      # B) PR comment: if the branch has an open PR, post a single fresh comment
+      #    with the version and the exact pin snippet. On each push the previous
+      #    bot comment (matched by marker) is deleted and a NEW one is posted, so
+      #    it always lands at the bottom of the PR and notifies subscribers
+      #    (editing in place would leave it buried and silent). Skipped silently
+      #    when there is no open PR (e.g. pre-PR pushes).
       # Both are fail-soft: a comment/status hiccup must never fail the publish.
       - name: Pin published version to the commit (status)
         continue-on-error: true
@@ -156,13 +159,15 @@ jobs:
           make bump-core-version VERSION=${VERSION}
           \`\`\`
 
-          _Auto-updated on each push to this branch; supersedes older previews._"
+          _Re-posted on each push to this branch; supersedes older previews._"
+          # Delete the previous bot comment (matched by marker) so we never spam,
+          # then post a NEW one — keeps a single comment, always latest & at the
+          # bottom of the PR (an in-place edit would stay buried and notify nobody).
           CID=$(gh api "repos/${REPO}/issues/${PR}/comments" --paginate \
                   --jq "map(select(.body | startswith(\"${MARKER}\"))) | .[0].id // empty")
           if [ -n "$CID" ]; then
-            gh api "repos/${REPO}/issues/comments/${CID}" -X PATCH -f body="$BODY"
-            echo "Updated sticky comment #$CID on PR #$PR."
-          else
-            gh pr comment "$PR" --repo "$REPO" --body "$BODY"
-            echo "Created sticky comment on PR #$PR."
+            gh api "repos/${REPO}/issues/comments/${CID}" -X DELETE
+            echo "Deleted previous preview comment #$CID on PR #$PR."
           fi
+          gh pr comment "$PR" --repo "$REPO" --body "$BODY"
+          echo "Created fresh preview comment on PR #$PR."
