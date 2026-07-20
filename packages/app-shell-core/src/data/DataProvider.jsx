@@ -81,3 +81,11 @@ export function useDataCache() {
   if (!ctx) throw new Error('useDataCache must be used within a DataProvider');
   return ctx;
 }
+
+// Non-throwing variant for consumers that must work both with and without a
+// DataProvider mounted (e.g. a hook shared by cached app screens and by isolated
+// unit tests). Returns null when there is no provider so callers can fall back
+// to their pre-cache behavior instead of crashing.
+export function useOptionalDataCache() {
+  return useContext(DataContext);
+}
