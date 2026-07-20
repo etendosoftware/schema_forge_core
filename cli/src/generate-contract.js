@@ -530,6 +530,7 @@ const FIELD_ATTR_SPECS = [
   ['forceCalloutFields', 'array'],
   ['excludeValueOf', 'verbatim'],
   ['customRenderer', 'verbatim'],
+  ['editModal', 'verbatim'],
 ];
 
 function mapFieldAttributes(f, mapped) {
