@@ -289,8 +289,11 @@ function applyFieldDecisionProps(field, fieldDecision) {
   if (fieldDecision.summable) field.summable = true;
   if (fieldDecision.businessCritical) field.businessCritical = true;
   if (fieldDecision.gridOrder != null) field.gridOrder = fieldDecision.gridOrder;
-  if (fieldDecision.min !== undefined) field.min = fieldDecision.min;
-  if (fieldDecision.max !== undefined) field.max = fieldDecision.max;
+  // ETP-4556 — `false` is the disable sentinel (see field-validation.js): omit the
+  // flat ETP-4277 bound entirely, matching the nested `validation` object, so it is
+  // never fed to the on-blur autocorrect as a bogus `false` limit.
+  if (fieldDecision.min !== undefined && fieldDecision.min !== false) field.min = fieldDecision.min;
+  if (fieldDecision.max !== undefined && fieldDecision.max !== false) field.max = fieldDecision.max;
   copyTruthyDecisionProps(field, fieldDecision, FIELD_DECISION_COPY_PROPS);
 }
 

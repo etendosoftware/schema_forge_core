@@ -300,8 +300,9 @@ function applyFieldUIHints(f, mapped) {
   applyHints(f, mapped, FIELD_HINTS_POST_GRID);
   if (f.filterable === false) mapped.filterable = false;
   if (f.dot === false) mapped.dot = false;
-  if (f.min !== undefined) mapped.min = f.min;
-  if (f.max !== undefined) mapped.max = f.max;
+  // ETP-4556 — never propagate the `false` disable sentinel into the flat bound.
+  if (f.min !== undefined && f.min !== false) mapped.min = f.min;
+  if (f.max !== undefined && f.max !== false) mapped.max = f.max;
   // ETP-4555 — canonical declarative validation object (re-projected into a fixed
   // key order for deterministic output). Additive; absent when the field has none.
   const validation = projectValidation(f.validation);

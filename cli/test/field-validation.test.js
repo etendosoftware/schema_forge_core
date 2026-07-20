@@ -114,6 +114,48 @@ describe('buildFieldValidation (ETP-4555)', () => {
   });
 });
 
+// ─── ETP-4556 — explicit `false` disable sentinel for DB-sourced numeric keys ──
+describe('buildFieldValidation — false disables a DB-sourced constraint (ETP-4556)', () => {
+  it('maxLength:false omits maxLength even when raw.maxLength exists', () => {
+    const v = buildFieldValidation({ raw: { maxLength: '60' }, decision: { maxLength: false } });
+    assert.equal(v, undefined);
+  });
+
+  it('min:false omits minimum even when raw.valueMin exists (guards the zero case)', () => {
+    const v = buildFieldValidation({ raw: { valueMin: '0' }, decision: { min: false } });
+    assert.equal(v, undefined);
+  });
+
+  it('max:false omits maximum even when raw.valueMax exists', () => {
+    const v = buildFieldValidation({ raw: { valueMax: '100' }, decision: { max: false } });
+    assert.equal(v, undefined);
+  });
+
+  it('false disables only the targeted key, others still resolve', () => {
+    const v = buildFieldValidation({
+      raw: { maxLength: '60', valueMin: '0', valueMax: '100' },
+      decision: { maxLength: false },
+    });
+    assert.deepEqual(v, { minimum: 0, maximum: 100 });
+  });
+
+  it('override still works: maxLength:40 with raw 60 → 40', () => {
+    const v = buildFieldValidation({ raw: { maxLength: '60' }, decision: { maxLength: 40 } });
+    assert.equal(v.maxLength, 40);
+  });
+
+  it('fall-through unchanged: maxLength absent with raw 60 → 60', () => {
+    const v = buildFieldValidation({ raw: { maxLength: '60' }, decision: {} });
+    assert.equal(v.maxLength, 60);
+  });
+
+  it('a legit zero (maxLength:0) is NOT treated as disable (0 !== false)', () => {
+    const v = buildFieldValidation({ raw: { maxLength: '60' }, decision: { maxLength: 0 } });
+    assert.equal(v.maxLength, 0);
+    assert.ok(Object.prototype.hasOwnProperty.call(v, 'maxLength'));
+  });
+});
+
 describe('projectValidation (ETP-4555)', () => {
   it('reorders keys into canonical order and drops undefined', () => {
     const out = projectValidation({ maximum: 100, format: 'email', minimum: 0, undefinedKey: undefined });

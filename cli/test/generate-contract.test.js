@@ -8,6 +8,7 @@ import {
   generateApiPrediction,
   splitWindowContractArtifacts,
 } from '../src/generate-contract.js';
+import { resolveCurated } from '../src/resolve-curated.js';
 
 const minimalSchema = {
   version: '0.1.0',
@@ -2265,6 +2266,80 @@ describe('generateFrontendContract — max field constraint (ETP-4277)', () => {
     const discount = fc.entities.order.fields.find(f => f.name === 'discount');
     assert.equal(discount.min, 0);
     assert.equal(discount.max, 100);
+  });
+
+  // ETP-4556 — `false` disable sentinel must not leak into the flat contract key.
+  it('does NOT copy flat min when the curated field carries the false disable sentinel', () => {
+    const fc = generateFrontendContract(makeSchemaWithDiscount({ min: false, max: 100 }));
+    const discount = fc.entities.order.fields.find(f => f.name === 'discount');
+    assert.equal(discount.min, undefined);
+    assert.equal(discount.max, 100);
+  });
+
+  it('does NOT copy flat max when the curated field carries the false disable sentinel', () => {
+    const fc = generateFrontendContract(makeSchemaWithDiscount({ min: 0, max: false }));
+    const discount = fc.entities.order.fields.find(f => f.name === 'discount');
+    assert.equal(discount.min, 0);
+    assert.equal(discount.max, undefined);
+  });
+});
+
+// ─── ETP-4556 — `false` disable sentinel end-to-end (decisions → resolve → contract) ──
+describe('false disable sentinel — regen level (ETP-4556)', () => {
+  // Raw AD provides valueMin/valueMax so we can prove `false` disables an
+  // EXISTING raw constraint, not merely the absence of one.
+  const schemaRaw = {
+    window: { id: '801', name: 'Sales Order' },
+    entities: [{
+      name: 'cOrderLine',
+      tableName: 'C_OrderLine',
+      tabId: '21',
+      tabName: 'Lines',
+      fields: [
+        { name: 'discount', columnName: 'Discount', label: 'Discount', type: 'number',
+          visibility: 'editable', valueMin: '5', valueMax: '500' },
+      ],
+    }],
+  };
+
+  function contractField(fieldDecision) {
+    const decisions = {
+      version: 2,
+      window: { name: 'Sales Order' },
+      entities: { cOrderLine: { name: 'orderLine', fields: { discount: fieldDecision } } },
+      rules: {},
+    };
+    return resolveCurated(schemaRaw, { rules: [] }, decisions).then(({ schema }) => {
+      const fc = generateFrontendContract(schema);
+      const entity = Object.values(fc.entities).find(e => e.fields.some(f => f.name === 'discount'));
+      return entity.fields.find(f => f.name === 'discount');
+    });
+  }
+
+  it('min:false produces NEITHER validation.minimum NOR a flat min (disables the raw valueMin)', async () => {
+    const discount = await contractField({ min: false });
+    assert.equal(discount.min, undefined, 'flat min must be omitted');
+    assert.equal(discount.validation && discount.validation.minimum, undefined,
+      'validation.minimum must be omitted');
+  });
+
+  it('max:false produces NEITHER validation.maximum NOR a flat max (disables the raw valueMax)', async () => {
+    const discount = await contractField({ max: false });
+    assert.equal(discount.max, undefined, 'flat max must be omitted');
+    assert.equal(discount.validation && discount.validation.maximum, undefined,
+      'validation.maximum must be omitted');
+  });
+
+  it('a numeric min still emits BOTH the flat min and validation.minimum', async () => {
+    const discount = await contractField({ min: 10 });
+    assert.equal(discount.min, 10, 'flat min must be present');
+    assert.equal(discount.validation.minimum, 10, 'validation.minimum must be present');
+  });
+
+  it('a numeric zero min is a real bound, NOT a disable (emits both, overriding raw)', async () => {
+    const discount = await contractField({ min: 0 });
+    assert.equal(discount.min, 0, 'flat min 0 must be present');
+    assert.equal(discount.validation.minimum, 0, 'validation.minimum 0 must be present');
   });
 });
 
