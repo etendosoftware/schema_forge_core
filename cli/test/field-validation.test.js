@@ -83,6 +83,15 @@ describe('buildFieldValidation (ETP-4555)', () => {
     assert.equal(buildFieldValidation({ raw: { maxLength: {}, valueMin: {}, valueMax: {} } }), undefined);
   });
 
+  // BUG-1 — non-scalar metadata must be rejected before coercion. Number([]) === 0
+  // and Number(true) === 1 would otherwise fabricate a bogus numeric constraint.
+  it('does not fabricate a numeric constraint from array/boolean metadata (BUG-1)', () => {
+    assert.equal(buildFieldValidation({ raw: { valueMin: [], valueMax: [], maxLength: true } }), undefined);
+    assert.equal(buildFieldValidation({ decision: { min: [], max: false, maxLength: [1] } }), undefined);
+    // A genuine scalar alongside junk still resolves via precedence.
+    assert.equal(buildFieldValidation({ raw: { valueMin: [] }, decision: { min: 5 } }).minimum, 5);
+  });
+
   // Edge case (6) — the helper is field-type agnostic. Boolean / date / FK / read-only
   // fields carry no numeric metadata, so no spurious constraint must be emitted.
   it('emits no spurious constraint for boolean/date/FK fields (no numeric metadata)', () => {

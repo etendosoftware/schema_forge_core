@@ -35,6 +35,10 @@ function isNonEmptyArray(value) {
 
 function isPresent(value) {
   if (value == null) return false;
+  // Only scalar numeric metadata is coercible. Reject non-string/non-number
+  // (arrays, objects, booleans): Number([]) === 0 and Number(true) === 1 would
+  // otherwise fabricate a bogus numeric constraint (BUG-1).
+  if (typeof value !== 'number' && typeof value !== 'string') return false;
   // An empty/blank string is treated as absent — Number('') === 0 would otherwise
   // fabricate a bogus zero constraint.
   return !(typeof value === 'string' && value.trim() === '');
