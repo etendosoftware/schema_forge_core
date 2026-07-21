@@ -689,6 +689,166 @@ describe('resolveCurated — max field constraint (ETP-4277)', () => {
     assert.equal(discount.min, 0);
     assert.equal(discount.max, 100);
   });
+
+  // ETP-4556 — `false` disables the flat ETP-4277 min/max emission too, so the
+  // disable sentinel is consistent with the nested `validation` object (which
+  // already omits the bound on `false`). Without this guard `min: false` would
+  // leak into the flat contract key and feed the on-blur autocorrect a garbage
+  // bound.
+  it('does NOT emit flat min when decision min is false (disable sentinel)', async () => {
+    const decisions = {
+      version: 2,
+      window: { name: 'Sales Order' },
+      entities: {
+        cOrderLine: {
+          name: 'orderLine',
+          fields: {
+            discount: { min: false, max: 100 },
+          },
+        },
+      },
+      rules: {},
+    };
+    const { schema } = await resolveCurated(schemaRaw, { rules: [] }, decisions);
+    const discount = schema.entities[0].fields.find(f => f.name === 'discount');
+    assert.equal(discount.min, undefined);
+    assert.equal(discount.max, 100);
+  });
+
+  it('does NOT emit flat max when decision max is false (disable sentinel)', async () => {
+    const decisions = {
+      version: 2,
+      window: { name: 'Sales Order' },
+      entities: {
+        cOrderLine: {
+          name: 'orderLine',
+          fields: {
+            discount: { min: 0, max: false },
+          },
+        },
+      },
+      rules: {},
+    };
+    const { schema } = await resolveCurated(schemaRaw, { rules: [] }, decisions);
+    const discount = schema.entities[0].fields.find(f => f.name === 'discount');
+    assert.equal(discount.min, 0);
+    assert.equal(discount.max, undefined);
+  });
+});
+
+// ─── ETP-4555 — declarative validation constraint propagation ─────────────────
+describe('resolveCurated — validation constraint object (ETP-4555)', () => {
+  function rawSchema(fieldExtra = {}, textFieldExtra = {}) {
+    return {
+      window: { id: '900', name: 'Contacts' },
+      entities: [{
+        name: 'cBpartner',
+        tableName: 'C_BPartner',
+        tabId: '30',
+        tabName: 'Header',
+        fields: [
+          // Numeric field carrying raw DB value constraints (strings, as extracted).
+          { name: 'creditLimit', columnName: 'SO_CreditLimit', label: 'Credit Limit',
+            type: 'number', visibility: 'editable', valueMin: '0', valueMax: '1000000', ...fieldExtra },
+          // Text field carrying a raw fieldlength (string).
+          { name: 'name', columnName: 'Name', label: 'Name', type: 'string',
+            visibility: 'editable', maxLength: '60', ...textFieldExtra },
+        ],
+      }],
+    };
+  }
+
+  function baseDecisions(fields = { creditLimit: {}, name: {} }) {
+    return {
+      version: 2,
+      window: { name: 'Contacts' },
+      entities: { cBpartner: { name: 'businessPartner', fields } },
+      rules: {},
+    };
+  }
+
+  async function resolveField(rawExtra, textExtra, fields) {
+    const { schema } = await resolveCurated(rawSchema(rawExtra, textExtra), { rules: [] }, baseDecisions(fields));
+    const byName = {};
+    for (const f of schema.entities[0].fields) byName[f.name] = f;
+    return byName;
+  }
+
+  it('coerces raw maxLength (fieldlength string) into validation.maxLength as a Number', async () => {
+    const fields = await resolveField();
+    assert.deepEqual(fields.name.validation, { maxLength: 60 });
+    assert.equal(typeof fields.name.validation.maxLength, 'number');
+  });
+
+  it('coerces raw valueMin/valueMax into validation.minimum/maximum as Numbers', async () => {
+    const fields = await resolveField();
+    assert.equal(fields.creditLimit.validation.minimum, 0);
+    assert.equal(fields.creditLimit.validation.maximum, 1000000);
+    assert.equal(typeof fields.creditLimit.validation.minimum, 'number');
+  });
+
+  it('keeps minimum: 0 (zero must not be dropped as falsy)', async () => {
+    const fields = await resolveField();
+    assert.ok(Object.prototype.hasOwnProperty.call(fields.creditLimit.validation, 'minimum'));
+    assert.equal(fields.creditLimit.validation.minimum, 0);
+  });
+
+  it('lets an explicit decision min override raw valueMin (precedence)', async () => {
+    const fields = await resolveField({}, {}, {
+      creditLimit: { min: 500 },
+      name: {},
+    });
+    assert.equal(fields.creditLimit.validation.minimum, 500);
+  });
+
+  it('lets an explicit decision maxLength override raw fieldlength (precedence)', async () => {
+    const fields = await resolveField({}, {}, {
+      creditLimit: {},
+      name: { maxLength: 40 },
+    });
+    assert.equal(fields.name.validation.maxLength, 40);
+  });
+
+  it('emits decision-only constraints (minLength, format, enum, allowedSchemes)', async () => {
+    const fields = await resolveField({}, {}, {
+      creditLimit: {},
+      name: { minLength: 1, format: 'email', enum: ['A', 'B'], allowedSchemes: ['https'] },
+    });
+    assert.equal(fields.name.validation.minLength, 1);
+    assert.equal(fields.name.validation.format, 'email');
+    assert.deepEqual(fields.name.validation.enum, ['A', 'B']);
+    assert.deepEqual(fields.name.validation.allowedSchemes, ['https']);
+  });
+
+  it('mirrors required into validation.required only when true', async () => {
+    const fields = await resolveField({}, {}, {
+      creditLimit: {},
+      name: { required: true },
+    });
+    assert.equal(fields.name.validation.required, true);
+  });
+
+  it('omits the validation key entirely when no raw or decision constraint exists', async () => {
+    const raw = {
+      window: { id: '900', name: 'Contacts' },
+      entities: [{
+        name: 'cBpartner', tableName: 'C_BPartner', tabId: '30', tabName: 'Header',
+        fields: [{ name: 'note', columnName: 'Note', label: 'Note', type: 'string', visibility: 'editable' }],
+      }],
+    };
+    const { schema } = await resolveCurated(raw, { rules: [] }, baseDecisions({ note: {} }));
+    const note = schema.entities[0].fields.find(f => f.name === 'note');
+    assert.equal(note.validation, undefined);
+  });
+
+  it('emits validation keys in canonical order', async () => {
+    const fields = await resolveField({}, {}, {
+      creditLimit: {},
+      name: { required: true, minLength: 1, maxLength: 60, min: 0, max: 100, format: 'email', enum: ['A'], allowedSchemes: ['https'] },
+    });
+    assert.deepEqual(Object.keys(fields.name.validation),
+      ['required', 'minLength', 'maxLength', 'minimum', 'maximum', 'format', 'enum', 'allowedSchemes']);
+  });
 });
 
 // ─── ETP-4566 — explicit order marker for the field-order stability lock ─────

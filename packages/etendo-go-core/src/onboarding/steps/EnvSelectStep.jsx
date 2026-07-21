@@ -6,6 +6,7 @@ import { loginEnvironment, fetchEnvironments } from '../api.js';
 import { buildEnvironmentSessionStorage } from '../state.js';
 import { buildAppReturnToHref, getSafeReturnTo } from '../oauthReturnTo.js';
 import { trackOnboarding } from '../tracking.js';
+import { createOnboardingLogout } from '../logout.js';
 import { PageHeader } from '../components/PageHeader.jsx';
 import { EnterEnvironmentButtonContent } from '../components/EnterEnvironmentButtonContent.jsx';
 
@@ -14,17 +15,7 @@ export function EnvSelectStep({ config, stepData, onNext, onBack, goToStep, toke
   const [loggingIn, setLoggingIn] = useState(null);
   const apiBase = config.apiBase || '';
 
-  const handleLogout = () => {
-    trackOnboarding(config, 'onboarding_auth_logout', {
-      action: 'logout',
-      status: 'success',
-    });
-    localStorage.removeItem('sf_platform_token');
-    localStorage.removeItem('sf_platform_auth_method');
-    if (setToken) setToken(null);
-    if (setAccountName) setAccountName(null);
-    if (goToStep) goToStep('login');
-  };
+  const handleLogout = createOnboardingLogout({ config, setToken, setAccountName, goToStep });
 
   const loginToEnvironment = async (env) => {
     trackOnboarding(config, 'onboarding_environment_enter_submitted', {
