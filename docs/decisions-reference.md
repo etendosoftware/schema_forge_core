@@ -515,6 +515,7 @@ Entity keys use **camelCase from tabName** (e.g., `"header"`, `"lines"`, `"basic
 | `fields` | object | `{}` | Field-level decisions. |
 | `draftMode` | object | `null` | Draft/Processed workflow config. |
 | `javaQualifier` | string | `null` | CDI qualifier for custom NeoHandler. |
+| `preconditions` | object | `null` | Process preconditions checked by NEO Headless before a button/action process runs. Keyed by `AD_Process_ID`. See [Process Preconditions](#process-preconditions-entitiesnamepreconditions). |
 | `handlesDefaults` | boolean | `true` | **HandleDefaults.** When `true` (default), a new detail line's add-row fetches `GET /{detailEntity}/defaults?parentId=…` on open and pre-fills empty editable fields from the backend-resolved defaults (reusing the header-defaults normalization). Set `false` to opt this detail entity out — the add-row keeps literal-only seeding and no `/defaults` request is made. Emitted to the contract / runtime `api.crud` only when `false`. |
 
 ### Line HandleDefaults (`entities.{name}.handlesDefaults`)
@@ -547,6 +548,43 @@ Enables a two-button save workflow: "Save Draft" (save only) + "Save & {label}" 
 
 **When disabled** (default): single "Save" button.
 **When enabled**: "Save draft" + "Save & {label}" buttons, plus process buttons from `processEndpoints`.
+
+### Process Preconditions (`entities.{name}.preconditions`)
+
+Declares, as **data**, the record-level conditions that must hold before a button/action
+process is allowed to run. NEO Headless evaluates them generically at the single process
+choke-point and returns a structured `PRECONDITIONS_UNMET` error **before** the legacy AD
+process fires — replacing opaque late errors like `"Period not defined."` (ETP-4275). No
+per-window Java: the mechanism is metadata-driven and reusable across processes.
+
+The block is an object **keyed by `AD_Process_ID`** (string). Each value is an array of rules:
+
+```json
+{
+  "entities": {
+    "header": {
+      "preconditions": {
+        "800125": [
+          { "field": "usableLifeMonths", "requiredWhen": "@calculateType@ != 'PE' && @depreciationType@ != 'YE'" },
+          { "field": "usableLifeYears",  "requiredWhen": "@depreciationType@ == 'YE'" },
+          { "field": "currency" }
+        ]
+      }
+    }
+  }
+}
+```
+
+| Rule property | Type | Required | Purpose |
+|---------------|------|----------|---------|
+| `field` | string | Yes | The NEO field identifier the API exposes (camelCase record property, **not** the raw DB column). The runtime resolves it to the record value via entity/table metadata. |
+| `requiredWhen` | string | No | Condition gating the rule. Supports `@field@` record references, string literals, `==`, `!=`, `&&`/`&`, `\|\|`. When the condition evaluates false the rule is skipped; when absent the precondition is unconditional. |
+| `message` | string | No | **Reserved / not yet surfaced.** Documented for forward-compatibility. The runtime currently returns only a single generic top-level message plus the `missing` field list; this per-rule value is not read or emitted. |
+
+**Flow:** `decisions.json` → `push-to-neo.js` serializes the block into the new
+`ETGO_SF_ENTITY.preconditions` text column → NEO Headless reads it at runtime. An explicit
+but empty block (`{}`) clears any stale DB value. The block is written directly from
+`decisions.json` (like `agentPrompt`); it does **not** flow through `contract.json`.
 
 ## Field Properties (`entities.{name}.fields.{fieldName}.*`)
 
