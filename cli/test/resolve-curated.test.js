@@ -805,3 +805,63 @@ describe('resolveCurated — validation constraint object (ETP-4555)', () => {
       ['required', 'minLength', 'maxLength', 'minimum', 'maximum', 'format', 'enum', 'allowedSchemes']);
   });
 });
+
+// ─── ETP-4566 — explicit order marker for the field-order stability lock ─────
+
+describe('resolveCurated — __explicitOrder marker (ETP-4566)', () => {
+  const baseSchema = {
+    window: { id: '200', name: 'Sales Order' },
+    entities: [{
+      name: 'cOrder',
+      tableName: 'C_Order',
+      tabId: '10',
+      tabName: 'Header',
+      fields: [
+        { name: 'documentNo', columnName: 'DocumentNo', label: 'Document No',
+          type: 'string', visibility: 'readOnly' },
+        { name: 'description', columnName: 'Description', label: 'Description',
+          type: 'string', visibility: 'editable' },
+      ],
+    }],
+  };
+
+  it('field with an explicit decisions.json order is tagged with __explicitOrder', async () => {
+    const decisions = {
+      version: 2,
+      window: { name: 'Sales Order' },
+      entities: {
+        cOrder: {
+          name: 'order',
+          fields: {
+            documentNo: { order: 3 },
+          },
+        },
+      },
+      rules: {},
+    };
+    const { schema } = await resolveCurated(baseSchema, { rules: [] }, decisions);
+    const field = schema.entities[0].fields.find(f => f.name === 'documentNo');
+    assert.equal(field.__explicitOrder, 3);
+  });
+
+  it('field with no explicit order in decisions.json is NOT tagged', async () => {
+    const decisions = {
+      version: 2,
+      window: { name: 'Sales Order' },
+      entities: {
+        cOrder: {
+          name: 'order',
+          fields: {
+            documentNo: { order: 3 },
+            description: {},
+          },
+        },
+      },
+      rules: {},
+    };
+    const { schema } = await resolveCurated(baseSchema, { rules: [] }, decisions);
+    const field = schema.entities[0].fields.find(f => f.name === 'description');
+    assert.equal(field.__explicitOrder, undefined,
+      '__explicitOrder must be absent when no explicit order is declared in decisions');
+  });
+});

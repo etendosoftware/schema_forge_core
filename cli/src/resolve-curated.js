@@ -528,6 +528,16 @@ function buildCuratedFields(rawEntity, fieldsDecisions, discardPatterns) {
 }
 
 function orderCuratedFields(curatedFields, fieldsDecisions) {
+  // Tag each field with its explicit decisions.json `order` (if any), in memory only.
+  // generate-contract.js's field-order stability lock reads this marker (persisted as
+  // `order` on backendContract fields) to tell an intentional order change apart from
+  // a field whose position is purely inherited from the historical lock — see
+  // lockFieldOrderToPreviousContract() in generate-contract.js.
+  for (const field of curatedFields) {
+    const explicitOrder = fieldsDecisions[field.name]?.order;
+    if (explicitOrder != null) field.__explicitOrder = explicitOrder;
+  }
+
   const hasOrderOverrides = Object.values(fieldsDecisions).some(decision => decision.order != null);
   if (!hasOrderOverrides) return curatedFields;
 
@@ -730,6 +740,7 @@ const WINDOW_BOOLEAN_TRUE_PROPS = [
   'hideDetailForm',
   'hideDelete',
   'hideDeleteButton',
+  'readOnly',
 ];
 
 // `attachments` is defined-only (not truthy) so an explicit `false` from
@@ -745,7 +756,7 @@ export const WINDOW_KEY_ORDER = [
   'id', 'name', 'primaryEntity', 'category', 'agentPrompt',
   'sidebarLayout', 'templateConfig',
   'documentPreview', 'notesField', 'relatedDocuments',
-  'hideDeleteWhenComplete', 'customTabsAfterBottom', 'hidePrint', 'hideCreate', 'hideSaveStatuses',
+  'hideDeleteWhenComplete', 'customTabsAfterBottom', 'hidePrint', 'hideCreate', 'readOnly', 'hideSaveStatuses',
   'hideMoreMenu', 'hideMoreDetails', 'hideDetailForm', 'hideDelete', 'hideDeleteButton', 'contentBg',
   'hideListFilters', 'hideStatusFilter', 'hideLink', 'hideEyeCount', 'customListIcons', 'breadcrumb',
   'customComponents', 'menuActions', 'processOverrides',
@@ -809,6 +820,15 @@ function applyWindowDecisions(window, windowDecisions) {
   copyBooleanTrueProps(window, windowDecisions, WINDOW_BOOLEAN_TRUE_PROPS);
   copyDefinedProps(window, windowDecisions, WINDOW_DEFINED_PROPS);
   copyNotNullProps(window, windowDecisions, WINDOW_NOT_NULL_PROPS);
+
+  // `readOnly` is sugar for a fully view-only window (GO UI). Expand it into the
+  // existing hideCreate + hideDelete gating so the New button and delete action
+  // disappear; `readOnly` itself stays on the window so generate-contract can also
+  // clear the crud write methods and DetailView can block edit/save at runtime.
+  if (window.readOnly) {
+    window.hideCreate = true;
+    window.hideDelete = true;
+  }
 
   if (windowDecisions.hideSaveStatuses?.length) {
     window.hideSaveStatuses = windowDecisions.hideSaveStatuses;
