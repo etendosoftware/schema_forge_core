@@ -85,6 +85,20 @@ export function buildEnvironmentSessionStorage(env, loginResponse) {
   return values;
 }
 
+// Clears the Etendo environment session written by buildEnvironmentSessionStorage.
+// Fail-safe: if localStorage is unavailable (SSR) or removeItem throws (private
+// mode), the caller's own logout flow still resets state and redirects to login.
+export function clearEnvironmentSession() {
+  if (typeof localStorage === 'undefined' || !localStorage) return;
+  for (const key of ENVIRONMENT_SESSION_KEYS) {
+    try {
+      localStorage.removeItem(key);
+    } catch {
+      // Storage may be unavailable or throw (SSR / private mode).
+    }
+  }
+}
+
 export function isProfileStepValid(form) {
   return Boolean(form.fullName?.trim() && form.countryCode);
 }
