@@ -293,6 +293,21 @@ const FIELD_HINTS_POST_GRID = [
   ['filterOnly', Boolean, setTrue],
 ];
 
+// Entity-level opt-in/opt-out flags carried from the curated entity onto the
+// frontend-contract entity. Each is emitted only when explicitly set — absent
+// (the common case) always means the flag's documented default.
+function applyEntityLevelFlags(entity, feEntity) {
+  if (entity.javaQualifier) feEntity.javaQualifier = entity.javaQualifier;
+  if (entity.draftMode?.enabled) feEntity.draftMode = entity.draftMode;
+  if (entity.formCols != null) feEntity.formCols = entity.formCols;
+  // HandleDefaults opt-out: emit only when explicitly disabled (default is on).
+  if (entity.handlesDefaults === false) feEntity.handlesDefaults = false;
+  // Per-entity delete opt-out (ETP-4512): emit only when explicitly set.
+  if (entity.hideDelete === true) feEntity.hideDelete = true;
+  const siblingFields = entity.fields.filter(f => isSystem(f) && f.addLineFromSibling).map(f => f.name);
+  if (siblingFields.length > 0) feEntity.addLineHiddenFromSibling = siblingFields;
+}
+
 function applyFieldUIHints(f, mapped) {
   applyBasicFieldUIHints(f, mapped);
   applyHints(f, mapped, FIELD_HINTS_PRE_GRID);
@@ -396,15 +411,7 @@ export function generateFrontendContract(schema, rules = []) {
       .map(f => ({ name: f.apiKey || f.name, derivation: f.derivation }));
 
     const feEntity = { tableName: entity.tableName, tabId: entity.tabId, tabName: entity.tabName, uiPattern: entity.uiPattern ?? 'STD', fields, searchableFields, computedFields };
-    if (entity.javaQualifier) feEntity.javaQualifier = entity.javaQualifier;
-    if (entity.draftMode?.enabled) feEntity.draftMode = entity.draftMode;
-    if (entity.formCols != null) feEntity.formCols = entity.formCols;
-    // HandleDefaults opt-out: emit only when explicitly disabled (default is on).
-    if (entity.handlesDefaults === false) feEntity.handlesDefaults = false;
-    // Per-entity delete opt-out (ETP-4512): emit only when explicitly set.
-    if (entity.hideDelete === true) feEntity.hideDelete = true;
-    const siblingFields = entity.fields.filter(f => isSystem(f) && f.addLineFromSibling).map(f => f.name);
-    if (siblingFields.length > 0) feEntity.addLineHiddenFromSibling = siblingFields;
+    applyEntityLevelFlags(entity, feEntity);
     entities[entity.name] = feEntity;
   }
 
