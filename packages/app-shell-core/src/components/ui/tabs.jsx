@@ -16,22 +16,23 @@ const TabsContext = createContext(null);
  *   </Tabs>
  */
 
-export function Tabs({ value, onValueChange, children, className }) {
+export function Tabs({ value, onValueChange, children, className, ...rest }) {
   const ctx = useMemo(() => ({ value, onValueChange }), [value, onValueChange]);
   return (
     <TabsContext.Provider value={ctx}>
-      <div className={cn('flex flex-col', className)}>
+      <div className={cn('flex flex-col', className)} {...rest}>
         {children}
       </div>
     </TabsContext.Provider>
   );
 }
 
-export function TabsList({ children, className }) {
+export function TabsList({ children, className, ...rest }) {
   return (
     <div
       role="tablist"
       className={cn('flex flex-row items-end', className)}
+      {...rest}
     >
       {children}
     </div>
@@ -41,7 +42,7 @@ export function TabsList({ children, className }) {
 /**
  * @param {{ value: string; children: React.ReactNode; icon?: React.ElementType; badge?: number; className?: string; 'data-testid'?: string }} props
  */
-export function TabsTrigger({ value, children, icon: Icon, badge, className, 'data-testid': dataTestId }) {
+export function TabsTrigger({ value, children, icon: Icon, badge, className, ...rest }) {
   const ctx = useContext(TabsContext);
   const isActive = ctx?.value === value;
 
@@ -50,7 +51,6 @@ export function TabsTrigger({ value, children, icon: Icon, badge, className, 'da
       type="button"
       role="tab"
       aria-selected={isActive}
-      data-testid={dataTestId}
       onClick={() => ctx?.onValueChange(value)}
       className={cn(
         'inline-flex items-center gap-1 px-3 py-3 text-sm transition-colors',
@@ -60,6 +60,7 @@ export function TabsTrigger({ value, children, icon: Icon, badge, className, 'da
           : 'border-transparent font-normal text-[#555B6D] hover:text-[#3f3f50]',
         className,
       )}
+      {...rest}
     >
       {Icon ? <Icon className="h-6 w-6 shrink-0" data-testid="Icon__fa4214" /> : null}
       <span className="px-1">{children}</span>
@@ -75,11 +76,11 @@ export function TabsTrigger({ value, children, icon: Icon, badge, className, 'da
 /**
  * @param {{ value: string; children: React.ReactNode; className?: string }} props
  */
-export function TabsContent({ value, children, className }) {
+export function TabsContent({ value, children, className, ...rest }) {
   const ctx = useContext(TabsContext);
   if (ctx?.value !== value) return null;
   return (
-    <div role="tabpanel" className={cn('flex flex-1 flex-col', className)}>
+    <div role="tabpanel" className={cn('flex flex-1 flex-col', className)} {...rest}>
       {children}
     </div>
   );

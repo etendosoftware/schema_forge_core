@@ -49,6 +49,21 @@ export function selectPreferredOrg(role) {
   return role?.orgList?.find(org => org.name !== '*') || role?.orgList?.[0] || null;
 }
 
+// Canonical list of the Etendo environment session keys persisted on login.
+// buildEnvironmentSessionStorage below is the single writer of these keys, so
+// any consumer that needs to clear the environment session (e.g. logout) MUST
+// reuse this constant instead of hardcoding its own copy. Keep this in sync
+// with the keys assigned inside buildEnvironmentSessionStorage.
+export const ENVIRONMENT_SESSION_KEYS = [
+  'sf_auth_token',
+  'sf_auth_user',
+  'sf_auth_client_id',
+  'sf_auth_client_name',
+  'sf_auth_rolelist',
+  'sf_auth_selected_role',
+  'sf_auth_selected_org',
+];
+
 export function buildEnvironmentSessionStorage(env, loginResponse) {
   const values = {
     sf_auth_token: loginResponse.token,
