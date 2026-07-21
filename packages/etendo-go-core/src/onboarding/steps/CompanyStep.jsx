@@ -5,12 +5,14 @@ import { Label } from '@etendosoftware/app-shell-core/components/ui/label';
 import { useUI } from '@etendosoftware/app-shell-core/i18n';
 import { isCompanyStepValid } from '../state.js';
 import { trackOnboarding } from '../tracking.js';
+import { createOnboardingLogout } from '../logout.js';
 import { SetupShell } from '../components/SetupShell.jsx';
 import { SetupField } from '../components/SetupField.jsx';
 import { SetupSelect } from '../components/SetupSelect.jsx';
 
-export function CompanyStep({ config, stepData, onNext, onBack, goToStep, onChange, draftNotice, setDraftNotice, accountName }) {
+export function CompanyStep({ config, stepData, onNext, onBack, goToStep, setToken, setAccountName, onChange, draftNotice, setDraftNotice, accountName }) {
   const ui = useUI();
+  const handleLogout = createOnboardingLogout({ config, setToken, setAccountName, goToStep });
 
   const [form, setForm] = useState(() => ({
     clientName: stepData.clientName ?? config.defaultForm?.clientName ?? '',
@@ -54,6 +56,8 @@ export function CompanyStep({ config, stepData, onNext, onBack, goToStep, onChan
     <SetupShell
       progressLabel={ui('onboardingProgressAlmostDone')}
       progressValue={90}
+      onLogout={handleLogout}
+      logoutLabel={ui('logout')}
       brandLabel={config.brandLabel || 'Etendo GO'}
       data-testid="SetupShell__79cf84">
       {draftNotice && (

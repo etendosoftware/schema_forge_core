@@ -5,14 +5,16 @@ import { Label } from '@etendosoftware/app-shell-core/components/ui/label';
 import { useUI, useLocaleSwitch } from '@etendosoftware/app-shell-core/i18n';
 import { isProfileStepValid } from '../state.js';
 import { trackOnboarding } from '../tracking.js';
+import { createOnboardingLogout } from '../logout.js';
 import { SetupShell } from '../components/SetupShell.jsx';
 import { SetupField } from '../components/SetupField.jsx';
 import { BusinessTypeCard } from '../components/BusinessTypeCard.jsx';
 import { buildCountryOptions } from '../countries.js';
 
-export function ProfileStep({ config, stepData, onNext, onBack, goToStep, accountName, draftNotice, setDraftNotice, onChange }) {
+export function ProfileStep({ config, stepData, onNext, onBack, goToStep, accountName, setToken, setAccountName, draftNotice, setDraftNotice, onChange }) {
   const ui = useUI();
   const { locale } = useLocaleSwitch();
+  const handleLogout = createOnboardingLogout({ config, setToken, setAccountName, goToStep });
 
   const [form, setForm] = useState(() => ({
     fullName: stepData.fullName ?? config.defaultForm?.fullName ?? accountName ?? '',
@@ -68,6 +70,8 @@ export function ProfileStep({ config, stepData, onNext, onBack, goToStep, accoun
     <SetupShell
       progressLabel={ui('onboardingProgressAlmostReady')}
       progressValue={50}
+      onLogout={handleLogout}
+      logoutLabel={ui('logout')}
       brandLabel={config.brandLabel || 'Etendo GO'}
       data-testid="SetupShell__79cf84">
       {draftNotice && (
