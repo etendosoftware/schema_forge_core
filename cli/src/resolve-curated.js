@@ -290,6 +290,7 @@ function applyFieldDecisionProps(field, fieldDecision) {
   if (fieldDecision.gridOrder != null) field.gridOrder = fieldDecision.gridOrder;
   if (fieldDecision.min !== undefined) field.min = fieldDecision.min;
   if (fieldDecision.max !== undefined) field.max = fieldDecision.max;
+  if (fieldDecision.integer !== undefined) field.integer = fieldDecision.integer;
   copyTruthyDecisionProps(field, fieldDecision, FIELD_DECISION_COPY_PROPS);
 }
 

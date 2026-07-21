@@ -2266,6 +2266,31 @@ describe('generateFrontendContract — max field constraint (ETP-4277)', () => {
     assert.equal(discount.min, 0);
     assert.equal(discount.max, 100);
   });
+
+  it('copies integer:true from curated field to contract field output', () => {
+    const fc = generateFrontendContract(makeSchemaWithDiscount({ integer: true }));
+    const discount = fc.entities.order.fields.find(f => f.name === 'discount');
+    assert.equal(discount.integer, true);
+  });
+
+  it('copies integer:false through (explicit decimal opt-out)', () => {
+    const fc = generateFrontendContract(makeSchemaWithDiscount({ integer: false }));
+    const discount = fc.entities.order.fields.find(f => f.name === 'discount');
+    assert.equal(discount.integer, false);
+  });
+
+  it('does not set integer on contract field when curated field has no integer flag', () => {
+    const fc = generateFrontendContract(makeSchemaWithDiscount());
+    const discount = fc.entities.order.fields.find(f => f.name === 'discount');
+    assert.equal(discount.integer, undefined);
+  });
+
+  it('copies min + integer together (e.g. usableLifeMonths: min 1, integer)', () => {
+    const fc = generateFrontendContract(makeSchemaWithDiscount({ min: 1, integer: true }));
+    const discount = fc.entities.order.fields.find(f => f.name === 'discount');
+    assert.equal(discount.min, 1);
+    assert.equal(discount.integer, true);
+  });
 });
 
 describe('generateFrontendContract — window.import', () => {
