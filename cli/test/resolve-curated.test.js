@@ -689,6 +689,51 @@ describe('resolveCurated — max field constraint (ETP-4277)', () => {
     assert.equal(discount.min, 0);
     assert.equal(discount.max, 100);
   });
+
+  // ETP-4556 — `false` disables the flat ETP-4277 min/max emission too, so the
+  // disable sentinel is consistent with the nested `validation` object (which
+  // already omits the bound on `false`). Without this guard `min: false` would
+  // leak into the flat contract key and feed the on-blur autocorrect a garbage
+  // bound.
+  it('does NOT emit flat min when decision min is false (disable sentinel)', async () => {
+    const decisions = {
+      version: 2,
+      window: { name: 'Sales Order' },
+      entities: {
+        cOrderLine: {
+          name: 'orderLine',
+          fields: {
+            discount: { min: false, max: 100 },
+          },
+        },
+      },
+      rules: {},
+    };
+    const { schema } = await resolveCurated(schemaRaw, { rules: [] }, decisions);
+    const discount = schema.entities[0].fields.find(f => f.name === 'discount');
+    assert.equal(discount.min, undefined);
+    assert.equal(discount.max, 100);
+  });
+
+  it('does NOT emit flat max when decision max is false (disable sentinel)', async () => {
+    const decisions = {
+      version: 2,
+      window: { name: 'Sales Order' },
+      entities: {
+        cOrderLine: {
+          name: 'orderLine',
+          fields: {
+            discount: { min: 0, max: false },
+          },
+        },
+      },
+      rules: {},
+    };
+    const { schema } = await resolveCurated(schemaRaw, { rules: [] }, decisions);
+    const discount = schema.entities[0].fields.find(f => f.name === 'discount');
+    assert.equal(discount.min, 0);
+    assert.equal(discount.max, undefined);
+  });
 });
 
 // ─── ETP-4555 — declarative validation constraint propagation ─────────────────

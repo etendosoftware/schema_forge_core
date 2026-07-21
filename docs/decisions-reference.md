@@ -735,8 +735,8 @@ instead of the default input when it detects this property.
 |----------|------|---------|---------|
 | `name` | string | Raw field name | Override field's public API name. |
 | `required` | boolean | From AD mandatory | Force field as required. |
-| `min` | number | `undefined` | Minimum allowed value for numeric fields. On blur the UI autocorrects values below this limit to `min`. Travels through the full pipeline (`decisions.json` → contract → generated FieldDefs). |
-| `max` | number | `undefined` | Maximum allowed value for numeric fields. On blur the UI autocorrects values above this limit to `max`. Travels through the full pipeline (`decisions.json` → contract → generated FieldDefs). Example: `"max": 100` on a discount (%) field prevents values above 100. |
+| `min` | number \| `false` | `undefined` | Minimum allowed value for numeric fields. On blur the UI autocorrects values below this limit to `min`. Travels through the full pipeline (`decisions.json` → contract → generated FieldDefs). `false` disables the bound entirely, even if raw AD defines one (see ETP-4556 precedence below). |
+| `max` | number \| `false` | `undefined` | Maximum allowed value for numeric fields. On blur the UI autocorrects values above this limit to `max`. Travels through the full pipeline (`decisions.json` → contract → generated FieldDefs). Example: `"max": 100` on a discount (%) field prevents values above 100. `false` disables the bound entirely, even if raw AD defines one (see ETP-4556 precedence below). |
 | `readOnlyLogic` | string \| null | `null` | Expression for conditional read-only. Set `null` to omit. |
 | `displayLogic` | string \| null | `null` | Expression for conditional visibility. Set `null` to omit. |
 | `businessCritical` | boolean | `false` | Advisory-only metadata flag. When `true`, marks the field as business-critical data. This flag does **not** change any functional behavior (validation, read-only logic, visibility, etc.). It travels through the pipeline (`decisions.json` → `resolve-curated` → `contract.json` → `push-to-neo` → `ETGO_SF_FIELD.ISBUSINESSCRITICAL`) so that downstream consumers (e.g., AI agents reading `neo_schema`) know they must confirm with the user before creating or updating records that include this field. |
@@ -770,12 +770,22 @@ Per-field decision inputs (all optional):
 | Property | Type | Source of the contract value | Notes |
 |----------|------|------------------------------|-------|
 | `minLength` | number | `validation.minLength` | Decision only — no raw AD source. |
-| `maxLength` | number | `validation.maxLength` | Decision **overrides** the raw AD field length. |
-| `min` | number | `validation.minimum` | Decision **overrides** raw AD `valueMin`. Also still emitted flat (ETP-4277). |
-| `max` | number | `validation.maximum` | Decision **overrides** raw AD `valueMax`. Also still emitted flat (ETP-4277). |
+| `maxLength` | number \| `false` | `validation.maxLength` | Decision **overrides** the raw AD field length. `false` **disables** it (ETP-4556). |
+| `min` | number \| `false` | `validation.minimum` | Decision **overrides** raw AD `valueMin`. `false` **disables** it (ETP-4556) — omitted from BOTH the `validation` object and the flat `min` key. Otherwise still emitted flat (ETP-4277). |
+| `max` | number \| `false` | `validation.maximum` | Decision **overrides** raw AD `valueMax`. `false` **disables** it (ETP-4556) — omitted from BOTH the `validation` object and the flat `max` key. Otherwise still emitted flat (ETP-4277). |
 | `format` | string | `validation.format` | Semantic format hint (e.g. `email`, `uri`). Never guessed from column type. |
 | `enum` | string[] | `validation.enum` | Explicit allowed values. Empty array is ignored. |
 | `allowedSchemes` | string[] | `validation.allowedSchemes` | Explicit URL scheme allow-list. Empty array is ignored. |
+
+**Precedence for the three DB-sourced numeric keys (`maxLength`, `min`, `max`) — ETP-4556:**
+
+| Decision value | Effect |
+|----------------|--------|
+| a **number** (incl. `0`) | **Overrides** the raw AD value — the number is the constraint. `0` is a real bound (`minimum: 0` / `maximum: 0` / `maxLength: 0`), NOT a disable. |
+| **`false`** | **Disables** the constraint entirely — omitted even when raw AD provides a value. For `min`/`max` this also suppresses the flat ETP-4277 key, so the on-blur autocorrect never receives a bogus `false` bound. |
+| **absent / `null`** | **Falls through** to the raw AD value (`fieldlength`, `valueMin`, `valueMax`). If raw has none either, the constraint is omitted. |
+
+> **`0` vs `false`:** `0` is a valid constraint value; `false` means "no constraint". They are distinguished with a strict `=== false` check performed *before* numeric coercion, so `Number(false) === 0` can never fabricate a zero bound. The other decision keys (`required`, `minLength`, `format`, `enum`, `allowedSchemes`) do **not** honour the `false` sentinel.
 
 **Rules (non-negotiable):**
 
@@ -784,6 +794,7 @@ Per-field decision inputs (all optional):
 3. **Zero is valid** — `minimum: 0` and `maximum: 0` survive (presence is tested with `hasOwnProperty` / `!= null`, never truthiness).
 4. **String→Number coercion** — raw AD metadata arrives as strings (`maxLength: "60"`); numeric constraints are coerced to `Number` and NaN/blank values are dropped.
 5. **Deterministic key order** — keys are always emitted in the canonical order shown above (`required, minLength, maxLength, minimum, maximum, format, enum, allowedSchemes`). The order is fixed so the offline regen-check (`generate-contract` re-projecting the resolved object) is byte-stable — a shuffled key order would surface as a spurious contract diff.
+6. **`false` disable sentinel (ETP-4556)** — for `maxLength`, `min`, `max` only, a decision value of literal `false` disables the constraint even when raw AD provides one. `false` is checked before numeric coercion (so `Number(false) === 0` cannot fabricate a zero bound) and `0` stays a valid bound. For `min`/`max` the sentinel is enforced consistently across the nested `validation` object AND the flat ETP-4277 key.
 
 **Unicode length semantics:** `minLength`/`maxLength` count **UTF-16 code units** (JavaScript `String.length` / the AD field-length column), not Unicode grapheme clusters. A character outside the Basic Multilingual Plane (e.g. an emoji, a surrogate pair) counts as **2** toward the length. Constraints inherited from AD (`fieldlength`) follow the same column-length semantics the database enforces.
 

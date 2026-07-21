@@ -58,6 +58,25 @@ function firstNumber(...candidates) {
 }
 
 /**
+ * Resolve a DB-sourced numeric constraint (maxLength / min / max) with an
+ * explicit disable sentinel (ETP-4556).
+ *
+ * A decision value of literal `false` means "disable this constraint": omit it
+ * entirely even when raw DB metadata exists. This is checked BEFORE coercion so
+ * `Number(false) === 0` can never fabricate a bogus zero. Any other decision
+ * value falls through to normal precedence (decision wins over raw). A legit
+ * `0` decision (0 !== false) is a real bound and is preserved.
+ *
+ * @param {*} decisionVal  Decision value (false = disable, number/string = override).
+ * @param {*} rawVal       Raw DB metadata value.
+ * @returns {number|undefined} The resolved bound, or undefined when disabled/absent.
+ */
+function resolveNumeric(decisionVal, rawVal) {
+  if (decisionVal === false) return undefined;
+  return firstNumber(decisionVal, rawVal);
+}
+
+/**
  * Re-project a validation object into canonical key order, dropping undefined
  * values. Returns undefined when nothing survives (so callers can omit the key).
  */
@@ -91,16 +110,18 @@ export function buildFieldValidation({ raw = {}, decision = {}, required = false
   const minLength = firstNumber(decision.minLength);
   if (minLength !== undefined) v.minLength = minLength;
 
-  // maxLength — explicit decision wins over raw fieldlength.
-  const maxLength = firstNumber(decision.maxLength, raw.maxLength);
+  // maxLength — explicit decision wins over raw fieldlength; `false` disables it.
+  const maxLength = resolveNumeric(decision.maxLength, raw.maxLength);
   if (maxLength !== undefined) v.maxLength = maxLength;
 
-  // minimum — explicit decision `min` wins over raw valueMin (zero is valid).
-  const minimum = firstNumber(decision.min, raw.valueMin);
+  // minimum — explicit decision `min` wins over raw valueMin (zero is valid);
+  // `false` disables it.
+  const minimum = resolveNumeric(decision.min, raw.valueMin);
   if (minimum !== undefined) v.minimum = minimum;
 
-  // maximum — explicit decision `max` wins over raw valueMax (zero is valid).
-  const maximum = firstNumber(decision.max, raw.valueMax);
+  // maximum — explicit decision `max` wins over raw valueMax (zero is valid);
+  // `false` disables it.
+  const maximum = resolveNumeric(decision.max, raw.valueMax);
   if (maximum !== undefined) v.maximum = maximum;
 
   // format — decisions only, never inferred.
