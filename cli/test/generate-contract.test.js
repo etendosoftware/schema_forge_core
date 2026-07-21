@@ -959,6 +959,28 @@ describe('generateApiPrediction', () => {
     assert.equal(prediction.crud.journal.handlesDefaults, undefined);
   });
 
+  it('surfaces delete:false on crud when an entity opts out via hideDelete, scoped to just that entity', () => {
+    const hideDeleteSchema = {
+      version: '0.1.0',
+      window: { id: '900', name: 'GL Journal', primaryEntity: 'journal', category: 'finance' },
+      entities: [
+        { name: 'journal', table: 'GL_Journal', level: 'header', fields: [
+          { name: 'description', column: 'Description', type: 'string', visibility: 'editable', required: false, grid: false, form: true },
+        ] },
+        { name: 'journalLine', table: 'GL_JournalLine', level: 'line', hideDelete: true, fields: [
+          { name: 'account', column: 'Account_ID', type: 'foreignKey', reference: 'Account', inputMode: 'selector', visibility: 'editable', required: true, grid: true, form: true },
+        ] },
+      ],
+    };
+    const fc = generateFrontendContract(hideDeleteSchema);
+    const bc = generateBackendContract(hideDeleteSchema);
+    const prediction = generateApiPrediction(hideDeleteSchema, fc, bc);
+    assert.equal(prediction.crud.journalLine.delete, false);
+    // The header entity's own delete capability is unaffected — this is the whole
+    // point of an entity-scoped flag vs. window.hideDelete (which is all-or-nothing).
+    assert.equal(prediction.crud.journal.delete, true);
+  });
+
   it('CRUD URLs follow correct pattern', () => {
     const fc = generateFrontendContract(fkSchema);
     const bc = generateBackendContract(fkSchema);
@@ -2220,6 +2242,38 @@ describe('generateFrontendContract — handlesDefaults', () => {
   it('omits handlesDefaults when explicitly true', () => {
     const fc = generateFrontendContract(make(true));
     assert.equal(fc.entities.journalLine.handlesDefaults, undefined);
+  });
+});
+
+describe('generateFrontendContract — hideDelete (ETP-4512)', () => {
+  const make = (hideDelete) => ({
+    version: '0.1.0',
+    window: { id: '900', name: 'GL Journal', primaryEntity: 'journal', category: 'finance' },
+    entities: [
+      { name: 'journal', table: 'GL_Journal', level: 'header', fields: [
+        { name: 'description', column: 'Description', type: 'string', visibility: 'editable', required: false, grid: false, form: true },
+      ] },
+      { name: 'journalLine', table: 'GL_JournalLine', level: 'line',
+        ...(hideDelete === undefined ? {} : { hideDelete }),
+        fields: [
+          { name: 'account', column: 'Account_ID', type: 'foreignKey', reference: 'Account', inputMode: 'selector', visibility: 'editable', required: true, grid: true, form: true },
+        ] },
+    ],
+  });
+
+  it('emits hideDelete:true when the entity opts out', () => {
+    const fc = generateFrontendContract(make(true));
+    assert.equal(fc.entities.journalLine.hideDelete, true);
+  });
+
+  it('omits hideDelete when the entity does not set it (default on, delete allowed)', () => {
+    const fc = generateFrontendContract(make(undefined));
+    assert.equal(fc.entities.journalLine.hideDelete, undefined);
+  });
+
+  it('omits hideDelete when explicitly false', () => {
+    const fc = generateFrontendContract(make(false));
+    assert.equal(fc.entities.journalLine.hideDelete, undefined);
   });
 });
 

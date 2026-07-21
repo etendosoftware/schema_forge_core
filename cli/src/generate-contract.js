@@ -401,6 +401,8 @@ export function generateFrontendContract(schema, rules = []) {
     if (entity.formCols != null) feEntity.formCols = entity.formCols;
     // HandleDefaults opt-out: emit only when explicitly disabled (default is on).
     if (entity.handlesDefaults === false) feEntity.handlesDefaults = false;
+    // Per-entity delete opt-out (ETP-4512): emit only when explicitly set.
+    if (entity.hideDelete === true) feEntity.hideDelete = true;
     const siblingFields = entity.fields.filter(f => isSystem(f) && f.addLineFromSibling).map(f => f.name);
     if (siblingFields.length > 0) feEntity.addLineHiddenFromSibling = siblingFields;
     entities[entity.name] = feEntity;
@@ -1207,6 +1209,12 @@ function buildCrudPrediction(baseUrl, entityName, feEntity) {
   // Surface the HandleDefaults opt-out into the runtime api so DetailView can skip
   // the line /defaults fetch for this entity. Emitted only when explicitly off.
   if (feEntity && feEntity.handlesDefaults === false) crud.handlesDefaults = false;
+  // Per-entity delete opt-out (ETP-4512) — see resolve-curated.js's applyEntityDecisions
+  // for why this exists alongside window.hideDelete. DetailView's buildDeleteRowHandler /
+  // isBulkDeleteBarVisible / canDeleteSelectedLine all gate directly on this same
+  // crud.delete flag, so setting it here removes the row-level delete affordance too,
+  // not just the declared API capability.
+  if (feEntity && feEntity.hideDelete === true) crud.delete = false;
   return crud;
 }
 

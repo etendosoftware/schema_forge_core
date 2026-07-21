@@ -596,6 +596,16 @@ function applyEntityDecisions(entity, entityDecision) {
   if (entityDecision.handlesDefaults === false) {
     entity.handlesDefaults = false;
   }
+  // Per-entity delete opt-out (ETP-4512): unlike window.hideDelete (which disables
+  // delete uniformly across every entity in the window), this scopes the CRUD
+  // delete capability to just this one entity — for a child/detail entity whose
+  // rows are exclusively managed as a side effect of the parent's own save (e.g.
+  // a NeoHandler syncing a join table), where allowing manual row deletion would
+  // let a user bypass that invariant. Composes with window.hideDelete: either can
+  // disable delete for a given entity, neither depends on the other.
+  if (entityDecision.hideDelete === true) {
+    entity.hideDelete = true;
+  }
 }
 
 /**
