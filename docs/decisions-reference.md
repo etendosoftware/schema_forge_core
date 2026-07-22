@@ -638,7 +638,7 @@ Gates a field's visibility on a named, server-resolved capability flag instead o
 - **The grid column entry** — emitted by both `generateTableComponent` (standard grid) and the `list-modal` column builder, as `visibleWhenCapability: '<key>'` alongside the field's other column flags.
 - **A `window.statusPills` entry that references this field** — the capability key is resolved by *looking up the field by name* within the entity (`statusPills[i].field`) and copied onto the generated `extraBadges` entry. It is never declared redundantly on the `statusPills` decision entry itself — one source of truth, the field.
 
-At runtime, the consuming component calls `useHasCapability(key)` (from `@etendosoftware/app-shell-core/auth`, re-exported via `@/auth/AuthContext.jsx`) and **omits the field/pill entirely** when it resolves `false` — not disabled, not hidden via CSS. `useHasCapability` fails closed: an unloaded `capabilities` map or a missing key both resolve `false`, so a slow/failed webhook fetch never leaks a gated field.
+At runtime, the consuming component reads the `capabilities` map off `useAuth()` (populated once at role-selection via the `GET /webhooks/SFWindowAccessMap` webhook) and **omits the field/pill entirely** when the named key resolves `false` — not disabled, not hidden via CSS. The check itself is the plain function `isCapabilityVisible(capabilities, key)` (`tools/app-shell/src/lib/capabilityVisibility.js` in the functional repo) — deliberately not a hook, since callers gate a variable number of entries per render and a hook would violate the rules of hooks. Components pull `capabilities` once via the `useCapabilitiesSafe()` hook (`tools/app-shell/src/hooks/useCapabilitiesSafe.js`) and pass it into `isCapabilityVisible` per field/column/pill. Both fail closed: an unloaded `capabilities` map ({}) or a missing/falsy key resolve `false`, so a slow/failed webhook fetch never leaks a gated field.
 
 ```json
 "accountingDate": {
@@ -647,7 +647,7 @@ At runtime, the consuming component calls `useHasCapability(key)` (from `@etendo
 }
 ```
 
-**Note:** as of ETP-4520, the standard grid column emission is wired end-to-end. The `list-modal` grid column emission is also wired. The `statusPills`/`DetailView` runtime consumption (reading `extraBadges[i].visibleWhenCapability` and calling `useHasCapability`) still needs a companion change in the functional repo's `DetailView.jsx` (statusPill rendering lives there, not in `schema_forge_core`) — the generator-side data is emitted and ready to be consumed.
+**Note:** as of ETP-4520, this mechanism is end-to-end complete. The standard grid column emission and the `list-modal` grid column emission are wired on the generator side, and the functional repo's runtime consumption is also in place: `DataTable.jsx` filters gated columns out of `visibleColumns`, and `DetailView.jsx` resolves gated `statusPills`/`extraBadges` entries to `null` before rendering — both via the shared `isCapabilityVisible`/`useCapabilitiesSafe` pair described above (functional repo commit `c6e2ac1e3`). The concrete shipped consumer is the `posted` field on `sales-invoice` and `purchase-invoice`, gated behind `showAccountingFields` (see those windows' `docs/generated-custom-windows/*.md` guides in the functional repo).
 
 #### Status column rendering (`columnType` and `enumValues`)
 
