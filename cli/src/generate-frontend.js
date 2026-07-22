@@ -315,7 +315,10 @@ export function generateTableComponent(entityName, contract) {
     const filterOnlyPart = fragmentIf((f.filterOnly || f.filterable === false), ', filterable: false');
     const dotPart = fragmentIf(f.dot === false, ', dot: false');
     const gridReadOnlyPart = fragmentIf(f.gridReadOnly, ', readOnly: true');
-    return `  { key: '${f.name}', column: '${f.column}', type: '${type}'${labelsPart}${labelPart}${enumLabelsPart}${enumVariantsPart}${selectionPart}${togglePart}${badgePart}${badgeLabelsPart}${badgeColorsPart}${badgeVariantsPart}${summablePart}${displayPart}${renderPart}${requiredPart}${lookupPart}${lookupDrawerColPart}${excludeValueOfColPart}${popupPart}${minColPart}${maxColPart}${growPart}${columnWidthPart}${noTrailingPart}${filterOnlyPart}${dotPart}${gridReadOnlyPart} },`;
+    // ETP-4520 — opt-in capability gate: DataTable resolves useHasCapability(key) at
+    // runtime and omits the column entirely (not disabled/hidden via CSS) when false.
+    const visibleWhenCapabilityPart = f.visibleWhenCapability ? `, visibleWhenCapability: '${String(f.visibleWhenCapability).replace(/'/g, "\\'")}'` : '';
+    return `  { key: '${f.name}', column: '${f.column}', type: '${type}'${labelsPart}${labelPart}${enumLabelsPart}${enumVariantsPart}${selectionPart}${togglePart}${badgePart}${badgeLabelsPart}${badgeColorsPart}${badgeVariantsPart}${summablePart}${displayPart}${renderPart}${requiredPart}${lookupPart}${lookupDrawerColPart}${excludeValueOfColPart}${popupPart}${minColPart}${maxColPart}${growPart}${columnWidthPart}${noTrailingPart}${filterOnlyPart}${dotPart}${gridReadOnlyPart}${visibleWhenCapabilityPart} },`;
   }).join('\n');
 
   const filtersArray = searchableFields.map(f => `'${f}'`).join(', ');
@@ -1394,7 +1397,9 @@ function buildListModalColumns(entity) {
     const patternFieldPart = wrapIf(", patternField: '", f.patternField, "'");
     const kindLabelsPart = jsonWrapIf(', kindLabels: ', f.kindLabels);
     const tonesPart = jsonWrapIf(', tones: ', f.tones);
-    return `  { key: '${f.name}', column: '${f.column}', type: '${type}'${labelPart}${labelKeyPart}${enumLabelsPart}${enumVariantsPart}${togglePart}${inlineEditPart}${badgePart}${displayPart}${cellTypePart}${subFieldPart}${subEmptyKeyPart}${kindFieldPart}${patternFieldPart}${kindLabelsPart}${tonesPart} },`;
+    // ETP-4520 — same opt-in capability gate as the standard DataTable columns.
+    const visibleWhenCapabilityPart = f.visibleWhenCapability ? `, visibleWhenCapability: '${String(f.visibleWhenCapability).replace(/'/g, "\\'")}'` : '';
+    return `  { key: '${f.name}', column: '${f.column}', type: '${type}'${labelPart}${labelKeyPart}${enumLabelsPart}${enumVariantsPart}${togglePart}${inlineEditPart}${badgePart}${displayPart}${cellTypePart}${subFieldPart}${subEmptyKeyPart}${kindFieldPart}${patternFieldPart}${kindLabelsPart}${tonesPart}${visibleWhenCapabilityPart} },`;
   }).join('\n');
 }
 
@@ -2300,7 +2305,17 @@ ${MARKERS.GENERATED_END(`summary:${headerEntity}`)}
 
 ${MARKERS.GENERATED_START(`extraBadges:${headerEntity}`)}
 const extraBadges = [
-${statusPills.map(p => `  { key: '${p.field}', type: 'statusPill', trueKey: '${p.trueKey}', falseKey: '${p.falseKey}' },`).join('\n')}
+${statusPills.map(p => {
+  // ETP-4520 — the capability gate lives on the *field* the pill renders (looked
+  // up by name within the header entity), not duplicated on the statusPills
+  // decision entry itself. DetailView resolves useHasCapability(key) at runtime
+  // and omits the pill entirely (not disabled/hidden via CSS) when false.
+  const pillField = allEntityFields.find(ef => ef.name === p.field);
+  const pillCapabilityPart = pillField?.visibleWhenCapability
+    ? `, visibleWhenCapability: '${String(pillField.visibleWhenCapability).replace(/'/g, "\\'")}'`
+    : '';
+  return `  { key: '${p.field}', type: 'statusPill', trueKey: '${p.trueKey}', falseKey: '${p.falseKey}'${pillCapabilityPart} },`;
+}).join('\n')}
 ];
 ${MARKERS.GENERATED_END(`extraBadges:${headerEntity}`)}
 

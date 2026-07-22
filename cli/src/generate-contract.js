@@ -233,6 +233,9 @@ const BASIC_FIELD_HINTS = [
   ['explicitType', Boolean, setTrue],
   ['statusBar', Boolean, setTrue],
   ['badge', Boolean, setTrue],
+  // ETP-4520 — capability key gating field visibility on the grid/statusPill
+  // surfaces at runtime (see resolve-curated.js's FIELD_DECISION_COPY_PROPS).
+  ['visibleWhenCapability', Boolean],
 ];
 
 /**
