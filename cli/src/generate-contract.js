@@ -318,6 +318,9 @@ function applyFieldUIHints(f, mapped) {
   // ETP-4556 — never propagate the `false` disable sentinel into the flat bound.
   if (f.min !== undefined && f.min !== false) mapped.min = f.min;
   if (f.max !== undefined && f.max !== false) mapped.max = f.max;
+  // ETP-4542 — flat `integer` bound (whole-number constraint). Additive, mirrors
+  // min/max; the `false` sentinel is treated as "no constraint" for consistency.
+  if (f.integer !== undefined && f.integer !== false) mapped.integer = f.integer;
   // ETP-4555 — canonical declarative validation object (re-projected into a fixed
   // key order for deterministic output). Additive; absent when the field has none.
   const validation = projectValidation(f.validation);

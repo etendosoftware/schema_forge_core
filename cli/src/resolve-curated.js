@@ -291,6 +291,8 @@ function applyFieldDecisionProps(field, fieldDecision) {
   if (fieldDecision.gridOrder != null) field.gridOrder = fieldDecision.gridOrder;
   applyFlatBound(field, fieldDecision, 'min');
   applyFlatBound(field, fieldDecision, 'max');
+  // ETP-4542 — flat `integer` bound (whole-number constraint), same sentinel handling as min/max.
+  applyFlatBound(field, fieldDecision, 'integer');
   copyTruthyDecisionProps(field, fieldDecision, FIELD_DECISION_COPY_PROPS);
 }
 

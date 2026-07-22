@@ -2322,6 +2322,32 @@ describe('generateFrontendContract — max field constraint (ETP-4277)', () => {
     assert.equal(discount.max, 100);
   });
 
+  it('copies integer:true from curated field to contract field output', () => {
+    const fc = generateFrontendContract(makeSchemaWithDiscount({ integer: true }));
+    const discount = fc.entities.order.fields.find(f => f.name === 'discount');
+    assert.equal(discount.integer, true);
+  });
+
+  it('does not set integer on contract field when curated field has no integer flag', () => {
+    const fc = generateFrontendContract(makeSchemaWithDiscount());
+    const discount = fc.entities.order.fields.find(f => f.name === 'discount');
+    assert.equal(discount.integer, undefined);
+  });
+
+  it('copies min + integer together (e.g. usableLifeMonths: min 1, integer)', () => {
+    const fc = generateFrontendContract(makeSchemaWithDiscount({ min: 1, integer: true }));
+    const discount = fc.entities.order.fields.find(f => f.name === 'discount');
+    assert.equal(discount.min, 1);
+    assert.equal(discount.integer, true);
+  });
+
+  // ETP-4542 + ETP-4556 — integer follows the same `false` disable sentinel as min/max.
+  it('does NOT copy flat integer when the curated field carries the false disable sentinel', () => {
+    const fc = generateFrontendContract(makeSchemaWithDiscount({ integer: false }));
+    const discount = fc.entities.order.fields.find(f => f.name === 'discount');
+    assert.equal(discount.integer, undefined);
+  });
+
   // ETP-4556 — `false` disable sentinel must not leak into the flat contract key.
   it('does NOT copy flat min when the curated field carries the false disable sentinel', () => {
     const fc = generateFrontendContract(makeSchemaWithDiscount({ min: false, max: 100 }));
