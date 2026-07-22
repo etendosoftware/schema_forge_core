@@ -15,6 +15,7 @@ import { dirname, join } from 'node:path';
 import { classifyRule } from './pre-classify.js';
 import { toCamelCase, isMainModule } from './utils.js';
 import { migrateDecisions, needsMigration, getVersion } from './migrations/index.js';
+import { buildFieldValidation } from './lib/field-validation.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -288,10 +289,19 @@ function applyFieldDecisionProps(field, fieldDecision) {
   if (fieldDecision.summable) field.summable = true;
   if (fieldDecision.businessCritical) field.businessCritical = true;
   if (fieldDecision.gridOrder != null) field.gridOrder = fieldDecision.gridOrder;
-  if (fieldDecision.min !== undefined) field.min = fieldDecision.min;
-  if (fieldDecision.max !== undefined) field.max = fieldDecision.max;
-  if (fieldDecision.integer !== undefined) field.integer = fieldDecision.integer;
+  applyFlatBound(field, fieldDecision, 'min');
+  applyFlatBound(field, fieldDecision, 'max');
+  // ETP-4542 — flat `integer` bound (whole-number constraint), same sentinel handling as min/max.
+  applyFlatBound(field, fieldDecision, 'integer');
   copyTruthyDecisionProps(field, fieldDecision, FIELD_DECISION_COPY_PROPS);
+}
+
+// ETP-4556 — `false` is the disable sentinel (see field-validation.js): omit the flat
+// ETP-4277 bound entirely, matching the nested `validation` object, so it is never fed
+// to the on-blur autocorrect as a bogus `false` limit.
+function applyFlatBound(field, fieldDecision, key) {
+  const v = fieldDecision[key];
+  if (v !== undefined && v !== false) field[key] = v;
 }
 
 function applyForeignKeyLookupProps(field, fieldDecision) {
@@ -386,6 +396,11 @@ function buildCuratedField(rawField, fieldDecision, discardPatterns) {
   // for a classic stored-procedure process that NEO can actually execute).
   if (fieldDecision.processId) field.processId = fieldDecision.processId;
   if (fieldDecision.processType) field.processType = fieldDecision.processType;
+
+  // ETP-4555 — canonical declarative validation object (raw DB constraints merged
+  // with explicit decisions; decision wins). Additive to the flat min/max above.
+  const validation = buildFieldValidation({ raw: rawField, decision: fieldDecision, required: field.required });
+  if (validation) field.validation = validation;
 
   return field;
 }

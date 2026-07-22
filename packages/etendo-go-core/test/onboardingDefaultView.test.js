@@ -8,6 +8,7 @@ const __dirname = dirname(fileURLToPath(import.meta.url));
 const onboardingSrc = join(__dirname, '..', 'src', 'onboarding');
 const flow = readFileSync(join(onboardingSrc, 'OnboardingFlow.jsx'), 'utf8');
 const envSelect = readFileSync(join(onboardingSrc, 'steps', 'EnvSelectStep.jsx'), 'utf8');
+const logoutHelper = readFileSync(join(onboardingSrc, 'logout.js'), 'utf8');
 
 // ETP-4443: Login must be the default onboarding view (post-logout and cold entry). The product
 // evolved so the login flow is the main entry point; register is only a secondary action.
@@ -31,12 +32,16 @@ describe('Onboarding default view (ETP-4443)', () => {
     assert.doesNotMatch(flow, /default to registering/);
   });
 
-  it('sends the user to login after logging out from the env-select step', () => {
-    const handleLogout = envSelect.slice(
-      envSelect.indexOf('const handleLogout'),
-      envSelect.indexOf('const handleLogout') + 400,
-    );
-    assert.match(handleLogout, /goToStep\('login'\)/);
-    assert.doesNotMatch(handleLogout, /goToStep\('register'\)/);
+  it('sends the user to login after logging out (shared onboarding logout helper)', () => {
+    // ETP-4427 centralized the logout logic in logout.js; the post-logout
+    // landing guarantee now lives there (the single source of truth).
+    assert.match(logoutHelper, /goToStep\('login'\)/);
+    assert.doesNotMatch(logoutHelper, /goToStep\('register'\)/);
+  });
+
+  it('env-select logs out through the shared helper', () => {
+    // The ETP-4443 post-logout-to-login guarantee reaches env-select via the
+    // shared helper rather than an inline handler.
+    assert.match(envSelect, /const handleLogout = createOnboardingLogout\(\{[^}]*goToStep[^}]*\}\)/);
   });
 });
