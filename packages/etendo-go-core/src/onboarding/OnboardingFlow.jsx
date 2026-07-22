@@ -3,7 +3,7 @@ import { Loader2 } from 'lucide-react';
 import { useUI } from '@etendosoftware/app-shell-core/i18n';
 import { createLocalAuthStorage } from '@etendosoftware/app-shell-core/auth';
 import { fetchAccount, fetchEnvironments, loginEnvironment, fetchOnboardingDraft, saveOnboardingDraft } from './api.js';
-import { buildEnvironmentSessionStorage } from './state.js';
+import { buildEnvironmentSessionStorage, clearEnvironmentSession } from './state.js';
 import { buildAppReturnToHref, getSafeReturnTo } from './oauthReturnTo.js';
 import { trackOnboarding } from './tracking.js';
 import { createOnboardingLogout } from './logout.js';
@@ -84,7 +84,10 @@ export function OnboardingFlow({ steps = [], config = {} }) {
   if (!onLogoutRef.current) {
     onLogoutRef.current = createOnboardingLogout({
       flushDraft: () => draftPersistenceRef.current.flush(draftContextRef.current),
-      cleanupSession: () => authStorageRef.current.clear(),
+      cleanupSession: () => {
+        authStorageRef.current.clear();
+        clearEnvironmentSession();
+      },
       resetState: () => logoutContextRef.current.resetState(),
       navigateToLogin: () => logoutContextRef.current.navigateToLogin(),
       track: (eventDefinition, properties) => logoutContextRef.current.track(eventDefinition, properties),

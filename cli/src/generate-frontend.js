@@ -2358,13 +2358,15 @@ export function generateIndexComponent(headerEntity, detailEntity, contract) {
   const headerName = toJsIdentifier(headerEntity);
   const category = contract?.frontendContract?.window?.category ?? 'general';
   const windowName = contract?.frontendContract?.window?.name ?? toLabel(headerEntity);
+  const readOnly = contract?.frontendContract?.window?.readOnly === true;
   const apiPrediction = contract?.apiPrediction;
 
   const apiProp = apiPrediction ? ' api={api}' : '';
   const apiImport = apiPrediction ? `, { api }` : '';
+  const readOnlyMeta = readOnly ? ', readOnly: true' : '';
   return `import ${headerName}Page${apiImport} from './${headerName}Page';
 
-const windowMeta = { category: '${category}', name: '${windowName}' };
+const windowMeta = { category: '${category}', name: '${windowName}'${readOnlyMeta} };
 
 ${MARKERS.GENERATED_START('component:App')}
 export default function App({ windowName, recordId, token, apiBaseUrl, window, ...rest }) {
