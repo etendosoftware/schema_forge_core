@@ -572,6 +572,41 @@ describe('buildAdvancedFilterCriteria', () => {
     expect(result).toEqual([{ fieldName: 'name', operator: 'inSet', value: 'a,b,c' }]);
   });
 
+  // ================================================================
+  // ETP-4609 — "Es cualquiera de" must match case-insensitively.
+  // `inSet` (and its single-value `equals` shortcut) are case-sensitive
+  // on the backend, so the operator sent for a manually-typed code list
+  // must be the case-insensitive `iEquals` instead (already relied on
+  // elsewhere for the text mode "Es" operator).
+  // ================================================================
+
+  it('uses case-insensitive iEquals for a single inSet value', () => {
+    const filter = {
+      rowOperator: 'and',
+      conditions: [{ field: 'name', operator: 'inSet', value: 'i' }],
+    };
+    const result = buildAdvancedFilterCriteria(filter, columns);
+    expect(result).toEqual([{ fieldName: 'name', operator: 'iEquals', value: 'i' }]);
+  });
+
+  it('OR-composes case-insensitive iEquals clauses for multiple inSet values', () => {
+    const filter = {
+      rowOperator: 'and',
+      conditions: [{ field: 'name', operator: 'inSet', value: 'i,s' }],
+    };
+    const result = buildAdvancedFilterCriteria(filter, columns);
+    expect(result).toEqual([
+      {
+        _constructor: 'AdvancedCriteria',
+        operator: 'or',
+        criteria: [
+          { fieldName: 'name', operator: 'iEquals', value: 'i' },
+          { fieldName: 'name', operator: 'iEquals', value: 's' },
+        ],
+      },
+    ]);
+  });
+
   it('handles multi-value array with single item (no OR wrap)', () => {
     const filter = {
       rowOperator: 'and',
