@@ -959,6 +959,28 @@ describe('generateApiPrediction', () => {
     assert.equal(prediction.crud.journal.handlesDefaults, undefined);
   });
 
+  it('surfaces delete:false on crud when an entity opts out via hideDelete, scoped to just that entity', () => {
+    const hideDeleteSchema = {
+      version: '0.1.0',
+      window: { id: '900', name: 'GL Journal', primaryEntity: 'journal', category: 'finance' },
+      entities: [
+        { name: 'journal', table: 'GL_Journal', level: 'header', fields: [
+          { name: 'description', column: 'Description', type: 'string', visibility: 'editable', required: false, grid: false, form: true },
+        ] },
+        { name: 'journalLine', table: 'GL_JournalLine', level: 'line', hideDelete: true, fields: [
+          { name: 'account', column: 'Account_ID', type: 'foreignKey', reference: 'Account', inputMode: 'selector', visibility: 'editable', required: true, grid: true, form: true },
+        ] },
+      ],
+    };
+    const fc = generateFrontendContract(hideDeleteSchema);
+    const bc = generateBackendContract(hideDeleteSchema);
+    const prediction = generateApiPrediction(hideDeleteSchema, fc, bc);
+    assert.equal(prediction.crud.journalLine.delete, false);
+    // The header entity's own delete capability is unaffected — this is the whole
+    // point of an entity-scoped flag vs. window.hideDelete (which is all-or-nothing).
+    assert.equal(prediction.crud.journal.delete, true);
+  });
+
   it('CRUD URLs follow correct pattern', () => {
     const fc = generateFrontendContract(fkSchema);
     const bc = generateBackendContract(fkSchema);
@@ -2223,6 +2245,38 @@ describe('generateFrontendContract — handlesDefaults', () => {
   });
 });
 
+describe('generateFrontendContract — hideDelete (ETP-4512)', () => {
+  const make = (hideDelete) => ({
+    version: '0.1.0',
+    window: { id: '900', name: 'GL Journal', primaryEntity: 'journal', category: 'finance' },
+    entities: [
+      { name: 'journal', table: 'GL_Journal', level: 'header', fields: [
+        { name: 'description', column: 'Description', type: 'string', visibility: 'editable', required: false, grid: false, form: true },
+      ] },
+      { name: 'journalLine', table: 'GL_JournalLine', level: 'line',
+        ...(hideDelete === undefined ? {} : { hideDelete }),
+        fields: [
+          { name: 'account', column: 'Account_ID', type: 'foreignKey', reference: 'Account', inputMode: 'selector', visibility: 'editable', required: true, grid: true, form: true },
+        ] },
+    ],
+  });
+
+  it('emits hideDelete:true when the entity opts out', () => {
+    const fc = generateFrontendContract(make(true));
+    assert.equal(fc.entities.journalLine.hideDelete, true);
+  });
+
+  it('omits hideDelete when the entity does not set it (default on, delete allowed)', () => {
+    const fc = generateFrontendContract(make(undefined));
+    assert.equal(fc.entities.journalLine.hideDelete, undefined);
+  });
+
+  it('omits hideDelete when explicitly false', () => {
+    const fc = generateFrontendContract(make(false));
+    assert.equal(fc.entities.journalLine.hideDelete, undefined);
+  });
+});
+
 // ─── ETP-4277 — max constraint in contract fields ─────────────────────────────
 describe('generateFrontendContract — max field constraint (ETP-4277)', () => {
   function makeSchemaWithDiscount(discountExtra = {}) {
@@ -2266,6 +2320,32 @@ describe('generateFrontendContract — max field constraint (ETP-4277)', () => {
     const discount = fc.entities.order.fields.find(f => f.name === 'discount');
     assert.equal(discount.min, 0);
     assert.equal(discount.max, 100);
+  });
+
+  it('copies integer:true from curated field to contract field output', () => {
+    const fc = generateFrontendContract(makeSchemaWithDiscount({ integer: true }));
+    const discount = fc.entities.order.fields.find(f => f.name === 'discount');
+    assert.equal(discount.integer, true);
+  });
+
+  it('does not set integer on contract field when curated field has no integer flag', () => {
+    const fc = generateFrontendContract(makeSchemaWithDiscount());
+    const discount = fc.entities.order.fields.find(f => f.name === 'discount');
+    assert.equal(discount.integer, undefined);
+  });
+
+  it('copies min + integer together (e.g. usableLifeMonths: min 1, integer)', () => {
+    const fc = generateFrontendContract(makeSchemaWithDiscount({ min: 1, integer: true }));
+    const discount = fc.entities.order.fields.find(f => f.name === 'discount');
+    assert.equal(discount.min, 1);
+    assert.equal(discount.integer, true);
+  });
+
+  // ETP-4542 + ETP-4556 — integer follows the same `false` disable sentinel as min/max.
+  it('does NOT copy flat integer when the curated field carries the false disable sentinel', () => {
+    const fc = generateFrontendContract(makeSchemaWithDiscount({ integer: false }));
+    const discount = fc.entities.order.fields.find(f => f.name === 'discount');
+    assert.equal(discount.integer, undefined);
   });
 
   // ETP-4556 — `false` disable sentinel must not leak into the flat contract key.

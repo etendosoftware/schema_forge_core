@@ -1,5 +1,6 @@
 import { BrowserRouter, Navigate, Route, Routes, useLocation } from 'react-router-dom';
 import { AuthProvider, useAuth } from '../auth/index.js';
+import { DataProvider } from '../data/index.js';
 import { CurrencyProvider } from '../hooks/useCurrency.jsx';
 import { LocaleProvider } from '../i18n/index.js';
 import { ShellLayout } from '../layout/index.js';
@@ -44,6 +45,7 @@ function renderRoute(route, auth) {
 export function AppShellProviders({
   children,
   auth,
+  data,
   locale,
   setLocale,
   dictionaries,
@@ -60,13 +62,20 @@ export function AppShellProviders({
         initialSession={auth?.initialSession}
         onSessionChange={auth?.onSessionChange}
         data-testid="AuthProvider__b517b2">
-        <CurrencyProvider
-          value={currency?.value || currency}
-          apiBaseUrl={currency?.apiBaseUrl}
-          fetcher={currency?.fetcher}
-          data-testid="CurrencyProvider__b517b2">
-          {children}
-        </CurrencyProvider>
+        <DataProvider
+          cache={data?.cache}
+          apiBase={data?.apiBase}
+          recordStaleTime={data?.recordStaleTime}
+          catalogStaleTime={data?.catalogStaleTime}
+          data-testid="DataProvider__b517b2">
+          <CurrencyProvider
+            value={currency?.value || currency}
+            apiBaseUrl={currency?.apiBaseUrl}
+            fetcher={currency?.fetcher}
+            data-testid="CurrencyProvider__b517b2">
+            {children}
+          </CurrencyProvider>
+        </DataProvider>
       </AuthProvider>
     </LocaleProvider>
   );
@@ -86,6 +95,7 @@ export function AppShellRuntime({
   reports,
   routes,
   auth,
+  data,
   locale,
   setLocale,
   dictionaries,
@@ -122,6 +132,7 @@ export function AppShellRuntime({
     <BrowserRouter basename={basename} data-testid="BrowserRouter__b517b2">
       <AppShellProviders
         auth={runtimeAuth}
+        data={data}
         locale={locale}
         setLocale={setLocale}
         dictionaries={dictionaries}
