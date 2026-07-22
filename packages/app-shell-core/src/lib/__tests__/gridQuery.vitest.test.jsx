@@ -425,8 +425,17 @@ describe('buildAdvancedFilterCriteria', () => {
       ],
     };
     const result = buildAdvancedFilterCriteria(filter, columns);
+    // ETP-4609: case-insensitive iEquals, OR-composed (no native case-insensitive "in").
     expect(result).toEqual([
-      { fieldName: 'name', operator: 'inSet', value: 'a,b,c' },
+      {
+        _constructor: 'AdvancedCriteria',
+        operator: 'or',
+        criteria: [
+          { fieldName: 'name', operator: 'iEquals', value: 'a' },
+          { fieldName: 'name', operator: 'iEquals', value: 'b' },
+          { fieldName: 'name', operator: 'iEquals', value: 'c' },
+        ],
+      },
     ]);
   });
 
@@ -552,7 +561,8 @@ describe('buildAdvancedFilterCriteria', () => {
       conditions: [{ field: 'name', operator: 'inSet', value: ['only'] }],
     };
     const result = buildAdvancedFilterCriteria(filter, columns);
-    expect(result).toEqual([{ fieldName: 'name', operator: 'equals', value: 'only' }]);
+    // ETP-4609: single-value inSet now uses case-insensitive iEquals.
+    expect(result).toEqual([{ fieldName: 'name', operator: 'iEquals', value: 'only' }]);
   });
 
   it('handles inSet with empty array', () => {
@@ -569,7 +579,18 @@ describe('buildAdvancedFilterCriteria', () => {
       conditions: [{ field: 'name', operator: 'inSet', value: 'a,b,c' }],
     };
     const result = buildAdvancedFilterCriteria(filter, columns);
-    expect(result).toEqual([{ fieldName: 'name', operator: 'inSet', value: 'a,b,c' }]);
+    // ETP-4609: OR-composed case-insensitive iEquals, not a raw case-sensitive inSet.
+    expect(result).toEqual([
+      {
+        _constructor: 'AdvancedCriteria',
+        operator: 'or',
+        criteria: [
+          { fieldName: 'name', operator: 'iEquals', value: 'a' },
+          { fieldName: 'name', operator: 'iEquals', value: 'b' },
+          { fieldName: 'name', operator: 'iEquals', value: 'c' },
+        ],
+      },
+    ]);
   });
 
   // ================================================================
@@ -1418,7 +1439,8 @@ describe('buildAdvancedFilterCriteria — inSet filtering edge cases', () => {
       conditions: [{ field: 'name', operator: 'inSet', value: [null, '', 'valid'] }],
     };
     const result = buildAdvancedFilterCriteria(filter, columns);
-    expect(result).toEqual([{ fieldName: 'name', operator: 'equals', value: 'valid' }]);
+    // ETP-4609: case-insensitive iEquals.
+    expect(result).toEqual([{ fieldName: 'name', operator: 'iEquals', value: 'valid' }]);
   });
 
   it('returns null when inSet array has only null/empty values', () => {
@@ -1435,7 +1457,17 @@ describe('buildAdvancedFilterCriteria — inSet filtering edge cases', () => {
       conditions: [{ field: 'name', operator: 'inSet', value: 'a, b' }],
     };
     const result = buildAdvancedFilterCriteria(filter, columns);
-    expect(result).toEqual([{ fieldName: 'name', operator: 'inSet', value: 'a,b' }]);
+    // ETP-4609: OR-composed case-insensitive iEquals.
+    expect(result).toEqual([
+      {
+        _constructor: 'AdvancedCriteria',
+        operator: 'or',
+        criteria: [
+          { fieldName: 'name', operator: 'iEquals', value: 'a' },
+          { fieldName: 'name', operator: 'iEquals', value: 'b' },
+        ],
+      },
+    ]);
   });
 
   it('handles inSet string with single value after trim', () => {
@@ -1444,7 +1476,8 @@ describe('buildAdvancedFilterCriteria — inSet filtering edge cases', () => {
       conditions: [{ field: 'name', operator: 'inSet', value: 'solo' }],
     };
     const result = buildAdvancedFilterCriteria(filter, columns);
-    expect(result).toEqual([{ fieldName: 'name', operator: 'equals', value: 'solo' }]);
+    // ETP-4609: case-insensitive iEquals.
+    expect(result).toEqual([{ fieldName: 'name', operator: 'iEquals', value: 'solo' }]);
   });
 });
 

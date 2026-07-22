@@ -906,22 +906,34 @@ describe('buildAdvancedFilterCriteria — between operator', () => {
 describe('buildAdvancedFilterCriteria — inSet operator', () => {
   const columns = [{ key: 'name', type: 'string' }];
 
-  it('produces inSet criterion for array with multiple values', () => {
+  it('produces OR-composed case-insensitive iEquals for array with multiple values', () => {
     const filter = {
       rowOperator: 'and',
       conditions: [{ field: 'name', operator: 'inSet', value: ['a', 'b', 'c'] }],
     };
     const result = buildAdvancedFilterCriteria(filter, columns);
-    assert.deepEqual(result, [{ fieldName: 'name', operator: 'inSet', value: 'a,b,c' }]);
+    // ETP-4609: `inSet`/`equals` are case-sensitive on the backend; use the
+    // case-insensitive `iEquals` operator (OR-composed) instead.
+    assert.deepEqual(result, [
+      {
+        _constructor: 'AdvancedCriteria',
+        operator: 'or',
+        criteria: [
+          { fieldName: 'name', operator: 'iEquals', value: 'a' },
+          { fieldName: 'name', operator: 'iEquals', value: 'b' },
+          { fieldName: 'name', operator: 'iEquals', value: 'c' },
+        ],
+      },
+    ]);
   });
 
-  it('produces equals criterion for array with single value', () => {
+  it('produces case-insensitive iEquals criterion for array with single value', () => {
     const filter = {
       rowOperator: 'and',
       conditions: [{ field: 'name', operator: 'inSet', value: ['only'] }],
     };
     const result = buildAdvancedFilterCriteria(filter, columns);
-    assert.deepEqual(result, [{ fieldName: 'name', operator: 'equals', value: 'only' }]);
+    assert.deepEqual(result, [{ fieldName: 'name', operator: 'iEquals', value: 'only' }]);
   });
 
   it('returns null for inSet with empty array', () => {
@@ -938,7 +950,17 @@ describe('buildAdvancedFilterCriteria — inSet operator', () => {
       conditions: [{ field: 'name', operator: 'inSet', value: 'a, b, c' }],
     };
     const result = buildAdvancedFilterCriteria(filter, columns);
-    assert.deepEqual(result, [{ fieldName: 'name', operator: 'inSet', value: 'a,b,c' }]);
+    assert.deepEqual(result, [
+      {
+        _constructor: 'AdvancedCriteria',
+        operator: 'or',
+        criteria: [
+          { fieldName: 'name', operator: 'iEquals', value: 'a' },
+          { fieldName: 'name', operator: 'iEquals', value: 'b' },
+          { fieldName: 'name', operator: 'iEquals', value: 'c' },
+        ],
+      },
+    ]);
   });
 
   it('handles inSet with single string value (no comma)', () => {
@@ -947,7 +969,7 @@ describe('buildAdvancedFilterCriteria — inSet operator', () => {
       conditions: [{ field: 'name', operator: 'inSet', value: 'solo' }],
     };
     const result = buildAdvancedFilterCriteria(filter, columns);
-    assert.deepEqual(result, [{ fieldName: 'name', operator: 'equals', value: 'solo' }]);
+    assert.deepEqual(result, [{ fieldName: 'name', operator: 'iEquals', value: 'solo' }]);
   });
 
   it('filters out null and empty values from inSet array', () => {
@@ -956,7 +978,7 @@ describe('buildAdvancedFilterCriteria — inSet operator', () => {
       conditions: [{ field: 'name', operator: 'inSet', value: [null, '', 'valid'] }],
     };
     const result = buildAdvancedFilterCriteria(filter, columns);
-    assert.deepEqual(result, [{ fieldName: 'name', operator: 'equals', value: 'valid' }]);
+    assert.deepEqual(result, [{ fieldName: 'name', operator: 'iEquals', value: 'valid' }]);
   });
 
   it('returns null for inSet array with only null/empty values', () => {
