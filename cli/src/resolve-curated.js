@@ -15,6 +15,7 @@ import { dirname, join } from 'node:path';
 import { classifyRule } from './pre-classify.js';
 import { toCamelCase, isMainModule } from './utils.js';
 import { migrateDecisions, needsMigration, getVersion } from './migrations/index.js';
+import { buildFieldValidation } from './lib/field-validation.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -288,9 +289,17 @@ function applyFieldDecisionProps(field, fieldDecision) {
   if (fieldDecision.summable) field.summable = true;
   if (fieldDecision.businessCritical) field.businessCritical = true;
   if (fieldDecision.gridOrder != null) field.gridOrder = fieldDecision.gridOrder;
-  if (fieldDecision.min !== undefined) field.min = fieldDecision.min;
-  if (fieldDecision.max !== undefined) field.max = fieldDecision.max;
+  applyFlatBound(field, fieldDecision, 'min');
+  applyFlatBound(field, fieldDecision, 'max');
   copyTruthyDecisionProps(field, fieldDecision, FIELD_DECISION_COPY_PROPS);
+}
+
+// ETP-4556 — `false` is the disable sentinel (see field-validation.js): omit the flat
+// ETP-4277 bound entirely, matching the nested `validation` object, so it is never fed
+// to the on-blur autocorrect as a bogus `false` limit.
+function applyFlatBound(field, fieldDecision, key) {
+  const v = fieldDecision[key];
+  if (v !== undefined && v !== false) field[key] = v;
 }
 
 function applyForeignKeyLookupProps(field, fieldDecision) {
@@ -385,6 +394,11 @@ function buildCuratedField(rawField, fieldDecision, discardPatterns) {
   // for a classic stored-procedure process that NEO can actually execute).
   if (fieldDecision.processId) field.processId = fieldDecision.processId;
   if (fieldDecision.processType) field.processType = fieldDecision.processType;
+
+  // ETP-4555 — canonical declarative validation object (raw DB constraints merged
+  // with explicit decisions; decision wins). Additive to the flat min/max above.
+  const validation = buildFieldValidation({ raw: rawField, decision: fieldDecision, required: field.required });
+  if (validation) field.validation = validation;
 
   return field;
 }
@@ -522,6 +536,16 @@ function buildCuratedFields(rawEntity, fieldsDecisions, discardPatterns) {
 }
 
 function orderCuratedFields(curatedFields, fieldsDecisions) {
+  // Tag each field with its explicit decisions.json `order` (if any), in memory only.
+  // generate-contract.js's field-order stability lock reads this marker (persisted as
+  // `order` on backendContract fields) to tell an intentional order change apart from
+  // a field whose position is purely inherited from the historical lock — see
+  // lockFieldOrderToPreviousContract() in generate-contract.js.
+  for (const field of curatedFields) {
+    const explicitOrder = fieldsDecisions[field.name]?.order;
+    if (explicitOrder != null) field.__explicitOrder = explicitOrder;
+  }
+
   const hasOrderOverrides = Object.values(fieldsDecisions).some(decision => decision.order != null);
   if (!hasOrderOverrides) return curatedFields;
 
@@ -724,6 +748,7 @@ const WINDOW_BOOLEAN_TRUE_PROPS = [
   'hideDetailForm',
   'hideDelete',
   'hideDeleteButton',
+  'readOnly',
 ];
 
 // `attachments` is defined-only (not truthy) so an explicit `false` from
@@ -739,7 +764,7 @@ export const WINDOW_KEY_ORDER = [
   'id', 'name', 'primaryEntity', 'category', 'agentPrompt',
   'sidebarLayout', 'templateConfig',
   'documentPreview', 'notesField', 'relatedDocuments',
-  'hideDeleteWhenComplete', 'customTabsAfterBottom', 'hidePrint', 'hideCreate', 'hideSaveStatuses',
+  'hideDeleteWhenComplete', 'customTabsAfterBottom', 'hidePrint', 'hideCreate', 'readOnly', 'hideSaveStatuses',
   'hideMoreMenu', 'hideMoreDetails', 'hideDetailForm', 'hideDelete', 'hideDeleteButton', 'contentBg',
   'hideListFilters', 'hideStatusFilter', 'hideLink', 'hideEyeCount', 'customListIcons', 'breadcrumb',
   'customComponents', 'menuActions', 'processOverrides',
@@ -803,6 +828,15 @@ function applyWindowDecisions(window, windowDecisions) {
   copyBooleanTrueProps(window, windowDecisions, WINDOW_BOOLEAN_TRUE_PROPS);
   copyDefinedProps(window, windowDecisions, WINDOW_DEFINED_PROPS);
   copyNotNullProps(window, windowDecisions, WINDOW_NOT_NULL_PROPS);
+
+  // `readOnly` is sugar for a fully view-only window (GO UI). Expand it into the
+  // existing hideCreate + hideDelete gating so the New button and delete action
+  // disappear; `readOnly` itself stays on the window so generate-contract can also
+  // clear the crud write methods and DetailView can block edit/save at runtime.
+  if (window.readOnly) {
+    window.hideCreate = true;
+    window.hideDelete = true;
+  }
 
   if (windowDecisions.hideSaveStatuses?.length) {
     window.hideSaveStatuses = windowDecisions.hideSaveStatuses;

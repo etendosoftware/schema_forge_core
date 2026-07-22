@@ -1,6 +1,7 @@
 import { createHash } from 'node:crypto';
 import { toSpecName } from './push-to-neo.js';
 import { autoSimplifyEntityName, reorderKeys, WINDOW_KEY_ORDER } from './resolve-curated.js';
+import { projectValidation } from './lib/field-validation.js';
 
 // Slug helper for deterministic test IDs: collapse non-alphanumerics to hyphens, trim.
 const slug = (s) => String(s ?? '')
@@ -299,8 +300,13 @@ function applyFieldUIHints(f, mapped) {
   applyHints(f, mapped, FIELD_HINTS_POST_GRID);
   if (f.filterable === false) mapped.filterable = false;
   if (f.dot === false) mapped.dot = false;
-  if (f.min !== undefined) mapped.min = f.min;
-  if (f.max !== undefined) mapped.max = f.max;
+  // ETP-4556 — never propagate the `false` disable sentinel into the flat bound.
+  if (f.min !== undefined && f.min !== false) mapped.min = f.min;
+  if (f.max !== undefined && f.max !== false) mapped.max = f.max;
+  // ETP-4555 — canonical declarative validation object (re-projected into a fixed
+  // key order for deterministic output). Additive; absent when the field has none.
+  const validation = projectValidation(f.validation);
+  if (validation) mapped.validation = validation;
 }
 
 /**
@@ -571,6 +577,11 @@ export function generateBackendContract(schema, rules = [], processes = []) {
         required: f.required,
       };
       if (f.businessCritical) field.businessCritical = true;
+      // Persist the explicit decisions.json order (when set) so the NEXT run's
+      // field-order stability lock can tell an intentional order change apart
+      // from a field whose position is purely inherited. See
+      // lockFieldOrderToPreviousContract() below.
+      if (f.__explicitOrder != null) field.order = f.__explicitOrder;
       return field;
     });
 
@@ -1255,6 +1266,13 @@ export function generateApiPrediction(schema, frontendContract, backendContract)
     // CRUD — NEO Headless enables all methods by default via PopulateSpec
     crud[entityName] = buildCrudPrediction(baseUrl, entityName, feEntity);
     if (frontendContract.window?.hideDelete) crud[entityName].delete = false;
+    // Read-only windows (GO view-only) expose no write methods at all.
+    if (frontendContract.window?.readOnly) {
+      crud[entityName].post = false;
+      crud[entityName].put = false;
+      crud[entityName].patch = false;
+      crud[entityName].delete = false;
+    }
 
     // Selectors — FK fields that are visible (editable or readOnly)
     selectors.push(...collectSelectorPredictions(feEntity, entityName, baseUrl, windowCategory, schema, frontendContract));
@@ -1283,9 +1301,12 @@ export function generateApiPrediction(schema, frontendContract, backendContract)
     },
   };
 
-  // Forward window.category so components can derive isSOTrx for selector filtering
-  if (schema.window.category) {
-    result.window = { category: schema.window.category };
+  // Forward window.category so components can derive isSOTrx for selector filtering,
+  // and window.readOnly so the runtime (DetailView) can force the whole window view-only.
+  if (schema.window.category || schema.window.readOnly) {
+    result.window = {};
+    if (schema.window.category) result.window.category = schema.window.category;
+    if (schema.window.readOnly) result.window.readOnly = true;
   }
 
   // Forward labelOverrides from the window config so generated components can apply per-window label overrides
@@ -1301,6 +1322,14 @@ export function generateApiPrediction(schema, frontendContract, backendContract)
  * across re-extractions. Uses the previous backend contract as canonical order (superset
  * including system/discarded fields). New fields land at the end (alpha-sorted); removed
  * fields drop out naturally. Duplicate field names are matched sequentially.
+ *
+ * Precedence rule (ETP-4566): a field that already existed in the previous contract stays
+ * pinned to its old position ONLY while its own state is unchanged. If, since that previous
+ * run, the field gained/changed an explicit decisions.json `order` (see orderCuratedFields()
+ * in resolve-curated.js) or its resolved visibility changed, the new resolved position wins
+ * instead — the field is "repositioned". Fields with no explicit order in the current run are
+ * never repositioned by the order dimension: they stay governed purely by the historical lock,
+ * completely unaffected by other fields' order changes in the same run.
  */
 function lockFieldOrderToPreviousContract(schema, previousContract) {
   const prevBE = previousContract?.backendContract?.entities;
@@ -1312,6 +1341,16 @@ function lockFieldOrderToPreviousContract(schema, previousContract) {
   }
 }
 
+/**
+ * A field matched to a previous-contract field is "repositioned" (freed from the stability
+ * lock) when, since that previous run, its own explicit order or resolved visibility changed.
+ */
+function fieldWasRepositioned(currentField, prevField) {
+  const currentOrder = currentField.__explicitOrder;
+  if (currentOrder != null && currentOrder !== prevField.order) return true;
+  return currentField.visibility !== prevField.visibility;
+}
+
 function reorderFieldsByPrev(currentFields, prevFields) {
   const positionsByName = new Map();
   prevFields.forEach((f, i) => {
@@ -1319,22 +1358,59 @@ function reorderFieldsByPrev(currentFields, prevFields) {
     positionsByName.get(f.name).push(i);
   });
   const consumed = new Map();
-  const rank = new WeakMap();
+  // null  = brand new (not in the previous contract) — untouched by the lock, existing behavior
+  // false = pinned — stays at its previous position
+  // true  = repositioned — freed from the lock, slots in near its current neighbors
+  const isRepositioned = new WeakMap();
+  const pinnedRank = new WeakMap();
+
   for (const f of currentFields) {
     const positions = positionsByName.get(f.name);
     const used = consumed.get(f.name) ?? 0;
-    if (positions && used < positions.length) {
-      rank.set(f, positions[used]);
-      consumed.set(f.name, used + 1);
+    if (!positions || used >= positions.length) {
+      isRepositioned.set(f, null);
+      continue;
+    }
+    const prevIndex = positions[used];
+    consumed.set(f.name, used + 1);
+    const prevField = prevFields[prevIndex];
+    if (fieldWasRepositioned(f, prevField)) {
+      isRepositioned.set(f, true);
     } else {
-      rank.set(f, Infinity);
+      isRepositioned.set(f, false);
+      pinnedRank.set(f, prevIndex);
     }
   }
+
+  // Anchor every repositioned/new field to the nearest PRECEDING pinned field in the
+  // current (decision-resolved) sequence, so it slots in right after that neighbor
+  // without ever disturbing the relative order of the pinned fields themselves.
+  let lastAnchor = -1;
+  const anchorOf = new WeakMap();
+  for (const f of currentFields) {
+    if (isRepositioned.get(f) === false) {
+      lastAnchor = pinnedRank.get(f);
+    }
+    anchorOf.set(f, lastAnchor);
+  }
+
+  const currentIndexOf = new WeakMap();
+  currentFields.forEach((f, i) => currentIndexOf.set(f, i));
+
   return currentFields.slice().sort((a, b) => {
-    const ia = rank.get(a);
-    const ib = rank.get(b);
-    if (ia !== ib) return ia - ib;
-    return (a.name || '').localeCompare(b.name || '');
+    const repoA = isRepositioned.get(a);
+    const repoB = isRepositioned.get(b);
+    // Brand-new fields keep the original behavior: always after every matched field,
+    // alpha-sorted among themselves.
+    if (repoA === null || repoB === null) {
+      if (repoA === null && repoB === null) return (a.name || '').localeCompare(b.name || '');
+      return repoA === null ? 1 : -1;
+    }
+    const aa = anchorOf.get(a);
+    const ab = anchorOf.get(b);
+    if (aa !== ab) return aa - ab;
+    if (repoA !== repoB) return repoA ? 1 : -1; // a pinned field wins ties over a repositioned neighbor
+    return currentIndexOf.get(a) - currentIndexOf.get(b);
   });
 }
 

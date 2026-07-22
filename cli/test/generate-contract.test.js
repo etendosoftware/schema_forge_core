@@ -8,6 +8,7 @@ import {
   generateApiPrediction,
   splitWindowContractArtifacts,
 } from '../src/generate-contract.js';
+import { resolveCurated } from '../src/resolve-curated.js';
 
 const minimalSchema = {
   version: '0.1.0',
@@ -2266,6 +2267,80 @@ describe('generateFrontendContract — max field constraint (ETP-4277)', () => {
     assert.equal(discount.min, 0);
     assert.equal(discount.max, 100);
   });
+
+  // ETP-4556 — `false` disable sentinel must not leak into the flat contract key.
+  it('does NOT copy flat min when the curated field carries the false disable sentinel', () => {
+    const fc = generateFrontendContract(makeSchemaWithDiscount({ min: false, max: 100 }));
+    const discount = fc.entities.order.fields.find(f => f.name === 'discount');
+    assert.equal(discount.min, undefined);
+    assert.equal(discount.max, 100);
+  });
+
+  it('does NOT copy flat max when the curated field carries the false disable sentinel', () => {
+    const fc = generateFrontendContract(makeSchemaWithDiscount({ min: 0, max: false }));
+    const discount = fc.entities.order.fields.find(f => f.name === 'discount');
+    assert.equal(discount.min, 0);
+    assert.equal(discount.max, undefined);
+  });
+});
+
+// ─── ETP-4556 — `false` disable sentinel end-to-end (decisions → resolve → contract) ──
+describe('false disable sentinel — regen level (ETP-4556)', () => {
+  // Raw AD provides valueMin/valueMax so we can prove `false` disables an
+  // EXISTING raw constraint, not merely the absence of one.
+  const schemaRaw = {
+    window: { id: '801', name: 'Sales Order' },
+    entities: [{
+      name: 'cOrderLine',
+      tableName: 'C_OrderLine',
+      tabId: '21',
+      tabName: 'Lines',
+      fields: [
+        { name: 'discount', columnName: 'Discount', label: 'Discount', type: 'number',
+          visibility: 'editable', valueMin: '5', valueMax: '500' },
+      ],
+    }],
+  };
+
+  function contractField(fieldDecision) {
+    const decisions = {
+      version: 2,
+      window: { name: 'Sales Order' },
+      entities: { cOrderLine: { name: 'orderLine', fields: { discount: fieldDecision } } },
+      rules: {},
+    };
+    return resolveCurated(schemaRaw, { rules: [] }, decisions).then(({ schema }) => {
+      const fc = generateFrontendContract(schema);
+      const entity = Object.values(fc.entities).find(e => e.fields.some(f => f.name === 'discount'));
+      return entity.fields.find(f => f.name === 'discount');
+    });
+  }
+
+  it('min:false produces NEITHER validation.minimum NOR a flat min (disables the raw valueMin)', async () => {
+    const discount = await contractField({ min: false });
+    assert.equal(discount.min, undefined, 'flat min must be omitted');
+    assert.equal(discount.validation && discount.validation.minimum, undefined,
+      'validation.minimum must be omitted');
+  });
+
+  it('max:false produces NEITHER validation.maximum NOR a flat max (disables the raw valueMax)', async () => {
+    const discount = await contractField({ max: false });
+    assert.equal(discount.max, undefined, 'flat max must be omitted');
+    assert.equal(discount.validation && discount.validation.maximum, undefined,
+      'validation.maximum must be omitted');
+  });
+
+  it('a numeric min still emits BOTH the flat min and validation.minimum', async () => {
+    const discount = await contractField({ min: 10 });
+    assert.equal(discount.min, 10, 'flat min must be present');
+    assert.equal(discount.validation.minimum, 10, 'validation.minimum must be present');
+  });
+
+  it('a numeric zero min is a real bound, NOT a disable (emits both, overriding raw)', async () => {
+    const discount = await contractField({ min: 0 });
+    assert.equal(discount.min, 0, 'flat min 0 must be present');
+    assert.equal(discount.validation.minimum, 0, 'validation.minimum 0 must be present');
+  });
 });
 
 describe('generateFrontendContract — window.import', () => {
@@ -2353,6 +2428,273 @@ describe('generateFrontendContract — window.import', () => {
       },
     };
     assert.throws(() => generateFrontendContract(schema), /import\.fields references unknown field "doesNotExist"/);
+  });
+});
+
+// ─── ETP-4555 — validation constraint object in contract fields ───────────────
+describe('generateFrontendContract — validation constraint object (ETP-4555)', () => {
+  function makeSchema(fieldExtra = {}) {
+    return {
+      version: '0.1.0',
+      window: { id: '900', name: 'Contacts', primaryEntity: 'businessPartner', category: 'master' },
+      entities: [{
+        name: 'businessPartner',
+        table: 'C_BPartner',
+        level: 'header',
+        fields: [
+          { name: 'name', column: 'Name', type: 'string', visibility: 'editable',
+            required: false, searchable: false, grid: true, form: true, ...fieldExtra },
+          { name: 'note', column: 'Note', type: 'string', visibility: 'editable',
+            required: false, searchable: false, grid: true, form: true },
+        ],
+      }],
+    };
+  }
+  it('emits the validation object carried on the curated field', () => {
+    const fc = generateFrontendContract(makeSchema({ validation: { maxLength: 60 } }));
+    const name = fc.entities.businessPartner.fields.find(f => f.name === 'name');
+    assert.deepEqual(name.validation, { maxLength: 60 });
+  });
+
+  it('emits explicit format and allowedSchemes from the validation object', () => {
+    const fc = generateFrontendContract(makeSchema({
+      validation: { format: 'email', allowedSchemes: ['https'] },
+    }));
+    const name = fc.entities.businessPartner.fields.find(f => f.name === 'name');
+    assert.equal(name.validation.format, 'email');
+    assert.deepEqual(name.validation.allowedSchemes, ['https']);
+  });
+
+  it('emits validation keys in canonical order regardless of input key order', () => {
+    const fc = generateFrontendContract(makeSchema({
+      validation: { allowedSchemes: ['https'], maximum: 100, format: 'email', minimum: 0, maxLength: 60, minLength: 1, required: true, enum: ['A'] },
+    }));
+    const name = fc.entities.businessPartner.fields.find(f => f.name === 'name');
+    assert.deepEqual(Object.keys(name.validation),
+      ['required', 'minLength', 'maxLength', 'minimum', 'maximum', 'format', 'enum', 'allowedSchemes']);
+  });
+
+  it('does not emit a validation key when the curated field has none', () => {
+    const fc = generateFrontendContract(makeSchema());
+    const note = fc.entities.businessPartner.fields.find(f => f.name === 'note');
+    assert.equal(note.validation, undefined);
+  });
+
+  it('preserves minimum: 0 in the emitted validation object', () => {
+    const fc = generateFrontendContract(makeSchema({ validation: { minimum: 0 } }));
+    const name = fc.entities.businessPartner.fields.find(f => f.name === 'name');
+    assert.ok(Object.prototype.hasOwnProperty.call(name.validation, 'minimum'));
+    assert.equal(name.validation.minimum, 0);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Field-order stability lock precedence (ETP-4566)
+//
+// lockFieldOrderToPreviousContract() re-pins fields that already existed in the
+// previous contract to their old position, so raw re-extractions stay stable.
+// That lock must NOT win over an intentional decisions.json order/visibility
+// change: a field whose own order or visibility changed since the previous run
+// must be "repositioned" to its newly resolved slot instead of staying pinned.
+// Fields with no explicit order at all must never be touched by this — they stay
+// governed purely by the historical lock, regardless of what other fields do.
+// ---------------------------------------------------------------------------
+
+describe('generateBackendContract — explicit order marker (ETP-4566)', () => {
+  const schemaWithExplicitOrder = {
+    version: '0.1.0',
+    window: { id: '143', name: 'Sales Order', primaryEntity: 'order', category: 'sales' },
+    entities: [{
+      name: 'order',
+      table: 'C_Order',
+      level: 'header',
+      fields: [
+        { name: 'documentNo', column: 'DocumentNo', type: 'string', visibility: 'editable',
+          required: false, grid: true, form: true, __explicitOrder: 3 },
+        { name: 'description', column: 'Description', type: 'string', visibility: 'editable',
+          required: false, grid: true, form: true },
+      ],
+    }],
+  };
+
+  it('field with an explicit decisions.json order includes order in backendContract', () => {
+    const bc = generateBackendContract(schemaWithExplicitOrder);
+    const documentNo = bc.entities.order.fields.find(f => f.name === 'documentNo');
+    assert.equal(documentNo.order, 3);
+  });
+
+  it('field without an explicit order does NOT have the key in backendContract', () => {
+    const bc = generateBackendContract(schemaWithExplicitOrder);
+    const description = bc.entities.order.fields.find(f => f.name === 'description');
+    assert.equal(description.order, undefined,
+      'absent explicit order must not appear in backendContract');
+  });
+});
+
+describe('generateContract — field-order stability lock precedence (ETP-4566)', () => {
+  // Baseline "previous run" fixture shared by the scenario tests below.
+  //   fieldNewlyOrdered — previously hidden (visibility: system, no order); this run
+  //                       becomes visible with a brand-new explicit order (case a).
+  //   fieldOrderChange  — previously visible with order:2; this run keeps the same
+  //                       visibility but its order changes to 5 (case b).
+  //   fieldP, fieldQ    — carry an explicit order that stays IDENTICAL across runs;
+  //                       must remain pinned like any other unchanged field.
+  //   fieldA, fieldB    — never had an explicit order (case d); must keep their exact
+  //                       relative sequence no matter what fieldNewlyOrdered/fieldOrderChange do.
+  function buildPreviousContract() {
+    return {
+      backendContract: {
+        entities: {
+          order: {
+            fields: [
+              { name: 'fieldP', visibility: 'editable', required: false, order: 1 },
+              { name: 'fieldNewlyOrdered', visibility: 'system', required: false },
+              { name: 'fieldQ', visibility: 'editable', required: false, order: 2 },
+              { name: 'fieldA', visibility: 'editable', required: false },
+              { name: 'fieldOrderChange', visibility: 'editable', required: false, order: 2 },
+              { name: 'fieldB', visibility: 'editable', required: false },
+            ],
+          },
+        },
+      },
+    };
+  }
+
+  // The current run's curated fields, already resolved by resolve-curated.js's
+  // orderCuratedFields() — i.e. already sorted by explicit order, with unordered
+  // fields keeping their natural relative sequence (fieldA before fieldB).
+  function buildCurrentSchema() {
+    return {
+      version: '0.1.0',
+      window: { id: '143', name: 'Sales Order', primaryEntity: 'order', category: 'sales' },
+      entities: [{
+        name: 'order',
+        table: 'C_Order',
+        level: 'header',
+        fields: [
+          { name: 'fieldP', column: 'FieldP', type: 'string', visibility: 'editable',
+            required: false, grid: true, form: true, __explicitOrder: 1 },
+          { name: 'fieldNewlyOrdered', column: 'FieldNewlyOrdered', type: 'string', visibility: 'editable',
+            required: false, grid: true, form: true, __explicitOrder: 1.5 },
+          { name: 'fieldQ', column: 'FieldQ', type: 'string', visibility: 'editable',
+            required: false, grid: true, form: true, __explicitOrder: 2 },
+          { name: 'fieldOrderChange', column: 'FieldOrderChange', type: 'string', visibility: 'editable',
+            required: false, grid: true, form: true, __explicitOrder: 5 },
+          { name: 'fieldA', column: 'FieldA', type: 'string', visibility: 'editable',
+            required: false, grid: true, form: true },
+          { name: 'fieldB', column: 'FieldB', type: 'string', visibility: 'editable',
+            required: false, grid: true, form: true },
+        ],
+      }],
+    };
+  }
+  function orderedNames(previousContract) {
+    const contract = generateContract(buildCurrentSchema(), [], [], null, previousContract);
+    return contract.backendContract.entities.order.fields.map(f => f.name);
+  }
+
+  it('(a) a field hidden previously that becomes visible with a new explicit order lands at that order', () => {
+    const names = orderedNames(buildPreviousContract());
+    // fieldNewlyOrdered gained order:1.5 (previously had none at all) -> repositioned
+    // right after fieldP (order:1) and before fieldQ (order:2), exactly where its new
+    // order places it — NOT stuck at its old (hidden) previous-contract position.
+    assert.ok(names.indexOf('fieldP') < names.indexOf('fieldNewlyOrdered'));
+    assert.ok(names.indexOf('fieldNewlyOrdered') < names.indexOf('fieldQ'));
+  });
+
+  it('(b) a field whose order value itself changes (without a visibility change) gets repositioned', () => {
+    const names = orderedNames(buildPreviousContract());
+    // Previously fieldOrderChange (order:2) was pinned right AFTER fieldA (prev position:
+    // fieldQ, fieldA, fieldOrderChange, fieldB). Its order changing to 5 must free it from
+    // that old absolute slot: it now lands right after fieldQ and BEFORE fieldA — reflecting
+    // the freshly resolved order (any explicit order still outranks fieldA/fieldB, which have
+    // none at all) instead of staying stuck at its previous-contract position after fieldA.
+    assert.ok(names.indexOf('fieldQ') < names.indexOf('fieldOrderChange'));
+    assert.ok(names.indexOf('fieldOrderChange') < names.indexOf('fieldA'));
+  });
+
+  it('(c) fields whose own order/visibility is unchanged keep their exact previous relative position', () => {
+    const names = orderedNames(buildPreviousContract());
+    // fieldP and fieldQ carry the same order (1 and 2) in both runs -> stay pinned,
+    // in the same relative sequence as the previous contract.
+    assert.ok(names.indexOf('fieldP') < names.indexOf('fieldQ'));
+  });
+
+  it('(d) fields with no explicit order at all are unaffected by other fields\' order changes', () => {
+    const unaffectedPrevious = buildPreviousContract();
+    const namesWithChanges = orderedNames(unaffectedPrevious);
+
+    // Re-run against a previous contract where NOTHING changed (order-stable baseline)
+    // to isolate fieldA/fieldB's relative order from fieldNewlyOrdered/fieldOrderChange churn.
+    const stablePrevious = {
+      backendContract: {
+        entities: {
+          order: {
+            fields: [
+              { name: 'fieldP', visibility: 'editable', required: false, order: 1 },
+              { name: 'fieldA', visibility: 'editable', required: false },
+              { name: 'fieldB', visibility: 'editable', required: false },
+            ],
+          },
+        },
+      },
+    };
+    const stableSchema = {
+      version: '0.1.0',
+      window: { id: '143', name: 'Sales Order', primaryEntity: 'order', category: 'sales' },
+      entities: [{
+        name: 'order',
+        table: 'C_Order',
+        level: 'header',
+        fields: [
+          { name: 'fieldP', column: 'FieldP', type: 'string', visibility: 'editable',
+            required: false, grid: true, form: true, __explicitOrder: 1 },
+          { name: 'fieldA', column: 'FieldA', type: 'string', visibility: 'editable',
+            required: false, grid: true, form: true },
+          { name: 'fieldB', column: 'FieldB', type: 'string', visibility: 'editable',
+            required: false, grid: true, form: true },
+        ],
+      }],
+    };
+    const stableContract = generateContract(stableSchema, [], [], null, stablePrevious);
+    const namesStable = stableContract.backendContract.entities.order.fields.map(f => f.name);
+
+    // fieldA before fieldB in both runs, regardless of the extra repositioned fields
+    // present (or not) in the churned run — no side effect leaks onto unrelated fields.
+    assert.ok(namesWithChanges.indexOf('fieldA') < namesWithChanges.indexOf('fieldB'));
+    assert.ok(namesStable.indexOf('fieldA') < namesStable.indexOf('fieldB'));
+  });
+
+  it('brand-new fields (absent from the previous contract) are unaffected by the lock', () => {
+    const previousContract = {
+      backendContract: {
+        entities: {
+          order: {
+            fields: [
+              { name: 'fieldA', visibility: 'editable', required: false },
+            ],
+          },
+        },
+      },
+    };
+    const schema = {
+      version: '0.1.0',
+      window: { id: '143', name: 'Sales Order', primaryEntity: 'order', category: 'sales' },
+      entities: [{
+        name: 'order',
+        table: 'C_Order',
+        level: 'header',
+        fields: [
+          { name: 'fieldA', column: 'FieldA', type: 'string', visibility: 'editable',
+            required: false, grid: true, form: true },
+          { name: 'brandNewField', column: 'BrandNewField', type: 'string', visibility: 'editable',
+            required: false, grid: true, form: true },
+        ],
+      }],
+    };
+    const contract = generateContract(schema, [], [], null, previousContract);
+    const names = contract.backendContract.entities.order.fields.map(f => f.name);
+    assert.deepEqual(names, ['fieldA', 'brandNewField']);
   });
 });
 
