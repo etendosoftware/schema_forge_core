@@ -698,7 +698,7 @@ WHERE w.AD_Window_ID = $1
     SELECT 1 FROM AD_Field f2
     WHERE f2.AD_Tab_ID = t.AD_Tab_ID AND f2.AD_Column_ID = c.AD_Column_ID
   )
-ORDER BY t.SeqNo, t.Name, t.AD_Tab_ID, c.ColumnName, c.AD_Column_ID
+ORDER BY t.SeqNo, t.Name COLLATE "C", t.AD_Tab_ID COLLATE "C", c.ColumnName COLLATE "C", c.AD_Column_ID COLLATE "C"
 `;
 
 /**
@@ -744,7 +744,7 @@ export async function main(windowId, windowName) {
           AND rlt_es.AD_Language = 'es_ES'
          WHERE rl.AD_Reference_ID = ANY($1)
            AND rl.IsActive = 'Y'
-         ORDER BY rl.SeqNo NULLS LAST, rl.Name COLLATE "C", rl.Value COLLATE "C"`,
+         ORDER BY rl.SeqNo NULLS LAST, rl.Name COLLATE "C", rl.Value COLLATE "C", rl.AD_Reference_ID COLLATE "C", rl.AD_Ref_List_ID COLLATE "C"`,
         [listRefIds]
       );
       for (const row of enumResult.rows) {
