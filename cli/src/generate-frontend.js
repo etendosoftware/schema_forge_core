@@ -1883,6 +1883,13 @@ export function generatePageComponent(headerEntity, detailEntity, contract) {
 
   // Window-level UI config from decisions.json
   const windowConfig = contract?.frontendContract?.window ?? {};
+  // ETP-4520 — AD_Window_ID (threaded through resolve-curated.js/generate-contract.js
+  // already, see schema.window.id). Baked as a literal so useWindowAccess() doesn't
+  // depend on the host injecting a matching `window.id` prop at runtime. Gates the whole
+  // feature: artifacts extracted before window.id was tracked (or hand-built windows with
+  // no backing AD_Window) fall back to today's unrestricted behavior rather than emitting
+  // a check against an id we don't have.
+  const windowAccessId = windowConfig.id ?? null;
   const documentPreview = windowConfig.documentPreview ?? null;
   const notesField = windowConfig.notesField ?? null;
   const relatedDocuments = windowConfig.relatedDocuments ?? false;
@@ -2239,8 +2246,42 @@ export function generatePageComponent(headerEntity, detailEntity, contract) {
   const detailTableAndFormProps = buildDetailTableAndFormProps(detailEntity, customLinesComp, hideDetailForm, detailName);
   const detailProcessesProp = detailProcessesArray ? '\n        detailProcesses={detailProcesses}' : '';
   const useStateImport = fragmentIf(needsUseState, 'useState, ');
-  return `import { ${useStateImport}useEffect } from 'react';
-import { ListView, DetailView } from '@/components/contract-ui';${fragmentIf(customListIcons, `\nimport { SortIcon, RefreshIcon } from '@/components/ui/custom-icons';`)}${fragmentIf(menuActionsConfig.length > 0, `\nimport { toast } from 'sonner';`)}${wrapIf('\nimport { ', lineConfigSymbol, ` } from '@/hooks/useLineGrossAmount';`)}
+  // ETP-4520 — per-window access-tier gating. Only emitted when a real AD_Window_ID
+  // is known (windowAccessId); see the windowAccessId comment above for the fallback.
+  const useMemoImport = fragmentIf(!!windowAccessId, 'useMemo, ');
+  const windowAccessImport = windowAccessId
+    ? `\nimport { useWindowAccess } from '@/auth/AuthContext.jsx';\nimport { useUI } from '@/i18n';`
+    : '';
+  // ETP-4520 — hook calls run unconditionally on every render (Rules of Hooks): the
+  // guard's early return happens further down, AFTER these are declared, never before.
+  // effectiveWindow reuses the same `props.window` reference when the tier isn't
+  // 'read-only' (no new object identity → no extra re-renders downstream); it only
+  // allocates a new object for the 'read-only' tier, memoized on [windowAccessTier,
+  // props.window] so it's stable across re-renders that don't change either.
+  const windowAccessHooksBlock = windowAccessId ? `
+  const ui = useUI();
+  const windowAccessTier = useWindowAccess('${windowAccessId}');
+  const effectiveWindow = useMemo(() => (
+    windowAccessTier === 'read-only' ? { ...(props.window || {}), readOnly: true } : props.window
+  ), [windowAccessTier, props.window]);` : '';
+  // "none" → route guard: blocks the render before ListView/DetailView ever mount, so
+  // no data fetch happens for a window the user has no access to at all (closes the
+  // deep-link gap — a role with no menu entry could otherwise still hit the route
+  // directly). "read-only"/"full" fall through unchanged below.
+  const windowAccessGuardBlock = windowAccessId ? `
+  if (windowAccessTier === 'none') {
+    return (
+      <div className="flex h-full w-full items-center justify-center p-10 text-center text-sm text-muted-foreground" data-testid="window-access-denied">
+        {ui('windowAccessDenied')}
+      </div>
+    );
+  }` : '';
+  // Overrides the `window` prop forwarded via `{...props}` so DetailView's existing
+  // `window.readOnly` handling (see generate-contract.js's window.readOnly comment)
+  // also fires for the runtime "read-only" tier, not just the static decisions.json one.
+  const effectiveWindowProp = windowAccessId ? ' window={effectiveWindow}' : '';
+  return `import { ${useStateImport}${useMemoImport}useEffect } from 'react';
+import { ListView, DetailView } from '@/components/contract-ui';${windowAccessImport}${fragmentIf(customListIcons, `\nimport { SortIcon, RefreshIcon } from '@/components/ui/custom-icons';`)}${fragmentIf(menuActionsConfig.length > 0, `\nimport { toast } from 'sonner';`)}${wrapIf('\nimport { ', lineConfigSymbol, ` } from '@/hooks/useLineGrossAmount';`)}
 ${headerTableImport}
 import ${headerName}Form from './${headerName}Form';${(buildDetailImports(detailEntity, detailName, customLinesComp))}
 ${fragmentIf(secondaryTabDefs.length > 0, `${secondaryTabsImports}\n`)}${formFooterImport}${customLinesImport}${primaryTabsImports}${listKpiCardsImport}${relatedDocsImport}${attachmentsImport}${extraTabsImport}${customCompImportBlock}import catalogs from './mockCatalogs';
@@ -2298,11 +2339,11 @@ ${hiddenDefaultsArray}${hiddenArraySeparator}${hiddenSiblingArray}
 ${MARKERS.GENERATED_END(`addLineFields:${detailEntity}`)}` : ''}
 ${apiBlock}
 ${labelOverridesBlock}${MARKERS.GENERATED_START(`component:${compName}`)}
-export default function ${compName}({ windowName, recordId, ...props }) {${fragmentIf(customComponents.newRecordComponent, `
+export default function ${compName}({ windowName, recordId, ...props }) {${windowAccessHooksBlock}${fragmentIf(customComponents.newRecordComponent, `
   const [showNewModal, setShowNewModal] = useState(false);`)}${fragmentIf(newActionsWithComponents.length > 0, `\n${newActionsStatements}`)}${fragmentIf(menuActionsWithComponents.length > 0, `
 ${menuActionStateStatements}`)}${fragmentIf(confirmModalName, `
   const [showConfirmModal, setShowConfirmModal] = useState(false);
-  const draftModeWithConfirm = { ...draftMode, onConfirm: () => setShowConfirmModal(true) };`)}
+  const draftModeWithConfirm = { ...draftMode, onConfirm: () => setShowConfirmModal(true) };`)}${windowAccessGuardBlock}
   if (recordId) {
     return (
       <>
@@ -2320,7 +2361,7 @@ ${menuActionStateStatements}`)}${fragmentIf(confirmModalName, `
         windowName={windowName}
         recordId={recordId}
         breadcrumb={breadcrumb}${apiProp}${detailTabIndexProp}${secondaryTabsProp}${formFooterProp}${customLinesProp}${primaryTabsProp}${othersLabelProp}${documentPreviewProp}${hideDeleteProp}${hideDeleteButtonProp}${customTabsAfterBottomProp}${hidePrintProp}${hideSaveStatusesProp}${hideMoreMenuProp}${hideMoreDetailsProp}${noHeaderBorderProp}${toolbarBorderBottomProp}${compactSidebarPaddingProp}${whiteFormBackgroundProp}${autoSaveOnBlurProp}${hideFormCardProp}${sidebarAboveTabsOnlyProp}${tabsSeparatorProp}${sidebarClassNameProp}${tabsBarPaddingXProp}${primaryTabsVariantProp}${toolbarPaddingXProp}${toolbarButtonSizeProp}${contentBgProp}${formCardPaddingProp}${formScrollPaddingXProp}${notesFieldProp}${customTabsProp}${customCompPropsBlock}${menuActionsProp}${draftModeProp}${requiredHeaderFieldsProp}${addLineGuardProp}${headerContentProp}${detailSortByProp}${titleFieldProp}${documentDateFieldProp}${salesThemeProp}${disableProcessedLockProp}${statusEnumLabelsProp}${statusFieldLabelProp}${lockedAlertProp}${showDetailFooterTotalsProp}${labelOverridesProp}${lineConfigProp}${linesLayoutProp}${balanceFooterProp}${sendDocumentDetailProp}${selectorPriceCurrencyProp}
-        {...props}${sidebarContentProp}
+        {...props}${effectiveWindowProp}${sidebarContentProp}
       />
 ${menuActionModals}${confirmModalName ? `
       {showConfirmModal && (
@@ -2347,7 +2388,7 @@ ${menuActionModals}${confirmModalName ? `
       windowName={windowName}
       breadcrumb={breadcrumb}${apiProp}${isGallery ? `
       galleryRenderer={(gProps) => <${headerName}Gallery {...gProps} />}` : ''}${listKpiCardsProp}${listViewOptionsProp}${listBaseFilterProp}${quickFiltersProp}${subsetFiltersProp}${dateFilterKeyProp}${initialHiddenColumnsProp}${bulkActionsProp}${listbarPaddingXProp}${tablePaddingXProp}${hidePrintListProp}${hideCreateProp}${hideMoreMenuListProp}${hideListFiltersProp}${hideStatusFilterProp}${hideLinkProp}${hideEyeCountProp}${customListIconsProp}${labelOverridesListProp}${rowQuickActionsProp}${sendDocumentProp}${listSortByProp}${importConfigProp}
-      {...props}${customComponents.newRecordComponent ? `
+      {...props}${effectiveWindowProp}${customComponents.newRecordComponent ? `
       onNew={() => setShowNewModal(true)}` : ''}${newActionsPropValue}
     />${customComponents.newRecordComponent ? `
     {showNewModal && <${customComponents.newRecordComponent} token={props.token} apiBaseUrl={props.apiBaseUrl} windowName={windowName} onClose={() => setShowNewModal(false)} />}` : ''}${fragmentIf(newActionsWithComponents.length > 0, `\n${newActionsModals}`)}${fragmentIf(needsFragment, `
@@ -2367,14 +2408,20 @@ export function generateIndexComponent(headerEntity, detailEntity, contract) {
   const category = contract?.frontendContract?.window?.category ?? 'general';
   const windowName = contract?.frontendContract?.window?.name ?? toLabel(headerEntity);
   const readOnly = contract?.frontendContract?.window?.readOnly === true;
+  // ETP-4520 — AD_Window_ID, threaded through resolve-curated.js → generate-contract.js
+  // already (schema.window.id). Carried here so it's available on `props.window.id` at
+  // runtime; generatePageComponent bakes its own literal copy for the windowAccess check
+  // (see WINDOW_ID below) so this is a convenience mirror, not the source of truth.
+  const windowId = contract?.frontendContract?.window?.id ?? null;
   const apiPrediction = contract?.apiPrediction;
 
   const apiProp = apiPrediction ? ' api={api}' : '';
   const apiImport = apiPrediction ? `, { api }` : '';
   const readOnlyMeta = readOnly ? ', readOnly: true' : '';
+  const windowIdMeta = windowId ? `, id: '${windowId}'` : '';
   return `import ${headerName}Page${apiImport} from './${headerName}Page';
 
-const windowMeta = { category: '${category}', name: '${windowName}'${readOnlyMeta} };
+const windowMeta = { category: '${category}', name: '${windowName}'${readOnlyMeta}${windowIdMeta} };
 
 ${MARKERS.GENERATED_START('component:App')}
 export default function App({ windowName, recordId, token, apiBaseUrl, window, ...rest }) {

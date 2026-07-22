@@ -1689,7 +1689,11 @@ const newRecordContract = {
 describe('generatePageComponent - newRecordComponent', () => {
   it('imports useState when newRecordComponent is configured', () => {
     const code = generatePageComponent('finPayment', null, newRecordContract);
-    assert.ok(code.includes("import { useState, useEffect } from 'react'"), 'should import useState');
+    // ETP-4520 — this fixture's window.id enables the windowAccess guard, which
+    // adds its own `useMemo` import alongside `useState`; assert on the react
+    // import statement as a whole rather than an exact substring so this stays
+    // robust to further additions to that import list.
+    assert.match(code, /import \{ [^}]*useState[^}]*\} from 'react'/, 'should import useState');
   });
 
   it('declares showNewModal state hook', () => {
