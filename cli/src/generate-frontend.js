@@ -2254,8 +2254,12 @@ export function generatePageComponent(headerEntity, detailEntity, contract) {
   // ETP-4520 — per-window access-tier gating. Only emitted when a real AD_Window_ID
   // is known (windowAccessId); see the windowAccessId comment above for the fallback.
   const useMemoImport = fragmentIf(!!windowAccessId, 'useMemo, ');
+  // WindowAccessGuard is the single, tested "access denied" presentation (see
+  // packages/app-shell-core/src/auth/WindowAccessGuard.jsx) — the generator never
+  // inlines that JSX itself, just references it, so every window shares one
+  // implementation instead of duplicating it per generated file.
   const windowAccessImport = windowAccessId
-    ? `\nimport { useWindowAccess } from '@/auth/AuthContext.jsx';\nimport { useUI } from '@/i18n';`
+    ? `\nimport { useWindowAccess, WindowAccessGuard } from '@/auth/AuthContext.jsx';`
     : '';
   // ETP-4520 — hook calls run unconditionally on every render (Rules of Hooks): the
   // guard's early return happens further down, AFTER these are declared, never before.
@@ -2264,7 +2268,6 @@ export function generatePageComponent(headerEntity, detailEntity, contract) {
   // allocates a new object for the 'read-only' tier, memoized on [windowAccessTier,
   // props.window] so it's stable across re-renders that don't change either.
   const windowAccessHooksBlock = windowAccessId ? `
-  const ui = useUI();
   const windowAccessTier = useWindowAccess('${windowAccessId}');
   const effectiveWindow = useMemo(() => (
     windowAccessTier === 'read-only' ? { ...(props.window || {}), readOnly: true } : props.window
@@ -2275,11 +2278,7 @@ export function generatePageComponent(headerEntity, detailEntity, contract) {
   // directly). "read-only"/"full" fall through unchanged below.
   const windowAccessGuardBlock = windowAccessId ? `
   if (windowAccessTier === 'none') {
-    return (
-      <div className="flex h-full w-full items-center justify-center p-10 text-center text-sm text-muted-foreground" data-testid="window-access-denied">
-        {ui('windowAccessDenied')}
-      </div>
-    );
+    return <WindowAccessGuard windowId="${windowAccessId}" />;
   }` : '';
   // Overrides the `window` prop forwarded via `{...props}` so DetailView's existing
   // `window.readOnly` handling (see generate-contract.js's window.readOnly comment)

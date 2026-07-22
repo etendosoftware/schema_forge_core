@@ -39,11 +39,9 @@ describe('generatePageComponent — windowAccess tier gating (ETP-4520)', () => 
   it('emits the useWindowAccess hook, the "none" route guard and the effectiveWindow merge when window.id is present', () => {
     const src = generatePageComponent('header', undefined, buildContract({ id: '181' }));
 
-    assert.match(src, /import \{ useWindowAccess \} from '@\/auth\/AuthContext\.jsx';/);
-    assert.match(src, /import \{ useUI \} from '@\/i18n';/);
+    assert.match(src, /import \{ useWindowAccess, WindowAccessGuard \} from '@\/auth\/AuthContext\.jsx';/);
     assert.match(src, /const windowAccessTier = useWindowAccess\('181'\);/);
-    assert.match(src, /if \(windowAccessTier === 'none'\)/);
-    assert.match(src, /data-testid="window-access-denied"/);
+    assert.match(src, /if \(windowAccessTier === 'none'\)\s*\{\s*return <WindowAccessGuard windowId="181" \/>;/);
     assert.match(src, /const effectiveWindow = useMemo\(/);
     // Both ListView and DetailView must receive the overridden window prop
     // (order-safe: placed after {...props} so it wins the spread).
