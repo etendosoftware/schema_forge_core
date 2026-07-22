@@ -13,6 +13,7 @@
   "exports": {
     ".": "./src/index.js",
     "./auth": "./src/auth/index.js",
+    "./data": "./src/data/index.js",
     "./i18n": "./src/i18n/index.js",
     "./i18n/resolveLabel": "./src/i18n/resolveLabel.js",
     "./layout": "./src/layout/index.js",

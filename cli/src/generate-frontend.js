@@ -524,6 +524,14 @@ export function generateFormComponent(entityName, contract) {
     const emptyOptionPart = f.emptyOptionLabelKey ? `, emptyOptionLabelKey: '${f.emptyOptionLabelKey.replace(/'/g, "\\'")}'` : '';
     const fieldGroupPart = f.fieldGroup ? `, fieldGroup: '${f.fieldGroup.replace(/'/g, "\\'")}'` : '';
     const precisionPart = wrapIf(', precision: ', f.precision);
+    // Declarative numeric constraints (ETP-4542). Passed straight through to the
+    // generated FieldDef so the runtime `getNumericFieldError` (EntityForm blur +
+    // useEntity save gate) can validate generic windows without custom components.
+    // Emitted ONLY when defined so fields declaring neither stay byte-for-byte the
+    // same. `type` is intentionally left as 'number' — the validator reads `min`/
+    // `integer`, not `type`, and EntityForm.getInputType only recognizes 'number'.
+    const minPart = f.min != null ? `, min: ${f.min}` : '';
+    const integerPart = fragmentIf(f.integer === true, ', integer: true');
     // Behavioral metadata: displayLogic and readOnlyLogic
     let displayLogicPart = buildDisplayLogicPart(f);
     let readOnlyLogicPart = buildReadOnlyLogicPart(f);
@@ -536,7 +544,7 @@ export function generateFormComponent(entityName, contract) {
     const clearablePart = f.clearable === false ? ', clearable: false' : '';
     const customRendererPart = f.customRenderer ? `, customRenderer: ${f.customRenderer}` : '';
     const editModalPart = wrapIf(", editModal: '", f.editModal, "'");
-    const fieldLine = `  { key: '${f.name}', column: '${f.column}', type: '${type}'${formLabelPart}${requiredPart}${lookupPart}${popupPart}${readOnlyPart}${inlinePart}${sectionPart}${referencePart}${inputModePart}${searchSelectPart}${allowCreatePart}${createPart}${dependsOnPart}${optionsPart}${valueTypePart}${defaultValuePart}${helpPart}${placeholderPart}${emptyOptionPart}${fieldGroupPart}${precisionPart}${displayLogicPart}${readOnlyLogicPart}${spanPart}${rowsPart}${clearablePart}${customRendererPart}${editModalPart} },`;
+    const fieldLine = `  { key: '${f.name}', column: '${f.column}', type: '${type}'${formLabelPart}${requiredPart}${lookupPart}${popupPart}${readOnlyPart}${inlinePart}${sectionPart}${referencePart}${inputModePart}${searchSelectPart}${allowCreatePart}${createPart}${dependsOnPart}${optionsPart}${valueTypePart}${defaultValuePart}${helpPart}${placeholderPart}${emptyOptionPart}${fieldGroupPart}${precisionPart}${minPart}${integerPart}${displayLogicPart}${readOnlyLogicPart}${spanPart}${rowsPart}${clearablePart}${customRendererPart}${editModalPart} },`;
     return [...slotLines, fieldLine].join('\n');
   }).join('\n');
 

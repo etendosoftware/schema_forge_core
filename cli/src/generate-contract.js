@@ -293,6 +293,21 @@ const FIELD_HINTS_POST_GRID = [
   ['filterOnly', Boolean, setTrue],
 ];
 
+// Entity-level opt-in/opt-out flags carried from the curated entity onto the
+// frontend-contract entity. Each is emitted only when explicitly set — absent
+// (the common case) always means the flag's documented default.
+function applyEntityLevelFlags(entity, feEntity) {
+  if (entity.javaQualifier) feEntity.javaQualifier = entity.javaQualifier;
+  if (entity.draftMode?.enabled) feEntity.draftMode = entity.draftMode;
+  if (entity.formCols != null) feEntity.formCols = entity.formCols;
+  // HandleDefaults opt-out: emit only when explicitly disabled (default is on).
+  if (entity.handlesDefaults === false) feEntity.handlesDefaults = false;
+  // Per-entity delete opt-out (ETP-4512): emit only when explicitly set.
+  if (entity.hideDelete === true) feEntity.hideDelete = true;
+  const siblingFields = entity.fields.filter(f => isSystem(f) && f.addLineFromSibling).map(f => f.name);
+  if (siblingFields.length > 0) feEntity.addLineHiddenFromSibling = siblingFields;
+}
+
 function applyFieldUIHints(f, mapped) {
   applyBasicFieldUIHints(f, mapped);
   applyHints(f, mapped, FIELD_HINTS_PRE_GRID);
@@ -303,6 +318,9 @@ function applyFieldUIHints(f, mapped) {
   // ETP-4556 — never propagate the `false` disable sentinel into the flat bound.
   if (f.min !== undefined && f.min !== false) mapped.min = f.min;
   if (f.max !== undefined && f.max !== false) mapped.max = f.max;
+  // ETP-4542 — flat `integer` bound (whole-number constraint). Additive, mirrors
+  // min/max; the `false` sentinel is treated as "no constraint" for consistency.
+  if (f.integer !== undefined && f.integer !== false) mapped.integer = f.integer;
   // ETP-4555 — canonical declarative validation object (re-projected into a fixed
   // key order for deterministic output). Additive; absent when the field has none.
   const validation = projectValidation(f.validation);
@@ -396,13 +414,7 @@ export function generateFrontendContract(schema, rules = []) {
       .map(f => ({ name: f.apiKey || f.name, derivation: f.derivation }));
 
     const feEntity = { tableName: entity.tableName, tabId: entity.tabId, tabName: entity.tabName, uiPattern: entity.uiPattern ?? 'STD', fields, searchableFields, computedFields };
-    if (entity.javaQualifier) feEntity.javaQualifier = entity.javaQualifier;
-    if (entity.draftMode?.enabled) feEntity.draftMode = entity.draftMode;
-    if (entity.formCols != null) feEntity.formCols = entity.formCols;
-    // HandleDefaults opt-out: emit only when explicitly disabled (default is on).
-    if (entity.handlesDefaults === false) feEntity.handlesDefaults = false;
-    const siblingFields = entity.fields.filter(f => isSystem(f) && f.addLineFromSibling).map(f => f.name);
-    if (siblingFields.length > 0) feEntity.addLineHiddenFromSibling = siblingFields;
+    applyEntityLevelFlags(entity, feEntity);
     entities[entity.name] = feEntity;
   }
 
@@ -1207,6 +1219,12 @@ function buildCrudPrediction(baseUrl, entityName, feEntity) {
   // Surface the HandleDefaults opt-out into the runtime api so DetailView can skip
   // the line /defaults fetch for this entity. Emitted only when explicitly off.
   if (feEntity && feEntity.handlesDefaults === false) crud.handlesDefaults = false;
+  // Per-entity delete opt-out (ETP-4512) — see resolve-curated.js's applyEntityDecisions
+  // for why this exists alongside window.hideDelete. DetailView's buildDeleteRowHandler /
+  // isBulkDeleteBarVisible / canDeleteSelectedLine all gate directly on this same
+  // crud.delete flag, so setting it here removes the row-level delete affordance too,
+  // not just the declared API capability.
+  if (feEntity && feEntity.hideDelete === true) crud.delete = false;
   return crud;
 }
 
