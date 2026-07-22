@@ -65,6 +65,19 @@ Per-locale field label overrides. When the simplified interface needs to rename 
 
 ## Window Properties (`window.*`)
 
+### Runtime window-access gating (`window.id`) — ETP-4520
+
+`window.id` (the AD_Window_ID, already threaded through `resolve-curated.js`/`generate-contract.js` unconditionally — not a decisions.json key, extracted straight from the raw AD Window) now doubles as the lookup key for a **runtime, per-role access tier**. Whenever a contract carries a real `window.id`, `generatePageComponent` emits:
+
+- `useWindowAccess(windowId)` (from `@etendosoftware/app-shell-core/auth`), resolving `"none" | "read-only" | "full"` from the `windowAccess` map fetched once, at role-selection time, from `GET /webhooks/SFWindowAccessMap`.
+- A route guard: `"none"` renders `<WindowAccessGuard windowId="...">` and returns immediately, **before either ListView or DetailView mounts** — no data fetch happens for a window the current role has no access to at all (closes the deep-link gap where a role with no menu entry could otherwise still hit the route directly).
+- A `"read-only"` tier merges `readOnly: true` into the `window` prop forwarded to `ListView`/`DetailView` (reusing the same `window.readOnly` mechanism the static decisions.json `readOnly` flag already relies on — see `generate-contract.js`'s comment on `window.readOnly`), disabling Save/Create/Delete and the destructive kebab actions.
+- `"full"` is today's unrestricted behavior, unaffected.
+
+Both hooks/the guard fail **closed**: an unloaded `windowAccess` map or a missing `windowId` both resolve `"none"`, never `"full"`. Artifacts without a `window.id` (pre-ETP-4520 extractions, hand-built windows with no backing AD Window) silently keep today's behavior — the feature only activates once `window.id` is present.
+
+This is not a decisions.json opt-in; it applies automatically to every generated window that has an `window.id`. The one companion piece it still needs from whoever wires up the host app: the `GET /webhooks/SFWindowAccessMap` fetcher must be passed to `AuthProvider` as the `fetchWindowAccess` prop, invoked at the same lifecycle moment `selectedRole.orgList` is populated (see `AuthContext.jsx`'s `selectRole()`).
+
 | Property | Type | Default | Values | Purpose |
 |----------|------|---------|--------|---------|
 | `category` | string | Inferred | `"sales"`, `"purchases"`, `"inventory"`, `"finance"`, `"accounting"`, `"master"`, `"project"`, `"general"` | UI routing and navigation grouping. |
@@ -616,6 +629,25 @@ Applied to fields with `grid: true` to control how the list cell renders.
 | `gridReadOnly` | boolean | `false` | Make an otherwise-editable column read-only in the grid. |
 | `grow` | boolean | `false` | Let the column grow to fill available width. |
 | `cellType` | string | `null` | Selects a cell renderer from the registry (see below). Generic to any grid; the `list-modal` layout ships a styled set. |
+| `visibleWhenCapability` | string | `null` | Names a capability key (e.g. `"showAccountingFields"`) from the `capabilities` map returned by the `GET /webhooks/SFWindowAccessMap` webhook. Opt-in — absent means always visible, no behavior change. See below. |
+
+#### Capability-gated field visibility (`visibleWhenCapability`) — ETP-4520
+
+Gates a field's visibility on a named, server-resolved capability flag instead of a fixed decision. The generator copies the value straight through (`resolve-curated.js` → `generate-contract.js`, same shape as `badge`) onto:
+
+- **The grid column entry** — emitted by both `generateTableComponent` (standard grid) and the `list-modal` column builder, as `visibleWhenCapability: '<key>'` alongside the field's other column flags.
+- **A `window.statusPills` entry that references this field** — the capability key is resolved by *looking up the field by name* within the entity (`statusPills[i].field`) and copied onto the generated `extraBadges` entry. It is never declared redundantly on the `statusPills` decision entry itself — one source of truth, the field.
+
+At runtime, the consuming component calls `useHasCapability(key)` (from `@etendosoftware/app-shell-core/auth`, re-exported via `@/auth/AuthContext.jsx`) and **omits the field/pill entirely** when it resolves `false` — not disabled, not hidden via CSS. `useHasCapability` fails closed: an unloaded `capabilities` map or a missing key both resolve `false`, so a slow/failed webhook fetch never leaks a gated field.
+
+```json
+"accountingDate": {
+  "visibility": "editable",
+  "visibleWhenCapability": "showAccountingFields"
+}
+```
+
+**Note:** as of ETP-4520, the standard grid column emission is wired end-to-end. The `list-modal` grid column emission is also wired. The `statusPills`/`DetailView` runtime consumption (reading `extraBadges[i].visibleWhenCapability` and calling `useHasCapability`) still needs a companion change in the functional repo's `DetailView.jsx` (statusPill rendering lives there, not in `schema_forge_core`) — the generator-side data is emitted and ready to be consumed.
 
 #### Status column rendering (`columnType` and `enumValues`)
 
