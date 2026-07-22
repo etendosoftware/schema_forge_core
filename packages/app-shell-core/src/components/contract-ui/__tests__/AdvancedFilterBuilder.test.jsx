@@ -714,4 +714,93 @@ describe('AdvancedFilterBuilder', () => {
       });
     });
   });
+
+  // ================================================================
+  // ETP-4609 — required columns must not offer isNull / isNotNull
+  // ================================================================
+
+  describe('required columns hide isNull/isNotNull operators (ETP-4609)', () => {
+    const seededValue = (field) => ({
+      rowOperator: 'and',
+      conditions: [{ field, operator: '', value: '' }],
+    });
+
+    it('does not offer "Es vacío" / "No es vacío" for a required text column', async () => {
+      const user = userEvent.setup();
+      const cols = [{ key: 'name', label: 'Name', type: 'text', column: 'Name', required: true }];
+      render(<AdvancedFilterBuilder columns={cols} value={seededValue('name')} />);
+      await user.click(screen.getByText('advancedFilterSelectOp').closest('button'));
+      expect(screen.queryByRole('option', { name: 'opIsEmpty' })).not.toBeInTheDocument();
+      expect(screen.queryByRole('option', { name: 'opIsNotEmpty' })).not.toBeInTheDocument();
+      // Other operators for the mode remain available.
+      expect(screen.getByRole('option', { name: 'opContains' })).toBeInTheDocument();
+    });
+
+    it('still offers "Es vacío" / "No es vacío" for the same column when not required', async () => {
+      const user = userEvent.setup();
+      const cols = [{ key: 'name', label: 'Name', type: 'text', column: 'Name' }];
+      render(<AdvancedFilterBuilder columns={cols} value={seededValue('name')} />);
+      await user.click(screen.getByText('advancedFilterSelectOp').closest('button'));
+      expect(await screen.findByRole('option', { name: 'opIsEmpty' })).toBeInTheDocument();
+      expect(screen.getByRole('option', { name: 'opIsNotEmpty' })).toBeInTheDocument();
+    });
+
+    it('does not offer isNull/isNotNull for a required identifier (selector) column', async () => {
+      const user = userEvent.setup();
+      const cols = [
+        { key: 'productCategory', label: 'Category', type: 'selector', column: 'M_Product_Category_ID', required: true },
+      ];
+      render(<AdvancedFilterBuilder columns={cols} value={seededValue('productCategory')} />);
+      await user.click(screen.getByText('advancedFilterSelectOp').closest('button'));
+      expect(screen.queryByRole('option', { name: 'opIsEmpty' })).not.toBeInTheDocument();
+      expect(screen.queryByRole('option', { name: 'opIsNotEmpty' })).not.toBeInTheDocument();
+    });
+  });
+
+  // ================================================================
+  // ETP-4609 — synthetic `type: 'custom'` columns without a backend field
+  // must not appear in the filter field list (wrong label + never matches).
+  // ================================================================
+
+  describe('custom columns without a backend field are excluded from filters (ETP-4609)', () => {
+    it('does not offer a custom column that has no `column` / `backendFilterKey`', async () => {
+      const user = userEvent.setup();
+      const cols = [
+        { key: 'name', label: 'Name', type: 'text', column: 'Name' },
+        {
+          key: 'nameAndSearchKey',
+          labels: { en_US: 'Identifier & Name', es_ES: 'Identificador & Nombre' },
+          type: 'custom',
+          render: () => null,
+        },
+      ];
+      render(<AdvancedFilterBuilder columns={cols} />);
+      await user.click(screen.getByText('advancedFilterSelectField').closest('button'));
+      expect(await screen.findByRole('option', { name: 'Name' })).toBeInTheDocument();
+      // The raw internal key must never leak into the field dropdown as an option.
+      expect(screen.queryByRole('option', { name: 'nameAndSearchKey' })).not.toBeInTheDocument();
+    });
+
+    it('still offers a custom column that declares a real `column` (AD field)', async () => {
+      const user = userEvent.setup();
+      const cols = [
+        { key: 'grandTotalAmount', label: 'Total', type: 'custom', column: 'GrandTotal', render: () => null },
+      ];
+      render(<AdvancedFilterBuilder columns={cols} />);
+      await user.click(screen.getByText('advancedFilterSelectField').closest('button'));
+      // useLabel is mocked as the identity function in this file (line ~12), so
+      // columnLabel resolves to `col.column` here, not `col.label`.
+      expect(await screen.findByRole('option', { name: 'GrandTotal' })).toBeInTheDocument();
+    });
+
+    it('still offers a custom column explicitly opted in via `filterable: true`', async () => {
+      const user = userEvent.setup();
+      const cols = [
+        { key: 'virtualButFilterable', label: 'Virtual', type: 'custom', filterable: true, render: () => null },
+      ];
+      render(<AdvancedFilterBuilder columns={cols} />);
+      await user.click(screen.getByText('advancedFilterSelectField').closest('button'));
+      expect(await screen.findByRole('option', { name: 'Virtual' })).toBeInTheDocument();
+    });
+  });
 });
