@@ -690,6 +690,65 @@ describe('resolveCurated — max field constraint (ETP-4277)', () => {
     assert.equal(discount.max, 100);
   });
 
+  it('propagates integer:true and min together (e.g. usableLifeMonths)', async () => {
+    const decisions = {
+      version: 2,
+      window: { name: 'Sales Order' },
+      entities: {
+        cOrderLine: {
+          name: 'orderLine',
+          fields: {
+            discount: { min: 1, integer: true },
+          },
+        },
+      },
+      rules: {},
+    };
+    const { schema } = await resolveCurated(schemaRaw, { rules: [] }, decisions);
+    const discount = schema.entities[0].fields.find(f => f.name === 'discount');
+    assert.equal(discount.min, 1);
+    assert.equal(discount.integer, true);
+  });
+
+  it('does NOT set integer when the decision omits it', async () => {
+    const decisions = {
+      version: 2,
+      window: { name: 'Sales Order' },
+      entities: {
+        cOrderLine: {
+          name: 'orderLine',
+          fields: {
+            discount: { min: 0 },
+          },
+        },
+      },
+      rules: {},
+    };
+    const { schema } = await resolveCurated(schemaRaw, { rules: [] }, decisions);
+    const discount = schema.entities[0].fields.find(f => f.name === 'discount');
+    assert.equal(discount.integer, undefined);
+  });
+
+  // ETP-4542 + ETP-4556 — integer follows the same `false` disable sentinel as min/max.
+  it('does NOT emit flat integer when decision integer is false (disable sentinel)', async () => {
+    const decisions = {
+      version: 2,
+      window: { name: 'Sales Order' },
+      entities: {
+        cOrderLine: {
+          name: 'orderLine',
+          fields: {
+            discount: { integer: false },
+          },
+        },
+      },
+      rules: {},
+    };
+    const { schema } = await resolveCurated(schemaRaw, { rules: [] }, decisions);
+    const discount = schema.entities[0].fields.find(f => f.name === 'discount');
+    assert.equal(discount.integer, undefined);
+  });
+
   // ETP-4556 — `false` disables the flat ETP-4277 min/max emission too, so the
   // disable sentinel is consistent with the nested `validation` object (which
   // already omits the bound on `false`). Without this guard `min: false` would

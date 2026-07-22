@@ -1173,6 +1173,58 @@ describe('field type mapping edge cases', () => {
 });
 
 // ---------------------------------------------------------------------------
+// Numeric constraint passthrough (min / integer) — ETP-4542
+// ---------------------------------------------------------------------------
+
+describe('generateFormComponent - numeric constraints (min/integer)', () => {
+  const numericContract = {
+    frontendContract: {
+      window: { id: '1', name: 'Numeric', primaryEntity: 'test', category: 'test' },
+      entities: {
+        test: {
+          fields: [
+            { name: 'bothConstraints', column: 'Both', type: 'integer', tsType: 'number', visibility: 'editable', form: true, min: 1, integer: true },
+            { name: 'onlyMin', column: 'OnlyMin', type: 'integer', tsType: 'number', visibility: 'editable', form: true, min: 0 },
+            { name: 'onlyInteger', column: 'OnlyInt', type: 'integer', tsType: 'number', visibility: 'editable', form: true, integer: true },
+            { name: 'plainNumber', column: 'Plain', type: 'integer', tsType: 'number', visibility: 'editable', form: true },
+          ],
+          searchableFields: [],
+          computedFields: [],
+        },
+      },
+    },
+    backendContract: { processEndpoints: [] },
+  };
+
+  it('emits min and integer for a field declaring both', () => {
+    const code = generateFormComponent('test', numericContract);
+    assert.ok(/key: 'bothConstraints'[^}]*min: 1[^}]*integer: true/.test(code));
+  });
+
+  it('emits min (including 0) when only min is declared', () => {
+    const code = generateFormComponent('test', numericContract);
+    assert.ok(/key: 'onlyMin'[^}]*min: 0/.test(code));
+    assert.ok(!/key: 'onlyMin'[^}]*integer: true/.test(code));
+  });
+
+  it('emits integer when only integer is declared', () => {
+    const code = generateFormComponent('test', numericContract);
+    assert.ok(/key: 'onlyInteger'[^}]*integer: true/.test(code));
+    assert.ok(!/key: 'onlyInteger'[^}]*min:/.test(code));
+  });
+
+  it('emits neither min nor integer for a plain numeric field (backwards-compatible)', () => {
+    const code = generateFormComponent('test', numericContract);
+    const line = code.split('\n').find(l => l.includes("key: 'plainNumber'"));
+    assert.ok(line, 'plainNumber field line should exist');
+    assert.ok(!line.includes('min:'), 'plain field must not gain a min prop');
+    assert.ok(!line.includes('integer:'), 'plain field must not gain an integer prop');
+    // type stays 'number' (validator reads min/integer, not type)
+    assert.ok(line.includes("type: 'number'"));
+  });
+});
+
+// ---------------------------------------------------------------------------
 // addLineFields derived field separation
 // ---------------------------------------------------------------------------
 
