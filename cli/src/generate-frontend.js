@@ -1804,6 +1804,49 @@ function buildDetailProcessesForPage(detailEntity, contract, processOverrides) {
     : '';
 }
 
+// ETP-4520 — per-window access-tier gating ("none" | "read-only" | "full"), resolved at
+// runtime from AuthContext.windowAccess. Only emitted when the contract carries a real
+// AD_Window_ID (windowAccessId) — legacy/hand-built artifacts without one keep today's
+// unrestricted behavior. Extracted out of generatePageComponent (Sonar S3776): this is
+// the one cohesive "route-guard/readOnly wiring" chunk that ticket added, bundled behind
+// a single call instead of four separate inline ternaries in the caller.
+function buildWindowAccessWiring(windowAccessId) {
+  // ETP-4520 — only emitted when a real AD_Window_ID is known (windowAccessId); see the
+  // comment above for the fallback.
+  const useMemoImport = fragmentIf(!!windowAccessId, 'useMemo, ');
+  // WindowAccessGuard is the single, tested "access denied" presentation (see
+  // packages/app-shell-core/src/auth/WindowAccessGuard.jsx) — the generator never
+  // inlines that JSX itself, just references it, so every window shares one
+  // implementation instead of duplicating it per generated file.
+  const windowAccessImport = windowAccessId
+    ? `\nimport { useWindowAccess, WindowAccessGuard } from '@/auth/AuthContext.jsx';`
+    : '';
+  // Hook calls run unconditionally on every render (Rules of Hooks): the guard's early
+  // return happens further down, AFTER these are declared, never before. effectiveWindow
+  // reuses the same `props.window` reference when the tier isn't 'read-only' (no new
+  // object identity → no extra re-renders downstream); it only allocates a new object for
+  // the 'read-only' tier, memoized on [windowAccessTier, props.window] so it's stable
+  // across re-renders that don't change either.
+  const windowAccessHooksBlock = windowAccessId ? `
+  const windowAccessTier = useWindowAccess('${windowAccessId}');
+  const effectiveWindow = useMemo(() => (
+    windowAccessTier === 'read-only' ? { ...(props.window || {}), readOnly: true } : props.window
+  ), [windowAccessTier, props.window]);` : '';
+  // "none" → route guard: blocks the render before ListView/DetailView ever mount, so
+  // no data fetch happens for a window the user has no access to at all (closes the
+  // deep-link gap — a role with no menu entry could otherwise still hit the route
+  // directly). "read-only"/"full" fall through unchanged below.
+  const windowAccessGuardBlock = windowAccessId ? `
+  if (windowAccessTier === 'none') {
+    return <WindowAccessGuard windowId="${windowAccessId}" />;
+  }` : '';
+  // Overrides the `window` prop forwarded via `{...props}` so DetailView's existing
+  // `window.readOnly` handling (see generate-contract.js's window.readOnly comment)
+  // also fires for the runtime "read-only" tier, not just the static decisions.json one.
+  const effectiveWindowProp = windowAccessId ? ' window={effectiveWindow}' : '';
+  return { useMemoImport, windowAccessImport, windowAccessHooksBlock, windowAccessGuardBlock, effectiveWindowProp };
+}
+
 /**
  * Generate a header-detail page component with ListView/DetailView pattern.
  * Produces a thin declarative component that routes by recordId.
@@ -2251,39 +2294,15 @@ export function generatePageComponent(headerEntity, detailEntity, contract) {
   const detailTableAndFormProps = buildDetailTableAndFormProps(detailEntity, customLinesComp, hideDetailForm, detailName);
   const detailProcessesProp = detailProcessesArray ? '\n        detailProcesses={detailProcesses}' : '';
   const useStateImport = fragmentIf(needsUseState, 'useState, ');
-  // ETP-4520 — per-window access-tier gating. Only emitted when a real AD_Window_ID
-  // is known (windowAccessId); see the windowAccessId comment above for the fallback.
-  const useMemoImport = fragmentIf(!!windowAccessId, 'useMemo, ');
-  // WindowAccessGuard is the single, tested "access denied" presentation (see
-  // packages/app-shell-core/src/auth/WindowAccessGuard.jsx) — the generator never
-  // inlines that JSX itself, just references it, so every window shares one
-  // implementation instead of duplicating it per generated file.
-  const windowAccessImport = windowAccessId
-    ? `\nimport { useWindowAccess, WindowAccessGuard } from '@/auth/AuthContext.jsx';`
-    : '';
-  // ETP-4520 — hook calls run unconditionally on every render (Rules of Hooks): the
-  // guard's early return happens further down, AFTER these are declared, never before.
-  // effectiveWindow reuses the same `props.window` reference when the tier isn't
-  // 'read-only' (no new object identity → no extra re-renders downstream); it only
-  // allocates a new object for the 'read-only' tier, memoized on [windowAccessTier,
-  // props.window] so it's stable across re-renders that don't change either.
-  const windowAccessHooksBlock = windowAccessId ? `
-  const windowAccessTier = useWindowAccess('${windowAccessId}');
-  const effectiveWindow = useMemo(() => (
-    windowAccessTier === 'read-only' ? { ...(props.window || {}), readOnly: true } : props.window
-  ), [windowAccessTier, props.window]);` : '';
-  // "none" → route guard: blocks the render before ListView/DetailView ever mount, so
-  // no data fetch happens for a window the user has no access to at all (closes the
-  // deep-link gap — a role with no menu entry could otherwise still hit the route
-  // directly). "read-only"/"full" fall through unchanged below.
-  const windowAccessGuardBlock = windowAccessId ? `
-  if (windowAccessTier === 'none') {
-    return <WindowAccessGuard windowId="${windowAccessId}" />;
-  }` : '';
-  // Overrides the `window` prop forwarded via `{...props}` so DetailView's existing
-  // `window.readOnly` handling (see generate-contract.js's window.readOnly comment)
-  // also fires for the runtime "read-only" tier, not just the static decisions.json one.
-  const effectiveWindowProp = windowAccessId ? ' window={effectiveWindow}' : '';
+  // ETP-4520 — per-window access-tier gating. See buildWindowAccessWiring() above for
+  // the full rationale (only emitted when a real AD_Window_ID / windowAccessId is known).
+  const {
+    useMemoImport,
+    windowAccessImport,
+    windowAccessHooksBlock,
+    windowAccessGuardBlock,
+    effectiveWindowProp
+  } = buildWindowAccessWiring(windowAccessId);
   return `import { ${useStateImport}${useMemoImport}useEffect } from 'react';
 import { ListView, DetailView } from '@/components/contract-ui';${windowAccessImport}${fragmentIf(customListIcons, `\nimport { SortIcon, RefreshIcon } from '@/components/ui/custom-icons';`)}${fragmentIf(menuActionsConfig.length > 0, `\nimport { toast } from 'sonner';`)}${wrapIf('\nimport { ', lineConfigSymbol, ` } from '@/hooks/useLineGrossAmount';`)}
 ${headerTableImport}
