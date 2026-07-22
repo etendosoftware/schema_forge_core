@@ -565,8 +565,8 @@ The block is an object **keyed by `AD_Process_ID`** (string). Each value is an a
     "header": {
       "preconditions": {
         "800125": [
-          { "field": "usableLifeMonths", "requiredWhen": "@calculateType@ != 'PE' && @depreciationType@ != 'YE'" },
-          { "field": "usableLifeYears",  "requiredWhen": "@depreciationType@ == 'YE'" },
+          { "field": "usableLifeMonths", "requiredWhen": "@calculateType@ != 'PE' && @amortize@ != 'YE'" },
+          { "field": "usableLifeYears",  "requiredWhen": "@amortize@ == 'YE'" },
           { "field": "currency" }
         ]
       }
@@ -585,6 +585,8 @@ The block is an object **keyed by `AD_Process_ID`** (string). Each value is an a
 `ETGO_SF_ENTITY.preconditions` text column → NEO Headless reads it at runtime. An explicit
 but empty block (`{}`) clears any stale DB value. The block is written directly from
 `decisions.json` (like `agentPrompt`); it does **not** flow through `contract.json`.
+
+> **Scope — when to declare (ETP-4275 review).** Preconditions fit only **conditionally-required, non-AD-mandatory** fields: a field the record saves fine without, but a process needs (the assets case above). AD-mandatory fields never arrive null, so there is nothing to check. Failures that are **not** "a record field is unset" — no lines, already processed, period closed, business partner blocked, org/doctype config, stock — are **outside this model** (line/state/environment checks). A review of the NEO-exposed PL processes found assets is essentially the only good fit; declaring preconditions elsewhere adds no value in the current model.
 
 ## Field Properties (`entities.{name}.fields.{fieldName}.*`)
 
