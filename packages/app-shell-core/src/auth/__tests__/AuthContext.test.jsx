@@ -43,7 +43,7 @@ describe('AuthContext — windowAccess/capabilities (ETP-4520)', () => {
     expect(result.current.capabilities).toEqual({ showAccountingFields: true });
   });
 
-  it('does not block role selection on the network round trip (fire-and-forget)', () => {
+  it('does not block role selection on the network round trip (fire-and-forget)', async () => {
     let resolveFetch;
     const fetchWindowAccess = vi.fn(() => new Promise((resolve) => { resolveFetch = resolve; }));
     const { result } = renderHook(() => useAuth(), { wrapper: wrapperWith({ fetchWindowAccess }) });
@@ -56,6 +56,12 @@ describe('AuthContext — windowAccess/capabilities (ETP-4520)', () => {
     // though the window-access fetch is still pending.
     expect(result.current.selectedRole).toEqual({ id: 'role-1' });
     expect(result.current.windowAccess).toEqual({});
+
+    // The actual fetchWindowAccess() call is deferred one microtask (so a
+    // synchronous throw is caught too) — flush it before resolving.
+    await act(async () => {
+      await Promise.resolve();
+    });
     resolveFetch({ windowAccess: {}, capabilities: {} });
   });
 
@@ -126,6 +132,64 @@ describe('AuthContext — windowAccess/capabilities (ETP-4520)', () => {
       result.current.logout();
     });
 
+    expect(result.current.windowAccess).toEqual({});
+    expect(result.current.capabilities).toEqual({});
+  });
+
+  it('fails closed WHILE loading when switching from a role with full access to a new role', async () => {
+    let resolveFirst;
+    const fetchWindowAccess = vi.fn()
+      .mockImplementationOnce(() => new Promise((resolve) => { resolveFirst = resolve; }))
+      .mockImplementationOnce(() => new Promise(() => {})); // never resolves for the second role
+
+    const { result } = renderHook(() => useAuth(), { wrapper: wrapperWith({ fetchWindowAccess }) });
+
+    // First role gets full access/capabilities.
+    act(() => {
+      result.current.selectRole({ id: 'role-admin' });
+    });
+    // The fetchWindowAccess() call is deferred one microtask — flush it so
+    // `resolveFirst` is assigned before we call it.
+    await act(async () => {
+      await Promise.resolve();
+    });
+    await act(async () => {
+      resolveFirst({
+        windowAccess: { '147': 'full' },
+        capabilities: { showAccountingFields: true },
+      });
+    });
+    await waitFor(() => {
+      expect(result.current.windowAccess).toEqual({ '147': 'full' });
+    });
+    expect(result.current.capabilities).toEqual({ showAccountingFields: true });
+
+    // Switch to a new (restricted) role — the fetch for it never resolves in
+    // this test, so we can assert the intermediate state synchronously.
+    act(() => {
+      result.current.selectRole({ id: 'role-restricted' });
+    });
+
+    // Fail closed WHILE loading, not the stale admin maps from the previous role.
+    expect(result.current.windowAccess).toEqual({});
+    expect(result.current.capabilities).toEqual({});
+  });
+
+  it('does not crash and fails closed when fetchWindowAccess throws synchronously', async () => {
+    const fetchWindowAccess = vi.fn(() => {
+      throw new Error('synchronous boom');
+    });
+    const { result } = renderHook(() => useAuth(), { wrapper: wrapperWith({ fetchWindowAccess }) });
+
+    expect(() => {
+      act(() => {
+        result.current.selectRole({ id: 'role-1' });
+      });
+    }).not.toThrow();
+
+    await waitFor(() => {
+      expect(fetchWindowAccess).toHaveBeenCalledTimes(1);
+    });
     expect(result.current.windowAccess).toEqual({});
     expect(result.current.capabilities).toEqual({});
   });

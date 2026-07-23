@@ -53,14 +53,26 @@ export function AuthProvider({ children, storage, initialSession, onSessionChang
       setCapabilities({});
       return;
     }
+    // Fail closed IMMEDIATELY on every role switch, not just before the
+    // first-ever load: clear the previous role's maps before kicking off the
+    // fetch, so the UI never briefly (or permanently, on failure) keeps
+    // showing a prior role's access while the new role's fetch is in flight.
+    setWindowAccess({});
+    setCapabilities({});
     if (typeof fetchWindowAccess !== 'function') return;
-    Promise.resolve(fetchWindowAccess(nextSession))
+    // Deferring the call itself into the promise chain (rather than
+    // `Promise.resolve(fetchWindowAccess(nextSession))`) also catches a
+    // SYNCHRONOUS throw from the host app's fetcher, routing it through the
+    // same `.catch()` as a rejected promise instead of propagating out of
+    // `selectRole` uncaught.
+    Promise.resolve()
+      .then(() => fetchWindowAccess(nextSession))
       .then((result) => {
-        if (result?.windowAccess) setWindowAccess(result.windowAccess);
-        if (result?.capabilities) setCapabilities(result.capabilities);
+        setWindowAccess(result?.windowAccess ?? {});
+        setCapabilities(result?.capabilities ?? {});
       })
       .catch(() => {
-        // Fail closed: leave the existing (default {}) maps in place.
+        // Fail closed: leave the (already cleared, default {}) maps in place.
       });
   }, [persistSession, session, fetchWindowAccess]);
 
