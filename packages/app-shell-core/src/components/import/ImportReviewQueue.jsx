@@ -7,6 +7,7 @@ import { Popover, PopoverTrigger, PopoverContent } from '../ui/popover.jsx';
 import { Command, CommandInput, CommandList, CommandEmpty, CommandGroup, CommandItem } from '../ui/command.jsx';
 import { Dialog, DialogContent, DialogHeader, DialogFooter, DialogTitle, DialogDescription } from '../ui/dialog.jsx';
 import { ScrollPane } from '../ui/scroll-pane.jsx';
+import { csvField } from '../../lib/csv/csvSerializer.js';
 
 const DEFAULT_LABELS = {
   filterAll: 'All',
@@ -78,11 +79,6 @@ const STATUS_TAG_COLORS = {
   destructive: 'bg-[#FEF0F4] text-[#D50B3E]',
   neutral: 'bg-[#F5F7F9] text-[#3F3F50]',
 };
-
-function csvEscape(value) {
-  const s = String(value ?? '');
-  return /[",\n]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s;
-}
 
 /** Line number + status pill, shared by every row in the frozen leading column. */
 function StatusLineTag({ index, tag, children }) {
@@ -266,12 +262,12 @@ function FkMismatchCell({ index, field, value, error, onSelect, simSearchFn, tok
  */
 export function buildErrorsCsv(entries, headers, mapping) {
   const mappedHeaders = headers.filter((h) => mapping[h]);
-  const lines = [[...mappedHeaders, 'Error'].map(csvEscape).join(',')];
+  const lines = [[...mappedHeaders, 'Error'].map(csvField).join(',')];
   for (const entry of entries) {
     if (entry.errors.length === 0) continue;
     const values = mappedHeaders.map((h) => entry.row[mapping[h]]);
     const errorText = entry.errors.map((e) => (e.target ? `${e.target}: ${e.message}` : e.message)).join(' | ');
-    lines.push([...values, errorText].map(csvEscape).join(','));
+    lines.push([...values, errorText].map(csvField).join(','));
   }
   return lines.join('\n');
 }
