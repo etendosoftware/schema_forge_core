@@ -1472,6 +1472,23 @@ export function generateListModalPage(headerEntity, contract) {
   const entity = contract.frontendContract.entities[headerEntity];
   const windowConfig = contract?.frontendContract?.window ?? {};
   const templateConfig = windowConfig.templateConfig ?? null;
+  // ETP-4520 — same window-access tier gating as generatePageComponent (see
+  // buildWindowAccessWiring() above). list-modal windows have their own template
+  // (ListModalWindow, no ListView/DetailView) so the wiring has to be spliced into
+  // THIS function's output too — reusing the helper keeps both call sites in sync
+  // instead of re-deriving the hooks/guard/prop strings a second time.
+  const windowAccessId = windowConfig.id ?? null;
+  const {
+    windowAccessImport,
+    windowAccessHooksBlock,
+    windowAccessGuardBlock,
+    effectiveWindowProp,
+  } = buildWindowAccessWiring(windowAccessId);
+  // Only this function's own react import — list-modal pages don't otherwise import
+  // from 'react' (no useState/useEffect here), so it's emitted standalone rather than
+  // reusing buildWindowAccessWiring's useMemoImport fragment (that one is shaped to be
+  // combined with generatePageComponent's useState/useEffect import line).
+  const reactImportLine = windowAccessId ? "import { useMemo } from 'react';\n" : '';
 
   const columnsArray = buildListModalColumns(entity);
 
@@ -1537,7 +1554,7 @@ export function generateListModalPage(headerEntity, contract) {
     toolbarFilters: tc.toolbarFilters ?? [],
   }, null, 2);
 
-  return `import { ListModalWindow } from '@/components/contract-ui';
+  return `${reactImportLine}import { ListModalWindow } from '@/components/contract-ui';${windowAccessImport}
 
 ${MARKERS.GENERATED_START(`columns:${headerEntity}`)}
 const columns = [
@@ -1561,7 +1578,7 @@ const breadcrumb = ${breadcrumbLiteral};
 const listModalConfig = ${configLiteral};
 ${apiBlock}
 ${MARKERS.GENERATED_START(`component:${compName}`)}
-export default function ${compName}({ windowName, ...props }) {
+export default function ${compName}({ windowName, ...props }) {${windowAccessHooksBlock}${windowAccessGuardBlock}
   return (
     <ListModalWindow
       entity="${headerEntity}"
@@ -1573,7 +1590,7 @@ export default function ${compName}({ windowName, ...props }) {
       sections={sections}
       filters={filters}
       config={listModalConfig}${apiProp}
-      {...props}
+      {...props}${effectiveWindowProp}
     />
   );
 }
