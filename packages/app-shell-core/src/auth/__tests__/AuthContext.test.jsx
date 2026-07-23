@@ -271,6 +271,62 @@ describe('AuthContext — windowAccess/capabilities (ETP-4520)', () => {
     expect(result.current.capabilities).toEqual({});
   });
 
+  it('fetches window access on mount when the initial/persisted session already has a selectedRole (hydration, ETP-4520)', async () => {
+    // Regression: a host app whose login flow sets `selectedRole` directly via
+    // login()/setSession() (or a page reload rehydrating a persisted session)
+    // rather than calling selectRole() itself must still get its window access
+    // fetched — otherwise windowAccess/capabilities stay fail-closed forever.
+    const fetchWindowAccess = vi.fn().mockResolvedValue({
+      windowAccess: { '147': 'full' },
+      capabilities: { showAccountingFields: true },
+    });
+    const { result } = renderHook(() => useAuth(), {
+      wrapper: ({ children }) => (
+        <AuthProvider
+          storage={createMemoryAuthStorage()}
+          fetchWindowAccess={fetchWindowAccess}
+          initialSession={{ token: 'tok', selectedRole: { id: 'role-1' } }}>
+          {children}
+        </AuthProvider>
+      ),
+    });
+
+    await waitFor(() => {
+      expect(fetchWindowAccess).toHaveBeenCalledTimes(1);
+    });
+    const [sessionArg] = fetchWindowAccess.mock.calls[0];
+    expect(sessionArg.selectedRole).toEqual({ id: 'role-1' });
+
+    await waitFor(() => {
+      expect(result.current.windowAccess).toEqual({ '147': 'full' });
+    });
+    expect(result.current.capabilities).toEqual({ showAccountingFields: true });
+  });
+
+  it('does not double-fetch when selectRole() is called explicitly (hydration effect no-ops for the same role)', async () => {
+    const fetchWindowAccess = vi.fn().mockResolvedValue({
+      windowAccess: { '147': 'full' },
+      capabilities: { showAccountingFields: true },
+    });
+    const { result } = renderHook(() => useAuth(), { wrapper: wrapperWith({ fetchWindowAccess }) });
+
+    await act(async () => {
+      result.current.selectRole({ id: 'role-1' });
+    });
+    await waitFor(() => {
+      expect(result.current.windowAccess).toEqual({ '147': 'full' });
+    });
+
+    expect(fetchWindowAccess).toHaveBeenCalledTimes(1);
+  });
+
+  it('does not fetch on mount when there is no persisted/initial selectedRole', () => {
+    const fetchWindowAccess = vi.fn();
+    renderHook(() => useAuth(), { wrapper: wrapperWith({ fetchWindowAccess }) });
+
+    expect(fetchWindowAccess).not.toHaveBeenCalled();
+  });
+
   it('exposes setWindowAccess/setCapabilities for callers that fetch externally', () => {
     const { result } = renderHook(() => useAuth(), { wrapper: wrapperWith() });
 
