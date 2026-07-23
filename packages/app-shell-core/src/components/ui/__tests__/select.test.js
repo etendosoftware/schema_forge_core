@@ -18,7 +18,7 @@ function extractTriggerBaseClass(source) {
   return match ? match[1] : null;
 }
 
-describe('SelectTrigger — Figma form-input dimensions (ETP-3893 + ETP-4321)', () => {
+describe('SelectTrigger — semantic form-input dimensions (ETP-4554)', () => {
   const triggerClass = extractTriggerBaseClass(src);
 
   it('source exposes a single canonical class string for the trigger', () => {
@@ -38,8 +38,8 @@ describe('SelectTrigger — Figma form-input dimensions (ETP-3893 + ETP-4321)', 
     assert.match(triggerClass, /(^|\s)rounded-lg(\s|$)/);
   });
 
-  it('uses the Figma border color #D1D4DB', () => {
-    assert.match(triggerClass, /border-\[#D1D4DB\]/);
+  it('uses the semantic control border', () => {
+    assert.match(triggerClass, /border-border-control/);
   });
 
   it('drives padding from the shared FIELD_PADDING token (ETP-4321)', () => {
@@ -54,5 +54,11 @@ describe('SelectTrigger — Figma form-input dimensions (ETP-3893 + ETP-4321)', 
   it('does NOT regress to the legacy rounded-md / shadow-sm pairing', () => {
     assert.doesNotMatch(triggerClass, /(^|\s)rounded-md(\s|$)/);
     assert.doesNotMatch(triggerClass, /(^|\s)shadow-sm(\s|$)/);
+  });
+
+  it('uses a dedicated disabled state and an accessible focus ring', () => {
+    assert.match(triggerClass, /disabled:text-text-disabled/);
+    assert.doesNotMatch(triggerClass, /disabled:opacity-/);
+    assert.match(triggerClass, /focus:ring-focus-ring/);
   });
 });

@@ -276,7 +276,7 @@ export function buildChangelogEntry(fromVersion, toVersion, classification, auth
  * Main orchestrator: load contracts, diff, classify, bump, write.
  * Returns null if no prev contract exists or no changes detected.
  */
-export async function checkVersion(windowName, author) {
+export async function checkVersion(windowName, author, prevMcpContract = null) {
   const artifactDir = join(ROOT, 'artifacts', windowName);
 
   // Load current contract
@@ -315,17 +315,25 @@ export async function checkVersion(windowName, author) {
     JSON.stringify(currentContract, null, 2) + '\n'
   );
 
-  // Keep contract.mcp.json's version in sync — it is written earlier in the
-  // pipeline (before this bump runs), so without this it permanently lags
-  // one version behind contract.json every time a bump occurs.
+  // contract.mcp.json carries its OWN content-based `checksum` (computed from
+  // apiPrediction/formState/agentProfile only — see splitWindowContractArtifacts),
+  // independent of contract.json's frontendContract/backendContract. Bump its
+  // version ONLY when that own checksum actually changed; otherwise leave the
+  // file untouched. Previously this unconditionally forced contract.mcp.json's
+  // version to follow contract.json's, so ANY frontendContract-only change
+  // (e.g. a new UI field validation rule) bumped every window's .mcp.json too,
+  // even when its own apiPrediction/formState/agentProfile were byte-identical.
   try {
     const mcpRaw = await readFile(join(artifactDir, 'contract.mcp.json'), 'utf-8');
     const mcpContract = JSON.parse(mcpRaw);
-    mcpContract.version = newVersion;
-    await writeFile(
-      join(artifactDir, 'contract.mcp.json'),
-      JSON.stringify(mcpContract, null, 2) + '\n'
-    );
+    const ownContentChanged = !prevMcpContract || prevMcpContract.checksum !== mcpContract.checksum;
+    if (ownContentChanged) {
+      mcpContract.version = newVersion;
+      await writeFile(
+        join(artifactDir, 'contract.mcp.json'),
+        JSON.stringify(mcpContract, null, 2) + '\n'
+      );
+    }
   } catch {
     // No mcp split artifact for this window — nothing to sync.
   }
