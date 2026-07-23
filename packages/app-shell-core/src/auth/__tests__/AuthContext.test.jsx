@@ -194,6 +194,52 @@ describe('AuthContext — windowAccess/capabilities (ETP-4520)', () => {
     expect(result.current.capabilities).toEqual({});
   });
 
+  it('discards a stale response that arrives after a newer selectRole call (ETP-4520 race)', async () => {
+    let resolveRoleA;
+    let resolveRoleB;
+    const fetchWindowAccess = vi.fn()
+      .mockImplementationOnce(() => new Promise((resolve) => { resolveRoleA = resolve; }))
+      .mockImplementationOnce(() => new Promise((resolve) => { resolveRoleB = resolve; }));
+
+    const { result } = renderHook(() => useAuth(), { wrapper: wrapperWith({ fetchWindowAccess }) });
+
+    // Select role A — its fetch is slow and controlled manually.
+    act(() => {
+      result.current.selectRole({ id: 'role-A' });
+    });
+    // Flush the deferred microtask so resolveRoleA is assigned.
+    await act(async () => {
+      await Promise.resolve();
+    });
+
+    // Before A resolves, select role B — its fetch is controlled manually too.
+    act(() => {
+      result.current.selectRole({ id: 'role-B' });
+    });
+    await act(async () => {
+      await Promise.resolve();
+    });
+
+    // Resolve B first (fast response), then A (slow, stale response) — out
+    // of call order, simulating the network race.
+    await act(async () => {
+      resolveRoleB({ windowAccess: { '200': 'full' }, capabilities: { roleB: true } });
+    });
+    await waitFor(() => {
+      expect(result.current.windowAccess).toEqual({ '200': 'full' });
+    });
+    expect(result.current.capabilities).toEqual({ roleB: true });
+
+    await act(async () => {
+      resolveRoleA({ windowAccess: { '100': 'read-only' }, capabilities: { roleA: true } });
+    });
+
+    // The stale, later-arriving response for the abandoned role-A request
+    // must be discarded — state still reflects role B's data.
+    expect(result.current.windowAccess).toEqual({ '200': 'full' });
+    expect(result.current.capabilities).toEqual({ roleB: true });
+  });
+
   it('exposes setWindowAccess/setCapabilities for callers that fetch externally', () => {
     const { result } = renderHook(() => useAuth(), { wrapper: wrapperWith() });
 

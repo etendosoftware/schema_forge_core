@@ -1,4 +1,4 @@
-import { createContext, useContext, useState, useCallback, useMemo } from 'react';
+import { createContext, useContext, useState, useCallback, useMemo, useRef } from 'react';
 import { createLocalAuthStorage, normalizeAuthSession } from './session.js';
 
 const AuthContext = createContext(null);
@@ -17,6 +17,16 @@ export function AuthProvider({ children, storage, initialSession, onSessionChang
   // / useHasCapability treat an unloaded map the same as "no access granted".
   const [windowAccess, setWindowAccess] = useState({});
   const [capabilities, setCapabilities] = useState({});
+  // ETP-4520 — request-sequencing guard against a stale-response race: if
+  // role A is selected then role B before A's fetchWindowAccess resolves, A's
+  // slower response can land AFTER B's and overwrite B's correct maps with
+  // A's stale ones. Every selectRole() call increments this ref immediately;
+  // only the response whose captured id still matches the ref's CURRENT value
+  // at resolution time is allowed to apply state (i.e. no newer selectRole
+  // call has started since). A plain monotonic counter is enough here — no
+  // AbortController, since the host app's fetchWindowAccess isn't guaranteed
+  // to accept a cancellation signal.
+  const selectRoleRequestIdRef = useRef(0);
 
   const persistSession = useCallback((nextSession) => {
     const normalized = normalizeAuthSession(nextSession);
@@ -47,6 +57,10 @@ export function AuthProvider({ children, storage, initialSession, onSessionChang
   // selection is not blocked on the network round trip. On failure (or when no
   // fetcher is configured) the fail-closed defaults are left in place.
   const selectRole = useCallback((role) => {
+    // Bump the request id FIRST, on every path (including the immediate-
+    // return "no role" branch) — this abandons any in-flight fetch from a
+    // previous selectRole call before it can ever apply its result.
+    const thisRequestId = ++selectRoleRequestIdRef.current;
     const nextSession = persistSession({ ...session, selectedRole: role || null });
     if (!role) {
       setWindowAccess({});
@@ -68,6 +82,11 @@ export function AuthProvider({ children, storage, initialSession, onSessionChang
     Promise.resolve()
       .then(() => fetchWindowAccess(nextSession))
       .then((result) => {
+        // Stale-response guard: if a newer selectRole call has started since
+        // this one, its result already owns windowAccess/capabilities — a
+        // late-arriving response for an abandoned request must never
+        // overwrite it.
+        if (selectRoleRequestIdRef.current !== thisRequestId) return;
         setWindowAccess(result?.windowAccess ?? {});
         setCapabilities(result?.capabilities ?? {});
       })
