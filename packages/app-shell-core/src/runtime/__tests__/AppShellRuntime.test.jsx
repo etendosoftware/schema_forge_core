@@ -1,9 +1,13 @@
-import { test, expect } from 'vitest';
+import { test, expect, afterEach } from 'vitest';
 import { renderToStaticMarkup } from 'react-dom/server';
-import { render, screen, act } from '@testing-library/react';
+import { render, screen, act, cleanup } from '@testing-library/react';
 import { useLocation } from 'react-router-dom';
 import { AppShellRuntime } from '../AppShellRuntime.jsx';
 import { useAuth } from '../../auth/index.js';
+
+// Core vitest runs without `globals: true` (see vitest.config.js) — do
+// explicit cleanup so mounted providers don't bleed between tests.
+afterEach(cleanup);
 
 function RouteAwareProbe() {
   // Throws outside a Router context — proves children mount inside BrowserRouter.
