@@ -193,6 +193,12 @@ const FIELD_DECISION_COPY_PROPS = [
   'grow',
   'columnWidth',
   'gridReadOnly',
+  // ETP-4603 — composite list column. On a "host" grid field, an object that
+  // absorbs sibling fields into one column: { subtitle, media: { field, kind,
+  // fallback }, parts: [{ field, sortable, filterable }], partSeparator }. The
+  // generator emits it as a `type: 'multiField'` column and hides the absorbed
+  // sibling columns (their data still arrives — the list fetch has no projection).
+  'multiField',
   'inlineToggle',
   'inlineEdit',
   'noTrailing',

@@ -256,6 +256,10 @@ function applyGridHints(f, mapped) {
   if (f.grow) mapped.grow = true;
   if (f.columnWidth != null) mapped.columnWidth = f.columnWidth;
   if (f.gridReadOnly) mapped.gridReadOnly = true;
+  // ETP-4603 — composite `multiField` list-column decorator (host grid field).
+  // Passed through verbatim; generate-frontend.js resolves its part fields and
+  // emits the `type: 'multiField'` column plus the absorbed-column suppression.
+  if (f.multiField) mapped.multiField = f.multiField;
   // Inline-edit affordances in the list grid (used by list-modal and inline lines):
   //  - inlineToggle → render a Switch in the cell that PATCHes the field on change.
   //  - inlineEdit   → render an editable input in the cell that PATCHes on commit.

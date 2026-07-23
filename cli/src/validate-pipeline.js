@@ -789,6 +789,88 @@ function collectFrontendLineFields(contract) {
   return fields;
 }
 
+/**
+ * The set of fields the backend can filter/sort on for an entity: the frontend
+ * contract's `searchableFields` unioned with the backend `supportedFilters`
+ * (both are populated from the same source, but tolerate either being empty).
+ */
+function collectQueryableFields(contract, entityName, entity) {
+  const set = new Set(entity?.searchableFields ?? []);
+  for (const name of contract.apiPrediction?.crud?.[entityName]?.supportedFilters ?? []) {
+    set.add(name);
+  }
+  return set;
+}
+
+/** Sibling fields a `multiField` decorator references (must EXIST on the entity). */
+function multiFieldRefs(mf) {
+  const refs = [];
+  if (mf.subtitle) refs.push(mf.subtitle);
+  if (mf.media?.field) refs.push(mf.media.field);
+  for (const p of Array.isArray(mf.parts) ? mf.parts : []) {
+    if (p?.field) refs.push(p.field);
+  }
+  return refs;
+}
+
+/** Fields a `multiField` issues a backend `_sortBy` on (must be QUERYABLE): host + sort-enabled parts. */
+function multiFieldSortFields(host, mf) {
+  const set = new Set([host.name]);
+  for (const p of Array.isArray(mf.parts) ? mf.parts : []) {
+    if (p?.field && p.sortable !== false) set.add(p.field);
+  }
+  return set;
+}
+
+function checkMultiFieldHost(artifactName, entityName, host, fieldNames, queryable) {
+  const mf = host.multiField;
+  for (const ref of multiFieldRefs(mf)) {
+    if (!fieldNames.has(ref)) {
+      return violation('F18', artifactName, 'BLOCK',
+        `field '${host.name}' multiField references field '${ref}' which does not exist on entity '${entityName}'`,
+        `Reference only fields declared on the same entity — decisions.json field.multiField subtitle/media.field/parts[].field must match frontendContract.entities.${entityName}.fields[].name.`);
+    }
+  }
+  for (const sortField of multiFieldSortFields(host, mf)) {
+    if (!queryable.has(sortField)) {
+      return violation('F18', artifactName, 'BLOCK',
+        `multiField sort part '${sortField}' on entity '${entityName}' is not queryable (missing from the entity's searchable/supported filters)`,
+        `Mark that part 'sortable: false', or make '${sortField}' searchable so the backend accepts _sortBy on it.`);
+    }
+  }
+  return null;
+}
+
+/**
+ * F18: a `multiField` list-column decorator (ETP-4603) on a grid field must only
+ * reference real, appropriately-capable sibling fields. Validated against the
+ * resolved contract, where generate-contract emits the decorator onto the host
+ * field. A typo in decisions.json thus fails the pipeline instead of silently
+ * rendering an empty title/chip or an un-sortable header segment.
+ */
+async function ruleF18(artifactDir, artifactName) {
+  const contractPath = join(artifactDir, 'contract.json');
+  if (!(await fileExists(contractPath))) return null;
+  let contract;
+  try {
+    contract = JSON.parse(await readFile(contractPath, 'utf8'));
+  } catch {
+    return skipped('F18', artifactName, 'contract.json could not be parsed — F18 check skipped');
+  }
+  const entities = contract.frontendContract?.entities ?? {};
+  for (const [entityName, entity] of Object.entries(entities)) {
+    const fields = entity?.fields ?? [];
+    const fieldNames = new Set(fields.map(f => f?.name).filter(Boolean));
+    const queryable = collectQueryableFields(contract, entityName, entity);
+    for (const host of fields) {
+      if (!host?.multiField) continue;
+      const v = checkMultiFieldHost(artifactName, entityName, host, fieldNames, queryable);
+      if (v) return v;
+    }
+  }
+  return null;
+}
+
 // ---------------------------------------------------------------------------
 // Artifact discovery
 // ---------------------------------------------------------------------------
@@ -862,6 +944,7 @@ async function runWindowChecks(artifactDir, artifactName, registryContent, root,
     { rule: 'F15', run: () => ruleF15(artifactDir, artifactName) },
     { rule: 'F16', run: () => ruleF16(artifactDir, artifactName) },
     { rule: 'F17', run: () => ruleF17(artifactDir, artifactName) },
+    { rule: 'F18', run: () => ruleF18(artifactDir, artifactName) },
   ], skipSet);
 }
 

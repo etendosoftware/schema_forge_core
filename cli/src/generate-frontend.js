@@ -253,6 +253,77 @@ export function pick(cond, whenTrue, whenFalse) {
 }
 
 /**
+ * ETP-4603 — resolve the declared `parts` of a `multiField` host field against
+ * the contract so each part behaves like a real column for per-part sort and
+ * advanced-filter expansion. Each part's `field` is looked up in `fieldByName`
+ * to fill `key/column/type/label(s)`; unresolved fields degrade to a plain
+ * string key. A part may carry its own `labels`/`label`, which override the
+ * contract field's. `sortable`/`filterable` are only emitted when explicitly false
+ * (both default true downstream). When the decorator omits `parts`, defaults to
+ * [title, subtitle] (subtitle only when present).
+ */
+export function resolveMultiFieldParts(f, fieldByName) {
+  const mf = f.multiField;
+  const partDefs = (Array.isArray(mf.parts) && mf.parts.length > 0)
+    ? mf.parts
+    : [{ field: f.name }, ...(mf.subtitle ? [{ field: mf.subtitle }] : [])];
+  return partDefs.map(p => {
+    const cf = fieldByName.get(p.field);
+    const part = cf
+      ? { key: cf.name, column: cf.column, type: mapFieldType(cf) }
+      : { key: p.field, column: p.field, type: 'string' };
+    // Decorator part label(s) win over the contract field's own so a host like
+    // Product can show "Identifier & Name" without renaming the underlying field.
+    const labels = p.labels ?? cf?.labels;
+    const label = p.label ?? cf?.label;
+    if (labels) part.labels = labels;
+    if (label) part.label = label;
+    if (p.sortable === false) part.sortable = false;
+    if (p.filterable === false) part.filterable = false;
+    return part;
+  });
+}
+
+/**
+ * ETP-4603 — emit the runtime column object for a `multiField` host grid field:
+ * a single composite column (`type: 'multiField'`) whose renderer reads
+ * `row[title]` (bold), `row[subtitle]` (chip) and `row[media.field]` (image),
+ * and whose `parts` drive per-part header sort + advanced-filter expansion.
+ */
+export function buildMultiFieldColumnLine(f, fieldByName) {
+  const mf = f.multiField;
+  const esc = (v) => String(v).replace(/'/g, "\\'");
+  const parts = resolveMultiFieldParts(f, fieldByName);
+  const titlePart = `, title: '${esc(f.name)}'`;
+  const subtitlePart = mf.subtitle ? `, subtitle: '${esc(mf.subtitle)}'` : '';
+  const mediaPart = jsonWrapIf(', media: ', mf.media);
+  const separatorPart = mf.partSeparator ? `, partSeparator: '${esc(mf.partSeparator)}'` : '';
+  const partsPart = `, parts: ${JSON.stringify(parts)}`;
+  return `  { key: '${esc(f.name)}', column: '${esc(f.column)}', type: 'multiField'${titlePart}${subtitlePart}${mediaPart}${partsPart}${separatorPart} },`;
+}
+
+/**
+ * ETP-4603 — names of grid fields absorbed by any `multiField` host (its
+ * subtitle, media field, and each non-host part). These must NOT render as their
+ * own columns; their data still arrives because the list fetch sends no field
+ * projection (NEO Headless returns every configured entity field).
+ */
+export function collectMultiFieldAbsorbed(gridFields) {
+  const absorbed = new Set();
+  for (const f of gridFields) {
+    const mf = f.multiField;
+    if (!mf) continue;
+    if (mf.subtitle) absorbed.add(mf.subtitle);
+    if (mf.media?.field) absorbed.add(mf.media.field);
+    const partDefs = Array.isArray(mf.parts) ? mf.parts : [];
+    for (const p of partDefs) {
+      if (p.field && p.field !== f.name) absorbed.add(p.field);
+    }
+  }
+  return absorbed;
+}
+
+/**
  * Generate a data table component for an entity.
  * Produces a thin declarative component that imports DataTable from contract-ui.
  */
@@ -274,7 +345,17 @@ export function generateTableComponent(entityName, contract) {
   // Collect known cell type render helpers needed by this table
   const neededCellTypes = new Set(gridFields.map(f => f.cellType).filter(Boolean));
 
-  const columnsArray = gridFields.map(f => {
+  // ETP-4603 — composite multiField columns: a host field's decorator absorbs
+  // sibling columns (subtitle/media/extra parts). Keep hosts; drop absorbed
+  // siblings from the column set (their data still arrives — the list fetch has
+  // no field projection).
+  const fieldByName = new Map(entity.fields.map(f => [f.name, f]));
+  const absorbedByMultiField = collectMultiFieldAbsorbed(gridFields);
+
+  const columnsArray = gridFields
+    .filter(f => f.multiField || !absorbedByMultiField.has(f.name))
+    .map(f => {
+    if (f.multiField) return buildMultiFieldColumnLine(f, fieldByName);
     const type = mapFieldType(f);
     const selectionPart = fragmentIf(f.isSelectionColumn, ', isSelectionColumn: true');
     const enumLabelsPart = ((type === 'enum' || type === 'status') && f.enumValues?.length)
