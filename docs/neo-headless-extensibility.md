@@ -413,6 +413,6 @@ All webhooks are invoked via HTTP (see `push-to-neo.js` for programmatic usage f
 
 ## Related Documentation
 
-- **API Reference:** `modules/com.etendoerp.go/docs/neo-headless.md`
+- **API Reference:** `docs/neo-headless.md` in the separate `com.etendoerp.go` repo
 - **Architecture Overview:** `docs/architecture-overview.md`
 - **Research Notes:** `docs/brainstorming-2026-03-10.md`
