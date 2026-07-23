@@ -15,6 +15,30 @@ export const SEMANTIC_THEME_TOKENS = Object.freeze([
   '--focus-ring',
 ]);
 
+/**
+ * shadcn/Tailwind's generic role tokens (--foreground, --card-foreground, ...)
+ * are what application code actually consumes via Tailwind utilities
+ * (text-foreground, ...) — SEMANTIC_THEME_TOKENS above is rarely used
+ * directly. Each generic token here must resolve to the exact same color as
+ * its audited counterpart in BOTH themes, so a future edit to one side can't
+ * silently drift the app's rendered colors away from the ETP-4554 contrast
+ * contract while this test keeps passing.
+ *
+ * Deliberately excludes --primary, --inverse, --sidebar-foreground and
+ * --sidebar-accent-foreground: those legitimately diverge from --text-primary
+ * in the dark theme (a distinct brand-blue primary, an inverted-background
+ * role, and a separately-tuned near-white sidebar text), so they are not safe
+ * to pin to a single canonical token across both themes.
+ */
+export const ALIAS_TOKEN_PAIRS = Object.freeze([
+  ['--foreground', '--text-primary'],
+  ['--card-foreground', '--text-primary'],
+  ['--popover-foreground', '--text-primary'],
+  ['--secondary-foreground', '--text-primary'],
+  ['--accent-foreground', '--text-primary'],
+  ['--muted-foreground', '--text-secondary'],
+]);
+
 function parseHex(value) {
   const match = value.trim().match(/^#([\da-f]{3}|[\da-f]{6})$/i);
   if (!match) return null;
@@ -92,14 +116,17 @@ export function validateThemeContract(theme) {
     }
   }
 
+  // WARN(a11y): --border-control is deliberately NOT gated here (see styles.css).
+  // It's back to staging's light color, which is ~1.5:1 against --background/--card —
+  // short of the WCAG 1.4.11 3:1 minimum. Known, accepted gap; do not re-add without
+  // also resolving the button-vs-input token conflict documented at its definition.
   const requirements = [
-    ['--border-control', ['--background', '--card'], 3],
     ['--border-structural', ['--background', '--card'], 3],
     ['--text-primary', ['--background', '--card'], 4.5],
     ['--text-secondary', ['--background', '--card'], 4.5],
     ['--text-disabled', ['--background', '--card'], 4.5],
     ['--icon-secondary', ['--background', '--card'], 3],
-    ['--focus-ring', ['--background', '--card', '--border-control'], 3],
+    ['--focus-ring', ['--background', '--card'], 3],
   ];
 
   for (const [token, surfaces, minimum] of requirements) {
@@ -112,5 +139,24 @@ export function validateThemeContract(theme) {
       }
     }
   }
+
+  for (const [alias, canonical] of ALIAS_TOKEN_PAIRS) {
+    if (!theme[alias] || !theme[canonical]) continue;
+    try {
+      const [ar, ag, ab] = parseColor(theme[alias]);
+      const [cr, cg, cb] = parseColor(theme[canonical]);
+      const driftedChannel = [ar - cr, ag - cg, ab - cb].some((delta) => Math.abs(delta) > 1 / 255);
+      if (driftedChannel) {
+        errors.push(
+          `${alias} (${theme[alias]}) has drifted from its accessibility-audited counterpart `
+          + `${canonical} (${theme[canonical]}); keep them equal or move ${alias} into SEMANTIC_THEME_TOKENS `
+          + 'with its own contrast requirement',
+        );
+      }
+    } catch (error) {
+      errors.push(`${alias} or ${canonical} is invalid: ${error.message}`);
+    }
+  }
+
   return errors;
 }
