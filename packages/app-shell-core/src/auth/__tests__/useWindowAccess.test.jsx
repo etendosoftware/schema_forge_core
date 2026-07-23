@@ -55,6 +55,29 @@ describe('useWindowAccess', () => {
     expect(result.current).toBe('none');
   });
 
+  it('fails closed to "none" for an unrecognized tier value in the map', async () => {
+    const { result } = renderHook(() => ({
+      access: useWindowAccess('147'),
+      auth: useAuth(),
+    }), {
+      wrapper: wrapperWith({
+        fetchWindowAccess: async () => ({
+          windowAccess: { '147': 'bogus', '181': undefined },
+          capabilities: {},
+        }),
+      }),
+    });
+
+    await act(async () => {
+      result.current.auth.selectRole({ id: 'role-1' });
+    });
+
+    await waitFor(() => {
+      expect(result.current.auth.windowAccess).toEqual({ '147': 'bogus', '181': undefined });
+    });
+    expect(result.current.access).toBe('none');
+  });
+
   it('returns the resolved tier once the map has loaded via role selection', async () => {
     const { result } = renderHook(() => ({
       access: useWindowAccess('147'),
@@ -99,5 +122,30 @@ describe('useHasCapability', () => {
       wrapper: wrapperWith(),
     });
     expect(result.current).toBe(false);
+  });
+
+  it('fails closed to false for non-boolean-true truthy values (strict === true check)', async () => {
+    const { result } = renderHook(() => ({
+      stringFalse: useHasCapability('stringFalseFlag'),
+      numberOne: useHasCapability('numberOneFlag'),
+      auth: useAuth(),
+    }), {
+      wrapper: wrapperWith({
+        fetchWindowAccess: async () => ({
+          windowAccess: {},
+          capabilities: { stringFalseFlag: 'false', numberOneFlag: 1 },
+        }),
+      }),
+    });
+
+    await act(async () => {
+      result.current.auth.selectRole({ id: 'role-1' });
+    });
+
+    await waitFor(() => {
+      expect(result.current.auth.capabilities).toEqual({ stringFalseFlag: 'false', numberOneFlag: 1 });
+    });
+    expect(result.current.stringFalse).toBe(false);
+    expect(result.current.numberOne).toBe(false);
   });
 });
