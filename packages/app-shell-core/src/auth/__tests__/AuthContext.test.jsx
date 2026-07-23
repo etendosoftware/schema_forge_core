@@ -240,6 +240,37 @@ describe('AuthContext — windowAccess/capabilities (ETP-4520)', () => {
     expect(result.current.capabilities).toEqual({ roleB: true });
   });
 
+  it('discards an in-flight selectRole response that resolves after logout (ETP-4520 race)', async () => {
+    let resolveFetch;
+    const fetchWindowAccess = vi.fn(() => new Promise((resolve) => { resolveFetch = resolve; }));
+    const { result } = renderHook(() => useAuth(), { wrapper: wrapperWith({ fetchWindowAccess }) });
+
+    // Select a role — its fetch is slow and controlled manually.
+    act(() => {
+      result.current.selectRole({ id: 'role-1' });
+    });
+    // Flush the deferred microtask so resolveFetch is assigned.
+    await act(async () => {
+      await Promise.resolve();
+    });
+
+    // Logout before the fetch resolves.
+    act(() => {
+      result.current.logout();
+    });
+    expect(result.current.windowAccess).toEqual({});
+    expect(result.current.capabilities).toEqual({});
+
+    // The abandoned request now resolves with the pre-logout role's data.
+    await act(async () => {
+      resolveFetch({ windowAccess: { '147': 'full' }, capabilities: { showAccountingFields: true } });
+    });
+
+    // The stale response must be discarded — post-logout state stays empty.
+    expect(result.current.windowAccess).toEqual({});
+    expect(result.current.capabilities).toEqual({});
+  });
+
   it('exposes setWindowAccess/setCapabilities for callers that fetch externally', () => {
     const { result } = renderHook(() => useAuth(), { wrapper: wrapperWith() });
 

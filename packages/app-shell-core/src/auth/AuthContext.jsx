@@ -43,6 +43,11 @@ export function AuthProvider({ children, storage, initialSession, onSessionChang
     onSessionChange?.(clearedSession);
     setWindowAccess({});
     setCapabilities({});
+    // ETP-4520 — abandon any in-flight selectRole() fetch too: bumping the
+    // ref makes its stale-response guard (`selectRoleRequestIdRef.current
+    // !== thisRequestId`) discard a late-arriving resolution instead of
+    // repopulating windowAccess/capabilities with the pre-logout role's data.
+    selectRoleRequestIdRef.current += 1;
   }, [authStorage, onSessionChange]);
 
   const selectOrg = useCallback((org) => {
