@@ -405,8 +405,9 @@ public NeoResponse afterHandle(NeoContext ctx) {
 | `SFListWindows` | List available windows | `q` (search) |
 | `SFListProcesses` | List available processes | `q` (search) |
 | `SFListMenu` | Full menu tree | -- |
+| `SFWindowAccessMap` | Per-role window access tier + capability flags (ETP-4520) | -- |
 
-All webhooks are invoked via HTTP (see `push-to-neo.js` for programmatic usage from Schema Forge).
+All webhooks are invoked via HTTP (see `push-to-neo.js` for programmatic usage from Schema Forge). `SFWindowAccessMap` is the one exception consumed directly by the generated frontend (`AuthContext`'s `fetchWindowAccess`) rather than by Schema Forge tooling — see `docs/decisions-reference.md` (window-access gating) and `modules/com.etendoerp.go/docs/neo-headless.md` §8b for the response shape and resolution order.
 
 ---
 
