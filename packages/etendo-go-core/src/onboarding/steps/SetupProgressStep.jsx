@@ -7,6 +7,7 @@ import { buildAppReturnToHref, getSafeReturnTo } from '../oauthReturnTo.js';
 import { trackOnboarding } from '../tracking.js';
 import { SetupProgressShell } from '../components/SetupProgressShell.jsx';
 import { SetupProgressCard } from '../components/SetupProgressCard.jsx';
+import { OnboardingSessionAction } from '../components/OnboardingSessionAction.jsx';
 import { Button } from '@etendosoftware/app-shell-core/components/ui/button';
 
 // Status phrases rotated in the loading screen so a long step never reads as
@@ -29,7 +30,7 @@ const TRICKLE_MAX = 95;
 const TRICKLE_EASE = 0.005;
 const TRICKLE_INTERVAL_MS = 200;
 
-export function SetupProgressStep({ config, stepData, onNext, onBack, goToStep, token, routeByEnvironments }) {
+export function SetupProgressStep({ config, stepData, onNext, onBack, goToStep, token, routeByEnvironments, onLogout }) {
   const ui = useUI();
   const [steps, setSteps] = useState(() => initialSetupSteps());
   const [result, setResult] = useState(null);
@@ -41,16 +42,34 @@ export function SetupProgressStep({ config, stepData, onNext, onBack, goToStep, 
   const terminalRef = useRef(false);
   const reducedMotionRef = useRef(false);
   const hasStartedRef = useRef(false);
+  const isMountedRef = useRef(true);
 
   const apiBase = config.apiBase || '';
 
+  useEffect(() => {
+    isMountedRef.current = true;
+    return () => {
+      isMountedRef.current = false;
+    };
+  }, []);
+
+  const handleLogout = () => {
+    // Provisioning is server-side and cannot be safely cancelled from this
+    // screen. Mark it inactive before the asynchronous draft flush/cleanup so
+    // a completed stream cannot create a new environment session after logout.
+    isMountedRef.current = false;
+    return onLogout();
+  };
+
   const loginToEnvironment = useCallback(async (env, { requireReadiness = false } = {}) => {
+    if (!isMountedRef.current) return;
     trackOnboarding(config, 'onboarding_environment_enter_submitted', {
       action: 'enter_environment',
       status: 'started',
     });
     try {
       const data = await loginEnvironment(fetch, apiBase, token, env);
+      if (!isMountedRef.current) return;
       if (data.token) {
         const storageValues = buildEnvironmentSessionStorage(env, data);
         Object.entries(storageValues).forEach(([key, value]) => localStorage.setItem(key, value));
@@ -67,6 +86,7 @@ export function SetupProgressStep({ config, stepData, onNext, onBack, goToStep, 
 
         if (requireReadiness && config.checkReadiness) {
           const readiness = await config.checkReadiness(fetch, apiBase, data.token);
+          if (!isMountedRef.current) return;
           if (!readiness.ready) {
             trackOnboarding(config, 'onboarding_environment_enter_failed', {
               action: 'enter_environment',
@@ -96,6 +116,7 @@ export function SetupProgressStep({ config, stepData, onNext, onBack, goToStep, 
       });
       setResult({ status: 'failed', error: ui('onboardingEnvironmentLoginFailed') });
     } catch (err) {
+      if (!isMountedRef.current) return;
       trackOnboarding(config, 'onboarding_environment_enter_failed', {
         action: 'enter_environment',
         status: 'failed',
@@ -126,6 +147,7 @@ export function SetupProgressStep({ config, stepData, onNext, onBack, goToStep, 
     let succeeded = false;
     try {
       await runOnboardingStream(fetch, apiBase, token, formPayload, (msg) => {
+        if (!isMountedRef.current) return;
         if (msg.type === 'result') {
           const resultObj = {
             status: msg.success ? 'success' : 'failed',
@@ -149,18 +171,22 @@ export function SetupProgressStep({ config, stepData, onNext, onBack, goToStep, 
         }
       });
     } catch (err) {
+      if (!isMountedRef.current) return;
       trackOnboarding(config, 'onboarding_run_failed', {
         action: 'create_environment',
         status: 'failed',
       });
       setResult({ status: 'failed', error: err.userMessage || ui(err.code || 'onboardingGenericError') });
     } finally {
+      if (!isMountedRef.current) return;
       setRunning(false);
-      if (succeeded) {
+      if (succeeded && isMountedRef.current) {
         // Fetch environments and auto-login to the newly created one
         const retryLogin = async (attempts = 3, delay = 2000) => {
           for (let i = 0; i < attempts; i++) {
+            if (!isMountedRef.current) return;
             await new Promise(r => setTimeout(r, delay));
+            if (!isMountedRef.current) return;
             try {
               const envs = await fetchEnvironments(fetch, apiBase, token);
               if (envs.length > 0) {
@@ -171,6 +197,7 @@ export function SetupProgressStep({ config, stepData, onNext, onBack, goToStep, 
               // retry
             }
           }
+          if (!isMountedRef.current) return;
           if (routeByEnvironments) {
             await routeByEnvironments(token);
           } else if (goToStep) {
@@ -356,7 +383,10 @@ export function SetupProgressStep({ config, stepData, onNext, onBack, goToStep, 
   }
 
   return (
-    <SetupProgressShell background={config.background} data-testid="SetupProgressShell__79cf84">
+    <SetupProgressShell
+      background={config.background}
+      headerContent={token && <OnboardingSessionAction onLogout={handleLogout} label={ui('logout')} />}
+      data-testid="SetupProgressShell__79cf84">
       <div className="w-full flex flex-col items-center gap-6">
         <SetupProgressCard data-testid="SetupProgressCard__79cf84" {...setupProgressState} />
         {result?.status === 'failed' && (

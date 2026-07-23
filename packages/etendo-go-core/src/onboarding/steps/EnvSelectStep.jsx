@@ -6,16 +6,13 @@ import { loginEnvironment, fetchEnvironments } from '../api.js';
 import { buildEnvironmentSessionStorage } from '../state.js';
 import { buildAppReturnToHref, getSafeReturnTo } from '../oauthReturnTo.js';
 import { trackOnboarding } from '../tracking.js';
-import { createOnboardingLogout } from '../logout.js';
 import { PageHeader } from '../components/PageHeader.jsx';
 import { EnterEnvironmentButtonContent } from '../components/EnterEnvironmentButtonContent.jsx';
 
-export function EnvSelectStep({ config, stepData, onNext, onBack, goToStep, token, setToken, accountName, setAccountName, environments = [], loadingEnvs = false, routeByEnvironments }) {
+export function EnvSelectStep({ config, stepData, onNext, onBack, goToStep, token, accountName, environments = [], loadingEnvs = false, routeByEnvironments, onLogout }) {
   const ui = useUI();
   const [loggingIn, setLoggingIn] = useState(null);
   const apiBase = config.apiBase || '';
-
-  const handleLogout = createOnboardingLogout({ config, setToken, setAccountName, goToStep });
 
   const loginToEnvironment = async (env) => {
     trackOnboarding(config, 'onboarding_environment_enter_submitted', {
@@ -147,9 +144,9 @@ export function EnvSelectStep({ config, stepData, onNext, onBack, goToStep, toke
   return (
     <div className="min-h-screen bg-gray-50">
       <PageHeader
-        isAuthenticated
+        isAuthenticated={Boolean(token)}
         accountName={accountName}
-        onLogout={handleLogout}
+        onLogout={onLogout}
         logoutLabel={ui('logout')}
         brandLabel={config.brandLabel || 'Etendo GO'}
         data-testid="PageHeader__79cf84" />

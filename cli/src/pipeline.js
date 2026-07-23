@@ -375,10 +375,10 @@ async function runReportPipeline({ reportId, reportName, dryRun }) {
   console.log('\n=== Report Pipeline complete ===\n');
 }
 
-export async function runAdvisoryVersionCheck(windowName) {
+export async function runAdvisoryVersionCheck(windowName, prevMcpContract = null) {
   try {
     const {checkVersion} = await import('./check-version.js');
-    const versionResult = await checkVersion(windowName, 'pipeline');
+    const versionResult = await checkVersion(windowName, 'pipeline', prevMcpContract);
     if (versionResult) {
       console.log(`  ✓ Version: ${versionResult.changelog.from} → ${versionResult.newVersion} (${versionResult.classification.level})`);
       if (versionResult.classification.level === 'breaking') {
@@ -706,7 +706,7 @@ export async function runGenerateContractStep(windowName, pipelineContext, deps 
   await writeFile(`artifacts/${windowName}/contract.mcp.json`, JSON.stringify(mcpContract, null, 2) + '\n');
   console.log(`  ✓ Contract generated (${contract.testManifest.summary.total} tests)`);
   // Version check
-  await versionCheck(windowName);
+  await versionCheck(windowName, prevMcpContract);
 }
 
 export function printTranslateTodosGuidance(step) {

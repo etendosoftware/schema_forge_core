@@ -301,9 +301,22 @@
     --accent-foreground: 222 47% 11%;
     --destructive: 0 84% 60%;
     --destructive-foreground: 210 40% 98%;
-    --border: 214 32% 91%;
-    --input: 214 32% 91%;
-    --ring: 222 47% 11%;
+    --inverse: 222 47% 11%;
+    --inverse-foreground: 210 40% 98%;
+    --inverse-muted: 215 16% 72%;
+    --inverse-border: 215 20% 30%;
+    /* Semantic accessibility contract v1 (ETP-4554). */
+    --border-control: 215 16% 47%;
+    --border-structural: 215 16% 47%;
+    --border-subtle: 214 32% 85%;
+    --text-primary: 240 12% 8%;
+    --text-secondary: 240 12% 48%;
+    --text-disabled: 225 12% 38%;
+    --icon-secondary: 215 16% 47%;
+    --focus-ring: 222 47% 11%;
+    --border: var(--border-subtle);
+    --input: var(--border-control);
+    --ring: var(--focus-ring);
     --radius: 0.5rem;
 
     --sidebar-background: 0 0% 100%;
@@ -312,29 +325,33 @@
     --sidebar-primary-foreground: 0 0% 100%;
     --sidebar-accent: 210 40% 96%;
     --sidebar-accent-foreground: 222 47% 11%;
-    --sidebar-border: 214 32% 91%;
+    --sidebar-border: var(--border-structural);
     --sidebar-ring: 217.2 91.2% 59.8%;
 
     /* Figma design tokens (ETP-3802) */
     --accent-highlight: 51 100% 50%;            /* #FFD500 */
     --accent-highlight-foreground: 240 12% 8%;  /* #121217 on yellow */
     --page-bg: 210 20% 97%;                     /* #F5F7F9 */
-    --text-primary: 240 12% 8%;                 /* #121217 */
     --search-bg: 223 16% 92%;                   /* #E8EAEF */
-    --topbar-icon: 216 15% 57%;                 /* #828FA3 */
+    --topbar-icon: var(--icon-secondary);
     --topbar-breadcrumb: 225 12% 38%;           /* #555B6D */
-    --text-secondary: 240 12% 48%;              /* #6C6C89 */
     --search-placeholder: 225 12% 38%;          /* #555B6D */
 
     /* Status tag tokens — ETP-3835 */
     --status-success-bg: #EEFBF4;
     --status-success-fg: #17663A;
+    --status-success-border: #84E4AE;
     --status-warning-bg: #FFF9EB;
     --status-warning-fg: #8A6100;
+    --status-warning-border: #FFDA85;
+    --status-info-bg: #EFF6FF;
+    --status-info-fg: #1D4ED8;
+    --status-info-border: #BFDBFE;
     --status-destructive-bg: #FEF0F4;
     --status-destructive-fg: #D50B3E;
     --status-neutral-bg: #F5F7F9;
     --status-neutral-fg: #3F3F50;
+    --status-neutral-border: #E8EAEF;
   }
 
   .dark {
@@ -349,14 +366,27 @@
     --secondary: 215 20% 18%;
     --secondary-foreground: 210 20% 98%;
     --muted: 215 20% 18%;
-    --muted-foreground: 215 16% 60%;
+    --muted-foreground: 215 16% 72%;
     --accent: 215 20% 18%;
     --accent-foreground: 210 20% 98%;
     --destructive: 0 63% 50%;
     --destructive-foreground: 210 20% 98%;
-    --border: 215 20% 22%;
-    --input: 215 20% 22%;
-    --ring: 217 91% 60%;
+    --inverse: 0 0% 100%;
+    --inverse-foreground: 222 47% 11%;
+    --inverse-muted: 215 16% 35%;
+    --inverse-border: 215 16% 65%;
+    /* Semantic accessibility contract v1 — full dark override. */
+    --border-control: 215 16% 58%;
+    --border-structural: 215 16% 60%;
+    --border-subtle: 215 20% 30%;
+    --text-primary: 210 20% 98%;
+    --text-secondary: 215 16% 72%;
+    --text-disabled: 215 16% 65%;
+    --icon-secondary: 215 16% 70%;
+    --focus-ring: 0 0% 100%;
+    --border: var(--border-subtle);
+    --input: var(--border-control);
+    --ring: var(--focus-ring);
 
     --sidebar-background: 240 5.9% 10%;
     --sidebar-foreground: 240 4.8% 95.9%;
@@ -364,17 +394,53 @@
     --sidebar-primary-foreground: 0 0% 100%;
     --sidebar-accent: 240 3.7% 15.9%;
     --sidebar-accent-foreground: 240 4.8% 95.9%;
-    --sidebar-border: 240 3.7% 15.9%;
+    --sidebar-border: var(--border-structural);
     --sidebar-ring: 217.2 91.2% 59.8%;
 
     /* Figma design tokens (ETP-3802) — dark mode overrides */
     --accent-highlight: 51 100% 50%;
     --accent-highlight-foreground: 240 12% 8%;
     --page-bg: 222 47% 11%;
-    --text-primary: 210 20% 98%;
     --search-bg: 215 20% 22%;
-    --topbar-icon: 216 15% 65%;
+    --topbar-icon: var(--icon-secondary);
     --search-placeholder: 225 12% 55%;
+
+    --status-success-bg: #103B24;
+    --status-success-fg: #9AE6B4;
+    --status-success-border: #2F855A;
+    --status-warning-bg: #4A3300;
+    --status-warning-fg: #FDE68A;
+    --status-warning-border: #B7791F;
+    --status-info-bg: #172554;
+    --status-info-fg: #BFDBFE;
+    --status-info-border: #2563EB;
+    --status-destructive-bg: #4C0519;
+    --status-destructive-fg: #FECDD3;
+    --status-neutral-bg: #1F2937;
+    --status-neutral-fg: #D1D5DB;
+    --status-neutral-border: #4B5563;
+  }
+
+  .dark .bg-white {
+    background-color: hsl(var(--card));
+  }
+
+  .dark .bg-\[\#F5F7F9\],
+  .dark .hover\:bg-\[\#F5F7F9\]:hover {
+    background-color: hsl(var(--muted));
+  }
+
+  .dark .text-\[\#121217\] {
+    color: hsl(var(--text-primary));
+  }
+
+  .dark .text-\[\#3F3F50\] {
+    color: hsl(var(--text-secondary));
+  }
+
+  .dark input.bg-card {
+    background-color: hsl(var(--card)) !important;
+    color: hsl(var(--text-primary)) !important;
   }
 }
 

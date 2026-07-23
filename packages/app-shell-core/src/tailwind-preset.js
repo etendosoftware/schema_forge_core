@@ -3,7 +3,12 @@ const appShellCoreTailwindPreset = {
   theme: {
     extend: {
       colors: {
-        border: 'hsl(var(--border))',
+        border: {
+          DEFAULT: 'hsl(var(--border))',
+          control: 'hsl(var(--border-control))',
+          structural: 'hsl(var(--border-structural))',
+          subtle: 'hsl(var(--border-subtle))',
+        },
         input: 'hsl(var(--input))',
         ring: 'hsl(var(--ring))',
         background: 'hsl(var(--background))',
@@ -19,6 +24,34 @@ const appShellCoreTailwindPreset = {
         destructive: {
           DEFAULT: 'hsl(var(--destructive))',
           foreground: 'hsl(var(--destructive-foreground))',
+        },
+        inverse: {
+          DEFAULT: 'hsl(var(--inverse))',
+          foreground: 'hsl(var(--inverse-foreground))',
+          muted: 'hsl(var(--inverse-muted))',
+          border: 'hsl(var(--inverse-border))',
+        },
+        status: {
+          success: {
+            DEFAULT: 'var(--status-success-bg)',
+            foreground: 'var(--status-success-fg)',
+            border: 'var(--status-success-border)',
+          },
+          warning: {
+            DEFAULT: 'var(--status-warning-bg)',
+            foreground: 'var(--status-warning-fg)',
+            border: 'var(--status-warning-border)',
+          },
+          info: {
+            DEFAULT: 'var(--status-info-bg)',
+            foreground: 'var(--status-info-fg)',
+            border: 'var(--status-info-border)',
+          },
+          neutral: {
+            DEFAULT: 'var(--status-neutral-bg)',
+            foreground: 'var(--status-neutral-fg)',
+            border: 'var(--status-neutral-border)',
+          },
         },
         muted: {
           DEFAULT: 'hsl(var(--muted))',
@@ -56,6 +89,9 @@ const appShellCoreTailwindPreset = {
         'topbar-icon': 'hsl(var(--topbar-icon))',
         'topbar-breadcrumb': 'hsl(var(--topbar-breadcrumb))',
         'text-secondary': 'hsl(var(--text-secondary))',
+        'text-disabled': 'hsl(var(--text-disabled))',
+        'icon-secondary': 'hsl(var(--icon-secondary))',
+        'focus-ring': 'hsl(var(--focus-ring))',
         'search-placeholder': 'hsl(var(--search-placeholder))',
       },
       borderRadius: {
