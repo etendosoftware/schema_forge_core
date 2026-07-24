@@ -253,12 +253,69 @@ export function pick(cond, whenTrue, whenFalse) {
 }
 
 /**
+ * Build one `dimensionFields` entry for the synthetic `dimensionsPanel` column
+ * (see `buildDimensionsPanelColumn` / `generateTableComponent`). Reuses the same
+ * per-field extraction the normal grid columns use above — `mapFieldType` for
+ * `type`, a static baked `label` (same convention as every other column; AD
+ * labels are already localized at extraction time), FK `reference`/`inputMode`,
+ * `required`/`lookup`/`popup` — but trimmed to what the shared building blocks
+ * that actually consume `dimensionFields` read: `DimensionsPanel.jsx`
+ * (`DimSummary`/`DimensionGrid`), `SelectorInput`, and `selectorCatalog.js`'s
+ * `getSelectorCatalogKeys` (which falls back to `field.reference` as a mock-
+ * catalog key). Badge/enum/grid-cosmetic props (badge, summable, grow, …) are
+ * deliberately NOT extracted — they only apply to a real `DataTable`/
+ * `InlineLinesPanel` grid column, not a field rendered inside the panel.
+ */
+function buildDimensionFieldLiteral(f) {
+  const type = mapFieldType(f);
+  const labelPart = f.label ? `, label: '${f.label.replace(/'/g, "\\'")}'` : '';
+  const referencePart = wrapIf(", reference: '", f.reference, "'");
+  const inputModePart = wrapIf(", inputMode: '", f.inputMode, "'");
+  const requiredPart = fragmentIf(f.required, ', required: true');
+  const lookupPart = fragmentIf(f.lookup, ', lookup: true');
+  const popupPart = fragmentIf(f.popup, ', popup: true');
+  return `    { key: '${f.name}', column: '${f.column}', type: '${type}'${labelPart}${referencePart}${inputModePart}${requiredPart}${lookupPart}${popupPart} },`;
+}
+
+/**
+ * Build the ONE synthetic `type: 'dimensionsPanel'` column literal for an
+ * entity's `dimensionFieldsRaw` (fields flagged `dimensionsPanel: true` in
+ * `decisions.json` — see docs/decisions-reference.md). Returns `''` when there
+ * are none, so the caller can always append the result: an entity with zero
+ * such fields gets byte-for-byte the same `columns` array as before this
+ * feature existed.
+ *
+ * Always emitted LAST in the columns array — simplest, least-surprising
+ * position; `gridOrder` (which only reorders `gridFieldsRaw`) does not apply
+ * to it. The panel title is baked as a `labels` map (checked before `label` by
+ * `resolveColumnLabel.js`) using the same two strings as the hand-written
+ * `dimensionsPanelTitle` i18n key (`en_US.json`/`es_ES.json`), since this
+ * `const columns = [...]` array is module-scope code — it cannot call the
+ * `useUI()` hook the way a real component body can.
+ */
+function buildDimensionsPanelColumn(dimensionFieldsRaw) {
+  if (dimensionFieldsRaw.length === 0) return '';
+  const fieldsLiteral = dimensionFieldsRaw.map(buildDimensionFieldLiteral).join('\n');
+  return `
+  { key: 'dimensions', type: 'dimensionsPanel', label: 'Accounting dimensions', labels: { en_US: 'Accounting dimensions', es_ES: 'Dimensiones contables' }, dimensionFields: [
+${fieldsLiteral}
+  ] },`;
+}
+
+/**
  * Generate a data table component for an entity.
  * Produces a thin declarative component that imports DataTable from contract-ui.
  */
 export function generateTableComponent(entityName, contract) {
   const entity = contract.frontendContract.entities[entityName];
-  const gridFieldsRaw = entity.fields.filter(f => f.grid && f.visibility !== 'discarded');
+  // ETP-4529 — fields flagged `dimensionsPanel: true` never become their own grid
+  // column: they are collected below into ONE synthetic `type: 'dimensionsPanel'`
+  // column instead (regardless of their own `grid` value — see
+  // buildDimensionsPanelColumn). Excluding them here is what makes this additive:
+  // an entity with zero such fields sees byte-for-byte the same gridFieldsRaw as
+  // before this feature existed.
+  const gridFieldsRaw = entity.fields.filter(f => f.grid && f.visibility !== 'discarded' && !f.dimensionsPanel);
+  const dimensionFieldsRaw = entity.fields.filter(f => f.dimensionsPanel && f.visibility !== 'discarded');
   // gridOrder: absolute insertion position (1-based). Only the tagged fields move;
   // all other fields stay in their original relative order.
   const pinned = [...gridFieldsRaw].filter(f => f.gridOrder != null).sort((a, b) => a.gridOrder - b.gridOrder);
@@ -316,7 +373,7 @@ export function generateTableComponent(entityName, contract) {
     const dotPart = fragmentIf(f.dot === false, ', dot: false');
     const gridReadOnlyPart = fragmentIf(f.gridReadOnly, ', readOnly: true');
     return `  { key: '${f.name}', column: '${f.column}', type: '${type}'${labelsPart}${labelPart}${enumLabelsPart}${enumVariantsPart}${selectionPart}${togglePart}${badgePart}${badgeLabelsPart}${badgeColorsPart}${badgeVariantsPart}${summablePart}${displayPart}${renderPart}${requiredPart}${lookupPart}${lookupDrawerColPart}${excludeValueOfColPart}${popupPart}${minColPart}${maxColPart}${growPart}${columnWidthPart}${noTrailingPart}${filterOnlyPart}${dotPart}${gridReadOnlyPart} },`;
-  }).join('\n');
+  }).join('\n') + buildDimensionsPanelColumn(dimensionFieldsRaw);
 
   const filtersArray = searchableFields.map(f => `'${f}'`).join(', ');
 

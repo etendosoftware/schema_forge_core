@@ -19,7 +19,14 @@ import { buildFieldValidation } from './lib/field-validation.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
-const ROOT = join(__dirname, '..', '..');
+// SF_ROOT (exported by the Makefile / cli/sf-local — see docs/repo-topology.md)
+// lets LOCAL_CORE dev mode run this core script's CODE against the FUNCTIONAL
+// repo's DATA (artifacts/). Every other extractor/generator in cli/src/ already
+// honors this override (extract-fields.js, extract-rules.js, push-to-neo.js,
+// regen-all.js, pipeline.js, …) — this one was missing it, so `./cli/sf-local
+// sf-resolve-curated --window <w> --write` silently read/wrote schema_forge_core's
+// OWN artifacts/ dir instead of the caller's.
+const ROOT = process.env.SF_ROOT || join(__dirname, '..', '..');
 
 // ---------------------------------------------------------------------------
 // Entity name helpers
@@ -198,6 +205,12 @@ const FIELD_DECISION_COPY_PROPS = [
   'noTrailing',
   'inline',
   'addLineFromSibling',
+  // Opt-in (ETP-4529): collect this field into the ONE synthetic `dimensionsPanel`
+  // grid column instead of rendering it as its own column. Read regardless of the
+  // field's own `grid` value (typically `grid: false`, since it renders inside the
+  // expand-row panel, not as a standalone column) — see generate-frontend.js's
+  // generateTableComponent.
+  'dimensionsPanel',
   // Selector exclusion: filter out the option whose id equals the current value of
   // another field on the same row (e.g. newStorageBin excludeValueOf storageBin —
   // can't move stock to the same bin it came from).

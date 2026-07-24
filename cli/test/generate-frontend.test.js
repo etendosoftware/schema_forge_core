@@ -2399,6 +2399,80 @@ describe('generateTableComponent — gridReadOnly', () => {
 });
 
 // ---------------------------------------------------------------------------
+// generateTableComponent — dimensionsPanel column (ETP-4529)
+// ---------------------------------------------------------------------------
+// Fields flagged `dimensionsPanel: true` are collected into ONE synthetic
+// `type: 'dimensionsPanel'` column instead of becoming their own grid column,
+// regardless of their own `grid` value.
+describe('generateTableComponent — dimensionsPanel column (ETP-4529)', () => {
+  const dimensionsPanelContract = {
+    frontendContract: {
+      window: { id: '901', name: 'Sales Invoice', primaryEntity: 'lines', category: 'sales' },
+      entities: {
+        lines: {
+          fields: [
+            { name: 'product', column: 'M_Product_ID', type: 'foreignKey', tsType: 'string',
+              visibility: 'editable', required: true, grid: true, form: true, lookup: true },
+            { name: 'project', column: 'C_Project_ID', type: 'foreignKey', tsType: 'string',
+              visibility: 'editable', required: false, grid: false, form: true,
+              reference: 'Project', inputMode: 'search', lookup: true, dimensionsPanel: true },
+            { name: 'costcenter', column: 'C_Costcenter_ID', type: 'foreignKey', tsType: 'string',
+              visibility: 'editable', required: false, grid: false, form: true,
+              reference: 'Costcenter', inputMode: 'selector', dimensionsPanel: true },
+          ],
+          searchableFields: [],
+          computedFields: [],
+        },
+      },
+    },
+    backendContract: { processEndpoints: [] },
+  };
+
+  const noDimensionsContract = {
+    frontendContract: {
+      window: { id: '902', name: 'Physical Inventory', primaryEntity: 'lines', category: 'inventory' },
+      entities: {
+        lines: {
+          fields: [
+            { name: 'product', column: 'M_Product_ID', type: 'foreignKey', tsType: 'string',
+              visibility: 'editable', required: true, grid: true, form: true, lookup: true },
+          ],
+          searchableFields: [],
+          computedFields: [],
+        },
+      },
+    },
+    backendContract: { processEndpoints: [] },
+  };
+
+  it('emits exactly one dimensionsPanel column carrying both flagged fields', () => {
+    const code = generateTableComponent('lines', dimensionsPanelContract);
+    const matches = code.match(/type: 'dimensionsPanel'/g) ?? [];
+    assert.equal(matches.length, 1, 'exactly one dimensionsPanel column should be emitted');
+    assert.ok(code.includes("key: 'dimensions'"), 'synthetic column should use key: \'dimensions\'');
+    assert.ok(code.includes("key: 'project'") && code.includes("key: 'costcenter'"),
+      'both flagged fields should appear inside dimensionFields');
+    assert.ok(code.includes("reference: 'Project'"), 'reference should be carried through per field');
+  });
+
+  it('does NOT emit project/costcenter as their own top-level grid columns', () => {
+    const code = generateTableComponent('lines', dimensionsPanelContract);
+    const columnsBlock = code.slice(code.indexOf('const columns'), code.indexOf('const filters'));
+    const topLevelEntries = columnsBlock.match(/^  \{ key: '\w+'/gm) ?? [];
+    const topLevelKeys = topLevelEntries.map(l => l.match(/key: '(\w+)'/)[1]);
+    assert.ok(!topLevelKeys.includes('project'), 'project must not be its own top-level column');
+    assert.ok(!topLevelKeys.includes('costcenter'), 'costcenter must not be its own top-level column');
+    assert.ok(topLevelKeys.includes('product'), 'unflagged fields keep rendering as normal columns');
+  });
+
+  it('is fully additive: an entity with zero dimensionsPanel fields emits no dimensionsPanel column', () => {
+    const code = generateTableComponent('lines', noDimensionsContract);
+    assert.ok(!code.includes('dimensionsPanel'), 'no dimensionsPanel column/import should appear');
+    assert.ok(code.includes("key: 'product'"), 'the unrelated field still renders normally');
+  });
+});
+
+// ---------------------------------------------------------------------------
 // buildEntryFieldLine — skipDefault (HandleDefaults opt-out)
 // ---------------------------------------------------------------------------
 // A line field flagged skipDefault must surface in the add-row entry literal so
