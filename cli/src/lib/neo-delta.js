@@ -62,6 +62,18 @@ function normalizeAgentPrompt(value) {
   return trimmed === '' ? null : trimmed;
 }
 
+/**
+ * Local copy of normalizePreconditions() from push-to-neo.js. Inlined for the
+ * same no-circular-import reason as mapVisibility/normalizeAgentPrompt — mirror
+ * any change in the other. An explicit but empty declaration collapses to null
+ * so a stale DB value gets cleared (ETP-4275).
+ */
+function normalizePreconditions(value) {
+  if (value == null) return null;
+  if (typeof value !== 'object' || Array.isArray(value)) return null;
+  return Object.keys(value).length === 0 ? null : value;
+}
+
 function hasColumn(row, columnName) {
   return row != null && Object.hasOwn(row, columnName);
 }
@@ -71,6 +83,24 @@ function applyAgentPromptColumn(row, normalizedPrompt, previousRow) {
     row.AGENT_PROMPT = String(normalizedPrompt);
   } else if (hasColumn(previousRow, 'AGENT_PROMPT')) {
     row.AGENT_PROMPT = null;
+  }
+}
+
+/**
+ * Emit the ETGO_SF_ENTITY.PRECONDITIONS column, mirroring the live push:
+ * push-to-neo.js writes `preconditions ? JSON.stringify(preconditions) : null`
+ * and binds it unconditionally to clear a stale value. Here we follow the
+ * agentPrompt style — emit the JSON STRING when present, otherwise emit null
+ * only when the previous XML row carried a value (so a clear registers as
+ * drift, and an always-absent column never does). The value is the same
+ * JSON.stringify(...) string the UPDATE binds, so predicted XML text matches
+ * exported XML text byte-for-byte (ETP-4275).
+ */
+function applyPreconditionsColumn(row, preconditionsJson, previousRow) {
+  if (preconditionsJson !== null) {
+    row.PRECONDITIONS = preconditionsJson;
+  } else if (hasColumn(previousRow, 'PRECONDITIONS')) {
+    row.PRECONDITIONS = null;
   }
 }
 
@@ -177,6 +207,10 @@ export function computeWindowDelta(args) {
   } = args;
 
   const desiredEntityByTabName = buildDesiredEntityNameMap(schemaRawData, contract);
+  // Per-entity process preconditions, keyed by contract entity name — mirrors
+  // push-to-neo's buildEntityPreconditionsMap so the offline delta emits the
+  // same ETGO_SF_ENTITY.PRECONDITIONS the live push writes (ETP-4275).
+  const entityPreconditionsByName = buildEntityPreconditionsMap(decisions);
 
   // ---- Index prev-XML ----------------------------------------------------
 
@@ -258,40 +292,24 @@ export function computeWindowDelta(args) {
       ...ENTITY_DEFAULTS,
     };
     if (javaQualifier != null) entityRow.JAVA_QUALIFIER = javaQualifier;
+    // Serialize declared process preconditions into the row exactly as the live
+    // UPDATE binds them: `preconditions ? JSON.stringify(preconditions) : null`.
+    const preconditions = entityPreconditionsByName[entityName] ?? null;
+    const preconditionsJson = preconditions ? JSON.stringify(preconditions) : null;
+    applyPreconditionsColumn(entityRow, preconditionsJson, prevEntityRow);
     entityUpserts.push(entityRow);
 
     // Fields for this tab's table -----------------------------------------
-    const cols = colsByTable.get(tab.ad_table_id) || [];
-    let fieldSeq = 0;
-    for (const col of cols) {
-      if (
-        excludeSystemColumns
-        && SYSTEM_COLUMNS.has(String(col.columnname).toLowerCase())
-      ) {
-        continue;
-      }
-      fieldSeq++;
-      const fieldNK = fieldNaturalKey(specName, tabId, col.ad_column_id);
-      const prevFieldRow = prevFieldByNatural.get(fieldNK);
-      const fieldId = prevFieldRow
-        ? prevFieldRow.ETGO_SF_FIELD_ID
-        : newEtendoId();
-
-      fieldUpserts.push({
-        _naturalKey: fieldNK,
-        ETGO_SF_FIELD_ID: fieldId,
-        ETGO_SF_ENTITY_ID: entityId,
-        AD_COLUMN_ID: String(col.ad_column_id),
-        AD_MODULE_ID: moduleId,
-        SEQNO: String(fieldSeq * 10),
-        // populateSpec writes nothing in isincluded/isreadonly initially;
-        // those are set in stepUpdateFieldVisibility from the contract.
-        // For the delta we emit the FINAL state (post step-3 + step-4).
-        ISINCLUDED: 'Y', // placeholder; overwritten below
-        ISREADONLY: 'N',
-        ...FIELD_DEFAULTS,
-      });
-    }
+    fieldUpserts.push(...buildTabFieldUpserts({
+      specName,
+      tabId,
+      tab,
+      entityId,
+      moduleId,
+      colsByTable,
+      prevFieldByNatural,
+      excludeSystemColumns,
+    }));
   }
 
   // ---- Apply visibility from contract (mirrors stepUpdateFieldVisibility) ----
@@ -340,6 +358,59 @@ export function computeWindowDelta(args) {
 // ---------------------------------------------------------------------------
 // Helpers
 // ---------------------------------------------------------------------------
+
+/**
+ * Builds the ETGO_SF_FIELD upsert rows for a single tab's table, mirroring the
+ * per-column loop push-to-neo runs in populateWindowSpec. Extracted from
+ * computeWindowDelta to keep that function's cognitive complexity in check;
+ * behaviour is identical to the previous inline loop.
+ *
+ * @returns {Array<object>} field upsert rows in AD column order
+ */
+function buildTabFieldUpserts({
+  specName,
+  tabId,
+  tab,
+  entityId,
+  moduleId,
+  colsByTable,
+  prevFieldByNatural,
+  excludeSystemColumns,
+}) {
+  const cols = colsByTable.get(tab.ad_table_id) || [];
+  const fields = [];
+  let fieldSeq = 0;
+  for (const col of cols) {
+    if (
+      excludeSystemColumns
+      && SYSTEM_COLUMNS.has(String(col.columnname).toLowerCase())
+    ) {
+      continue;
+    }
+    fieldSeq++;
+    const fieldNK = fieldNaturalKey(specName, tabId, col.ad_column_id);
+    const prevFieldRow = prevFieldByNatural.get(fieldNK);
+    const fieldId = prevFieldRow
+      ? prevFieldRow.ETGO_SF_FIELD_ID
+      : newEtendoId();
+
+    fields.push({
+      _naturalKey: fieldNK,
+      ETGO_SF_FIELD_ID: fieldId,
+      ETGO_SF_ENTITY_ID: entityId,
+      AD_COLUMN_ID: String(col.ad_column_id),
+      AD_MODULE_ID: moduleId,
+      SEQNO: String(fieldSeq * 10),
+      // populateSpec writes nothing in isincluded/isreadonly initially;
+      // those are set in stepUpdateFieldVisibility from the contract.
+      // For the delta we emit the FINAL state (post step-3 + step-4).
+      ISINCLUDED: 'Y', // placeholder; overwritten below
+      ISREADONLY: 'N',
+      ...FIELD_DEFAULTS,
+    });
+  }
+  return fields;
+}
 
 /**
  * Mirrors `buildDesiredEntitiesMap` in push-to-neo.js, but returns only the
@@ -591,6 +662,24 @@ function buildFieldAgentPromptMap(decisions) {
       if (Object.hasOwn(fieldConf, 'agentPrompt')) {
         map[`${entityName}.${fieldName}`] = normalizeAgentPrompt(fieldConf.agentPrompt);
       }
+    }
+  }
+  return map;
+}
+
+/**
+ * Local copy of buildEntityPreconditionsMap() from push-to-neo.js. Keyed by the
+ * contract entity name (entityConf.name || entityKey) so it aligns with the
+ * NAME written on the ETGO_SF_ENTITY row — matching how the live path keys by
+ * `ent.name`. Only entities that declare a `preconditions` key are included;
+ * the value is the normalized object (or null to clear a stale value).
+ */
+function buildEntityPreconditionsMap(decisions) {
+  const map = {};
+  for (const [entityKey, entityConf] of Object.entries(decisions.entities || {})) {
+    const entityName = entityConf.name || entityKey;
+    if (Object.hasOwn(entityConf, 'preconditions')) {
+      map[entityName] = normalizePreconditions(entityConf.preconditions);
     }
   }
   return map;
