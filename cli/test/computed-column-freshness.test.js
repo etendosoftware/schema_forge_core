@@ -13,6 +13,7 @@ import { dirname, join } from 'node:path';
 import { buildSchema } from '../src/extract-fields.js';
 import { generateFrontendContract } from '../src/generate-contract.js';
 import { resolveCurated } from '../src/resolve-curated.js';
+import { generateTableComponent } from '../src/generate-frontend.js';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const ROOT = join(__dirname, '..');
@@ -354,5 +355,54 @@ describe('resolve-curated — computed-column pass-through', () => {
     const fc = generateFrontendContract(result.schema);
     const field = fc.entities.header.fields.find((f) => f.name === 'etgoStock');
     assert.deepEqual(field.computed, { mode: 'stored', refresh: 'queued' });
+  });
+});
+
+// ---------------------------------------------------------------------------
+// 4. Frontend generator — generateTableComponent carries `computed` onto the
+//    grid column so DataTable renders the freshness clock in the list header.
+// ---------------------------------------------------------------------------
+function tableContract(fieldOverrides) {
+  return {
+    frontendContract: {
+      entities: {
+        header: {
+          searchableFields: [],
+          fields: [
+            {
+              name: 'stock',
+              column: 'EM_ETGO_Stock',
+              type: 'number',
+              grid: true,
+              visibility: 'readOnly',
+              ...fieldOverrides,
+            },
+          ],
+        },
+      },
+    },
+  };
+}
+
+describe('generate-frontend — generateTableComponent (computed column adornment)', () => {
+  it('emits computed:{mode:stored,refresh:queued} onto a stored/queued grid column', () => {
+    const code = generateTableComponent('header', tableContract({ computed: { mode: 'stored', refresh: 'queued' } }));
+    assert.match(code, /key: 'stock'[^}]*computed: \{"mode":"stored","refresh":"queued"\}/);
+  });
+
+  it('emits computed with synchronous refresh when the field carries it', () => {
+    const code = generateTableComponent('header', tableContract({ computed: { mode: 'stored', refresh: 'synchronous' } }));
+    assert.match(code, /key: 'stock'[^}]*computed: \{"mode":"stored","refresh":"synchronous"\}/);
+  });
+
+  it('does NOT emit computed for a plain (non-computed) grid column', () => {
+    const code = generateTableComponent('header', tableContract({}));
+    assert.match(code, /key: 'stock'/);
+    assert.doesNotMatch(code, /key: 'stock'[^}]*computed:/);
+  });
+
+  it('does NOT emit computed for a virtual column (mode !== stored)', () => {
+    const code = generateTableComponent('header', tableContract({ computed: { mode: 'virtual' } }));
+    assert.doesNotMatch(code, /key: 'stock'[^}]*computed:/);
   });
 });

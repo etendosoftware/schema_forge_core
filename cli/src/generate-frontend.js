@@ -396,7 +396,11 @@ export function generateTableComponent(entityName, contract) {
     const filterOnlyPart = fragmentIf((f.filterOnly || f.filterable === false), ', filterable: false');
     const dotPart = fragmentIf(f.dot === false, ', dot: false');
     const gridReadOnlyPart = fragmentIf(f.gridReadOnly, ', readOnly: true');
-    return `  { key: '${f.name}', column: '${f.column}', type: '${type}'${labelsPart}${labelPart}${enumLabelsPart}${enumVariantsPart}${selectionPart}${togglePart}${badgePart}${badgeLabelsPart}${badgeColorsPart}${badgeVariantsPart}${summablePart}${displayPart}${renderPart}${requiredPart}${lookupPart}${lookupDrawerColPart}${excludeValueOfColPart}${popupPart}${minColPart}${maxColPart}${growPart}${columnWidthPart}${noTrailingPart}${filterOnlyPart}${dotPart}${gridReadOnlyPart} },`;
+    // Stored computed column (EPL-1807): carry the contract `computed` hint onto
+    // the grid column so DataTable renders the freshness clock in the header.
+    // Auto-detected — no per-window config; emitted only for mode: 'stored'.
+    const computedPart = jsonWrapIf(', computed: ', f.computed, '', f.computed?.mode === 'stored');
+    return `  { key: '${f.name}', column: '${f.column}', type: '${type}'${labelsPart}${labelPart}${enumLabelsPart}${enumVariantsPart}${selectionPart}${togglePart}${badgePart}${badgeLabelsPart}${badgeColorsPart}${badgeVariantsPart}${summablePart}${displayPart}${renderPart}${requiredPart}${lookupPart}${lookupDrawerColPart}${excludeValueOfColPart}${popupPart}${minColPart}${maxColPart}${growPart}${columnWidthPart}${noTrailingPart}${filterOnlyPart}${dotPart}${gridReadOnlyPart}${computedPart} },`;
   }).join('\n');
 
   const filtersArray = searchableFields.map(f => `'${f}'`).join(', ');
