@@ -312,11 +312,37 @@ function applyEntityLevelFlags(entity, feEntity) {
   if (siblingFields.length > 0) feEntity.addLineHiddenFromSibling = siblingFields;
 }
 
+// EPL-1807 refresh-mode → contract wording key. 'S' (synchronous) still flows
+// through the async queue drain for cross-table deps / on Oracle, so it shares
+// the "background" wording with 'Q'. Only 'M' (manual) gets distinct copy.
+function mapRefresh(refreshMode) {
+  if (refreshMode === 'M') return 'manual';
+  if (refreshMode === 'S') return 'synchronous';
+  return 'queued';
+}
+
+/**
+ * Emit the compact `computed` freshness hint for stored-computed columns
+ * (EPL-1807). Truthy-only: absent on every non-stored column, so there is zero
+ * contract churn for the 99% case. A per-field `decisions.json` override
+ * (`computedHint`) wins over the auto-detected AD value:
+ *   - computedHint === false → force-hide (never emit)
+ *   - computedHint === true  → force-show even if AD is not stored-computed
+ */
+function applyComputedHint(f, mapped) {
+  if (f.computedHint === false) return;
+  const autoStored = f.computedMode === 'S';
+  if (autoStored || f.computedHint === true) {
+    mapped.computed = { mode: 'stored', refresh: mapRefresh(f.refreshMode) };
+  }
+}
+
 function applyFieldUIHints(f, mapped) {
   applyBasicFieldUIHints(f, mapped);
   applyHints(f, mapped, FIELD_HINTS_PRE_GRID);
   applyGridHints(f, mapped);
   applyHints(f, mapped, FIELD_HINTS_POST_GRID);
+  applyComputedHint(f, mapped);
   if (f.filterable === false) mapped.filterable = false;
   if (f.dot === false) mapped.dot = false;
   // ETP-4556 — never propagate the `false` disable sentinel into the flat bound.
