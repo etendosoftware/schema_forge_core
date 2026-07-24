@@ -78,6 +78,21 @@ const OP_LABEL_KEY_DATE = {
 
 const NULLISH_OPS = new Set(['isNull', 'isNotNull']);
 
+/**
+ * Resolves the operator list offered for a given column.
+ *
+ * `isNull` / `isNotNull` ("Es vacío" / "No es vacío") are dropped for any
+ * `required` column: a mandatory field can never legitimately be empty, so
+ * offering those operators only sets the user up for a filter that can never
+ * match a row. This applies to every column, in every window — required-ness
+ * is a property of the field, not of a particular filter mode.
+ */
+function getOperatorsForColumn(col, mode) {
+  const base = mode ? (OPERATORS_BY_MODE[mode] ?? OPERATORS_BY_MODE.text) : [];
+  if (!col?.required) return base;
+  return base.filter((op) => !NULLISH_OPS.has(op));
+}
+
 function makeEmptyRow() {
   return { field: '', operator: '', value: '' };
 }
@@ -86,6 +101,18 @@ function isFilterableColumn(col) {
   if (!col?.key) return false;
   if (col.type === 'discarded' || col.type === 'system') return false;
   if (col.filterable === false) return false;
+  // A `type: 'custom'` column with no `column` (AD field) and no explicit
+  // `backendFilterKey` is a purely client-rendered, synthetic cell (e.g. a
+  // composite "identifier & name" avatar cell, or a computed badge) — there
+  // is no real backend property to send a filter criteria against. Offering
+  // it in the filter field list shows the raw internal `key` as its label
+  // (columnLabel has nothing else to fall back to) and silently filters
+  // nothing when applied. Opt back in explicitly with `filterable: true` if a
+  // custom column genuinely maps to a queryable backend field via a custom
+  // `buildCriteria`.
+  if (col.type === 'custom' && !col.column && !col.backendFilterKey && col.filterable !== true) {
+    return false;
+  }
   return true;
 }
 
@@ -282,7 +309,7 @@ export function AdvancedFilterBuilder({
         {draft.conditions.map((row, idx) => {
           const col = columnByKey[row.field] || null;
           const mode = col ? resolveFilterMode(col) : null;
-          const ops = mode ? (OPERATORS_BY_MODE[mode] ?? OPERATORS_BY_MODE.text) : [];
+          const ops = getOperatorsForColumn(col, mode);
           const opLabels = mode === 'date' ? OP_LABEL_KEY_DATE : OP_LABEL_KEY;
           const showValue = !!row.operator && !NULLISH_OPS.has(row.operator);
           const isBetween = row.operator === 'between';
