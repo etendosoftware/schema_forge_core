@@ -14,7 +14,7 @@ Table.displayName = "Table"
 
 const TableHeader = React.forwardRef(({ className, ...props }, ref) => (
   // WARN(a11y): border-border-subtle, not border-border-structural — see TableRow below.
-  <thead ref={ref} className={cn("[&_tr]:border-b [&_tr]:border-border-subtle", className)} {...props} />
+  (<thead ref={ref} className={cn("[&_tr]:border-b [&_tr]:border-border-subtle", className)} {...props} />)
 ))
 TableHeader.displayName = "TableHeader"
 
@@ -28,10 +28,10 @@ TableBody.displayName = "TableBody"
 
 const TableFooter = React.forwardRef(({ className, ...props }, ref) => (
   // WARN(a11y): border-border-subtle, not border-border-structural — see TableRow below.
-  <tfoot
+  (<tfoot
     ref={ref}
     className={cn("border-t border-border-subtle font-medium [&>tr]:last:border-b-0", className)}
-    {...props} />
+    {...props} />)
 ))
 TableFooter.displayName = "TableFooter"
 

@@ -1,7 +1,13 @@
-import { test, expect } from 'vitest';
+import { test, expect, afterEach } from 'vitest';
 import { renderToStaticMarkup } from 'react-dom/server';
+import { render, screen, act, cleanup } from '@testing-library/react';
 import { useLocation } from 'react-router-dom';
 import { AppShellRuntime } from '../AppShellRuntime.jsx';
+import { useAuth } from '../../auth/index.js';
+
+// Core vitest runs without `globals: true` (see vitest.config.js) — do
+// explicit cleanup so mounted providers don't bleed between tests.
+afterEach(cleanup);
 
 function RouteAwareProbe() {
   // Throws outside a Router context — proves children mount inside BrowserRouter.
@@ -54,4 +60,44 @@ test('AppShellRuntime falls back to ShellLayout when no layout override is given
   );
 
   expect(html).toMatch(/Group 1/);
+});
+
+// ETP-4520 — `auth.fetchWindowAccess` must reach `AuthProvider` through
+// `AppShellRuntime` -> `AppShellProviders`, the same pass-through path used by
+// `storage`/`initialSession`/`onSessionChange`. Without this, host apps have
+// no way to wire the window-access webhook fetch into the runtime.
+test('AppShellRuntime forwards auth.fetchWindowAccess to AuthProvider', async () => {
+  function RoleSelectorProbe() {
+    const { selectRole, windowAccess } = useAuth();
+    return (
+      <div>
+        <button type="button" data-testid="select-role" onClick={() => selectRole({ id: 'role-1' })}>
+          select
+        </button>
+        <div data-testid="window-access">{JSON.stringify(windowAccess)}</div>
+      </div>
+    );
+  }
+
+  const fetchWindowAccess = async () => ({
+    windowAccess: { '147': 'full' },
+    capabilities: { showAccountingFields: true },
+  });
+
+  render(
+    <AppShellRuntime
+      basename="/"
+      menuGroups={[]}
+      routes={[{ path: 'home', index: true, public: true, element: <div>home</div> }]}
+      auth={{ loginPath: '/login', fetchWindowAccess }}
+    >
+      <RoleSelectorProbe />
+    </AppShellRuntime>
+  );
+
+  await act(async () => {
+    screen.getByTestId('select-role').click();
+  });
+
+  expect(await screen.findByTestId('window-access')).toHaveTextContent('{"147":"full"}');
 });
