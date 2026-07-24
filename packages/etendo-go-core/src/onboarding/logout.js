@@ -1,47 +1,53 @@
-import { trackOnboarding } from './tracking.js';
-import { ENVIRONMENT_SESSION_KEYS } from './state.js';
+/**
+ * Creates the single logout operation used by authenticated onboarding steps.
+ *
+ * The guard intentionally lives outside React state: two clicks in the same
+ * render must share one cleanup operation before a re-render can occur.
+ */
+export function createOnboardingLogout({ flushDraft, cleanupSession, resetState, navigateToLogin, track }) {
+  let inFlight = null;
 
-// Platform-level session keys owned by the onboarding auth layer. Combined
-// with ENVIRONMENT_SESSION_KEYS (the Etendo environment session written by
-// buildEnvironmentSessionStorage) this is the full set cleared on sign-out.
-const PLATFORM_SESSION_KEYS = ['sf_platform_token', 'sf_platform_auth_method'];
+  const safelyTrack = (eventDefinition, properties) => {
+    try {
+      track(eventDefinition, properties);
+    } catch {
+      // Telemetry is best-effort and cannot retry an already-completed logout.
+    }
+  };
 
-const LOGOUT_SESSION_KEYS = [...PLATFORM_SESSION_KEYS, ...ENVIRONMENT_SESSION_KEYS];
+  return function onLogout() {
+    if (inFlight) return inFlight;
 
-// Builds the onboarding sign-out handler shared by every onboarding screen.
-//
-// It clears the full session (platform tokens plus the Etendo environment
-// session keys written by buildEnvironmentSessionStorage), resets the flow
-// state, tracks the logout event, and returns the user to the login step.
-// Centralizing it keeps every screen's exit path identical and avoids the
-// per-step duplication of this token-clearing logic.
-//
-// Storage clearing is fail-safe: if localStorage is unavailable (SSR) or
-// removeItem throws (e.g. private mode), the session-state reset and the
-// redirect to the login step still run, so the user always lands on login.
-export function createOnboardingLogout({ config, setToken, setAccountName, goToStep }) {
-  return () => {
-    trackOnboarding(config, 'onboarding_auth_logout', {
-      action: 'logout',
-      status: 'success',
-    });
-    clearSessionStorage();
-    if (setToken) setToken(null);
-    if (setAccountName) setAccountName(null);
-    if (goToStep) goToStep('login');
+    inFlight = (async () => {
+      try {
+        // A draft save is best-effort: failure must never trap an authenticated
+        // user in onboarding or prevent local credentials from being cleared.
+        if (flushDraft) {
+          try {
+            await flushDraft();
+          } catch {
+            // The draft persistence layer owns the warning and observability.
+          }
+        }
+        await cleanupSession();
+        resetState();
+        navigateToLogin();
+        safelyTrack('onboarding_auth_logout', {
+          action: 'logout',
+          status: 'success',
+        });
+      } catch (error) {
+        resetState();
+        navigateToLogin();
+        safelyTrack('onboarding_auth_logout', {
+          action: 'logout',
+          status: 'failed',
+        });
+      } finally {
+        inFlight = null;
+      }
+    })();
+
+    return inFlight;
   };
 }
-
-function clearSessionStorage() {
-  if (typeof localStorage === 'undefined' || !localStorage) return;
-  try {
-    for (const key of LOGOUT_SESSION_KEYS) {
-      localStorage.removeItem(key);
-    }
-  } catch {
-    // Storage may be unavailable or throw (SSR / private mode). Swallow the
-    // error so the session-state reset and login redirect still run.
-  }
-}
-
-export default createOnboardingLogout;

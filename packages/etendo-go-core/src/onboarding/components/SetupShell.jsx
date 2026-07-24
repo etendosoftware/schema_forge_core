@@ -1,5 +1,4 @@
 import React, { useEffect, useState } from 'react';
-import { Button } from '@etendosoftware/app-shell-core/components/ui/button';
 import AuthBrand from './AuthBrand.jsx';
 
 // Bridges the per-step remount: SetupShell unmounts/remounts when moving between
@@ -15,7 +14,7 @@ let lastProgressValue = 0;
 // change, which is what lets its CSS transitions (the scroll animation) fire.
 // This component renders only the form section; OnboardingFlow provides the
 // two-column grid and the persistent preview aside.
-export function SetupShell({ brandLabel, progressLabel, progressValue, headerContent, onLogout, logoutLabel, children }) {
+export function SetupShell({ brandLabel, progressLabel, progressValue, headerContent, children }) {
   // Start from the previously rendered value so the fill grows into the new one.
   const [fillWidth, setFillWidth] = useState(lastProgressValue);
   useEffect(() => {
@@ -40,16 +39,6 @@ export function SetupShell({ brandLabel, progressLabel, progressValue, headerCon
       <div className="flex items-start justify-between gap-6">
         <AuthBrand label={brandLabel} data-testid="AuthBrand__79cf84" />
         <div className="flex w-full max-w-[22rem] flex-col items-end gap-3 pt-1">
-          {onLogout && (
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={onLogout}
-              className="text-slate-500 hover:text-slate-700"
-              data-testid="onboarding-setup-logout">
-              {logoutLabel}
-            </Button>
-          )}
           {headerContent}
           <div className="w-full">
             <p className="text-right text-xs font-medium text-slate-500 sm:text-sm">

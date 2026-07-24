@@ -20,6 +20,7 @@
     "./observability": "./src/observability/index.js",
     "./reports": "./src/reports/index.js",
     "./runtime": "./src/runtime/index.js",
+    "./theme": "./src/theme/index.js",
     "./tailwind-preset": "./src/tailwind-preset.js",
     "./hooks/useCurrency.jsx": "./src/hooks/useCurrency.jsx",
     "./hooks/use-mobile.jsx": "./src/hooks/use-mobile.jsx",
@@ -39,7 +40,7 @@
     "!src/**/__tests__/**"
   ],
   "scripts": {
-    "test": "node --test test/*.test.js src/auth/__tests__/*.test.js src/i18n/__tests__/*.test.js src/runtime/__tests__/*.test.js src/components/ui/__tests__/*.test.js src/lib/__tests__/*.test.js src/lib/validation/__tests__/*.test.js src/lib/import/__tests__/*.test.js",
+    "test": "node --test test/*.test.js src/auth/__tests__/*.test.js src/i18n/__tests__/*.test.js src/runtime/__tests__/*.test.js src/theme/__tests__/*.test.js src/components/ui/__tests__/*.test.js src/lib/__tests__/*.test.js src/lib/validation/__tests__/*.test.js src/lib/import/__tests__/*.test.js",
     "test:vitest": "vitest run",
     "test:consumer": "node scripts/package-consumer-smoke.mjs"
   },
