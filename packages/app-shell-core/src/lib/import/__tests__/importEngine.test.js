@@ -10,11 +10,16 @@ describe('sendRow', () => {
     assert.equal(result.recordId, 'REC-1');
   });
 
-  it('returns FAILED with the server error on a committed:false response', async () => {
+  it('returns FAILED on a committed:false response, surfacing a friendly message with the raw text preserved on error.raw', async () => {
+    // ETP-4669: an unrecognized backend message is no longer shown to the user verbatim —
+    // it is classified to a friendly generic fallback, while the raw text stays on error.raw
+    // for the console/telemetry and the system-error dialog's report.
     const postBatch = async () => ({ committed: false, failedAt: { index: 0 }, error: { message: 'Rejected' } });
     const result = await sendRow([{ id: 'row' }], { postBatch });
     assert.equal(result.status, SEND_STATUS.FAILED);
-    assert.equal(result.error.message, 'Rejected');
+    assert.notEqual(result.error.message, 'Rejected');
+    assert.match(result.error.message, /could not be imported/i);
+    assert.ok(result.error.raw.includes('Rejected'), `expected raw to preserve the backend text, got: ${result.error.raw}`);
   });
 
   it('regression: classifies a unique-constraint rejection as DUPLICATE, not FAILED — nothing for the user to fix or retry', async () => {
@@ -53,13 +58,14 @@ describe('sendRow', () => {
     });
     const result = await sendRow([{ id: 'bp' }], { postBatch });
     assert.equal(result.status, SEND_STATUS.DUPLICATE);
-    assert.equal(
-      result.error.message,
-      'There is already a Business Partner with the same (Client, Organization, Search Key). (Client, Organization, Search Key) must be unique. You must change the values entered.',
-    );
+    // ETP-4669: the user sees a friendly duplicate message, not the raw AD text (which
+    // names technical field groups). The raw text is preserved on error.raw.
+    assert.match(result.error.message, /already exists/i);
+    assert.ok(!result.error.message.includes('Business Partner'), `expected no raw AD text leak, got: ${result.error.message}`);
+    assert.ok(result.error.raw.includes('must be unique'), `expected raw to preserve the backend text, got: ${result.error.raw}`);
   });
 
-  it('regression: a real /batch failure with a non-duplicate nested message surfaces that message and stays FAILED', async () => {
+  it('regression: a real /batch failure with a non-duplicate nested message stays FAILED and preserves the raw text on error.raw', async () => {
     const postBatch = async () => ({
       committed: false,
       failedAt: { index: 0, id: 'bp' },
@@ -71,7 +77,10 @@ describe('sendRow', () => {
     });
     const result = await sendRow([{ id: 'bp' }], { postBatch });
     assert.equal(result.status, SEND_STATUS.FAILED);
-    assert.equal(result.error.message, 'Could not find Sequence for: EM_Etgo_Identifier');
+    // ETP-4669: unrecognized backend text is not shown verbatim — a friendly generic
+    // message is shown, with the real text kept on error.raw for the report.
+    assert.match(result.error.message, /could not be imported/i);
+    assert.ok(result.error.raw.includes('Could not find Sequence for: EM_Etgo_Identifier'), `expected raw to preserve the backend text, got: ${result.error.raw}`);
   });
 
   it('regression: a genuinely different failure message is still classified as FAILED, not DUPLICATE', async () => {
@@ -92,26 +101,27 @@ describe('sendRow', () => {
     assert.equal(result.status, SEND_STATUS.UNKNOWN);
   });
 
-  it('regression: surfaces the real message from a raw exception response ({ message } shape, not the documented { error } wrapper)', async () => {
-    // Confirmed via a live capture: an unhandled server-side exception (a genuine 500,
-    // not a graceful BatchService.java transactional rollback) never goes through the
-    // documented `{ committed: false, error: { message, ... } }` shape at all — it comes
-    // back as Etendo's generic error envelope, `{ message: "..." }`, with no `.error` key
-    // (useBatch's runBatch returns this unmodified whenever the non-ok body happens to
-    // parse as JSON). Reading only `response.error` for that shape silently produced
-    // `error: undefined`, so the actual backend exception text never reached the UI —
-    // the user saw nothing more useful than a generic "Unknown error" bubble.
+  it('regression (ETP-4669): an uncontrolled backend leak ({ message } shape) never reaches the user as-is — friendly message, raw kept on error.raw', async () => {
+    // Confirmed via a live capture: an unhandled server-side exception (a genuine 500, not
+    // a graceful BatchService.java transactional rollback) comes back as Etendo's generic
+    // envelope, `{ message: "..." }`, with no `.error` key. The exception text here is an
+    // unserialized Redis CachedSet reference (the sibling ETP-4668 backend bug) — exactly
+    // the kind of raw, meaningless-to-the-user leak that must NOT be shown in the bubble.
+    // It is classified to a friendly generic message; the raw text stays on error.raw for
+    // the system-error dialog's report and the console.
     const postBatch = async () => ({ message: 'Invalid value for OBTIKTaxIDKey: some.CachedSet@1a2b3c' });
     const result = await sendRow([{ id: 'row' }], { postBatch });
     assert.equal(result.status, SEND_STATUS.FAILED);
-    assert.equal(result.error.message, 'Invalid value for OBTIKTaxIDKey: some.CachedSet@1a2b3c');
+    assert.ok(!result.error.message.includes('CachedSet'), `expected the raw leak to be hidden from the user, got: ${result.error.message}`);
+    assert.match(result.error.message, /could not be imported/i);
+    assert.ok(result.error.raw.includes('CachedSet'), `expected raw to preserve the backend text, got: ${result.error.raw}`);
   });
 
-  it('regression: falls back to a generic message only when the response has neither shape', async () => {
+  it('regression: falls back to a friendly generic message when the response has neither shape', async () => {
     const postBatch = async () => ({});
     const result = await sendRow([{ id: 'row' }], { postBatch });
     assert.equal(result.status, SEND_STATUS.FAILED);
-    assert.equal(result.error.message, 'Unknown error');
+    assert.match(result.error.message, /could not be imported/i);
   });
 
   it('regression: carries error.detail through as a readable raw trace (the underlying NEO error, not just the generic wrapper message)', async () => {
@@ -163,12 +173,15 @@ describe('sendRow', () => {
     });
     const result = await sendRow([{ id: 'bp' }], { postBatch });
     assert.equal(result.status, SEND_STATUS.FAILED);
-    assert.ok(result.error.message.includes('searchKey'), `expected message to include the field name, got: ${result.error.message}`);
-    assert.ok(result.error.message.includes('Value too long'), `expected message to include the validation text, got: ${result.error.message}`);
+    // ETP-4669: a "value too long" validation is classified to a friendly message; the raw
+    // field-level text (which leaks the technical field name searchKey) is kept on error.raw.
+    assert.match(result.error.message, /too long/i);
+    assert.ok(!result.error.message.includes('searchKey'), `expected no technical field-name leak, got: ${result.error.message}`);
     assert.ok(!result.error.message.includes("rejected by server"), `expected the generic wrapper text to be replaced, got: ${result.error.message}`);
+    assert.ok(result.error.raw.includes('Value too long'), `expected raw to preserve the validation text, got: ${result.error.raw}`);
   });
 
-  it('regression: joins multiple field validation messages from error.detail.response.errors into one readable string', async () => {
+  it('regression: joins multiple field validation messages from error.detail.response.errors into the raw trace', async () => {
     const postBatch = async () => ({
       committed: false,
       failedAt: { index: 0, id: 'bp' },
@@ -188,13 +201,15 @@ describe('sendRow', () => {
     });
     const result = await sendRow([{ id: 'bp' }], { postBatch });
     assert.equal(result.status, SEND_STATUS.FAILED);
-    assert.ok(result.error.message.includes('searchKey'), `expected message to include searchKey, got: ${result.error.message}`);
-    assert.ok(result.error.message.includes('Value too long'), `expected message to include the searchKey text, got: ${result.error.message}`);
-    assert.ok(result.error.message.includes('email'), `expected message to include email, got: ${result.error.message}`);
-    assert.ok(result.error.message.includes('Invalid email format'), `expected message to include the email text, got: ${result.error.message}`);
+    // ETP-4669: the user sees one friendly message; the joined field-level detail (both the
+    // searchKey and email messages) is preserved on error.raw for the report.
+    assert.match(result.error.message, /too long|could not be imported/i);
+    assert.ok(!result.error.message.includes('searchKey'), `expected no technical field-name leak, got: ${result.error.message}`);
+    assert.ok(result.error.raw.includes('searchKey') && result.error.raw.includes('Value too long'), `expected raw to include the searchKey detail, got: ${result.error.raw}`);
+    assert.ok(result.error.raw.includes('email') && result.error.raw.includes('Invalid email format'), `expected raw to include the email detail, got: ${result.error.raw}`);
   });
 
-  it('regression: prefers error.detail.error.message over error.detail.response.errors when both happen to be present (documented priority order)', async () => {
+  it('regression: prefers error.detail.error.message over error.detail.response.errors when both are present (classification priority)', async () => {
     const postBatch = async () => ({
       committed: false,
       failedAt: { index: 0, id: 'bp' },
@@ -208,11 +223,11 @@ describe('sendRow', () => {
       },
     });
     const result = await sendRow([{ id: 'bp' }], { postBatch });
+    // The nested duplicate message (detail.error.message) wins over the value-too-long
+    // validation shape, so the outcome is DUPLICATE and the raw duplicate text is preserved.
     assert.equal(result.status, SEND_STATUS.DUPLICATE);
-    assert.equal(
-      result.error.message,
-      'There is already a Business Partner with the same (Client, Organization, Search Key). (Client, Organization, Search Key) must be unique.',
-    );
+    assert.match(result.error.message, /already exists/i);
+    assert.ok(result.error.raw.includes('must be unique'), `expected raw to preserve the duplicate text, got: ${result.error.raw}`);
   });
 });
 

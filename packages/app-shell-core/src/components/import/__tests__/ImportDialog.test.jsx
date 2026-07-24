@@ -136,7 +136,10 @@ describe('ImportDialog', () => {
     await waitFor(() => expect(onImported).toHaveBeenCalledWith({ okCount: 0, failedCount: 1 }));
     // The dialog itself must still be showing the review queue at this point, not
     // already torn down — this is what a caller closing on every onImported call hides.
-    expect(screen.getByTestId('ImportReviewQueue__rowError-0').textContent).toContain('Invalid value for OBTIKTaxIDKey');
+    // ETP-4669: the row now shows a friendly, classified message — the raw backend text
+    // ("Invalid value for OBTIKTaxIDKey", an uncontrolled leak) is no longer rendered here;
+    // it is preserved on error.raw for the system-error dialog's report.
+    expect(screen.getByTestId('ImportReviewQueue__rowError-0').textContent).toMatch(/could not be imported/i);
   });
 
   it('regression: shows the ImportSystemErrorDialog with the last failure\'s message, row data, request sent, and raw trace after a failed send', async () => {
@@ -156,7 +159,10 @@ describe('ImportDialog', () => {
     fireEvent.click(screen.getByTestId('ImportDialog__importButton'));
     fireEvent.click(screen.getByTestId('ImportConfirmStep__confirm'));
     await waitFor(() => screen.getByTestId('ImportSystemErrorDialog__title'));
-    expect(screen.getByTestId('ImportSystemErrorDialog__message').textContent).toBe("Operation 'bp' rejected by server");
+    // ETP-4669: the prominent message is the friendly, classified text — never the raw
+    // wrapper ("Operation 'bp' rejected by server"). The raw trace still carries the real
+    // backend text and is shown (collapsed) under "View full report".
+    expect(screen.getByTestId('ImportSystemErrorDialog__message').textContent).toMatch(/could not be imported/i);
     expect(screen.queryByTestId('ImportSystemErrorDialog__trace')).toBeNull();
     fireEvent.click(screen.getByTestId('ImportSystemErrorDialog__toggleReport'));
     expect(screen.getByTestId('ImportSystemErrorDialog__row').textContent).toContain('Lucia');
