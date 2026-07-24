@@ -21,6 +21,7 @@ const IMPORT_ERROR_FALLBACKS = {
   importErrorRequiredGeneric: () => 'A required field is missing.',
   importErrorDuplicate: () => 'A record with the same value already exists.',
   importErrorDuplicateIdentifier: () => 'A record with this identifier already exists.',
+  importErrorDuplicateUser: () => 'A user with this name already exists for the contact. Try a different name.',
   importErrorValueTooLong: () => 'A value is too long for one of its fields.',
   importErrorGeneric: () => 'This row could not be imported. Open the details for the technical report or contact support.',
 };
@@ -68,6 +69,12 @@ export function classifyImportError(rawMessage) {
     || /must be unique/i.test(msg)
   ) {
     return { key: 'importErrorDuplicateIdentifier', params: {}, duplicate: true };
+  }
+  // Etendo auto-creates a portal AD_User for a contact; the derived username can collide
+  // with an existing user. Its own top-level `{error:{message}}` shape carries no "must be
+  // unique" wording, so it needs its own branch rather than falling into the generic bucket.
+  if (/user with the same name already exists/i.test(msg)) {
+    return { key: 'importErrorDuplicateUser', params: {}, duplicate: true };
   }
   if (/value too long/i.test(msg)) {
     return { key: 'importErrorValueTooLong', params: {}, duplicate: false };
