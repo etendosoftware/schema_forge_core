@@ -73,8 +73,12 @@ export function classifyImportError(rawMessage) {
   // Etendo auto-creates a portal AD_User for a contact; the derived username can collide
   // with an existing user. Its own top-level `{error:{message}}` shape carries no "must be
   // unique" wording, so it needs its own branch rather than falling into the generic bucket.
+  // `duplicate: false` (unlike the genuine already-exists cases above): the CONTACT is not a
+  // duplicate — only the derived username collides — so the user can fix it (change the
+  // commercial name) and retry. It gets the normal actionable-error treatment (stays in the
+  // queue, counts toward failedCount, retriable inline) rather than being silently skipped.
   if (/user with the same name already exists/i.test(msg)) {
-    return { key: 'importErrorDuplicateUser', params: {}, duplicate: true };
+    return { key: 'importErrorDuplicateUser', params: {}, duplicate: false };
   }
   if (/value too long/i.test(msg)) {
     return { key: 'importErrorValueTooLong', params: {}, duplicate: false };
