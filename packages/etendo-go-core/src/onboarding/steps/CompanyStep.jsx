@@ -5,14 +5,14 @@ import { Label } from '@etendosoftware/app-shell-core/components/ui/label';
 import { useUI } from '@etendosoftware/app-shell-core/i18n';
 import { isCompanyStepValid } from '../state.js';
 import { trackOnboarding } from '../tracking.js';
-import { createOnboardingLogout } from '../logout.js';
 import { SetupShell } from '../components/SetupShell.jsx';
+import { OnboardingSessionAction } from '../components/OnboardingSessionAction.jsx';
+import { DraftSaveWarning } from '../components/DraftSaveWarning.jsx';
 import { SetupField } from '../components/SetupField.jsx';
 import { SetupSelect } from '../components/SetupSelect.jsx';
 
-export function CompanyStep({ config, stepData, onNext, onBack, goToStep, setToken, setAccountName, onChange, draftNotice, setDraftNotice, accountName }) {
+export function CompanyStep({ config, stepData, onNext, onBack, goToStep, onChange, draftNotice, draftSaveWarning, setDraftNotice, accountName, token, onLogout }) {
   const ui = useUI();
-  const handleLogout = createOnboardingLogout({ config, setToken, setAccountName, goToStep });
 
   const [form, setForm] = useState(() => ({
     clientName: stepData.clientName ?? config.defaultForm?.clientName ?? '',
@@ -51,14 +51,16 @@ export function CompanyStep({ config, stepData, onNext, onBack, goToStep, setTok
   // Freelancers invoice under their personal tax id, captured elsewhere — hide the
   // company Tax ID field for them. businessType comes from the profile step.
   const showTaxId = stepData.businessType !== 'freelancer';
+  const sessionAction = token && (
+    <OnboardingSessionAction onLogout={onLogout} label={ui('logout')} />
+  );
 
   return (
     <SetupShell
       progressLabel={ui('onboardingProgressAlmostDone')}
       progressValue={90}
-      onLogout={handleLogout}
-      logoutLabel={ui('logout')}
       brandLabel={config.brandLabel || 'Etendo GO'}
+      headerContent={sessionAction}
       data-testid="SetupShell__79cf84">
       {draftNotice && (
         <div
@@ -68,6 +70,7 @@ export function CompanyStep({ config, stepData, onNext, onBack, goToStep, setTok
           {ui('onboardingDraftRestoredNotice')}
         </div>
       )}
+      <DraftSaveWarning show={draftSaveWarning} message={ui('onboardingDraftSaveWarning')} />
       <div>
         <div className="mb-10">
           <h1 className="text-3xl font-semibold tracking-[-0.06em] text-slate-900 sm:text-[2.7rem] sm:leading-[1.04]">

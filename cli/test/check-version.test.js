@@ -435,6 +435,61 @@ describe('checkVersion (integration)', () => {
     assert.equal(mcpContract.version, '0.2.0');
   });
 
+  it('does NOT bump contract.mcp.json version when its own checksum is unchanged (frontendContract-only change)', async () => {
+    // contract.mcp.json carries its own content-based checksum (apiPrediction/
+    // formState/agentProfile), independent of contract.json's frontendContract.
+    // A contract.json bump driven purely by frontendContract must not force a
+    // version bump on an .mcp.json whose own payload didn't change.
+    const oldContract = makeContract(
+      { order: { fields: [{ name: 'documentNo', type: 'string' }] } },
+      [{ method: 'GET', path: '/order' }]
+    );
+    const newContract = makeContract(
+      { order: { fields: [
+        { name: 'documentNo', type: 'string' },
+        { name: 'dateOrdered', type: 'date' },
+      ] } },
+      [{ method: 'GET', path: '/order' }]
+    );
+    await writeFile(join(artifactDir, 'contract.prev.json'), JSON.stringify(oldContract, null, 2));
+    await writeFile(join(artifactDir, 'contract.json'), JSON.stringify(newContract, null, 2));
+    const unchangedMcp = { version: '0.1.0', checksum: 'stable-mcp-checksum', apiPrediction: {} };
+    await writeFile(join(artifactDir, 'contract.mcp.json'), JSON.stringify(unchangedMcp, null, 2));
+
+    const result = await checkVersion(testWindow, 'test-author', unchangedMcp);
+    assert.equal(result.newVersion, '0.2.0');
+
+    const { readFile } = await import('node:fs/promises');
+    const mcpContract = JSON.parse(await readFile(join(artifactDir, 'contract.mcp.json'), 'utf-8'));
+    assert.equal(mcpContract.version, '0.1.0', 'mcp version must stay put — its own checksum did not change');
+  });
+
+  it('DOES bump contract.mcp.json version when its own checksum changed', async () => {
+    const oldContract = makeContract(
+      { order: { fields: [{ name: 'documentNo', type: 'string' }] } },
+      [{ method: 'GET', path: '/order' }]
+    );
+    const newContract = makeContract(
+      { order: { fields: [
+        { name: 'documentNo', type: 'string' },
+        { name: 'dateOrdered', type: 'date' },
+      ] } },
+      [{ method: 'GET', path: '/order' }]
+    );
+    await writeFile(join(artifactDir, 'contract.prev.json'), JSON.stringify(oldContract, null, 2));
+    await writeFile(join(artifactDir, 'contract.json'), JSON.stringify(newContract, null, 2));
+    const prevMcp = { version: '0.1.0', checksum: 'old-mcp-checksum', apiPrediction: {} };
+    const currentMcp = { version: '0.1.0', checksum: 'new-mcp-checksum', apiPrediction: { changed: true } };
+    await writeFile(join(artifactDir, 'contract.mcp.json'), JSON.stringify(currentMcp, null, 2));
+
+    const result = await checkVersion(testWindow, 'test-author', prevMcp);
+    assert.equal(result.newVersion, '0.2.0');
+
+    const { readFile } = await import('node:fs/promises');
+    const mcpContract = JSON.parse(await readFile(join(artifactDir, 'contract.mcp.json'), 'utf-8'));
+    assert.equal(mcpContract.version, '0.2.0', 'mcp version must follow — its own checksum did change');
+  });
+
   it('does not fail when no contract.mcp.json exists for the window', async () => {
     const oldContract = makeContract(
       { order: { fields: [{ name: 'documentNo', type: 'string' }] } },

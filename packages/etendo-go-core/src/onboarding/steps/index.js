@@ -9,7 +9,7 @@ export const coreSteps = [
   { id: 'login', component: LoginStep },
   { id: 'register', component: RegisterStep },
   { id: 'env-select', component: EnvSelectStep },
-  { id: 'profile', component: ProfileStep },
-  { id: 'company', component: CompanyStep },
+  { id: 'profile', component: ProfileStep, persistable: true, draftStep: 1 },
+  { id: 'company', component: CompanyStep, persistable: true, draftStep: 2 },
   { id: 'setup-progress', component: SetupProgressStep },
 ];

@@ -8,6 +8,7 @@ import { trackOnboarding } from '../tracking.js';
 import { AuthShell } from '../components/AuthShell.jsx';
 import { AuthField } from '../components/AuthField.jsx';
 import { AuthSsoOptions } from '../components/AuthSsoOptions.jsx';
+import { DraftSaveWarning } from '../components/DraftSaveWarning.jsx';
 import { OnboardingLanguageSelect } from '../components/OnboardingLanguageSelect.jsx';
 
 const AUTH_FEATURE_KEYS = ['onboardingAuthFeatureNoCard', 'onboardingAuthFeatureTrial', 'onboardingAuthFeatureInstantAccess'];
@@ -18,7 +19,7 @@ function maskEmail(email) {
   return `${email[0]}******${email.slice(at)}`;
 }
 
-export function LoginStep({ config, stepData, onNext, onBack, goToStep, setToken, setAccountName, routeByEnvironments }) {
+export function LoginStep({ config, stepData, onNext, onBack, goToStep, setToken, setAccountName, routeByEnvironments, draftSaveWarning }) {
   const ui = useUI();
   const { locale, setLocale } = useLocaleSwitch();
 
@@ -479,6 +480,8 @@ export function LoginStep({ config, stepData, onNext, onBack, goToStep, setToken
           {ui('onboardingLoginSubtitle')}
         </p>
       </div>
+
+      <DraftSaveWarning show={draftSaveWarning} message={ui('onboardingDraftSaveWarning')} />
 
       {loginNotice && (
         <div
