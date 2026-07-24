@@ -8,16 +8,85 @@ export class BatchTimeoutError extends Error {
 export const SEND_STATUS = { OK: 'ok', FAILED: 'failed', UNKNOWN: 'unknown', DUPLICATE: 'duplicate' };
 
 /**
- * Etendo's generic AD-level uniqueness-constraint message ("X must be unique") — the same
- * wording for any entity's unique index, not something specific to BusinessPartner
- * (confirmed via a real capture: "There is already a Business Partner with the same
- * (Client, Organization, Search Key). (Client, Organization, Search Key) must be unique.").
- * A row that already exists server-side isn't a failure the user needs to act on or
- * retry — retrying would only repeat the same rejection — so it's classified and reported
- * separately from a genuine FAILED/UNKNOWN outcome.
+ * English fallbacks for each classified error KIND — used verbatim only when the caller
+ * injects no `translate` function. This mirrors the DEFAULT_LABELS fallback the import UI
+ * components already use: a controlled, friendly default, NEVER the raw backend text. The
+ * raw text is always preserved separately on `error.raw` for the console/telemetry and the
+ * system-error dialog's collapsible report — it is just never the user-facing `message`.
+ * Keys match the genericLabels keys the functional app defines, so an injected `translate`
+ * (e.g. useUI's `ui`) resolves the same key to a localized string.
  */
-function isDuplicateKeyError(message) {
-  return typeof message === 'string' && /must be unique/i.test(message);
+const IMPORT_ERROR_FALLBACKS = {
+  importErrorRequiredField: (p) => `The field "${p.field}" is required.`,
+  importErrorRequiredGeneric: () => 'A required field is missing.',
+  importErrorDuplicate: () => 'A record with the same value already exists.',
+  importErrorDuplicateIdentifier: () => 'A record with this identifier already exists.',
+  importErrorValueTooLong: () => 'A value is too long for one of its fields.',
+  importErrorGeneric: () => 'This row could not be imported. Open the details for the technical report or contact support.',
+};
+
+/** snake_case / camelCase DB column → a human-readable "Title Case" label, self-contained. */
+function toReadableFieldLabel(column) {
+  const normalized = String(column || '').trim();
+  if (!normalized) return 'Field';
+  return normalized
+    .replace(/_/g, ' ')
+    .replace(/([a-z])([A-Z])/g, '$1 $2')
+    .toLowerCase()
+    .replace(/\b\w/g, (ch) => ch.toUpperCase());
+}
+
+/**
+ * Maps a raw backend diagnostic string to a stable, translatable error KIND — an i18n key,
+ * its interpolation params, and whether the outcome is a benign duplicate (a row that
+ * already exists server-side: nothing for the user to fix or retry, so it is reported
+ * separately from a genuine FAILED outcome — the same wording matches ANY entity's unique
+ * index, e.g. "There is already a Business Partner with the same (...). (...) must be
+ * unique.").
+ *
+ * `importEngine.js` is a plain app-shell-core lib and cannot import the functional app's
+ * error code (useEntity.normalizeServerError / backendErrors.js), so the KINDS worth
+ * recognizing are reimplemented here, self-contained. Anything unrecognized falls through
+ * to `importErrorGeneric` — a friendly generic, never the raw dump. Regex gaps are bounded
+ * ({1,200}) rather than unbounded to avoid super-linear backtracking (SonarQube S5852).
+ */
+export function classifyImportError(rawMessage) {
+  const msg = typeof rawMessage === 'string' ? rawMessage : '';
+  const requiredMatch = msg.match(/null value in column\s+"([^"]+)"\s+of relation/i);
+  if (requiredMatch) {
+    return { key: 'importErrorRequiredField', params: { field: toReadableFieldLabel(requiredMatch[1]) }, duplicate: false };
+  }
+  if (/violates\s+not-null\s+constraint/i.test(msg)) {
+    return { key: 'importErrorRequiredGeneric', params: {}, duplicate: false };
+  }
+  if (/duplicate key value violates unique constraint/i.test(msg)) {
+    return { key: 'importErrorDuplicate', params: {}, duplicate: true };
+  }
+  if (
+    /ya existe.{1,200}\(.{1,200}\).{1,200}debe ser único/i.test(msg)
+    || /there is already.{1,200}\(.{1,200}\).{1,200}must be unique/i.test(msg)
+    || /must be unique/i.test(msg)
+  ) {
+    return { key: 'importErrorDuplicateIdentifier', params: {}, duplicate: true };
+  }
+  if (/value too long/i.test(msg)) {
+    return { key: 'importErrorValueTooLong', params: {}, duplicate: false };
+  }
+  return { key: 'importErrorGeneric', params: {}, duplicate: false };
+}
+
+/**
+ * Turns a classification into the user-facing message. With an injected `translate` it
+ * returns the localized string (falling back to the English default if the key is missing —
+ * `translate` returning the key unchanged is the "missing" signal, same guard the app's own
+ * translate helpers use). With no `translate`, the English default. Never the raw backend text.
+ */
+function friendlyImportMessage(classification, translate) {
+  const { key, params } = classification;
+  const fallback = IMPORT_ERROR_FALLBACKS[key](params);
+  if (typeof translate !== 'function') return fallback;
+  const translated = translate(key, params);
+  return translated && translated !== key ? translated : fallback;
 }
 
 /**
@@ -46,7 +115,7 @@ function firstValidationMessage(errors) {
  * may have already committed server-side, and blindly treating it as a safe
  * retry target risks a duplicate create.
  */
-export async function sendRow(operations, { postBatch }) {
+export async function sendRow(operations, { postBatch, translate } = {}) {
   let response;
   try {
     response = await postBatch(operations);
@@ -83,22 +152,28 @@ export async function sendRow(operations, { postBatch }) {
   // full trace, one at a time, until the pipeline stabilizes).
   const raw = error.raw ?? (error.detail ? JSON.stringify(error.detail, null, 2) : JSON.stringify(response, null, 2));
   // error.message is BatchService.java's own generic wrapper ("Operation 'bp' rejected by
-  // server") — always the same text regardless of cause, so isDuplicateKeyError's
-  // /must be unique/i check against it can never match. The real diagnostic text (e.g.
-  // Etendo's own "... must be unique." message) lives one level deeper, at
-  // error.detail.error.message, whenever NeoCrudHandler attached the underlying NEO
-  // response as `detail` (verified against a real capture of a duplicate-key /batch
-  // failure). Prefer that nested message everywhere this result's error surfaces —
-  // both for classification and for what the review queue actually shows the user —
-  // falling back to the wrapper text only when there's no nested detail to read. A
-  // validation-error op (NEO status -4) uses a third shape instead — detail.response.errors
-  // — checked second since a plain-failure op never has both.
-  const diagnosticMessage =
+  // server") — always the same text regardless of cause, so classification against it can
+  // never match. The real diagnostic text (e.g. Etendo's own "... must be unique." message)
+  // lives one level deeper, at error.detail.error.message, whenever NeoCrudHandler attached
+  // the underlying NEO response as `detail` (verified against a real capture of a
+  // duplicate-key /batch failure). Read that nested message first, falling back to the
+  // wrapper only when there's no nested detail. A validation-error op (NEO status -4) uses
+  // a third shape instead — detail.response.errors — checked second since a plain-failure
+  // op never has both. This is the RAW text used only to CLASSIFY the outcome; it is never
+  // shown to the user directly.
+  const rawDiagnostic =
     error.detail?.error?.message
     || firstValidationMessage(error.detail?.response?.errors)
     || error.message;
-  const status = isDuplicateKeyError(diagnosticMessage) ? SEND_STATUS.DUPLICATE : SEND_STATUS.FAILED;
-  return { status, error: { ...error, message: diagnosticMessage, raw } };
+  const classification = classifyImportError(rawDiagnostic);
+  const status = classification.duplicate ? SEND_STATUS.DUPLICATE : SEND_STATUS.FAILED;
+  // The user-facing message is the classified, friendly (and, when `translate` is injected,
+  // localized) text — NEVER `rawDiagnostic`, which can be an uncontrolled backend leak
+  // (e.g. an unserialized `com.etendoerp.redis.interfaces.CachedSet@55b0cf12`, ETP-4668).
+  // The raw text stays on `error.raw` for the console/telemetry and the system-error
+  // dialog's collapsible report, so nothing diagnostic is lost — it just isn't the bubble.
+  const message = friendlyImportMessage(classification, translate);
+  return { status, error: { ...error, message, raw } };
 }
 
 /**
@@ -126,7 +201,7 @@ async function runBoundedPool(items, concurrency, worker, onSettle) {
  * `results` — the caller reports `truncatedCount` explicitly rather than
  * silently dropping them.
  */
-export async function runImport(rows, { buildRowOperations, postBatch, concurrency = 4, maxRows = 5000, onProgress }) {
+export async function runImport(rows, { buildRowOperations, postBatch, translate, concurrency = 4, maxRows = 5000, onProgress }) {
   const attempted = rows.slice(0, maxRows);
   const truncatedCount = rows.length - attempted.length;
   const results = new Array(attempted.length);
@@ -155,7 +230,7 @@ export async function runImport(rows, { buildRowOperations, postBatch, concurren
       } catch (error) {
         return { status: SEND_STATUS.FAILED, error, operations: null };
       }
-      const result = await sendRow(operations, { postBatch });
+      const result = await sendRow(operations, { postBatch, translate });
       return { ...result, operations };
     },
     (result, row, index) => {
