@@ -1,0 +1,26 @@
+{
+  "version": "v2",
+  "frontendContract": {
+    "window": { "primaryEntity": "product" },
+    "entities": {
+      "product": {
+        "searchableFields": ["name"],
+        "fields": [
+          {
+            "name": "name",
+            "column": "Name",
+            "multiField": {
+              "subtitle": "searchKey",
+              "parts": [
+                { "field": "name", "sortable": true },
+                { "field": "searchKey", "sortable": true }
+              ]
+            }
+          },
+          { "name": "searchKey", "column": "Value" }
+        ]
+      }
+    }
+  },
+  "agentProfile": {}
+}

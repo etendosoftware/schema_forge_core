@@ -193,6 +193,12 @@ const FIELD_DECISION_COPY_PROPS = [
   'grow',
   'columnWidth',
   'gridReadOnly',
+  // ETP-4603 — composite list column. On a "host" grid field, an object that
+  // absorbs sibling fields into one column: { subtitle, media: { field, kind,
+  // fallback }, parts: [{ field, sortable, filterable }], partSeparator }. The
+  // generator emits it as a `type: 'multiField'` column and hides the absorbed
+  // sibling columns (their data still arrives — the list fetch has no projection).
+  'multiField',
   'inlineToggle',
   'inlineEdit',
   'noTrailing',
@@ -236,6 +242,11 @@ const FIELD_RAW_COPY_PROPS = [
   'enumValues',
   'processId',
   'processType',
+  // EPL-1807 computed-column attributes (freshness indicator). Passed through
+  // unchanged; generate-contract.js derives the compact `computed` hint from them.
+  'computedMode',
+  'refreshMode',
+  'computationFunction',
 ];
 
 function resolveFieldVisibility(rawField, fieldDecision, discardPatterns) {
@@ -289,6 +300,10 @@ function applyFieldDecisionProps(field, fieldDecision) {
   if (fieldDecision.summable) field.summable = true;
   if (fieldDecision.businessCritical) field.businessCritical = true;
   if (fieldDecision.gridOrder != null) field.gridOrder = fieldDecision.gridOrder;
+  // EPL-1807 escape hatch: force-show/force-hide the computed freshness indicator
+  // regardless of AD auto-detection. `false` is meaningful (force-hide), so copy
+  // it explicitly rather than via the truthy-only decision-copy loop.
+  if (fieldDecision.computedHint !== undefined) field.computedHint = fieldDecision.computedHint;
   applyFlatBound(field, fieldDecision, 'min');
   applyFlatBound(field, fieldDecision, 'max');
   // ETP-4542 — flat `integer` bound (whole-number constraint), same sentinel handling as min/max.
