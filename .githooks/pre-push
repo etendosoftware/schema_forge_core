@@ -43,6 +43,11 @@ SPIN_FRAMES=('⠋' '⠙' '⠹' '⠸' '⠼' '⠴' '⠦' '⠧' '⠇' '⠏')
 
 # Per-step duration cache (used as ETA baseline across runs).
 DURATIONS_FILE="$REPO_DIR/tmp/pre-push/durations"
+
+# Content-addressed step cache (inert unless PRE_PUSH_CACHE=1 — see the file).
+# Mirrored verbatim from etendo_schema_forge; edit in one repo and sync.
+# shellcheck source=lib/step-cache.sh
+. "$SCRIPT_DIR/lib/step-cache.sh"
 LAST_DURATION=0
 
 # Look up the last recorded duration (seconds) for a step key, or 0.
@@ -153,7 +158,16 @@ run_step() {
   local run_dir="$3"
   local log_file="$4"
   local cmd="$5"
+  local cache_key="${6:-}"
   local abs_log="$REPO_DIR/$log_file"
+
+  # A hit means every input this step reads is byte-identical to the last time it
+  # passed. Announced loudly and never silently: a quiet skip is how "it passed
+  # locally" turns into a lie.
+  if step_cache_lookup "$step_num" "$cache_key"; then
+    echo "==> [$step_num/3] $step_name... CACHED (inputs unchanged since it last passed)"
+    return 0
+  fi
 
   echo "==> [$step_num/3] $step_name..."
 
@@ -165,8 +179,10 @@ run_step() {
 
   if [ $exit_status -eq 0 ]; then
     echo "==> [$step_num/3] $step_name... SUCCESS ✅ (${LAST_DURATION}s)"
+    step_cache_store "$step_num" "$cache_key"
   else
     echo "==> [$step_num/3] $step_name... FAILED ❌ (${LAST_DURATION}s)"
+    step_cache_invalidate "$step_num"
     fail_with_log "$step_name" "$exit_status" "$abs_log"
   fi
 }
@@ -356,7 +372,9 @@ run_optional_playwright() {
 check_base_conflicts
 
 # 0. Run data-testid check (fast, runs before expensive checks)
-run_step "0" "Running data-testid check" "$REPO_DIR" "tmp/pre-push/data-testid-check.log" "npm run check:data-testid -- packages/app-shell-core/src"
+# The checker only ever reads the core sources it scans, plus its own script.
+STEP0_KEY="$(step_cache_compute "node-$(node -e "process.stdout.write(process.versions.node.split('.')[0])" 2>/dev/null || echo 0)" packages/app-shell-core/src scripts/check-add-data-testid.sh)"
+run_step "0" "Running data-testid check" "$REPO_DIR" "tmp/pre-push/data-testid-check.log" "npm run check:data-testid -- packages/app-shell-core/src" "$STEP0_KEY"
 
 # Step 1 (domain boundary check) disabled: repos are now split at the repo
 # level, so the monorepo cross-domain check no longer applies. Re-enable by

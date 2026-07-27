@@ -39,6 +39,14 @@ function isGeneratedDependencyManifest(path) {
   return /(^|\/)(package-lock|npm-shrinkwrap)\.json$/.test(path);
 }
 
+function isLocaleJsonFile(path) {
+  // Locale JSON dictionaries are DATA (parallel key -> translation maps), not
+  // application logic: translated strings legitimately repeat across locale
+  // dictionaries (e.g. es_AR and es_ES sharing the same neutral phrasing) —
+  // DRY/extract-shared-logic rules apply to logic, not to data.
+  return /\/locales\/[^/]+\.json$/.test(path);
+}
+
 function normalizeDuplicateLine(line) {
   const trimmed = line.trim();
   if (!trimmed) return '';
@@ -171,6 +179,7 @@ export function detectDuplicatedBlocks(diffText, { minLines = DUPLICATE_MIN_LINE
     // rules do not apply, same as the artifacts/ skip above.
     if (run.path.startsWith('cli/cache/')) continue;
     if (isGeneratedDependencyManifest(run.path)) continue;
+    if (isLocaleJsonFile(run.path)) continue;
     const normalizedLines = run.lines
       .map((entry) => ({ ...entry, normalized: normalizeDuplicateLine(entry.text) }))
       .filter((entry) => entry.normalized);
@@ -313,7 +322,7 @@ function isExemptFromSizeGate(path) {
     return true;
   }
   // Locale JSON files grow predictably as the app is translated — skip them.
-  if (/\/locales\/[^/]+\.json$/.test(path)) {
+  if (isLocaleJsonFile(path)) {
     return true;
   }
   // Generated contract snapshots are intentionally verbose and are checked
