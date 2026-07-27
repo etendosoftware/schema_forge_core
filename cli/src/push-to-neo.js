@@ -103,6 +103,18 @@ export function normalizeAgentPrompt(value) {
   return trimmed === '' ? null : trimmed;
 }
 
+/**
+ * Normalize a declared per-entity `preconditions` block into a plain object,
+ * or null when empty/malformed. Mirrors normalizeAgentPrompt: an explicit but
+ * empty declaration collapses to null so a stale DB value gets cleared.
+ * Shape (ETP-4275): { "<AD_Process_ID>": [ { field, requiredWhen?, message? } ] }.
+ */
+export function normalizePreconditions(value) {
+  if (value == null) return null;
+  if (typeof value !== 'object' || Array.isArray(value)) return null;
+  return Object.keys(value).length === 0 ? null : value;
+}
+
 // ---------------------------------------------------------------------------
 // Configuration loading
 // ---------------------------------------------------------------------------
@@ -264,6 +276,7 @@ export async function pushToNeo(windowName, options = {}) {
   const specName = windowName;
   const fieldDefaultExprs = buildFieldDefaultExprMap(decisionsData);
   const fieldAgentPrompts = buildFieldAgentPromptMap(decisionsData);
+  const entityPreconditions = buildEntityPreconditionsMap(decisionsData);
   const specAgentPrompt = normalizeAgentPrompt(decisionsData.window?.agentPrompt);
   const allFields = extractFieldsFromContract(contract.backendContract);
 
@@ -277,6 +290,7 @@ export async function pushToNeo(windowName, options = {}) {
     allFields,
     fieldDefaultExprs,
     fieldAgentPrompts,
+    entityPreconditions,
     specAgentPrompt,
     specName,
     windowId,
@@ -346,6 +360,27 @@ export function buildFieldAgentPromptMap(decisionsData) {
       if (Object.hasOwn(fieldConf, 'agentPrompt')) {
         map[`${entityName}.${fieldName}`] = normalizeAgentPrompt(fieldConf.agentPrompt);
       }
+    }
+  }
+  return map;
+}
+
+/**
+ * Build an `entityName` -> preconditions map from decisions.json. Resolves the
+ * entity name the same way buildFieldAgentPromptMap does (`entityConf.name`
+ * falling back to the decisions key) so it matches the contract entity name
+ * used when the ETGO_SF_ENTITY row is written. Only entities that declare a
+ * `preconditions` key are included; the value is the normalized object (or null
+ * to clear a stale DB value). Serialized into ETGO_SF_ENTITY.preconditions by
+ * push-to-neo so NEO Headless can validate process preconditions generically
+ * (ETP-4275).
+ */
+export function buildEntityPreconditionsMap(decisionsData) {
+  const map = {};
+  for (const [entityKey, entityConf] of Object.entries(decisionsData.entities || {})) {
+    const entityName = entityConf.name || entityKey;
+    if (Object.hasOwn(entityConf, 'preconditions')) {
+      map[entityName] = normalizePreconditions(entityConf.preconditions);
     }
   }
   return map;
@@ -575,15 +610,20 @@ async function renameEntitiesToContractNames(client, ctx, entityMaps) {
     const entityId = (ent.tabName && entityMaps.entityMapByName[ent.tabName])
       || (ent.tableName && entityMaps.entityMapByTableName[ent.tableName]);
     if (!entityId) continue;
+    // Serialize declared process preconditions into the ETGO_SF_ENTITY row.
+    // Written unconditionally (null when undeclared) so a stale DB value is
+    // cleared, mirroring how field agentPrompt clears itself (ETP-4275).
+    const preconditions = ctx.entityPreconditions?.[ent.name] ?? null;
+    const preconditionsJson = preconditions ? JSON.stringify(preconditions) : null;
     if (ent.javaQualifier !== undefined) {
       await client.query(
-        'UPDATE etgo_sf_entity SET name = $1, java_qualifier = $2 WHERE etgo_sf_entity_id = $3',
-        [ent.name, ent.javaQualifier, entityId],
+        'UPDATE etgo_sf_entity SET name = $1, java_qualifier = $2, preconditions = $3 WHERE etgo_sf_entity_id = $4',
+        [ent.name, ent.javaQualifier, preconditionsJson, entityId],
       );
     } else {
       await client.query(
-        'UPDATE etgo_sf_entity SET name = $1 WHERE etgo_sf_entity_id = $2',
-        [ent.name, entityId],
+        'UPDATE etgo_sf_entity SET name = $1, preconditions = $2 WHERE etgo_sf_entity_id = $3',
+        [ent.name, preconditionsJson, entityId],
       );
     }
     entityMaps.entityMapByName[ent.name] = entityId;
