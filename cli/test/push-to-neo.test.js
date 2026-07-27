@@ -14,6 +14,8 @@ import {
   pushReportToNeo,
   dumpDelta,
   buildFieldAgentPromptMap,
+  buildEntityPreconditionsMap,
+  normalizePreconditions,
   buildFieldUpdateParams,
   buildSpecUpsertParams,
 } from '../src/push-to-neo.js';
@@ -71,6 +73,84 @@ describe('buildFieldAgentPromptMap', () => {
       'Order.blank': null,
       'Order.real': 'pick nearest warehouse',
     });
+  });
+});
+
+describe('buildEntityPreconditionsMap', () => {
+  it('maps entityName -> preconditions, resolving entity name like agentPrompt', () => {
+    const decisions = {
+      entities: {
+        header: {
+          name: 'Asset',
+          preconditions: {
+            800125: [
+              { field: 'usableLifeMonths', requiredWhen: "@calculateType@ != 'PE' && @depreciationType@ != 'YE'" },
+              { field: 'usableLifeYears', requiredWhen: "@depreciationType@ == 'YE'" },
+              { field: 'currency' },
+            ],
+          },
+        },
+        lines: { fields: { qty: {} } },
+      },
+    };
+
+    const map = buildEntityPreconditionsMap(decisions);
+
+    assert.deepEqual(map, {
+      Asset: {
+        800125: [
+          { field: 'usableLifeMonths', requiredWhen: "@calculateType@ != 'PE' && @depreciationType@ != 'YE'" },
+          { field: 'usableLifeYears', requiredWhen: "@depreciationType@ == 'YE'" },
+          { field: 'currency' },
+        ],
+      },
+    });
+  });
+
+  it('falls back to the decisions key when no name override is given', () => {
+    const decisions = {
+      entities: {
+        header: { preconditions: { 800125: [{ field: 'currency' }] } },
+      },
+    };
+    assert.deepEqual(buildEntityPreconditionsMap(decisions), {
+      header: { 800125: [{ field: 'currency' }] },
+    });
+  });
+
+  it('returns an empty object when no entity declares preconditions', () => {
+    assert.deepEqual(buildEntityPreconditionsMap({}), {});
+    assert.deepEqual(buildEntityPreconditionsMap({ entities: {} }), {});
+    assert.deepEqual(
+      buildEntityPreconditionsMap({ entities: { header: { name: 'Asset' } } }),
+      {},
+    );
+  });
+
+  it('normalizes an explicit-but-empty block to null to clear stale DB values', () => {
+    assert.deepEqual(
+      buildEntityPreconditionsMap({ entities: { header: { preconditions: {} } } }),
+      { header: null },
+    );
+    assert.deepEqual(
+      buildEntityPreconditionsMap({ entities: { header: { preconditions: null } } }),
+      { header: null },
+    );
+  });
+});
+
+describe('normalizePreconditions', () => {
+  it('returns null for empty, null, or malformed values', () => {
+    assert.equal(normalizePreconditions(null), null);
+    assert.equal(normalizePreconditions(undefined), null);
+    assert.equal(normalizePreconditions({}), null);
+    assert.equal(normalizePreconditions([]), null);
+    assert.equal(normalizePreconditions('nope'), null);
+  });
+
+  it('passes through a non-empty preconditions object unchanged', () => {
+    const block = { 800125: [{ field: 'currency' }] };
+    assert.equal(normalizePreconditions(block), block);
   });
 });
 

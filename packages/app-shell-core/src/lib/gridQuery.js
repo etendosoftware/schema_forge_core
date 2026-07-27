@@ -505,18 +505,15 @@ function createNullCriteria(fieldName, op) {
   return [{ fieldName, operator: op === 'isNull' ? 'isNull' : 'notNull' }];
 }
 
+// `inSet` ("Es cualquiera de") takes a manually-typed, comma-separated list of
+// codes with no hint about casing. `equals`/`inSet` are case-sensitive on the
+// backend, so typing a code in the wrong case silently matched nothing
+// (ETP-4609). Route through `iEquals` — the same case-insensitive operator
+// already used for the text-mode "Es" operator — OR-composed across items
+// via buildOrCriteria, since there is no native case-insensitive "in" operator.
 function generateInSetCriteria(val, fieldName) {
   const items = processInput(val);
-  let result;
-  if (items.length === 0) {
-    result = null;
-
-  } else if (items.length === 1) {
-    result = [{ fieldName, operator: 'equals', value: items[0] }];
-  } else {
-    result = [{ fieldName, operator: 'inSet', value: items.join(',') }];
-  }
-  return result;
+  return buildOrCriteria(items, fieldName, 'iEquals');
 }
 
 function buildOrCriteria(val, fieldName, op) {
