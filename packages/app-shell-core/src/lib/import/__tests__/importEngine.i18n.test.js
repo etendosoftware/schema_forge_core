@@ -37,6 +37,15 @@ describe('classifyImportError', () => {
     assert.equal(es.duplicate, true);
   });
 
+  it('maps a duplicate-username collision to its own kind, flagged actionable (duplicate:false) — the contact is not a duplicate, only the derived AD_User name is', () => {
+    // No "must be unique" wording, so it must NOT fall into the earlier duplicate-identifier
+    // branch (which is duplicate:true / benign-skip). Its own branch keeps it actionable.
+    const c = classifyImportError('A user with the same name already exists. Enter a different name for this user');
+    assert.equal(c.key, 'importErrorDuplicateUser');
+    assert.equal(c.duplicate, false);
+    assert.deepEqual(c.params, {});
+  });
+
   it('maps a value-too-long validation to its own kind', () => {
     const c = classifyImportError('Value too long. Length 48, maximum allowed 40');
     assert.equal(c.key, 'importErrorValueTooLong');
@@ -63,6 +72,7 @@ describe('classifyImportError', () => {
 const es = {
   importErrorRequiredField: (p) => `El campo "${p.field}" es obligatorio.`,
   importErrorDuplicateIdentifier: () => 'Ya existe un registro con este identificador.',
+  importErrorDuplicateUser: () => 'Ya existe un usuario con este nombre para el contacto. Use un nombre diferente.',
   importErrorValueTooLong: () => 'Un valor es demasiado largo.',
   importErrorGeneric: () => 'No se pudo importar esta fila. Abra el detalle para ver el reporte técnico.',
 };
@@ -97,6 +107,27 @@ describe('sendRow — translator-injected friendly messages', () => {
     assert.equal(result.error.message, 'Ya existe un registro con este identificador.');
     assert.ok(!result.error.message.includes('Business Partner'), `expected no raw AD text leak, got: ${result.error.message}`);
     assert.ok(result.error.raw.includes('must be unique'), `expected raw to keep the backend text, got: ${result.error.raw}`);
+  });
+
+  it('classifies a duplicate-username collision as an actionable FAILED (not DUPLICATE), with a friendly message and the raw text on error.raw — translator injected and not', async () => {
+    // Etendo's derived-username collision arrives as a top-level error.message, status 500, no
+    // .detail. duplicate:false means SEND_STATUS.FAILED (stays in the queue, counts toward
+    // failedCount) — never silently skipped like a benign already-exists row.
+    const rawText = 'A user with the same name already exists. Enter a different name for this user';
+    const postBatch = async () => ({ committed: false, error: { message: rawText, status: 500 } });
+
+    const withT = await sendRow([{ id: 'bp' }], { postBatch, translate });
+    assert.equal(withT.status, SEND_STATUS.FAILED);
+    assert.equal(withT.status !== SEND_STATUS.DUPLICATE, true);
+    assert.equal(withT.error.message, es.importErrorDuplicateUser());
+    assert.notEqual(withT.error.message, rawText);
+    assert.ok(withT.error.raw.includes('user with the same name already exists'), `expected raw to keep the backend text, got: ${withT.error.raw}`);
+
+    const noT = await sendRow([{ id: 'bp' }], { postBatch });
+    assert.equal(noT.status, SEND_STATUS.FAILED);
+    assert.equal(noT.error.message, 'A user with this name already exists for the contact. Try a different name.');
+    assert.notEqual(noT.error.message, rawText);
+    assert.ok(noT.error.raw.includes('user with the same name already exists'), `expected raw to keep the backend text, got: ${noT.error.raw}`);
   });
 
   it('falls back to the English default when the injected translator has no entry for the classified key (returns the key unchanged)', async () => {
