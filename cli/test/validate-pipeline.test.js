@@ -22,7 +22,10 @@ async function runOnFixtures(windowNames, opts = {}) {
     scope: windowNames,
     strict: opts.strict ?? false,
     skip: opts.skip ?? [],
-    root: join(FIXTURES, '..', '..', '..'), // repo root — not used because we override artifactsRoot below
+    // repo root — normally unused because we override artifactsRoot below, but
+    // F10/F18 resolve custom component paths relative to it, so tests that need
+    // a real tools/app-shell/src/windows/custom/<name>/ tree pass opts.root.
+    root: opts.root ?? join(FIXTURES, '..', '..', '..'),
     registryPath: opts.registryPath ?? join(FIXTURES, 'mock-registry.js'),
     // Override the artifacts root to point at our fixture directory
     _artifactsRoot: FIXTURES,
@@ -814,5 +817,36 @@ describe('ETP-3959 quality gates', () => {
     } finally {
       await rm(tmpRoot, { recursive: true, force: true });
     }
+  });
+});
+
+// ─── F18 — custom table `required` flag drift (ETP-4609 follow-up) ─────────
+// These fixtures need a real tools/app-shell/src/windows/custom/<name>/ tree
+// to resolve against, so `root` is overridden to the fixtures dir itself (the
+// custom components live under fixtures/pipeline-validator/tools/app-shell/...).
+
+describe('Rule F18 — custom table required-flag drift', () => {
+  it('BLOCK when a local column required flag drifts from the contract', async () => {
+    const result = await runOnFixtures(['window-f18-drift'], { root: FIXTURES });
+    const f18 = result.violations.find(v => v.rule === 'F18');
+    assert.ok(f18, 'F18 should fire when a custom column required flag does not match the contract');
+    assert.equal(f18.severity, 'BLOCK');
+    assert.match(f18.message, /'name'/);
+    assert.match(f18.message, /required=false/);
+    assert.match(f18.message, /required=true/);
+  });
+
+  it('passes when local required flags match the contract, ignoring unmapped and indeterminate columns', async () => {
+    const result = await runOnFixtures(['window-f18-ok'], { root: FIXTURES });
+    const f18 = result.violations.find(v => v.rule === 'F18');
+    assert.ok(!f18, 'F18 should not fire when required flags match (or cannot be statically resolved)');
+  });
+
+  it('is skipped when the window has no custom table override', async () => {
+    const result = await runOnFixtures(['window-f18-no-custom-table'], { root: FIXTURES });
+    const f18 = result.violations.find(v => v.rule === 'F18');
+    const f18Skip = result.skipped.find(s => s.rule === 'F18');
+    assert.ok(!f18, 'F18 should not fire for a window with no custom table dir');
+    assert.ok(!f18Skip, 'F18 should not even emit a skipped entry — nothing to check');
   });
 });

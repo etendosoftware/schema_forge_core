@@ -17,11 +17,12 @@
 
 import { readFile, readdir, access } from 'node:fs/promises';
 import { createHash } from 'node:crypto';
-import { join, dirname } from 'node:path';
+import { join, dirname, sep } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { execFile } from 'node:child_process';
 import { promisify } from 'node:util';
 import { needsMigration } from './migrations/index.js';
+import { collectSourceFiles, isJavaScriptModule, parseModuleSource, walkAst } from './quality-gate/checks/shared.js';
 
 const execFileAsync = promisify(execFile);
 
@@ -789,6 +790,171 @@ function collectFrontendLineFields(contract) {
   return fields;
 }
 
+/**
+ * F18: Hand-written custom table/field columns under
+ * tools/app-shell/src/windows/custom/<window>/ carry a local `required` flag
+ * that must be manually kept in sync with the real `required` value in that
+ * window's contract.json. This drifts silently whenever a field's required-ness
+ * changes upstream (or a column is copy-pasted from another field) and nobody
+ * updates the hardcoded copy (ETP-4609 follow-up).
+ *
+ * Detection: parse every non-test .js/.jsx file under the window's custom dir
+ * with @babel/parser, walk the AST for array literals that look like column/
+ * field descriptors (at least one element is an object with both a string
+ * `key` and a string `column` property — the signature shared by every known
+ * custom table/panel in the codebase, regardless of variable name or how deep
+ * the array literal is nested, e.g. inside a useMemo). For each element whose
+ * `key` matches a contract field `name` (searched across all frontendContract
+ * entities), compare the locally declared `required` (absent = false) against
+ * the contract field's `required`. A statically undeterminable local value
+ * (e.g. `...(cond ? { required: true } : {})`) is skipped rather than guessed.
+ *
+ * Only fires for windows that actually have a custom table override — windows
+ * relying on the generated table are correct by construction and skipped.
+ */
+async function ruleF18(artifactDir, artifactName, root = ROOT) {
+  const contractPath = join(artifactDir, 'contract.json');
+  if (!(await fileExists(contractPath))) return null;
+
+  const customDir = join(root, 'tools', 'app-shell', 'src', 'windows', 'custom', artifactName);
+  if (!(await dirExists(customDir))) return null; // no custom table override — nothing to check
+
+  const files = collectSourceFiles(
+    customDir,
+    (filePath) => isJavaScriptModule(filePath) && !filePath.split(sep).includes('__tests__'),
+  );
+  if (files.length === 0) return null;
+
+  let contract;
+  try {
+    contract = await readJSON(contractPath);
+  } catch {
+    return skipped('F18', artifactName, 'contract.json could not be parsed — F18 check skipped');
+  }
+
+  const fieldIndex = collectContractFieldIndex(contract);
+  if (fieldIndex.size === 0) return null;
+
+  for (const filePath of files) {
+    let entries;
+    try {
+      const source = await readFile(filePath, 'utf-8');
+      const ast = parseModuleSource(source, filePath);
+      entries = extractColumnEntries(ast);
+    } catch {
+      continue; // a single unparsable custom file must not fail the whole rule
+    }
+
+    for (const entry of entries) {
+      if (entry.required === 'indeterminate') continue;
+
+      const field = resolveContractField(fieldIndex, entry.key, entry.column);
+      if (!field) continue; // not a real contract field — pure custom render column
+
+      if (entry.required !== field.required) {
+        const relFile = filePath.startsWith(root) ? filePath.slice(root.length + 1) : filePath;
+        return violation(
+          'F18', artifactName, 'BLOCK',
+          `Custom table column '${entry.key}' in ${relFile} has required=${entry.required} ` +
+            `but contract.json field '${entry.key}' has required=${field.required}`,
+          `Update the 'required' flag on column '${entry.key}' in ${relFile} to match ` +
+            `artifacts/${artifactName}/contract.json (required: ${field.required}), or fix the ` +
+            `contract/decisions.json if the local value is the correct one.`,
+        );
+      }
+    }
+  }
+  return null;
+}
+
+/**
+ * Build an index of contract field name -> candidate matches (required + column + entity),
+ * searched across every entity in frontendContract (header, lines, etc.) — a custom table
+ * column may reference a field from any of them.
+ */
+function collectContractFieldIndex(contract) {
+  const entities = contract.frontendContract?.entities ?? {};
+  const index = new Map();
+  for (const [entityName, entity] of Object.entries(entities)) {
+    for (const field of entity.fields ?? []) {
+      if (!field?.name) continue;
+      const list = index.get(field.name) ?? [];
+      list.push({ required: !!field.required, column: field.column ?? null, entity: entityName });
+      index.set(field.name, list);
+    }
+  }
+  return index;
+}
+
+/**
+ * Resolve the contract field a local column entry refers to. When the same field
+ * `name` exists on more than one entity, disambiguate using the local `column`
+ * (AD column name) when available; otherwise fall back to the first match.
+ */
+function resolveContractField(fieldIndex, key, localColumn) {
+  const candidates = fieldIndex.get(key);
+  if (!candidates || candidates.length === 0) return null;
+  if (candidates.length === 1) return candidates[0];
+  if (localColumn) {
+    const byColumn = candidates.find(c => c.column === localColumn);
+    if (byColumn) return byColumn;
+  }
+  return candidates[0];
+}
+
+/**
+ * Walk a parsed AST and collect { key, column, required } entries from every
+ * array literal that looks like a column/field descriptor array (see ruleF18
+ * doc comment for the exact signature). `required` is `true`/`false` when it can
+ * be statically determined, `false` when the property is entirely absent, or the
+ * string `'indeterminate'` when present but not a plain boolean literal (e.g. a
+ * spread guarded by a runtime condition) — indeterminate entries must never be
+ * compared against the contract, only skipped.
+ */
+function extractColumnEntries(ast) {
+  const entries = [];
+  walkAst(ast, (node) => {
+    if (node.type !== 'ArrayExpression') return;
+    const objectElements = node.elements.filter(el => el && el.type === 'ObjectExpression');
+    const looksLikeColumnsArray = objectElements.some(
+      obj => hasStringProp(obj, 'key') && hasStringProp(obj, 'column'),
+    );
+    if (!looksLikeColumnsArray) return;
+
+    for (const obj of objectElements) {
+      const keyProp = findObjectProp(obj, 'key');
+      if (!keyProp || keyProp.value.type !== 'StringLiteral') continue;
+
+      const columnProp = findObjectProp(obj, 'column');
+      const column = columnProp && columnProp.value.type === 'StringLiteral' ? columnProp.value.value : null;
+
+      entries.push({ key: keyProp.value.value, column, required: resolveLocalRequired(obj) });
+    }
+  });
+  return entries;
+}
+
+function resolveLocalRequired(objectExpression) {
+  const requiredProp = findObjectProp(objectExpression, 'required');
+  if (requiredProp) {
+    return requiredProp.value.type === 'BooleanLiteral' ? requiredProp.value.value : 'indeterminate';
+  }
+  const hasSpread = objectExpression.properties.some(p => p.type === 'SpreadElement');
+  return hasSpread ? 'indeterminate' : false;
+}
+
+function hasStringProp(objectExpression, name) {
+  const prop = findObjectProp(objectExpression, name);
+  return !!prop && prop.value.type === 'StringLiteral';
+}
+
+function findObjectProp(objectExpression, name) {
+  return objectExpression.properties.find(p => p.type === 'ObjectProperty' && !p.computed && (
+    (p.key.type === 'Identifier' && p.key.name === name) ||
+    (p.key.type === 'StringLiteral' && p.key.value === name)
+  ));
+}
+
 // ---------------------------------------------------------------------------
 // Artifact discovery
 // ---------------------------------------------------------------------------
@@ -862,6 +1028,7 @@ async function runWindowChecks(artifactDir, artifactName, registryContent, root,
     { rule: 'F15', run: () => ruleF15(artifactDir, artifactName) },
     { rule: 'F16', run: () => ruleF16(artifactDir, artifactName) },
     { rule: 'F17', run: () => ruleF17(artifactDir, artifactName) },
+    { rule: 'F18', run: () => ruleF18(artifactDir, artifactName, root) },
   ], skipSet);
 }
 
