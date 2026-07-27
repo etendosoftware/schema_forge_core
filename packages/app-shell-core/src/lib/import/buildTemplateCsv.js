@@ -1,7 +1,4 @@
-function csvEscape(value) {
-  const s = String(value ?? '');
-  return /[",\n]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s;
-}
+import { csvField } from '../csv/csvSerializer.js';
 
 /**
  * Builds a blank (header-row-only) CSV template for a window's import
@@ -13,6 +10,6 @@ function csvEscape(value) {
  */
 export function buildTemplateCsv(fields) {
   return fields
-    .map((field) => csvEscape(field.aliases?.[0] ?? field.label ?? field.target))
+    .map((field) => csvField(field.aliases?.[0] ?? field.label ?? field.target))
     .join(',');
 }

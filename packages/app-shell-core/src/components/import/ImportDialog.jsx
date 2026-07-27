@@ -18,7 +18,38 @@ import { buildOperations } from '../../lib/import/buildOperations.js';
 import { runImport, sendRow, SEND_STATUS } from '../../lib/import/importEngine.js';
 import { buildTemplateCsv } from '../../lib/import/buildTemplateCsv.js';
 
-const DEFAULT_LABELS = { title: 'Import', revalidating: 'Revalidating rows…', downloadTemplate: 'Download CSV template' };
+// Root-level labels for ImportDialog's own chrome. `importButton` is a function of the
+// valid-row count, mirroring the (n) => string labels the confirm step already uses, so the
+// whole flow's button text is translatable rather than the hardcoded `Import ${n}` it was.
+const DEFAULT_LABELS = { title: 'Import', revalidating: 'Revalidating rows…', downloadTemplate: 'Download CSV template', importButton: (n) => `Import ${n}` };
+
+/**
+ * Shape of the optional `labels` prop — a NESTED object: root-level keys for this dialog's
+ * own chrome, plus one sub-slice per child component, each matching that child's own
+ * DEFAULT_LABELS. Every level is optional; any omitted key/slice falls back to the child's
+ * hardcoded English DEFAULT_LABELS. The functional app (etendo_schema_forge's ListView)
+ * builds this object from its useUI() dictionary and MUST match this shape exactly.
+ *
+ *   {
+ *     title, revalidating, downloadTemplate, importButton: (n) => string,   // this dialog
+ *     dropzone:     { dropHere, dropHint },                                  // ImportDropzone
+ *     progress:     { title, subtitle },                                     // ImportProgressStep
+ *     mapping:      { notImported, mappedSummary, editMatch, editTitle, save, cancel }, // ImportColumnMapping
+ *     confirm:      { title, willImport: (n) => string, willSkip: (n) => string, cancel, confirm }, // ImportConfirmStep
+ *     fileError:    { title, cancel, retry },                                // ImportFileErrorDialog
+ *     reviewQueue:  { filterAll, filterOk, filterError, skip, skipped, unskip, downloadErrors,
+ *                     status, statusOk, statusError, fieldErrorsTooltip, bulkApplyTitle,
+ *                     bulkApplyDescription, bulkApplyOnlyThis, bulkApplyAll, retry },  // ImportReviewQueue
+ *                     // NB: `retry` feeds ImportReviewQueue's separate `retryLabel` prop, not its DEFAULT_LABELS
+ *     systemError:  { title, subtitle, copy, copied, copyFailed, close, showReport, hideReport,
+ *                     rowData, requestSent, serverResponse },                 // ImportSystemErrorDialog
+ *   }
+ *
+ * Templated strings (mappedSummary's {mapped}/{total}, fieldErrorsTooltip's {fields},
+ * bulkApplyDescription's {count}/{raw}/{value}) keep their {placeholders} — each child fills
+ * them at render time. `translate` is a separate, plain (key, params) => string function
+ * (e.g. useUI's `ui`) injected into the send pipeline so backend errors get localized too.
+ */
 
 const STEP = { DROPZONE: 'dropzone', MAPPING: 'mapping', CONFIRM: 'confirm', SENDING: 'sending', FILE_ERROR: 'fileError', RESULT: 'result' };
 
@@ -40,7 +71,7 @@ function renameRowKeys(row, mapping) {
   return renamed;
 }
 
-export function ImportDialog({ open, onOpenChange, config, token, postBatch, simSearchFn, onImported, labels }) {
+export function ImportDialog({ open, onOpenChange, config, token, postBatch, simSearchFn, onImported, labels, translate }) {
   const text = { ...DEFAULT_LABELS, ...labels };
   const [step, setStep] = useState(STEP.DROPZONE);
   const [fileErrorMessage, setFileErrorMessage] = useState(null);
@@ -98,13 +129,17 @@ export function ImportDialog({ open, onOpenChange, config, token, postBatch, sim
   // which made `simSearch`'s own guard clause short-circuit to "no match" for every row
   // instead of actually querying — the descriptor then threw "country could not be
   // resolved" for every address-bearing row (confirmed via a real browser run).
+  // `translate` is threaded into the descriptor config too — a composite descriptor (e.g.
+  // Contacts) throws its own row-level errors (an unresolved country FK) and needs the app's
+  // translate fn to localize them, exactly like the send pipeline does for backend errors.
   const operationsConfig = useMemo(() => ({
     spec: config.spec,
     entity: config.entity,
     descriptorName: config.descriptor,
     targets: config.fields.map((f) => f.target),
     token,
-  }), [config.spec, config.entity, config.descriptor, config.fields, token]);
+    translate,
+  }), [config.spec, config.entity, config.descriptor, config.fields, token, translate]);
 
   // The real config shape (decisions.json → window.import, verified against
   // artifacts/contacts/decisions.json) is `dedupe: { scope, key: string[] }`, not a flat
@@ -240,6 +275,7 @@ export function ImportDialog({ open, onOpenChange, config, token, postBatch, sim
       ({ results } = await runImport(toSend.map((e) => e.row), {
         buildRowOperations: (row) => buildOperations(row, operationsConfig),
         postBatch,
+        translate,
         concurrency: config.concurrency,
         maxRows: config.maxRows,
         onProgress: (completed, total) => setProgress(Math.round((completed / total) * 100)),
@@ -251,7 +287,7 @@ export function ImportDialog({ open, onOpenChange, config, token, postBatch, sim
     }
     const okCount = results.filter((r) => r.status === 'ok').length;
     // A DUPLICATE result (the row's record already exists server-side, a unique-constraint
-    // rejection — see importEngine.js's isDuplicateKeyError) is not an actionable failure:
+    // rejection — see importEngine.js's classifyImportError) is not an actionable failure:
     // retrying would only repeat the identical rejection, and there's nothing for the user
     // to fix. Reported as a skipped entry (same treatment the pre-send in-file dedupe
     // already uses — greyed out, no retry/skip buttons, per ImportReviewQueue) rather than
@@ -289,12 +325,12 @@ export function ImportDialog({ open, onOpenChange, config, token, postBatch, sim
     onImported({ okCount, failedCount: trueFailures.length });
     if (okCount > 0) toast.success(`${okCount} records imported successfully`);
     if (duplicateResults.length > 0) toast.info(`${duplicateResults.length} row(s) skipped — already exist`);
-  }, [entries, operationsConfig, config.concurrency, config.maxRows, postBatch, onImported]);
+  }, [entries, operationsConfig, config.concurrency, config.maxRows, postBatch, onImported, translate]);
 
   const handleRetryEntryPostSend = useCallback(async (index) => {
     const entry = entries[index];
     const operations = await buildOperations(entry.row, operationsConfig);
-    const result = await sendRow(operations, { postBatch });
+    const result = await sendRow(operations, { postBatch, translate });
     setEntries((prev) => {
       const next = [...prev];
       if (result.status === 'ok') {
@@ -311,7 +347,7 @@ export function ImportDialog({ open, onOpenChange, config, token, postBatch, sim
     if (result.status !== 'ok' && result.status !== SEND_STATUS.DUPLICATE) {
       setSystemError({ message: result.error?.message || 'Unknown error', raw: result.error?.raw, row: entry.row, operations });
     }
-  }, [entries, operationsConfig, postBatch]);
+  }, [entries, operationsConfig, postBatch, translate]);
 
   const handleRetryFile = useCallback(() => {
     setFileErrorMessage(null);
@@ -328,7 +364,7 @@ export function ImportDialog({ open, onOpenChange, config, token, postBatch, sim
 
           {step === STEP.DROPZONE && (
             <div className="flex flex-col gap-2">
-              <ImportDropzone onFileSelected={handleFileSelected} data-testid="ImportDropzone__38a6c3" />
+              <ImportDropzone onFileSelected={handleFileSelected} labels={labels?.dropzone} data-testid="ImportDropzone__38a6c3" />
               <button
                 type="button"
                 className="self-center text-xs text-muted-foreground underline underline-offset-2 hover:text-foreground"
@@ -345,6 +381,7 @@ export function ImportDialog({ open, onOpenChange, config, token, postBatch, sim
               message={fileErrorMessage}
               onCancel={() => onOpenChange(false)}
               onRetry={handleRetryFile}
+              labels={labels?.fileError}
               data-testid="ImportFileErrorDialog__38a6c3" />
           )}
 
@@ -355,6 +392,7 @@ export function ImportDialog({ open, onOpenChange, config, token, postBatch, sim
                 importFields={config.fields}
                 mapping={mapping}
                 onApplyMapping={handleApplyMapping}
+                labels={labels?.mapping}
                 data-testid="ImportColumnMapping__38a6c3" />
               <div className="relative flex min-h-0 flex-1 flex-col">
                 {isRevalidating && (
@@ -376,6 +414,7 @@ export function ImportDialog({ open, onOpenChange, config, token, postBatch, sim
                   onUnskipEntry={handleUnskipEntry}
                   onApplyFkValue={handleApplyFkValue}
                   onDownloadErrors={() => downloadCsv(buildErrorsCsv(entries, headers, mapping), 'import-errors.csv')}
+                  labels={labels?.reviewQueue}
                   simSearchFn={simSearchFn}
                   token={token}
                   data-testid="ImportReviewQueue__38a6c3" />
@@ -387,7 +426,7 @@ export function ImportDialog({ open, onOpenChange, config, token, postBatch, sim
                   disabled={validCount === 0}
                   data-testid="ImportDialog__importButton"
                 >
-                  {`Import ${validCount}`}
+                  {text.importButton(validCount)}
                 </Button>
               </div>
             </div>
@@ -399,10 +438,11 @@ export function ImportDialog({ open, onOpenChange, config, token, postBatch, sim
               skipCount={skipCount}
               onCancel={() => setStep(STEP.MAPPING)}
               onConfirm={handleSend}
+              labels={labels?.confirm}
               data-testid="ImportConfirmStep__38a6c3" />
           )}
 
-          {step === STEP.SENDING && <ImportProgressStep percent={progress} data-testid="ImportProgressStep__38a6c3" />}
+          {step === STEP.SENDING && <ImportProgressStep percent={progress} labels={labels?.progress} data-testid="ImportProgressStep__38a6c3" />}
 
           {step === STEP.RESULT && (
             <div className="flex min-h-0 max-h-[70vh] min-w-0 flex-col gap-4">
@@ -418,7 +458,8 @@ export function ImportDialog({ open, onOpenChange, config, token, postBatch, sim
                   onUnskipEntry={handleUnskipEntry}
                   onApplyFkValue={handleApplyFkValue}
                   onDownloadErrors={() => downloadCsv(buildErrorsCsv(entries, headers, mapping), 'import-errors.csv')}
-                  retryLabel="Retry"
+                  retryLabel={labels?.reviewQueue?.retry ?? 'Retry'}
+                  labels={labels?.reviewQueue}
                   simSearchFn={simSearchFn}
                   token={token}
                   data-testid="ImportReviewQueue__38a6c3" />
@@ -430,7 +471,7 @@ export function ImportDialog({ open, onOpenChange, config, token, postBatch, sim
                   disabled={validCount === 0}
                   data-testid="ImportDialog__importButton"
                 >
-                  {`Import ${validCount}`}
+                  {text.importButton(validCount)}
                 </Button>
               </div>
             </div>
@@ -444,6 +485,7 @@ export function ImportDialog({ open, onOpenChange, config, token, postBatch, sim
         operations={systemError?.operations}
         raw={systemError?.raw}
         onClose={() => setSystemError(null)}
+        labels={labels?.systemError}
         data-testid="ImportSystemErrorDialog__38a6c3" />
     </>
   );
