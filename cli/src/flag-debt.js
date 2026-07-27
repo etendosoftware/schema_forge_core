@@ -115,12 +115,40 @@ const MS_PER_DAY = 24 * 60 * 60 * 1000;
 
 // ── Registry ────────────────────────────────────────────────────────────────
 
+/**
+ * Flattens a feature entry into the shape the scoring internals consume.
+ *
+ * The registry's unit of accounting is the FEATURE; the flag is a temporary
+ * attribute nested under it. Durable facts (paths, testSpecs, deferredItems)
+ * live on the feature and keep scoring after the flag is retired. Flag-borne
+ * facts flatten to `undefined` when there is no flag, which the existing
+ * dimensions already treat correctly: no symbols → nothing to grep as a touch
+ * point, no ttl → lifecycle scores 0. Retirement therefore LOWERS the score
+ * without deleting the accounting — the incentive the inversion exists for.
+ */
+export function normalizeFeature(entry) {
+  const flag = entry.flag || null;
+  return {
+    ...entry,
+    flag,
+    key: flag ? flag.key : null,
+    defaultValue: flag ? flag.defaultValue : null,
+    ttl: flag ? flag.ttl : undefined,
+    ttlNote: flag ? flag.ttlNote : null,
+    symbols: flag ? flag.symbols || [] : [],
+  };
+}
+
 export function loadRegistry(registryPath) {
   const raw = fs.readFileSync(registryPath, 'utf8');
   const registry = JSON.parse(raw);
-  if (!Array.isArray(registry.flags)) {
-    throw new Error(`${registryPath}: expected a "flags" array`);
+  if (!Array.isArray(registry.features)) {
+    throw new Error(`${registryPath}: expected a "features" array (v2 registry — the feature owns the entry, the flag is nested)`);
   }
+  for (const feature of registry.features) {
+    if (!feature.id) throw new Error(`${registryPath}: every feature needs an "id"`);
+  }
+  registry.features = registry.features.map(normalizeFeature);
   return registry;
 }
 
@@ -307,7 +335,7 @@ export function collectTouchPoints(flag, { roots, frameworkPaths }) {
       .map(([, dir]) => dir);
 
     for (const relative of walkFiles(rootDir, { skipPaths: nestedRoots })) {
-      const hits = findSymbolHits(path.join(rootDir, relative), flag.symbols || [flag.key]);
+      const hits = findSymbolHits(path.join(rootDir, relative), flag.symbols || []);
       if (hits.length === 0) continue;
       const bucket = classifyReference(relative, { ownedPaths, frameworkPaths, specPaths });
       if (bucket === 'owned' || bucket === 'framework') continue;
@@ -609,7 +637,9 @@ export function scoreFlag(flag, context) {
   const lifecycle = scoreLifecycle(flag, context.now);
   const deferred = scoreDeferredItems(flag);
   return {
+    id: flag.id,
     key: flag.key,
+    hasFlag: Boolean(flag.flag),
     description: flag.description || '',
     owner: flag.owner || 'unassigned',
     jira: flag.jira || null,
@@ -635,7 +665,7 @@ export function buildReport(registry, context) {
       backend: context.roots.backend,
       backendUnavailableReason: context.backendUnavailableReason || null,
     },
-    flags: registry.flags.map((flag) => scoreFlag(flag, context)),
+    features: registry.features.map((feature) => scoreFlag(feature, context)),
   };
 }
 
@@ -702,16 +732,19 @@ function renderSpecLines(tests) {
 export function renderConsole(report) {
   const lines = [];
   lines.push('');
-  lines.push(`Flag debt scorecard v0 — ${report.flags.length} flag(s) — ${report.generatedAt}`);
+  lines.push(`Feature debt scorecard — ${report.features.length} feature(s) — ${report.generatedAt}`);
   if (report.roots.backendUnavailableReason) {
     lines.push(`  warning: ${report.roots.backendUnavailableReason}`);
   }
   lines.push('');
 
-  for (const flag of report.flags) {
-    const meta = [flag.jira, `owner ${flag.owner}`, `default ${flag.defaultValue}`]
+  for (const flag of report.features) {
+    // The flag is presented as an attribute of the feature — when it is gone,
+    // the feature keeps its line and simply reads "shipped".
+    const flagMeta = flag.hasFlag ? `flag ${flag.key} · default ${flag.defaultValue}` : 'shipped — no flag';
+    const meta = [flag.jira, `owner ${flag.owner}`, flagMeta]
       .filter(Boolean).join(' · ');
-    lines.push(`${flag.key}  (${meta})`);
+    lines.push(`${flag.id}  (${meta})`);
     lines.push(`  ${flag.description}`);
     lines.push('');
 
@@ -768,11 +801,11 @@ export function renderConsole(report) {
     lines.push('');
   }
 
-  const width = Math.max(4, ...report.flags.map((flag) => flag.key.length));
-  lines.push(`  ${pad('FLAG', width)}  ${padStart('TOUCH', 6)}  ${padStart('TESTS', 6)}  `
+  const width = Math.max(7, ...report.features.map((flag) => flag.id.length));
+  lines.push(`  ${pad('FEATURE', width)}  ${padStart('TOUCH', 6)}  ${padStart('TESTS', 6)}  `
     + `${padStart('COV', 5)}  ${padStart('LIFE', 5)}  ${padStart('OPEN', 5)}  ${padStart('TOTAL', 6)}`);
-  for (const flag of report.flags) {
-    lines.push(`  ${pad(flag.key, width)}  ${padStart(flag.touchPoints.points, 6)}  `
+  for (const flag of report.features) {
+    lines.push(`  ${pad(flag.id, width)}  ${padStart(flag.touchPoints.points, 6)}  `
       + `${padStart(flag.tests.points, 6)}  ${padStart(flag.coverage.points, 5)}  `
       + `${padStart(flag.lifecycle.points, 5)}  ${padStart(flag.deferred.points, 5)}  `
       + `${padStart(flag.total, 6)}`);
@@ -891,7 +924,7 @@ function htmlFlagCard(flag) {
   return `<section class="card">
   <header>
     <div class="ident">
-      <h2><code>${escapeHtml(flag.key)}</code></h2>
+      <h2><code>${escapeHtml(flag.id)}</code></h2>
       <p class="desc">${escapeHtml(flag.description)}</p>
     </div>
     <div class="score">
@@ -1018,10 +1051,10 @@ export function renderHtml(report) {
 <body>
 <main>
   <h1>Flag debt scorecard <span class="muted">v0</span></h1>
-  <p class="muted">Generated ${escapeHtml(report.generatedAt)} · ${report.flags.length} flag(s)${
+  <p class="muted">Generated ${escapeHtml(report.generatedAt)} · ${report.features.length} feature(s)${
     report.roots.backendUnavailableReason ? ` · ${escapeHtml(report.roots.backendUnavailableReason)}` : ''
   }</p>
-  ${report.flags.map(htmlFlagCard).join('\n')}
+  ${report.features.map(htmlFlagCard).join('\n')}
   <footer>Higher is worse. Report only — v0 never fails a build. Scale and rules: docs/flag-debt.md</footer>
 </main>
 </body>
@@ -1075,9 +1108,9 @@ export function main(argv = process.argv.slice(2), { stdout = process.stdout } =
   const registryPath = options.registry || path.join(options.repoRoot, REGISTRY_FILENAME);
   const registry = loadRegistry(registryPath);
   if (options.flag) {
-    registry.flags = registry.flags.filter((flag) => flag.key === options.flag);
-    if (registry.flags.length === 0) {
-      stdout.write(`No flag "${options.flag}" in ${registryPath}\n`);
+    registry.features = registry.features.filter((feature) => feature.id === options.flag || feature.key === options.flag);
+    if (registry.features.length === 0) {
+      stdout.write(`No feature or flag "${options.flag}" in ${registryPath}\n`);
       return 0;
     }
   }

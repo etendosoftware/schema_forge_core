@@ -29,6 +29,7 @@ import {
   scoreFlag,
   buildReport,
   renderConsole,
+  normalizeFeature,
   renderHtml,
   parseArgs,
   main,
@@ -71,13 +72,32 @@ const FLAG = {
   },
 };
 
+/**
+ * Converts the flat fixture shape the assertions use into the v2 nested entry:
+ * the FEATURE owns the entry, the flag is an attribute under `flag`.
+ */
+function nest(flat) {
+  const { key, ttl, ttlNote, defaultValue, symbols, ...feature } = flat;
+  return {
+    id: flat.id || `${key}-feature`,
+    ...feature,
+    flag: { key, ttl, ttlNote, defaultValue, symbols },
+  };
+}
+
 function registryFile(flags = [FLAG]) {
   return {
-    version: 1,
+    version: 2,
     roots: { frontend: '.', backend: 'modules/backend' },
     conventions: { frameworkPaths: ['app/lib/flags/'] },
-    flags,
+    features: flags.map(nest),
   };
+}
+
+/** registryFile + the normalization loadRegistry would apply — for direct buildReport calls. */
+function normalizedRegistry(flags = [FLAG]) {
+  const raw = registryFile(flags);
+  return { ...raw, features: raw.features.map(normalizeFeature) };
 }
 
 /**
@@ -133,14 +153,15 @@ after(() => {
 describe('loadRegistry', () => {
   it('reads a registry from disk', () => {
     const registry = loadRegistry(join(root, REGISTRY_FILENAME));
-    assert.equal(registry.flags.length, 1);
-    assert.equal(registry.flags[0].key, 'tenant-upgrade');
+    assert.equal(registry.features.length, 1);
+    assert.equal(registry.features[0].id, 'tenant-upgrade-feature');
+    assert.equal(registry.features[0].key, 'tenant-upgrade');
   });
 
   it('rejects a registry with no flags array', () => {
     const bad = join(root, 'bad-registry.json');
     writeFileSync(bad, JSON.stringify({ version: 1 }));
-    assert.throws(() => loadRegistry(bad), /expected a "flags" array/);
+    assert.throws(() => loadRegistry(bad), /expected a "features" array/);
   });
 
   it('propagates a parse error rather than scoring nothing silently', () => {
@@ -827,13 +848,46 @@ describe('scoreFlag and buildReport', () => {
     assert.equal(scoreFlag(orphan, context()).owner, 'unassigned');
   });
 
+  it('keeps scoring a feature after its flag is retired', () => {
+    // The invariant the feature/flag inversion exists for: deleting the nested
+    // `flag` must LOWER the score (touch points and lifecycle vanish — there is
+    // nothing left to retire and no expiry to miss) while the durable debt
+    // (declared-but-missing specs, deferred decisions) keeps scoring. If this
+    // ever breaks, retiring a flag deletes the accounting instead of the debt.
+    const withFlag = { ...FLAG, ttl: '2000-01-01' }; // long overdue: lifecycle > 0
+    const retiredEntry = nest(withFlag);
+    delete retiredEntry.flag;
+    const retired = normalizeFeature(retiredEntry);
+    const live = normalizeFeature(nest(withFlag));
+
+    const liveScore = scoreFlag(live, context());
+    const retiredScore = scoreFlag(retired, context());
+
+    assert.equal(retiredScore.hasFlag, false);
+    assert.equal(retiredScore.key, null);
+    assert.equal(retiredScore.touchPoints.points, 0);
+    assert.equal(retiredScore.touchPoints.files.length, 0);
+    assert.equal(retiredScore.lifecycle.points, 0);
+    // Durable dimensions are untouched by retirement.
+    assert.equal(retiredScore.tests.points, liveScore.tests.points);
+    assert.equal(retiredScore.deferred.points, liveScore.deferred.points);
+    // Retirement can only lower the total, never raise it.
+    assert.ok(retiredScore.total <= liveScore.total);
+    // And the console names the state instead of showing an empty flag.
+    const output = renderConsole(buildReport(
+      { ...registryFile(), features: [retired] },
+      context()
+    ));
+    assert.match(output, /shipped — no flag/);
+  });
+
   it('scores every flag and records the backend warning', () => {
-    const report = buildReport(registryFile(), {
+    const report = buildReport(normalizedRegistry(), {
       ...context(),
       backendUnavailableReason: 'backend module not found',
     });
-    assert.equal(report.flags.length, 1);
-    assert.equal(report.version, 1);
+    assert.equal(report.features.length, 1);
+    assert.equal(report.version, 2);
     assert.match(report.roots.backendUnavailableReason, /backend module not found/);
     assert.match(report.generatedAt, /^\d{4}-\d{2}-\d{2}T/);
   });
@@ -843,7 +897,7 @@ describe('rendering', () => {
   let report;
 
   beforeEach(() => {
-    report = buildReport(registryFile(), context());
+    report = buildReport(normalizedRegistry(), context());
   });
 
   it('renders every dimension and a summary row in the console output', () => {
@@ -894,7 +948,7 @@ describe('rendering', () => {
           { id: 'typo-kind', kind: 'precondtion', note: 'misspelled kind' },
         ],
       };
-      const oddReport = () => buildReport(registryFile([oddFlag]), context({ flags: [oddFlag] }));
+      const oddReport = () => buildReport(normalizedRegistry([oddFlag]), context({ flags: [oddFlag] }));
 
       it('says on the console that a declared value was ignored, and shows it', () => {
         const output = renderConsole(oddReport());
@@ -912,7 +966,7 @@ describe('rendering', () => {
       });
 
       it('still totals the derived scores, not the declared ones', () => {
-        const scored = oddReport().flags[0];
+        const scored = oddReport().features[0];
         assert.equal(scored.deferred.points, POINTS.deferredItemKind.open * 2);
       });
     });
@@ -934,7 +988,7 @@ describe('rendering', () => {
     });
 
     it('shows the deferred points in the summary row and the total', () => {
-      const scored = deferredReport().flags[0];
+      const scored = deferredReport().features[0];
       assert.equal(scored.deferred.points, 5 + 6 + 1);
       const output = renderConsole(deferredReport());
       assert.ok(output.includes(String(scored.total)));
@@ -948,7 +1002,7 @@ describe('rendering', () => {
 
     it('escapes a deferred note so it cannot inject markup', () => {
       const hostile = { ...FLAG, deferredItems: [{ id: 'x', kind: 'open', note: '<img src=x onerror=alert(1)>' }] };
-      const html = renderHtml(buildReport(registryFile([hostile]), context({ flags: [hostile] })));
+      const html = renderHtml(buildReport(normalizedRegistry([hostile]), context({ flags: [hostile] })));
       assert.ok(!html.includes('<img src=x'));
       assert.ok(html.includes('&lt;img'));
     });
@@ -1026,13 +1080,13 @@ describe('the CLI', () => {
   it('narrows the report to a single flag', () => {
     const stdout = capture();
     assert.equal(main(['--root', root, '--flag', 'tenant-upgrade'], { stdout }), 0);
-    assert.match(stdout.text, /1 flag\(s\)/);
+    assert.match(stdout.text, /1 feature\(s\)/);
   });
 
   it('says so, without failing, when the named flag is unknown', () => {
     const stdout = capture();
     assert.equal(main(['--root', root, '--flag', 'ghost'], { stdout }), 0);
-    assert.match(stdout.text, /No flag "ghost"/);
+    assert.match(stdout.text, /No feature or flag "ghost"/);
   });
 
   it('writes the JSON and HTML reports on request', () => {
@@ -1042,6 +1096,6 @@ describe('the CLI', () => {
     assert.match(stdout.text, /HTML written to/);
 
     const written = JSON.parse(readFileSync(join(root, 'flag-debt.json'), 'utf8'));
-    assert.equal(written.flags[0].key, 'tenant-upgrade');
+    assert.equal(written.features[0].key, 'tenant-upgrade');
   });
 });
