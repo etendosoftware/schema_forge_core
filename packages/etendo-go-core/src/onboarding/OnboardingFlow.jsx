@@ -122,7 +122,12 @@ export function OnboardingFlow({ steps = [], config = {} }) {
     }
   }, [apiBase, goToStep, config.defaultForm, steps]);
 
-  // Route by environments list: 0 -> profile (restore draft), 1+ -> loginEnvironment and redirect
+  // Route by environments list: 0 -> profile (restore draft), 1+ -> auto-login and
+  // redirect. Signing in never stops on a chooser: an account that owns several
+  // environments returns to the one it last used, and changes environment from
+  // inside the app instead. `sf_last_environment` is deliberately outside
+  // ENVIRONMENT_SESSION_KEYS so logging out does not forget the choice; when it
+  // names an environment the account no longer owns, the first one stands in.
   const routeByEnvironments = useCallback(async (authToken) => {
     setLoadingEnvs(true);
     try {
@@ -131,9 +136,9 @@ export function OnboardingFlow({ steps = [], config = {} }) {
       if (envs.length === 0) {
         await restoreOnboardingDraft(authToken);
       } else {
-        // Auto-login to first environment
         try {
-          const env = envs[0];
+          const lastUsedId = localStorage.getItem('sf_last_environment');
+          const env = envs.find((candidate) => candidate.clientId === lastUsedId) || envs[0];
           trackOnboarding(config, 'onboarding_environment_enter_submitted', {
             action: 'enter_environment',
             status: 'started',
