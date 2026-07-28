@@ -339,3 +339,60 @@ describe('AuthContext — windowAccess/capabilities (ETP-4520)', () => {
     expect(result.current.capabilities).toEqual({ showAccountingFields: false });
   });
 });
+
+// ETP-4576 cycle 3 — in-memory csrfToken. The CSRF token backing the
+// `X-Go-CSRF` header (ADR-0001) is issued by the backend in session
+// responses and must live ONLY in memory, never in `session`/authStorage —
+// unlike the legacy bearer token it replaces for unsafe-method requests.
+describe('AuthContext — csrfToken (ETP-4576)', () => {
+  it('defaults csrfToken to null before any change', () => {
+    const { result } = renderHook(() => useAuth(), { wrapper: wrapperWith() });
+
+    expect(result.current.csrfToken).toBeNull();
+  });
+
+  it('exposes setCsrfToken in the context value and updates csrfToken when called', () => {
+    const { result } = renderHook(() => useAuth(), { wrapper: wrapperWith() });
+
+    expect(typeof result.current.setCsrfToken).toBe('function');
+
+    act(() => {
+      result.current.setCsrfToken('csrf-abc123');
+    });
+
+    expect(result.current.csrfToken).toBe('csrf-abc123');
+  });
+
+  it('clears csrfToken back to null on logout', () => {
+    const { result } = renderHook(() => useAuth(), { wrapper: wrapperWith() });
+
+    act(() => {
+      result.current.setCsrfToken('csrf-abc123');
+    });
+    expect(result.current.csrfToken).toBe('csrf-abc123');
+
+    act(() => {
+      result.current.logout();
+    });
+
+    expect(result.current.csrfToken).toBeNull();
+  });
+
+  it('never persists csrfToken into authStorage — it is memory-only, not part of session', () => {
+    const storage = createMemoryAuthStorage();
+    const { result } = renderHook(() => useAuth(), {
+      wrapper: ({ children }) => <AuthProvider storage={storage}>{children}</AuthProvider>,
+    });
+
+    act(() => {
+      result.current.setCsrfToken('csrf-should-not-persist');
+    });
+    expect(result.current.csrfToken).toBe('csrf-should-not-persist');
+
+    // The underlying storage is only ever written to via persistSession()
+    // (session/logout/selectRole/selectOrg) — csrfToken must never travel
+    // through that path, under any session key.
+    const persisted = storage.read();
+    expect(JSON.stringify(persisted)).not.toContain('csrf-should-not-persist');
+  });
+});
