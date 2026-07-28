@@ -1,6 +1,11 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { createLocalAuthStorage, createMemoryAuthStorage, normalizeAuthSession } from '../session.js';
+import {
+  createLocalAuthStorage,
+  createMemoryAuthStorage,
+  normalizeAuthSession,
+  purgeLegacyAuthStorage,
+} from '../session.js';
 
 function createFakeStorage(initial = {}) {
   const data = new Map(Object.entries(initial));
@@ -87,4 +92,60 @@ test('local auth storage clear is a no-op without a storage backend', () => {
   const storage = createLocalAuthStorage({ storage: null });
   assert.doesNotThrow(() => storage.clear());
   assert.deepEqual(storage.read(), normalizeAuthSession());
+});
+
+const LEGACY_AUTH_KEYS = [
+  'sf_auth_token',
+  'sf_auth_user',
+  'sf_auth_client_id',
+  'sf_auth_client_name',
+  'sf_auth_rolelist',
+  'sf_auth_selected_role',
+  'sf_auth_selected_org',
+  'sf_platform_token',
+  'sf_platform_auth_method',
+];
+
+test('purgeLegacyAuthStorage removes every legacy key and leaves unrelated keys intact', () => {
+  const seed = Object.fromEntries(LEGACY_AUTH_KEYS.map((key) => [key, 'value']));
+  const backing = createFakeStorage({ ...seed, unrelated_key: 'kept' });
+
+  purgeLegacyAuthStorage(backing);
+
+  for (const key of LEGACY_AUTH_KEYS) {
+    assert.equal(backing.getItem(key), null, `expected ${key} to be purged`);
+  }
+  assert.equal(backing.getItem('unrelated_key'), 'kept');
+});
+
+test('purgeLegacyAuthStorage clears the orphan sf_auth_client_name key', () => {
+  // sf_auth_client_name is written by the onboarding flow but the existing
+  // clear() never removes it (SESSION_KEYS has no clientName entry) — this
+  // new function exists precisely to close that gap.
+  const backing = createFakeStorage({ sf_auth_client_name: 'Acme Corp' });
+
+  purgeLegacyAuthStorage(backing);
+
+  assert.equal(backing.getItem('sf_auth_client_name'), null);
+});
+
+test('purgeLegacyAuthStorage does not throw when the storage is empty', () => {
+  const backing = createFakeStorage();
+  assert.doesNotThrow(() => purgeLegacyAuthStorage(backing));
+});
+
+test('purgeLegacyAuthStorage is a safe no-op when storage is null', () => {
+  assert.doesNotThrow(() => purgeLegacyAuthStorage(null));
+});
+
+test('purgeLegacyAuthStorage swallows exceptions thrown mid-purge by removeItem', () => {
+  let calls = 0;
+  const flakyStorage = {
+    removeItem: (key) => {
+      calls += 1;
+      if (calls === 3) throw new Error('storage unavailable');
+    },
+  };
+
+  assert.doesNotThrow(() => purgeLegacyAuthStorage(flakyStorage));
 });
