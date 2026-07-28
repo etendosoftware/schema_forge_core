@@ -859,66 +859,111 @@ async function ruleF18(artifactDir, artifactName, root = ROOT, allowlist = []) {
   if (fieldIndex.size === 0) return null;
 
   const parsedCache = new Map(); // filePath -> ast | null
-  const parseFile = async (filePath) => {
-    if (parsedCache.has(filePath)) return parsedCache.get(filePath);
-    let ast = null;
-    try {
-      const source = await readFile(filePath, 'utf-8');
-      ast = parseModuleSource(source, filePath);
-    } catch {
-      ast = null; // a single unparsable custom file must not fail the whole rule
-    }
-    parsedCache.set(filePath, ast);
-    return ast;
-  };
+  const sharedFiles = await collectF18SharedFiles(primaryFiles, root, parsedCache);
+  const allFiles = [...primaryFiles, ...sharedFiles];
 
+  for (const filePath of allFiles) {
+    const ast = await parseF18File(filePath, parsedCache);
+    if (!ast) continue;
+
+    const fileViolation = findF18RequiredMismatch(filePath, ast, fieldIndex, artifactName, allowlist, root);
+    if (fileViolation) return fileViolation;
+  }
+  return null;
+}
+
+/**
+ * Parse a single custom file's source into an AST, caching the result (including
+ * parse failures, cached as `null`) so repeated lookups across the primary-files
+ * pass and the shared-files pass do not re-read/re-parse the same file. A single
+ * unparsable custom file must not fail the whole rule, so parse errors resolve to
+ * `null` rather than throwing.
+ */
+async function parseF18File(filePath, parsedCache) {
+  if (parsedCache.has(filePath)) return parsedCache.get(filePath);
+  let ast = null;
+  try {
+    const source = await readFile(filePath, 'utf-8');
+    ast = parseModuleSource(source, filePath);
+  } catch {
+    ast = null;
+  }
+  parsedCache.set(filePath, ast);
+  return ast;
+}
+
+/**
+ * Trace one import hop from each of the window's primary custom files (see
+ * ruleF18 doc comment, location #3) and return the set of resolved files that
+ * land inside tools/app-shell/src/windows/custom/shared/.
+ */
+async function collectF18SharedFiles(primaryFiles, root, parsedCache) {
   const sharedDir = join(root, 'tools', 'app-shell', 'src', 'windows', 'custom', 'shared');
   const sharedFiles = new Set();
   for (const filePath of primaryFiles) {
-    const ast = await parseFile(filePath);
+    const ast = await parseF18File(filePath, parsedCache);
     if (!ast) continue;
     for (const target of await resolveSharedImportTargets(ast, filePath, sharedDir, root)) {
       sharedFiles.add(target);
     }
   }
+  return sharedFiles;
+}
 
-  const allFiles = [...primaryFiles, ...sharedFiles];
+/**
+ * Extract column/field descriptor entries from one already-parsed custom file
+ * and return the first `required` mismatch against the contract as a violation,
+ * or `null` when the file has no entries, no matching contract field, or is
+ * fully in sync (including allowlisted divergences). A single unparsable file
+ * must not fail the whole rule, so an extraction error also resolves to `null`.
+ */
+function findF18RequiredMismatch(filePath, ast, fieldIndex, artifactName, allowlist, root) {
+  let entries;
+  try {
+    entries = extractColumnEntries(ast);
+  } catch {
+    return null;
+  }
 
-  for (const filePath of allFiles) {
-    const ast = await parseFile(filePath);
-    if (!ast) continue;
-
-    let entries;
-    try {
-      entries = extractColumnEntries(ast);
-    } catch {
-      continue; // a single unparsable custom file must not fail the whole rule
-    }
-
-    for (const entry of entries) {
-      if (entry.required === 'indeterminate') continue;
-
-      const field = resolveContractField(fieldIndex, entry.key, entry.column);
-      if (!field) continue; // not a real contract field — pure custom render column
-
-      if (isF18Allowlisted(allowlist, artifactName, entry.key)) continue;
-
-      if (entry.required !== field.required) {
-        const relFile = filePath.startsWith(root) ? filePath.slice(root.length + 1) : filePath;
-        return violation(
-          'F18', artifactName, 'BLOCK',
-          `Custom table column '${entry.key}' in ${relFile} has required=${entry.required} ` +
-            `but contract.json field '${entry.key}' has required=${field.required}`,
-          `Update the 'required' flag on column '${entry.key}' in ${relFile} to match ` +
-            `artifacts/${artifactName}/contract.json (required: ${field.required}), or fix the ` +
-            `contract/decisions.json if the local value is the correct one. If this divergence ` +
-            `is intentional, add { "artifact": "${artifactName}", "key": "${entry.key}", "reason": "..." } ` +
-            `to cli/src/validate-pipeline-f18-allowlist.json instead.`,
-        );
-      }
+  for (const entry of entries) {
+    const mismatch = evaluateF18Entry(entry, fieldIndex, artifactName, allowlist);
+    if (mismatch) {
+      const relFile = filePath.startsWith(root) ? filePath.slice(root.length + 1) : filePath;
+      return buildF18Violation(artifactName, relFile, entry.key, entry.required, mismatch.required);
     }
   }
   return null;
+}
+
+/**
+ * Decide whether a single column entry is a reportable `required` mismatch.
+ * Returns the matched contract field (so the caller has its `required` value
+ * for the message) when it diverges and is not allowlisted, otherwise `null`.
+ */
+function evaluateF18Entry(entry, fieldIndex, artifactName, allowlist) {
+  if (entry.required === 'indeterminate') return null;
+
+  const field = resolveContractField(fieldIndex, entry.key, entry.column);
+  if (!field) return null; // not a real contract field — pure custom render column
+
+  if (isF18Allowlisted(allowlist, artifactName, entry.key)) return null;
+
+  if (entry.required === field.required) return null;
+
+  return field;
+}
+
+function buildF18Violation(artifactName, relFile, key, localRequired, contractRequired) {
+  return violation(
+    'F18', artifactName, 'BLOCK',
+    `Custom table column '${key}' in ${relFile} has required=${localRequired} ` +
+      `but contract.json field '${key}' has required=${contractRequired}`,
+    `Update the 'required' flag on column '${key}' in ${relFile} to match ` +
+      `artifacts/${artifactName}/contract.json (required: ${contractRequired}), or fix the ` +
+      `contract/decisions.json if the local value is the correct one. If this divergence ` +
+      `is intentional, add { "artifact": "${artifactName}", "key": "${key}", "reason": "..." } ` +
+      `to cli/src/validate-pipeline-f18-allowlist.json instead.`,
+  );
 }
 
 const F18_CUSTOM_FILE_PREDICATE = (filePath) =>
