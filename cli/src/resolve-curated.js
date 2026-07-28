@@ -229,6 +229,12 @@ const FIELD_DECISION_COPY_PROPS = [
   // via POST /sws/neo/<createSpec>/<createEntity> with { name }, then auto-selected.
   'createSpec',
   'createEntity',
+  // ETP-4520 — names a capability key (e.g. "showAccountingFields") from the
+  // SFWindowAccessMap webhook's `capabilities` map. Opt-in: absent = always
+  // visible (no behavior change). When present, the field is omitted entirely
+  // (not disabled/hidden via CSS) from the grid column and from any
+  // statusPill that references it, whenever useHasCapability(key) is false.
+  'visibleWhenCapability',
 ];
 
 const FIELD_RAW_COPY_PROPS = [
