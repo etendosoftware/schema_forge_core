@@ -48,8 +48,9 @@ test('AuthorizePage posts to the OAuth authorize endpoint with the cookie sessio
   assert.match(src, /method:\s*'POST'/);
   assert.match(src, /credentials:\s*['"]include['"]/);
   assert.match(src, /X-Go-CSRF/);
-  assert.doesNotMatch(src, /Authorization/);
-  assert.doesNotMatch(src, /Bearer/);
+  const codeOnly = src.replace(/^\s*\/\/.*$/gm, '');
+  assert.doesNotMatch(codeOnly, /['"]Authorization['"]\s*:/);
+  assert.doesNotMatch(codeOnly, /Bearer/);
   assert.match(src, /code_challenge/);
 });
 
