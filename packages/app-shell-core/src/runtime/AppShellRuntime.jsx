@@ -18,8 +18,15 @@ function DefaultLoginRedirect({ loginPath }) {
   );
 }
 
-export function AuthGate({ children, loginPath = '/login', fallback }) {
-  const { isAuthenticated } = useAuth();
+export function AuthGate({ children, loginPath = '/login', fallback, bootingFallback = null }) {
+  const { isAuthenticated, status } = useAuth();
+  // ETP-4576 — hosts that opt into the cookie-session restore (via
+  // auth.restoreSession) go through a real 'booting' state first; render
+  // this instead of falling through to the unauthenticated redirect, or
+  // every reload would flash a login screen before the restore resolves.
+  // Hosts that don't pass restoreSession never see 'booting' (status
+  // resolves synchronously), so this branch is a no-op for them.
+  if (status === 'booting') return bootingFallback;
   if (isAuthenticated) return children;
   return fallback || <DefaultLoginRedirect loginPath={loginPath} data-testid="DefaultLoginRedirect__b517b2" />;
 }
@@ -30,6 +37,7 @@ function renderRoute(route, auth) {
     : <AuthGate
     loginPath={auth.loginPath}
     fallback={auth.unauthenticatedFallback}
+    bootingFallback={auth.bootingFallback}
     data-testid="AuthGate__b517b2">{route.element}</AuthGate>;
 
   return (
@@ -62,6 +70,7 @@ export function AppShellProviders({
         initialSession={auth?.initialSession}
         onSessionChange={auth?.onSessionChange}
         fetchWindowAccess={auth?.fetchWindowAccess}
+        restoreSession={auth?.restoreSession}
         data-testid="AuthProvider__b517b2">
         <DataProvider
           cache={data?.cache}
@@ -146,6 +155,7 @@ export function AppShellRuntime({
               <AuthGate
                 loginPath={runtimeAuth.loginPath}
                 fallback={runtimeAuth.unauthenticatedFallback}
+                bootingFallback={runtimeAuth.bootingFallback}
                 data-testid="AuthGate__b517b2">
                 <Layout
                   menuGroups={menuGroups || runtime.menuGroups}

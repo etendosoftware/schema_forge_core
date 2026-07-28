@@ -222,6 +222,11 @@ test('AppShellRuntime shows the protected route content once auth.restoreSession
     />
   );
 
+  // Flush the deferred microtask so resolveRestore is assigned before we call it.
+  await act(async () => {
+    await Promise.resolve();
+  });
+
   expect(screen.queryByTestId('protected')).not.toBeInTheDocument();
 
   await act(async () => {
@@ -262,7 +267,7 @@ test('AppShellRuntime falls through from booting to the unauthenticated fallback
   expect(screen.getByTestId('location')).toHaveTextContent('/');
 
   await waitFor(() => {
-    expect(screen.getByTestId('location')).toHaveTextContent('/login');
+    expect(screen.getByTestId('login-fallback')).toBeInTheDocument();
   });
   expect(screen.queryByTestId('protected')).not.toBeInTheDocument();
 });
@@ -292,6 +297,11 @@ test('AppShellRuntime threads auth.bootingFallback down to the route AuthGate al
       }}
     />
   );
+
+  // Flush the deferred microtask so rejectRestore is assigned before we call it.
+  await act(async () => {
+    await Promise.resolve();
+  });
 
   expect(screen.getByTestId('loading')).toBeInTheDocument();
   expect(screen.queryByTestId('login-fallback')).not.toBeInTheDocument();
