@@ -7,6 +7,9 @@ import { fileURLToPath } from 'node:url';
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const componentsDir = join(__dirname, '..', 'src', 'onboarding', 'components');
 const mockup = readFileSync(join(componentsDir, 'SetupPreviewMockup.jsx'), 'utf8');
+// Menu icons and skeleton primitives (Bar, Checkbox, TableRow, MENU_GROUPS...)
+// live in the shared module reused by SetupPreviewMockup and AuthPreviewMockup.
+const sharedParts = readFileSync(join(componentsDir, 'dashboardSkeletonParts.jsx'), 'utf8');
 
 // ETP-4445 — the onboarding right panel is a live skeleton preview of the app
 // dashboard. These tests pin down the behavior that matters and that a future
@@ -45,9 +48,11 @@ describe('SetupPreviewMockup (ETP-4445)', () => {
   });
 
   it('uses the same phosphor menu icons as the real app sidebar', () => {
-    assert.match(mockup, /from '@phosphor-icons\/react'/);
+    // Icons live in the shared dashboardSkeletonParts module; SetupPreviewMockup
+    // still consumes them via MENU_GROUPS/RailMenuItem.
+    assert.match(sharedParts, /from '@phosphor-icons\/react'/);
     for (const icon of ['House', 'Star', 'IdentificationCard', 'TrendUp', 'Receipt', 'Package', 'Bank', 'Plug', 'Gear', 'Flask']) {
-      assert.match(mockup, new RegExp(`\\b${icon}\\b`), `expected phosphor icon ${icon}`);
+      assert.match(sharedParts, new RegExp(`\\b${icon}\\b`), `expected phosphor icon ${icon}`);
     }
   });
 
