@@ -94,7 +94,15 @@ function getOperatorsForColumn(col, mode) {
 }
 
 function makeEmptyRow() {
-  return { field: '', operator: '', value: '' };
+  return { field: '', operator: '', value: '', _rowKey: crypto.randomUUID() };
+}
+
+// External values (e.g. loaded from a saved preset) don't carry a `_rowKey`,
+// so mint one on load — gives each condition row a stable React key that
+// survives row removal, instead of the array index (see IdentifierMultiPicker
+// precedent in OcrLinesReviewModal.jsx for the same pattern).
+function ensureRowKeys(conditions) {
+  return conditions.map((c) => (c._rowKey ? c : { ...c, _rowKey: crypto.randomUUID() }));
 }
 
 function isFilterableColumn(col) {
@@ -174,7 +182,7 @@ export function AdvancedFilterBuilder({
 
   const initialDraft = useMemo(() => (
     value?.conditions?.length
-      ? { rowOperator: value.rowOperator ?? 'and', conditions: cloneConditions(value.conditions) }
+      ? { rowOperator: value.rowOperator ?? 'and', conditions: ensureRowKeys(cloneConditions(value.conditions)) }
       : { rowOperator: 'and', conditions: [makeEmptyRow()] }
   ), [value]);
 
@@ -315,7 +323,7 @@ export function AdvancedFilterBuilder({
           const isBetween = row.operator === 'between';
 
           return (
-            <div key={idx} className="flex items-start gap-2">
+            <div key={row._rowKey} className="flex items-start gap-2">
               {/* Connector */}
               <div className="w-16 shrink-0">
                 {idx === 0 ? (
@@ -836,7 +844,7 @@ function IdentifierMultiPicker({ col, entity, apiBaseUrl, rows, value, onChange,
         </button>
       </PopoverTrigger>
       <PopoverContent align="start" className="w-64 p-0" data-testid="PopoverContent__4eedf1">
-        <div className="px-3 pt-3 pb-2 text-xs font-normal leading-6" style={{ color: '#6C6C89' }}>
+        <div className="px-3 pt-3 pb-2 text-xs font-normal leading-6" style={{ color: 'hsl(var(--muted-foreground))' }}>
           {ui('advancedFilterSelectorOf', { label: colLabelKey })}
         </div>
         <div className="px-3 pb-2">
@@ -1006,7 +1014,7 @@ function DistinctEnumPicker({ col, entity, apiBaseUrl, rows, value, onChange, ui
           variant="outline"
           size="sm"
           className={[
-            'w-full justify-between gap-1.5 h-9 text-xs font-normal rounded-md bg-white',
+            'w-full justify-between gap-1.5 h-9 text-xs font-normal rounded-md bg-card',
             value ? 'text-foreground' : 'text-muted-foreground',
           ].join(' ')}
           data-testid="Button__4eedf1">
