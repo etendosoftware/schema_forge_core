@@ -13,14 +13,25 @@ import { SetupSelect } from '../components/SetupSelect.jsx';
 
 export function CompanyStep({ config, stepData, onNext, onBack, goToStep, onChange, draftNotice, draftSaveWarning, setDraftNotice, accountName, token, onLogout }) {
   const ui = useUI();
+  // Freelancers have no company: their personal full name (captured in the
+  // profile step) is used as the invoicing name instead.
+  const isFreelancer = stepData.businessType === 'freelancer';
 
   const [form, setForm] = useState(() => ({
-    clientName: stepData.clientName ?? config.defaultForm?.clientName ?? '',
+    // Freelancer clientName always derives from fullName — never from a stale
+    // stepData.clientName left over from a prior Company/Advisory selection
+    // in this session (businessType can be changed back and forth via Back).
+    clientName: isFreelancer ? (stepData.fullName ?? '') : (stepData.clientName ?? config.defaultForm?.clientName ?? ''),
     fiscalIdType: stepData.fiscalIdType ?? config.defaultForm?.fiscalIdType ?? '',
     fiscalIdValue: stepData.fiscalIdValue ?? config.defaultForm?.fiscalIdValue ?? '',
     address: stepData.address ?? config.defaultForm?.address ?? '',
     sector: stepData.sector ?? config.defaultForm?.sector ?? 'technology',
   }));
+
+  useEffect(() => {
+    if (isFreelancer && onChange) onChange({ clientName: form.clientName });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const updateField = (field, value) => {
     setForm(f => ({ ...f, [field]: value }));
@@ -49,8 +60,8 @@ export function CompanyStep({ config, stepData, onNext, onBack, goToStep, onChan
 
   const isValid = isCompanyStepValid(form);
   // Freelancers invoice under their personal tax id, captured elsewhere — hide the
-  // company Tax ID field for them. businessType comes from the profile step.
-  const showTaxId = stepData.businessType !== 'freelancer';
+  // company Tax ID field for them.
+  const showTaxId = !isFreelancer;
   const sessionAction = token && (
     <OnboardingSessionAction onLogout={onLogout} label={ui('logout')} />
   );
@@ -82,14 +93,16 @@ export function CompanyStep({ config, stepData, onNext, onBack, goToStep, onChan
         </div>
 
         <div className="space-y-6">
-          <SetupField
-            id="clientName"
-            label={ui('onboardingCompanyNameLabel')}
-            required
-            value={form.clientName}
-            onChange={e => updateField('clientName', e.target.value)}
-            placeholder={ui('onboardingCompanyNamePlaceholder')}
-            data-testid="SetupField__79cf84" />
+          {!isFreelancer && (
+            <SetupField
+              id="clientName"
+              label={ui('onboardingCompanyNameLabel')}
+              required
+              value={form.clientName}
+              onChange={e => updateField('clientName', e.target.value)}
+              placeholder={ui('onboardingCompanyNamePlaceholder')}
+              data-testid="SetupField__79cf84" />
+          )}
 
           {showTaxId && (
             <div>
