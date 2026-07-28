@@ -791,39 +791,62 @@ function collectFrontendLineFields(contract) {
 }
 
 /**
- * F18: Hand-written custom table/field columns under
- * tools/app-shell/src/windows/custom/<window>/ carry a local `required` flag
+ * F18: Hand-written custom table/field columns carry a local `required` flag
  * that must be manually kept in sync with the real `required` value in that
  * window's contract.json. This drifts silently whenever a field's required-ness
  * changes upstream (or a column is copy-pasted from another field) and nobody
  * updates the hardcoded copy (ETP-4609 follow-up).
  *
- * Detection: parse every non-test .js/.jsx file under the window's custom dir
- * with @babel/parser, walk the AST for array literals that look like column/
- * field descriptors (at least one element is an object with both a string
- * `key` and a string `column` property — the signature shared by every known
- * custom table/panel in the codebase, regardless of variable name or how deep
- * the array literal is nested, e.g. inside a useMemo). For each element whose
+ * Coverage (three source locations per window, ETP-4609 follow-up round 2):
+ *   1. tools/app-shell/src/windows/custom/<artifactName>/ — hand-built windows.
+ *   2. artifacts/<artifactName>/custom/ — the "pipeline convention" location
+ *      (sales-order, sales-invoice, purchase-order, ...); the generated
+ *      HeaderPage imports from here via resolveCustomImport(), and it is the
+ *      file that actually renders at runtime even when a decoy array with the
+ *      same shape sits in the hand-built windows/custom/<name>/ tree.
+ *   3. tools/app-shell/src/windows/custom/shared/ — components shared by more
+ *      than one window (e.g. PaymentHeaderTableBase.jsx used by both
+ *      payment-in and payment-out via thin prop-passing wrappers). This
+ *      directory is not keyed to a single window, so it is only pulled in for
+ *      a given window when one of that window's own files (#1 or #2 above)
+ *      actually imports it — traced one hop: parse the wrapper's `import`
+ *      statements, resolve `@/...` and relative specifiers, and if the
+ *      resolved path lands inside .../windows/custom/shared/, include that
+ *      file's column entries in this window's check. This correctly
+ *      attributes shared/PaymentHeaderTableBase.jsx to payment-in when
+ *      checking payment-in, and to payment-out when checking payment-out,
+ *      without trying to understand the dir/specName runtime branching.
+ *   Known limitation (by design, not a bug): only one import hop is traced,
+ *   and only `@/...` and relative (`./`, `../`) specifiers are resolved —
+ *   re-exports (a shared file that itself re-exports columns from another
+ *   file) and non-`@/` aliases (e.g. `@generated/...`) are not followed.
+ *
+ * Detection: parse every non-test .js/.jsx file collected above with
+ * @babel/parser, walk the AST for array literals that look like column/field
+ * descriptors (at least one element is an object with both a string `key` and
+ * a string `column` property — the signature shared by every known custom
+ * table/panel in the codebase, regardless of variable name or how deep the
+ * array literal is nested, e.g. inside a useMemo). For each element whose
  * `key` matches a contract field `name` (searched across all frontendContract
  * entities), compare the locally declared `required` (absent = false) against
  * the contract field's `required`. A statically undeterminable local value
  * (e.g. `...(cond ? { required: true } : {})`) is skipped rather than guessed.
  *
- * Only fires for windows that actually have a custom table override — windows
- * relying on the generated table are correct by construction and skipped.
+ * Suppression: some local `required` values are intentionally divergent (e.g.
+ * they guard an inline-add-row save, unrelated to any AdvancedFilterBuilder).
+ * `(artifact, key)` pairs listed in the F18 allowlist file (see
+ * `loadF18Allowlist`) are evaluated but never reported as violations.
+ *
+ * Only fires for windows that actually have a custom override in location #1
+ * or #2 — windows relying purely on the generated table are correct by
+ * construction and skipped.
  */
-async function ruleF18(artifactDir, artifactName, root = ROOT) {
+async function ruleF18(artifactDir, artifactName, root = ROOT, allowlist = []) {
   const contractPath = join(artifactDir, 'contract.json');
   if (!(await fileExists(contractPath))) return null;
 
-  const customDir = join(root, 'tools', 'app-shell', 'src', 'windows', 'custom', artifactName);
-  if (!(await dirExists(customDir))) return null; // no custom table override — nothing to check
-
-  const files = collectSourceFiles(
-    customDir,
-    (filePath) => isJavaScriptModule(filePath) && !filePath.split(sep).includes('__tests__'),
-  );
-  if (files.length === 0) return null;
+  const primaryFiles = collectF18PrimaryFiles(artifactDir, artifactName, root);
+  if (primaryFiles.length === 0) return null; // no custom override anywhere — nothing to check
 
   let contract;
   try {
@@ -835,11 +858,38 @@ async function ruleF18(artifactDir, artifactName, root = ROOT) {
   const fieldIndex = collectContractFieldIndex(contract);
   if (fieldIndex.size === 0) return null;
 
-  for (const filePath of files) {
-    let entries;
+  const parsedCache = new Map(); // filePath -> ast | null
+  const parseFile = async (filePath) => {
+    if (parsedCache.has(filePath)) return parsedCache.get(filePath);
+    let ast = null;
     try {
       const source = await readFile(filePath, 'utf-8');
-      const ast = parseModuleSource(source, filePath);
+      ast = parseModuleSource(source, filePath);
+    } catch {
+      ast = null; // a single unparsable custom file must not fail the whole rule
+    }
+    parsedCache.set(filePath, ast);
+    return ast;
+  };
+
+  const sharedDir = join(root, 'tools', 'app-shell', 'src', 'windows', 'custom', 'shared');
+  const sharedFiles = new Set();
+  for (const filePath of primaryFiles) {
+    const ast = await parseFile(filePath);
+    if (!ast) continue;
+    for (const target of await resolveSharedImportTargets(ast, filePath, sharedDir, root)) {
+      sharedFiles.add(target);
+    }
+  }
+
+  const allFiles = [...primaryFiles, ...sharedFiles];
+
+  for (const filePath of allFiles) {
+    const ast = await parseFile(filePath);
+    if (!ast) continue;
+
+    let entries;
+    try {
       entries = extractColumnEntries(ast);
     } catch {
       continue; // a single unparsable custom file must not fail the whole rule
@@ -851,6 +901,8 @@ async function ruleF18(artifactDir, artifactName, root = ROOT) {
       const field = resolveContractField(fieldIndex, entry.key, entry.column);
       if (!field) continue; // not a real contract field — pure custom render column
 
+      if (isF18Allowlisted(allowlist, artifactName, entry.key)) continue;
+
       if (entry.required !== field.required) {
         const relFile = filePath.startsWith(root) ? filePath.slice(root.length + 1) : filePath;
         return violation(
@@ -859,12 +911,109 @@ async function ruleF18(artifactDir, artifactName, root = ROOT) {
             `but contract.json field '${entry.key}' has required=${field.required}`,
           `Update the 'required' flag on column '${entry.key}' in ${relFile} to match ` +
             `artifacts/${artifactName}/contract.json (required: ${field.required}), or fix the ` +
-            `contract/decisions.json if the local value is the correct one.`,
+            `contract/decisions.json if the local value is the correct one. If this divergence ` +
+            `is intentional, add { "artifact": "${artifactName}", "key": "${entry.key}", "reason": "..." } ` +
+            `to cli/src/validate-pipeline-f18-allowlist.json instead.`,
         );
       }
     }
   }
   return null;
+}
+
+const F18_CUSTOM_FILE_PREDICATE = (filePath) =>
+  isJavaScriptModule(filePath) && !filePath.split(sep).includes('__tests__');
+
+/**
+ * Collect the "primary" custom files for a window — the two locations that
+ * are unambiguously owned by that single window (see ruleF18 doc comment,
+ * locations #1 and #2). Both are safe to scan unconditionally: a missing
+ * directory just yields no files (collectSourceFiles handles that).
+ */
+function collectF18PrimaryFiles(artifactDir, artifactName, root) {
+  const windowCustomDir = join(root, 'tools', 'app-shell', 'src', 'windows', 'custom', artifactName);
+  const artifactsCustomDir = join(artifactDir, 'custom');
+  return [
+    ...collectSourceFiles(windowCustomDir, F18_CUSTOM_FILE_PREDICATE),
+    ...collectSourceFiles(artifactsCustomDir, F18_CUSTOM_FILE_PREDICATE),
+  ];
+}
+
+/**
+ * Resolve a module specifier from an import statement to an absolute path,
+ * without checking existence. Supports the two forms used across the
+ * codebase: the `@/` alias (→ tools/app-shell/src/...) and relative
+ * specifiers (resolved against the importing file's directory). Any other
+ * form (bare npm specifier, `@generated/...`, etc.) returns null — it is not
+ * resolved, by design (see ruleF18 doc comment "Known limitation").
+ */
+function resolveImportSpecifier(source, importingFilePath, root) {
+  if (source.startsWith('@/')) {
+    return join(root, 'tools', 'app-shell', 'src', source.slice(2));
+  }
+  if (source.startsWith('.')) {
+    return join(dirname(importingFilePath), source);
+  }
+  return null;
+}
+
+/**
+ * Given a resolved-but-extensionless (or already-extensioned) candidate path,
+ * find the actual file on disk by trying the candidate as-is, then with
+ * .jsx/.js appended, then as a directory index (index.jsx/index.js).
+ */
+async function resolveExistingFile(candidatePath) {
+  const attempts = [
+    candidatePath,
+    `${candidatePath}.jsx`,
+    `${candidatePath}.js`,
+    join(candidatePath, 'index.jsx'),
+    join(candidatePath, 'index.js'),
+  ];
+  for (const attempt of attempts) {
+    if (await fileExists(attempt)) return attempt;
+  }
+  return null;
+}
+
+/**
+ * Parse an already-parsed AST's top-level `import` declarations and return
+ * the absolute paths of any that resolve into `sharedDir` (one hop only —
+ * this does not recurse into the shared file's own imports).
+ */
+async function resolveSharedImportTargets(ast, importingFilePath, sharedDir, root) {
+  const sharedDirPrefix = sharedDir.endsWith(sep) ? sharedDir : sharedDir + sep;
+  const targets = [];
+  for (const node of ast.program?.body ?? []) {
+    if (node.type !== 'ImportDeclaration' || typeof node.source?.value !== 'string') continue;
+    const candidate = resolveImportSpecifier(node.source.value, importingFilePath, root);
+    if (!candidate) continue;
+    if (candidate !== sharedDir && !candidate.startsWith(sharedDirPrefix)) continue; // not a shared/ import
+    const resolved = await resolveExistingFile(candidate);
+    if (resolved) targets.push(resolved);
+  }
+  return targets;
+}
+
+/**
+ * Load the F18 suppression allowlist — a small, human-reviewable JSON file of
+ * `{ artifact, key, reason }` entries for known-intentional divergences (e.g.
+ * a `required` flag that guards an inline-add-row save, unrelated to any
+ * contract field visibility). A missing file is an empty allowlist, not an
+ * error — most repos/checkouts will never need one.
+ */
+async function loadF18Allowlist(path) {
+  try {
+    const raw = await readFile(path, 'utf-8');
+    const parsed = JSON.parse(raw);
+    return Array.isArray(parsed) ? parsed : [];
+  } catch {
+    return [];
+  }
+}
+
+function isF18Allowlisted(allowlist, artifactName, key) {
+  return allowlist.some(entry => entry?.artifact === artifactName && entry?.key === key);
 }
 
 /**
@@ -1011,7 +1160,7 @@ async function runEnabledChecks(checks, skipSet) {
   return (await Promise.all(pendingChecks)).filter(Boolean);
 }
 
-async function runWindowChecks(artifactDir, artifactName, registryContent, root, skipSet) {
+async function runWindowChecks(artifactDir, artifactName, registryContent, root, skipSet, f18Allowlist = []) {
   return runEnabledChecks([
     { rule: 'F1', run: () => ruleF1(artifactDir, artifactName) },
     { rule: 'F2', run: () => ruleF2(artifactDir, artifactName) },
@@ -1028,7 +1177,7 @@ async function runWindowChecks(artifactDir, artifactName, registryContent, root,
     { rule: 'F15', run: () => ruleF15(artifactDir, artifactName) },
     { rule: 'F16', run: () => ruleF16(artifactDir, artifactName) },
     { rule: 'F17', run: () => ruleF17(artifactDir, artifactName) },
-    { rule: 'F18', run: () => ruleF18(artifactDir, artifactName, root) },
+    { rule: 'F18', run: () => ruleF18(artifactDir, artifactName, root, f18Allowlist) },
   ], skipSet);
 }
 
@@ -1048,10 +1197,10 @@ async function runAggregateSectionChecks(artifactDir, artifactName, skipSet) {
   return [...f9Results, ...f4Results];
 }
 
-async function runChecksForArtifact({ kind, artifactDir, artifactName, registryContent, root, skipSet, strict }) {
+async function runChecksForArtifact({ kind, artifactDir, artifactName, registryContent, root, skipSet, strict, f18Allowlist }) {
   if (kind === 'window') {
     return tagArtifactKind(
-      await runWindowChecks(artifactDir, artifactName, registryContent, root, skipSet),
+      await runWindowChecks(artifactDir, artifactName, registryContent, root, skipSet, f18Allowlist),
       'window',
     );
   }
@@ -1155,6 +1304,7 @@ export async function getChangedArtifactsSince(root, ref) {
  * @param {string[]} [options.skip=[]] - list of rule IDs to skip (e.g. ['F4', 'F7'])
  * @param {string} [options.root=ROOT] - repo root (override for testing)
  * @param {string} [options.registryPath] - override path to registry.js (for testing)
+ * @param {string} [options.f18AllowlistPath] - override path to the F18 suppression allowlist (for testing)
  * @returns {Promise<{violations: Array, skipped: Array, summary: object}>}
  */
 export async function validatePipeline({
@@ -1163,11 +1313,14 @@ export async function validatePipeline({
   skip = [],
   root = ROOT,
   registryPath,
+  f18AllowlistPath,
   _artifactsRoot,
 } = {}) {
   const artifactsRoot = _artifactsRoot ?? join(root, 'artifacts');
   const resolvedRegistryPath = registryPath ?? join(root, 'tools', 'app-shell', 'src', 'windows', 'registry.js');
   const registryContent = await loadRegistryContent(resolvedRegistryPath);
+  const resolvedF18AllowlistPath = f18AllowlistPath ?? join(__dirname, 'validate-pipeline-f18-allowlist.json');
+  const f18Allowlist = await loadF18Allowlist(resolvedF18AllowlistPath);
   const artifactNames = await resolveArtifactNames(scope, root, artifactsRoot);
 
   const skipSet = new Set(skip.map(s => s.toUpperCase()));
@@ -1186,6 +1339,7 @@ export async function validatePipeline({
       root,
       skipSet,
       strict,
+      f18Allowlist,
     }));
   }
 
