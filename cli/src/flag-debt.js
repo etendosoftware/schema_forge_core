@@ -1030,6 +1030,13 @@ function renderComposition(carried) {
     <ul class="legend">${legend}</ul>`;
 }
 
+/** The TTL chip in the metadata row: countdown, overdue, or no TTL at all. */
+function ttlChip(life) {
+  if (life.ttl === null) return 'no TTL';
+  if (life.daysRemaining >= 0) return `TTL in ${life.daysRemaining}d`;
+  return `TTL ${-life.daysRemaining}d overdue`;
+}
+
 function htmlFlagCard(flag) {
   const tp = flag.touchPoints;
   const touchDetail = htmlTouchPointDetail(tp);
@@ -1071,11 +1078,7 @@ function htmlFlagCard(flag) {
     <li>owner ${escapeHtml(flag.owner)}</li>
     <li>default ${escapeHtml(flag.defaultValue)}</li>
     <li>created ${escapeHtml(flag.created || 'unknown')}</li>
-    <li>${life.ttl === null
-      ? 'no TTL'
-      : (life.daysRemaining >= 0
-        ? `TTL in ${life.daysRemaining}d`
-        : `TTL ${-life.daysRemaining}d overdue`)}</li>
+    <li>${ttlChip(life)}</li>
   </ul>
   ${composition}
   <table>
