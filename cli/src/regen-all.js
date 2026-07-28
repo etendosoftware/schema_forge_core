@@ -196,7 +196,7 @@ async function runPipeline(name, windowId, { pushToNeo, skipExtract }) {
   // Version check (advisory)
   try {
     const { checkVersion } = await import('./check-version.js');
-    const vr = await checkVersion(name, 'pipeline');
+    const vr = await checkVersion(name, 'pipeline', prevMcpContract);
     if (vr) console.log(`    Version: ${vr.changelog.from} → ${vr.newVersion} (${vr.classification.level})`);
   } catch { /* skip */ }
 

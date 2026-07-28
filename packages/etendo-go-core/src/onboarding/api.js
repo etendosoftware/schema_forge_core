@@ -24,19 +24,20 @@ export function buildAuthHeaders(token) {
   };
 }
 
-function buildApiError(data, fallbackCode) {
+function buildApiError(data, fallbackCode, status) {
   const error = new Error(data?.error?.message || data?.message || fallbackCode);
   // Prefer the backend's stable error code (e.g. "WEAK_PASSWORD") when present,
   // falling back to the generic per-call code.
   error.code = data?.error?.code || fallbackCode;
   error.userMessage = data?.error?.userMessage || data?.error?.message || data?.message || null;
+  error.status = status;
   return error;
 }
 
 async function readJsonResponse(response, fallbackCode) {
   const data = await response.json();
   if (!response.ok) {
-    throw buildApiError(data, fallbackCode);
+    throw buildApiError(data, fallbackCode, response.status);
   }
   return data;
 }

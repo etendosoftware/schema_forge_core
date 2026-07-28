@@ -32,11 +32,8 @@ describe('Onboarding default view (ETP-4443)', () => {
   });
 
   it('sends the user to login after logging out from the env-select step', () => {
-    const handleLogout = envSelect.slice(
-      envSelect.indexOf('const handleLogout'),
-      envSelect.indexOf('const handleLogout') + 400,
-    );
-    assert.match(handleLogout, /goToStep\('login'\)/);
-    assert.doesNotMatch(handleLogout, /goToStep\('register'\)/);
+    assert.match(envSelect, /onLogout=\{onLogout\}/);
+    assert.doesNotMatch(envSelect, /const handleLogout/);
+    assert.doesNotMatch(envSelect, /localStorage\.removeItem\('sf_platform_token'\)/);
   });
 });

@@ -291,6 +291,61 @@ describe('computeWindowDelta', () => {
     assert.equal(entity.JAVA_QUALIFIER, 'sales-order-header');
   });
 
+  it('emits PRECONDITIONS on the entity row when declared in decisions', () => {
+    const preconditions = {
+      '1000100': [{ field: 'documentNo', requiredWhen: 'always', message: 'required' }],
+    };
+    const delta = minimalDelta({
+      decisions: {
+        entities: {
+          header: {
+            name: 'header',
+            preconditions,
+          },
+        },
+      },
+    });
+    const entity = delta.tables.ETGO_SF_ENTITY.upserts[0];
+    // Value is the JSON STRING the live UPDATE binds, not the raw object.
+    assert.equal(entity.PRECONDITIONS, JSON.stringify(preconditions));
+  });
+
+  it('does not emit PRECONDITIONS when none are declared', () => {
+    const delta = minimalDelta();
+    const entity = delta.tables.ETGO_SF_ENTITY.upserts[0];
+    assert.ok(!Object.hasOwn(entity, 'PRECONDITIONS'),
+      'PRECONDITIONS must be absent when undeclared and no prev value existed');
+  });
+
+  it('does not emit PRECONDITIONS for an empty declaration', () => {
+    const delta = minimalDelta({
+      decisions: { entities: { header: { name: 'header', preconditions: {} } } },
+    });
+    const entity = delta.tables.ETGO_SF_ENTITY.upserts[0];
+    assert.ok(!Object.hasOwn(entity, 'PRECONDITIONS'),
+      'empty preconditions collapse to null → column not emitted');
+  });
+
+  it('emits PRECONDITIONS=null to clear a stale value from prev-snapshot', () => {
+    // Prev XML row carried a PRECONDITIONS value but decisions no longer
+    // declares any → the live push clears it, so the delta must too.
+    const delta = minimalDelta({
+      decisions: {},
+      prevSnapshot: {
+        spec:   [{ ETGO_SF_SPEC_ID: 'S1', NAME: 'test-window', ISACTIVE: 'Y' }],
+        entity: [{
+          ETGO_SF_ENTITY_ID: 'E1', ETGO_SF_SPEC_ID: 'S1', AD_TAB_ID: 'T1',
+          NAME: 'header', PRECONDITIONS: '{"1000100":[]}',
+        }],
+        field:  [],
+      },
+    });
+    const entity = delta.tables.ETGO_SF_ENTITY.upserts[0];
+    assert.ok(Object.hasOwn(entity, 'PRECONDITIONS'),
+      'clear must register as an explicit null');
+    assert.equal(entity.PRECONDITIONS, null);
+  });
+
   it('handles discarded visibility', () => {
     // Field must be in prevSnapshot so it is treated as existing — the filter
     // only prunes NEW records that would be ISINCLUDED=N.

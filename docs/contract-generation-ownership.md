@@ -47,6 +47,16 @@ consumer repo or monorepo artifacts
 
 That means an external project can consume the app shell package, but it still needs a contract/artifact producer path: either generated artifacts copied from Schema Forge, generated in its own repo through Schema Forge tooling, or delivered by a future artifact package.
 
+## Field-Level Derivation Ownership
+
+Some contract field attributes are not copied verbatim from a single input — they are **derived** by a producer step from multiple sources with a defined precedence. Ownership of that derivation logic belongs to the producer, not to any single input file:
+
+| Derived attribute | Producer step | Derivation rule | Scope |
+|-------------------|---------------|-----------------|-------|
+| `frontendContract.*.fields[].validation` (ETP-4555) | `resolve-curated` builds it; `generate-contract` re-projects it into canonical key order | Per-constraint **decision > raw AD** precedence; omitted when neither source supplies a value (no guessed defaults) | Frontend contract only — **not** pushed to NEO, **not** enforced server-side. Runtime enforcement is out of scope until a later SECURITY task. |
+
+The derivation logic is centralized in `cli/src/lib/field-validation.js` and shared by both producer steps. Full contract shape, the five precedence/coercion rules, and UTF-16 length semantics are documented in `docs/decisions-reference.md` § "Validation Constraints (`validation` object)"; the field-distribution placement is in `docs/contract-field-distribution.md`.
+
 ## Regeneration Rules
 
 Regenerate a window contract when any of these change:

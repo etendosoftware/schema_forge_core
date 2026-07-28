@@ -10,10 +10,10 @@ const EXPANDED_W = 240;
 export function ShellMenu({ groups = [], expanded = true, onToggle }) {
   return (
     <aside
-      className="fixed inset-y-0 left-0 z-30 flex flex-col border-r border-border/50 bg-white transition-[width] duration-200"
+      className="fixed inset-y-0 left-0 z-30 flex flex-col border-r border-border-structural bg-card transition-[width] duration-200"
       style={{ width: expanded ? EXPANDED_W : COLLAPSED_W }}
     >
-      <div className="flex h-14 items-center justify-between border-b border-border/40 px-3">
+      <div className="flex h-14 items-center justify-between border-b border-border-structural px-3">
         {expanded && <span className="text-sm font-semibold text-foreground">Schema Forge</span>}
         <Button
           type="button"
@@ -59,7 +59,7 @@ export function ShellMenu({ groups = [], expanded = true, onToggle }) {
 
 export function ShellTopBar({ title, breadcrumb, rightExtras }) {
   return (
-    <header className="flex h-14 shrink-0 items-center justify-between border-b border-border/40 bg-white px-4">
+    <header className="flex h-14 shrink-0 items-center justify-between border-b border-border-structural bg-card px-4">
       <div className="min-w-0">
         {breadcrumb && <div className="text-xs text-muted-foreground">{breadcrumb}</div>}
         <h1 className="truncate text-sm font-semibold text-foreground">{title || 'Dashboard'}</h1>

@@ -65,6 +65,19 @@ Per-locale field label overrides. When the simplified interface needs to rename 
 
 ## Window Properties (`window.*`)
 
+### Runtime window-access gating (`window.id`) — ETP-4520
+
+`window.id` (the AD_Window_ID, already threaded through `resolve-curated.js`/`generate-contract.js` unconditionally — not a decisions.json key, extracted straight from the raw AD Window) now doubles as the lookup key for a **runtime, per-role access tier**. Whenever a contract carries a real `window.id`, `generatePageComponent` emits:
+
+- `useWindowAccess(windowId)` (from `@etendosoftware/app-shell-core/auth`, re-exported in the generated app via `@/auth/AuthContext.jsx`'s barrel — `etendo_schema_forge`'s local file that just does `export * from '@etendosoftware/app-shell-core/auth';` — so the generated import path you'll actually see is `@/auth/AuthContext.jsx`, not the package specifier directly), resolving `"none" | "read-only" | "full"` from the `windowAccess` map fetched once, at role-selection time, from `GET /webhooks/SFWindowAccessMap`.
+- A route guard: `"none"` renders `<WindowAccessGuard windowId="...">` and returns immediately, **before either ListView or DetailView mounts** — no data fetch happens for a window the current role has no access to at all (closes the deep-link gap where a role with no menu entry could otherwise still hit the route directly).
+- A `"read-only"` tier merges `readOnly: true` into the `window` prop forwarded to `ListView`/`DetailView` (reusing the same `window.readOnly` mechanism the static decisions.json `readOnly` flag already relies on — see `generate-contract.js`'s comment on `window.readOnly`), disabling Save/Create/Delete and the destructive kebab actions.
+- `"full"` is today's unrestricted behavior, unaffected.
+
+Both hooks/the guard fail **closed**: an unloaded `windowAccess` map or a missing `windowId` both resolve `"none"`, never `"full"`. Artifacts without a `window.id` (pre-ETP-4520 extractions, hand-built windows with no backing AD Window) silently keep today's behavior — the feature only activates once `window.id` is present.
+
+This is not a decisions.json opt-in; it applies automatically to every generated window that has an `window.id`. The one companion piece it still needs from whoever wires up the host app: the `GET /webhooks/SFWindowAccessMap` fetcher must be passed to `AuthProvider` as the `fetchWindowAccess` prop, invoked at the same lifecycle moment `selectedRole.orgList` is populated (see `AuthContext.jsx`'s `selectRole()`).
+
 | Property | Type | Default | Values | Purpose |
 |----------|------|---------|--------|---------|
 | `category` | string | Inferred | `"sales"`, `"purchases"`, `"inventory"`, `"finance"`, `"accounting"`, `"master"`, `"project"`, `"general"` | UI routing and navigation grouping. |
@@ -515,6 +528,7 @@ Entity keys use **camelCase from tabName** (e.g., `"header"`, `"lines"`, `"basic
 | `fields` | object | `{}` | Field-level decisions. |
 | `draftMode` | object | `null` | Draft/Processed workflow config. |
 | `javaQualifier` | string | `null` | CDI qualifier for custom NeoHandler. |
+| `preconditions` | object | `null` | Process preconditions checked by NEO Headless before a button/action process runs. Keyed by `AD_Process_ID`. See [Process Preconditions](#process-preconditions-entitiesnamepreconditions). |
 | `handlesDefaults` | boolean | `true` | **HandleDefaults.** When `true` (default), a new detail line's add-row fetches `GET /{detailEntity}/defaults?parentId=…` on open and pre-fills empty editable fields from the backend-resolved defaults (reusing the header-defaults normalization). Set `false` to opt this detail entity out — the add-row keeps literal-only seeding and no `/defaults` request is made. Emitted to the contract / runtime `api.crud` only when `false`. |
 
 ### Line HandleDefaults (`entities.{name}.handlesDefaults`)
@@ -548,6 +562,45 @@ Enables a two-button save workflow: "Save Draft" (save only) + "Save & {label}" 
 **When disabled** (default): single "Save" button.
 **When enabled**: "Save draft" + "Save & {label}" buttons, plus process buttons from `processEndpoints`.
 
+### Process Preconditions (`entities.{name}.preconditions`)
+
+Declares, as **data**, the record-level conditions that must hold before a button/action
+process is allowed to run. NEO Headless evaluates them generically at the single process
+choke-point and returns a structured `PRECONDITIONS_UNMET` error **before** the legacy AD
+process fires — replacing opaque late errors like `"Period not defined."` (ETP-4275). No
+per-window Java: the mechanism is metadata-driven and reusable across processes.
+
+The block is an object **keyed by `AD_Process_ID`** (string). Each value is an array of rules:
+
+```json
+{
+  "entities": {
+    "header": {
+      "preconditions": {
+        "800125": [
+          { "field": "usableLifeMonths", "requiredWhen": "@calculateType@ != 'PE' && @amortize@ != 'YE'" },
+          { "field": "usableLifeYears",  "requiredWhen": "@amortize@ == 'YE'" },
+          { "field": "currency" }
+        ]
+      }
+    }
+  }
+}
+```
+
+| Rule property | Type | Required | Purpose |
+|---------------|------|----------|---------|
+| `field` | string | Yes | The NEO field identifier the API exposes (camelCase record property, **not** the raw DB column). The runtime resolves it to the record value via entity/table metadata. |
+| `requiredWhen` | string | No | Condition gating the rule. Supports `@field@` record references, string literals, `==`, `!=`, `&&`/`&`, `\|\|`. When the condition evaluates false the rule is skipped; when absent the precondition is unconditional. |
+| `message` | string | No | **Reserved / not yet surfaced.** Documented for forward-compatibility. The runtime currently returns only a single generic top-level message plus the `missing` field list; this per-rule value is not read or emitted. |
+
+**Flow:** `decisions.json` → `push-to-neo.js` serializes the block into the new
+`ETGO_SF_ENTITY.preconditions` text column → NEO Headless reads it at runtime. An explicit
+but empty block (`{}`) clears any stale DB value. The block is written directly from
+`decisions.json` (like `agentPrompt`); it does **not** flow through `contract.json`.
+
+> **Scope — when to declare (ETP-4275 review).** Preconditions fit only **conditionally-required, non-AD-mandatory** fields: a field the record saves fine without, but a process needs (the assets case above). AD-mandatory fields never arrive null, so there is nothing to check. Failures that are **not** "a record field is unset" — no lines, already processed, period closed, business partner blocked, org/doctype config, stock — are **outside this model** (line/state/environment checks). A review of the NEO-exposed PL processes found assets is essentially the only good fit; declaring preconditions elsewhere adds no value in the current model.
+
 ## Field Properties (`entities.{name}.fields.{fieldName}.*`)
 
 Field keys use **camelCase from raw schema** (e.g., `"businessPartner"`, `"orderDate"`).
@@ -561,6 +614,7 @@ Field keys use **camelCase from raw schema** (e.g., `"businessPartner"`, `"order
 | `form` | boolean | Per visibility | `true`/`false` | Show in detail/form view. |
 | `searchable` | boolean | `false` | `true`/`false` | Enable as filter parameter in list API. |
 | `section` | string | `null` | `"principal"`, `"other"`, custom | Group fields into form sections. |
+| `order` | number | `null` | Any number (ties broken by name) | Explicit form-field position within the entity. When at least one field in the entity declares `order`, all its fields are sorted by `order` (fields without it sort last, in their natural/raw relative order). See **Field order & the stability lock** below for how this interacts with `generate-contract.js`'s cross-run position lock. |
 | `inline` | boolean | `false` | `true`/`false` | When `true`, keeps the field in the normal form grid flow even if the generator would otherwise pull it out. Currently relevant for image-type fields: an image field with `inline: true` renders inside the form grid using `row-span-2`, spanning two rows for visual balance instead of being extracted to a separate slot. |
 | `skipDefault` | boolean | `false` | `true`/`false` | **HandleDefaults opt-out (per field).** When `true`, the line add-row never applies a backend-resolved default to this field (it stays empty / keeps its literal seed) even when the entity's `handlesDefaults` is on. Emitted to the contract / add-row literal only when `true`. |
 | `clearsField` | string | `null` | Sibling field key | **Mutual exclusion.** Names a sibling field that is cleared (set to `0`/empty) whenever this field gets a non-zero value — e.g. a journal line where entering a Debit clears the Credit, and vice versa. The two fields form a "one-of" group: in the inline add-row's required-field check, an empty member is **not** flagged as missing while its partner carries a value (so a debit-only line submits). A required boolean/checkbox is likewise never treated as missing (unchecked is valid). |
@@ -573,6 +627,34 @@ Field keys use **camelCase from raw schema** (e.g., `"businessPartner"`, `"order
 | `readOnly` | false | true | false |
 | `system` | false | false | false |
 | `discarded` | false | false | false |
+
+### Field order & the stability lock (ETP-4566)
+
+`resolve-curated.js`'s `orderCuratedFields()` sorts an entity's fields by their explicit
+`order` decision the moment ANY field in that entity declares one; fields without `order`
+keep their natural/raw relative sequence at the end. But `generate-contract.js` then runs a
+**field-order stability lock** (`lockFieldOrderToPreviousContract()`) that re-pins every field
+already present in the *previous* `contract.json` to its old position — so a raw re-extraction
+(column added/removed in AD) never causes unrelated fields to drift. This lock has precedence
+over the freshly resolved `order` **except** when the field's own state changed:
+
+- A field that existed in the previous contract **and** whose own `order` value or resolved
+  `visibility` is unchanged since that run → stays pinned to its old position (the common,
+  intended case — this is what keeps the UI stable across re-extractions).
+- A field that existed before **and** whose own `order` value changed (including gaining an
+  `order` it didn't have previously), **or** whose `visibility` changed → is freed from the
+  lock ("repositioned") and slots in at its newly resolved position instead.
+- A field with **no explicit `order` at all** in the current run is never repositioned by the
+  order dimension — it is always governed purely by the historical lock, and is never affected
+  by *other* fields' order changes in the same run (no unrelated position drift).
+- A field absent from the previous contract entirely (brand new) is unaffected by the lock, as
+  before.
+
+**Practical rule of thumb:** if a field's form position isn't updating after you change/add its
+`order` in `decisions.json`, check whether the field already existed with the *same* `order`
+value in `artifacts/{window}/contract.json` before your edit — if so, the change should already
+take effect on the next `--write`. If a field seems permanently stuck at an old position despite
+a real `order`/`visibility` change, that points at a generator bug, not a decisions.json issue.
 
 ### Grid cell flags
 
@@ -588,6 +670,7 @@ Applied to fields with `grid: true` to control how the list cell renders.
 | `grow` | boolean | `false` | Let the column grow to fill available width. |
 | `cellType` | string | `null` | Selects a cell renderer from the registry (see below). Generic to any grid; the `list-modal` layout ships a styled set. |
 | `dimensionsPanel` | boolean | `false` | Collect this field into the ONE synthetic `type: 'dimensionsPanel'` grid column instead of its own column — see below. Read regardless of the field's own `grid` value (typically `grid: false`, since the field renders inside the expand-row panel, not as a standalone column). |
+| `visibleWhenCapability` | string | `null` | Names a capability key (e.g. `"showAccountingFields"`) from the `capabilities` map returned by the `GET /webhooks/SFWindowAccessMap` webhook. Opt-in — absent means always visible, no behavior change. See below. |
 
 #### Accounting dimensions panel (`dimensionsPanel`)
 
@@ -615,6 +698,24 @@ The consuming React side (`InlineLinesPanel`, `DimensionsPanel.jsx`'s `DimSummar
 - Each `dimensionFields` entry reuses the same per-field extraction as a normal grid column (`mapFieldType` for `type`, static baked `label`, FK `reference`/`inputMode`, `required`/`lookup`/`popup`) via `buildDimensionFieldLiteral`, trimmed to what the consuming components actually read.
 - Only affects the **grid/table** rendering (`generateTableComponent`). A field flagged `dimensionsPanel: true` still appears as its own field in the lines entity's `addLineFields` (the add-new-row form, built by `generatePageComponent`) if `form: true` — the add-row flow is a separate, flat-form UX not covered by this flag.
 - A field with `grid: true` AND `dimensionsPanel: true` is collected into the panel only — it is excluded from `gridFieldsRaw` regardless of its own `grid` value.
+
+#### Capability-gated field visibility (`visibleWhenCapability`) — ETP-4520
+
+Gates a field's visibility on a named, server-resolved capability flag instead of a fixed decision. The generator copies the value straight through (`resolve-curated.js` → `generate-contract.js`, same shape as `badge`) onto:
+
+- **The grid column entry** — emitted by both `generateTableComponent` (standard grid) and the `list-modal` column builder, as `visibleWhenCapability: '<key>'` alongside the field's other column flags.
+- **A `window.statusPills` entry that references this field** — the capability key is resolved by *looking up the field by name* within the entity (`statusPills[i].field`) and copied onto the generated `extraBadges` entry. It is never declared redundantly on the `statusPills` decision entry itself — one source of truth, the field.
+
+At runtime, the consuming component reads the `capabilities` map off `useAuth()` (populated once at role-selection via the `GET /webhooks/SFWindowAccessMap` webhook) and **omits the field/pill entirely** when the named key resolves `false` — not disabled, not hidden via CSS. The check itself is the plain function `isCapabilityVisible(capabilities, key)` (`tools/app-shell/src/lib/capabilityVisibility.js` in the functional repo) — deliberately not a hook, since callers gate a variable number of entries per render and a hook would violate the rules of hooks. Components pull `capabilities` once via the `useCapabilitiesSafe()` hook (`tools/app-shell/src/hooks/useCapabilitiesSafe.js`) and pass it into `isCapabilityVisible` per field/column/pill. Both fail closed: an unloaded `capabilities` map ({}) or a missing/falsy key resolve `false`, so a slow/failed webhook fetch never leaks a gated field.
+
+```json
+"accountingDate": {
+  "visibility": "editable",
+  "visibleWhenCapability": "showAccountingFields"
+}
+```
+
+**Note:** as of ETP-4520, this mechanism is end-to-end complete. The standard grid column emission and the `list-modal` grid column emission are wired on the generator side, and the functional repo's runtime consumption is also in place: `DataTable.jsx` filters gated columns out of `visibleColumns`, and `DetailView.jsx` resolves gated `statusPills`/`extraBadges` entries to `null` before rendering — both via the shared `isCapabilityVisible`/`useCapabilitiesSafe` pair described above (functional repo commit `c6e2ac1e3`). The concrete shipped consumer is the `posted` field on `sales-invoice` and `purchase-invoice`, gated behind `showAccountingFields` (see those windows' `docs/generated-custom-windows/*.md` guides in the functional repo).
 
 #### Status column rendering (`columnType` and `enumValues`)
 
@@ -734,12 +835,72 @@ instead of the default input when it detects this property.
 |----------|------|---------|---------|
 | `name` | string | Raw field name | Override field's public API name. |
 | `required` | boolean | From AD mandatory | Force field as required. |
-| `min` | number | `undefined` | Minimum allowed value for numeric fields. On blur the UI autocorrects values below this limit to `min`. Travels through the full pipeline (`decisions.json` → contract → generated FieldDefs). |
-| `max` | number | `undefined` | Maximum allowed value for numeric fields. On blur the UI autocorrects values above this limit to `max`. Travels through the full pipeline (`decisions.json` → contract → generated FieldDefs). Example: `"max": 100` on a discount (%) field prevents values above 100. |
+| `min` | number \| `false` | `undefined` | Minimum allowed value for numeric fields. On blur the UI autocorrects values below this limit to `min`. Travels through the full pipeline (`decisions.json` → contract → generated FieldDefs). `false` disables the bound entirely, even if raw AD defines one (see ETP-4556 precedence below). |
+| `max` | number \| `false` | `undefined` | Maximum allowed value for numeric fields. On blur the UI autocorrects values above this limit to `max`. Travels through the full pipeline (`decisions.json` → contract → generated FieldDefs). Example: `"max": 100` on a discount (%) field prevents values above 100. `false` disables the bound entirely, even if raw AD defines one (see ETP-4556 precedence below). |
 | `readOnlyLogic` | string \| null | `null` | Expression for conditional read-only. Set `null` to omit. |
 | `displayLogic` | string \| null | `null` | Expression for conditional visibility. Set `null` to omit. |
 | `businessCritical` | boolean | `false` | Advisory-only metadata flag. When `true`, marks the field as business-critical data. This flag does **not** change any functional behavior (validation, read-only logic, visibility, etc.). It travels through the pipeline (`decisions.json` → `resolve-curated` → `contract.json` → `push-to-neo` → `ETGO_SF_FIELD.ISBUSINESSCRITICAL`) so that downstream consumers (e.g., AI agents reading `neo_schema`) know they must confirm with the user before creating or updating records that include this field. |
 | `agentPrompt` | string | `null` | Per-field guidance for AI agents. Carried into the curated field and persisted to `ETGO_SF_FIELD.AGENT_PROMPT`, from where `neo_schema` returns it inside each field object. Empty or whitespace-only values clear the persisted prompt and are omitted from the MCP response. |
+
+### Validation Constraints (`validation` object) — ETP-4555
+
+Declarative validation constraints are preserved through the whole pipeline
+(`schema-raw` / `decisions.json` → `resolve-curated` → `contract.json`) and emitted
+as a **single nested `validation` object** on each frontend contract field. The object
+is **additive** — the flat `min`/`max` keys above keep working unchanged (backward-compat).
+
+You do not write the `validation` object yourself; you supply its inputs (raw AD metadata
+or the per-field decision keys below) and the resolver assembles it. Contract shape:
+
+```jsonc
+"validation": {
+  "required": true,           // mirror of the field's resolved required flag (only when true)
+  "minLength": 1,             // decision only
+  "maxLength": 60,            // decision `maxLength`, else raw AD field length
+  "minimum": 0,               // decision `min`, else raw AD valueMin
+  "maximum": 100,             // decision `max`, else raw AD valueMax
+  "format": "email",          // decision only — NEVER inferred
+  "enum": ["A", "B"],         // decision only — explicit allowed values
+  "allowedSchemes": ["https"] // decision only — explicit configuration
+}
+```
+
+Per-field decision inputs (all optional):
+
+| Property | Type | Source of the contract value | Notes |
+|----------|------|------------------------------|-------|
+| `minLength` | number | `validation.minLength` | Decision only — no raw AD source. |
+| `maxLength` | number \| `false` | `validation.maxLength` | Decision **overrides** the raw AD field length. `false` **disables** it (ETP-4556). |
+| `min` | number \| `false` | `validation.minimum` | Decision **overrides** raw AD `valueMin`. `false` **disables** it (ETP-4556) — omitted from BOTH the `validation` object and the flat `min` key. Otherwise still emitted flat (ETP-4277). |
+| `max` | number \| `false` | `validation.maximum` | Decision **overrides** raw AD `valueMax`. `false` **disables** it (ETP-4556) — omitted from BOTH the `validation` object and the flat `max` key. Otherwise still emitted flat (ETP-4277). |
+| `format` | string | `validation.format` | Semantic format hint (e.g. `email`, `uri`). Never guessed from column type. |
+| `enum` | string[] | `validation.enum` | Explicit allowed values. Empty array is ignored. |
+| `allowedSchemes` | string[] | `validation.allowedSchemes` | Explicit URL scheme allow-list. Empty array is ignored. |
+
+**Precedence for the three DB-sourced numeric keys (`maxLength`, `min`, `max`) — ETP-4556:**
+
+| Decision value | Effect |
+|----------------|--------|
+| a **number** (incl. `0`) | **Overrides** the raw AD value — the number is the constraint. `0` is a real bound (`minimum: 0` / `maximum: 0` / `maxLength: 0`), NOT a disable. |
+| **`false`** | **Disables** the constraint entirely — omitted even when raw AD provides a value. For `min`/`max` this also suppresses the flat ETP-4277 key, so the on-blur autocorrect never receives a bogus `false` bound. |
+| **absent / `null`** | **Falls through** to the raw AD value (`fieldlength`, `valueMin`, `valueMax`). If raw has none either, the constraint is omitted. |
+
+> **`0` vs `false`:** `0` is a valid constraint value; `false` means "no constraint". They are distinguished with a strict `=== false` check performed *before* numeric coercion, so `Number(false) === 0` can never fabricate a zero bound. The other decision keys (`required`, `minLength`, `format`, `enum`, `allowedSchemes`) do **not** honour the `false` sentinel.
+
+**Rules (non-negotiable):**
+
+1. **Precedence** — an explicit `decisions.json` value always wins over extracted raw AD metadata.
+2. **No guessed defaults** — a constraint absent from both raw and decision is **omitted**; the whole `validation` key is absent when nothing applies. Absence never fabricates a default.
+3. **Zero is valid** — `minimum: 0` and `maximum: 0` survive (presence is tested with `hasOwnProperty` / `!= null`, never truthiness).
+4. **String→Number coercion** — raw AD metadata arrives as strings (`maxLength: "60"`); numeric constraints are coerced to `Number` and NaN/blank values are dropped.
+5. **Deterministic key order** — keys are always emitted in the canonical order shown above (`required, minLength, maxLength, minimum, maximum, format, enum, allowedSchemes`). The order is fixed so the offline regen-check (`generate-contract` re-projecting the resolved object) is byte-stable — a shuffled key order would surface as a spurious contract diff.
+6. **`false` disable sentinel (ETP-4556)** — for `maxLength`, `min`, `max` only, a decision value of literal `false` disables the constraint even when raw AD provides one. `false` is checked before numeric coercion (so `Number(false) === 0` cannot fabricate a zero bound) and `0` stays a valid bound. For `min`/`max` the sentinel is enforced consistently across the nested `validation` object AND the flat ETP-4277 key.
+
+**Unicode length semantics:** `minLength`/`maxLength` count **UTF-16 code units** (JavaScript `String.length` / the AD field-length column), not Unicode grapheme clusters. A character outside the Basic Multilingual Plane (e.g. an emoji, a surrogate pair) counts as **2** toward the length. Constraints inherited from AD (`fieldlength`) follow the same column-length semantics the database enforces.
+
+The projection logic is centralized in `cli/src/lib/field-validation.js` (`buildFieldValidation`, `projectValidation`, `VALIDATION_KEY_ORDER`) and shared by `resolve-curated.js` (builds the object) and `generate-contract.js` (re-projects it into canonical order).
+
+**Scope — frontend contract only.** The `validation` object is emitted on `frontendContract` fields and is consumed by the generated React SPA for client-side form validation. It is **not** pushed to NEO Headless and NEO does **not** enforce it at the API boundary — backend/runtime enforcement of these constraints is out of scope for ETP-4555 and may be addressed by a later SECURITY task. Until then, treat the object as an advisory client-side contract, not a server-enforced guarantee. See `docs/contract-field-distribution.md` and `docs/contract-generation-ownership.md` for the cross-system placement.
 
 ### Explicit null
 

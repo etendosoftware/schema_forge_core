@@ -237,13 +237,13 @@ describe('SetupProgressCard — presentational ring & bar (ETP-4446)', () => {
 
 describe('SetupProgressShell — background slot (ETP-4446)', () => {
   it('renders the background prop as an absolutely-positioned decorative layer', () => {
-    assert.match(shell, /export function SetupProgressShell\(\{ children, background \}\)/);
+    assert.match(shell, /export function SetupProgressShell\(\{ children, background, headerContent \}\)/);
     assert.match(shell, /\{background && <div className="absolute inset-0">\{background\}<\/div>\}/);
     // Content sits above the backdrop.
     assert.match(shell, /relative z-10 flex min-h-screen items-center justify-center/);
   });
 
   it('wires the backdrop from config.background into the shell', () => {
-    assert.match(step, /<SetupProgressShell background=\{config\.background\}/);
+    assert.match(step, /<SetupProgressShell\s+background=\{config\.background\}/);
   });
 });

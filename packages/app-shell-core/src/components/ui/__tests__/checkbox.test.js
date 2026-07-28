@@ -7,8 +7,8 @@ const src = await readFile(new URL('../checkbox.jsx', import.meta.url), 'utf8');
 // ---------------------------------------------------------------------------
 // checkbox.jsx — source-reading tests (ETP-3660)
 //
-// The Checkbox is a custom forwardRef component that renders a <button
-// role="checkbox"> with a visually-hidden <input type="checkbox"> inside.
+// The Checkbox is a custom forwardRef component that renders a native input
+// inside a label, avoiding invalid nested interactive controls.
 // We verify the structural contract through static source analysis because
 // the component depends on React + a DOM environment not available here.
 // ---------------------------------------------------------------------------
@@ -63,20 +63,17 @@ describe('Checkbox — aria-checked behavior (ETP-3660)', () => {
   });
 });
 
-describe('Checkbox — button role (ETP-3660)', () => {
-  it('renders a button element as the root', () => {
-    assert.match(src, /<button/);
+describe('Checkbox — native control semantics (ETP-4554)', () => {
+  it('renders a label wrapper and a native checkbox input', () => {
+    assert.match(src, /<label/);
+    assert.match(src, /type="checkbox"/);
   });
 
-  it('button has role="checkbox"', () => {
-    assert.match(src, /role="checkbox"/);
+  it('does not nest an interactive input in a button', () => {
+    assert.doesNotMatch(src, /<button/);
   });
 
-  it('button has type="button" to prevent form submission', () => {
-    assert.match(src, /type="button"/);
-  });
-
-  it('passes disabled prop to the button', () => {
+  it('passes disabled prop to the native input', () => {
     assert.match(src, /disabled=\{disabled\}/);
   });
 });
@@ -86,20 +83,13 @@ describe('Checkbox — hidden input element (ETP-3660)', () => {
     assert.match(src, /type="checkbox"/);
   });
 
-  it('input has tabIndex={-1} to remove it from tab order', () => {
-    assert.match(src, /tabIndex=\{-1\}/);
-  });
-
   it('input is visually hidden with sr-only class', () => {
     assert.match(src, /className="sr-only"/);
   });
 
-  it('input is readOnly (no onChange on the input itself)', () => {
-    assert.match(src, /readOnly/);
-  });
-
-  it('input has aria-hidden="true" to exclude it from the accessibility tree', () => {
-    assert.match(src, /aria-hidden="true"/);
+  it('keeps the native input accessible and wires its change event', () => {
+    assert.match(src, /onChange=\{onChange\}/);
+    assert.doesNotMatch(src, /aria-hidden="true"/);
   });
 
   it('input checked value is coerced to boolean (!!checked)', () => {
@@ -108,16 +98,9 @@ describe('Checkbox — hidden input element (ETP-3660)', () => {
 });
 
 describe('Checkbox — click handler wiring (ETP-3660)', () => {
-  it('onClick handler calls both onClick and onChange props', () => {
-    assert.match(src, /onClick\?\..*onChange\?\./ );
-  });
-
-  it('uses optional chaining for onClick prop call', () => {
-    assert.match(src, /onClick\?\.\(/);
-  });
-
-  it('uses optional chaining for onChange prop call', () => {
-    assert.match(src, /onChange\?\.\(/);
+  it('forwards click and change handlers to the native input', () => {
+    assert.match(src, /onClick=\{onClick\}/);
+    assert.match(src, /onChange=\{onChange\}/);
   });
 });
 

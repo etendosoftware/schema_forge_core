@@ -109,7 +109,13 @@ jobs:
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
           git tag -a "${{ steps.ver.outputs.tag }}" -m "Release ${{ steps.ver.outputs.tag }}"
-          git push origin "${{ steps.ver.outputs.tag }}"
+          # --no-verify: `npm install` ran the root `prepare` script, which points
+          # core.hooksPath at .githooks, so the local pre-push dev hook (Sonar,
+          # data-testid, dirty-tree guard) would otherwise fire here and block the
+          # push. That hook is for local dev only — CI has its own gates above — and
+          # the release intentionally leaves the runner tree dirty (release-version
+          # rewrites package.json in place without committing it back). Bypass it.
+          git push --no-verify origin "${{ steps.ver.outputs.tag }}"
 
       # --- Notify the functional repo so it can bump its lockstep pin ---------
       # GITHUB_TOKEN cannot trigger workflows in another repo, so this uses a

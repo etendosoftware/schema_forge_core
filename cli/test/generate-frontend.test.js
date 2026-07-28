@@ -214,6 +214,23 @@ describe('getReadOnlyFields', () => {
 // ---------------------------------------------------------------------------
 
 describe('generateTableComponent', () => {
+  it('emits semantic roles for depreciation progress', () => {
+    const contract = structuredClone(singleEntityContract);
+    contract.frontendContract.entities.item.fields.push({
+      name: 'etgoAmortizationStatus', column: 'EM_Etgo_Amortization_Status',
+      type: 'number', tsType: 'number', visibility: 'readOnly', grid: true,
+      form: false, cellType: 'depreciationProgress',
+    });
+
+    const code = generateTableComponent('item', contract);
+
+    assert.match(code, /var\(--status-success-fg\)/);
+    assert.match(code, /var\(--status-warning-fg\)/);
+    assert.match(code, /bg-muted/);
+    assert.match(code, /text-muted-foreground/);
+    assert.doesNotMatch(code, /#[0-9a-f]{3,8}|bg-gray-200/i);
+  });
+
   it('imports DataTable from contract-ui', () => {
     const code = generateTableComponent('order', masterDetailContract);
     assert.ok(code.includes("import { DataTable, InlineLinesPanel } from '@/components/contract-ui'"));
@@ -1173,6 +1190,58 @@ describe('field type mapping edge cases', () => {
 });
 
 // ---------------------------------------------------------------------------
+// Numeric constraint passthrough (min / integer) — ETP-4542
+// ---------------------------------------------------------------------------
+
+describe('generateFormComponent - numeric constraints (min/integer)', () => {
+  const numericContract = {
+    frontendContract: {
+      window: { id: '1', name: 'Numeric', primaryEntity: 'test', category: 'test' },
+      entities: {
+        test: {
+          fields: [
+            { name: 'bothConstraints', column: 'Both', type: 'integer', tsType: 'number', visibility: 'editable', form: true, min: 1, integer: true },
+            { name: 'onlyMin', column: 'OnlyMin', type: 'integer', tsType: 'number', visibility: 'editable', form: true, min: 0 },
+            { name: 'onlyInteger', column: 'OnlyInt', type: 'integer', tsType: 'number', visibility: 'editable', form: true, integer: true },
+            { name: 'plainNumber', column: 'Plain', type: 'integer', tsType: 'number', visibility: 'editable', form: true },
+          ],
+          searchableFields: [],
+          computedFields: [],
+        },
+      },
+    },
+    backendContract: { processEndpoints: [] },
+  };
+
+  it('emits min and integer for a field declaring both', () => {
+    const code = generateFormComponent('test', numericContract);
+    assert.ok(/key: 'bothConstraints'[^}]*min: 1[^}]*integer: true/.test(code));
+  });
+
+  it('emits min (including 0) when only min is declared', () => {
+    const code = generateFormComponent('test', numericContract);
+    assert.ok(/key: 'onlyMin'[^}]*min: 0/.test(code));
+    assert.ok(!/key: 'onlyMin'[^}]*integer: true/.test(code));
+  });
+
+  it('emits integer when only integer is declared', () => {
+    const code = generateFormComponent('test', numericContract);
+    assert.ok(/key: 'onlyInteger'[^}]*integer: true/.test(code));
+    assert.ok(!/key: 'onlyInteger'[^}]*min:/.test(code));
+  });
+
+  it('emits neither min nor integer for a plain numeric field (backwards-compatible)', () => {
+    const code = generateFormComponent('test', numericContract);
+    const line = code.split('\n').find(l => l.includes("key: 'plainNumber'"));
+    assert.ok(line, 'plainNumber field line should exist');
+    assert.ok(!line.includes('min:'), 'plain field must not gain a min prop');
+    assert.ok(!line.includes('integer:'), 'plain field must not gain an integer prop');
+    // type stays 'number' (validator reads min/integer, not type)
+    assert.ok(line.includes("type: 'number'"));
+  });
+});
+
+// ---------------------------------------------------------------------------
 // addLineFields derived field separation
 // ---------------------------------------------------------------------------
 
@@ -1620,7 +1689,11 @@ const newRecordContract = {
 describe('generatePageComponent - newRecordComponent', () => {
   it('imports useState when newRecordComponent is configured', () => {
     const code = generatePageComponent('finPayment', null, newRecordContract);
-    assert.ok(code.includes("import { useState, useEffect } from 'react'"), 'should import useState');
+    // ETP-4520 — this fixture's window.id enables the windowAccess guard, which
+    // adds its own `useMemo` import alongside `useState`; assert on the react
+    // import statement as a whole rather than an exact substring so this stays
+    // robust to further additions to that import list.
+    assert.match(code, /import \{ [^}]*useState[^}]*\} from 'react'/, 'should import useState');
   });
 
   it('declares showNewModal state hook', () => {

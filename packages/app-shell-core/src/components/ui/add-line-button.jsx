@@ -13,7 +13,7 @@ const PRIMARY_STYLE = {
   justifyContent: 'center',
   gap: 4,
   padding: '5px 8px',
-  background: '#FFFFFF',
+  background: 'hsl(var(--card))',
   border: 'none',
   borderRadius: '7px 0 0 7px',
   fontSize: 14,
@@ -30,17 +30,17 @@ const CHEVRON_STYLE = {
   alignItems: 'center',
   justifyContent: 'center',
   padding: '5px 8px',
-  background: '#FFFFFF',
+  background: 'hsl(var(--card))',
   border: 'none',
   borderRadius: '0 7px 7px 0',
   cursor: 'pointer',
   transition: 'background-color 0.15s ease',
 };
 
-const DISABLED_OVERLAY = { opacity: 0.5, cursor: 'not-allowed' };
+const DISABLED_OVERLAY = { color: 'hsl(var(--text-disabled))', background: 'hsl(var(--muted))', cursor: 'not-allowed' };
 
-const hoverIn = (disabled) => (e) => { if (!disabled) e.currentTarget.style.backgroundColor = '#F9FAFB'; };
-const hoverOut = (disabled) => (e) => { if (!disabled) e.currentTarget.style.backgroundColor = '#FFFFFF'; };
+const hoverIn = (disabled) => (e) => { if (!disabled) e.currentTarget.style.backgroundColor = 'hsl(var(--muted))'; };
+const hoverOut = (disabled) => (e) => { if (!disabled) e.currentTarget.style.backgroundColor = 'hsl(var(--card))'; };
 
 /**
  * Split button matching the Figma "Añadir línea" design (ETP-3835).

@@ -96,3 +96,55 @@ describe('Tabs primitives', () => {
     expect(screen.queryByText('Should not render')).not.toBeInTheDocument();
   });
 });
+
+// ETP-4553 / GitHub #901 — Tabs, TabsList, TabsTrigger and TabsContent used to
+// destructure only their own known props, so any extra prop a caller passed
+// (data-testid, aria-label, an event handler, etc.) was silently dropped
+// instead of reaching the rendered element. Discovered via EditAccountModal's
+// (ETP-4530) data-testid usages; the fix is a generic `...rest` spread on all
+// four primitives.
+describe('Tabs primitives — extra prop passthrough (ETP-4553)', () => {
+  it('spreads extra props (data-testid) onto Tabs', () => {
+    const { container } = render(
+      <Tabs value="x" onValueChange={() => {}} data-testid="my-tabs">
+        <TabsList>
+          <TabsTrigger value="x">One</TabsTrigger>
+        </TabsList>
+      </Tabs>,
+    );
+    expect(container.querySelector('[data-testid="my-tabs"]')).toBeInTheDocument();
+  });
+
+  it('spreads extra props (data-testid) onto TabsList', () => {
+    render(
+      <Tabs value="x" onValueChange={() => {}}>
+        <TabsList data-testid="my-tabslist">
+          <TabsTrigger value="x">One</TabsTrigger>
+        </TabsList>
+      </Tabs>,
+    );
+    expect(screen.getByTestId('my-tabslist')).toBeInTheDocument();
+  });
+
+  it('spreads extra props (data-testid, aria-label) onto TabsTrigger', () => {
+    render(
+      <Tabs value="x" onValueChange={() => {}}>
+        <TabsList>
+          <TabsTrigger value="x" data-testid="my-tab" aria-label="My tab">One</TabsTrigger>
+        </TabsList>
+      </Tabs>,
+    );
+    const trigger = screen.getByTestId('my-tab');
+    expect(trigger).toBeInTheDocument();
+    expect(trigger).toHaveAttribute('aria-label', 'My tab');
+  });
+
+  it('spreads extra props (data-testid) onto TabsContent', () => {
+    render(
+      <Tabs value="x" onValueChange={() => {}}>
+        <TabsContent value="x" data-testid="my-content">Body</TabsContent>
+      </Tabs>,
+    );
+    expect(screen.getByTestId('my-content')).toBeInTheDocument();
+  });
+});

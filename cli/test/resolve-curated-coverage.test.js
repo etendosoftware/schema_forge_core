@@ -418,6 +418,46 @@ describe('resolveCurated — applyEntityDecisions handlesDefaults: false', () =>
 });
 
 // ---------------------------------------------------------------------------
+// applyEntityDecisions — hideDelete: true (ETP-4512)
+// ---------------------------------------------------------------------------
+
+describe('resolveCurated — applyEntityDecisions hideDelete: true', () => {
+  const schemaRaw = makeSchema('invoiceLine', [
+    { name: 'product', columnName: 'M_Product_ID', label: 'Product', type: 'foreignKey', visibility: 'editable' },
+  ]);
+  const decisions = makeDecisions('invoiceLine', {
+    name: 'invoiceLine',
+    hideDelete: true,
+    fields: { product: {} },
+  });
+
+  it('carries hideDelete: true to the curated entity', async () => {
+    const { schema } = await resolveCurated(schemaRaw, { rules: [] }, decisions);
+    assert.equal(schema.entities[0].hideDelete, true);
+  });
+
+  it('does NOT set hideDelete when absent from decisions (default ON, delete allowed)', async () => {
+    const noFlag = makeDecisions('invoiceLine', {
+      name: 'invoiceLine',
+      fields: { product: {} },
+    });
+    const { schema } = await resolveCurated(schemaRaw, { rules: [] }, noFlag);
+    assert.equal(schema.entities[0].hideDelete, undefined,
+      'hideDelete should be absent when not explicitly set to true');
+  });
+
+  it('does NOT set hideDelete when explicitly false', async () => {
+    const falseFlag = makeDecisions('invoiceLine', {
+      name: 'invoiceLine',
+      hideDelete: false,
+      fields: { product: {} },
+    });
+    const { schema } = await resolveCurated(schemaRaw, { rules: [] }, falseFlag);
+    assert.equal(schema.entities[0].hideDelete, undefined);
+  });
+});
+
+// ---------------------------------------------------------------------------
 // window.statusFieldLabel — WINDOW_TRUTHY_PROPS propagation
 // ---------------------------------------------------------------------------
 

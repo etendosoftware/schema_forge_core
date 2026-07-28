@@ -1,4 +1,5 @@
 export * from './auth/index.js';
+export * from './data/index.js';
 export * from './i18n/index.js';
 export * from './hooks/useCurrency.jsx';
 export * from './hooks/use-mobile.jsx';

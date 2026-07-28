@@ -38,6 +38,9 @@ These properties exist **only in `frontendContract.entities.{entity}.fields`**.
 | `reference` | Frontend | FK entity name for selector/search UI | `"BusinessPartner"`, `"Warehouse"` |
 | `inputMode` | Frontend | How the FK field is rendered | `"search"`, `"selector"`, `"dependent"` |
 | `dependsOn` | Frontend | Cascading FK dependency | `{ field, filterKey }` |
+| `validation` | Frontend | Client-side form validation constraints (nested object) | `{ required, maxLength, minimum, format, ... }` |
+
+> **`validation` object (ETP-4555):** a single nested object holding declarative constraints — `required`, `minLength`, `maxLength`, `minimum`, `maximum`, `format`, `enum`, `allowedSchemes` (fixed canonical key order). Derived by `resolve-curated` with **decision > raw AD** precedence; absent when nothing applies. **Frontend-scoped only** — not pushed to NEO and not enforced server-side (see the note in `docs/decisions-reference.md` § "Validation Constraints"). Full shape, precedence rules, zero-validity, string→number coercion, and UTF-16 length semantics live there — this table is a pointer, not a copy.
 
 ### Entity-Level Properties (Frontend)
 

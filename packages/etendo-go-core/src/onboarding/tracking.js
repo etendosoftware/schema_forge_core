@@ -6,11 +6,13 @@ const ONBOARDING_EVENT_CONTEXT = {
 
 export function trackOnboarding(config, eventDefinition, properties = {}) {
   if (config?.track) {
-    Promise.resolve(
-      config.track(eventDefinition, {
+    try {
+      Promise.resolve(config.track(eventDefinition, {
         ...ONBOARDING_EVENT_CONTEXT,
         ...properties,
-      })
-    ).catch(() => {});
+      })).catch(() => {});
+    } catch {
+      // Telemetry must never affect the user-facing onboarding transition.
+    }
   }
 }

@@ -4,11 +4,11 @@ export function detectBaseUrl() {
   const path = window.location.pathname;
   const webIdx = path.indexOf('/web/');
   if (webIdx !== -1) return path.substring(0, webIdx);
-  return import.meta.env.VITE_API_BASE || '';
+  return import.meta.env?.VITE_API_BASE || '';
 }
 
 const DEFAULT_BASE_URL = detectBaseUrl();
-console.log('[api.js] DEFAULT_BASE_URL:', JSON.stringify(DEFAULT_BASE_URL), 'pathname:', window.location.pathname, 'VITE_API_BASE:', import.meta.env.VITE_API_BASE);
+console.log('[api.js] DEFAULT_BASE_URL:', JSON.stringify(DEFAULT_BASE_URL), 'pathname:', window.location.pathname, 'VITE_API_BASE:', import.meta.env?.VITE_API_BASE);
 
 export function buildHeaders(token) {
   const headers = {

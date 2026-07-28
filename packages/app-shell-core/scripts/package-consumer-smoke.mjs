@@ -77,6 +77,7 @@ import {
   AppShellRuntime,
   createAppShellConfig,
   createMemoryAuthStorage,
+  LogoutRoute,
 } from '@etendosoftware/app-shell-core';
 import { Button } from '@etendosoftware/app-shell-core/components/ui/button.jsx';
 import { Card, CardContent } from '@etendosoftware/app-shell-core/components/ui/card.jsx';
@@ -107,6 +108,7 @@ const config = createAppShellConfig({
     { path: '/', index: true, element: <Dashboard /> },
     { path: '/dashboard', element: <Dashboard /> },
     { path: '/login', public: true, element: <Login /> },
+    { path: '/logout', public: true, element: <LogoutRoute safeDestination="/login" /> },
   ],
   reports: [{ id: 'sales-summary', title: 'Sales summary' }],
 });

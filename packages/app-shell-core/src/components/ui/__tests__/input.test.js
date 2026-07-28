@@ -15,7 +15,7 @@ function extractInputClass(source) {
   return match ? match[1] : null;
 }
 
-describe('Input — Figma form-input tokens (ETP-3893 + ETP-4000 + ETP-4321)', () => {
+describe('Input — semantic form-input tokens (ETP-4554)', () => {
   const inputClass = extractInputClass(src);
 
   it('source exposes a single canonical class string', () => {
@@ -35,8 +35,8 @@ describe('Input — Figma form-input tokens (ETP-3893 + ETP-4000 + ETP-4321)', (
     assert.match(inputClass, /(^|\s)rounded-lg(\s|$)/);
   });
 
-  it('uses the Figma border color #D1D4DB', () => {
-    assert.match(inputClass, /border-\[#D1D4DB\]/);
+  it('uses the semantic control border', () => {
+    assert.match(inputClass, /border-border-control/);
   });
 
   it('drives padding from the shared FIELD_PADDING density token (ETP-4321)', () => {
@@ -44,12 +44,12 @@ describe('Input — Figma form-input tokens (ETP-3893 + ETP-4000 + ETP-4321)', (
     assert.match(src, /import \{[^}]*FIELD_PADDING[^}]*\} from "\.\/formDensity\.js"/);
   });
 
-  it('uses the Figma form fill #F5F7F9 (ETP-4000)', () => {
-    assert.match(inputClass, /bg-\[#F5F7F9\]/);
+  it('uses a semantic muted surface', () => {
+    assert.match(inputClass, /bg-muted/);
   });
 
-  it('uses the Figma placeholder color #828FA3 (ETP-4000)', () => {
-    assert.match(inputClass, /placeholder:text-\[#828FA3\]/);
+  it('uses semantic secondary placeholder text', () => {
+    assert.match(inputClass, /placeholder:text-text-secondary/);
   });
 
   it('does NOT carry a drop shadow — Figma ETP-4000 renders the field flat', () => {
@@ -70,5 +70,11 @@ describe('Input — Figma form-input tokens (ETP-3893 + ETP-4000 + ETP-4321)', (
 
   it('does NOT use the legacy bg-transparent (ETP-4000 sets the form fill)', () => {
     assert.doesNotMatch(inputClass, /(^|\s)bg-transparent(\s|$)/);
+  });
+
+  it('uses a dedicated disabled state and an accessible focus ring', () => {
+    assert.match(inputClass, /disabled:text-text-disabled/);
+    assert.doesNotMatch(inputClass, /disabled:opacity-/);
+    assert.match(inputClass, /focus-visible:ring-focus-ring/);
   });
 });
