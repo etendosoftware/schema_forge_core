@@ -132,24 +132,19 @@ describe('useCurrency', () => {
       json: () => Promise.resolve({ currencyCode: 'EUR' }),
     }));
 
-    const { rerender } = renderHook(
-      ({ orgId }) => {
-        mockUseAuth.mockReturnValue({ isAuthenticated: true, selectedOrg: { id: orgId } });
-        return useCurrency();
-      },
-      {
-        initialProps: { orgId: 'org-1' },
-        wrapper: ({ children }) => (
-          <CurrencyProvider apiBaseUrl="/sws/neo" fetcher={fetcher}>{children}</CurrencyProvider>
-        ),
-      },
-    );
+    mockUseAuth.mockReturnValue({ isAuthenticated: true, selectedOrg: { id: 'org-1' } });
+    const { rerender } = renderHook(() => useCurrency(), {
+      wrapper: ({ children }) => (
+        <CurrencyProvider apiBaseUrl="/sws/neo" fetcher={fetcher}>{children}</CurrencyProvider>
+      ),
+    });
 
     await waitFor(() => {
       expect(fetcher).toHaveBeenCalledTimes(1);
     });
 
-    rerender({ orgId: 'org-2' });
+    mockUseAuth.mockReturnValue({ isAuthenticated: true, selectedOrg: { id: 'org-2' } });
+    rerender();
 
     await waitFor(() => {
       expect(fetcher).toHaveBeenCalledTimes(2);
