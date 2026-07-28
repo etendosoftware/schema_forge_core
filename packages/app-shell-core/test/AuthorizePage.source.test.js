@@ -42,11 +42,14 @@ test('AuthorizePage renders ConnectionsLanding when not in the OAuth flow', asyn
   assert.match(src, /<ConnectionsLanding/);
 });
 
-test('AuthorizePage posts to the OAuth authorize endpoint with a bearer token', async () => {
+test('AuthorizePage posts to the OAuth authorize endpoint with the cookie session (no bearer token)', async () => {
   const src = await readSource();
   assert.match(src, /fetch\('\/oauth2\/authorize'/);
   assert.match(src, /method:\s*'POST'/);
-  assert.match(src, /`Bearer \$\{token\}`/);
+  assert.match(src, /credentials:\s*['"]include['"]/);
+  assert.match(src, /X-Go-CSRF/);
+  assert.doesNotMatch(src, /Authorization/);
+  assert.doesNotMatch(src, /Bearer/);
   assert.match(src, /code_challenge/);
 });
 
@@ -78,12 +81,6 @@ test('AuthorizePage declares labels for all supported scopes', async () => {
   assert.match(src, /'neo:process'/);
   assert.match(src, /'neo:report'/);
   assert.match(src, /'neo:\*'/);
-});
-
-test('AuthorizePage derives the API base URL from the current path', async () => {
-  const src = await readSource();
-  assert.match(src, /path\.indexOf\('\/web\/'\)/);
-  assert.match(src, /VITE_API_BASE/);
 });
 
 test('AuthorizePage derives the MCP URL from the window origin', async () => {
