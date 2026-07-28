@@ -396,3 +396,211 @@ describe('AuthContext — csrfToken (ETP-4576)', () => {
     expect(JSON.stringify(persisted)).not.toContain('csrf-should-not-persist');
   });
 });
+
+// ETP-4576 cycle 4 — session restore on mount, purely additive. AuthProvider
+// gains an optional `restoreSession` prop (host-injected, same pattern as
+// `fetchWindowAccess`) and a new tri-state `status` field
+// ('booting' | 'authenticated' | 'anonymous') on the context value. When the
+// prop is not supplied, `status` must resolve synchronously and no new side
+// effect (legacy storage purge) must fire — hosts that have not opted into
+// the new flow must see zero behavior change.
+describe('AuthContext — session restore (ETP-4576)', () => {
+  afterEach(() => {
+    // These tests seed real localStorage keys (jsdom) to exercise the legacy
+    // purge; keep them from leaking into other tests in this file/run.
+    window.localStorage.clear();
+  });
+
+  describe('without restoreSession (default, backward-compatible behavior)', () => {
+    it('resolves status synchronously to "authenticated" on the first render when the initial session already has a token', () => {
+      const { result } = renderHook(() => useAuth(), {
+        wrapper: ({ children }) => (
+          <AuthProvider storage={createMemoryAuthStorage()} initialSession={{ token: 'tok-1' }}>
+            {children}
+          </AuthProvider>
+        ),
+      });
+
+      expect(result.current.status).toBe('authenticated');
+    });
+
+    it('resolves status synchronously to "anonymous" on the first render when there is no token', () => {
+      const { result } = renderHook(() => useAuth(), { wrapper: wrapperWith() });
+
+      expect(result.current.status).toBe('anonymous');
+    });
+
+    it('does not purge legacy localStorage keys when restoreSession is not provided (zero side effects for opted-out hosts)', () => {
+      window.localStorage.setItem('sf_auth_token', 'legacy-existing-token');
+
+      renderHook(() => useAuth(), { wrapper: wrapperWith() });
+
+      expect(window.localStorage.getItem('sf_auth_token')).toBe('legacy-existing-token');
+    });
+  });
+
+  describe('with restoreSession provided', () => {
+    it('starts in "booting" status synchronously on the first render, before the restore promise settles', () => {
+      // Never resolves within this test — we only assert the synchronous,
+      // first-render value.
+      const restoreSession = vi.fn(() => new Promise(() => {}));
+      const { result } = renderHook(() => useAuth(), {
+        wrapper: ({ children }) => (
+          <AuthProvider
+            storage={createMemoryAuthStorage()}
+            initialSession={{ token: 'tok-1' }}
+            restoreSession={restoreSession}>
+            {children}
+          </AuthProvider>
+        ),
+      });
+
+      // Booting regardless of what the initial/persisted session says — the
+      // restore result is the source of truth once restoreSession is wired.
+      expect(result.current.status).toBe('booting');
+    });
+
+    it('purges legacy auth storage once on mount, before the restore promise resolves (success case)', async () => {
+      window.localStorage.setItem('sf_auth_token', 'legacy-existing-token');
+      const restoreSession = vi.fn().mockResolvedValue({
+        account: { id: 'acc-1' },
+        environment: { id: 'env-1' },
+        roleList: [{ id: 'role-1' }],
+        csrfToken: 'csrf-restored-abc',
+      });
+
+      const { result } = renderHook(() => useAuth(), {
+        wrapper: ({ children }) => (
+          <AuthProvider storage={createMemoryAuthStorage()} restoreSession={restoreSession}>
+            {children}
+          </AuthProvider>
+        ),
+      });
+
+      // The purge runs synchronously in the mount effect — it must already
+      // be gone even before the restore promise has had a chance to settle.
+      expect(window.localStorage.getItem('sf_auth_token')).toBeNull();
+
+      await waitFor(() => {
+        expect(result.current.status).toBe('authenticated');
+      });
+    });
+
+    it('purges legacy auth storage once on mount even when the restore promise rejects (failure case)', async () => {
+      window.localStorage.setItem('sf_auth_token', 'legacy-existing-token');
+      const restoreSession = vi.fn().mockRejectedValue(new Error('network error'));
+
+      const { result } = renderHook(() => useAuth(), {
+        wrapper: ({ children }) => (
+          <AuthProvider storage={createMemoryAuthStorage()} restoreSession={restoreSession}>
+            {children}
+          </AuthProvider>
+        ),
+      });
+
+      expect(window.localStorage.getItem('sf_auth_token')).toBeNull();
+
+      await waitFor(() => {
+        expect(result.current.status).toBe('anonymous');
+      });
+    });
+
+    it('resolves to "authenticated" with the restored csrfToken once the restore promise succeeds', async () => {
+      const restoreSession = vi.fn().mockResolvedValue({
+        account: { id: 'acc-1' },
+        environment: { id: 'env-1' },
+        roleList: [{ id: 'role-1' }],
+        csrfToken: 'csrf-restored-abc',
+      });
+
+      const { result } = renderHook(() => useAuth(), {
+        wrapper: ({ children }) => (
+          <AuthProvider storage={createMemoryAuthStorage()} restoreSession={restoreSession}>
+            {children}
+          </AuthProvider>
+        ),
+      });
+
+      await waitFor(() => {
+        expect(result.current.status).toBe('authenticated');
+      });
+      expect(result.current.csrfToken).toBe('csrf-restored-abc');
+    });
+
+    it('resolves to "anonymous" with csrfToken null and clears any existing session when restoreSession resolves null', async () => {
+      const restoreSession = vi.fn().mockResolvedValue(null);
+      // Seed a session that already looks logged-in, so we can prove it gets
+      // actively cleared rather than just happening to start empty.
+      const storage = createMemoryAuthStorage({ token: 'stale-token', username: 'stale-user' });
+
+      const { result } = renderHook(() => useAuth(), {
+        wrapper: ({ children }) => (
+          <AuthProvider storage={storage} restoreSession={restoreSession}>
+            {children}
+          </AuthProvider>
+        ),
+      });
+
+      await waitFor(() => {
+        expect(result.current.status).toBe('anonymous');
+      });
+      expect(result.current.csrfToken).toBeNull();
+      // Cleared as if logout() had run.
+      expect(result.current.token).toBeNull();
+      expect(result.current.isAuthenticated).toBe(false);
+    });
+
+    it('resolves to "anonymous" fail-closed when the restore promise rejects, without throwing or leaving an unhandled rejection', async () => {
+      const restoreSession = vi.fn().mockRejectedValue(new Error('network error'));
+      const storage = createMemoryAuthStorage({ token: 'stale-token', username: 'stale-user' });
+
+      let result;
+      expect(() => {
+        ({ result } = renderHook(() => useAuth(), {
+          wrapper: ({ children }) => (
+            <AuthProvider storage={storage} restoreSession={restoreSession}>
+              {children}
+            </AuthProvider>
+          ),
+        }));
+      }).not.toThrow();
+
+      await waitFor(() => {
+        expect(result.current.status).toBe('anonymous');
+      });
+      expect(result.current.csrfToken).toBeNull();
+      expect(result.current.token).toBeNull();
+      expect(result.current.isAuthenticated).toBe(false);
+    });
+
+    it('does not call restoreSession more than once even when the component re-renders', async () => {
+      const restoreSession = vi.fn().mockResolvedValue({
+        account: { id: 'acc-1' },
+        environment: { id: 'env-1' },
+        roleList: [{ id: 'role-1' }],
+        csrfToken: 'csrf-restored-abc',
+      });
+
+      const { result } = renderHook(() => useAuth(), {
+        wrapper: ({ children }) => (
+          <AuthProvider storage={createMemoryAuthStorage()} restoreSession={restoreSession}>
+            {children}
+          </AuthProvider>
+        ),
+      });
+
+      await waitFor(() => {
+        expect(result.current.status).toBe('authenticated');
+      });
+      expect(restoreSession).toHaveBeenCalledTimes(1);
+
+      // Force a re-render via an existing, unrelated action — must not
+      // re-trigger the mount-only restore.
+      act(() => {
+        result.current.selectOrg({ id: 'org-1' });
+      });
+
+      expect(restoreSession).toHaveBeenCalledTimes(1);
+    });
+  });
+});
