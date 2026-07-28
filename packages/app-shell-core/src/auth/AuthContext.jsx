@@ -1,9 +1,16 @@
 import { createContext, useContext, useState, useCallback, useMemo, useRef, useEffect } from 'react';
-import { createLocalAuthStorage, normalizeAuthSession } from './session.js';
+import { createLocalAuthStorage, normalizeAuthSession, purgeLegacyAuthStorage } from './session.js';
 
 const AuthContext = createContext(null);
 
-export function AuthProvider({ children, storage, initialSession, onSessionChange, fetchWindowAccess }) {
+export function AuthProvider({
+  children,
+  storage,
+  initialSession,
+  onSessionChange,
+  fetchWindowAccess,
+  restoreSession,
+}) {
   const authStorage = useMemo(() => storage || createLocalAuthStorage(), [storage]);
   const [session, setSessionState] = useState(() => normalizeAuthSession({
     ...authStorage.read(),
@@ -22,6 +29,19 @@ export function AuthProvider({ children, storage, initialSession, onSessionChang
   // authStorage: it is bound to the httpOnly session cookie, not a value the
   // client should carry across reloads on its own.
   const [csrfToken, setCsrfToken] = useState(null);
+  // ETP-4576 — tri-state auth status. Hosts that don't pass `restoreSession`
+  // (not yet migrated to the cookie-session restore flow) keep today's
+  // behavior verbatim: resolved synchronously from whatever session/token
+  // was already read above, never 'booting'. Hosts that opt in start
+  // 'booting' until GET /sws/go/session (via restoreSession) settles.
+  const [status, setStatus] = useState(() => (
+    typeof restoreSession === 'function' ? 'booting' : (session.token ? 'authenticated' : 'anonymous')
+  ));
+  // ETP-4576 — guards the mount-only restore effect below against firing
+  // more than once, since a host passing an inline arrow function as
+  // `restoreSession` would otherwise get a new function identity every
+  // render.
+  const hasRestoredRef = useRef(false);
   // ETP-4520 — request-sequencing guard against a stale-response race: if
   // role A is selected then role B before A's fetchWindowAccess resolves, A's
   // slower response can land AFTER B's and overwrite B's correct maps with
@@ -63,6 +83,37 @@ export function AuthProvider({ children, storage, initialSession, onSessionChang
     selectRoleRequestIdRef.current += 1;
     fetchedForRoleRef.current = undefined;
   }, [authStorage, onSessionChange]);
+
+  // ETP-4576 — session restore on mount (opt-in via `restoreSession`, same
+  // host-injected pattern as `fetchWindowAccess`): purges the legacy
+  // sf_auth_*/sf_platform_* localStorage keys once ("on first read", per the
+  // PRD), then consumes GET /sws/go/session through the host-supplied
+  // fetcher. Success moves the tri-state status to 'authenticated' and
+  // stores the restored CSRF proof; any failure (no active session, network
+  // error) fails closed through the same logout() path already used
+  // elsewhere, so session/windowAccess/capabilities/csrfToken end up
+  // consistently cleared. Deliberately does not touch `session`'s shape —
+  // mapping {account, environment, roleList} into it is a follow-up cycle.
+  useEffect(() => {
+    if (typeof restoreSession !== 'function') return;
+    if (hasRestoredRef.current) return;
+    hasRestoredRef.current = true;
+
+    purgeLegacyAuthStorage();
+
+    Promise.resolve()
+      .then(() => restoreSession())
+      .then((result) => {
+        if (!result) throw new Error('No active session');
+        setCsrfToken(result.csrfToken ?? null);
+        setStatus('authenticated');
+      })
+      .catch(() => {
+        logout();
+        setStatus('anonymous');
+      });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const selectOrg = useCallback((org) => {
     persistSession({ ...session, selectedOrg: org || null });
@@ -148,6 +199,7 @@ export function AuthProvider({ children, storage, initialSession, onSessionChang
     windowAccess,
     capabilities,
     csrfToken,
+    status,
     setWindowAccess,
     setCapabilities,
     setCsrfToken,
@@ -156,7 +208,7 @@ export function AuthProvider({ children, storage, initialSession, onSessionChang
     selectRole,
     selectOrg,
     logout,
-  }), [session, windowAccess, capabilities, csrfToken, setSession, selectRole, selectOrg, logout]);
+  }), [session, windowAccess, capabilities, csrfToken, status, setSession, selectRole, selectOrg, logout]);
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 }
