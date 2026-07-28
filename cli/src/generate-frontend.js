@@ -1944,6 +1944,20 @@ export function generatePageComponent(headerEntity, detailEntity, contract) {
   const detailFields = contract.frontendContract.entities[detailEntity]?.fields ?? [];
   const detailEditableFields = detailFields.filter(f => f.form && f.visibility !== 'readOnly');
 
+  // ETP-4610 — field keys flagged `dimensionsPanel: true` on the LINES entity,
+  // forwarded to DetailView as `dimensionsPanelFieldKeys` so it can scope its
+  // `lineHiddenColumns` dimension-macro trust to fields THIS window's own
+  // decisions.json declared as accounting-dimension candidates (see
+  // `buildDimensionsPanelColumn` above, which collects the same fields for the
+  // grid's synthetic panel column) — instead of only the small, global
+  // `DIMENSION_MACRO_KEYS` allowlist baked into DetailView.jsx. Fully additive:
+  // an entity with zero dimensionsPanel fields yields an empty array and no
+  // prop is emitted at all (see dimensionsPanelFieldKeysProp below), so every
+  // window that predates this feature regenerates byte-for-byte identical.
+  const dimensionsPanelFieldKeys = detailFields
+    .filter(f => f.dimensionsPanel && f.visibility !== 'discarded')
+    .map(f => f.name);
+
   // Status field gets a badge in the header; summary strip uses only fields with explicit section:'summary'.
   // Prefer DocStatus column (document workflow status) if present, even when form:false.
   const allEntityFields = contract.frontendContract.entities[headerEntity]?.fields ?? [];
@@ -2115,6 +2129,13 @@ export function generatePageComponent(headerEntity, detailEntity, contract) {
     documentPreview
   );
   const notesFieldProp = wrapIf('\n        notesField="', notesField, '"');
+  // ETP-4610 — see `dimensionsPanelFieldKeys` computation above.
+  const dimensionsPanelFieldKeysProp = jsonWrapIf(
+    '\n        dimensionsPanelFieldKeys={',
+    dimensionsPanelFieldKeys,
+    '}',
+    dimensionsPanelFieldKeys.length > 0
+  );
   // customTabs accumulator — DetailView supports items with shape
   //   { key, label, Component, placement?: 'tab' | 'footer', props?: {} }
   // `placement: 'tab'` renders as a main tab (Lines/Notes style);
@@ -2467,7 +2488,7 @@ ${menuActionStateStatements}`)}${fragmentIf(confirmModalName, `
         detailLabel="${entityDetailLabel}"` : ''}
         windowName={windowName}
         recordId={recordId}
-        breadcrumb={breadcrumb}${apiProp}${detailTabIndexProp}${secondaryTabsProp}${formFooterProp}${customLinesProp}${primaryTabsProp}${othersLabelProp}${documentPreviewProp}${hideDeleteProp}${hideDeleteButtonProp}${customTabsAfterBottomProp}${hidePrintProp}${hideSaveStatusesProp}${hideMoreMenuProp}${hideMoreDetailsProp}${noHeaderBorderProp}${toolbarBorderBottomProp}${compactSidebarPaddingProp}${whiteFormBackgroundProp}${autoSaveOnBlurProp}${hideFormCardProp}${sidebarAboveTabsOnlyProp}${tabsSeparatorProp}${sidebarClassNameProp}${tabsBarPaddingXProp}${primaryTabsVariantProp}${toolbarPaddingXProp}${toolbarButtonSizeProp}${contentBgProp}${formCardPaddingProp}${formScrollPaddingXProp}${notesFieldProp}${customTabsProp}${customCompPropsBlock}${menuActionsProp}${draftModeProp}${requiredHeaderFieldsProp}${addLineGuardProp}${headerContentProp}${detailSortByProp}${titleFieldProp}${documentDateFieldProp}${salesThemeProp}${disableProcessedLockProp}${statusEnumLabelsProp}${statusFieldLabelProp}${lockedAlertProp}${showDetailFooterTotalsProp}${labelOverridesProp}${lineConfigProp}${linesLayoutProp}${balanceFooterProp}${sendDocumentDetailProp}${selectorPriceCurrencyProp}
+        breadcrumb={breadcrumb}${apiProp}${detailTabIndexProp}${secondaryTabsProp}${formFooterProp}${customLinesProp}${primaryTabsProp}${othersLabelProp}${documentPreviewProp}${hideDeleteProp}${hideDeleteButtonProp}${customTabsAfterBottomProp}${hidePrintProp}${hideSaveStatusesProp}${hideMoreMenuProp}${hideMoreDetailsProp}${noHeaderBorderProp}${toolbarBorderBottomProp}${compactSidebarPaddingProp}${whiteFormBackgroundProp}${autoSaveOnBlurProp}${hideFormCardProp}${sidebarAboveTabsOnlyProp}${tabsSeparatorProp}${sidebarClassNameProp}${tabsBarPaddingXProp}${primaryTabsVariantProp}${toolbarPaddingXProp}${toolbarButtonSizeProp}${contentBgProp}${formCardPaddingProp}${formScrollPaddingXProp}${notesFieldProp}${dimensionsPanelFieldKeysProp}${customTabsProp}${customCompPropsBlock}${menuActionsProp}${draftModeProp}${requiredHeaderFieldsProp}${addLineGuardProp}${headerContentProp}${detailSortByProp}${titleFieldProp}${documentDateFieldProp}${salesThemeProp}${disableProcessedLockProp}${statusEnumLabelsProp}${statusFieldLabelProp}${lockedAlertProp}${showDetailFooterTotalsProp}${labelOverridesProp}${lineConfigProp}${linesLayoutProp}${balanceFooterProp}${sendDocumentDetailProp}${selectorPriceCurrencyProp}
         {...props}${effectiveWindowProp}${sidebarContentProp}
       />
 ${menuActionModals}${confirmModalName ? `
