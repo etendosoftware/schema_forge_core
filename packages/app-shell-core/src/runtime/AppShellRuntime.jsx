@@ -61,6 +61,7 @@ export function AppShellProviders({
         storage={auth?.storage}
         initialSession={auth?.initialSession}
         onSessionChange={auth?.onSessionChange}
+        fetchWindowAccess={auth?.fetchWindowAccess}
         data-testid="AuthProvider__b517b2">
         <DataProvider
           cache={data?.cache}

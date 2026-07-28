@@ -140,6 +140,53 @@ describe('detectDuplicatedBlocks', () => {
       ['tools/app-shell/src/foo.js', 'tools/app-shell/src/bar.js'],
     );
   });
+
+  it('ignores duplicated blocks in locale JSON dictionaries', () => {
+    const block = [
+      '+  "csvImport": "Importar",',
+      '+  "csvImportEditCorrespondence": "Editar correspondencia",',
+      '+  "csvImportReviewQueue": "Cola de revisión",',
+      '+  "csvImportApplyToAll": "Aplicar a todos",',
+      '+  "csvImportRevalidate": "Revalidar",',
+      '+  "csvImportDiscardRow": "Descartar fila"',
+    ].join('\n');
+
+    const diff = [
+      makeDiff('tools/app-shell/src/locales/es_AR.json', block),
+      makeDiff('tools/app-shell/src/locales/es_ES.json', block),
+    ].join('\n');
+
+    assert.deepEqual(detectDuplicatedBlocks(diff), []);
+  });
+
+  it('still flags the same duplicated block when it lands in real source (locale skip is path-scoped, not a blanket disable)', () => {
+    const block = [
+      '+  "csvImport": "Importar",',
+      '+  "csvImportEditCorrespondence": "Editar correspondencia",',
+      '+  "csvImportReviewQueue": "Cola de revisión",',
+      '+  "csvImportApplyToAll": "Aplicar a todos",',
+      '+  "csvImportRevalidate": "Revalidar",',
+      '+  "csvImportDiscardRow": "Descartar fila"',
+    ].join('\n');
+
+    // The locale JSON copy is silently dropped; the two real source copies must still
+    // collide. This proves the skip only removes locales/ runs from the comparison,
+    // rather than disabling duplication detection for the whole diff.
+    const diff = [
+      makeDiff('tools/app-shell/src/locales/es_AR.json', block),
+      makeDiff('tools/app-shell/src/foo.js', block),
+      makeDiff('tools/app-shell/src/bar.js', block),
+    ].join('\n');
+
+    const findings = detectDuplicatedBlocks(diff);
+    assert.equal(findings.length, 1);
+    assert.equal(findings[0].code, 'DUPLICATED_BLOCK');
+    assert.equal(findings[0].severity, 'blocker');
+    assert.deepEqual(
+      findings[0].locations.map((location) => location.path),
+      ['tools/app-shell/src/foo.js', 'tools/app-shell/src/bar.js'],
+    );
+  });
 });
 
 describe('analyzeChangedFiles', () => {
