@@ -23,7 +23,8 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import { spawnSync } from 'node:child_process';
-import { fileURLToPath, pathToFileURL } from 'node:url';
+import { fileURLToPath } from 'node:url';
+import { isMainModule } from './utils.js';
 
 const HERE = path.dirname(fileURLToPath(import.meta.url));
 /**
@@ -1325,7 +1326,7 @@ export function main(argv = process.argv.slice(2), { stdout = process.stdout } =
   return report;
 }
 
-if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) {
+if (isMainModule(import.meta.url)) {
   try {
     main();
     // v0 is report-only: debt never sets a non-zero status. Only a usage error
