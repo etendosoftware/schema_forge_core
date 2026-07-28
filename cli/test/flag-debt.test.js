@@ -1,8 +1,10 @@
 import { describe, it, before, after, beforeEach } from 'node:test';
 import assert from 'node:assert/strict';
-import { mkdtempSync, mkdirSync, writeFileSync, readFileSync, rmSync } from 'node:fs';
+import { mkdtempSync, mkdirSync, writeFileSync, readFileSync, rmSync, symlinkSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
+import { spawnSync } from 'node:child_process';
+import { fileURLToPath } from 'node:url';
 import {
   POINTS,
   REGISTRY_FILENAME,
@@ -1099,5 +1101,76 @@ describe('the CLI', () => {
 
     const written = JSON.parse(readFileSync(join(root, 'flag-debt.json'), 'utf8'));
     assert.equal(written.features[0].key, 'tenant-upgrade');
+  });
+});
+
+describe('the CLI — real process, real symlink (npm-bin regression, ETP-4686)', () => {
+  // Every "the CLI" test above calls main() in-process, which never touches
+  // the top-level `if (isMainModule(import.meta.url)) { main(); }` guard at
+  // the bottom of flag-debt.js. That guard is exactly what broke when
+  // invoked through an npm bin symlink (node_modules/.bin/sf-flag-debt ->
+  // ../@etendosoftware/schema-forge-cli/src/flag-debt.js, per this package's
+  // own "bin" entry): import.meta.url resolves through the symlink to the
+  // real file, while process.argv[1] keeps the symlink path, so a plain
+  // string-equality guard silently never calls main() — exit 0, zero output,
+  // reading as a clean scorecard. Only a real child process invoked through a
+  // real on-disk symlink exercises that guard at all; see commit 0db070078.
+  const REAL_FLAG_DEBT = fileURLToPath(new URL('../src/flag-debt.js', import.meta.url));
+
+  let cliRoot;
+  let repoRoot;
+  let binSymlink;
+
+  before(() => {
+    cliRoot = mkdtempSync(join(tmpdir(), 'flag-debt-cli-test-'));
+
+    // Mirrors npm's real install shape: a package's src file, symlinked from
+    // node_modules/.bin/<name>. A symlink chain to the real source (rather
+    // than a copy) means this test can never drift from what actually ships,
+    // and Node resolves flag-debt.js's own `./utils.js` import against the
+    // *real* file's directory once the symlink is followed, so no fixture
+    // copy of utils.js is needed either.
+    const srcDir = join(cliRoot, 'src');
+    mkdirSync(srcDir, { recursive: true });
+    const srcFile = join(srcDir, 'flag-debt.js');
+    symlinkSync(REAL_FLAG_DEBT, srcFile);
+
+    const binDir = join(cliRoot, '.bin');
+    mkdirSync(binDir, { recursive: true });
+    binSymlink = join(binDir, 'sf-flag-debt');
+    symlinkSync(srcFile, binSymlink);
+
+    // A minimal repo for the scorer to run against — just enough registry to
+    // produce a scorecard. This suite is only exercising the entrypoint
+    // guard, not the scoring dimensions (those are covered exhaustively
+    // above), so it deliberately does not reuse the shared `root` fixture.
+    repoRoot = mkdtempSync(join(tmpdir(), 'flag-debt-cli-repo-'));
+    writeFileSync(join(repoRoot, REGISTRY_FILENAME), JSON.stringify({
+      version: 2,
+      roots: { frontend: '.' },
+      features: [{ id: 'smoke-feature', flag: { key: 'smoke-flag', symbols: ['smoke-flag'] } }],
+    }, null, 2));
+  });
+
+  after(() => {
+    rmSync(cliRoot, { recursive: true, force: true });
+    rmSync(repoRoot, { recursive: true, force: true });
+  });
+
+  it('invoked through a real node_modules/.bin symlink, runs main() and prints the scorecard', () => {
+    const result = spawnSync('node', [binSymlink, '--root', repoRoot], { encoding: 'utf8' });
+    assert.equal(result.status, 0, `unexpected exit ${result.status}, stderr: ${result.stderr}`);
+    // The regression's signature was exit 0 with EMPTY stdout — asserting the
+    // exit code alone passes on the broken guard too and would prove
+    // nothing. The content check is what actually catches it.
+    assert.match(result.stdout, /Feature debt scorecard/);
+    assert.match(result.stdout, /smoke-feature/);
+  });
+
+  it('invoked directly (node src/flag-debt.js, no symlink) also runs main() — the LOCAL_CORE path', () => {
+    const result = spawnSync('node', [REAL_FLAG_DEBT, '--root', repoRoot], { encoding: 'utf8' });
+    assert.equal(result.status, 0, `unexpected exit ${result.status}, stderr: ${result.stderr}`);
+    assert.match(result.stdout, /Feature debt scorecard/);
+    assert.match(result.stdout, /smoke-feature/);
   });
 });
