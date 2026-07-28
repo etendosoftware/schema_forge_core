@@ -10,12 +10,20 @@ afterEach(cleanup);
 // and `../auth/api.js`). vitest matches vi.mock by RESOLVED module id, so from
 // this test dir (`hooks/__tests__/`) `../../auth/...` resolves to the exact same
 // files the hook imports — the mocks intercept the hook's internal useAuth call.
+//
+// mockUseAuth is exposed via vi.hoisted() so individual tests can override its
+// return value (e.g. `mockUseAuth.mockReturnValueOnce({ isAuthenticated: false })`)
+// without affecting other tests — mockReturnValueOnce self-clears.
+const { mockUseAuth } = vi.hoisted(() => ({
+  mockUseAuth: vi.fn(() => ({ isAuthenticated: true })),
+}));
+
 vi.mock('../../auth/AuthContext.jsx', () => ({
-  useAuth: () => ({ token: 'test-token' }),
+  useAuth: mockUseAuth,
 }));
 
 vi.mock('../../auth/api.js', () => ({
-  buildHeaders: (token) => ({ Authorization: `Bearer ${token}` }),
+  buildHeaders: () => ({}),
 }));
 
 import { useDistinctValues } from '../useDistinctValues.js';
@@ -166,6 +174,18 @@ describe('useDistinctValues', () => {
     });
     renderHook(() =>
       useDistinctValues('entity', 'field', { apiBaseUrl: '' }),
+    );
+    expect(fetchSpy).not.toHaveBeenCalled();
+  });
+
+  it('does not fetch when isAuthenticated is false', () => {
+    mockUseAuth.mockReturnValueOnce({ isAuthenticated: false });
+    const fetchSpy = vi.spyOn(globalThis, 'fetch').mockResolvedValue({
+      ok: true,
+      json: () => Promise.resolve({ response: { data: [] } }),
+    });
+    renderHook(() =>
+      useDistinctValues('entity', 'field', { apiBaseUrl: '/api' }),
     );
     expect(fetchSpy).not.toHaveBeenCalled();
   });
