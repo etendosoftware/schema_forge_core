@@ -896,4 +896,29 @@ describe('Rule F18 — custom table required-flag drift', () => {
     const f18 = result.violations.find(v => v.rule === 'F18');
     assert.ok(f18, 'a missing allowlist file must behave as an empty allowlist, not suppress everything');
   });
+
+  it('allowlist entry scopes by (artifact, key) pair — same key drifting on a different artifact is still reported', async () => {
+    const allowlistPath = join(FIXTURES, 'f18-allowlist-test.json');
+    const result = await runOnFixtures(['window-f18-allowlisted', 'window-f18-allowlist-scope'], {
+      root: FIXTURES,
+      f18AllowlistPath: allowlistPath,
+    });
+    const f18ViolationsByArtifact = result.violations
+      .filter(v => v.rule === 'F18')
+      .map(v => v.artifact);
+    assert.ok(
+      f18ViolationsByArtifact.includes('window-f18-allowlist-scope'),
+      'the allowlist entry for window-f18-allowlisted/asset must not suppress the same key drifting on a different artifact',
+    );
+  });
+
+  it('does not scan shared/ files for a window whose custom file never imports them (no blast radius)', async () => {
+    const result = await runOnFixtures(['window-f18-shared-not-imported'], { root: FIXTURES });
+    const f18 = result.violations.find(v => v.rule === 'F18');
+    assert.ok(
+      !f18,
+      'shared/window-f18-shared-base.jsx must not be attributed to a window whose custom files never import it, ' +
+        'even though its required:true for "name" would conflict with this window\'s contract (required:false)',
+    );
+  });
 });
