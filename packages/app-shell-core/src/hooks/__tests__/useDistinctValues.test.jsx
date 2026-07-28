@@ -12,8 +12,11 @@ afterEach(cleanup);
 // files the hook imports — the mocks intercept the hook's internal useAuth call.
 //
 // mockUseAuth is exposed via vi.hoisted() so individual tests can override its
-// return value (e.g. `mockUseAuth.mockReturnValueOnce({ isAuthenticated: false })`)
-// without affecting other tests — mockReturnValueOnce self-clears.
+// return value (e.g. `mockUseAuth.mockReturnValue({ isAuthenticated: false })`)
+// without affecting other tests — any test that overrides it MUST restore the
+// default (`{ isAuthenticated: true }`) before it finishes, since a hoisted
+// vi.fn() has no "original" implementation for the beforeEach's
+// restoreAllMocks to fall back to.
 const { mockUseAuth } = vi.hoisted(() => ({
   mockUseAuth: vi.fn(() => ({ isAuthenticated: true })),
 }));
@@ -179,15 +182,26 @@ describe('useDistinctValues', () => {
   });
 
   it('does not fetch when isAuthenticated is false', () => {
-    mockUseAuth.mockReturnValueOnce({ isAuthenticated: false });
-    const fetchSpy = vi.spyOn(globalThis, 'fetch').mockResolvedValue({
-      ok: true,
-      json: () => Promise.resolve({ response: { data: [] } }),
-    });
-    renderHook(() =>
-      useDistinctValues('entity', 'field', { apiBaseUrl: '/api' }),
-    );
-    expect(fetchSpy).not.toHaveBeenCalled();
+    // mockReturnValue (not `Once`) so EVERY call to useAuth() during this test
+    // sees isAuthenticated: false — React may re-invoke the hook across
+    // renders, and a `*Once` override only covers the first call, letting a
+    // later render fall through to the default `{ isAuthenticated: true }`
+    // and fetch anyway. Restored explicitly in `finally` (not left to the
+    // `beforeEach` restoreAllMocks) because a vi.hoisted() vi.fn() has no
+    // "original" implementation for restoreAllMocks to fall back to.
+    mockUseAuth.mockReturnValue({ isAuthenticated: false });
+    try {
+      const fetchSpy = vi.spyOn(globalThis, 'fetch').mockResolvedValue({
+        ok: true,
+        json: () => Promise.resolve({ response: { data: [] } }),
+      });
+      renderHook(() =>
+        useDistinctValues('entity', 'field', { apiBaseUrl: '/api' }),
+      );
+      expect(fetchSpy).not.toHaveBeenCalled();
+    } finally {
+      mockUseAuth.mockReturnValue({ isAuthenticated: true });
+    }
   });
 
   it('exposes search and setSearch', async () => {
