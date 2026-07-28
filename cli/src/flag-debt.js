@@ -210,6 +210,25 @@ function isFile(target) {
  * where its owned-path declarations do not apply, turning owned code into a
  * phantom touch point.
  */
+/** Directory entries, or nothing at all when the directory cannot be read. */
+function readDirSafely(absoluteDir) {
+  try {
+    return fs.readdirSync(absoluteDir, { withFileTypes: true });
+  } catch {
+    return [];
+  }
+}
+
+function isWalkableDir(entry, absolute, { skipDirNames, blocked }) {
+  if (skipDirNames.has(entry.name)) return false;
+  return !blocked.has(absolute);
+}
+
+function isScannableFile(entry, extensions) {
+  if (SKIP_FILE_NAMES.has(entry.name)) return false;
+  return extensions.has(path.extname(entry.name));
+}
+
 export function* walkFiles(root, {
   skipDirNames = SKIP_DIR_NAMES, extensions = SOURCE_EXTENSIONS, skipPaths = [],
 } = {}) {
@@ -217,21 +236,14 @@ export function* walkFiles(root, {
   const stack = [''];
   while (stack.length > 0) {
     const relativeDir = stack.pop();
-    let entries;
-    try {
-      entries = fs.readdirSync(path.join(root, relativeDir), { withFileTypes: true });
-    } catch {
-      continue;
-    }
-    for (const entry of entries) {
+    for (const entry of readDirSafely(path.join(root, relativeDir))) {
       const relative = relativeDir ? path.join(relativeDir, entry.name) : entry.name;
       if (entry.isDirectory()) {
-        if (skipDirNames.has(entry.name)) continue;
-        if (blocked.has(path.resolve(root, relative))) continue;
-        stack.push(relative);
-      } else if (entry.isFile()) {
-        if (SKIP_FILE_NAMES.has(entry.name)) continue;
-        if (extensions.has(path.extname(entry.name))) yield relative;
+        if (isWalkableDir(entry, path.resolve(root, relative), { skipDirNames, blocked })) {
+          stack.push(relative);
+        }
+      } else if (entry.isFile() && isScannableFile(entry, extensions)) {
+        yield relative;
       }
     }
   }
@@ -454,43 +466,64 @@ export function resolveCoverageScript(repoRoot) {
   return candidates.find((candidate) => isFile(candidate)) || null;
 }
 
+/** Expands one declared path — a file or a directory — into owned entries. */
+function expandDeclaredPath(rootName, rootDir, declared) {
+  const absolute = path.join(rootDir, declared);
+  if (isFile(absolute)) {
+    if (!COVERAGE_EXTENSIONS.has(path.extname(absolute))) return [];
+    return [{ root: rootName, path: toPosix(declared) }];
+  }
+  if (!isDirectory(absolute)) return [];
+  return [...walkFiles(absolute, { extensions: COVERAGE_EXTENSIONS })]
+    .map((relative) => ({ root: rootName, path: toPosix(path.join(declared, relative)) }));
+}
+
 /** Owned source files, expanded from the declared paths (dirs included). */
 export function expandOwnedFiles(flag, roots) {
   const files = [];
   for (const [rootName, rootDir] of Object.entries(roots)) {
     if (!rootDir) continue;
-    for (const declared of (flag.paths && flag.paths[rootName]) || []) {
-      const absolute = path.join(rootDir, declared);
-      if (isFile(absolute)) {
-        if (COVERAGE_EXTENSIONS.has(path.extname(absolute))) {
-          files.push({ root: rootName, path: toPosix(declared) });
-        }
-      } else if (isDirectory(absolute)) {
-        for (const relative of walkFiles(absolute, { extensions: COVERAGE_EXTENSIONS })) {
-          files.push({ root: rootName, path: toPosix(path.join(declared, relative)) });
-        }
-      }
+    const declaredPaths = (flag.paths && flag.paths[rootName]) || [];
+    for (const declared of declaredPaths) {
+      files.push(...expandDeclaredPath(rootName, rootDir, declared));
     }
   }
   return files.sort((a, b) => a.path.localeCompare(b.path));
 }
 
-/** Pulls the uncovered-line count out of sonar-coverage.sh's report. */
-export function parseUncoveredLines(output) {
-  const summary = output.match(/uncovered lines:\s*(\d+)/i);
-  if (summary) return Number(summary[1]);
-  if (/no coverage data on server/i.test(output)) return null;
-
-  const ranges = output.match(/^\s*Uncovered:\s*(.+)$/mi);
-  if (!ranges) return null;
-  if (/^\s*none\s*$/i.test(ranges[1])) return 0;
-  return ranges[1].split(',').reduce((total, chunk) => {
+/** Sums an `Uncovered:` list like `12, 40-44, 91` into a line count. */
+function sumUncoveredRanges(list) {
+  return list.split(',').reduce((total, chunk) => {
     const span = chunk.trim().match(/^(\d+)(?:-(\d+))?$/);
     if (!span) return total;
     const from = Number(span[1]);
     const to = span[2] ? Number(span[2]) : from;
     return total + (to - from + 1);
   }, 0);
+}
+
+/**
+ * Pulls the uncovered-line count out of sonar-coverage.sh's report.
+ *
+ * Line scanning with `trim()` rather than regexes carrying leading and trailing
+ * `\s*`: those are ambiguous against a long run of whitespace and backtrack
+ * super-linearly, which on tool output we do not control is a denial-of-service
+ * shape. Splitting first makes the cost linear in the input.
+ */
+export function parseUncoveredLines(output) {
+  const text = String(output ?? '');
+  const summary = text.match(/uncovered lines:[ \t]*(\d+)/i);
+  if (summary) return Number(summary[1]);
+  if (/no coverage data on server/i.test(text)) return null;
+
+  for (const rawLine of text.split('\n')) {
+    const line = rawLine.trim();
+    if (!/^uncovered:/i.test(line)) continue;
+    const list = line.slice(line.indexOf(':') + 1).trim();
+    if (/^none$/i.test(list)) return 0;
+    return sumUncoveredRanges(list);
+  }
+  return null;
 }
 
 export function collectCoverage(flag, { roots, repoRoot, env = process.env, runner = runCoverageScript }) {
@@ -729,90 +762,122 @@ function renderSpecLines(tests) {
   return lines;
 }
 
+/** `  <label>   <n> pts  <detail>` — the shape every dimension row shares. */
+function dimensionLine(label, points, detail = '') {
+  const score = `${points} pts`;
+  const tail = detail ? `  ${detail}` : '';
+  return `  ${pad(label, 14)} ${padStart(score, 8)}${tail}`;
+}
+
+function renderFeatureHeading(flag) {
+  // The flag is presented as an attribute of the feature — when it is gone,
+  // the feature keeps its line and simply reads "shipped".
+  const flagMeta = flag.hasFlag
+    ? `flag ${flag.key} · default ${flag.defaultValue}`
+    : 'shipped — no flag';
+  const meta = [flag.jira, `owner ${flag.owner}`, flagMeta].filter(Boolean).join(' · ');
+  return [`${flag.id}  (${meta})`, `  ${flag.description}`, ''];
+}
+
+function renderCoverageSection(cov) {
+  const summary = cov.status === 'measured'
+    ? `${cov.files.length} owned file(s) analysed`
+    : `unavailable (${cov.reason})`;
+  const lines = [dimensionLine('coverage', cov.points, summary)];
+  for (const file of cov.files.filter((entry) => entry.uncovered !== null)) {
+    lines.push(`        ${file.path} — ${file.uncovered} uncovered (${file.points} pts)`);
+  }
+  return lines;
+}
+
+function lifecycleSummary(life) {
+  if (life.ttl === null) return 'no TTL declared';
+  if (life.daysRemaining >= 0) {
+    return `ttl ${life.ttl} · ${life.daysRemaining} day(s) remaining`;
+  }
+  const overdue = -life.daysRemaining;
+  return `ttl ${life.ttl} · ${overdue} day(s) overdue (${life.weeksOverdue} week(s))`;
+}
+
+function renderLifecycleSection(flag) {
+  const lines = [dimensionLine('lifecycle', flag.lifecycle.points, lifecycleSummary(flag.lifecycle))];
+  if (flag.ttlNote) lines.push(`        note: ${flag.ttlNote}`);
+  return lines;
+}
+
+/** `5 pts`, plus whatever the report must disclose about a points override. */
+function deferredBreakdown(item) {
+  const unit = item.points === 1 ? 'pt' : 'pts';
+  let breakdown = `${item.points} ${unit}`;
+  if (item.pointsOverridden) breakdown += ', declared';
+  if (item.pointsOverrideIgnored) {
+    const declared = JSON.stringify(item.declaredPoints);
+    breakdown += `, declared ${declared} IGNORED (not a whole number of points)`;
+  }
+  return breakdown;
+}
+
+function renderDeferredItem(item) {
+  const label = item.kindRecognized ? item.kind : `${item.kind} → open rate`;
+  const lines = [
+    `        [${label}] ${item.id} — ${deferredBreakdown(item)}`,
+    ...wrapText(item.note, 92, '          '),
+  ];
+  for (const component of item.components) {
+    lines.push(`          · ${component.id}`);
+    lines.push(...wrapText(component.note, 88, '              '));
+    if (component.ref) lines.push(`              ref: ${component.ref}`);
+  }
+  for (const ref of item.refs) lines.push(`          ref: ${ref}`);
+  return lines;
+}
+
+function renderDeferredSection(deferred) {
+  if (deferred.items.length === 0) return [];
+  const lines = [dimensionLine('open items', deferred.points, `${deferred.items.length} deferred`)];
+  for (const item of deferred.items) lines.push(...renderDeferredItem(item));
+  return lines;
+}
+
+function renderFeatureBlock(flag) {
+  const tp = flag.touchPoints;
+  const touchDetail = `${tp.files.length} file(s), ${tp.extraFiles} beyond the ${tp.freeAllowance} expected`;
+  return [
+    ...renderFeatureHeading(flag),
+    dimensionLine('touch points', tp.points, touchDetail),
+    ...renderTouchPointLines(tp),
+    dimensionLine('tests', flag.tests.points),
+    ...renderSpecLines(flag.tests),
+    ...renderCoverageSection(flag.coverage),
+    ...renderLifecycleSection(flag),
+    ...renderDeferredSection(flag.deferred),
+    '',
+    dimensionLine('TOTAL', flag.total),
+    '',
+  ];
+}
+
+function renderSummaryTable(report) {
+  const width = Math.max(7, ...report.features.map((flag) => flag.id.length));
+  const header = `  ${pad('FEATURE', width)}  ${padStart('TOUCH', 6)}  ${padStart('TESTS', 6)}  `
+    + `${padStart('COV', 5)}  ${padStart('LIFE', 5)}  ${padStart('OPEN', 5)}  ${padStart('TOTAL', 6)}`;
+  const rows = report.features.map((flag) => `  ${pad(flag.id, width)}  `
+    + `${padStart(flag.touchPoints.points, 6)}  ${padStart(flag.tests.points, 6)}  `
+    + `${padStart(flag.coverage.points, 5)}  ${padStart(flag.lifecycle.points, 5)}  `
+    + `${padStart(flag.deferred.points, 5)}  ${padStart(flag.total, 6)}`);
+  return [header, ...rows];
+}
+
 export function renderConsole(report) {
-  const lines = [];
-  lines.push('');
-  lines.push(`Feature debt scorecard — ${report.features.length} feature(s) — ${report.generatedAt}`);
+  const heading = `Feature debt scorecard — ${report.features.length} feature(s) — ${report.generatedAt}`;
+  const lines = ['', heading];
   if (report.roots.backendUnavailableReason) {
     lines.push(`  warning: ${report.roots.backendUnavailableReason}`);
   }
   lines.push('');
-
-  for (const flag of report.features) {
-    // The flag is presented as an attribute of the feature — when it is gone,
-    // the feature keeps its line and simply reads "shipped".
-    const flagMeta = flag.hasFlag ? `flag ${flag.key} · default ${flag.defaultValue}` : 'shipped — no flag';
-    const meta = [flag.jira, `owner ${flag.owner}`, flagMeta]
-      .filter(Boolean).join(' · ');
-    lines.push(`${flag.id}  (${meta})`);
-    lines.push(`  ${flag.description}`);
-    lines.push('');
-
-    const tp = flag.touchPoints;
-    lines.push(`  ${pad('touch points', 14)} ${padStart(`${tp.points} pts`, 8)}  `
-      + `${tp.files.length} file(s), ${tp.extraFiles} beyond the ${tp.freeAllowance} expected`);
-    lines.push(...renderTouchPointLines(tp));
-
-    lines.push(`  ${pad('tests', 14)} ${padStart(`${flag.tests.points} pts`, 8)}`);
-    lines.push(...renderSpecLines(flag.tests));
-
-    const cov = flag.coverage;
-    const covSummary = cov.status === 'measured'
-      ? `${cov.files.length} owned file(s) analysed`
-      : `unavailable (${cov.reason})`;
-    lines.push(`  ${pad('coverage', 14)} ${padStart(`${cov.points} pts`, 8)}  ${covSummary}`);
-    for (const file of cov.files.filter((entry) => entry.uncovered !== null)) {
-      lines.push(`        ${file.path} — ${file.uncovered} uncovered (${file.points} pts)`);
-    }
-
-    const life = flag.lifecycle;
-    const lifeSummary = life.ttl === null
-      ? 'no TTL declared'
-      : (life.daysRemaining >= 0
-        ? `ttl ${life.ttl} · ${life.daysRemaining} day(s) remaining`
-        : `ttl ${life.ttl} · ${-life.daysRemaining} day(s) overdue (${life.weeksOverdue} week(s))`);
-    lines.push(`  ${pad('lifecycle', 14)} ${padStart(`${life.points} pts`, 8)}  ${lifeSummary}`);
-    if (flag.ttlNote) lines.push(`        note: ${flag.ttlNote}`);
-
-    if (flag.deferred.items.length > 0) {
-      lines.push(`  ${pad('open items', 14)} ${padStart(`${flag.deferred.points} pts`, 8)}  `
-        + `${flag.deferred.items.length} deferred`);
-      for (const item of flag.deferred.items) {
-        const unit = item.points === 1 ? 'pt' : 'pts';
-        let breakdown = `${item.points} ${unit}`;
-        if (item.pointsOverridden) breakdown += ', declared';
-        if (item.pointsOverrideIgnored) {
-          breakdown += `, declared ${JSON.stringify(item.declaredPoints)} IGNORED `
-            + '(not a whole number of points)';
-        }
-        const label = item.kindRecognized ? item.kind : `${item.kind} → open rate`;
-        lines.push(`        [${label}] ${item.id} — ${breakdown}`);
-        lines.push(...wrapText(item.note, 92, '          '));
-        for (const component of item.components) {
-          lines.push(`          · ${component.id}`);
-          lines.push(...wrapText(component.note, 88, '              '));
-          if (component.ref) lines.push(`              ref: ${component.ref}`);
-        }
-        for (const ref of item.refs) lines.push(`          ref: ${ref}`);
-      }
-    }
-    lines.push('');
-    lines.push(`  ${pad('TOTAL', 14)} ${padStart(`${flag.total} pts`, 8)}`);
-    lines.push('');
-  }
-
-  const width = Math.max(7, ...report.features.map((flag) => flag.id.length));
-  lines.push(`  ${pad('FEATURE', width)}  ${padStart('TOUCH', 6)}  ${padStart('TESTS', 6)}  `
-    + `${padStart('COV', 5)}  ${padStart('LIFE', 5)}  ${padStart('OPEN', 5)}  ${padStart('TOTAL', 6)}`);
-  for (const flag of report.features) {
-    lines.push(`  ${pad(flag.id, width)}  ${padStart(flag.touchPoints.points, 6)}  `
-      + `${padStart(flag.tests.points, 6)}  ${padStart(flag.coverage.points, 5)}  `
-      + `${padStart(flag.lifecycle.points, 5)}  ${padStart(flag.deferred.points, 5)}  `
-      + `${padStart(flag.total, 6)}`);
-  }
-  lines.push('');
-  lines.push('  Report only — v0 never fails a build. Scale: docs/flag-debt.md');
-  lines.push('');
+  for (const flag of report.features) lines.push(...renderFeatureBlock(flag));
+  lines.push(...renderSummaryTable(report));
+  lines.push('', '  Report only — v0 never fails a build. Scale: docs/flag-debt.md', '');
   return lines.join('\n');
 }
 
@@ -831,72 +896,149 @@ function htmlRow(label, points, detail, slot) {
     + `<td>${detail}</td></tr>`;
 }
 
-function htmlFlagCard(flag) {
-  const tp = flag.touchPoints;
-  const touchDetail = [
-    `${tp.files.length} file(s), ${tp.extraFiles} beyond the ${tp.freeAllowance} expected`,
-    tp.files.length > 0
-      ? `<ul>${tp.files.map((file) => `<li><code>${escapeHtml(file.root)}: ${escapeHtml(file.path)}</code>`
-        + ` <span class="muted">lines ${escapeHtml(file.hits.map((hit) => hit.line).join(', '))}</span></li>`).join('')}</ul>`
-      : '',
-    tp.docReferences.length > 0
-      ? `<p class="muted">${tp.docReferences.length} documentation reference(s), not scored</p>` : '',
-    tp.testReferences.length > 0
-      ? `<p class="muted">${tp.testReferences.length} test reference(s), not scored</p>` : '',
-  ].join('');
+/** `<ul>…</ul>` around already-rendered `<li>` strings, or nothing when empty. */
+function htmlList(items, className = '') {
+  if (items.length === 0) return '';
+  const attr = className ? ` class="${className}"` : '';
+  return `<ul${attr}>${items.join('')}</ul>`;
+}
 
-  const specList = (specs, label) => (specs.length === 0 ? '' : `<ul>${specs.map((spec) =>
-    `<li><span class="tag">${escapeHtml(label)}</span> <code>${escapeHtml(spec.root)}: ${escapeHtml(spec.path)}</code>`
-    + ` <span class="muted">${escapeHtml(spec.note)}</span></li>`).join('')}</ul>`);
+function htmlTouchPointDetail(tp) {
+  const summary = `${tp.files.length} file(s), ${tp.extraFiles} beyond the ${tp.freeAllowance} expected`;
+  const fileItems = tp.files.map((file) => {
+    const lineNumbers = escapeHtml(file.hits.map((hit) => hit.line).join(', '));
+    const location = `${escapeHtml(file.root)}: ${escapeHtml(file.path)}`;
+    return `<li><code>${location}</code> <span class="muted">lines ${lineNumbers}</span></li>`;
+  });
+  const parts = [summary, htmlList(fileItems)];
+  if (tp.docReferences.length > 0) {
+    parts.push(`<p class="muted">${tp.docReferences.length} documentation reference(s), not scored</p>`);
+  }
+  if (tp.testReferences.length > 0) {
+    parts.push(`<p class="muted">${tp.testReferences.length} test reference(s), not scored</p>`);
+  }
+  return parts.join('');
+}
 
-  const testDetail = Object.entries(flag.tests.kinds).map(([kind, result]) => {
+function htmlSpecList(specs, label) {
+  const items = specs.map((spec) => {
+    const location = `${escapeHtml(spec.root)}: ${escapeHtml(spec.path)}`;
+    return `<li><span class="tag">${escapeHtml(label)}</span> <code>${location}</code>`
+      + ` <span class="muted">${escapeHtml(spec.note)}</span></li>`;
+  });
+  return htmlList(items);
+}
+
+function htmlTestDetail(tests) {
+  return Object.entries(tests.kinds).map(([kind, result]) => {
     const present = result.declared - result.missing.length;
     const summary = [`${present}/${result.declared} present`];
     if (result.pending.length > 0) summary.push(`${result.pending.length} pending (+${result.flatPoints})`);
     if (result.acceptedDebt.length > 0) {
       summary.push(`${result.acceptedDebt.length} accepted debt (+${result.acceptedDebtPoints})`);
     }
-    return `<p><strong>${escapeHtml(kind)}</strong>: ${escapeHtml(summary.join(' · '))}</p>`
-      + specList(result.pending, 'pending')
-      + specList(result.acceptedDebt, 'accepted debt');
+    const headline = escapeHtml(summary.join(' · '));
+    return `<p><strong>${escapeHtml(kind)}</strong>: ${headline}</p>`
+      + htmlSpecList(result.pending, 'pending')
+      + htmlSpecList(result.acceptedDebt, 'accepted debt');
   }).join('');
+}
 
-  const cov = flag.coverage;
-  const covDetail = cov.status === 'measured'
-    ? `<ul>${cov.files.map((file) => `<li><code>${escapeHtml(file.path)}</code> — `
-      + `${file.uncovered === null ? escapeHtml(file.note) : `${file.uncovered} uncovered`}</li>`).join('')}</ul>`
-    : `<span class="muted">unavailable (${escapeHtml(cov.reason)})</span>`;
+function htmlCoverageDetail(cov) {
+  if (cov.status !== 'measured') {
+    return `<span class="muted">unavailable (${escapeHtml(cov.reason)})</span>`;
+  }
+  const items = cov.files.map((file) => {
+    const state = file.uncovered === null ? escapeHtml(file.note) : `${file.uncovered} uncovered`;
+    return `<li><code>${escapeHtml(file.path)}</code> — ${state}</li>`;
+  });
+  return htmlList(items);
+}
 
+function htmlLifecycleDetail(flag) {
   const life = flag.lifecycle;
-  const lifeDetail = life.ttl === null
-    ? '<span class="muted">no TTL declared</span>'
-    : (life.daysRemaining >= 0
-      ? `TTL ${escapeHtml(life.ttl)} — ${life.daysRemaining} day(s) remaining`
-      : `TTL ${escapeHtml(life.ttl)} — ${-life.daysRemaining} day(s) overdue`)
-      + (flag.ttlNote ? `<p class="muted">${escapeHtml(flag.ttlNote)}</p>` : '');
+  const note = flag.ttlNote ? `<p class="muted">${escapeHtml(flag.ttlNote)}</p>` : '';
+  if (life.ttl === null) return `<span class="muted">no TTL declared</span>${note}`;
+  const ttl = escapeHtml(life.ttl);
+  const state = life.daysRemaining >= 0
+    ? `${life.daysRemaining} day(s) remaining`
+    : `${-life.daysRemaining} day(s) overdue`;
+  return `TTL ${ttl} — ${state}${note}`;
+}
 
-  const deferred = flag.deferred.items.length === 0 ? '' : `
+/** `5 pts`, plus whatever the card must disclose about a points override. */
+function htmlItemPoints(item) {
+  let text = `${item.points} pts`;
+  if (item.pointsOverridden) text += ', declared';
+  if (item.pointsOverrideIgnored) {
+    const declared = escapeHtml(JSON.stringify(item.declaredPoints));
+    text += `, declared ${declared} ignored`;
+  }
+  return `<span class="pts-inline">${text}</span>`;
+}
+
+function htmlDeferredItem(item) {
+  const fallback = item.kindRecognized ? '' : ' &rarr; open rate';
+  const tag = `<span class="tag ${escapeHtml(item.kind)}">${escapeHtml(item.kind)}${fallback}</span>`;
+  const componentItems = item.components.map((component) => {
+    const ref = component.ref ? ` <span class="muted">${escapeHtml(component.ref)}</span>` : '';
+    return `<li><code>${escapeHtml(component.id)}</code> ${escapeHtml(component.note)}${ref}</li>`;
+  });
+  const refs = item.refs.length > 0
+    ? `<p class="muted">${item.refs.map((ref) => escapeHtml(ref)).join('<br>')}</p>`
+    : '';
+  return `<li>${tag} <code>${escapeHtml(item.id)}</code> ${htmlItemPoints(item)}`
+    + `<p>${escapeHtml(item.note)}</p>`
+    + htmlList(componentItems, 'components')
+    + refs
+    + '</li>';
+}
+
+function htmlDeferredSection(deferred) {
+  if (deferred.items.length === 0) return '';
+  const heading = `— ${deferred.items.length} deferred, ${deferred.points} pts`;
+  const items = deferred.items.map(htmlDeferredItem);
+  return `
   <div class="deferred">
-    <h3>Open items <span class="muted">— ${flag.deferred.items.length} deferred, ${flag.deferred.points} pts</span></h3>
-    <ul>${flag.deferred.items.map((item) => `<li><span class="tag ${escapeHtml(item.kind)}">${escapeHtml(item.kind)}`
-      + `${item.kindRecognized ? '' : ' &rarr; open rate'}</span> `
-      + `<code>${escapeHtml(item.id)}</code> <span class="pts-inline">${item.points} pts`
-      + `${item.pointsOverridden ? ', declared' : ''}`
-      + `${item.pointsOverrideIgnored
-        ? `, declared ${escapeHtml(JSON.stringify(item.declaredPoints))} ignored`
-        : ''}</span>`
-      + `<p>${escapeHtml(item.note)}</p>`
-      + (item.components.length > 0
-        ? `<ul class="components">${item.components.map((component) =>
-          `<li><code>${escapeHtml(component.id)}</code> ${escapeHtml(component.note)}`
-          + (component.ref ? ` <span class="muted">${escapeHtml(component.ref)}</span>` : '')
-          + '</li>').join('')}</ul>`
-        : '')
-      + (item.refs.length > 0
-        ? `<p class="muted">${item.refs.map((ref) => escapeHtml(ref)).join('<br>')}</p>`
-        : '')
-      + '</li>').join('')}</ul>
+    <h3>Open items <span class="muted">${heading}</span></h3>
+    ${htmlList(items)}
   </div>`;
+}
+
+/**
+ * The part-to-whole bar plus its legend.
+ *
+ * The total is the sum of its dimensions, so one bar reads as a magnitude and
+ * decomposes without a second chart. Every segment is directly labelled in the
+ * legend, which is what discharges the light-mode contrast relief the palette
+ * validator asks for, and the aria-label names each dimension for non-visual
+ * readers.
+ */
+function renderComposition(carried) {
+  if (carried.length === 0) {
+    return '<p class="empty">No debt recorded against this flag.</p>';
+  }
+  const label = escapeHtml(carried.map((d) => `${d.label} ${d.points} points`).join(', '));
+  const segments = carried
+    .map((d) => `<span class="seg s${d.slot}" style="flex:${d.points}"></span>`)
+    .join('');
+  const legend = carried
+    .map((d) => `<li><span class="dot s${d.slot}"></span>${escapeHtml(d.label)}`
+      + ` <span class="legend-pts">${d.points}</span></li>`)
+    .join('');
+  return `<div class="bar" role="img" aria-label="${label}">${segments}</div>
+    <ul class="legend">${legend}</ul>`;
+}
+
+function htmlFlagCard(flag) {
+  const tp = flag.touchPoints;
+  const touchDetail = htmlTouchPointDetail(tp);
+  const testDetail = htmlTestDetail(flag.tests);
+  const cov = flag.coverage;
+  const covDetail = htmlCoverageDetail(cov);
+  const life = flag.lifecycle;
+  const lifeDetail = htmlLifecycleDetail(flag);
+  const deferred = htmlDeferredSection(flag.deferred);
 
   // The total is the sum of its dimensions, so a part-to-whole bar is the honest
   // form: it reads as one magnitude and decomposes without a second chart. Each
@@ -911,15 +1053,7 @@ function htmlFlagCard(flag) {
   ];
   const carried = dimensions.filter((dimension) => dimension.points > 0);
 
-  const composition = carried.length === 0
-    ? '<p class="empty">No debt recorded against this flag.</p>'
-    : `<div class="bar" role="img" aria-label="${escapeHtml(
-      carried.map((d) => `${d.label} ${d.points} points`).join(', ')
-    )}">${carried.map((d) =>
-      `<span class="seg s${d.slot}" style="flex:${d.points}"></span>`).join('')}</div>
-    <ul class="legend">${carried.map((d) =>
-      `<li><span class="dot s${d.slot}"></span>${escapeHtml(d.label)}`
-      + ` <span class="legend-pts">${d.points}</span></li>`).join('')}</ul>`;
+  const composition = renderComposition(carried);
 
   return `<section class="card">
   <header>
@@ -1064,20 +1198,61 @@ export function renderHtml(report) {
 
 // ── CLI ─────────────────────────────────────────────────────────────────────
 
+/** Flags that stand alone, mapped to the option each one sets. */
+const BOOLEAN_ARGS = new Map([
+  ['--json', 'json'],
+  ['--html', 'html'],
+  ['--help', 'help'],
+  ['-h', 'help'],
+]);
+
+/** Options that take a value, either as `--opt value` or `--opt=value`. */
+const VALUE_ARGS = new Map([
+  ['--flag', { key: 'flag', parse: (value) => value }],
+  ['--root', { key: 'repoRoot', parse: (value) => path.resolve(value) }],
+  ['--registry', { key: 'registry', parse: (value) => path.resolve(value) }],
+]);
+
+/**
+ * Reads a value option at `index`, returning how many argv entries it consumed.
+ *
+ * The loop counter is never reassigned from inside a branch: the caller advances
+ * by what this reports, so the two forms (`--opt value` and `--opt=value`) differ
+ * only in the number they return.
+ */
+function readValueArg(argv, index, options) {
+  const arg = argv[index];
+  const inline = arg.indexOf('=');
+  if (inline !== -1) {
+    const spec = VALUE_ARGS.get(arg.slice(0, inline));
+    if (!spec) return 0;
+    options[spec.key] = spec.parse(arg.slice(inline + 1));
+    return 1;
+  }
+  const spec = VALUE_ARGS.get(arg);
+  if (!spec) return 0;
+  const value = argv[index + 1];
+  if (value === undefined) throw new Error(`${arg} needs a value`);
+  options[spec.key] = spec.parse(value);
+  return 2;
+}
+
 export function parseArgs(argv) {
-  const options = { json: false, html: false, flag: null, repoRoot: DEFAULT_REPO_ROOT, registry: null, help: false };
-  for (let i = 0; i < argv.length; i += 1) {
+  const options = {
+    json: false, html: false, flag: null, repoRoot: DEFAULT_REPO_ROOT, registry: null, help: false,
+  };
+  let i = 0;
+  while (i < argv.length) {
     const arg = argv[i];
-    if (arg === '--json') options.json = true;
-    else if (arg === '--html') options.html = true;
-    else if (arg === '--help' || arg === '-h') options.help = true;
-    else if (arg === '--flag') options.flag = argv[++i];
-    else if (arg.startsWith('--flag=')) options.flag = arg.slice('--flag='.length);
-    else if (arg === '--root') options.repoRoot = path.resolve(argv[++i]);
-    else if (arg.startsWith('--root=')) options.repoRoot = path.resolve(arg.slice('--root='.length));
-    else if (arg === '--registry') options.registry = path.resolve(argv[++i]);
-    else if (arg.startsWith('--registry=')) options.registry = path.resolve(arg.slice('--registry='.length));
-    else throw new Error(`unknown option: ${arg}`);
+    const booleanKey = BOOLEAN_ARGS.get(arg);
+    if (booleanKey) {
+      options[booleanKey] = true;
+      i += 1;
+      continue;
+    }
+    const consumed = readValueArg(argv, i, options);
+    if (consumed === 0) throw new Error(`unknown option: ${arg}`);
+    i += consumed;
   }
   return options;
 }
@@ -1098,11 +1273,19 @@ Env: SONAR_TOKEN / SONAR_HOST_URL enable the coverage dimension.
 Docs: docs/flag-debt.md
 `;
 
+/**
+ * Runs the scorer and returns the report, or `null` when there was nothing to
+ * score (help, or a name that matches no feature).
+ *
+ * It returns the report rather than an exit code because in v0 the exit code
+ * carries no information — debt never fails a build — while the report is what
+ * a caller actually wants. The CLI wrapper below owns the exit status.
+ */
 export function main(argv = process.argv.slice(2), { stdout = process.stdout } = {}) {
   const options = parseArgs(argv);
   if (options.help) {
     stdout.write(HELP);
-    return 0;
+    return null;
   }
 
   const registryPath = options.registry || path.join(options.repoRoot, REGISTRY_FILENAME);
@@ -1111,7 +1294,7 @@ export function main(argv = process.argv.slice(2), { stdout = process.stdout } =
     registry.features = registry.features.filter((feature) => feature.id === options.flag || feature.key === options.flag);
     if (registry.features.length === 0) {
       stdout.write(`No feature or flag "${options.flag}" in ${registryPath}\n`);
-      return 0;
+      return null;
     }
   }
 
@@ -1136,12 +1319,15 @@ export function main(argv = process.argv.slice(2), { stdout = process.stdout } =
     fs.writeFileSync(target, renderHtml(report));
     stdout.write(`  HTML written to ${target}\n`);
   }
-  return 0;
+  return report;
 }
 
 if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) {
   try {
-    process.exitCode = main();
+    main();
+    // v0 is report-only: debt never sets a non-zero status. Only a usage error
+    // does, in the catch below.
+    process.exitCode = 0;
   } catch (error) {
     // A broken invocation or an unreadable registry is a usage error, and is the
     // only way this command fails: debt itself never sets a non-zero exit in v0.

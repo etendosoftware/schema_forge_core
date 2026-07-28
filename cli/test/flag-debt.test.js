@@ -1067,31 +1067,33 @@ describe('the CLI', () => {
 
   it('prints help and scores nothing', () => {
     const stdout = capture();
-    assert.equal(main(['--help'], { stdout }), 0);
+    assert.equal(main(['--help'], { stdout }), null);
     assert.match(stdout.text, /flag-debt — per-flag technical-debt scorer/);
   });
 
   it('scores every registered flag and always exits 0 — v0 is report only', () => {
     const stdout = capture();
-    assert.equal(main(['--root', root], { stdout }), 0);
+    const report = main(['--root', root], { stdout });
+    assert.equal(report.features.length, 1);
     assert.match(stdout.text, /tenant-upgrade/);
   });
 
   it('narrows the report to a single flag', () => {
     const stdout = capture();
-    assert.equal(main(['--root', root, '--flag', 'tenant-upgrade'], { stdout }), 0);
+    const narrowed = main(['--root', root, '--flag', 'tenant-upgrade'], { stdout });
+    assert.equal(narrowed.features.length, 1);
     assert.match(stdout.text, /1 feature\(s\)/);
   });
 
   it('says so, without failing, when the named flag is unknown', () => {
     const stdout = capture();
-    assert.equal(main(['--root', root, '--flag', 'ghost'], { stdout }), 0);
+    assert.equal(main(['--root', root, '--flag', 'ghost'], { stdout }), null);
     assert.match(stdout.text, /No feature or flag "ghost"/);
   });
 
   it('writes the JSON and HTML reports on request', () => {
     const stdout = capture();
-    assert.equal(main(['--root', root, '--json', '--html'], { stdout }), 0);
+    assert.ok(main(['--root', root, '--json', '--html'], { stdout }));
     assert.match(stdout.text, /JSON written to/);
     assert.match(stdout.text, /HTML written to/);
 
