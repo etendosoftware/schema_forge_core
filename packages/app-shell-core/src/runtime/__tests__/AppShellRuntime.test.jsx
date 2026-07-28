@@ -1,6 +1,6 @@
 import { test, expect, afterEach } from 'vitest';
 import { renderToStaticMarkup } from 'react-dom/server';
-import { render, screen, act, cleanup } from '@testing-library/react';
+import { render, screen, act, cleanup, waitFor } from '@testing-library/react';
 import { useLocation } from 'react-router-dom';
 import { AppShellRuntime } from '../AppShellRuntime.jsx';
 import { useAuth } from '../../auth/index.js';
@@ -100,4 +100,210 @@ test('AppShellRuntime forwards auth.fetchWindowAccess to AuthProvider', async ()
   });
 
   expect(await screen.findByTestId('window-access')).toHaveTextContent('{"147":"full"}');
+});
+
+// ETP-4576 — session-restore-by-cookie migration. `AppShellRuntime` must forward
+// `auth.restoreSession` to `AuthProvider` through the exact same pass-through
+// mechanism proven above for `fetchWindowAccess`, and its `AuthGate` must gate
+// on the tri-state `status` ('booting' | 'authenticated' | 'anonymous') exposed
+// by `useAuth()`, not only on `isAuthenticated`. Without this, a host that
+// opts into the cookie-session restore flow would see a flash of the
+// unauthenticated redirect before the restore resolves.
+//
+// A `restoreSession` mock is used (instead of `initialSession={{ token }}`) to
+// force the 'booting' state: per AuthContext.jsx, `status` is only ever
+// 'booting' when `restoreSession` is a function — without it, `status`
+// resolves synchronously and never passes through 'booting'.
+
+function SessionStatusProbe() {
+  const { status, csrfToken } = useAuth();
+  return (
+    <div>
+      <div data-testid="status">{status}</div>
+      <div data-testid="csrf">{csrfToken ?? ''}</div>
+    </div>
+  );
+}
+
+function LocationProbe() {
+  const location = useLocation();
+  return <div data-testid="location">{location.pathname}</div>;
+}
+
+test('AppShellRuntime forwards auth.restoreSession to AuthProvider', async () => {
+  const restoreSession = async () => ({
+    account: { id: 'acc-1' },
+    environment: {},
+    roleList: [],
+    csrfToken: 'csrf-xyz',
+  });
+
+  render(
+    <AppShellRuntime
+      basename="/"
+      menuGroups={[]}
+      routes={[{ path: 'home', index: true, public: true, element: <div>home</div> }]}
+      auth={{ loginPath: '/login', restoreSession }}
+    >
+      <SessionStatusProbe />
+    </AppShellRuntime>
+  );
+
+  await waitFor(() => {
+    expect(screen.getByTestId('status')).toHaveTextContent('authenticated');
+  });
+  expect(screen.getByTestId('csrf')).toHaveTextContent('csrf-xyz');
+});
+
+test('AppShellRuntime shows neither protected content nor the unauthenticated fallback while auth.restoreSession is still pending', () => {
+  render(
+    <AppShellRuntime
+      basename="/"
+      menuGroups={[{ id: 'g1', title: 'Group 1', items: [] }]}
+      routes={[{ path: 'home', index: true, public: false, element: <div data-testid="protected">protected</div> }]}
+      auth={{
+        loginPath: '/login',
+        unauthenticatedFallback: <div data-testid="login-fallback">login</div>,
+        // Never resolves — keeps `status` at 'booting' for the life of the test.
+        restoreSession: () => new Promise(() => {}),
+      }}
+    />
+  );
+
+  expect(screen.queryByTestId('protected')).not.toBeInTheDocument();
+  expect(screen.queryByTestId('login-fallback')).not.toBeInTheDocument();
+});
+
+test('AppShellRuntime renders a custom auth.bootingFallback while status is booting', () => {
+  render(
+    <AppShellRuntime
+      basename="/"
+      menuGroups={[{ id: 'g1', title: 'Group 1', items: [] }]}
+      routes={[{ path: 'home', index: true, public: false, element: <div data-testid="protected">protected</div> }]}
+      auth={{
+        loginPath: '/login',
+        bootingFallback: <div data-testid="loading">Cargando...</div>,
+        // Not part of this test's assertions — only present so that, against
+        // the pre-implementation code (which ignores `status` and falls
+        // through to the `isAuthenticated` check), AuthGate renders a finite
+        // fallback instead of <Navigate to="/login">. Without it, the
+        // catch-all route bounces back to `/`, which is still unauthenticated,
+        // producing an infinite navigation loop that crashes the Vitest worker.
+        unauthenticatedFallback: <div data-testid="login-fallback">login</div>,
+        restoreSession: () => new Promise(() => {}),
+      }}
+    />
+  );
+
+  expect(screen.getByTestId('loading')).toBeInTheDocument();
+  expect(screen.queryByTestId('protected')).not.toBeInTheDocument();
+});
+
+test('AppShellRuntime shows the protected route content once auth.restoreSession resolves successfully', async () => {
+  let resolveRestore;
+  const restoreSession = () => new Promise((resolve) => {
+    resolveRestore = resolve;
+  });
+
+  render(
+    <AppShellRuntime
+      basename="/"
+      menuGroups={[{ id: 'g1', title: 'Group 1', items: [] }]}
+      routes={[{ path: 'home', index: true, public: false, element: <div data-testid="protected">protected</div> }]}
+      auth={{
+        loginPath: '/login',
+        restoreSession,
+        // Already authenticated (has a token) before the restore settles, so
+        // this isolates the assertion to the `status` gate: content must stay
+        // hidden while booting even though `isAuthenticated` is already true,
+        // and only appear once `status` flips to 'authenticated'.
+        initialSession: { token: 'existing-token' },
+      }}
+    />
+  );
+
+  expect(screen.queryByTestId('protected')).not.toBeInTheDocument();
+
+  await act(async () => {
+    resolveRestore({ account: {}, environment: {}, roleList: [], csrfToken: 'csrf-abc' });
+  });
+
+  await waitFor(() => {
+    expect(screen.getByTestId('protected')).toBeInTheDocument();
+  });
+});
+
+test('AppShellRuntime falls through from booting to the unauthenticated fallback when auth.restoreSession resolves without a session', async () => {
+  const restoreSession = async () => null; // no active session
+
+  render(
+    <AppShellRuntime
+      basename="/"
+      menuGroups={[{ id: 'g1', title: 'Group 1', items: [] }]}
+      routes={[{ path: 'home', index: true, public: false, element: <div data-testid="protected">protected</div> }]}
+      auth={{
+        loginPath: '/login',
+        restoreSession,
+        // Not part of this test's assertions — only present so that, against
+        // the pre-implementation code (which ignores `status` and falls
+        // through to the `isAuthenticated` check), AuthGate renders a finite
+        // fallback instead of <Navigate to="/login">. Without it, the
+        // catch-all route bounces back to `/`, which is still unauthenticated,
+        // producing an infinite navigation loop that crashes the Vitest worker.
+        unauthenticatedFallback: <div data-testid="login-fallback">login</div>,
+      }}
+    >
+      <LocationProbe />
+    </AppShellRuntime>
+  );
+
+  // Still booting right after mount: no redirect has happened yet.
+  expect(screen.queryByTestId('protected')).not.toBeInTheDocument();
+  expect(screen.getByTestId('location')).toHaveTextContent('/');
+
+  await waitFor(() => {
+    expect(screen.getByTestId('location')).toHaveTextContent('/login');
+  });
+  expect(screen.queryByTestId('protected')).not.toBeInTheDocument();
+});
+
+// Same threading mechanism already proven for `auth.unauthenticatedFallback`
+// (merged into `runtimeAuth` in AppShellRuntime and forwarded to every
+// `AuthGate`, both the layout-level one and the per-route ones from
+// `renderRoute`): configuring `auth.bootingFallback` alongside it must reach
+// the route-level `AuthGate` too, and the gate must hand off from one fallback
+// to the other as `status` moves from 'booting' to 'anonymous'.
+test('AppShellRuntime threads auth.bootingFallback down to the route AuthGate alongside auth.unauthenticatedFallback', async () => {
+  let rejectRestore;
+  const restoreSession = () => new Promise((_resolve, reject) => {
+    rejectRestore = reject;
+  });
+
+  render(
+    <AppShellRuntime
+      basename="/"
+      menuGroups={[{ id: 'g1', title: 'Group 1', items: [] }]}
+      routes={[{ path: 'home', index: true, public: false, element: <div data-testid="protected">protected</div> }]}
+      auth={{
+        loginPath: '/login',
+        restoreSession,
+        bootingFallback: <div data-testid="loading">Cargando...</div>,
+        unauthenticatedFallback: <div data-testid="login-fallback">login</div>,
+      }}
+    />
+  );
+
+  expect(screen.getByTestId('loading')).toBeInTheDocument();
+  expect(screen.queryByTestId('login-fallback')).not.toBeInTheDocument();
+  expect(screen.queryByTestId('protected')).not.toBeInTheDocument();
+
+  await act(async () => {
+    rejectRestore(new Error('session expired'));
+  });
+
+  await waitFor(() => {
+    expect(screen.getByTestId('login-fallback')).toBeInTheDocument();
+  });
+  expect(screen.queryByTestId('loading')).not.toBeInTheDocument();
+  expect(screen.queryByTestId('protected')).not.toBeInTheDocument();
 });
