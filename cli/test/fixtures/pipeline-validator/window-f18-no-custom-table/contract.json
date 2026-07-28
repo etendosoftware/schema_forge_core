@@ -1,14 +1,1 @@
-{
-  "version": "v2",
-  "frontendContract": {
-    "window": { "primaryEntity": "widget" },
-    "entities": {
-      "widget": {
-        "fields": [
-          { "name": "name", "column": "Name", "required": true }
-        ]
-      }
-    }
-  },
-  "agentProfile": {}
-}
+../_shared/minimal-contract.json
