@@ -17,6 +17,11 @@ export function AuthProvider({ children, storage, initialSession, onSessionChang
   // / useHasCapability treat an unloaded map the same as "no access granted".
   const [windowAccess, setWindowAccess] = useState({});
   const [capabilities, setCapabilities] = useState({});
+  // ETP-4576 — the X-Go-CSRF proof (ADR-0001, com.etendoerp.go) issued by the
+  // backend in session responses. In-memory only, never persisted through
+  // authStorage: it is bound to the httpOnly session cookie, not a value the
+  // client should carry across reloads on its own.
+  const [csrfToken, setCsrfToken] = useState(null);
   // ETP-4520 — request-sequencing guard against a stale-response race: if
   // role A is selected then role B before A's fetchWindowAccess resolves, A's
   // slower response can land AFTER B's and overwrite B's correct maps with
@@ -48,6 +53,9 @@ export function AuthProvider({ children, storage, initialSession, onSessionChang
     onSessionChange?.(clearedSession);
     setWindowAccess({});
     setCapabilities({});
+    // ETP-4576 — the CSRF proof is tied to the session cookie being cleared;
+    // never let it survive into the next (anonymous) state.
+    setCsrfToken(null);
     // ETP-4520 — abandon any in-flight selectRole() fetch too: bumping the
     // ref makes its stale-response guard (`selectRoleRequestIdRef.current
     // !== thisRequestId`) discard a late-arriving resolution instead of
@@ -139,14 +147,16 @@ export function AuthProvider({ children, storage, initialSession, onSessionChang
     isAuthenticated: !!session.token,
     windowAccess,
     capabilities,
+    csrfToken,
     setWindowAccess,
     setCapabilities,
+    setCsrfToken,
     setSession,
     login: setSession,
     selectRole,
     selectOrg,
     logout,
-  }), [session, windowAccess, capabilities, setSession, selectRole, selectOrg, logout]);
+  }), [session, windowAccess, capabilities, csrfToken, setSession, selectRole, selectOrg, logout]);
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 }
