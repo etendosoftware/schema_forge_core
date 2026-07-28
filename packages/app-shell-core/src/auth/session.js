@@ -11,6 +11,21 @@ const SESSION_KEYS = {
 
 const JSON_KEYS = new Set(['roleList', 'selectedRole', 'selectedOrg']);
 
+// Full set of pre-cookie-session localStorage keys, including sf_auth_client_name
+// (written by onboarding but never covered by clear(), since SESSION_KEYS has no
+// clientName entry) — ETP-4576 purges these once on migration to the __Host- cookie.
+const LEGACY_AUTH_KEYS = [
+  'sf_auth_token',
+  'sf_auth_user',
+  'sf_auth_client_id',
+  'sf_auth_client_name',
+  'sf_auth_rolelist',
+  'sf_auth_selected_role',
+  'sf_auth_selected_org',
+  'sf_platform_token',
+  'sf_platform_auth_method',
+];
+
 function getBrowserStorage() {
   if (typeof window === 'undefined') return null;
   return window.localStorage || null;
@@ -36,6 +51,17 @@ function writeValue(storage, key, value, json = false) {
     return;
   }
   storage.setItem(key, json ? JSON.stringify(value) : String(value));
+}
+
+export function purgeLegacyAuthStorage(storage = getBrowserStorage()) {
+  try {
+    for (const key of LEGACY_AUTH_KEYS) {
+      storage?.removeItem(key);
+    }
+  } catch {
+    // ignore — storage access can throw (e.g. disabled in some privacy modes);
+    // never let a purge failure block logout/session restore.
+  }
 }
 
 export function normalizeAuthSession(session = {}) {
