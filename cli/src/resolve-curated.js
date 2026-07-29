@@ -399,7 +399,16 @@ function buildCuratedField(rawField, fieldDecision, discardPatterns) {
   if (isVisible && Array.isArray(fieldDecision.forceCalloutFields) && fieldDecision.forceCalloutFields.length > 0)
     field.forceCalloutFields = fieldDecision.forceCalloutFields;
 
-  if (rawField.defaultValue !== undefined) {
+  // decisions.json can override a field's default value (e.g. movementQuantity: "1" on
+  // goods-receipt lines instead of the raw/computed AD default "0"). Mirrors the
+  // `derivation: null` suppression pattern below: an explicit `defaultValue: null` means
+  // "no default at all" (suppress the raw value), any other explicit value wins outright,
+  // and an absent key falls back to the raw AD-derived default exactly as before (ETP-4671).
+  if (Object.prototype.hasOwnProperty.call(fieldDecision, 'defaultValue')) {
+    if (fieldDecision.defaultValue !== null) {
+      field.defaultValue = fieldDecision.defaultValue;
+    }
+  } else if (rawField.defaultValue !== undefined) {
     field.defaultValue = rawField.defaultValue;
   }
 
