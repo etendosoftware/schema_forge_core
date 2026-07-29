@@ -253,6 +253,7 @@ export function pick(cond, whenTrue, whenFalse) {
 }
 
 /**
+
  * ETP-4603 — resolve the declared `parts` of a `multiField` host field against
  * the contract so each part behaves like a real column for per-part sort and
  * advanced-filter expansion. Each part's `field` is looked up in `fieldByName`
@@ -324,12 +325,69 @@ export function collectMultiFieldAbsorbed(gridFields) {
 }
 
 /**
+ * Build one `dimensionFields` entry for the synthetic `dimensionsPanel` column
+ * (see `buildDimensionsPanelColumn` / `generateTableComponent`). Reuses the same
+ * per-field extraction the normal grid columns use above — `mapFieldType` for
+ * `type`, a static baked `label` (same convention as every other column; AD
+ * labels are already localized at extraction time), FK `reference`/`inputMode`,
+ * `required`/`lookup`/`popup` — but trimmed to what the shared building blocks
+ * that actually consume `dimensionFields` read: `DimensionsPanel.jsx`
+ * (`DimSummary`/`DimensionGrid`), `SelectorInput`, and `selectorCatalog.js`'s
+ * `getSelectorCatalogKeys` (which falls back to `field.reference` as a mock-
+ * catalog key). Badge/enum/grid-cosmetic props (badge, summable, grow, …) are
+ * deliberately NOT extracted — they only apply to a real `DataTable`/
+ * `InlineLinesPanel` grid column, not a field rendered inside the panel.
+ */
+function buildDimensionFieldLiteral(f) {
+  const type = mapFieldType(f);
+  const labelPart = f.label ? `, label: '${f.label.replace(/'/g, "\\'")}'` : '';
+  const referencePart = wrapIf(", reference: '", f.reference, "'");
+  const inputModePart = wrapIf(", inputMode: '", f.inputMode, "'");
+  const requiredPart = fragmentIf(f.required, ', required: true');
+  const lookupPart = fragmentIf(f.lookup, ', lookup: true');
+  const popupPart = fragmentIf(f.popup, ', popup: true');
+  return `    { key: '${f.name}', column: '${f.column}', type: '${type}'${labelPart}${referencePart}${inputModePart}${requiredPart}${lookupPart}${popupPart} },`;
+}
+
+/**
+ * Build the ONE synthetic `type: 'dimensionsPanel'` column literal for an
+ * entity's `dimensionFieldsRaw` (fields flagged `dimensionsPanel: true` in
+ * `decisions.json` — see docs/decisions-reference.md). Returns `''` when there
+ * are none, so the caller can always append the result: an entity with zero
+ * such fields gets byte-for-byte the same `columns` array as before this
+ * feature existed.
+ *
+ * Always emitted LAST in the columns array — simplest, least-surprising
+ * position; `gridOrder` (which only reorders `gridFieldsRaw`) does not apply
+ * to it. The panel title is baked as a `labels` map (checked before `label` by
+ * `resolveColumnLabel.js`) using the same two strings as the hand-written
+ * `dimensionsPanelTitle` i18n key (`en_US.json`/`es_ES.json`), since this
+ * `const columns = [...]` array is module-scope code — it cannot call the
+ * `useUI()` hook the way a real component body can.
+ */
+function buildDimensionsPanelColumn(dimensionFieldsRaw) {
+  if (dimensionFieldsRaw.length === 0) return '';
+  const fieldsLiteral = dimensionFieldsRaw.map(buildDimensionFieldLiteral).join('\n');
+  return `
+  { key: 'dimensions', type: 'dimensionsPanel', label: 'Accounting dimensions', labels: { en_US: 'Accounting dimensions', es_ES: 'Dimensiones contables' }, dimensionFields: [
+${fieldsLiteral}
+  ] },`;
+}
+
+/**
  * Generate a data table component for an entity.
  * Produces a thin declarative component that imports DataTable from contract-ui.
  */
 export function generateTableComponent(entityName, contract) {
   const entity = contract.frontendContract.entities[entityName];
-  const gridFieldsRaw = entity.fields.filter(f => f.grid && f.visibility !== 'discarded');
+  // ETP-4529 — fields flagged `dimensionsPanel: true` never become their own grid
+  // column: they are collected below into ONE synthetic `type: 'dimensionsPanel'`
+  // column instead (regardless of their own `grid` value — see
+  // buildDimensionsPanelColumn). Excluding them here is what makes this additive:
+  // an entity with zero such fields sees byte-for-byte the same gridFieldsRaw as
+  // before this feature existed.
+  const gridFieldsRaw = entity.fields.filter(f => f.grid && f.visibility !== 'discarded' && !f.dimensionsPanel);
+  const dimensionFieldsRaw = entity.fields.filter(f => f.dimensionsPanel && f.visibility !== 'discarded');
   // gridOrder: absolute insertion position (1-based). Only the tagged fields move;
   // all other fields stay in their original relative order.
   const pinned = [...gridFieldsRaw].filter(f => f.gridOrder != null).sort((a, b) => a.gridOrder - b.gridOrder);
@@ -404,7 +462,7 @@ export function generateTableComponent(entityName, contract) {
     // runtime and omits the column entirely (not disabled/hidden via CSS) when false.
     const visibleWhenCapabilityPart = f.visibleWhenCapability ? `, visibleWhenCapability: '${String(f.visibleWhenCapability).replace(/'/g, "\\'")}'` : '';
     return `  { key: '${f.name}', column: '${f.column}', type: '${type}'${labelsPart}${labelPart}${enumLabelsPart}${enumVariantsPart}${selectionPart}${togglePart}${badgePart}${badgeLabelsPart}${badgeColorsPart}${badgeVariantsPart}${summablePart}${displayPart}${renderPart}${requiredPart}${lookupPart}${lookupDrawerColPart}${excludeValueOfColPart}${popupPart}${minColPart}${maxColPart}${growPart}${columnWidthPart}${noTrailingPart}${filterOnlyPart}${dotPart}${gridReadOnlyPart}${computedPart}${visibleWhenCapabilityPart} },`;
-  }).join('\n');
+  }).join('\n') + buildDimensionsPanelColumn(dimensionFieldsRaw);
 
   const filtersArray = searchableFields.map(f => `'${f}'`).join(', ');
 
@@ -1972,6 +2030,20 @@ export function generatePageComponent(headerEntity, detailEntity, contract) {
   const detailFields = contract.frontendContract.entities[detailEntity]?.fields ?? [];
   const detailEditableFields = detailFields.filter(f => f.form && f.visibility !== 'readOnly');
 
+  // ETP-4610 — field keys flagged `dimensionsPanel: true` on the LINES entity,
+  // forwarded to DetailView as `dimensionsPanelFieldKeys` so it can scope its
+  // `lineHiddenColumns` dimension-macro trust to fields THIS window's own
+  // decisions.json declared as accounting-dimension candidates (see
+  // `buildDimensionsPanelColumn` above, which collects the same fields for the
+  // grid's synthetic panel column) — instead of only the small, global
+  // `DIMENSION_MACRO_KEYS` allowlist baked into DetailView.jsx. Fully additive:
+  // an entity with zero dimensionsPanel fields yields an empty array and no
+  // prop is emitted at all (see dimensionsPanelFieldKeysProp below), so every
+  // window that predates this feature regenerates byte-for-byte identical.
+  const dimensionsPanelFieldKeys = detailFields
+    .filter(f => f.dimensionsPanel && f.visibility !== 'discarded')
+    .map(f => f.name);
+
   // Status field gets a badge in the header; summary strip uses only fields with explicit section:'summary'.
   // Prefer DocStatus column (document workflow status) if present, even when form:false.
   const allEntityFields = contract.frontendContract.entities[headerEntity]?.fields ?? [];
@@ -2143,6 +2215,13 @@ export function generatePageComponent(headerEntity, detailEntity, contract) {
     documentPreview
   );
   const notesFieldProp = wrapIf('\n        notesField="', notesField, '"');
+  // ETP-4610 — see `dimensionsPanelFieldKeys` computation above.
+  const dimensionsPanelFieldKeysProp = jsonWrapIf(
+    '\n        dimensionsPanelFieldKeys={',
+    dimensionsPanelFieldKeys,
+    '}',
+    dimensionsPanelFieldKeys.length > 0
+  );
   // customTabs accumulator — DetailView supports items with shape
   //   { key, label, Component, placement?: 'tab' | 'footer', props?: {} }
   // `placement: 'tab'` renders as a main tab (Lines/Notes style);
@@ -2495,7 +2574,7 @@ ${menuActionStateStatements}`)}${fragmentIf(confirmModalName, `
         detailLabel="${entityDetailLabel}"` : ''}
         windowName={windowName}
         recordId={recordId}
-        breadcrumb={breadcrumb}${apiProp}${detailTabIndexProp}${secondaryTabsProp}${formFooterProp}${customLinesProp}${primaryTabsProp}${othersLabelProp}${documentPreviewProp}${hideDeleteProp}${hideDeleteButtonProp}${customTabsAfterBottomProp}${hidePrintProp}${hideSaveStatusesProp}${hideMoreMenuProp}${hideMoreDetailsProp}${noHeaderBorderProp}${toolbarBorderBottomProp}${compactSidebarPaddingProp}${whiteFormBackgroundProp}${autoSaveOnBlurProp}${hideFormCardProp}${sidebarAboveTabsOnlyProp}${tabsSeparatorProp}${sidebarClassNameProp}${tabsBarPaddingXProp}${primaryTabsVariantProp}${toolbarPaddingXProp}${toolbarButtonSizeProp}${contentBgProp}${formCardPaddingProp}${formScrollPaddingXProp}${notesFieldProp}${customTabsProp}${customCompPropsBlock}${menuActionsProp}${draftModeProp}${requiredHeaderFieldsProp}${addLineGuardProp}${headerContentProp}${detailSortByProp}${titleFieldProp}${documentDateFieldProp}${salesThemeProp}${disableProcessedLockProp}${statusEnumLabelsProp}${statusFieldLabelProp}${lockedAlertProp}${showDetailFooterTotalsProp}${labelOverridesProp}${lineConfigProp}${linesLayoutProp}${balanceFooterProp}${sendDocumentDetailProp}${selectorPriceCurrencyProp}
+        breadcrumb={breadcrumb}${apiProp}${detailTabIndexProp}${secondaryTabsProp}${formFooterProp}${customLinesProp}${primaryTabsProp}${othersLabelProp}${documentPreviewProp}${hideDeleteProp}${hideDeleteButtonProp}${customTabsAfterBottomProp}${hidePrintProp}${hideSaveStatusesProp}${hideMoreMenuProp}${hideMoreDetailsProp}${noHeaderBorderProp}${toolbarBorderBottomProp}${compactSidebarPaddingProp}${whiteFormBackgroundProp}${autoSaveOnBlurProp}${hideFormCardProp}${sidebarAboveTabsOnlyProp}${tabsSeparatorProp}${sidebarClassNameProp}${tabsBarPaddingXProp}${primaryTabsVariantProp}${toolbarPaddingXProp}${toolbarButtonSizeProp}${contentBgProp}${formCardPaddingProp}${formScrollPaddingXProp}${notesFieldProp}${dimensionsPanelFieldKeysProp}${customTabsProp}${customCompPropsBlock}${menuActionsProp}${draftModeProp}${requiredHeaderFieldsProp}${addLineGuardProp}${headerContentProp}${detailSortByProp}${titleFieldProp}${documentDateFieldProp}${salesThemeProp}${disableProcessedLockProp}${statusEnumLabelsProp}${statusFieldLabelProp}${lockedAlertProp}${showDetailFooterTotalsProp}${labelOverridesProp}${lineConfigProp}${linesLayoutProp}${balanceFooterProp}${sendDocumentDetailProp}${selectorPriceCurrencyProp}
         {...props}${effectiveWindowProp}${sidebarContentProp}
       />
 ${menuActionModals}${confirmModalName ? `
