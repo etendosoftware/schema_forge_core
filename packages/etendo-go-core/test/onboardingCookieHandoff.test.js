@@ -35,8 +35,10 @@ const authBarrel = readFileSync(join(packages, 'app-shell-core', 'src', 'auth', 
 // consumers' `if (data.token)` guards are dead code and must branch on
 // `data.status === 'success'`.
 //
-// TDD red step: these assertions target the NEW contract. They are expected to
-// fail against today's sources.
+// These assertions are regression tests: the contract described above is
+// already implemented, and they pin it down so the handoff channel cannot creep
+// back in (a reintroduced `sf_auth_*` write, or a revived `if (data.token)`
+// guard, breaks them).
 //
 // Structural/source-reading style is the established convention for this
 // package (see onboardingDefaultView / onboardingAuthSuccess): there is no
