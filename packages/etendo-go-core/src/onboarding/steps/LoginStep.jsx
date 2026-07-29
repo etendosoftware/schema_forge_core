@@ -28,6 +28,7 @@ export function LoginStep({ config, stepData, onNext, onBack, goToStep, setToken
 
   const [loginForm, setLoginForm] = useState({ email: '', password: '' });
   const [loginError, setLoginError] = useState(null);
+  const [loginFieldErrors, setLoginFieldErrors] = useState({ email: null, password: null });
   const [loginNotice, setLoginNotice] = useState(null);
   const [loginLoading, setLoginLoading] = useState(false);
   const [showLoginPassword, setShowLoginPassword] = useState(false);
@@ -64,7 +65,7 @@ export function LoginStep({ config, stepData, onNext, onBack, goToStep, setToken
     }
   }, []);
 
-  const handleAuthSuccess = useCallback((token, account, { route = true, authMethod = 'password' } = {}) => {
+  const handleAuthSuccess = useCallback(async (token, account, { route = true, authMethod = 'password' } = {}) => {
     localStorage.setItem('sf_platform_token', token);
     localStorage.setItem('sf_platform_auth_method', authMethod);
     if (setToken) setToken(token);
@@ -73,7 +74,7 @@ export function LoginStep({ config, stepData, onNext, onBack, goToStep, setToken
     setSsoError(null);
     setSsoLoadingProvider(null);
     if (route && routeByEnvironments) {
-      routeByEnvironments(token);
+      await routeByEnvironments(token);
     }
   }, [setToken, setAccountName, routeByEnvironments]);
 
@@ -150,12 +151,21 @@ export function LoginStep({ config, stepData, onNext, onBack, goToStep, setToken
 
   const handleLogin = async (e) => {
     e.preventDefault();
+    setLoginError(null);
+    setLoginNotice(null);
+
+    const emailError = loginForm.email.trim() ? null : ui('onboardingEmailRequired');
+    const passwordError = loginForm.password ? null : ui('onboardingPasswordRequired');
+    if (emailError || passwordError) {
+      setLoginFieldErrors({ email: emailError, password: passwordError });
+      return;
+    }
+    setLoginFieldErrors({ email: null, password: null });
+
     trackOnboarding(config, 'onboarding_auth_submitted', {
       action: 'login',
       status: 'started',
     });
-    setLoginError(null);
-    setLoginNotice(null);
     setLoginLoading(true);
     try {
       const data = await loginAccount(fetch, apiBase, loginForm);
@@ -164,21 +174,25 @@ export function LoginStep({ config, stepData, onNext, onBack, goToStep, setToken
           action: 'login',
           status: 'success',
         });
-        handleAuthSuccess(data.token, data.account);
+        // Keep the loading state on: routeByEnvironments always ends by either
+        // navigating away (window.location.href) or switching to another
+        // onboarding step, so LoginStep unmounts. Resetting it here would flash
+        // the button back to its normal state during that hand-off window.
+        await handleAuthSuccess(data.token, data.account);
       } else {
         trackOnboarding(config, 'onboarding_auth_failed', {
           action: 'login',
           status: 'failed',
         });
         setLoginError(ui('onboardingInvalidCredentials'));
+        setLoginLoading(false);
       }
     } catch (err) {
       trackOnboarding(config, 'onboarding_auth_failed', {
         action: 'login',
         status: 'failed',
       });
-      setLoginError(err.userMessage || ui(err.code || 'onboardingConnectionError'));
-    } finally {
+      setLoginError(ui(err.code || 'onboardingConnectionError'));
       setLoginLoading(false);
     }
   };
@@ -507,11 +521,15 @@ export function LoginStep({ config, stepData, onNext, onBack, goToStep, setToken
           label={ui('onboardingEmailLabel')}
           icon={Mail}
           value={loginForm.email}
-          onChange={e => setLoginForm(f => ({ ...f, email: e.target.value }))}
+          onChange={e => {
+            setLoginForm(f => ({ ...f, email: e.target.value }));
+            setLoginFieldErrors(errors => (errors.email ? { ...errors, email: null } : errors));
+          }}
           disabled={loginLoading}
           placeholder={ui('onboardingEmailPlaceholder')}
           autoComplete="email"
           required
+          error={loginFieldErrors.email}
           data-testid="AuthField__79cf84" />
 
         <div className="flex flex-col gap-3">
@@ -521,11 +539,15 @@ export function LoginStep({ config, stepData, onNext, onBack, goToStep, setToken
             label={ui('onboardingPasswordLabel')}
             icon={Lock}
             value={loginForm.password}
-            onChange={e => setLoginForm(f => ({ ...f, password: e.target.value }))}
+            onChange={e => {
+              setLoginForm(f => ({ ...f, password: e.target.value }));
+              setLoginFieldErrors(errors => (errors.password ? { ...errors, password: null } : errors));
+            }}
             disabled={loginLoading}
             placeholder={ui('onboardingPasswordPlaceholder')}
             autoComplete="current-password"
             required
+            error={loginFieldErrors.password}
             trailing={(
               <button
                 type="button"

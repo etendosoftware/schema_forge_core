@@ -387,6 +387,20 @@ function applyEnumValues(fieldDef, row, schemaType, enumValuesMap) {
 }
 
 /**
+ * Apply EPL-1807 computed-column attributes from the DB row.
+ * Only stored/virtual computed columns carry a non-'N' Computation_Mode; the
+ * downstream contract generator uses these to decide whether to emit the
+ * freshness indicator. Convention #6: omit keys when the column is not computed.
+ */
+function applyComputationHints(fieldDef, row) {
+  if (row.computation_mode && row.computation_mode !== 'N') {
+    fieldDef.computedMode = row.computation_mode;        // 'S' = stored, 'V' = virtual
+    if (row.refresh_mode) fieldDef.refreshMode = row.refresh_mode; // 'M' | 'S' | 'Q'
+    if (row.computation_function) fieldDef.computationFunction = row.computation_function;
+  }
+}
+
+/**
  * Apply optional AD metadata hints (constraints, UI flags, groups) to a field definition.
  */
 function applyFieldMetadata(fieldDef, row, schemaType, enumValuesMap) {
@@ -395,6 +409,7 @@ function applyFieldMetadata(fieldDef, row, schemaType, enumValuesMap) {
   applyDisplayLogic(fieldDef, row);
   applyCalloutLogic(fieldDef, row);
   applyUIHints(fieldDef, row);
+  applyComputationHints(fieldDef, row);
   if (row.val_rule_code) fieldDef.validationRule = parseValidationRule(row.val_rule_code);
   applyForeignKeyReference(fieldDef, row, schemaType);
   if (schemaType === 'button') applyButtonProcess(fieldDef, row);
@@ -600,6 +615,7 @@ SELECT
   fg.Name AS field_group_name,
   f.Property,
   c.IsKey,
+  c.Computation_Mode, c.Refresh_Mode, c.Computation_Function,
   tab_tbl.TableName AS tab_tablename
 FROM AD_Field f
 JOIN AD_Tab t ON f.AD_Tab_ID = t.AD_Tab_ID
@@ -674,6 +690,7 @@ SELECT
   c.Help AS help_text, NULL AS field_group_name,
   NULL AS property,  -- orphan columns have no AD_Field, so Property is always null
   c.IsKey,
+  c.Computation_Mode, c.Refresh_Mode, c.Computation_Function,
   tbl.TableName AS tab_tablename  -- tbl joins via t.AD_Table_ID so already canonical
 FROM AD_Tab t
 JOIN AD_Window w ON t.AD_Window_ID = w.AD_Window_ID
@@ -698,7 +715,7 @@ WHERE w.AD_Window_ID = $1
     SELECT 1 FROM AD_Field f2
     WHERE f2.AD_Tab_ID = t.AD_Tab_ID AND f2.AD_Column_ID = c.AD_Column_ID
   )
-ORDER BY t.SeqNo, t.Name, t.AD_Tab_ID, c.ColumnName, c.AD_Column_ID
+ORDER BY t.SeqNo, t.Name COLLATE "C", t.AD_Tab_ID COLLATE "C", c.ColumnName COLLATE "C", c.AD_Column_ID COLLATE "C"
 `;
 
 /**
@@ -744,7 +761,7 @@ export async function main(windowId, windowName) {
           AND rlt_es.AD_Language = 'es_ES'
          WHERE rl.AD_Reference_ID = ANY($1)
            AND rl.IsActive = 'Y'
-         ORDER BY rl.SeqNo NULLS LAST, rl.Name COLLATE "C", rl.Value COLLATE "C"`,
+         ORDER BY rl.SeqNo NULLS LAST, rl.Name COLLATE "C", rl.Value COLLATE "C", rl.AD_Reference_ID COLLATE "C", rl.AD_Ref_List_ID COLLATE "C"`,
         [listRefIds]
       );
       for (const row of enumResult.rows) {

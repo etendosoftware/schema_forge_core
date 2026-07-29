@@ -3,6 +3,7 @@ export * from './data/index.js';
 export * from './i18n/index.js';
 export * from './hooks/useCurrency.jsx';
 export * from './hooks/use-mobile.jsx';
+export * from './hooks/useNeoImage.js';
 export * from './layout/index.js';
 export * from './reports/index.js';
 export * from './runtime/index.js';
