@@ -1755,7 +1755,11 @@ function resolveSecondaryTabDefs(secondaryTabsDecl, contract, headerEntity, deta
       const readOnlyLogicJs = cfg.readOnlyLogic
         ? convertLogicToJs(cfg.readOnlyLogic, headerColumnMap, headerBooleanFields)
         : null;
-      return { key, label: cfg.label ?? toLabel(key), isFormTab, isPanelTab, isCustomForm: !!cfg.customForm, isCustomTable: !!cfg.customTable, PanelName, FormName, TableName, addLineEntries, requireSavedRecord, isCustomAddModal: !!customAddModalName, CustomAddModalName: customAddModalName, readOnlyLogicJs };
+      // Fields the tab's detail form must hide. Default [] (hide nothing) — see R3:
+      // absent means default, so the generator emits nothing and the component keeps
+      // its own `?? []`.
+      const excludeFields = cfg.excludeFields ?? [];
+      return { key, label: cfg.label ?? toLabel(key), isFormTab, isPanelTab, isCustomForm: !!cfg.customForm, isCustomTable: !!cfg.customTable, PanelName, FormName, TableName, addLineEntries, requireSavedRecord, isCustomAddModal: !!customAddModalName, CustomAddModalName: customAddModalName, readOnlyLogicJs, excludeFields };
     });
 }
 
@@ -1805,7 +1809,10 @@ function buildSecondaryTabPropEntry(t) {
     : '';
   const customAddModalPart = wrapIf(', customAddModal: ', t.CustomAddModalName);
   const formProp = (t.isCustomAddModal && !t.isCustomForm) ? '' : `, Form: ${t.FormName}`;
-  return `          { key: '${t.key}', label: '${t.label}', Table: ${t.TableName}${formProp}${addLinePart}${customAddModalPart}${requireSavedPart}${readOnlyLogicPart} },`;
+  // Emitted only when the tab actually excludes something ([] is truthy, hence the
+  // explicit length gate) so tabs on the default stay byte-identical.
+  const excludeFieldsPart = jsonWrapIf(', excludeFields: ', t.excludeFields, '', t.excludeFields?.length > 0);
+  return `          { key: '${t.key}', label: '${t.label}', Table: ${t.TableName}${formProp}${excludeFieldsPart}${addLinePart}${customAddModalPart}${requireSavedPart}${readOnlyLogicPart} },`;
 }
 
 function buildDetailProcessesForPage(detailEntity, contract, processOverrides) {
