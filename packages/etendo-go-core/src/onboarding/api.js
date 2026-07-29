@@ -17,10 +17,10 @@ const SSO_PAYLOAD_BUILDERS = {
   }),
 };
 
-export function buildAuthHeaders(token) {
+export function buildAuthHeaders(csrfToken) {
   return {
     'Content-Type': 'application/json',
-    ...(token ? { Authorization: `Bearer ${token}` } : {}),
+    ...(csrfToken ? { 'X-Go-CSRF': csrfToken } : {}),
   };
 }
 
@@ -100,10 +100,11 @@ export async function confirmPasswordReset(fetchImpl, baseUrl, form) {
   return readJsonResponse(response, ONBOARDING_ERROR_CODES.credentialResetFailed);
 }
 
-export async function changePassword(fetchImpl, baseUrl, token, form) {
+export async function changePassword(fetchImpl, baseUrl, csrfToken, form) {
   const response = await fetchImpl(`${baseUrl}/sws/go/change-password`, {
     method: 'POST',
-    headers: buildAuthHeaders(token),
+    credentials: 'include',
+    headers: buildAuthHeaders(csrfToken),
     body: JSON.stringify({
       currentPassword: form.currentPassword,
       newPassword: form.newPassword,
@@ -112,16 +113,16 @@ export async function changePassword(fetchImpl, baseUrl, token, form) {
   return readJsonResponse(response, ONBOARDING_ERROR_CODES.credentialChangeFailed);
 }
 
-export async function fetchAccount(fetchImpl, baseUrl, token) {
+export async function fetchAccount(fetchImpl, baseUrl) {
   const response = await fetchImpl(`${baseUrl}/sws/go/me`, {
-    headers: token ? { Authorization: `Bearer ${token}` } : {},
+    credentials: 'include',
   });
   return readJsonResponse(response, ONBOARDING_ERROR_CODES.invalidSession);
 }
 
-export async function fetchEnvironments(fetchImpl, baseUrl, token) {
+export async function fetchEnvironments(fetchImpl, baseUrl) {
   const response = await fetchImpl(`${baseUrl}/sws/go/environments`, {
-    headers: token ? { Authorization: `Bearer ${token}` } : {},
+    credentials: 'include',
   });
   const data = await readJsonResponse(response, ONBOARDING_ERROR_CODES.loadEnvironmentsFailed);
   return data.environments || [];
@@ -143,18 +144,19 @@ export async function loginEnvironment(fetchImpl, baseUrl, csrfToken, env) {
   return readJsonResponse(response, ONBOARDING_ERROR_CODES.environmentLoginFailed);
 }
 
-export async function fetchOnboardingDraft(fetchImpl, baseUrl, token) {
+export async function fetchOnboardingDraft(fetchImpl, baseUrl) {
   const response = await fetchImpl(`${baseUrl}/sws/go/onboarding/draft`, {
-    headers: token ? { Authorization: `Bearer ${token}` } : {},
+    credentials: 'include',
   });
   const data = await readJsonResponse(response, ONBOARDING_ERROR_CODES.invalidSession);
   return data.draft || null;
 }
 
-export async function saveOnboardingDraft(fetchImpl, baseUrl, token, draft) {
+export async function saveOnboardingDraft(fetchImpl, baseUrl, csrfToken, draft) {
   const response = await fetchImpl(`${baseUrl}/sws/go/onboarding/draft`, {
     method: 'POST',
-    headers: buildAuthHeaders(token),
+    credentials: 'include',
+    headers: buildAuthHeaders(csrfToken),
     body: JSON.stringify({ draft }),
   });
   return readJsonResponse(response, ONBOARDING_ERROR_CODES.invalidSession);
@@ -192,10 +194,11 @@ async function readStreamResult(reader, onMessage) {
   return finalResult;
 }
 
-export async function runOnboardingStream(fetchImpl, baseUrl, token, form, onMessage) {
+export async function runOnboardingStream(fetchImpl, baseUrl, csrfToken, form, onMessage) {
   const response = await fetchImpl(`${baseUrl}/sws/go/onboarding`, {
     method: 'POST',
-    headers: buildAuthHeaders(token),
+    credentials: 'include',
+    headers: buildAuthHeaders(csrfToken),
     body: JSON.stringify({
       clientName: form.clientName,
       currency: form.currency,
