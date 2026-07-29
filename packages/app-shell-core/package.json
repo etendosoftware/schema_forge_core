@@ -34,7 +34,9 @@
     "./pages/*": "./src/pages/*",
     "./hooks/*": "./src/hooks/*",
     "./auth/*": "./src/auth/*",
-    "./components/contract-ui/*": "./src/components/contract-ui/*"
+    "./utils/*": "./src/utils/*",
+    "./components/contract-ui/*": "./src/components/contract-ui/*",
+    "./components/*": "./src/components/*"
   },
   "files": [
     "src",
