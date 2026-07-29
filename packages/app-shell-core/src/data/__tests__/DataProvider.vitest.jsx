@@ -27,11 +27,28 @@ function CacheProbe() {
   );
 }
 
+// Probe for ETP-4576 identity-scope tests: exposes the cache plus the auth
+// setters needed to simulate a csrfToken rotation (cookie-session hosts with
+// no `token`) and a token change (legacy hosts without `csrfToken`).
+let capturedIdentityCache = null;
+function IdentityProbe() {
+  const { cache } = useDataCache();
+  const { setCsrfToken, login } = useAuth();
+  capturedIdentityCache = cache;
+  return (
+    <div>
+      <button onClick={() => setCsrfToken('csrf-2')}>rotate-csrf</button>
+      <button onClick={() => login({ token: 'tok-2' })}>change-token</button>
+    </div>
+  );
+}
+
 describe('DataProvider', () => {
   beforeEach(() => {
     localStorage.clear();
     sessionStorage.clear();
     capturedCache = null;
+    capturedIdentityCache = null;
   });
 
   test('clears cached data when the selected role changes', async () => {
@@ -101,5 +118,45 @@ describe('DataProvider', () => {
 
     expect(localStorage.length).toBe(0);
     expect(sessionStorage.length).toBe(0);
+  });
+
+  // ETP-4576 — cookie-session hosts (using restoreSession, cycle 4) never
+  // populate session.token; scope.auth must fall back to csrfToken so the
+  // cache still gets invalidated on login/logout/environment rotation.
+  test('clears cached data when csrfToken changes (cookie-session hosts with no token)', async () => {
+    const user = userEvent.setup();
+    renderWithProviders(<IdentityProbe />, { session: {} });
+
+    await act(async () => {
+      await capturedIdentityCache.fetchQuery({
+        key: { entity: 'Contact', recordId: '1' },
+        fetcher: () => Promise.resolve('cached'),
+      });
+    });
+    expect(capturedIdentityCache.size).toBe(1);
+
+    await user.click(screen.getByText('rotate-csrf'));
+
+    await waitFor(() => expect(capturedIdentityCache.size).toBe(0));
+  });
+
+  // Regression guard: legacy hosts (not yet migrated to restoreSession) keep
+  // populating session.token directly via their own login flow and never see
+  // a csrfToken. `token` must keep driving cache invalidation for them.
+  test('clears cached data when token changes (legacy hosts without csrfToken)', async () => {
+    const user = userEvent.setup();
+    renderWithProviders(<IdentityProbe />, { session: { token: 'tok-1' } });
+
+    await act(async () => {
+      await capturedIdentityCache.fetchQuery({
+        key: { entity: 'Contact', recordId: '1' },
+        fetcher: () => Promise.resolve('cached'),
+      });
+    });
+    expect(capturedIdentityCache.size).toBe(1);
+
+    await user.click(screen.getByText('change-token'));
+
+    await waitFor(() => expect(capturedIdentityCache.size).toBe(0));
   });
 });
