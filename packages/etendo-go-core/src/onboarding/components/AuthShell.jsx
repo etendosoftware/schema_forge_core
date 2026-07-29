@@ -53,7 +53,7 @@ export function AuthShell({ brandLabel, switchPrompt, switchAction, switchTestId
               </div>
             </div>
 
-            <AuthPreviewMockup data-testid="AuthPreviewMockup__79cf84" />
+            <AuthPreviewMockup />
           </div>
         </aside>
       </div>
