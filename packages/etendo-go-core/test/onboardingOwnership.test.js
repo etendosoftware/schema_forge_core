@@ -10,7 +10,6 @@ import {
 } from '../src/onboarding/api.js';
 import {
   applyProgressMessage,
-  buildEnvironmentSessionStorage,
   buildOnboardingPayload,
   initialSetupSteps,
   isCompanyStepValid,
@@ -112,12 +111,16 @@ describe('Core-owned onboarding state and SSO helpers', () => {
     assert.equal(isCompanyStepValid({ clientName: 'Core' }), true);
   });
 
-  it('selects the non-star organization and serializes the environment session', () => {
+  // ETP-4576: this test also asserted that buildEnvironmentSessionStorage
+  // serialized the environment session into the `sf_auth_*` localStorage keys.
+  // That helper is gone — the session is a server-side __Host- cookie now, so
+  // there is nothing for the client to serialize. Only the selectPreferredOrg
+  // ownership assertion survives; the org-selection logic itself is unchanged
+  // and is still Core-owned (the backend reuses the same preference when it
+  // builds the cookie's environment block).
+  it('selects the non-star organization', () => {
     const role = { id: 'role', orgList: [{ id: 'star', name: '*' }, { id: 'org', name: 'Core' }] };
     assert.deepEqual(selectPreferredOrg(role), { id: 'org', name: 'Core' });
-    const session = buildEnvironmentSessionStorage({ adminUserName: 'Ada' }, { token: 'env', roleList: [role] });
-    assert.equal(session.sf_auth_token, 'env');
-    assert.deepEqual(JSON.parse(session.sf_auth_selected_org), { id: 'org', name: 'Core' });
   });
 
   it('uses the SSO and password policy implementations from Core', () => {

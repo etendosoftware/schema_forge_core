@@ -1,10 +1,9 @@
-import { describe, it, beforeEach, afterEach } from 'node:test';
+import { describe, it } from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { createOnboardingLogout } from '../src/onboarding/logout.js';
-import { ENVIRONMENT_SESSION_KEYS, clearEnvironmentSession } from '../src/onboarding/state.js';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const onboardingSrc = join(__dirname, '..', 'src', 'onboarding');
@@ -107,10 +106,13 @@ describe('createOnboardingLogout', () => {
     assert.doesNotMatch(envSelect, /localStorage\.removeItem\('sf_platform_(token|auth_method)'\)/);
   });
 
-  it('composes cleanupSession from both the platform and the environment session storage', () => {
-    // cleanupSession must clear the generic app-shell-core auth storage AND the
-    // Etendo environment session written by buildEnvironmentSessionStorage —
-    // otherwise a logout leaves stale environment/role data behind.
+  it('composes cleanupSession from both the platform storage and the legacy key purge', () => {
+    // ETP-4576: cleanupSession must still clear the generic app-shell-core auth
+    // storage, but the environment session is now the __Host- cookie — there is
+    // no client-written `sf_auth_*` channel left to clear. What remains is
+    // purging the LEGACY keys a pre-cookie session may have left behind, which
+    // is app-shell-core's purgeLegacyAuthStorage (it owns the canonical list of
+    // 9 legacy keys), not the removed local clearEnvironmentSession().
     const flow = readFileSync(join(onboardingSrc, 'OnboardingFlow.jsx'), 'utf8');
     const cleanupBlock = flow.slice(
       flow.indexOf('cleanupSession: () =>'),
@@ -118,48 +120,18 @@ describe('createOnboardingLogout', () => {
     );
 
     assert.match(cleanupBlock, /authStorageRef\.current\.clear\(\)/);
-    assert.match(cleanupBlock, /clearEnvironmentSession\(\)/);
+    assert.match(cleanupBlock, /purgeLegacyAuthStorage\(\)/);
+    assert.doesNotMatch(cleanupBlock, /clearEnvironmentSession\(\)/);
   });
 });
 
-describe('clearEnvironmentSession', () => {
-  let store;
-  const originalLocalStorage = globalThis.localStorage;
-
-  beforeEach(() => {
-    store = new Map([['unrelated_key', 'keep-me']]);
-    globalThis.localStorage = {
-      getItem: (k) => (store.has(k) ? store.get(k) : null),
-      setItem: (k, v) => store.set(k, String(v)),
-      removeItem: (k) => store.delete(k),
-    };
-  });
-
-  afterEach(() => {
-    globalThis.localStorage = originalLocalStorage;
-  });
-
-  it('clears every Etendo environment session key and preserves unrelated keys', () => {
-    // Seed the full environment session (written by buildEnvironmentSessionStorage).
-    for (const key of ENVIRONMENT_SESSION_KEYS) {
-      store.set(key, `value-for-${key}`);
-    }
-    clearEnvironmentSession();
-    for (const key of ENVIRONMENT_SESSION_KEYS) {
-      assert.equal(store.has(key), false, `expected ${key} to be cleared`);
-    }
-    assert.equal(store.get('unrelated_key'), 'keep-me');
-  });
-
-  it('is fail-safe when localStorage.removeItem throws (private mode)', () => {
-    globalThis.localStorage.removeItem = () => {
-      throw new Error('QuotaExceededError: storage unavailable');
-    };
-    assert.doesNotThrow(clearEnvironmentSession);
-  });
-
-  it('is fail-safe when localStorage is undefined (SSR)', () => {
-    globalThis.localStorage = undefined;
-    assert.doesNotThrow(clearEnvironmentSession);
-  });
-});
+// ETP-4576: the `describe('clearEnvironmentSession')` suite that lived here was
+// removed together with the function it covered. The 7 `sf_auth_*` keys were
+// never state — they were a handoff channel between page loads (onboarding wrote
+// them, did a full-page redirect, and the app booted reading them back). The
+// __Host- session cookie survives that navigation on its own and the app now
+// asks the server via GET /sws/go/session, so the channel — and its writer
+// buildEnvironmentSessionStorage plus its eraser clearEnvironmentSession — are
+// gone. Purging leftover legacy keys is now app-shell-core's
+// purgeLegacyAuthStorage, covered by
+// packages/app-shell-core/src/auth/__tests__/session.test.js.
