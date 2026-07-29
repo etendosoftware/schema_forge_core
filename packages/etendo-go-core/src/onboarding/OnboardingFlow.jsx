@@ -1,9 +1,8 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { Loader2 } from 'lucide-react';
 import { useUI } from '@etendosoftware/app-shell-core/i18n';
-import { createLocalAuthStorage } from '@etendosoftware/app-shell-core/auth';
+import { createLocalAuthStorage, purgeLegacyAuthStorage } from '@etendosoftware/app-shell-core/auth';
 import { fetchSession, fetchEnvironments, loginEnvironment, fetchOnboardingDraft, saveOnboardingDraft } from './api.js';
-import { buildEnvironmentSessionStorage, clearEnvironmentSession } from './state.js';
 import { buildAppReturnToHref, getSafeReturnTo } from './oauthReturnTo.js';
 import { trackOnboarding } from './tracking.js';
 import { createOnboardingLogout } from './logout.js';
@@ -88,7 +87,11 @@ export function OnboardingFlow({ steps = [], config = {} }) {
       flushDraft: () => draftPersistenceRef.current.flush(draftContextRef.current),
       cleanupSession: () => {
         authStorageRef.current.clear();
-        clearEnvironmentSession();
+        // ETP-4576 — the environment session is the __Host- cookie now (the
+        // server drops it on logout), so there is no client-written channel left
+        // to clear. What remains is purging keys a pre-cookie session may have
+        // left behind; app-shell-core owns that canonical list.
+        purgeLegacyAuthStorage();
       },
       resetState: () => logoutContextRef.current.resetState(),
       navigateToLogin: () => logoutContextRef.current.navigateToLogin(),
@@ -142,9 +145,6 @@ export function OnboardingFlow({ steps = [], config = {} }) {
           });
           const data = await loginEnvironment(fetch, apiBase, csrfToken, env);
           if (data.status === 'success') {
-            const storageValues = buildEnvironmentSessionStorage(env, data);
-            Object.entries(storageValues).forEach(([key, value]) => localStorage.setItem(key, value));
-
             // Clear all SW caches on login to guarantee fresh resources
             if ('caches' in window) {
               try {

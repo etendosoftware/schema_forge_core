@@ -3,7 +3,6 @@ import { Loader2, Building2, Plus, RefreshCw } from 'lucide-react';
 import { Button } from '@etendosoftware/app-shell-core/components/ui/button';
 import { useUI } from '@etendosoftware/app-shell-core/i18n';
 import { loginEnvironment, fetchEnvironments } from '../api.js';
-import { buildEnvironmentSessionStorage } from '../state.js';
 import { buildAppReturnToHref, getSafeReturnTo } from '../oauthReturnTo.js';
 import { trackOnboarding } from '../tracking.js';
 import { PageHeader } from '../components/PageHeader.jsx';
@@ -22,10 +21,7 @@ export function EnvSelectStep({ config, stepData, onNext, onBack, goToStep, toke
     setLoggingIn(env.clientId);
     try {
       const data = await loginEnvironment(fetch, apiBase, token, env);
-      if (data.token) {
-        const storageValues = buildEnvironmentSessionStorage(env, data);
-        Object.entries(storageValues).forEach(([key, value]) => localStorage.setItem(key, value));
-
+      if (data.status === 'success') {
         // Clear all SW caches on login to guarantee fresh resources
         if ('caches' in window) {
           try {

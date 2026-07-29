@@ -78,13 +78,17 @@ describe('state.js drops the localStorage session handoff (ETP-4576)', () => {
   });
 
   it('has no leftover reference to the removed helpers or the sf_auth_ keys', () => {
-    // Guards against a partial removal that leaves the constant, a comment
-    // pointing at the old writer, or a stray key name behind.
+    // Guards against a partial removal that leaves the constant or a stray key
+    // name behind. Line comments are stripped first: a tombstone comment naming
+    // the removed helpers (documenting WHY the handoff channel is gone) is
+    // desirable, so the assertions must bind to real code only — same pattern as
+    // app-shell-core/test/AuthorizePage.source.test.js.
+    const codeOnly = state.replace(/^\s*\/\/.*$/gm, '');
     for (const name of REMOVED_HANDOFF_EXPORTS) {
-      assert.doesNotMatch(state, new RegExp(name), `state.js still mentions ${name}`);
+      assert.doesNotMatch(codeOnly, new RegExp(name), `state.js still mentions ${name}`);
     }
-    assert.doesNotMatch(state, /sf_auth_/);
-    assert.doesNotMatch(state, /localStorage/);
+    assert.doesNotMatch(codeOnly, /sf_auth_/);
+    assert.doesNotMatch(codeOnly, /localStorage/);
   });
 
   it('is no longer re-exported from the onboarding barrel', () => {
