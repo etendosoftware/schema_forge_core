@@ -84,6 +84,16 @@ export function evaluate(config, opts = {}) {
   });
 }
 
+/**
+ * Where the baseline lives for a given repo root. The single source of truth for
+ * that mapping: `evaluate()` reads the tracked files from `opts.root`, so anything
+ * that WRITES the baseline has to resolve against the same root or it updates a
+ * different repo's file than the one it just measured.
+ */
+export function configPathFor(root = ROOT) {
+  return join(root, 'cli', 'file-lines-budget.json');
+}
+
 export function loadConfig(configPath = CONFIG_PATH) {
   if (!existsSync(configPath)) throw new Error(`Config not found: ${configPath}`);
   return JSON.parse(readFileSync(configPath, 'utf8'));
@@ -107,13 +117,20 @@ function printHumanResults(results, { list }) {
   }
 }
 
-function lockInImprovements(config, improved, configPath) {
+/**
+ * Lower the baselines that improved and write the config back. `opts.root` MUST be
+ * the same root the results were measured against — otherwise this rewrites the
+ * baseline of a different checkout than the one it read.
+ */
+export function lockInImprovements(config, improved, opts = {}) {
+  const configPath = opts.configPath || configPathFor(opts.root);
   for (const r of improved) {
     const entry = config.files.find((f) => label(f) === label(r));
     entry.baseline = r.current;
   }
   writeFileSync(configPath, `${JSON.stringify(config, null, 2)}\n`);
   process.stdout.write(`\n  Updated baseline for ${improved.length} file(s). Commit cli/file-lines-budget.json.\n`);
+  return configPath;
 }
 
 /** A tracked file that cannot be found means the config or SF_ROOT is wrong — exit(2). */
@@ -155,7 +172,7 @@ function main() {
     process.stdout.write(`  ${grew.length ? '✗' : '✓'}  file-lines budget: ${tracked} file(s) tracked, ${total} lines total\n`);
   }
 
-  if (update && improved.length > 0) lockInImprovements(config, improved, CONFIG_PATH);
+  if (update && improved.length > 0) lockInImprovements(config, improved, { root: ROOT });
   reportMissingOrExit(missing);
   failIfGrew(grew);
 

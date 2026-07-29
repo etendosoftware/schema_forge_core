@@ -1,11 +1,13 @@
 import { describe, it } from 'node:test';
 import { strict as assert } from 'node:assert';
 import { spawnSync } from 'node:child_process';
-import { mkdtempSync, mkdirSync, writeFileSync, readFileSync, rmSync } from 'node:fs';
+import { mkdtempSync, mkdirSync, writeFileSync, readFileSync, rmSync, existsSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { countLines, evaluate, loadConfig } from '../src/file-lines-budget.js';
+import {
+  countLines, evaluate, loadConfig, configPathFor, lockInImprovements,
+} from '../src/file-lines-budget.js';
 
 const BIN = fileURLToPath(new URL('../src/file-lines-budget.js', import.meta.url));
 const TRACKED = 'tools/app-shell/src/components/contract-ui/DetailView.jsx';
@@ -76,6 +78,41 @@ describe('evaluate (ratchet status)', () => {
     const res = evaluate({ files: [{ path: '/no/such/File.jsx', baseline: 1 }] });
     assert.equal(res[0].status, 'missing');
     assert.equal(res[0].current, null);
+  });
+});
+
+describe('root threading (programmatic callers)', () => {
+  it('--update writes the baseline of the root it measured, not the module default', () => {
+    const root = makeRepo({ lines: 8, baseline: 10 });
+    const defaultConfig = configPathFor(); // module default, from SF_ROOT/__dirname
+    const defaultExistedBefore = existsSync(defaultConfig);
+    const defaultBefore = defaultExistedBefore ? readFileSync(defaultConfig, 'utf8') : null;
+    try {
+      const config = loadConfig(configPathFor(root));
+      const results = evaluate(config, { root });
+      const improved = results.filter((r) => r.status === 'improved');
+      assert.equal(improved.length, 1);
+
+      const written = lockInImprovements(config, improved, { root });
+
+      // The custom root's baseline is the one that moved...
+      assert.equal(written, configPathFor(root));
+      assert.equal(readBaseline(root), 8);
+      // ...and the module-level default was never touched. Before the root was
+      // threaded through, the write landed here instead — a caller that measured
+      // one checkout silently rewrote another.
+      assert.notEqual(configPathFor(root), defaultConfig);
+      assert.equal(existsSync(defaultConfig), defaultExistedBefore);
+      if (defaultExistedBefore) {
+        assert.equal(readFileSync(defaultConfig, 'utf8'), defaultBefore);
+      }
+    } finally {
+      rmSync(root, { recursive: true, force: true });
+    }
+  });
+
+  it('configPathFor maps a root to its cli/ baseline', () => {
+    assert.equal(configPathFor('/some/repo'), join('/some/repo', 'cli', 'file-lines-budget.json'));
   });
 });
 
