@@ -1,4 +1,4 @@
-// Does NOT import shared/window-f18-shared-base.jsx — this window renders its
+// Does NOT import shared/window-f19-shared-base.jsx — this window renders its
 // own table with no shared component. Its contract's 'name' field
 // intentionally disagrees with the shared base's required:true for 'name'
 // (this contract has required:false), to prove that field is never checked

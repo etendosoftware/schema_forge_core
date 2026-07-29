@@ -791,7 +791,7 @@ function collectFrontendLineFields(contract) {
 }
 
 /**
- * F18: Hand-written custom table/field columns carry a local `required` flag
+ * F19: Hand-written custom table/field columns carry a local `required` flag
  * that must be manually kept in sync with the real `required` value in that
  * window's contract.json. This drifts silently whenever a field's required-ness
  * changes upstream (or a column is copy-pasted from another field) and nobody
@@ -834,39 +834,39 @@ function collectFrontendLineFields(contract) {
  *
  * Suppression: some local `required` values are intentionally divergent (e.g.
  * they guard an inline-add-row save, unrelated to any AdvancedFilterBuilder).
- * `(artifact, key)` pairs listed in the F18 allowlist file (see
- * `loadF18Allowlist`) are evaluated but never reported as violations.
+ * `(artifact, key)` pairs listed in the F19 allowlist file (see
+ * `loadF19Allowlist`) are evaluated but never reported as violations.
  *
  * Only fires for windows that actually have a custom override in location #1
  * or #2 — windows relying purely on the generated table are correct by
  * construction and skipped.
  */
-async function ruleF18(artifactDir, artifactName, root = ROOT, allowlist = []) {
+async function ruleF19(artifactDir, artifactName, root = ROOT, allowlist = []) {
   const contractPath = join(artifactDir, 'contract.json');
   if (!(await fileExists(contractPath))) return null;
 
-  const primaryFiles = collectF18PrimaryFiles(artifactDir, artifactName, root);
+  const primaryFiles = collectF19PrimaryFiles(artifactDir, artifactName, root);
   if (primaryFiles.length === 0) return null; // no custom override anywhere — nothing to check
 
   let contract;
   try {
     contract = await readJSON(contractPath);
   } catch {
-    return skipped('F18', artifactName, 'contract.json could not be parsed — F18 check skipped');
+    return skipped('F19', artifactName, 'contract.json could not be parsed — F19 check skipped');
   }
 
   const fieldIndex = collectContractFieldIndex(contract);
   if (fieldIndex.size === 0) return null;
 
   const parsedCache = new Map(); // filePath -> ast | null
-  const sharedFiles = await collectF18SharedFiles(primaryFiles, root, parsedCache);
+  const sharedFiles = await collectF19SharedFiles(primaryFiles, root, parsedCache);
   const allFiles = [...primaryFiles, ...sharedFiles];
 
   for (const filePath of allFiles) {
-    const ast = await parseF18File(filePath, parsedCache);
+    const ast = await parseF19File(filePath, parsedCache);
     if (!ast) continue;
 
-    const fileViolation = findF18RequiredMismatch(filePath, ast, fieldIndex, artifactName, allowlist, root);
+    const fileViolation = findF19RequiredMismatch(filePath, ast, fieldIndex, artifactName, allowlist, root);
     if (fileViolation) return fileViolation;
   }
   return null;
@@ -879,7 +879,7 @@ async function ruleF18(artifactDir, artifactName, root = ROOT, allowlist = []) {
  * unparsable custom file must not fail the whole rule, so parse errors resolve to
  * `null` rather than throwing.
  */
-async function parseF18File(filePath, parsedCache) {
+async function parseF19File(filePath, parsedCache) {
   if (parsedCache.has(filePath)) return parsedCache.get(filePath);
   let ast = null;
   try {
@@ -894,14 +894,14 @@ async function parseF18File(filePath, parsedCache) {
 
 /**
  * Trace one import hop from each of the window's primary custom files (see
- * ruleF18 doc comment, location #3) and return the set of resolved files that
+ * ruleF19 doc comment, location #3) and return the set of resolved files that
  * land inside tools/app-shell/src/windows/custom/shared/.
  */
-async function collectF18SharedFiles(primaryFiles, root, parsedCache) {
+async function collectF19SharedFiles(primaryFiles, root, parsedCache) {
   const sharedDir = join(root, 'tools', 'app-shell', 'src', 'windows', 'custom', 'shared');
   const sharedFiles = new Set();
   for (const filePath of primaryFiles) {
-    const ast = await parseF18File(filePath, parsedCache);
+    const ast = await parseF19File(filePath, parsedCache);
     if (!ast) continue;
     for (const target of await resolveSharedImportTargets(ast, filePath, sharedDir, root)) {
       sharedFiles.add(target);
@@ -917,7 +917,7 @@ async function collectF18SharedFiles(primaryFiles, root, parsedCache) {
  * fully in sync (including allowlisted divergences). A single unparsable file
  * must not fail the whole rule, so an extraction error also resolves to `null`.
  */
-function findF18RequiredMismatch(filePath, ast, fieldIndex, artifactName, allowlist, root) {
+function findF19RequiredMismatch(filePath, ast, fieldIndex, artifactName, allowlist, root) {
   let entries;
   try {
     entries = extractColumnEntries(ast);
@@ -926,10 +926,10 @@ function findF18RequiredMismatch(filePath, ast, fieldIndex, artifactName, allowl
   }
 
   for (const entry of entries) {
-    const mismatch = evaluateF18Entry(entry, fieldIndex, artifactName, allowlist);
+    const mismatch = evaluateF19Entry(entry, fieldIndex, artifactName, allowlist);
     if (mismatch) {
       const relFile = filePath.startsWith(root) ? filePath.slice(root.length + 1) : filePath;
-      return buildF18Violation(artifactName, relFile, entry.key, entry.required, mismatch.required);
+      return buildF19Violation(artifactName, relFile, entry.key, entry.required, mismatch.required);
     }
   }
   return null;
@@ -940,47 +940,47 @@ function findF18RequiredMismatch(filePath, ast, fieldIndex, artifactName, allowl
  * Returns the matched contract field (so the caller has its `required` value
  * for the message) when it diverges and is not allowlisted, otherwise `null`.
  */
-function evaluateF18Entry(entry, fieldIndex, artifactName, allowlist) {
+function evaluateF19Entry(entry, fieldIndex, artifactName, allowlist) {
   if (entry.required === 'indeterminate') return null;
 
   const field = resolveContractField(fieldIndex, entry.key, entry.column);
   if (!field) return null; // not a real contract field — pure custom render column
 
-  if (isF18Allowlisted(allowlist, artifactName, entry.key)) return null;
+  if (isF19Allowlisted(allowlist, artifactName, entry.key)) return null;
 
   if (entry.required === field.required) return null;
 
   return field;
 }
 
-function buildF18Violation(artifactName, relFile, key, localRequired, contractRequired) {
+function buildF19Violation(artifactName, relFile, key, localRequired, contractRequired) {
   return violation(
-    'F18', artifactName, 'BLOCK',
+    'F19', artifactName, 'BLOCK',
     `Custom table column '${key}' in ${relFile} has required=${localRequired} ` +
       `but contract.json field '${key}' has required=${contractRequired}`,
     `Update the 'required' flag on column '${key}' in ${relFile} to match ` +
       `artifacts/${artifactName}/contract.json (required: ${contractRequired}), or fix the ` +
       `contract/decisions.json if the local value is the correct one. If this divergence ` +
       `is intentional, add { "artifact": "${artifactName}", "key": "${key}", "reason": "..." } ` +
-      `to cli/src/validate-pipeline-f18-allowlist.json instead.`,
+      `to cli/src/validate-pipeline-f19-allowlist.json instead.`,
   );
 }
 
-const F18_CUSTOM_FILE_PREDICATE = (filePath) =>
+const F19_CUSTOM_FILE_PREDICATE = (filePath) =>
   isJavaScriptModule(filePath) && !filePath.split(sep).includes('__tests__');
 
 /**
  * Collect the "primary" custom files for a window — the two locations that
- * are unambiguously owned by that single window (see ruleF18 doc comment,
+ * are unambiguously owned by that single window (see ruleF19 doc comment,
  * locations #1 and #2). Both are safe to scan unconditionally: a missing
  * directory just yields no files (collectSourceFiles handles that).
  */
-function collectF18PrimaryFiles(artifactDir, artifactName, root) {
+function collectF19PrimaryFiles(artifactDir, artifactName, root) {
   const windowCustomDir = join(root, 'tools', 'app-shell', 'src', 'windows', 'custom', artifactName);
   const artifactsCustomDir = join(artifactDir, 'custom');
   return [
-    ...collectSourceFiles(windowCustomDir, F18_CUSTOM_FILE_PREDICATE),
-    ...collectSourceFiles(artifactsCustomDir, F18_CUSTOM_FILE_PREDICATE),
+    ...collectSourceFiles(windowCustomDir, F19_CUSTOM_FILE_PREDICATE),
+    ...collectSourceFiles(artifactsCustomDir, F19_CUSTOM_FILE_PREDICATE),
   ];
 }
 
@@ -990,7 +990,7 @@ function collectF18PrimaryFiles(artifactDir, artifactName, root) {
  * codebase: the `@/` alias (→ tools/app-shell/src/...) and relative
  * specifiers (resolved against the importing file's directory). Any other
  * form (bare npm specifier, `@generated/...`, etc.) returns null — it is not
- * resolved, by design (see ruleF18 doc comment "Known limitation").
+ * resolved, by design (see ruleF19 doc comment "Known limitation").
  */
 function resolveImportSpecifier(source, importingFilePath, root) {
   if (source.startsWith('@/')) {
@@ -1041,13 +1041,13 @@ async function resolveSharedImportTargets(ast, importingFilePath, sharedDir, roo
 }
 
 /**
- * Load the F18 suppression allowlist — a small, human-reviewable JSON file of
+ * Load the F19 suppression allowlist — a small, human-reviewable JSON file of
  * `{ artifact, key, reason }` entries for known-intentional divergences (e.g.
  * a `required` flag that guards an inline-add-row save, unrelated to any
  * contract field visibility). A missing file is an empty allowlist, not an
  * error — most repos/checkouts will never need one.
  */
-async function loadF18Allowlist(path) {
+async function loadF19Allowlist(path) {
   try {
     const raw = await readFile(path, 'utf-8');
     const parsed = JSON.parse(raw);
@@ -1057,7 +1057,7 @@ async function loadF18Allowlist(path) {
   }
 }
 
-function isF18Allowlisted(allowlist, artifactName, key) {
+function isF19Allowlisted(allowlist, artifactName, key) {
   return allowlist.some(entry => entry?.artifact === artifactName && entry?.key === key);
 }
 
@@ -1098,7 +1098,7 @@ function resolveContractField(fieldIndex, key, localColumn) {
 
 /**
  * Walk a parsed AST and collect { key, column, required } entries from every
- * array literal that looks like a column/field descriptor array (see ruleF18
+ * array literal that looks like a column/field descriptor array (see ruleF19
  * doc comment for the exact signature). `required` is `true`/`false` when it can
  * be statically determined, `false` when the property is entirely absent, or the
  * string `'indeterminate'` when present but not a plain boolean literal (e.g. a
@@ -1205,7 +1205,7 @@ async function runEnabledChecks(checks, skipSet) {
   return (await Promise.all(pendingChecks)).filter(Boolean);
 }
 
-async function runWindowChecks(artifactDir, artifactName, registryContent, root, skipSet, f18Allowlist = []) {
+async function runWindowChecks(artifactDir, artifactName, registryContent, root, skipSet, f19Allowlist = []) {
   return runEnabledChecks([
     { rule: 'F1', run: () => ruleF1(artifactDir, artifactName) },
     { rule: 'F2', run: () => ruleF2(artifactDir, artifactName) },
@@ -1222,7 +1222,7 @@ async function runWindowChecks(artifactDir, artifactName, registryContent, root,
     { rule: 'F15', run: () => ruleF15(artifactDir, artifactName) },
     { rule: 'F16', run: () => ruleF16(artifactDir, artifactName) },
     { rule: 'F17', run: () => ruleF17(artifactDir, artifactName) },
-    { rule: 'F18', run: () => ruleF18(artifactDir, artifactName, root, f18Allowlist) },
+    { rule: 'F19', run: () => ruleF19(artifactDir, artifactName, root, f19Allowlist) },
   ], skipSet);
 }
 
@@ -1242,10 +1242,10 @@ async function runAggregateSectionChecks(artifactDir, artifactName, skipSet) {
   return [...f9Results, ...f4Results];
 }
 
-async function runChecksForArtifact({ kind, artifactDir, artifactName, registryContent, root, skipSet, strict, f18Allowlist }) {
+async function runChecksForArtifact({ kind, artifactDir, artifactName, registryContent, root, skipSet, strict, f19Allowlist }) {
   if (kind === 'window') {
     return tagArtifactKind(
-      await runWindowChecks(artifactDir, artifactName, registryContent, root, skipSet, f18Allowlist),
+      await runWindowChecks(artifactDir, artifactName, registryContent, root, skipSet, f19Allowlist),
       'window',
     );
   }
@@ -1349,7 +1349,7 @@ export async function getChangedArtifactsSince(root, ref) {
  * @param {string[]} [options.skip=[]] - list of rule IDs to skip (e.g. ['F4', 'F7'])
  * @param {string} [options.root=ROOT] - repo root (override for testing)
  * @param {string} [options.registryPath] - override path to registry.js (for testing)
- * @param {string} [options.f18AllowlistPath] - override path to the F18 suppression allowlist (for testing)
+ * @param {string} [options.f19AllowlistPath] - override path to the F19 suppression allowlist (for testing)
  * @returns {Promise<{violations: Array, skipped: Array, summary: object}>}
  */
 export async function validatePipeline({
@@ -1358,14 +1358,14 @@ export async function validatePipeline({
   skip = [],
   root = ROOT,
   registryPath,
-  f18AllowlistPath,
+  f19AllowlistPath,
   _artifactsRoot,
 } = {}) {
   const artifactsRoot = _artifactsRoot ?? join(root, 'artifacts');
   const resolvedRegistryPath = registryPath ?? join(root, 'tools', 'app-shell', 'src', 'windows', 'registry.js');
   const registryContent = await loadRegistryContent(resolvedRegistryPath);
-  const resolvedF18AllowlistPath = f18AllowlistPath ?? join(__dirname, 'validate-pipeline-f18-allowlist.json');
-  const f18Allowlist = await loadF18Allowlist(resolvedF18AllowlistPath);
+  const resolvedF19AllowlistPath = f19AllowlistPath ?? join(__dirname, 'validate-pipeline-f19-allowlist.json');
+  const f19Allowlist = await loadF19Allowlist(resolvedF19AllowlistPath);
   const artifactNames = await resolveArtifactNames(scope, root, artifactsRoot);
 
   const skipSet = new Set(skip.map(s => s.toUpperCase()));
@@ -1384,7 +1384,7 @@ export async function validatePipeline({
       root,
       skipSet,
       strict,
-      f18Allowlist,
+      f19Allowlist,
     }));
   }
 

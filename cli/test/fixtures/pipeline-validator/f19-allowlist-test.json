@@ -1,6 +1,6 @@
 [
   {
-    "artifact": "window-f18-allowlisted",
+    "artifact": "window-f19-allowlisted",
     "key": "asset",
     "reason": "Test fixture mirroring amortization/asset — required flag guards inline-add-row save."
   }

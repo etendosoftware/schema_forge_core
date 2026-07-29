@@ -5,7 +5,7 @@ const productRequired = true;
 
 function useColumns() {
   // Mirrors the real InvoiceLinesTable.jsx pattern: `required` is spread in
-  // conditionally at runtime. F18 cannot statically resolve this, so it must
+  // conditionally at runtime. F19 cannot statically resolve this, so it must
   // be treated as indeterminate and skipped — never guessed as `false`, which
   // would otherwise false-positive against the contract's required=true.
   return useMemo(() => [

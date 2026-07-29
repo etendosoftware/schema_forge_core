@@ -1,6 +1,6 @@
 // Mirrors AmortizationLinesTable.jsx CORE_FIELDS: 'asset' required=true here
 // is intentional (guards an inline-add-row save) and is suppressed via the
-// F18 allowlist. 'other' has the same kind of drift but is NOT allowlisted,
+// F19 allowlist. 'other' has the same kind of drift but is NOT allowlisted,
 // so it must still be reported — proves suppression is selective.
 import { DataTable } from '@/components/contract-ui';
 
