@@ -60,13 +60,15 @@ describe('Core-owned onboarding API contract', () => {
     await loginWithSsoProvider(fetchImpl, '/etendo', 'google', {
       credential: 'id-token', email: 'untrusted@example.com', provider: 'google',
     });
-    await changePassword(fetchImpl, '/etendo', 'platform-token', {
+    // ETP-4576: changePassword's 3rd param is now a CSRF token (X-Go-CSRF), not a Bearer token.
+    await changePassword(fetchImpl, '/etendo', 'csrf-abc', {
       currentPassword: 'old', newPassword: 'new', ignored: 'not-sent',
     });
 
     assert.equal(calls[0].url, '/etendo/sws/go/session/sso/google');
     assert.equal(calls[0].options.body, JSON.stringify({ credential: 'id-token' }));
-    assert.equal(calls[1].options.headers.Authorization, 'Bearer platform-token');
+    assert.equal(calls[1].options.headers['X-Go-CSRF'], 'csrf-abc');
+    assert.equal('Authorization' in calls[1].options.headers, false);
     assert.equal(calls[1].options.body, JSON.stringify({ currentPassword: 'old', newPassword: 'new' }));
     assert.deepEqual(buildAuthHeaders(null), { 'Content-Type': 'application/json' });
   });
@@ -83,9 +85,10 @@ describe('Core-owned onboarding API contract', () => {
     };
     const messages = [];
 
-    await saveOnboardingDraft(fetchImpl, '', 'token', { fullName: 'Ada' });
-    assert.deepEqual(await fetchOnboardingDraft(fetchImpl, '', 'token'), { fullName: 'Ada' });
-    assert.deepEqual(await runOnboardingStream(fetchImpl, '', 'token', {
+    await saveOnboardingDraft(fetchImpl, '', 'csrf-abc', { fullName: 'Ada' });
+    // ETP-4576: fetchOnboardingDraft is a GET behind the session cookie — it no longer takes an auth param.
+    assert.deepEqual(await fetchOnboardingDraft(fetchImpl, ''), { fullName: 'Ada' });
+    assert.deepEqual(await runOnboardingStream(fetchImpl, '', 'csrf-abc', {
       clientName: 'Core', currency: 'EUR', language: 'en_US', countryCode: 'ES',
     }, (message) => messages.push(message)), { type: 'result', success: true });
 
