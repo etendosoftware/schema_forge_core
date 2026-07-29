@@ -1,5 +1,5 @@
 import { createContext, useContext, useState, useCallback, useMemo, useRef, useEffect } from 'react';
-import { fetchCookieSession } from './api.js';
+import { deleteCookieSession, fetchCookieSession } from './api.js';
 import {
   createLocalAuthStorage,
   mapRestoredSession,
@@ -82,7 +82,12 @@ export function AuthProvider({
     return normalized;
   }, [authStorage, onSessionChange]);
 
-  const logout = useCallback(() => {
+  // Resets every piece of client-side session state. Split out of logout()
+  // because the restore-failure path below needs exactly this and NOT the
+  // server-side revoke: there, the server just told us no session exists, so
+  // asking it to revoke one would be both wrong and a wasted round trip on
+  // every anonymous page load.
+  const clearLocalSession = useCallback(() => {
     const clearedSession = normalizeAuthSession();
     setSessionState(clearedSession);
     authStorage.clear();
@@ -100,8 +105,23 @@ export function AuthProvider({
     fetchedForRoleRef.current = undefined;
   }, [authStorage, onSessionChange]);
 
-  // ETP-4576 — session restore on mount (opt-in via `restoreSession`, same
-  // host-injected pattern as `fetchWindowAccess`): purges the legacy
+  const logout = useCallback(() => {
+    // ETP-4576 — revoke the session server-side, otherwise the cookie outlives
+    // this "logout" and the session stays valid. Read the CSRF proof BEFORE
+    // clearing local state below wipes it: DELETE is an unsafe method, so
+    // sending it empty earns a 403 and silently leaves the session alive.
+    //
+    // Fire-and-forget on purpose: local state clears immediately so the UI
+    // responds at once, the revoke travels in parallel, and
+    // deleteCookieSession never throws — a network failure must not trap a
+    // user in a session they asked to leave.
+    deleteCookieSession(csrfToken);
+    clearLocalSession();
+  }, [clearLocalSession, csrfToken]);
+
+  // ETP-4576 — session restore on mount. `restoreSession` defaults to the
+  // platform cookie fetcher (a host can override it, or opt out with an
+  // explicit null), so this runs for every host: purges the legacy
   // sf_auth_*/sf_platform_* localStorage keys once ("on first read", per the
   // PRD), then consumes GET /sws/go/session through the host-supplied
   // fetcher. Success moves the tri-state status to 'authenticated' and
@@ -131,7 +151,9 @@ export function AuthProvider({
         setStatus('authenticated');
       })
       .catch(() => {
-        logout();
+        // Local clear only, deliberately not logout(): the server just told us
+        // there is no session, so there is nothing to revoke.
+        clearLocalSession();
         setStatus('anonymous');
       });
     // eslint-disable-next-line react-hooks/exhaustive-deps
