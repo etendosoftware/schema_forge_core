@@ -1,5 +1,10 @@
 import { createContext, useContext, useState, useCallback, useMemo, useRef, useEffect } from 'react';
-import { createLocalAuthStorage, normalizeAuthSession, purgeLegacyAuthStorage } from './session.js';
+import {
+  createLocalAuthStorage,
+  mapRestoredSession,
+  normalizeAuthSession,
+  purgeLegacyAuthStorage,
+} from './session.js';
 
 const AuthContext = createContext(null);
 
@@ -106,6 +111,12 @@ export function AuthProvider({
       .then((result) => {
         if (!result) throw new Error('No active session');
         setCsrfToken(result.csrfToken ?? null);
+        // Set state WITHOUT persisting: purgeLegacyAuthStorage() just ran above,
+        // so writing through authStorage here would immediately rewrite the very
+        // legacy keys it deleted. The server response is the authoritative copy.
+        const restoredSession = normalizeAuthSession(mapRestoredSession(result));
+        setSessionState(restoredSession);
+        onSessionChange?.(restoredSession);
         setStatus('authenticated');
       })
       .catch(() => {

@@ -64,6 +64,32 @@ export function purgeLegacyAuthStorage(storage = getBrowserStorage()) {
   }
 }
 
+// ETP-4576 — maps the GET /sws/go/session payload onto the `session` shape the
+// AuthContext consumers expect. The backend's `environment` block carries only
+// IDs, while the UI needs the full role/org objects (it renders their `.name`),
+// so the selection is resolved by cross-referencing those IDs against the
+// returned `roleList`. Everything falls back to null/[] instead of throwing: a
+// session can legitimately have `environment: null` (logged in, no environment
+// entered yet), and an unexpected payload must not break the app boot.
+export function mapRestoredSession(restored = {}) {
+  const { account, environment, roleList } = restored;
+  const roles = Array.isArray(roleList) ? roleList : [];
+  const selectedRole = environment?.roleId
+    ? roles.find((role) => role?.id === environment.roleId) || null
+    : null;
+  const selectedOrg = environment?.orgId
+    ? selectedRole?.orgList?.find((org) => org?.id === environment.orgId) || null
+    : null;
+
+  return {
+    username: account?.name || account?.email || null,
+    clientId: environment?.clientId || null,
+    roleList: roles,
+    selectedRole,
+    selectedOrg,
+  };
+}
+
 export function normalizeAuthSession(session = {}) {
   return {
     token: session.token || null,
