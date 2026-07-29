@@ -64,7 +64,7 @@ describe('Core-owned onboarding API contract', () => {
       currentPassword: 'old', newPassword: 'new', ignored: 'not-sent',
     });
 
-    assert.equal(calls[0].url, '/etendo/sws/go/sso/google');
+    assert.equal(calls[0].url, '/etendo/sws/go/session/sso/google');
     assert.equal(calls[0].options.body, JSON.stringify({ credential: 'id-token' }));
     assert.equal(calls[1].options.headers.Authorization, 'Bearer platform-token');
     assert.equal(calls[1].options.body, JSON.stringify({ currentPassword: 'old', newPassword: 'new' }));

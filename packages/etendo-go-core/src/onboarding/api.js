@@ -43,8 +43,9 @@ async function readJsonResponse(response, fallbackCode) {
 }
 
 export async function registerAccount(fetchImpl, baseUrl, form) {
-  const response = await fetchImpl(`${baseUrl}/sws/go/register`, {
+  const response = await fetchImpl(`${baseUrl}/sws/go/session/register`, {
     method: 'POST',
+    credentials: 'include',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(form),
   });
@@ -52,8 +53,9 @@ export async function registerAccount(fetchImpl, baseUrl, form) {
 }
 
 export async function loginAccount(fetchImpl, baseUrl, form) {
-  const response = await fetchImpl(`${baseUrl}/sws/go/login`, {
+  const response = await fetchImpl(`${baseUrl}/sws/go/session`, {
     method: 'POST',
+    credentials: 'include',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(form),
   });
@@ -68,8 +70,9 @@ export async function loginWithSsoProvider(fetchImpl, baseUrl, provider, payload
     error.code = ONBOARDING_ERROR_CODES.ssoFailed;
     throw error;
   }
-  const response = await fetchImpl(`${baseUrl}/sws/go/sso/${encodeURIComponent(normalizedProvider)}`, {
+  const response = await fetchImpl(`${baseUrl}/sws/go/session/sso/${encodeURIComponent(normalizedProvider)}`, {
     method: 'POST',
+    credentials: 'include',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(buildPayload(payload)),
   });
@@ -124,10 +127,18 @@ export async function fetchEnvironments(fetchImpl, baseUrl, token) {
   return data.environments || [];
 }
 
-export async function loginEnvironment(fetchImpl, baseUrl, token, env) {
-  const userId = encodeURIComponent(env.adminUserId);
-  const response = await fetchImpl(`${baseUrl}/sws/go/login?userId=${userId}`, {
-    headers: token ? { Authorization: `Bearer ${token}` } : {},
+export async function loginEnvironment(fetchImpl, baseUrl, csrfToken, env) {
+  const headers = { 'Content-Type': 'application/json' };
+  if (csrfToken) headers['X-Go-CSRF'] = csrfToken;
+  const response = await fetchImpl(`${baseUrl}/sws/go/session/environment`, {
+    method: 'POST',
+    credentials: 'include',
+    headers,
+    body: JSON.stringify({
+      userId: env.adminUserId,
+      ...(env.roleId ? { roleId: env.roleId } : {}),
+      ...(env.orgId ? { orgId: env.orgId } : {}),
+    }),
   });
   return readJsonResponse(response, ONBOARDING_ERROR_CODES.environmentLoginFailed);
 }
