@@ -1,3 +1,11 @@
+/**
+ * Survey state persistence — storage, dismissal and monthly-cap machinery.
+ *
+ * This module deliberately knows NO survey ids and NO counter names. Which survey
+ * is the onboarding one, and which counter a given survey snapshots, are supplied
+ * by the caller: they are product decisions belonging to the app that defines the
+ * surveys, not to the shared runtime. Everything here works for any survey set.
+ */
 const STORAGE_KEY = 'sf_survey_v1';
 
 const DEFAULTS = Object.freeze({
@@ -7,7 +15,10 @@ const DEFAULTS = Object.freeze({
   lastDismissedAt: null,
   onboardingCompleted: false,
   onboardingShown: false,
-  counters: Object.freeze({ invoicing: 0, order: 0 }),
+  // Counters start empty: the key set is whatever the app increments. Every read
+  // of a counter — here and in callers — is `?? 0` guarded, so an absent key and a
+  // key seeded to 0 are indistinguishable.
+  counters: Object.freeze({}),
   shownThisMonth: Object.freeze({}),
   respondedCounts: Object.freeze({}),
   respondedAt: Object.freeze({}),
@@ -65,13 +76,21 @@ export function markOnboardingCompleted() {
   writeSurveyState({ ...state, onboardingCompleted: true });
 }
 
-export function markSurveyShown(surveyId, now = Date.now()) {
+/**
+ * @param {string}  surveyId
+ * @param {number}  [now]
+ * @param {object}  [opts]
+ * @param {boolean} [opts.isOnboarding] Whether THIS survey is the app's onboarding
+ *   survey. The caller decides — the shared runtime has no way to know which id
+ *   that is, and no business guessing.
+ */
+export function markSurveyShown(surveyId, now = Date.now(), { isOnboarding = false } = {}) {
   const state = readSurveyState();
   const monthKey = new Date(now).toISOString().slice(0, 7);
   writeSurveyState({
     ...state,
     lastShownAt: new Date(now).toISOString(),
-    onboardingShown: surveyId === 'csat_onboarding' ? true : state.onboardingShown,
+    onboardingShown: isOnboarding ? true : state.onboardingShown,
     shownThisMonth: {
       ...state.shownThisMonth,
       [monthKey]: (state.shownThisMonth[monthKey] ?? 0) + 1,
@@ -79,7 +98,17 @@ export function markSurveyShown(surveyId, now = Date.now()) {
   });
 }
 
-export function markSurveyResponded(surveyId, now = Date.now()) {
+/**
+ * @param {string}  surveyId
+ * @param {number}  [now]
+ * @param {object}  [opts]
+ * @param {?string} [opts.counterKey] Which counter to snapshot into
+ *   `respondedCountAt[surveyId]` — the "how many of these had the user done when
+ *   they last answered" reading that re-ask cadence is based on. Omit for surveys
+ *   that track no counter; nothing is recorded then, which is what surveys with no
+ *   counter did before this was an input.
+ */
+export function markSurveyResponded(surveyId, now = Date.now(), { counterKey = null } = {}) {
   const state = readSurveyState();
   writeSurveyState({
     ...state,
@@ -93,8 +122,7 @@ export function markSurveyResponded(surveyId, now = Date.now()) {
     },
     respondedCountAt: {
       ...state.respondedCountAt,
-      ...(surveyId === 'csat_invoicing' && { csat_invoicing: state.counters.invoicing ?? 0 }),
-      ...(surveyId === 'csat_order' && { csat_order: state.counters.order ?? 0 }),
+      ...(counterKey ? { [surveyId]: state.counters[counterKey] ?? 0 } : {}),
     },
   });
 }
