@@ -5,9 +5,25 @@ import { AuthProvider, useAuth, createMemoryAuthStorage } from '../../auth/index
 import { DataProvider, useDataCache } from '../DataProvider.jsx';
 import { useQuery } from '../useQuery.jsx';
 
+// ETP-4576 cycle 4a — `restoreSession` is no longer opt-in: AuthProvider defaults
+// it to the platform cookie fetcher (fetchCookieSession). Left on the default, every
+// provider here would call `fetch` on mount, fail under jsdom, and take the
+// fail-closed path — which runs logout(), clearing the session and thereby changing
+// DataProvider's identity scope, which wipes the cache these tests just populated.
+// This suite's subject is cache scoping/deduplication, NOT the session restore, so
+// it opts OUT of the restore entirely with an explicit `null`: AuthProvider's
+// `typeof restoreSession === 'function'` checks then take the legacy branch, status
+// resolves synchronously from `session.token`, and the mount effect returns early —
+// i.e. behaviour verbatim identical to before the default existed. Note `undefined`
+// would NOT work: a default parameter only fills in for `undefined`. Do not remove.
+const NO_RESTORE = null;
+
 function renderWithProviders(ui, { session = { token: 'tok', selectedRole: { id: 'r1' }, selectedOrg: { id: 'o1' } } } = {}) {
   return render(
-    <AuthProvider storage={createMemoryAuthStorage(session)} initialSession={session}>
+    <AuthProvider
+      storage={createMemoryAuthStorage(session)}
+      initialSession={session}
+      restoreSession={NO_RESTORE}>
       <DataProvider>{ui}</DataProvider>
     </AuthProvider>,
   );

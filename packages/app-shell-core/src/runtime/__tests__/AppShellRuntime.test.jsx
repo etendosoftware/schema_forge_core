@@ -9,6 +9,21 @@ import { useAuth } from '../../auth/index.js';
 // explicit cleanup so mounted providers don't bleed between tests.
 afterEach(cleanup);
 
+// ETP-4576 cycle 4a — `restoreSession` is no longer opt-in: AuthProvider defaults
+// it to the platform cookie fetcher (fetchCookieSession), and AppShellRuntime
+// forwards `auth.restoreSession` straight through (so omitting it hands the default
+// to every runtime mounted here). The tests below that predate the cookie-session
+// flow assume the legacy behaviour: `status` resolved synchronously from
+// `auth.initialSession.token`, never 'booting', and no fail-closed logout(). Under
+// the default they'd instead park in 'booting' (renderToStaticMarkup then yields the
+// empty bootingFallback) or get their windowAccess wiped by the logout that follows
+// a failed jsdom fetch. They opt OUT with an explicit `null`: AuthProvider's
+// `typeof restoreSession === 'function'` checks take the legacy branch and the mount
+// effect returns early. Note `undefined` would NOT work — a default parameter only
+// fills in for `undefined`. The ETP-4576 tests further down deliberately DO pass a
+// restoreSession, since the restore is their actual subject. Do not remove.
+const NO_RESTORE = null;
+
 function RouteAwareProbe() {
   // Throws outside a Router context — proves children mount inside BrowserRouter.
   const location = useLocation();
@@ -40,7 +55,7 @@ test('AppShellRuntime uses a custom layout component when one is provided', () =
       basename="/"
       menuGroups={[{ id: 'g1', title: 'Group 1', items: [] }]}
       routes={[{ path: 'home', index: true, public: false, element: <div>home</div> }]}
-      auth={{ loginPath: '/login', unauthenticatedFallback: <div>n/a</div>, initialSession: { token: 'test-token' } }}
+      auth={{ loginPath: '/login', unauthenticatedFallback: <div>n/a</div>, initialSession: { token: 'test-token' }, restoreSession: NO_RESTORE }}
       layout={CustomLayout}
     />
   );
@@ -55,7 +70,7 @@ test('AppShellRuntime falls back to ShellLayout when no layout override is given
       basename="/"
       menuGroups={[{ id: 'g1', title: 'Group 1', items: [] }]}
       routes={[{ path: 'home', index: true, public: false, element: <div>home</div> }]}
-      auth={{ loginPath: '/login', unauthenticatedFallback: <div>n/a</div>, initialSession: { token: 'test-token' } }}
+      auth={{ loginPath: '/login', unauthenticatedFallback: <div>n/a</div>, initialSession: { token: 'test-token' }, restoreSession: NO_RESTORE }}
     />
   );
 
@@ -89,7 +104,7 @@ test('AppShellRuntime forwards auth.fetchWindowAccess to AuthProvider', async ()
       basename="/"
       menuGroups={[]}
       routes={[{ path: 'home', index: true, public: true, element: <div>home</div> }]}
-      auth={{ loginPath: '/login', fetchWindowAccess }}
+      auth={{ loginPath: '/login', fetchWindowAccess, restoreSession: NO_RESTORE }}
     >
       <RoleSelectorProbe />
     </AppShellRuntime>

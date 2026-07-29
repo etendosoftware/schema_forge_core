@@ -3,7 +3,7 @@ export { AuthProvider, useAuth } from './AuthContext.jsx';
 // api.js when the bearer token went away, leaving this barrel re-exporting a
 // binding that no longer exists (silently `undefined` under Vite's transform, a
 // link error under native ESM).
-export { createApiFetch, buildHeaders, detectBaseUrl } from './api.js';
+export { createApiFetch, buildHeaders, detectBaseUrl, fetchCookieSession } from './api.js';
 export {
   createLocalAuthStorage,
   createMemoryAuthStorage,

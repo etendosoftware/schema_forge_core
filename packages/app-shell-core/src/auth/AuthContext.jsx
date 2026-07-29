@@ -1,4 +1,5 @@
 import { createContext, useContext, useState, useCallback, useMemo, useRef, useEffect } from 'react';
+import { fetchCookieSession } from './api.js';
 import {
   createLocalAuthStorage,
   mapRestoredSession,
@@ -14,7 +15,17 @@ export function AuthProvider({
   initialSession,
   onSessionChange,
   fetchWindowAccess,
-  restoreSession,
+  // ETP-4576 — defaults to the platform cookie fetcher, so every host gets the
+  // server-side session without wiring anything (an opt-in prop left hosts that
+  // pass no props unable to authenticate at all once the localStorage handoff
+  // was removed). Pass your own function to override it.
+  //
+  // To opt OUT (keep the pre-cookie synchronous path, e.g. in a test whose
+  // subject is not the restore) pass an explicit `null`: any non-function makes
+  // the effect below return early and `status` resolve synchronously from
+  // `session.token`. Note `undefined` does NOT opt out — a default parameter
+  // only fills in for `undefined`, so it silently re-arms the fetcher.
+  restoreSession = fetchCookieSession,
 }) {
   const authStorage = useMemo(() => storage || createLocalAuthStorage(), [storage]);
   const [session, setSessionState] = useState(() => normalizeAuthSession({

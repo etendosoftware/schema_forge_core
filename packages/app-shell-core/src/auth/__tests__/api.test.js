@@ -15,6 +15,15 @@ import { fileURLToPath } from 'node:url';
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const src = readFileSync(join(__dirname, '..', 'api.js'), 'utf8');
 
+// The `doesNotMatch` assertions below describe what the CODE must not do, but a
+// raw source read cannot tell code from prose: api.js documents its own security
+// guarantee ("no Authorization header", ADR-0001) in a comment, and that sentence
+// alone would trip the negative assertion. So negative assertions run against a
+// comment-stripped copy — the same pattern already used in
+// test/AuthorizePage.source.test.js and etendo-go-core's
+// onboardingCookieHandoff.test.js. Positive `match` assertions keep using `src`.
+const codeOnly = src.replace(/^\s*\/\/.*$/gm, '');
+
 describe('buildHeaders — no more client-side bearer token', () => {
   it('is exported as a zero-argument function (no token parameter)', () => {
     assert.match(src, /export function buildHeaders\s*\(\s*\)/);
@@ -30,7 +39,7 @@ describe('buildHeaders — no more client-side bearer token', () => {
   });
 
   it('never references an Authorization header anywhere in the module', () => {
-    assert.doesNotMatch(src, /Authorization/);
+    assert.doesNotMatch(codeOnly, /Authorization/);
   });
 
   it('never references a Bearer-token scheme anywhere in the module', () => {

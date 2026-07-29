@@ -19,6 +19,26 @@ export function buildHeaders() {
   };
 }
 
+// ETP-4576 — restores the backend-managed session (ADR-0001). This is the
+// platform default for AuthProvider's `restoreSession`, so a host gets the
+// cookie session without wiring anything; passing the prop overrides it.
+// Authenticates purely with the `__Host-` cookie: `credentials: 'include'` and
+// no Authorization header, since the browser never holds a bearer token.
+// Fails closed with null on the 401 for "no session", a network error, or an
+// unparsable body — every one of those means "not authenticated".
+export async function fetchCookieSession(baseUrl = DEFAULT_BASE_URL) {
+  try {
+    const res = await fetch(`${baseUrl}/sws/go/session`, {
+      method: 'GET',
+      credentials: 'include',
+    });
+    if (!res.ok) return null;
+    return await res.json();
+  } catch {
+    return null;
+  }
+}
+
 // Methods that mutate state and therefore require the session-bound CSRF proof
 // (ADR-0001, com.etendoerp.go): the session itself lives in an httpOnly cookie,
 // so only this header — never a client-held token — proves the request came
