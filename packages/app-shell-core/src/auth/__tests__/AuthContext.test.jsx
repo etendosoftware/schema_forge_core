@@ -912,6 +912,146 @@ describe('AuthContext — session restore (ETP-4576)', () => {
 // and then performs a legacy in-app login() would never flip isAuthenticated if
 // that flag derived from `status` alone. It must keep falling back to
 // `!!session.token`.
+// ETP-4576 — logout must revoke the session SERVER-SIDE. Real gap found in this
+// branch: nothing in the frontend ever called DELETE /sws/go/session. Logout was
+// purely client-side (clear state + authStorage), which was survivable with a
+// localStorage bearer token — deleting the token was the logout — but is a
+// security hole with the `__Host-` cookie: the cookie is httpOnly, JS cannot
+// delete it, so it survives the "logout" and the session stays valid on the
+// server. Only the backend endpoint (ETP-4575) can revoke it.
+//
+// Design constraints the tests below pin down:
+//   1. `logout()` stays SYNCHRONOUS. Every caller (LogoutRoute, the fail-closed
+//      restore path, OnboardingFlow's cleanup) uses it fire-and-forget; making it
+//      async would break them and delay the UI on a network round trip. So the
+//      DELETE is dispatched without await and local state is cleared immediately.
+//   2. The CSRF token must be captured BEFORE it is cleared. `logout()` calls
+//      setCsrfToken(null); reading the token after that (or letting the request
+//      read it late) sends an empty X-Go-CSRF and the backend answers 403 — the
+//      easiest bug to introduce here, and a silent one, since local logout would
+//      still look fine.
+//   3. A failing DELETE must not block or throw. The user asked to leave.
+//
+// All wrappers here pass restoreSession={NEVER_SETTLES}, so the shared `fetchStub`
+// records the logout request and nothing else.
+describe('AuthContext — logout revokes the session server-side (ETP-4576)', () => {
+  function deleteSessionCalls() {
+    return fetchStub.mock.calls.filter(([url, init = {}]) => (
+      (init.method || '').toUpperCase() === 'DELETE' && /\/sws\/go\/session$/.test(String(url))
+    ));
+  }
+
+  it('fires a DELETE /sws/go/session when logout() is called', async () => {
+    const { result } = renderHook(() => useAuth(), { wrapper: wrapperWith() });
+
+    act(() => {
+      result.current.logout();
+    });
+
+    await waitFor(() => {
+      expect(deleteSessionCalls()).toHaveLength(1);
+    });
+    const [, init = {}] = deleteSessionCalls()[0];
+    // The cookie is the credential, so it has to be allowed to travel.
+    expect(init.credentials).toBe('include');
+  });
+
+  it('sends the X-Go-CSRF header with the token the session held BEFORE the logout cleared it', async () => {
+    const { result } = renderHook(() => useAuth(), { wrapper: wrapperWith() });
+
+    act(() => {
+      result.current.setCsrfToken('csrf-abc');
+    });
+    expect(result.current.csrfToken).toBe('csrf-abc');
+
+    act(() => {
+      result.current.logout();
+    });
+
+    await waitFor(() => {
+      expect(deleteSessionCalls()).toHaveLength(1);
+    });
+    const [, init = {}] = deleteSessionCalls()[0];
+    // The bug this guards: reading csrfToken after setCsrfToken(null) sends an
+    // empty proof and the backend 403s, so the session is never revoked.
+    expect(init.headers?.['X-Go-CSRF']).toBe('csrf-abc');
+  });
+
+  it('never sends an Authorization header or a Bearer scheme on the logout request', async () => {
+    const { result } = renderHook(() => useAuth(), { wrapper: wrapperWith() });
+
+    act(() => {
+      result.current.setCsrfToken('csrf-abc');
+    });
+    act(() => {
+      result.current.logout();
+    });
+
+    await waitFor(() => {
+      expect(deleteSessionCalls()).toHaveLength(1);
+    });
+    const [, init = {}] = deleteSessionCalls()[0];
+    const serialized = JSON.stringify(init);
+    expect(serialized).not.toMatch(/Authorization/i);
+    expect(serialized).not.toMatch(/Bearer/i);
+  });
+
+  it('stays synchronous: local state is fully cleared immediately after logout(), with no await or waitFor', () => {
+    const { result } = renderHook(() => useAuth(), { wrapper: wrapperWith() });
+
+    act(() => {
+      result.current.setCsrfToken('csrf-abc');
+      result.current.setWindowAccess({ '147': 'full' });
+      result.current.setCapabilities({ showAccountingFields: true });
+      result.current.login({ token: 'tok-1', username: 'Ada' });
+    });
+    expect(result.current.isAuthenticated).toBe(true);
+
+    // Not awaited, not wrapped in waitFor: the DELETE is fire-and-forget, so the
+    // UI-visible state must already be anonymous when logout() returns.
+    let returned = 'sentinel';
+    act(() => {
+      returned = result.current.logout();
+    });
+
+    expect(returned).toBeUndefined();
+    expect(result.current.csrfToken).toBeNull();
+    expect(result.current.windowAccess).toEqual({});
+    expect(result.current.capabilities).toEqual({});
+    expect(result.current.token).toBeNull();
+    expect(result.current.username).toBeNull();
+    expect(result.current.isAuthenticated).toBe(false);
+  });
+
+  it('still clears local state and does not throw when the DELETE fails (offline / 403 / 500)', async () => {
+    fetchStub.mockRejectedValue(new TypeError('Failed to fetch'));
+    const { result } = renderHook(() => useAuth(), { wrapper: wrapperWith() });
+
+    act(() => {
+      result.current.setCsrfToken('csrf-abc');
+      result.current.setWindowAccess({ '147': 'full' });
+      result.current.login({ token: 'tok-1' });
+    });
+
+    expect(() => {
+      act(() => {
+        result.current.logout();
+      });
+    }).not.toThrow();
+
+    expect(result.current.csrfToken).toBeNull();
+    expect(result.current.windowAccess).toEqual({});
+    expect(result.current.capabilities).toEqual({});
+    expect(result.current.token).toBeNull();
+    expect(result.current.isAuthenticated).toBe(false);
+
+    // The rejection was attempted and swallowed — no unhandled rejection.
+    await waitFor(() => {
+      expect(deleteSessionCalls()).toHaveLength(1);
+    });
+  });
+});
+
 describe('AuthContext — isAuthenticated legacy fallback (ETP-4576 cycle 14 regression guard)', () => {
   it('is false once the default restore settles to "anonymous", then becomes true after a post-mount login() even though status stays "anonymous"', async () => {
     const { result } = renderHook(() => useAuth(), {
