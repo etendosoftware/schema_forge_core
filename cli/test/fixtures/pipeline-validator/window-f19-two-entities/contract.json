@@ -1,0 +1,21 @@
+{
+  "version": "v2",
+  "frontendContract": {
+    "window": { "primaryEntity": "header", "detailEntity": "lines" },
+    "entities": {
+      "header": {
+        "searchableFields": ["documentNo"],
+        "fields": [
+          { "name": "documentNo", "column": "DocumentNo", "type": "string" },
+          { "name": "lineAmount", "column": "HeaderNote", "type": "string" }
+        ]
+      },
+      "lines": {
+        "searchableFields": ["lineAmount"],
+        "fields": [
+          { "name": "lineAmount", "column": "LineNetAmt", "type": "amount" }
+        ]
+      }
+    }
+  }
+}

@@ -5,7 +5,7 @@ import { fileURLToPath } from 'node:url';
 import { dirname } from 'node:path';
 import { mkdtemp, mkdir, rm, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
-import { validatePipeline, classifyArtifact, getChangedArtifactsSince, parseCLIArgs } from '../src/validate-pipeline.js';
+import { validatePipeline, classifyArtifact, getChangedArtifactsSince, parseCLIArgs, ruleF19, loadF19Allowlist } from '../src/validate-pipeline.js';
 import { generateContract, splitWindowContractArtifacts } from '../src/generate-contract.js';
 import { generateAll } from '../src/generate-frontend.js';
 
@@ -836,5 +836,140 @@ describe('ETP-3959 quality gates', () => {
     } finally {
       await rm(tmpRoot, { recursive: true, force: true });
     }
+  });
+});
+
+// ---------------------------------------------------------------------------
+// F19 — missing filterMode on custom grid columns
+// ---------------------------------------------------------------------------
+
+/** Fixture root whose tools/app-shell/src/windows/custom/<window>/ holds the F19 tables. */
+const F19_ROOT = join(FIXTURES, 'f19-root');
+
+/** Run F19 alone against a fixture window (bypasses the other rules). */
+function runF19(windowName, allowlist = []) {
+  return ruleF19(join(FIXTURES, windowName), windowName, F19_ROOT, allowlist);
+}
+
+describe('Rule F19 — missing filterMode on custom grid columns', () => {
+  it('emits BLOCK for a custom column over an amount contract field', async () => {
+    const v = await runF19('window-f19-amount');
+    assert.ok(v, 'F19 violation expected');
+    assert.equal(v.rule, 'F19');
+    assert.equal(v.severity, 'BLOCK');
+    assert.equal(v.artifact, 'window-f19-amount');
+    assert.match(v.message, /custom grid column 'outstandingAmount'/);
+    assert.match(v.message, /contract field type 'amount' implies filterMode 'numeric'/);
+    assert.match(v.message, /AmountTable\.jsx/);
+    assert.match(v.fix, /Add filterMode: 'numeric' to the 'outstandingAmount' column/);
+    assert.match(v.fix, /validate-pipeline-f19-allowlist\.json/);
+  });
+
+  it('emits BLOCK for a custom column over a date contract field', async () => {
+    const v = await runF19('window-f19-date');
+    assert.ok(v, 'F19 violation expected');
+    assert.equal(v.severity, 'BLOCK');
+    assert.match(v.message, /custom grid column 'eTGODueDate'/);
+    assert.match(v.message, /contract field type 'date' implies filterMode 'date'/);
+  });
+
+  it('resolves the contract field by column when the name exists on two entities', async () => {
+    const v = await runF19('window-f19-two-entities');
+    assert.ok(v, 'F19 violation expected for the lines-entity amount field');
+    assert.match(v.message, /contract field type 'amount' implies filterMode 'numeric'/);
+  });
+
+  it('passes when the custom column declares filterMode', async () => {
+    assert.equal(await runF19('window-f19-declared'), null);
+  });
+
+  it('passes for a custom column with no matching contract field', async () => {
+    assert.equal(await runF19('window-f19-synthetic'), null);
+  });
+
+  it('passes for a custom column with neither column nor backendFilterKey', async () => {
+    // The key matches an `amount` contract field, but the ETP-4609
+    // isFilterableColumn guard drops this shape from the filter field list.
+    assert.equal(await runF19('window-f19-no-backend-key'), null);
+  });
+
+  it('still fires for a column-less custom column that declares backendFilterKey', async () => {
+    const v = await runF19('window-f19-backend-key');
+    assert.ok(v, 'an explicitly filterable custom column must still be checked');
+    assert.match(v.message, /custom grid column 'outstandingAmount'/);
+    assert.match(v.message, /implies filterMode 'numeric'/);
+  });
+
+  it('passes for a custom column over a string contract field', async () => {
+    assert.equal(await runF19('window-f19-string'), null);
+  });
+
+  it('passes for a custom FK column whose column ends in _ID', async () => {
+    assert.equal(await runF19('window-f19-fk'), null);
+  });
+
+  it('passes when the column object carries a spread (indeterminate)', async () => {
+    assert.equal(await runF19('window-f19-spread'), null);
+  });
+
+  it('passes when the window has no custom directory at all', async () => {
+    assert.equal(await runF19('window-f19-no-custom'), null);
+  });
+
+  it('scans the artifact-local custom/ directory too', async () => {
+    const v = await runF19('window-f19-artifact-custom');
+    assert.ok(v, 'F19 must scan artifacts/<window>/custom/ as well');
+    assert.match(v.message, /ArtifactCustomTable\.jsx/);
+  });
+
+  it('is registered in the window checks (reachable through validatePipeline)', async () => {
+    const result = await runOnFixtures(['window-f19-artifact-custom']);
+    const v = result.violations.find(v => v.rule === 'F19');
+    assert.ok(v, 'F19 must run as part of the window check registry');
+    assert.equal(v.severity, 'BLOCK');
+  });
+
+  it('allowlist suppresses exactly the (artifact, key) pair', async () => {
+    const suppressed = await runF19('window-f19-amount', [
+      { artifact: 'window-f19-amount', key: 'outstandingAmount', reason: 'intentional' },
+    ]);
+    assert.equal(suppressed, null, 'the allowlisted pair must be suppressed');
+  });
+
+  it('allowlist does not suppress a different key or a different artifact', async () => {
+    const otherKey = await runF19('window-f19-amount', [
+      { artifact: 'window-f19-amount', key: 'documentNo', reason: 'unrelated key' },
+    ]);
+    assert.ok(otherKey, 'a different key must not be suppressed');
+    const otherArtifact = await runF19('window-f19-amount', [
+      { artifact: 'window-f19-date', key: 'outstandingAmount', reason: 'unrelated artifact' },
+    ]);
+    assert.ok(otherArtifact, 'the same key on another artifact must not be suppressed');
+  });
+
+  it('treats a missing allowlist file as empty without throwing', async () => {
+    const rules = await loadF19Allowlist('/nonexistent/path/validate-pipeline-f19-allowlist.json');
+    assert.deepEqual(rules, []);
+  });
+
+  it('treats an unparseable allowlist file as empty without throwing', async () => {
+    const tmpRoot = await mkdtemp(join(tmpdir(), 'sf-f19-allowlist-'));
+    try {
+      const badPath = join(tmpRoot, 'allowlist.json');
+      await writeFile(badPath, '{ not json');
+      assert.deepEqual(await loadF19Allowlist(badPath), []);
+    } finally {
+      await rm(tmpRoot, { recursive: true, force: true });
+    }
+  });
+
+  it('ships an empty allowlist (no known intentional divergences)', async () => {
+    const rules = await loadF19Allowlist();
+    assert.ok(Array.isArray(rules), 'allowlist must be an array');
+    assert.deepEqual(rules, []);
+  });
+
+  it('returns null when the artifact has no contract.json', async () => {
+    assert.equal(await ruleF19(join(FIXTURES, 'report-incomplete'), 'report-incomplete', F19_ROOT), null);
   });
 });

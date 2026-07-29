@@ -17,7 +17,7 @@
 
 import { readFile, readdir, access } from 'node:fs/promises';
 import { createHash } from 'node:crypto';
-import { join, dirname } from 'node:path';
+import { join, dirname, sep } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { execFile } from 'node:child_process';
 import { promisify } from 'node:util';
@@ -872,6 +872,299 @@ async function ruleF18(artifactDir, artifactName) {
 }
 
 // ---------------------------------------------------------------------------
+// F19 — custom grid columns must declare filterMode when the data type needs one
+// ---------------------------------------------------------------------------
+
+const F19_ALLOWLIST_PATH = join(__dirname, 'validate-pipeline-f19-allowlist.json');
+
+/** Contract field type (or columnType) → the filterMode `resolveFilterMode` would need. */
+const F19_EXPECTED_MODES = new Map([
+  ['amount', 'numeric'],
+  ['number', 'numeric'],
+  ['integer', 'numeric'],
+  ['quantity', 'numeric'],
+  ['price', 'numeric'],
+  ['decimal', 'numeric'],
+  ['percent', 'numeric'],
+  ['signedDelta', 'numeric'],
+  ['date', 'date'],
+  ['dateTime', 'date'],
+  ['foreignKey', 'identifier'],
+  ['enum', 'enumLabel'],
+  ['status', 'enumLabel'],
+  ['boolean', 'booleanLabel'],
+]);
+
+/** Per-process cache: path → parsed AST (or null when the file could not be parsed). */
+const f19AstCache = new Map();
+/** path → promise of the parsed allowlist array. */
+const f19AllowlistCache = new Map();
+
+/**
+ * Load the F19 allowlist. A missing or unreadable file is an empty allowlist —
+ * this rule must never throw because a side file is absent.
+ *
+ * @param {string} [allowlistPath]
+ * @returns {Promise<Array<{artifact: string, key: string, reason?: string}>>}
+ */
+export function loadF19Allowlist(allowlistPath = F19_ALLOWLIST_PATH) {
+  if (!f19AllowlistCache.has(allowlistPath)) {
+    f19AllowlistCache.set(allowlistPath, (async () => {
+      try {
+        const parsed = await readJSON(allowlistPath);
+        return Array.isArray(parsed) ? parsed : [];
+      } catch {
+        return [];
+      }
+    })());
+  }
+  return f19AllowlistCache.get(allowlistPath);
+}
+
+function isF19Allowlisted(rules, artifactName, key) {
+  return rules.some(rule => rule?.artifact === artifactName && rule?.key === key);
+}
+
+/** The filterMode the runtime resolver would need for a contract field. */
+function f19ExpectedMode(field) {
+  const mapped = F19_EXPECTED_MODES.get(field.columnType ?? field.type);
+  if (mapped) return mapped;
+  if (Array.isArray(field.enumValues) && field.enumValues.length > 0) return 'enumLabel';
+  return 'text';
+}
+
+/**
+ * Index every contract field by name across ALL entities (header, lines, …).
+ * A name present on two entities keeps both candidates so the lookup can
+ * disambiguate by the grid column's local `column` value.
+ */
+function f19IndexContractFields(contract) {
+  const index = new Map();
+  for (const [entity, entityDef] of Object.entries(contract.frontendContract?.entities ?? {})) {
+    for (const field of entityDef?.fields ?? []) {
+      if (!field?.name) continue;
+      const candidates = index.get(field.name) ?? [];
+      candidates.push({
+        entity,
+        type: field.type ?? null,
+        columnType: field.columnType ?? null,
+        column: field.column ?? null,
+        enumValues: field.enumValues ?? null,
+      });
+      index.set(field.name, candidates);
+    }
+  }
+  return index;
+}
+
+function f19LookupContractField(index, entry) {
+  const candidates = index.get(entry.key);
+  if (!candidates?.length) return null;
+  if (candidates.length === 1) return candidates[0];
+  return (entry.column && candidates.find(c => c.column === entry.column)) || candidates[0];
+}
+
+function f19LiteralString(node) {
+  return node?.type === 'StringLiteral' ? node.value : null;
+}
+
+/**
+ * Flatten an ObjectExpression into a name → value-node map, reporting whether it
+ * carries a spread (which could inject `filterMode` from elsewhere).
+ */
+function f19ReadObjectProps(objectNode) {
+  const props = new Map();
+  let hasSpread = false;
+  for (const prop of objectNode.properties ?? []) {
+    if (prop?.type === 'SpreadElement' || prop?.type === 'SpreadProperty') {
+      hasSpread = true;
+      continue;
+    }
+    if (prop?.computed) continue;
+    const name = prop?.key?.name ?? f19LiteralString(prop?.key);
+    if (name) props.set(name, prop.value);
+  }
+  return { props, hasSpread };
+}
+
+/**
+ * Turn an ObjectExpression into a grid column descriptor, or null when it has no
+ * string-literal `key` property (i.e. it is not a statically readable column).
+ */
+function f19ToColumnEntry(objectNode) {
+  const { props, hasSpread } = f19ReadObjectProps(objectNode);
+  const key = f19LiteralString(props.get('key'));
+  if (key === null) return null;
+
+  const typeNode = props.get('type');
+  const type = f19LiteralString(typeNode);
+  const hasFilterMode = props.has('filterMode');
+  const filterModeResolved = !hasFilterMode || f19LiteralString(props.get('filterMode')) !== null;
+
+  return {
+    key,
+    column: f19LiteralString(props.get('column')),
+    type,
+    hasFilterMode,
+    hasBackendFilterKey: props.has('backendFilterKey'),
+    indeterminate: hasSpread || (typeNode !== undefined && type === null) || !filterModeResolved,
+  };
+}
+
+/** Every statically readable column descriptor found in any column-array literal. */
+function f19CollectColumnEntries(ast, walkAst) {
+  const entries = [];
+  walkAst(ast, (node) => {
+    if (node.type !== 'ArrayExpression') return;
+    const candidates = (node.elements ?? [])
+      .filter(element => element?.type === 'ObjectExpression')
+      .map(f19ToColumnEntry)
+      .filter(Boolean);
+    entries.push(...candidates);
+  });
+  return entries;
+}
+
+async function f19ParseFile(filePath, shared) {
+  if (!f19AstCache.has(filePath)) {
+    let ast = null;
+    try {
+      ast = shared.parseModuleSource(await readFile(filePath, 'utf-8'), filePath);
+    } catch {
+      ast = null; // unparseable custom module — not this rule's business
+    }
+    f19AstCache.set(filePath, ast);
+  }
+  return f19AstCache.get(filePath);
+}
+
+function f19CheckEntry({ entry, artifactName, index, rules, relFile }) {
+  if (entry.type !== 'custom' || entry.hasFilterMode || entry.indeterminate) return null;
+  // Neither `column` (AD field) nor `backendFilterKey` means a purely
+  // client-rendered synthetic cell with no backend property to filter against:
+  // `isFilterableColumn` in AdvancedFilterBuilder.jsx drops exactly this shape
+  // from the Advanced Filter field list (ETP-4609), so there is no filter mode
+  // to get wrong and demanding one would be the wrong remedy.
+  if (!entry.column && !entry.hasBackendFilterKey) return null;
+  const field = f19LookupContractField(index, entry);
+  if (!field) return null; // purely synthetic render cell — no backing column
+  const expected = f19ExpectedMode(field);
+  if (expected === 'text') return null;
+  // An `_ID` column (or an explicit backendFilterKey) already resolves to the
+  // identifier path at runtime, so annotating it would be pure noise.
+  if (expected === 'identifier' && (/_ID$/i.test(entry.column ?? '') || entry.hasBackendFilterKey)) return null;
+  if (isF19Allowlisted(rules, artifactName, entry.key)) return null;
+
+  const typeLabel = field.columnType ?? field.type ?? 'unknown';
+  return violation(
+    'F19', artifactName, 'BLOCK',
+    `custom grid column '${entry.key}' in ${relFile} declares no filterMode, but contract field type '${typeLabel}' implies filterMode '${expected}'`,
+    `Add filterMode: '${expected}' to the '${entry.key}' column, or add { "artifact": "${artifactName}", "key": "${entry.key}", "reason": "..." } to cli/src/validate-pipeline-f19-allowlist.json.`,
+  );
+}
+
+async function f19CheckFile({ filePath, artifactName, index, rules, root, shared }) {
+  const ast = await f19ParseFile(filePath, shared);
+  if (!ast) return null;
+  const relFile = shared.repoRelative(root, filePath);
+  for (const entry of f19CollectColumnEntries(ast, shared.walkAst)) {
+    const found = f19CheckEntry({ entry, artifactName, index, rules, relFile });
+    if (found) return found;
+  }
+  return null;
+}
+
+async function f19CustomFiles(artifactDir, artifactName, root, shared) {
+  const dirs = [
+    join(root, 'tools', 'app-shell', 'src', 'windows', 'custom', artifactName),
+    join(artifactDir, 'custom'),
+  ];
+  const files = [];
+  for (const dir of dirs) {
+    if (!(await dirExists(dir))) continue;
+    files.push(...shared.collectSourceFiles(
+      dir,
+      filePath => shared.isJavaScriptModule(filePath) && !filePath.split(sep).includes('__tests__'),
+    ));
+  }
+  return files;
+}
+
+/**
+ * F19: a hand-written grid column declared `type: 'custom'` must declare an
+ * explicit `filterMode` whenever the contract says the underlying field is not
+ * textual (ETP-4681).
+ *
+ * WHY: `type: 'custom'` means the cell has a bespoke `render`, so the runtime
+ * resolver (`resolveFilterMode` in app-shell-core/lib/gridQuery.js) cannot infer
+ * the data type — it falls through the `_ID` foreign-key heuristic to `'text'`.
+ * A numeric or date column then silently offers text-only operators, and a
+ * preloaded condition such as `outstandingAmount greaterThan 0` renders with an
+ * empty operator select.
+ *
+ * SCOPE: hand-written custom components only — both conventions
+ * (`tools/app-shell/src/windows/custom/<window>/` and `artifacts/<window>/custom/`).
+ * Generated tables are correct by construction (the generator emits the concrete
+ * type), so a window with no custom directory is never reported. Columns are
+ * matched to `frontendContract.entities.*.fields[].name`; a column with no
+ * contract counterpart is a synthetic render cell and is ignored.
+ *
+ * LIMITATIONS (deliberate, to keep the inference noise-free):
+ *   - A `custom` column that declares neither `column` nor `backendFilterKey` is
+ *     never reported, even when its `key` matches a numeric/date contract field:
+ *     `isFilterableColumn` (the ETP-4609 guard in AdvancedFilterBuilder.jsx) drops
+ *     that exact shape from the Advanced Filter field list, so it has no backend
+ *     property to filter against and no filter mode to get wrong. A column opting
+ *     back in with `filterable: true` + a bespoke `buildCriteria` is skipped too.
+ *   - Static analysis only. A column object carrying a spread, or whose `type` /
+ *     `filterMode` is not a string literal, is treated as indeterminate and skipped —
+ *     `filterMode` could be injected dynamically.
+ *   - A column whose own `column` value is not a string literal loses both the
+ *     `_ID` exemption and the synthetic-cell exemption above, so a `foreignKey`
+ *     field may be reported; declare `filterMode: 'identifier'` or allowlist it.
+ *   - Only the FIRST violation per artifact is reported (same as F18).
+ *   - Runs on the committed contract, so a not-yet-regenerated contract can mask
+ *     or invent a type mismatch — F1/F2 cover that staleness.
+ *
+ * @param {string} artifactDir
+ * @param {string} artifactName
+ * @param {string} [root] - repo root (for resolving app-shell custom paths)
+ * @param {Array<{artifact: string, key: string}>} [allowlist] - override; empty means "load the side file"
+ * @returns {Promise<object|null>}
+ */
+export async function ruleF19(artifactDir, artifactName, root = ROOT, allowlist = []) {
+  const contractPath = join(artifactDir, 'contract.json');
+  if (!(await fileExists(contractPath))) return null;
+
+  let shared;
+  try {
+    shared = await import('./quality-gate/checks/shared.js');
+  } catch {
+    return skipped('F19', artifactName, 'JS parser unavailable — F19 check skipped');
+  }
+
+  const files = await f19CustomFiles(artifactDir, artifactName, root, shared);
+  if (files.length === 0) return null; // generated tables are correct by construction
+
+  let contract;
+  try {
+    contract = await readJSON(contractPath);
+  } catch {
+    return skipped('F19', artifactName, 'contract.json could not be parsed — F19 check skipped');
+  }
+
+  const index = f19IndexContractFields(contract);
+  if (index.size === 0) return null;
+
+  const rules = allowlist.length > 0 ? allowlist : await loadF19Allowlist();
+  for (const filePath of files) {
+    const found = await f19CheckFile({ filePath, artifactName, index, rules, root, shared });
+    if (found) return found;
+  }
+  return null;
+}
+
+// ---------------------------------------------------------------------------
 // Artifact discovery
 // ---------------------------------------------------------------------------
 
@@ -945,6 +1238,7 @@ async function runWindowChecks(artifactDir, artifactName, registryContent, root,
     { rule: 'F16', run: () => ruleF16(artifactDir, artifactName) },
     { rule: 'F17', run: () => ruleF17(artifactDir, artifactName) },
     { rule: 'F18', run: () => ruleF18(artifactDir, artifactName) },
+    { rule: 'F19', run: () => ruleF19(artifactDir, artifactName, root) },
   ], skipSet);
 }
 
