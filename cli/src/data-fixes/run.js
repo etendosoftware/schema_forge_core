@@ -1,3 +1,4 @@
+#!/usr/bin/env node
 /**
  * run.js — Tenant data-fix runner.
  *
