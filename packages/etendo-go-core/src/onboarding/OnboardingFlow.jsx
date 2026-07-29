@@ -2,7 +2,7 @@ import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { Loader2 } from 'lucide-react';
 import { useUI } from '@etendosoftware/app-shell-core/i18n';
 import { createLocalAuthStorage } from '@etendosoftware/app-shell-core/auth';
-import { fetchAccount, fetchEnvironments, loginEnvironment, fetchOnboardingDraft, saveOnboardingDraft } from './api.js';
+import { fetchSession, fetchEnvironments, loginEnvironment, fetchOnboardingDraft, saveOnboardingDraft } from './api.js';
 import { buildEnvironmentSessionStorage, clearEnvironmentSession } from './state.js';
 import { buildAppReturnToHref, getSafeReturnTo } from './oauthReturnTo.js';
 import { trackOnboarding } from './tracking.js';
@@ -14,7 +14,9 @@ export function OnboardingFlow({ steps = [], config = {} }) {
   const ui = useUI();
   const [stepIndex, setStepIndex] = useState(-1); // -1 means verifying/loading initial state
   const [stepData, setStepData] = useState(() => config.defaultForm || {});
-  const [token, setToken] = useState(() => localStorage.getItem('sf_platform_token'));
+  // ETP-4576: the session lives in the __Host- cookie now; there is no more
+  // client-readable token, only the CSRF proof issued alongside it.
+  const [csrfToken, setCsrfToken] = useState(null);
   const [accountName, setAccountName] = useState(null);
   const [draftNotice, setDraftNotice] = useState(false);
   const [draftSaveWarning, setDraftSaveWarning] = useState(false);
@@ -37,7 +39,7 @@ export function OnboardingFlow({ steps = [], config = {} }) {
 
   draftContextRef.current = {
     apiBase,
-    token,
+    csrfToken,
     steps,
     stepId: currentStep?.id,
     form: stepData,
@@ -48,7 +50,7 @@ export function OnboardingFlow({ steps = [], config = {} }) {
       defaultForm: config.defaultForm || {},
       saveDraft: (draft) => {
         const context = draftContextRef.current;
-        return saveOnboardingDraft(fetch, context.apiBase, context.token, draft);
+        return saveOnboardingDraft(fetch, context.apiBase, context.csrfToken, draft);
       },
       onSaveFailure: (error) => {
         console.warn('Failed to save onboarding draft', error);
@@ -72,7 +74,7 @@ export function OnboardingFlow({ steps = [], config = {} }) {
 
   logoutContextRef.current = {
     resetState: () => {
-      setToken(null);
+      setCsrfToken(null);
       setAccountName(null);
       setEnvironments([]);
       setLoadingEnvs(false);
@@ -97,9 +99,9 @@ export function OnboardingFlow({ steps = [], config = {} }) {
   const onLogout = onLogoutRef.current;
 
   // Restore draft and set appropriate step index
-  const restoreOnboardingDraft = useCallback(async (authToken) => {
+  const restoreOnboardingDraft = useCallback(async () => {
     try {
-      const draft = await fetchOnboardingDraft(fetch, apiBase, authToken);
+      const draft = await fetchOnboardingDraft(fetch, apiBase);
       const restored = restorePersistedOnboardingDraft({
         draft,
         defaultForm: config.defaultForm,
@@ -123,13 +125,13 @@ export function OnboardingFlow({ steps = [], config = {} }) {
   }, [apiBase, goToStep, config.defaultForm, steps]);
 
   // Route by environments list: 0 -> profile (restore draft), 1+ -> loginEnvironment and redirect
-  const routeByEnvironments = useCallback(async (authToken) => {
+  const routeByEnvironments = useCallback(async (csrfToken) => {
     setLoadingEnvs(true);
     try {
-      const envs = await fetchEnvironments(fetch, apiBase, authToken);
+      const envs = await fetchEnvironments(fetch, apiBase);
       setEnvironments(envs);
       if (envs.length === 0) {
-        await restoreOnboardingDraft(authToken);
+        await restoreOnboardingDraft();
       } else {
         // Auto-login to first environment
         try {
@@ -138,8 +140,8 @@ export function OnboardingFlow({ steps = [], config = {} }) {
             action: 'enter_environment',
             status: 'started',
           });
-          const data = await loginEnvironment(fetch, apiBase, authToken, env);
-          if (data.token) {
+          const data = await loginEnvironment(fetch, apiBase, csrfToken, env);
+          if (data.status === 'success') {
             const storageValues = buildEnvironmentSessionStorage(env, data);
             Object.entries(storageValues).forEach(([key, value]) => localStorage.setItem(key, value));
 
@@ -205,42 +207,35 @@ export function OnboardingFlow({ steps = [], config = {} }) {
       localStorage.removeItem('sf_onboarding_initial_view');
     }
 
-    const currentToken = localStorage.getItem('sf_platform_token');
-    if (!currentToken) {
-      // Login is the default entry view; register is only shown when explicitly requested.
-      goToStep(initialView === 'register' ? 'register' : 'login');
-      return;
-    }
-
-    const promise = fetchAccount(fetch, apiBase, currentToken);
-    if (promise && typeof promise.then === 'function') {
-      promise
-        .then(data => {
-          setAccountName(data.name || data.email || null);
-          routeByEnvironments(currentToken);
-        })
-        .catch(() => {
-          authStorageRef.current.clear();
-          setToken(null);
-          goToStep('login');
-        });
-    } else {
-      // If mocked fetchAccount doesn't return a promise, default to the login view
-      goToStep('login');
-    }
+    // ETP-4576: the session lives in the __Host- cookie now, so there is no
+    // client-visible token to check for presence — ask the server instead.
+    // A 401 covers both "never had a session" and "had one, now expired or
+    // invalid" alike (the cookie is httpOnly, so JS can't tell them apart),
+    // so both now share the same initialView-respecting fallback below.
+    fetchSession(fetch, apiBase)
+      .then(data => {
+        setCsrfToken(data.csrfToken ?? null);
+        setAccountName(data.account?.name || data.account?.email || null);
+        routeByEnvironments(data.csrfToken);
+      })
+      .catch(() => {
+        authStorageRef.current.clear();
+        // Login is the default entry view; register is only shown when explicitly requested.
+        goToStep(initialView === 'register' ? 'register' : 'login');
+      });
   }, []);
 
   // Every persistable step follows the same debounce policy; no field names
   // are special-cased, so future steps opt in through their definition.
   useEffect(() => {
-    if (!token || !draftReadyRef.current) return undefined;
+    if (!csrfToken || !draftReadyRef.current) return undefined;
     draftPersistenceRef.current.schedule({ steps, stepId: currentStep?.id, form: stepData });
     return () => draftPersistenceRef.current.cancel();
-  }, [stepData, currentStep, token, steps]);
+  }, [stepData, currentStep, csrfToken, steps]);
 
   // Handle register success: setup new state, redirect to profile
-  const handleRegisterSuccess = (authToken, account) => {
-    setToken(authToken);
+  const handleRegisterSuccess = (csrfToken, account) => {
+    setCsrfToken(csrfToken);
     setAccountName(account?.name || account?.email || null);
     setStepData({
       ...config.defaultForm,
@@ -290,8 +285,13 @@ export function OnboardingFlow({ steps = [], config = {} }) {
       onBack={handleBack}
       onChange={handleStepDataChange}
       goToStep={goToStep}
-      token={token}
-      setToken={setToken}
+      // ETP-4576: `token`/`setToken` are kept as the prop names for step
+      // components (LoginStep/RegisterStep/EnvSelectStep/SetupProgressStep)
+      // so this cycle doesn't have to migrate all of them at once — they now
+      // carry the csrfToken value, not a bearer token. Renamed properly as
+      // each step component gets migrated in its own cycle.
+      token={csrfToken}
+      setToken={setCsrfToken}
       accountName={accountName}
       setAccountName={setAccountName}
       draftNotice={draftNotice}

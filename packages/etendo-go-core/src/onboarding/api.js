@@ -42,6 +42,13 @@ async function readJsonResponse(response, fallbackCode) {
   return data;
 }
 
+export async function fetchSession(fetchImpl, baseUrl) {
+  const response = await fetchImpl(`${baseUrl}/sws/go/session`, {
+    credentials: 'include',
+  });
+  return readJsonResponse(response, ONBOARDING_ERROR_CODES.invalidSession);
+}
+
 export async function registerAccount(fetchImpl, baseUrl, form) {
   const response = await fetchImpl(`${baseUrl}/sws/go/session/register`, {
     method: 'POST',
