@@ -1,14 +1,61 @@
-import { describe, it, expect, vi, afterEach } from 'vitest';
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { renderHook, cleanup, act, waitFor } from '@testing-library/react';
 import { createMemoryAuthStorage } from '../session.js';
 import { AuthProvider, useAuth } from '../AuthContext.jsx';
 
 afterEach(cleanup);
 
-function wrapperWith({ fetchWindowAccess } = {}) {
+// ETP-4576 cycle 4a — `restoreSession` stopped being opt-in: AuthProvider now
+// defaults it to the platform fetcher (fetchCookieSession — GET /sws/go/session
+// with credentials: 'include'). That has two file-wide consequences here, and
+// both are handled below rather than inside individual tests:
+//
+// 1. EVERY <AuthProvider> mounted without the prop now calls `fetch` on mount.
+//    jsdom has no server, so an unstubbed call would either hit the network or
+//    blow up with an unhandled rejection. The `beforeEach` stub answers 401 —
+//    the real "no active session" response — which keeps the fail-closed path
+//    (status -> 'anonymous', no session) deterministic and offline, i.e. the
+//    same anonymous outcome the pre-existing tests already assumed. It doubles
+//    as the probe used to assert HOW the default fetcher calls the endpoint.
+//
+// 2. The fail-closed path runs logout(): it clears the session AND bumps the
+//    selectRole stale-response guard. Suites whose subject is NOT the restore
+//    (the ETP-4520 windowAccess/capabilities ones, the csrfToken ones) would
+//    then race against that late logout — e.g. the hydration test seeds
+//    `initialSession: { token, selectedRole }` and asserts the fetched
+//    windowAccess sticks, which a 401-driven logout would wipe. So the shared
+//    `wrapperWith()` helper (and the two inline wrappers of those suites)
+//    neutralise the default with a never-settling `restoreSession` override:
+//    the provider stays in 'booting' forever, no purge/logout ever fires, and
+//    nothing else those tests assert changes. They keep verifying exactly what
+//    they verified before, without being coupled to the new fetcher.
+//
+// Suites that DO exercise the default mount <AuthProvider> directly, with no
+// `restoreSession` prop at all.
+const NEVER_SETTLES = () => new Promise(() => {});
+
+let fetchStub;
+beforeEach(() => {
+  fetchStub = vi.fn(async () => ({
+    ok: false,
+    status: 401,
+    json: async () => {
+      throw new Error('a 401 session response has no JSON body');
+    },
+  }));
+  vi.stubGlobal('fetch', fetchStub);
+});
+afterEach(() => {
+  vi.unstubAllGlobals();
+});
+
+function wrapperWith({ fetchWindowAccess, restoreSession = NEVER_SETTLES } = {}) {
   return function Wrapper({ children }) {
     return (
-      <AuthProvider storage={createMemoryAuthStorage()} fetchWindowAccess={fetchWindowAccess}>
+      <AuthProvider
+        storage={createMemoryAuthStorage()}
+        fetchWindowAccess={fetchWindowAccess}
+        restoreSession={restoreSession}>
         {children}
       </AuthProvider>
     );
@@ -285,6 +332,7 @@ describe('AuthContext — windowAccess/capabilities (ETP-4520)', () => {
         <AuthProvider
           storage={createMemoryAuthStorage()}
           fetchWindowAccess={fetchWindowAccess}
+          restoreSession={NEVER_SETTLES}
           initialSession={{ token: 'tok', selectedRole: { id: 'role-1' } }}>
           {children}
         </AuthProvider>
@@ -381,7 +429,9 @@ describe('AuthContext — csrfToken (ETP-4576)', () => {
   it('never persists csrfToken into authStorage — it is memory-only, not part of session', () => {
     const storage = createMemoryAuthStorage();
     const { result } = renderHook(() => useAuth(), {
-      wrapper: ({ children }) => <AuthProvider storage={storage}>{children}</AuthProvider>,
+      wrapper: ({ children }) => (
+        <AuthProvider storage={storage} restoreSession={NEVER_SETTLES}>{children}</AuthProvider>
+      ),
     });
 
     act(() => {
@@ -397,13 +447,13 @@ describe('AuthContext — csrfToken (ETP-4576)', () => {
   });
 });
 
-// ETP-4576 cycle 4 — session restore on mount, purely additive. AuthProvider
-// gains an optional `restoreSession` prop (host-injected, same pattern as
-// `fetchWindowAccess`) and a new tri-state `status` field
-// ('booting' | 'authenticated' | 'anonymous') on the context value. When the
-// prop is not supplied, `status` must resolve synchronously and no new side
-// effect (legacy storage purge) must fire — hosts that have not opted into
-// the new flow must see zero behavior change.
+// ETP-4576 cycle 4 — session restore on mount. AuthProvider takes a
+// `restoreSession` fetcher and exposes a tri-state `status` field
+// ('booting' | 'authenticated' | 'anonymous') on the context value.
+//
+// Cycle 4a — CONTRACT CHANGE: the prop is no longer opt-in. It now defaults to
+// the platform fetcher (fetchCookieSession, exported by ./api.js), so a host
+// that passes nothing still consults GET /sws/go/session.
 describe('AuthContext — session restore (ETP-4576)', () => {
   afterEach(() => {
     // These tests seed real localStorage keys (jsdom) to exercise the legacy
@@ -411,8 +461,24 @@ describe('AuthContext — session restore (ETP-4576)', () => {
     window.localStorage.clear();
   });
 
-  describe('without restoreSession (default, backward-compatible behavior)', () => {
-    it('resolves status synchronously to "authenticated" on the first render when the initial session already has a token', () => {
+  // ETP-4576 cycle 4a — this describe used to be
+  // 'without restoreSession (default, backward-compatible behavior)' and pinned
+  // the OPT-IN semantics: a host that did not pass the prop kept the legacy
+  // synchronous mode (status resolved from localStorage on the first render, no
+  // purge, no server call). That opt-out is deleted, and its three tests are
+  // inverted here, because it left a hole with no way out: three separate
+  // consumers already needed the very same GET /sws/go/session fetcher, and one
+  // of them — tools/etendo-go-ar/app-shell — mounts <AuthProvider> with no
+  // props at all. Once the onboarding flow stopped writing the `sf_auth_*`
+  // handoff keys (same epic), the legacy path had nothing left to read: that
+  // host's isAuthenticated was false forever and its AuthGuard never let anyone
+  // through. Making the platform fetcher the DEFAULT of the prop closes the
+  // hole without every host having to be migrated by hand, and removes the
+  // duplicated fetcher. Consequence: `restoreSession` is ALWAYS a function, so
+  // the synchronous legacy mode is gone — every host boots in 'booting', purges
+  // the legacy keys, and asks the server who it is.
+  describe('without an explicit restoreSession (the platform cookie fetcher is the default)', () => {
+    it('starts in "booting" instead of resolving status synchronously, even when the initial session already carries a token', () => {
       const { result } = renderHook(() => useAuth(), {
         wrapper: ({ children }) => (
           <AuthProvider storage={createMemoryAuthStorage()} initialSession={{ token: 'tok-1' }}>
@@ -421,21 +487,118 @@ describe('AuthContext — session restore (ETP-4576)', () => {
         ),
       });
 
-      expect(result.current.status).toBe('authenticated');
+      // The server is now the source of truth for a host that passes nothing,
+      // exactly like one that passes its own fetcher: a leftover client-side
+      // token must not be enough to declare the user authenticated.
+      expect(result.current.status).toBe('booting');
     });
 
-    it('resolves status synchronously to "anonymous" on the first render when there is no token', () => {
-      const { result } = renderHook(() => useAuth(), { wrapper: wrapperWith() });
+    it('settles to "anonymous" once the default fetcher gets the 401 "no active session" answer', async () => {
+      const { result } = renderHook(() => useAuth(), {
+        wrapper: ({ children }) => (
+          <AuthProvider storage={createMemoryAuthStorage()}>{children}</AuthProvider>
+        ),
+      });
 
-      expect(result.current.status).toBe('anonymous');
+      await waitFor(() => {
+        expect(result.current.status).toBe('anonymous');
+      });
+      expect(result.current.isAuthenticated).toBe(false);
+      expect(result.current.csrfToken).toBeNull();
     });
 
-    it('does not purge legacy localStorage keys when restoreSession is not provided (zero side effects for opted-out hosts)', () => {
+    it('settles to "authenticated" with the restored csrfToken when the default fetcher gets a session', async () => {
+      fetchStub.mockResolvedValue({
+        ok: true,
+        status: 200,
+        json: async () => ({
+          account: { name: 'Ada' },
+          environment: { clientId: 'client-1', roleId: 'role-1', orgId: 'org-1' },
+          roleList: [{ id: 'role-1', name: 'Admin', orgList: [{ id: 'org-1', name: 'Main Org' }] }],
+          csrfToken: 'csrf-from-default-fetcher',
+        }),
+      });
+
+      const { result } = renderHook(() => useAuth(), {
+        wrapper: ({ children }) => (
+          <AuthProvider storage={createMemoryAuthStorage()}>{children}</AuthProvider>
+        ),
+      });
+
+      await waitFor(() => {
+        expect(result.current.status).toBe('authenticated');
+      });
+      expect(result.current.csrfToken).toBe('csrf-from-default-fetcher');
+      expect(result.current.username).toBe('Ada');
+      expect(result.current.isAuthenticated).toBe(true);
+    });
+
+    it('asks GET /sws/go/session with the cookie attached and never sends an Authorization/Bearer header', async () => {
+      renderHook(() => useAuth(), {
+        wrapper: ({ children }) => (
+          <AuthProvider storage={createMemoryAuthStorage()}>{children}</AuthProvider>
+        ),
+      });
+
+      await waitFor(() => {
+        expect(fetchStub).toHaveBeenCalledTimes(1);
+      });
+
+      const [url, init = {}] = fetchStub.mock.calls[0];
+      expect(String(url)).toMatch(/\/sws\/go\/session$/);
+      // The whole point of the migration: the session travels in the httpOnly
+      // __Host- cookie, so the request must opt into sending credentials and
+      // must NOT carry a client-held token in any header.
+      expect(init.credentials).toBe('include');
+      expect((init.method || 'GET').toUpperCase()).toBe('GET');
+      const serializedRequest = JSON.stringify(init);
+      expect(serializedRequest).not.toMatch(/Authorization/i);
+      expect(serializedRequest).not.toMatch(/Bearer/i);
+    });
+
+    it('purges the legacy sf_auth_* localStorage keys on mount (the default fetcher makes the purge unconditional)', async () => {
       window.localStorage.setItem('sf_auth_token', 'legacy-existing-token');
 
-      renderHook(() => useAuth(), { wrapper: wrapperWith() });
+      const { result } = renderHook(() => useAuth(), {
+        wrapper: ({ children }) => (
+          <AuthProvider storage={createMemoryAuthStorage()}>{children}</AuthProvider>
+        ),
+      });
 
-      expect(window.localStorage.getItem('sf_auth_token')).toBe('legacy-existing-token');
+      // Inverted from the old 'does not purge ... (zero side effects for
+      // opted-out hosts)' test: there is no opted-out host any more, and the
+      // stale handoff keys are exactly what must not survive the boot.
+      expect(window.localStorage.getItem('sf_auth_token')).toBeNull();
+
+      await waitFor(() => {
+        expect(result.current.status).toBe('anonymous');
+      });
+    });
+
+    it('lets a host-supplied restoreSession override the default — the platform fetcher is never called', async () => {
+      const restoreSession = vi.fn().mockResolvedValue({
+        account: { name: 'Ada' },
+        environment: null,
+        roleList: [],
+        csrfToken: 'csrf-from-host-fetcher',
+      });
+
+      const { result } = renderHook(() => useAuth(), {
+        wrapper: ({ children }) => (
+          <AuthProvider storage={createMemoryAuthStorage()} restoreSession={restoreSession}>
+            {children}
+          </AuthProvider>
+        ),
+      });
+
+      await waitFor(() => {
+        expect(result.current.status).toBe('authenticated');
+      });
+      expect(restoreSession).toHaveBeenCalledTimes(1);
+      expect(result.current.csrfToken).toBe('csrf-from-host-fetcher');
+      // No leaked call to the real fetcher: the default must be *replaced*, not
+      // raced alongside the host's own implementation.
+      expect(fetchStub).not.toHaveBeenCalled();
     });
   });
 
@@ -739,18 +902,30 @@ describe('AuthContext — session restore (ETP-4576)', () => {
   });
 });
 
-// ETP-4576 cycle 14 — regression guard for the isAuthenticated fix above.
-// Legacy hosts (no `restoreSession` prop) compute `status` ONCE, synchronously,
-// on mount, and never recompute it afterwards — so if login() happens AFTER
-// mount (token goes from null to a real value), `status` stays frozen at
-// 'anonymous' forever. isAuthenticated must therefore keep falling back to
-// `!!session.token` for these hosts, or a post-mount login would never flip
-// isAuthenticated to true.
+// ETP-4576 cycle 14 — regression guard for the isAuthenticated fix above,
+// readapted in cycle 4a. Its original premise ("legacy hosts compute `status`
+// once, synchronously, and it stays frozen at 'anonymous' forever") is gone
+// with the default fetcher: every host now boots 'booting' and then settles
+// from the server's answer. The assertion it protects is unchanged and still
+// load-bearing, though: `status` only ever reaches 'authenticated' through the
+// restore path, so a host whose server says "no session" (401 -> 'anonymous')
+// and then performs a legacy in-app login() would never flip isAuthenticated if
+// that flag derived from `status` alone. It must keep falling back to
+// `!!session.token`.
 describe('AuthContext — isAuthenticated legacy fallback (ETP-4576 cycle 14 regression guard)', () => {
-  it('is false on mount without restoreSession/initialSession, then becomes true after a post-mount login() even though status stays frozen at "anonymous"', async () => {
-    const { result } = renderHook(() => useAuth(), { wrapper: wrapperWith() });
+  it('is false once the default restore settles to "anonymous", then becomes true after a post-mount login() even though status stays "anonymous"', async () => {
+    const { result } = renderHook(() => useAuth(), {
+      wrapper: ({ children }) => (
+        <AuthProvider storage={createMemoryAuthStorage()}>{children}</AuthProvider>
+      ),
+    });
 
-    expect(result.current.status).toBe('anonymous');
+    // Let the default fetcher's 401 settle first, so the post-mount login() is
+    // tested against a fully-booted anonymous provider (and so the fail-closed
+    // logout() cannot land afterwards and wipe the token we are about to set).
+    await waitFor(() => {
+      expect(result.current.status).toBe('anonymous');
+    });
     expect(result.current.isAuthenticated).toBe(false);
 
     act(() => {

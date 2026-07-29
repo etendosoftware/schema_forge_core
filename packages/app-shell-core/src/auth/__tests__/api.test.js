@@ -102,6 +102,39 @@ describe('createApiFetch — CSRF header on unsafe methods, session lives in an 
   });
 });
 
+// ETP-4576 cycle 4a — the GET /sws/go/session fetcher moves INTO the platform.
+// Three consumers already needed it (the onboarding api, the schema_forge host,
+// and tools/etendo-go-ar which passed nothing at all and was therefore broken),
+// so api.js owns it and AuthProvider defaults `restoreSession` to it.
+// Behavioral coverage — request shape, fail-closed paths — lives in the sibling
+// api.vitest.js, which can actually import this module; these are the structural
+// invariants, asserted in the suite `npm test` runs.
+describe('fetchCookieSession — the platform session fetcher (ETP-4576)', () => {
+  it('is exported as an async function taking an optional baseUrl', () => {
+    assert.match(src, /export async function fetchCookieSession\s*\(\s*baseUrl\s*=/);
+  });
+
+  it('defaults its baseUrl to the module-level DEFAULT_BASE_URL', () => {
+    assert.match(src, /export async function fetchCookieSession\s*\(\s*baseUrl\s*=\s*DEFAULT_BASE_URL\s*\)/);
+  });
+
+  it('requests the /sws/go/session endpoint', () => {
+    assert.match(src, /\/sws\/go\/session/);
+  });
+
+  it('sends credentials so the __Host- session cookie travels (already asserted module-wide, pinned here for the fetcher)', () => {
+    assert.match(src, /credentials:\s*['"]include['"]/);
+  });
+
+  it('fails closed by returning null on a non-ok response instead of throwing', () => {
+    assert.match(src, /if\s*\(\s*!res\.ok\s*\)\s*return null;/);
+  });
+
+  it('swallows fetch/parse failures with a catch that also yields null', () => {
+    assert.match(src, /catch[\s\S]{0,40}return null;/);
+  });
+});
+
 describe('detectBaseUrl', () => {
   it('is exported and reads window.location.pathname', () => {
     assert.match(src, /export function detectBaseUrl/);
