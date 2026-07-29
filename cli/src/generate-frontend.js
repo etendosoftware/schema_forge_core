@@ -1229,7 +1229,9 @@ import ${detailName}Form from './${detailName}Form';` : '';
 /**
  * The line field whose selection drives the price/callout chain. Every window uses
  * `product`; the constant exists so the value is declared in one place on both sides
- * (here, and `LINE_CONFIGS` in app-shell-core's useLineGrossAmount.js).
+ * (here, and `LINE_CONFIGS` in the functional app-shell's hooks/useLineGrossAmount.js).
+ * The generator emits the SYMBOL NAME rather than an import, so the two sides only
+ * have to agree on the value — which is why that hook can live in either repo.
  */
 const DEFAULT_PRICE_TRIGGER_FIELD = 'product';
 
