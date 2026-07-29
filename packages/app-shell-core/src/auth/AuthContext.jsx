@@ -195,7 +195,12 @@ export function AuthProvider({
 
   const value = useMemo(() => ({
     ...session,
-    isAuthenticated: !!session.token,
+    // ETP-4576 — cookie-session hosts (restoreSession) never populate
+    // session.token, so `status` is their only authentication signal. Legacy
+    // hosts still need the session.token check: their `status` is computed
+    // once on mount and never recomputed, so a post-mount login() would
+    // otherwise leave isAuthenticated stuck at false.
+    isAuthenticated: !!session.token || status === 'authenticated',
     windowAccess,
     capabilities,
     csrfToken,
