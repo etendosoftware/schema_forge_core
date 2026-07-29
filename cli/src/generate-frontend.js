@@ -1166,11 +1166,26 @@ function getDetailName(detailEntity) {
   return detailEntity ? toJsIdentifier(detailEntity) : null;
 }
 
+/**
+ * Optional `icon` on a tab descriptor. The value is a LOGICAL name (e.g. 'shield',
+ * 'attachment', 'pricing') that the shared component resolves to a component — never
+ * the name of an icon library, so the app's lucide → Phosphor migration stays a change
+ * in one resolver instead of a rewrite of every window's decisions.json.
+ *
+ * Sparse per R3: a tab that does not declare an icon emits nothing and the component
+ * keeps its own default, so existing windows regenerate byte-identical.
+ */
+function buildTabIconPart(icon) {
+  return wrapIf(", icon: '", icon, "'");
+}
+
 function pushAttachmentsTab(attachmentsEnabled, attachmentsOpts, customTabItems, headerTableName) {
   if (attachmentsEnabled) {
     const optsLiteral = JSON.stringify(attachmentsOpts);
+    // The icon rides on the descriptor, not inside `config` — `config` is forwarded to
+    // AttachmentsTab as props, while the icon is read by the tab strip that renders it.
     customTabItems.push(
-      `{ key: 'attachments', labelKey: 'attachments', Component: AttachmentsTab, placement: 'tab', props: { tableName: ${JSON.stringify(headerTableName)}, config: ${optsLiteral} } }`
+      `{ key: 'attachments', labelKey: 'attachments', Component: AttachmentsTab, placement: 'tab'${buildTabIconPart(attachmentsOpts?.icon)}, props: { tableName: ${JSON.stringify(headerTableName)}, config: ${optsLiteral} } }`
     );
   }
 }
@@ -1238,14 +1253,14 @@ function getCustomTabItems(relatedDocuments, customPanelTabs, attachmentsEnabled
   customPanelTabs.forEach(pt => {
     const labelPart = pt.labelKey ? `labelKey: '${pt.labelKey}'` : `label: '${pt.label}'`;
     customTabItems.push(
-        `{ key: '${pt.key}', ${labelPart}, Component: ${pt.component}, placement: 'tab' }`
+        `{ key: '${pt.key}', ${labelPart}, Component: ${pt.component}, placement: 'tab'${buildTabIconPart(pt.icon)} }`
     );
   });
   pushAttachmentsTab(attachmentsEnabled, attachmentsOpts, customTabItems, headerTableName);
   extraTabs.forEach(et => {
     const labelPart = et.labelKey ? `labelKey: '${et.labelKey}'` : `label: '${JSON.stringify(et.label)}'`;
     customTabItems.push(
-        `{ key: '${et.key}', ${labelPart}, Component: ${et.component}, placement: 'tab' }`
+        `{ key: '${et.key}', ${labelPart}, Component: ${et.component}, placement: 'tab'${buildTabIconPart(et.icon)} }`
     );
   });
   return customTabItems;
