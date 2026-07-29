@@ -308,7 +308,7 @@ export function AdvancedFilterBuilder({
   const hasBetween = draft.conditions.some((c) => c.operator === 'between');
 
   return (
-    <div className={`flex flex-col gap-3 ${hasBetween ? 'min-w-[640px]' : 'min-w-[560px]'}`}>
+    <div className={`flex w-max max-w-[min(90vw,60rem)] flex-col gap-3 ${hasBetween ? 'min-w-[38rem]' : 'min-w-[32rem]'}`}>
       <div className="flex items-center gap-2 text-sm font-semibold">
         <SlidersHorizontal className="h-4 w-4 text-primary" data-testid="SlidersHorizontal__4eedf1" />
         {ui('advancedFilterTitle')}
@@ -345,8 +345,9 @@ export function AdvancedFilterBuilder({
                   </Select>
                 )}
               </div>
-              {/* Field */}
-              <div className="flex-1 min-w-0">
+              {/* Field — content-sized (w-fit): hugs the selected column/placeholder
+                  up to max-w, floored by min-w, never grabs free space (no gap) */}
+              <div className="w-fit min-w-[12rem] max-w-[22rem]">
                 <Select
                   value={row.field || undefined}
                   onValueChange={(v) => updateRow(idx, { field: v })}
@@ -363,8 +364,9 @@ export function AdvancedFilterBuilder({
                   </SelectContent>
                 </Select>
               </div>
-              {/* Operator */}
-              <div className="flex-1 min-w-0">
+              {/* Operator — content-sized (w-fit): hugs the operator/placeholder
+                  up to max-w, floored by min-w, never grabs free space (no gap) */}
+              <div className="w-fit min-w-[12rem] max-w-[18rem]">
                 <Select
                   value={row.operator || undefined}
                   onValueChange={(v) => updateRow(idx, { operator: v })}
