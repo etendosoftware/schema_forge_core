@@ -602,5 +602,60 @@ describe('AuthContext — session restore (ETP-4576)', () => {
 
       expect(restoreSession).toHaveBeenCalledTimes(1);
     });
+
+    // ETP-4576 cycle 14 — real bug: `isAuthenticated` was computed as
+    // `!!session.token` only, but a `restoreSession` host never populates
+    // `session.token` (it only moves `status` to 'authenticated' and sets
+    // `csrfToken`). So a successfully-restored session still reported
+    // isAuthenticated === false, and AuthGate (AppShellRuntime.jsx) sent an
+    // authenticated user to the "not authenticated" fallback.
+    it('reflects isAuthenticated === true once a restoreSession-backed session reaches "authenticated" status, even though session.token stays unpopulated', async () => {
+      const restoreSession = vi.fn().mockResolvedValue({
+        account: { id: 'acc-1' },
+        environment: { id: 'env-1' },
+        roleList: [{ id: 'role-1' }],
+        csrfToken: 'csrf-abc',
+      });
+
+      const { result } = renderHook(() => useAuth(), {
+        wrapper: ({ children }) => (
+          <AuthProvider storage={createMemoryAuthStorage()} restoreSession={restoreSession}>
+            {children}
+          </AuthProvider>
+        ),
+      });
+
+      await waitFor(() => {
+        expect(result.current.status).toBe('authenticated');
+      });
+
+      // The bug: session.token is never populated by restoreSession, so
+      // isAuthenticated must derive from `status`, not just `session.token`.
+      expect(result.current.token).toBeFalsy();
+      expect(result.current.isAuthenticated).toBe(true);
+    });
+  });
+});
+
+// ETP-4576 cycle 14 — regression guard for the isAuthenticated fix above.
+// Legacy hosts (no `restoreSession` prop) compute `status` ONCE, synchronously,
+// on mount, and never recompute it afterwards — so if login() happens AFTER
+// mount (token goes from null to a real value), `status` stays frozen at
+// 'anonymous' forever. isAuthenticated must therefore keep falling back to
+// `!!session.token` for these hosts, or a post-mount login would never flip
+// isAuthenticated to true.
+describe('AuthContext — isAuthenticated legacy fallback (ETP-4576 cycle 14 regression guard)', () => {
+  it('is false on mount without restoreSession/initialSession, then becomes true after a post-mount login() even though status stays frozen at "anonymous"', async () => {
+    const { result } = renderHook(() => useAuth(), { wrapper: wrapperWith() });
+
+    expect(result.current.status).toBe('anonymous');
+    expect(result.current.isAuthenticated).toBe(false);
+
+    act(() => {
+      result.current.login({ token: 'tok-1' });
+    });
+
+    expect(result.current.status).toBe('anonymous');
+    expect(result.current.isAuthenticated).toBe(true);
   });
 });
