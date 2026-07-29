@@ -861,6 +861,18 @@ function buildCustomComponentImportsAndProps(customComponents, specName, customP
     customComponentImports.push(`import ${customComponents.processConfirmModal} from ${resolveCustomImport(specName, customComponents.processConfirmModal)};`);
     customComponentProps.push(`\n        processConfirmModal={${customComponents.processConfirmModal}}`);
   }
+  // Rich delete cartel replacing DetailView's generic delete Dialog (payments show
+  // conditional Conciliación/Asiento items). `deleteConfirmModalProps` carries the
+  // modal's own config (e.g. { dir: 'in' } for the cobro/pago wording) and is nested
+  // here — and gated on the modal — so it can never be emitted without its owner,
+  // exactly like sidePanelStyle under sidePanel above.
+  if (customComponents.deleteConfirmModal) {
+    customComponentImports.push(`import ${customComponents.deleteConfirmModal} from ${resolveCustomImport(specName, customComponents.deleteConfirmModal)};`);
+    customComponentProps.push(`\n        deleteConfirmModal={${customComponents.deleteConfirmModal}}`);
+    if (customComponents.deleteConfirmModalProps) {
+      customComponentProps.push(`\n        deleteConfirmModalProps={${JSON.stringify(customComponents.deleteConfirmModalProps)}}`);
+    }
+  }
   const customCompImportBlock = customComponentImports.length > 0
     ? customComponentImports.join('\n') + '\n'
     : '';
@@ -1967,6 +1979,11 @@ export function generatePageComponent(headerEntity, detailEntity, contract) {
   const relatedDocuments = windowConfig.relatedDocuments ?? false;
   const hideDetailForm = windowConfig.hideDetailForm ?? false;
   const hideDeleteWhenComplete = windowConfig.hideDeleteWhenComplete ?? false;
+  // NEO action the header delete (trash) button must call instead of a plain DELETE,
+  // for windows whose record cannot be removed once referenced (payments →
+  // eTPRRemovePayment). Default null = plain DELETE, so windows that do not declare
+  // it emit nothing and keep byte-identical output (R3).
+  const deleteAction = windowConfig.deleteAction ?? null;
   // Unconditional per-window delete opt-out (decisions.json → window.hideDeleteButton).
   // Distinct from `hideDelete` (which only disables the CRUD delete capability in the
   // contract) — this hides the Delete button in BOTH the detail toolbar and the list-row
@@ -2074,6 +2091,7 @@ export function generatePageComponent(headerEntity, detailEntity, contract) {
 
   // hideDeleteWhenComplete prop
   const hideDeleteProp = fragmentIf(hideDeleteWhenComplete, '\n        hideDeleteWhenComplete');
+  const deleteActionProp = wrapIf('\n        deleteAction="', deleteAction, '"');
   // hideDeleteButton prop — unconditional Delete-button hide in the detail toolbar.
   const hideDeleteButtonProp = fragmentIf(hideDeleteButton, '\n        hideDeleteButton');
   // customTabsAfterBottom prop
@@ -2417,7 +2435,7 @@ ${menuActionStateStatements}`)}${fragmentIf(confirmModalName, `
         detailLabel="${entityDetailLabel}"` : ''}
         windowName={windowName}
         recordId={recordId}
-        breadcrumb={breadcrumb}${apiProp}${detailTabIndexProp}${secondaryTabsProp}${formFooterProp}${customLinesProp}${primaryTabsProp}${othersLabelProp}${documentPreviewProp}${hideDeleteProp}${hideDeleteButtonProp}${customTabsAfterBottomProp}${hidePrintProp}${hideSaveStatusesProp}${hideMoreMenuProp}${hideMoreDetailsProp}${noHeaderBorderProp}${toolbarBorderBottomProp}${compactSidebarPaddingProp}${whiteFormBackgroundProp}${autoSaveOnBlurProp}${hideFormCardProp}${sidebarAboveTabsOnlyProp}${tabsSeparatorProp}${sidebarClassNameProp}${tabsBarPaddingXProp}${primaryTabsVariantProp}${toolbarPaddingXProp}${toolbarButtonSizeProp}${contentBgProp}${formCardPaddingProp}${formScrollPaddingXProp}${notesFieldProp}${customTabsProp}${customCompPropsBlock}${menuActionsProp}${draftModeProp}${requiredHeaderFieldsProp}${addLineGuardProp}${headerContentProp}${detailSortByProp}${titleFieldProp}${documentDateFieldProp}${salesThemeProp}${disableProcessedLockProp}${statusEnumLabelsProp}${statusFieldLabelProp}${lockedAlertProp}${showDetailFooterTotalsProp}${labelOverridesProp}${lineConfigProp}${linesLayoutProp}${balanceFooterProp}${sendDocumentDetailProp}${selectorPriceCurrencyProp}
+        breadcrumb={breadcrumb}${apiProp}${detailTabIndexProp}${secondaryTabsProp}${formFooterProp}${customLinesProp}${primaryTabsProp}${othersLabelProp}${documentPreviewProp}${hideDeleteProp}${hideDeleteButtonProp}${deleteActionProp}${customTabsAfterBottomProp}${hidePrintProp}${hideSaveStatusesProp}${hideMoreMenuProp}${hideMoreDetailsProp}${noHeaderBorderProp}${toolbarBorderBottomProp}${compactSidebarPaddingProp}${whiteFormBackgroundProp}${autoSaveOnBlurProp}${hideFormCardProp}${sidebarAboveTabsOnlyProp}${tabsSeparatorProp}${sidebarClassNameProp}${tabsBarPaddingXProp}${primaryTabsVariantProp}${toolbarPaddingXProp}${toolbarButtonSizeProp}${contentBgProp}${formCardPaddingProp}${formScrollPaddingXProp}${notesFieldProp}${customTabsProp}${customCompPropsBlock}${menuActionsProp}${draftModeProp}${requiredHeaderFieldsProp}${addLineGuardProp}${headerContentProp}${detailSortByProp}${titleFieldProp}${documentDateFieldProp}${salesThemeProp}${disableProcessedLockProp}${statusEnumLabelsProp}${statusFieldLabelProp}${lockedAlertProp}${showDetailFooterTotalsProp}${labelOverridesProp}${lineConfigProp}${linesLayoutProp}${balanceFooterProp}${sendDocumentDetailProp}${selectorPriceCurrencyProp}
         {...props}${effectiveWindowProp}${sidebarContentProp}
       />
 ${menuActionModals}${confirmModalName ? `
