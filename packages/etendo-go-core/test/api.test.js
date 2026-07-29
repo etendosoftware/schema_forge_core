@@ -7,6 +7,7 @@ import {
   fetchAccount,
   fetchEnvironments,
   fetchOnboardingDraft,
+  fetchSession,
   loginAccount,
   loginEnvironment,
   loginWithSsoProvider,
@@ -276,6 +277,54 @@ describe('onboarding session API — resource-access cluster (ETP-4576)', () => 
 
       await assert.rejects(
         () => fetchAccount(fetchImpl, '/etendo'),
+        (error) => {
+          assert.equal(error.code, ONBOARDING_ERROR_CODES.invalidSession);
+          assert.equal(error.status, 401);
+          return true;
+        },
+      );
+    });
+  });
+
+  describe('fetchSession', () => {
+    // ETP-4576 (cycle 12): OnboardingFlow's mount bootstrap replaces the old
+    // fetchAccount(fetch, apiBase, currentToken) call (which read
+    // localStorage.getItem('sf_platform_token')) with this GET. There is no
+    // more client-readable token — the __Host- session cookie rides alone.
+    it('GETs /sws/go/session with credentials included and no Authorization/Bearer header anywhere', async () => {
+      const { calls, fetchImpl } = recordingFetch(
+        jsonResponse({
+          status: 'active',
+          account: { name: 'Ada' },
+          environment: null,
+          roleList: [],
+          csrfToken: 'csrf-restored',
+        }),
+      );
+
+      const result = await fetchSession(fetchImpl, '/etendo');
+
+      assert.equal(calls.length, 1);
+      assert.equal(calls[0].url, '/etendo/sws/go/session');
+      assert.equal(calls[0].options.credentials, 'include');
+      assert.equal('Authorization' in (calls[0].options.headers || {}), false);
+      assert.doesNotMatch(JSON.stringify(calls[0].options.headers || {}), /Bearer/);
+      assert.deepEqual(result, {
+        status: 'active',
+        account: { name: 'Ada' },
+        environment: null,
+        roleList: [],
+        csrfToken: 'csrf-restored',
+      });
+    });
+
+    it('throws with the invalidSession code on an HTTP error (e.g. 401 — no cookie or an expired one)', async () => {
+      const { fetchImpl } = recordingFetch(
+        jsonResponse({ error: { message: 'no session' } }, { ok: false, status: 401 }),
+      );
+
+      await assert.rejects(
+        () => fetchSession(fetchImpl, '/etendo'),
         (error) => {
           assert.equal(error.code, ONBOARDING_ERROR_CODES.invalidSession);
           assert.equal(error.status, 401);
