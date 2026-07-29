@@ -42,6 +42,7 @@
     "sf-method-budget": "./src/method-budget.js",
     "sf-regen-all": "./src/regen-all.js",
     "sf-window-leak-budget": "./src/window-leak-budget.js",
+    "sf-file-lines-budget": "./src/file-lines-budget.js",
     "sf-xml-apply-delta": "./src/xml-apply-delta.js",
     "sf-resolve-curated": "./src/resolve-curated.js",
     "sf-validate-pipeline": "./src/validate-pipeline.js",
