@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { renderHook, cleanup, act, waitFor } from '@testing-library/react';
-import { createMemoryAuthStorage } from '../session.js';
+import { createLocalAuthStorage, createMemoryAuthStorage } from '../session.js';
 import { AuthProvider, useAuth } from '../AuthContext.jsx';
 
 afterEach(cleanup);
@@ -1049,6 +1049,225 @@ describe('AuthContext — logout revokes the session server-side (ETP-4576)', ()
     await waitFor(() => {
       expect(deleteSessionCalls()).toHaveLength(1);
     });
+  });
+});
+
+// ETP-4576 cycle 4b — THE LAST WRITER. Everything else in this epic removed a
+// *reader* of the `sf_auth_*` localStorage channel: the handoff between page
+// loads is gone, the session lives in the httpOnly `__Host-` cookie, the
+// provider restores from the server on mount, and logout revokes server-side.
+// One writer survived all of it: `authStorage` defaulted to
+// createLocalAuthStorage(), so persistSession() — reached from login(),
+// setSession(), selectRole() and selectOrg() — kept writing the token, the
+// username, the client id, the role list and the selected role/org straight
+// back into localStorage on every session change, for every host that passes no
+// `storage` prop. The mount purge deleted those keys once and then the very
+// first login re-created them. That is exactly the class of persistence SEC-10
+// is about, so the default flips to createMemoryAuthStorage().
+//
+// What is NOT changing:
+//   * the `storage` prop keeps the same priority — a host that wants its own
+//     storage (including localStorage) still injects it;
+//   * createLocalAuthStorage stays exported. It is published API of a package
+//     with consumers we cannot see, and the PRD keeps it "for migration/tests".
+//     It simply stops being what you get by default.
+//
+// What the flip costs, and why it costs nothing: a per-mount memory storage no
+// longer survives a page load. It does not need to — restoreSession is now the
+// platform default (cycle 4a), so every mount asks GET /sws/go/session who the
+// user is. The storage is reduced to per-mount scratch space.
+describe('AuthContext — the default auth storage is memory, never localStorage (ETP-4576)', () => {
+  afterEach(() => {
+    window.localStorage.clear();
+  });
+
+  // jsdom's Storage is not a plain object; enumerate it through the index API.
+  function localStorageKeys() {
+    const keys = [];
+    for (let i = 0; i < window.localStorage.length; i += 1) {
+      keys.push(window.localStorage.key(i));
+    }
+    return keys;
+  }
+
+  function legacyAuthKeys() {
+    return localStorageKeys().filter((key) => /^sf_auth_|^sf_platform_/.test(key));
+  }
+
+  function defaultStorageWrapper(props = {}) {
+    // Deliberately NO `storage` prop — the whole subject of this suite.
+    return function Wrapper({ children }) {
+      return <AuthProvider {...props}>{children}</AuthProvider>;
+    };
+  }
+
+  it('writes nothing to localStorage when login() persists a session (THE last-writer test)', async () => {
+    const { result } = renderHook(() => useAuth(), { wrapper: defaultStorageWrapper() });
+
+    // Let the default fetcher's 401 settle FIRST. This is what makes the
+    // assertion below mean "persistSession never wrote" rather than "it wrote
+    // and the mount purge happened to erase it": the purge runs once, inside
+    // the mount effect, and by the time `status` is 'anonymous' it is long
+    // finished. Anything found in localStorage after this point was written by
+    // the login() below.
+    await waitFor(() => {
+      expect(result.current.status).toBe('anonymous');
+    });
+    expect(legacyAuthKeys()).toEqual([]);
+
+    // Vacuity guard: prove localStorage is live and observable in this
+    // environment, so an empty result is a real "nothing was written" and not a
+    // silently unavailable Storage.
+    window.localStorage.setItem('unrelated_key', 'kept');
+
+    act(() => {
+      result.current.login({ token: 'tok', username: 'Ada', clientId: 'client-1' });
+    });
+
+    // persistSession DID run — the session is in the context...
+    expect(result.current.token).toBe('tok');
+    expect(result.current.username).toBe('Ada');
+    expect(result.current.isAuthenticated).toBe(true);
+
+    // ...and it went to memory only. No credential, no session context, on disk.
+    expect(legacyAuthKeys()).toEqual([]);
+    expect(window.localStorage.getItem('sf_auth_token')).toBeNull();
+    expect(window.localStorage.getItem('sf_auth_user')).toBeNull();
+    expect(window.localStorage.getItem('sf_auth_client_id')).toBeNull();
+    expect(window.localStorage.getItem('unrelated_key')).toBe('kept');
+  });
+
+  it('writes nothing to localStorage when selectRole() and selectOrg() persist through the default storage', async () => {
+    const { result } = renderHook(() => useAuth(), { wrapper: defaultStorageWrapper() });
+
+    await waitFor(() => {
+      expect(result.current.status).toBe('anonymous');
+    });
+
+    act(() => {
+      result.current.selectRole({ id: 'role-1', name: 'Admin' });
+    });
+    act(() => {
+      result.current.selectOrg({ id: 'org-1', name: 'Main Org' });
+    });
+
+    expect(result.current.selectedRole).toMatchObject({ id: 'role-1' });
+    expect(result.current.selectedOrg).toMatchObject({ id: 'org-1' });
+
+    // The two session mutations a logged-in user triggers most often — the role
+    // and org pickers — are also persistSession() call sites, so they were
+    // writers too.
+    expect(window.localStorage.getItem('sf_auth_selected_role')).toBeNull();
+    expect(window.localStorage.getItem('sf_auth_selected_org')).toBeNull();
+    expect(legacyAuthKeys()).toEqual([]);
+  });
+
+  it('writes nothing to localStorage when a restored cookie session settles on a host that passes no storage', async () => {
+    fetchStub.mockResolvedValue({
+      ok: true,
+      status: 200,
+      json: async () => ({
+        account: { name: 'Ada' },
+        environment: { clientId: 'client-1', roleId: 'role-1', orgId: 'org-1' },
+        roleList: [{ id: 'role-1', name: 'Admin', orgList: [{ id: 'org-1', name: 'Main Org' }] }],
+        csrfToken: 'csrf-abc',
+      }),
+    });
+
+    const { result } = renderHook(() => useAuth(), { wrapper: defaultStorageWrapper() });
+
+    await waitFor(() => {
+      expect(result.current.status).toBe('authenticated');
+    });
+    expect(result.current.username).toBe('Ada');
+
+    // The restore path already avoided persisting (it would undo its own
+    // purge); with the memory default there is no longer any path back to disk
+    // at all, not even the csrfToken via a later session mutation.
+    expect(legacyAuthKeys()).toEqual([]);
+    expect(JSON.stringify(localStorageKeys())).not.toContain('sf_auth');
+    expect(window.localStorage.getItem('sf_auth_client_name')).toBeNull();
+  });
+
+  it('does not hydrate the initial session from leftover sf_auth_* keys left in localStorage', () => {
+    // A machine that ran the pre-cookie build has these on disk. With
+    // createLocalAuthStorage() as the default, the useState initializer read
+    // them back on the very first render — resurrecting a stale token, user,
+    // client and role selection from a previous tenant before the purge in the
+    // mount effect had even run (and the purge only clears storage, it never
+    // resets the state that was already seeded from it).
+    window.localStorage.setItem('sf_auth_token', 'legacy-token');
+    window.localStorage.setItem('sf_auth_user', 'legacy-user');
+    window.localStorage.setItem('sf_auth_client_id', 'legacy-client');
+    window.localStorage.setItem('sf_auth_selected_role', JSON.stringify({ id: 'legacy-role' }));
+
+    // NEVER_SETTLES keeps the provider in 'booting', so nothing after the first
+    // render can clear the session — whatever we observe was seeded (or not) by
+    // the default storage's read() alone.
+    const { result } = renderHook(() => useAuth(), {
+      wrapper: defaultStorageWrapper({ restoreSession: NEVER_SETTLES }),
+    });
+
+    expect(result.current.status).toBe('booting');
+    expect(result.current.token).toBeNull();
+    expect(result.current.username).toBeNull();
+    expect(result.current.clientId).toBeNull();
+    expect(result.current.selectedRole).toBeNull();
+    expect(result.current.isAuthenticated).toBe(false);
+  });
+
+  it('still gives the storage prop priority over the new memory default', async () => {
+    const writes = [];
+    const injectedStorage = {
+      read: () => ({}),
+      write: (session) => writes.push(session),
+      clear: () => writes.push('clear'),
+    };
+
+    const { result } = renderHook(() => useAuth(), {
+      wrapper: ({ children }) => (
+        <AuthProvider storage={injectedStorage} restoreSession={NEVER_SETTLES}>
+          {children}
+        </AuthProvider>
+      ),
+    });
+
+    act(() => {
+      result.current.login({ token: 'tok', username: 'Ada' });
+    });
+
+    // The prop is honoured exactly as before — the default changed, the
+    // precedence did not.
+    expect(writes).toHaveLength(1);
+    expect(writes[0]).toMatchObject({ token: 'tok', username: 'Ada' });
+    expect(legacyAuthKeys()).toEqual([]);
+  });
+
+  it('lets a host opt back into localStorage persistence by injecting createLocalAuthStorage()', async () => {
+    // The escape hatch the PRD keeps: createLocalAuthStorage is no longer the
+    // default, but it is still exported and still works when injected, so any
+    // consumer that genuinely wants the old behavior (or a migration shim) is
+    // not broken by this cycle.
+    const { result } = renderHook(() => useAuth(), {
+      wrapper: ({ children }) => (
+        <AuthProvider storage={createLocalAuthStorage()} restoreSession={NEVER_SETTLES}>
+          {children}
+        </AuthProvider>
+      ),
+    });
+
+    act(() => {
+      result.current.login({ token: 'tok-opted-in' });
+    });
+
+    expect(window.localStorage.getItem('sf_auth_token')).toBe('tok-opted-in');
+  });
+
+  it('keeps createLocalAuthStorage exported from the auth barrel — it stops being the default, it is not deleted', async () => {
+    const barrel = await import('../index.js');
+
+    expect(typeof barrel.createLocalAuthStorage).toBe('function');
+    expect(typeof barrel.createMemoryAuthStorage).toBe('function');
   });
 });
 
