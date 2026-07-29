@@ -9,13 +9,19 @@ import { useCallback } from 'react';
  *                 (listPrice for orders/quotations, listPrice for invoices)
  * discountField — form key holding the editable discount percentage
  *                 (discount for orders, etgoDiscount for invoices)
+ * priceTriggerField — form key whose selection triggers the price/callout chain
+ *                 (list-price backfill, discount reset, net/gross recompute and
+ *                 currency conversion). 'product' everywhere today; it is named
+ *                 here rather than hardcoded in DetailView so a window whose
+ *                 trigger is called something else does not need a branch in a
+ *                 component every window renders (ETP-4708, report §8.2 L3).
  *
  * Add a new entry here whenever a new window type is onboarded.
  */
 export const LINE_CONFIGS = {
-  order:        { qtyField: 'orderedQuantity',  grossField: 'lineGrossAmount', priceField: 'listPrice',  discountField: 'discount'      },
-  invoice:      { qtyField: 'invoicedQuantity', grossField: 'grossAmount',     priceField: 'listPrice',  discountField: 'etgoDiscount'  },
-  returnOrder:  { qtyField: 'orderedQuantity',  grossField: 'lineGrossAmount', priceField: 'unitPrice',  discountField: null            },
+  order:        { qtyField: 'orderedQuantity',  grossField: 'lineGrossAmount', priceField: 'listPrice',  discountField: 'discount',     priceTriggerField: 'product' },
+  invoice:      { qtyField: 'invoicedQuantity', grossField: 'grossAmount',     priceField: 'listPrice',  discountField: 'etgoDiscount', priceTriggerField: 'product' },
+  returnOrder:  { qtyField: 'orderedQuantity',  grossField: 'lineGrossAmount', priceField: 'unitPrice',  discountField: null,           priceTriggerField: 'product' },
 };
 
 // Convenience aliases — import the one that matches the window type.

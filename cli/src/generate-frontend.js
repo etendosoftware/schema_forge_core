@@ -1226,6 +1226,13 @@ import ${detailName}Table from './${detailName}Table';
 import ${detailName}Form from './${detailName}Form';` : '';
 }
 
+/**
+ * The line field whose selection drives the price/callout chain. Every window uses
+ * `product`; the constant exists so the value is declared in one place on both sides
+ * (here, and `LINE_CONFIGS` in app-shell-core's useLineGrossAmount.js).
+ */
+const DEFAULT_PRICE_TRIGGER_FIELD = 'product';
+
 function getLineConfigSymbol(lineEntityConfig, LINE_CONFIG_SYMBOLS) {
   return lineEntityConfig ? (LINE_CONFIG_SYMBOLS[lineEntityConfig] ?? null) : null;
 }
@@ -2173,7 +2180,19 @@ export function generatePageComponent(headerEntity, detailEntity, contract) {
   // lineConfig prop — emitted when the window uses a non-default line pricing config
   const LINE_CONFIG_SYMBOLS = { invoice: 'INVOICE_LINE_CONFIG', returnOrder: 'RETURN_ORDER_LINE_CONFIG' };
   const lineConfigSymbol = getLineConfigSymbol(lineEntityConfig, LINE_CONFIG_SYMBOLS);
-  const lineConfigProp = wrapIf('\n        lineConfig={', lineConfigSymbol, '}');
+  // priceTriggerField override. The presets in useLineGrossAmount.js already carry
+  // 'product'; only a window whose trigger is named differently spills into the
+  // generated code. Gated on INEQUALITY with the default, not on truthiness — the
+  // default is a non-empty string, so a truthy gate would emit it for every window
+  // and defeat R3 (declare only what overrides the default).
+  const priceTriggerField = windowConfig.priceTriggerField ?? DEFAULT_PRICE_TRIGGER_FIELD;
+  const overridesPriceTrigger = priceTriggerField !== DEFAULT_PRICE_TRIGGER_FIELD;
+  // An overriding window still needs a preset to spread; windows without an explicit
+  // lineEntityConfig use the same ORDER default DetailView falls back to.
+  const lineConfigBaseSymbol = lineConfigSymbol ?? (overridesPriceTrigger ? 'ORDER_LINE_CONFIG' : null);
+  const lineConfigProp = overridesPriceTrigger
+    ? `\n        lineConfig={{ ...${lineConfigBaseSymbol}, priceTriggerField: '${String(priceTriggerField).replace(/'/g, "\\'")}' }}`
+    : wrapIf('\n        lineConfig={', lineConfigSymbol, '}');
   // ListView toolbar props
   const hidePrintListProp = fragmentIf(hidePrint, '\n      hidePrint');
   const hideCreateProp = fragmentIf(hideCreate, '\n      hideCreate');
@@ -2361,7 +2380,7 @@ export function generatePageComponent(headerEntity, detailEntity, contract) {
     effectiveWindowProp
   } = buildWindowAccessWiring(windowAccessId);
   return `import { ${useStateImport}${useMemoImport}useEffect } from 'react';
-import { ListView, DetailView } from '@/components/contract-ui';${windowAccessImport}${fragmentIf(customListIcons, `\nimport { SortIcon, RefreshIcon } from '@/components/ui/custom-icons';`)}${fragmentIf(menuActionsConfig.length > 0, `\nimport { toast } from 'sonner';`)}${wrapIf('\nimport { ', lineConfigSymbol, ` } from '@/hooks/useLineGrossAmount';`)}
+import { ListView, DetailView } from '@/components/contract-ui';${windowAccessImport}${fragmentIf(customListIcons, `\nimport { SortIcon, RefreshIcon } from '@/components/ui/custom-icons';`)}${fragmentIf(menuActionsConfig.length > 0, `\nimport { toast } from 'sonner';`)}${wrapIf('\nimport { ', lineConfigBaseSymbol, ` } from '@/hooks/useLineGrossAmount';`)}
 ${headerTableImport}
 import ${headerName}Form from './${headerName}Form';${(buildDetailImports(detailEntity, detailName, customLinesComp))}
 ${fragmentIf(secondaryTabDefs.length > 0, `${secondaryTabsImports}\n`)}${formFooterImport}${customLinesImport}${primaryTabsImports}${listKpiCardsImport}${relatedDocsImport}${attachmentsImport}${extraTabsImport}${customCompImportBlock}import catalogs from './mockCatalogs';

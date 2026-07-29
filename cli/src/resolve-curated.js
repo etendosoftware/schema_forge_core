@@ -732,6 +732,7 @@ const WINDOW_TRUTHY_PROPS = [
   'statusFieldLabel',
   'lockedAlert',
   'lineEntityConfig',
+  'priceTriggerField',
   'actions',
   'rowQuickActions',
   'sendDocument',
@@ -740,6 +741,10 @@ const WINDOW_TRUTHY_PROPS = [
   'extraTabs',
   'customPanelTabs',
   'selectorPriceCurrency',
+  // NEO action the header delete button calls instead of a plain DELETE. Truthy-
+  // only: the default is null, so a window that does not declare it contributes
+  // nothing to the contract and the generator emits no prop (R3).
+  'deleteAction',
 ];
 
 const WINDOW_BOOLEAN_TRUE_PROPS = [
@@ -783,7 +788,7 @@ export const WINDOW_KEY_ORDER = [
   'sidebarLayout', 'templateConfig',
   'documentPreview', 'notesField', 'relatedDocuments',
   'hideDeleteWhenComplete', 'customTabsAfterBottom', 'hidePrint', 'hideCreate', 'readOnly', 'hideSaveStatuses',
-  'hideMoreMenu', 'hideMoreDetails', 'hideDetailForm', 'hideDelete', 'hideDeleteButton', 'contentBg',
+  'hideMoreMenu', 'hideMoreDetails', 'hideDetailForm', 'hideDelete', 'hideDeleteButton', 'deleteAction', 'contentBg',
   'hideListFilters', 'hideStatusFilter', 'hideLink', 'hideEyeCount', 'customListIcons', 'breadcrumb',
   'customComponents', 'menuActions', 'processOverrides',
   'entityLabel', 'detailLabel', 'detailTabIndex', 'secondaryTabs',
@@ -792,7 +797,7 @@ export const WINDOW_KEY_ORDER = [
   'labelOverrides', 'primaryTabs', 'othersLabel',
   'disableProcessedLock', 'titleField',
   'listViewOptions', 'listBaseFilter', 'quickFilters', 'subsetFilters',
-  'dateFilterKey', 'statusEnumLabels', 'statusFieldLabel', 'lockedAlert', 'noHeaderBorder', 'toolbarBorderBottom', 'compactSidebarPadding', 'whiteFormBackground', 'hideFormCard', 'sidebarAboveTabsOnly', 'tabsSeparator', 'sidebarClassName', 'formCardPadding', 'formScrollPaddingX', 'tabsBarPaddingX', 'primaryTabsVariant', 'toolbarPaddingX', 'toolbarButtonSize', 'listbarPaddingX', 'tablePaddingX', 'lineEntityConfig',
+  'dateFilterKey', 'statusEnumLabels', 'statusFieldLabel', 'lockedAlert', 'noHeaderBorder', 'toolbarBorderBottom', 'compactSidebarPadding', 'whiteFormBackground', 'hideFormCard', 'sidebarAboveTabsOnly', 'tabsSeparator', 'sidebarClassName', 'formCardPadding', 'formScrollPaddingX', 'tabsBarPaddingX', 'primaryTabsVariant', 'toolbarPaddingX', 'toolbarButtonSize', 'listbarPaddingX', 'tablePaddingX', 'lineEntityConfig', 'priceTriggerField',
   'extraTabs', 'attachments', 'customPanelTabs', 'rowQuickActions',
   'sendDocument',
   'layoutType', 'linesLayout', 'balanceFooter', 'selectorPriceCurrency',
