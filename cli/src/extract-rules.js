@@ -18,7 +18,7 @@ JOIN AD_Column col ON col.AD_Callout_ID = co.AD_Callout_ID
 JOIN AD_Tab t ON col.AD_Table_ID = t.AD_Table_ID
 LEFT JOIN AD_Model_Object mo ON mo.AD_Callout_ID = co.AD_Callout_ID
 WHERE t.AD_Window_ID = $1
-ORDER BY co.AD_Callout_ID, col.AD_Table_ID, col.ColumnName
+ORDER BY co.AD_Callout_ID COLLATE "C", col.AD_Table_ID COLLATE "C", col.ColumnName COLLATE "C"
 `;
 
 const VALIDATION_RULES_SQL = `
@@ -60,6 +60,7 @@ ORDER BY t.SeqNo, t.Name, t.AD_Tab_ID, ai.Name, ai.AD_AuxiliarInput_ID
 `;
 
 const DOCUMENT_PROCESSES_SQL = `
+SELECT * FROM (
 -- 1. Tab-level process
 SELECT 'tab_process' AS mechanism,
        p.AD_Process_ID AS process_id, NULL AS obuiapp_process_id,
@@ -103,8 +104,8 @@ WHERE t.AD_Window_ID = $1
   AND r.Name = 'Button'
   AND c.AD_Process_ID IS NULL
   AND c.EM_OBUIAPP_Process_ID IS NULL
-
-ORDER BY mechanism, name
+) q
+ORDER BY mechanism COLLATE "C", name COLLATE "C", column_name COLLATE "C" NULLS LAST, process_id COLLATE "C" NULLS LAST, obuiapp_process_id COLLATE "C" NULLS LAST
 `;
 
 // --- Pure functions ---
