@@ -617,6 +617,28 @@ describe('ETP-3959 quality gates', () => {
     assert.ok(!f17, 'F17 should not fire for a valid balanceFooter');
   });
 
+  it('F18: multiField referencing a non-existent sibling field is blocked', async () => {
+    const result = await runOnFixtures(['window-f18-bad-ref']);
+    const f18 = result.violations.find(v => v.rule === 'F18');
+    assert.ok(f18, 'F18 should fire for a missing multiField reference');
+    assert.equal(f18.severity, 'BLOCK');
+    assert.match(f18.message, /doesNotExist/);
+  });
+
+  it('F18: multiField sort part that is not queryable is blocked', async () => {
+    const result = await runOnFixtures(['window-f18-bad-sort']);
+    const f18 = result.violations.find(v => v.rule === 'F18');
+    assert.ok(f18, 'F18 should fire for a non-queryable sort part');
+    assert.equal(f18.severity, 'BLOCK');
+    assert.match(f18.message, /not queryable/);
+  });
+
+  it('F18: valid multiField (existing refs + queryable sort parts) passes', async () => {
+    const result = await runOnFixtures(['window-f18-ok']);
+    const f18 = result.violations.find(v => v.rule === 'F18');
+    assert.ok(!f18, 'F18 should not fire for a valid multiField');
+  });
+
   it('F15: minimumCreate fields are validated against header and line scope', async () => {
     const tmpRoot = await mkdtemp(join(tmpdir(), 'sf-f15-scope-'));
     try {
