@@ -634,6 +634,108 @@ describe('AuthContext — session restore (ETP-4576)', () => {
       expect(result.current.token).toBeFalsy();
       expect(result.current.isAuthenticated).toBe(true);
     });
+
+    // ETP-4576 cycle 15 — the restore effect only set csrfToken + status, so
+    // every session-shaped field (username, clientId, roleList, selectedRole,
+    // selectedOrg) stayed empty on cookie-migrated hosts. Consumers that read
+    // them were broken: DataProvider scopes its cache by client/role/org,
+    // useCurrency needs the client, and the host UserAvatarButton renders
+    // selectedRole?.name / selectedOrg?.name. These tests assert the effect
+    // now maps the payload through mapRestoredSession.
+    it('maps the restored payload onto the session state, resolving the role and org objects from the environment IDs', async () => {
+      const restoreSession = vi.fn().mockResolvedValue({
+        account: { name: 'Ada' },
+        environment: { clientId: 'client-1', roleId: 'role-1', orgId: 'org-1' },
+        roleList: [{ id: 'role-1', name: 'Admin', orgList: [{ id: 'org-1', name: 'Main Org' }] }],
+        csrfToken: 'csrf-abc',
+      });
+
+      const { result } = renderHook(() => useAuth(), {
+        wrapper: ({ children }) => (
+          <AuthProvider storage={createMemoryAuthStorage()} restoreSession={restoreSession}>
+            {children}
+          </AuthProvider>
+        ),
+      });
+
+      await waitFor(() => {
+        expect(result.current.status).toBe('authenticated');
+      });
+
+      expect(result.current.username).toBe('Ada');
+      expect(result.current.clientId).toBe('client-1');
+      // The full objects, not the IDs the backend sent.
+      expect(result.current.selectedRole).toMatchObject({ id: 'role-1', name: 'Admin' });
+      expect(result.current.selectedOrg).toMatchObject({ id: 'org-1', name: 'Main Org' });
+      expect(result.current.roleList).toEqual([
+        { id: 'role-1', name: 'Admin', orgList: [{ id: 'org-1', name: 'Main Org' }] },
+      ]);
+    });
+
+    it('still reaches "authenticated" with null selectedRole/selectedOrg when the restored session has no environment yet', async () => {
+      // Logged in but no environment entered (no client/role/org chosen) — a
+      // real backend response shape, and it must not block the boot.
+      const restoreSession = vi.fn().mockResolvedValue({
+        account: { name: 'Ada' },
+        environment: null,
+        roleList: [{ id: 'role-1', name: 'Admin', orgList: [{ id: 'org-1', name: 'Main Org' }] }],
+        csrfToken: 'csrf-abc',
+      });
+
+      const { result } = renderHook(() => useAuth(), {
+        wrapper: ({ children }) => (
+          <AuthProvider storage={createMemoryAuthStorage()} restoreSession={restoreSession}>
+            {children}
+          </AuthProvider>
+        ),
+      });
+
+      await waitFor(() => {
+        expect(result.current.status).toBe('authenticated');
+      });
+
+      expect(result.current.username).toBe('Ada');
+      expect(result.current.clientId).toBeNull();
+      expect(result.current.selectedRole).toBeNull();
+      expect(result.current.selectedOrg).toBeNull();
+      // The available roles still reach the role picker.
+      expect(result.current.roleList).toHaveLength(1);
+    });
+
+    it('does not persist the restored session into authStorage — the server response is authoritative, and persisting would undo the legacy purge', async () => {
+      const restoreSession = vi.fn().mockResolvedValue({
+        account: { name: 'Ada' },
+        environment: { clientId: 'client-1', roleId: 'role-1', orgId: 'org-1' },
+        roleList: [{ id: 'role-1', name: 'Admin', orgList: [{ id: 'org-1', name: 'Main Org' }] }],
+        csrfToken: 'csrf-abc',
+      });
+      const storage = createMemoryAuthStorage();
+
+      const { result } = renderHook(() => useAuth(), {
+        wrapper: ({ children }) => (
+          <AuthProvider storage={storage} restoreSession={restoreSession}>
+            {children}
+          </AuthProvider>
+        ),
+      });
+
+      await waitFor(() => {
+        expect(result.current.status).toBe('authenticated');
+      });
+      // The mapping did land in the context...
+      expect(result.current.username).toBe('Ada');
+
+      // ...but nothing was written back to storage: the same effect purges the
+      // legacy sf_auth_* keys right before restoring, so persisting here would
+      // immediately rewrite them and defeat the purge.
+      const persisted = storage.read();
+      expect(persisted.username).toBeNull();
+      expect(persisted.clientId).toBeNull();
+      expect(persisted.selectedRole).toBeNull();
+      expect(persisted.selectedOrg).toBeNull();
+      expect(persisted.roleList).toEqual([]);
+      expect(JSON.stringify(persisted)).not.toContain('Ada');
+    });
   });
 });
 
