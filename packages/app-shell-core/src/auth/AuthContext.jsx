@@ -1,7 +1,7 @@
 import { createContext, useContext, useState, useCallback, useMemo, useRef, useEffect } from 'react';
 import { deleteCookieSession, fetchCookieSession } from './api.js';
 import {
-  createLocalAuthStorage,
+  createMemoryAuthStorage,
   mapRestoredSession,
   normalizeAuthSession,
   purgeLegacyAuthStorage,
@@ -27,7 +27,14 @@ export function AuthProvider({
   // only fills in for `undefined`, so it silently re-arms the fetcher.
   restoreSession = fetchCookieSession,
 }) {
-  const authStorage = useMemo(() => storage || createLocalAuthStorage(), [storage]);
+  // ETP-4576 — memory, not localStorage. This was the last writer of the
+  // sf_auth_* keys: persistSession() wrote them on every login/role/org change.
+  // Persisting is no longer needed either, since restoreSession asks the server
+  // on every mount. It also closes a stale-tenant leak: the useState
+  // initializer below reads storage BEFORE the mount purge runs, so a token
+  // left by a previous tenant used to be hydrated into state and never reset.
+  // A host can still inject its own storage (including createLocalAuthStorage).
+  const authStorage = useMemo(() => storage || createMemoryAuthStorage(), [storage]);
   const [session, setSessionState] = useState(() => normalizeAuthSession({
     ...authStorage.read(),
     ...initialSession,

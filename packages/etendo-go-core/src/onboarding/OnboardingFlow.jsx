@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { Loader2 } from 'lucide-react';
 import { useUI } from '@etendosoftware/app-shell-core/i18n';
-import { createLocalAuthStorage, purgeLegacyAuthStorage } from '@etendosoftware/app-shell-core/auth';
+import { purgeLegacyAuthStorage } from '@etendosoftware/app-shell-core/auth';
 import { fetchSession, fetchEnvironments, loginEnvironment, fetchOnboardingDraft, saveOnboardingDraft } from './api.js';
 import { buildAppReturnToHref, getSafeReturnTo } from './oauthReturnTo.js';
 import { trackOnboarding } from './tracking.js';
@@ -23,16 +23,11 @@ export function OnboardingFlow({ steps = [], config = {} }) {
   const [loadingEnvs, setLoadingEnvs] = useState(false);
 
   const draftReadyRef = useRef(false);
-  const authStorageRef = useRef(null);
   const logoutContextRef = useRef(null);
   const onLogoutRef = useRef(null);
   const draftPersistenceRef = useRef(null);
   const draftContextRef = useRef(null);
   const apiBase = config.apiBase || '';
-
-  if (!authStorageRef.current) {
-    authStorageRef.current = createLocalAuthStorage();
-  }
 
   const currentStep = steps[stepIndex];
 
@@ -86,7 +81,6 @@ export function OnboardingFlow({ steps = [], config = {} }) {
     onLogoutRef.current = createOnboardingLogout({
       flushDraft: () => draftPersistenceRef.current.flush(draftContextRef.current),
       cleanupSession: () => {
-        authStorageRef.current.clear();
         // ETP-4576 — the environment session is the __Host- cookie now (the
         // server drops it on logout), so there is no client-written channel left
         // to clear. What remains is purging keys a pre-cookie session may have
@@ -219,7 +213,7 @@ export function OnboardingFlow({ steps = [], config = {} }) {
         routeByEnvironments(data.csrfToken);
       })
       .catch(() => {
-        authStorageRef.current.clear();
+        purgeLegacyAuthStorage();
         // Login is the default entry view; register is only shown when explicitly requested.
         goToStep(initialView === 'register' ? 'register' : 'login');
       });
