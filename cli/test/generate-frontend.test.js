@@ -528,9 +528,27 @@ describe('generateFormComponent', () => {
 // ---------------------------------------------------------------------------
 
 describe('generatePageComponent', () => {
-  it('imports ListView and DetailView from contract-ui', () => {
+  it('imports ListView and DetailView from their own modules, not the barrel', () => {
     const code = generatePageComponent('order', 'orderLine', masterDetailContract);
-    assert.ok(code.includes("import { ListView, DetailView } from '@/components/contract-ui'"));
+    assert.ok(code.includes("import { ListView } from '@/components/contract-ui/ListView.jsx'"));
+    assert.ok(code.includes("import { DetailView } from '@/components/contract-ui/DetailView.jsx'"));
+  });
+
+  // ETP-4730 — this is the load-bearing half of the assertion above. The barrel
+  // re-exports ~25 modules, so routing these two through it puts them in the
+  // dependency closure of every importer, and therefore in the test surface of
+  // modules that never touch them: DetailView was reachable from 81 test files
+  // while only 33 import it. Emitting the direct paths took that to 49, and
+  // ListView's from 51 to 19. A future "tidy the imports" change that merges these
+  // back into `from '@/components/contract-ui'` would silently undo it, so the
+  // regression is pinned negatively rather than left to review.
+  it('does NOT route ListView or DetailView through the contract-ui barrel', () => {
+    const code = generatePageComponent('order', 'orderLine', masterDetailContract);
+    const barrelImports = code.match(/import \{[^}]*\} from '@\/components\/contract-ui';/g) ?? [];
+    for (const line of barrelImports) {
+      assert.ok(!/\bListView\b/.test(line), `ListView must not come from the barrel: ${line}`);
+      assert.ok(!/\bDetailView\b/.test(line), `DetailView must not come from the barrel: ${line}`);
+    }
   });
 
   it('exports a named component with PascalCase header entity name + Page', () => {
