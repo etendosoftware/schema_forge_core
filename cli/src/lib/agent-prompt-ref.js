@@ -72,9 +72,9 @@ export function resolveAgentPromptValue(value, promptRoot) {
 
 /**
  * Walk a parsed decisions object and resolve every `#REF#` agentPrompt in
- * place: the spec-level `window.agentPrompt` and each field's `agentPrompt`.
- * Values that are not references are left untouched. Mutates and returns the
- * same object for convenience.
+ * place: the spec-level `window.agentPrompt`, each entity's `agentPrompt`, and
+ * each field's `agentPrompt`. Values that are not references are left
+ * untouched. Mutates and returns the same object for convenience.
  *
  * @param {object} decisions - Parsed decisions.json.
  * @param {string} promptRoot - Repo root reference paths are resolved against.
@@ -99,6 +99,9 @@ export function resolveAgentPromptRefs(decisions, promptRoot) {
   const entities = decisions.entities;
   if (entities && typeof entities === 'object') {
     for (const entity of Object.values(entities)) {
+      if (entity && typeof entity === 'object' && typeof entity.agentPrompt === 'string') {
+        entity.agentPrompt = resolveAgentPromptValue(entity.agentPrompt, promptRoot);
+      }
       const fields = entity && typeof entity === 'object' ? entity.fields : null;
       if (fields && typeof fields === 'object') {
         for (const field of Object.values(fields)) {

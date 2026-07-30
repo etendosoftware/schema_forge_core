@@ -278,6 +278,7 @@ export async function pushToNeo(windowName, options = {}) {
   const fieldDefaultExprs = buildFieldDefaultExprMap(decisionsData);
   const fieldAgentPrompts = buildFieldAgentPromptMap(decisionsData);
   const entityPreconditions = buildEntityPreconditionsMap(decisionsData);
+  const entityAgentPrompts = buildEntityAgentPromptMap(decisionsData);
   const specAgentPrompt = normalizeAgentPrompt(decisionsData.window?.agentPrompt);
   const allFields = extractFieldsFromContract(contract.backendContract);
 
@@ -292,6 +293,7 @@ export async function pushToNeo(windowName, options = {}) {
     fieldDefaultExprs,
     fieldAgentPrompts,
     entityPreconditions,
+    entityAgentPrompts,
     specAgentPrompt,
     specName,
     windowId,
@@ -385,6 +387,28 @@ export function buildEntityPreconditionsMap(decisionsData) {
     const entityName = entityConf.name || entityKey;
     if (Object.hasOwn(entityConf, 'preconditions')) {
       map[entityName] = normalizePreconditions(entityConf.preconditions);
+    }
+  }
+  return map;
+}
+
+/**
+ * Build an `entityName` -> agentPrompt map from decisions.json. Mirrors
+ * buildEntityPreconditionsMap: resolves the entity name the same way
+ * (`entityConf.name` falling back to the decisions key) so it matches the
+ * contract entity name used when the ETGO_SF_ENTITY row is written. Only
+ * entities that declare an `agentPrompt` key are included; the value is the
+ * normalized string (or null to clear a stale DB value). Serialized into
+ * ETGO_SF_ENTITY.agent_prompt by push-to-neo so NEO Headless can surface
+ * entity-level agent guidance in neo_discover, additive to the spec-level and
+ * per-field prompts (ETP-4278).
+ */
+export function buildEntityAgentPromptMap(decisionsData) {
+  const map = {};
+  for (const [entityKey, entityConf] of Object.entries(decisionsData.entities || {})) {
+    const entityName = entityConf.name || entityKey;
+    if (Object.hasOwn(entityConf, 'agentPrompt')) {
+      map[entityName] = normalizeAgentPrompt(entityConf.agentPrompt);
     }
   }
   return map;
@@ -619,15 +643,19 @@ async function renameEntitiesToContractNames(client, ctx, entityMaps) {
     // cleared, mirroring how field agentPrompt clears itself (ETP-4275).
     const preconditions = ctx.entityPreconditions?.[ent.name] ?? null;
     const preconditionsJson = preconditions ? JSON.stringify(preconditions) : null;
+    // Serialize the declared entity-level agentPrompt the same way (ETP-4278):
+    // written unconditionally so an undeclared/cleared prompt resets the DB
+    // value, and surfaced additively by neo_discover's entity summary.
+    const entityAgentPrompt = ctx.entityAgentPrompts?.[ent.name] ?? null;
     if (ent.javaQualifier !== undefined) {
       await client.query(
-        'UPDATE etgo_sf_entity SET name = $1, java_qualifier = $2, preconditions = $3 WHERE etgo_sf_entity_id = $4',
-        [ent.name, ent.javaQualifier, preconditionsJson, entityId],
+        'UPDATE etgo_sf_entity SET name = $1, java_qualifier = $2, preconditions = $3, agent_prompt = $4 WHERE etgo_sf_entity_id = $5',
+        [ent.name, ent.javaQualifier, preconditionsJson, entityAgentPrompt, entityId],
       );
     } else {
       await client.query(
-        'UPDATE etgo_sf_entity SET name = $1, preconditions = $2 WHERE etgo_sf_entity_id = $3',
-        [ent.name, preconditionsJson, entityId],
+        'UPDATE etgo_sf_entity SET name = $1, preconditions = $2, agent_prompt = $3 WHERE etgo_sf_entity_id = $4',
+        [ent.name, preconditionsJson, entityAgentPrompt, entityId],
       );
     }
     entityMaps.entityMapByName[ent.name] = entityId;

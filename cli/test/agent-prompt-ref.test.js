@@ -90,22 +90,32 @@ describe('agent-prompt-ref', () => {
   });
 
   describe('resolveAgentPromptRefs', () => {
-    it('resolves spec-level and field-level references in place', () => {
+    it('resolves spec-level, entity-level and field-level references in place', () => {
       const decisions = {
         window: { agentPrompt: '#REF#agent-prompts/contacts/spec.md' },
         entities: {
           bankAccount: {
+            agentPrompt: '#REF#agent-prompts/contacts/spec.md',
             fields: {
               accountNo: { agentPrompt: '#REF#agent-prompts/contacts/spec.md' },
               iBAN: { agentPrompt: 'literal field prompt' },
               swiftCode: { visibility: 'editable' },
             },
           },
+          account: { agentPrompt: 'literal entity prompt' },
         },
       };
       const out = resolveAgentPromptRefs(decisions, root);
       assert.equal(out, decisions, 'returns the same object');
       assert.equal(decisions.window.agentPrompt, 'Spec prompt text.');
+      assert.equal(
+        decisions.entities.bankAccount.agentPrompt,
+        'Spec prompt text.'
+      );
+      assert.equal(
+        decisions.entities.account.agentPrompt,
+        'literal entity prompt'
+      );
       assert.equal(
         decisions.entities.bankAccount.fields.accountNo.agentPrompt,
         'Spec prompt text.'
