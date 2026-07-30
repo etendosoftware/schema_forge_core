@@ -1,0 +1,7 @@
+[
+  {
+    "artifact": "amortization",
+    "key": "asset",
+    "reason": "CORE_FIELDS required flag in AmortizationLinesTable.jsx guards an inline-add-row save (if (!newLine.asset) return;), not tied to AdvancedFilterBuilder — this window has no custom index.jsx/list-view override, so no Advanced Filter is in play for this file."
+  }
+]
