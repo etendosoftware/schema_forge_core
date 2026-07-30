@@ -70,6 +70,21 @@ export function resolveAgentPromptValue(value, promptRoot) {
   return trimmed;
 }
 
+/** True for non-null objects (arrays included, matching the previous checks). */
+function isObject(value) {
+  return value !== null && typeof value === 'object';
+}
+
+/**
+ * Resolve a `#REF#` agentPrompt on a single node in place. No-op when the node
+ * is not an object or its `agentPrompt` is not a string.
+ */
+function resolveNodePrompt(node, promptRoot) {
+  if (isObject(node) && typeof node.agentPrompt === 'string') {
+    node.agentPrompt = resolveAgentPromptValue(node.agentPrompt, promptRoot);
+  }
+}
+
 /**
  * Walk a parsed decisions object and resolve every `#REF#` agentPrompt in
  * place: the spec-level `window.agentPrompt`, each entity's `agentPrompt`, and
@@ -81,35 +96,25 @@ export function resolveAgentPromptValue(value, promptRoot) {
  * @returns {object} The same decisions object with references resolved.
  */
 export function resolveAgentPromptRefs(decisions, promptRoot) {
-  if (!decisions || typeof decisions !== 'object') {
+  if (!isObject(decisions)) {
     return decisions;
   }
 
-  if (
-    decisions.window &&
-    typeof decisions.window === 'object' &&
-    typeof decisions.window.agentPrompt === 'string'
-  ) {
-    decisions.window.agentPrompt = resolveAgentPromptValue(
-      decisions.window.agentPrompt,
-      promptRoot
-    );
+  resolveNodePrompt(decisions.window, promptRoot);
+
+  const entities = isObject(decisions.entities) ? decisions.entities : null;
+  if (!entities) {
+    return decisions;
   }
 
-  const entities = decisions.entities;
-  if (entities && typeof entities === 'object') {
-    for (const entity of Object.values(entities)) {
-      if (entity && typeof entity === 'object' && typeof entity.agentPrompt === 'string') {
-        entity.agentPrompt = resolveAgentPromptValue(entity.agentPrompt, promptRoot);
-      }
-      const fields = entity && typeof entity === 'object' ? entity.fields : null;
-      if (fields && typeof fields === 'object') {
-        for (const field of Object.values(fields)) {
-          if (field && typeof field === 'object' && typeof field.agentPrompt === 'string') {
-            field.agentPrompt = resolveAgentPromptValue(field.agentPrompt, promptRoot);
-          }
-        }
-      }
+  for (const entity of Object.values(entities)) {
+    resolveNodePrompt(entity, promptRoot);
+    const fields = isObject(entity) ? entity.fields : null;
+    if (!isObject(fields)) {
+      continue;
+    }
+    for (const field of Object.values(fields)) {
+      resolveNodePrompt(field, promptRoot);
     }
   }
 
