@@ -371,14 +371,16 @@ describe('buildBackendFilter', () => {
     const col = { key: 'processed' };
 
     it('produces equals true criterion', () => {
+      // ETP-4705: NEO Headless stores boolean/Y-N columns as the char 'Y'/'N'
+      // and filters with an exact string `equals` — a JS boolean never matches.
       assert.deepEqual(buildBackendFilter(col, { mode: 'booleanLabel', value: true }), [
-        { fieldName: 'processed', operator: 'equals', value: true },
+        { fieldName: 'processed', operator: 'equals', value: 'Y' },
       ]);
     });
 
     it('produces equals false criterion', () => {
       assert.deepEqual(buildBackendFilter(col, { mode: 'booleanLabel', value: false }), [
-        { fieldName: 'processed', operator: 'equals', value: false },
+        { fieldName: 'processed', operator: 'equals', value: 'N' },
       ]);
     });
   });
@@ -1110,31 +1112,33 @@ describe('buildAdvancedFilterCriteria — numeric mode (buildRowCriteria)', () =
 describe('buildAdvancedFilterCriteria — booleanLabel mode (buildRowCriteria)', () => {
   const columns = [{ key: 'active', type: 'boolean' }];
 
-  it('maps string "true" to boolean true', () => {
+  it('maps string "true" to backend char Y', () => {
+    // ETP-4705: NEO Headless expects the char 'Y'/'N' for boolean columns,
+    // not a JS boolean.
     const filter = {
       rowOperator: 'and',
       conditions: [{ field: 'active', operator: 'equals', value: 'true' }],
     };
     const result = buildAdvancedFilterCriteria(filter, columns);
-    assert.deepEqual(result, [{ fieldName: 'active', operator: 'equals', value: true }]);
+    assert.deepEqual(result, [{ fieldName: 'active', operator: 'equals', value: 'Y' }]);
   });
 
-  it('maps boolean true to true', () => {
+  it('maps boolean true to backend char Y', () => {
     const filter = {
       rowOperator: 'and',
       conditions: [{ field: 'active', operator: 'equals', value: true }],
     };
     const result = buildAdvancedFilterCriteria(filter, columns);
-    assert.deepEqual(result, [{ fieldName: 'active', operator: 'equals', value: true }]);
+    assert.deepEqual(result, [{ fieldName: 'active', operator: 'equals', value: 'Y' }]);
   });
 
-  it('maps false to false', () => {
+  it('maps false to backend char N', () => {
     const filter = {
       rowOperator: 'and',
       conditions: [{ field: 'active', operator: 'equals', value: false }],
     };
     const result = buildAdvancedFilterCriteria(filter, columns);
-    assert.deepEqual(result, [{ fieldName: 'active', operator: 'equals', value: false }]);
+    assert.deepEqual(result, [{ fieldName: 'active', operator: 'equals', value: 'N' }]);
   });
 });
 

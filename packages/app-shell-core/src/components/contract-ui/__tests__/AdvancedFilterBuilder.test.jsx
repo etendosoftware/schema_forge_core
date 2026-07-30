@@ -804,3 +804,74 @@ describe('AdvancedFilterBuilder', () => {
     });
   });
 });
+
+// ETP-4705 — the conditional filter panel used to force fixed/proportional
+// widths on its root container and on the Field/Operator selects, which
+// truncated placeholders ("Seleccionar condici…") and left a large empty gap.
+// The fix switched to content-based sizing. These assertions lock that in so a
+// regression back to the old fixed widths is caught.
+describe('AdvancedFilterBuilder — content-based sizing (ETP-4705)', () => {
+  // The Field select wrapper is uniquely identified by its max-w-[22rem];
+  // the Operator select wrapper by its max-w-[18rem].
+  const fieldWrapper = (container) => container.querySelector('div.max-w-\\[22rem\\]');
+  const operatorWrapper = (container) => container.querySelector('div.max-w-\\[18rem\\]');
+
+  it('root container uses w-max content sizing, not the old fixed min-widths (ETP-4705)', () => {
+    const { container } = render(<AdvancedFilterBuilder columns={COLUMNS} />);
+    const root = container.firstChild;
+    const cls = root.className;
+
+    // Must NOT regress to the old fixed pixel min-widths.
+    expect(cls).not.toContain('min-w-[760px]');
+    expect(cls).not.toContain('min-w-[860px]');
+
+    // Must use content-based sizing.
+    expect(cls).toContain('w-max');
+    expect(cls).toContain('max-w-[min(90vw,60rem)]');
+    // Non-between default floor.
+    expect(cls).toContain('min-w-[32rem]');
+  });
+
+  it('root container widens to min-w-[38rem] in the between case (ETP-4705)', () => {
+    // Seed a pre-applied condition whose operator is "between" so hasBetween is
+    // true on first render — no dropdown interaction needed.
+    const value = {
+      rowOperator: 'and',
+      conditions: [{ field: 'amount', operator: 'between', value: ['', ''] }],
+    };
+    const { container } = render(<AdvancedFilterBuilder columns={COLUMNS} value={value} />);
+    const cls = container.firstChild.className;
+
+    expect(cls).not.toContain('min-w-[760px]');
+    expect(cls).not.toContain('min-w-[860px]');
+    expect(cls).toContain('w-max');
+    // between → wider floor, and NOT the narrow default floor.
+    expect(cls).toContain('min-w-[38rem]');
+    expect(cls).not.toContain('min-w-[32rem]');
+  });
+
+  it('Field select wrapper is content-sized (w-fit), not flex-[2] (ETP-4705)', () => {
+    const { container } = render(<AdvancedFilterBuilder columns={COLUMNS} />);
+    const wrapper = fieldWrapper(container);
+    expect(wrapper).not.toBeNull();
+    const cls = wrapper.className;
+
+    expect(cls).toContain('w-fit');
+    expect(cls).toContain('min-w-[12rem]');
+    // Must NOT grab free space via flex.
+    expect(cls).not.toContain('flex-[2]');
+  });
+
+  it('Operator select wrapper is content-sized (w-fit), not flex-1 (ETP-4705)', () => {
+    const { container } = render(<AdvancedFilterBuilder columns={COLUMNS} />);
+    const wrapper = operatorWrapper(container);
+    expect(wrapper).not.toBeNull();
+    const cls = wrapper.className;
+
+    expect(cls).toContain('w-fit');
+    expect(cls).toContain('min-w-[12rem]');
+    // Must NOT grab free space via flex — the value cell keeps flex-1, so scope
+    // the assertion to this operator wrapper only.
+    expect(cls.split(/\s+/)).not.toContain('flex-1');
+  });
+});

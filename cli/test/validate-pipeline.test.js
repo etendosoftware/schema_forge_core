@@ -22,8 +22,15 @@ async function runOnFixtures(windowNames, opts = {}) {
     scope: windowNames,
     strict: opts.strict ?? false,
     skip: opts.skip ?? [],
-    root: join(FIXTURES, '..', '..', '..'), // repo root — not used because we override artifactsRoot below
+    // repo root — normally unused because we override artifactsRoot below, but
+    // F10/F19 resolve custom component paths relative to it, so tests that need
+    // a real tools/app-shell/src/windows/custom/<name>/ tree pass opts.root.
+    root: opts.root ?? join(FIXTURES, '..', '..', '..'),
     registryPath: opts.registryPath ?? join(FIXTURES, 'mock-registry.js'),
+    // F19 allowlist — tests that need a fixture-scoped allowlist entry pass
+    // opts.f19AllowlistPath; otherwise this falls through to the real
+    // (production) allowlist file, which never matches fixture artifact names.
+    f19AllowlistPath: opts.f19AllowlistPath,
     // Override the artifacts root to point at our fixture directory
     _artifactsRoot: FIXTURES,
   });
@@ -836,5 +843,104 @@ describe('ETP-3959 quality gates', () => {
     } finally {
       await rm(tmpRoot, { recursive: true, force: true });
     }
+  });
+});
+
+// ─── F19 — custom table `required` flag drift (ETP-4609 follow-up) ─────────
+// These fixtures need a real tools/app-shell/src/windows/custom/<name>/ tree
+// to resolve against, so `root` is overridden to the fixtures dir itself (the
+// custom components live under fixtures/pipeline-validator/tools/app-shell/...).
+
+describe('Rule F19 — custom table required-flag drift', () => {
+  it('BLOCK when a local column required flag drifts from the contract', async () => {
+    const result = await runOnFixtures(['window-f19-drift'], { root: FIXTURES });
+    const f19 = result.violations.find(v => v.rule === 'F19');
+    assert.ok(f19, 'F19 should fire when a custom column required flag does not match the contract');
+    assert.equal(f19.severity, 'BLOCK');
+    assert.match(f19.message, /'name'/);
+    assert.match(f19.message, /required=false/);
+    assert.match(f19.message, /required=true/);
+  });
+
+  it('passes when local required flags match the contract, ignoring unmapped and indeterminate columns', async () => {
+    const result = await runOnFixtures(['window-f19-ok'], { root: FIXTURES });
+    const f19 = result.violations.find(v => v.rule === 'F19');
+    assert.ok(!f19, 'F19 should not fire when required flags match (or cannot be statically resolved)');
+  });
+
+  it('is skipped when the window has no custom table override', async () => {
+    const result = await runOnFixtures(['window-f19-no-custom-table'], { root: FIXTURES });
+    const f19 = result.violations.find(v => v.rule === 'F19');
+    const f19Skip = result.skipped.find(s => s.rule === 'F19');
+    assert.ok(!f19, 'F19 should not fire for a window with no custom table dir');
+    assert.ok(!f19Skip, 'F19 should not even emit a skipped entry — nothing to check');
+  });
+
+  // ─── Coverage expansion (ETP-4609 follow-up round 2) ──────────────────────
+
+  it('BLOCK on drift in a shared component pulled in via a one-hop import (payment-in/out pattern)', async () => {
+    const result = await runOnFixtures(['window-f19-shared-drift'], { root: FIXTURES });
+    const f19 = result.violations.find(v => v.rule === 'F19');
+    assert.ok(f19, 'F19 should fire for the window whose contract disagrees with the shared column');
+    assert.equal(f19.severity, 'BLOCK');
+    assert.match(f19.message, /'name'/);
+    assert.match(f19.message, /window-f19-shared-base/);
+  });
+
+  it('does not fire for a different window that imports the same shared component correctly', async () => {
+    const result = await runOnFixtures(['window-f19-shared-ok'], { root: FIXTURES });
+    const f19 = result.violations.find(v => v.rule === 'F19');
+    assert.ok(!f19, 'the same shared column must be evaluated per-window against that window\'s own contract');
+  });
+
+  it('BLOCK on drift in artifacts/<name>/custom/ even when a clean decoy exists under windows/custom/<name>/', async () => {
+    const result = await runOnFixtures(['window-f19-artifacts-custom-drift'], { root: FIXTURES });
+    const f19 = result.violations.find(v => v.rule === 'F19');
+    assert.ok(f19, 'F19 should scan artifacts/<name>/custom/ (the pipeline-convention location) too');
+    assert.equal(f19.severity, 'BLOCK');
+    assert.match(f19.message, /RealTable\.jsx/);
+  });
+
+  it('allowlist suppresses one (artifact, key) pair without suppressing others', async () => {
+    const allowlistPath = join(FIXTURES, 'f19-allowlist-test.json');
+    const result = await runOnFixtures(['window-f19-allowlisted'], { root: FIXTURES, f19AllowlistPath: allowlistPath });
+    const f19 = result.violations.find(v => v.rule === 'F19');
+    assert.ok(f19, 'the non-allowlisted "other" column must still be reported');
+    assert.match(f19.message, /'other'/);
+    assert.doesNotMatch(f19.message, /'asset'/);
+  });
+
+  it('without an allowlist override, an unrelated drift is still reported (no accidental global suppression)', async () => {
+    const result = await runOnFixtures(['window-f19-allowlisted'], {
+      root: FIXTURES,
+      f19AllowlistPath: join(FIXTURES, 'does-not-exist.json'),
+    });
+    const f19 = result.violations.find(v => v.rule === 'F19');
+    assert.ok(f19, 'a missing allowlist file must behave as an empty allowlist, not suppress everything');
+  });
+
+  it('allowlist entry scopes by (artifact, key) pair — same key drifting on a different artifact is still reported', async () => {
+    const allowlistPath = join(FIXTURES, 'f19-allowlist-test.json');
+    const result = await runOnFixtures(['window-f19-allowlisted', 'window-f19-allowlist-scope'], {
+      root: FIXTURES,
+      f19AllowlistPath: allowlistPath,
+    });
+    const f19ViolationsByArtifact = result.violations
+      .filter(v => v.rule === 'F19')
+      .map(v => v.artifact);
+    assert.ok(
+      f19ViolationsByArtifact.includes('window-f19-allowlist-scope'),
+      'the allowlist entry for window-f19-allowlisted/asset must not suppress the same key drifting on a different artifact',
+    );
+  });
+
+  it('does not scan shared/ files for a window whose custom file never imports them (no blast radius)', async () => {
+    const result = await runOnFixtures(['window-f19-shared-not-imported'], { root: FIXTURES });
+    const f19 = result.violations.find(v => v.rule === 'F19');
+    assert.ok(
+      !f19,
+      'shared/window-f19-shared-base.jsx must not be attributed to a window whose custom files never import it, ' +
+        'even though its required:true for "name" would conflict with this window\'s contract (required:false)',
+    );
   });
 });

@@ -1,0 +1,15 @@
+{
+  "version": "v2",
+  "frontendContract": {
+    "window": { "primaryEntity": "widget" },
+    "entities": {
+      "widget": {
+        "fields": [
+          { "name": "name", "column": "Name", "required": false },
+          { "name": "description", "column": "Description", "required": true }
+        ]
+      }
+    }
+  },
+  "agentProfile": {}
+}
