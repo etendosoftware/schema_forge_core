@@ -22,6 +22,7 @@ import {
   upsertField as writerUpsertField,
 } from './neo-writer.js';
 import { computeWindowDelta, serializeDelta } from './lib/neo-delta.js';
+import { resolveAgentPromptRefs } from './lib/agent-prompt-ref.js';
 import { loadEtgoXmlSnapshot } from './lib/etgo-xml-parser.js';
 import { GO_MODULE_ID } from './lib/constants.js';
 import { isMainModule } from './utils.js';
@@ -270,7 +271,7 @@ export async function pushToNeo(windowName, options = {}) {
   const projectRoot = options.projectRoot || ROOT;
   const artifactsDir = join(projectRoot, 'artifacts', windowName);
 
-  const { contract, schemaRawData, decisionsData } = await loadPushArtifacts(artifactsDir, windowName);
+  const { contract, schemaRawData, decisionsData } = await loadPushArtifacts(artifactsDir, windowName, projectRoot);
   const windowId = resolveWindowId(schemaRawData, contract, options);
   const windowDisplayName = schemaRawData.window.name;
   const specName = windowName;
@@ -304,7 +305,7 @@ export async function pushToNeo(windowName, options = {}) {
 // pushToNeo helpers (private)
 // ---------------------------------------------------------------------------
 
-async function loadPushArtifacts(artifactsDir, windowName) {
+async function loadPushArtifacts(artifactsDir, windowName, projectRoot) {
   let contractRaw, schemaRawJson;
   try {
     contractRaw = await readFile(join(artifactsDir, 'contract.json'), 'utf-8');
@@ -321,6 +322,9 @@ async function loadPushArtifacts(artifactsDir, windowName) {
     const decisionsRaw = await readFile(join(artifactsDir, 'decisions.json'), 'utf-8');
     decisionsData = JSON.parse(decisionsRaw);
   } catch { /* optional — not all windows have decisions.json */ }
+  // Resolve any `#REF#<path>` agentPrompt references (spec + fields) against the
+  // repo root so every downstream consumer only sees literal prompt text.
+  resolveAgentPromptRefs(decisionsData, projectRoot || ROOT);
   return {
     contract: JSON.parse(contractRaw),
     schemaRawData: JSON.parse(schemaRawJson),
@@ -1170,7 +1174,7 @@ export async function dumpDelta(windowName, options) {
 
   // 1) Load the contract / schema-raw / decisions ----------------------------
   const { contract, schemaRawData, decisionsData } =
-    await loadPushArtifacts(artifactsDir, windowName);
+    await loadPushArtifacts(artifactsDir, windowName, projectRoot);
 
   // 2) Guard: only window specs are supported in this slice.
   const specType = contract.backendContract?.specType
