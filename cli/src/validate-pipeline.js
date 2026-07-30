@@ -1232,6 +1232,299 @@ async function ruleF18(artifactDir, artifactName) {
 }
 
 // ---------------------------------------------------------------------------
+// F20 — custom grid columns must declare filterMode when the data type needs one
+// ---------------------------------------------------------------------------
+
+const F20_ALLOWLIST_PATH = join(__dirname, 'validate-pipeline-f20-allowlist.json');
+
+/** Contract field type (or columnType) → the filterMode `resolveFilterMode` would need. */
+const F20_EXPECTED_MODES = new Map([
+  ['amount', 'numeric'],
+  ['number', 'numeric'],
+  ['integer', 'numeric'],
+  ['quantity', 'numeric'],
+  ['price', 'numeric'],
+  ['decimal', 'numeric'],
+  ['percent', 'numeric'],
+  ['signedDelta', 'numeric'],
+  ['date', 'date'],
+  ['dateTime', 'date'],
+  ['foreignKey', 'identifier'],
+  ['enum', 'enumLabel'],
+  ['status', 'enumLabel'],
+  ['boolean', 'booleanLabel'],
+]);
+
+/** Per-process cache: path → parsed AST (or null when the file could not be parsed). */
+const f20AstCache = new Map();
+/** path → promise of the parsed allowlist array. */
+const f20AllowlistCache = new Map();
+
+/**
+ * Load the F20 allowlist. A missing or unreadable file is an empty allowlist —
+ * this rule must never throw because a side file is absent.
+ *
+ * @param {string} [allowlistPath]
+ * @returns {Promise<Array<{artifact: string, key: string, reason?: string}>>}
+ */
+export function loadF20Allowlist(allowlistPath = F20_ALLOWLIST_PATH) {
+  if (!f20AllowlistCache.has(allowlistPath)) {
+    f20AllowlistCache.set(allowlistPath, (async () => {
+      try {
+        const parsed = await readJSON(allowlistPath);
+        return Array.isArray(parsed) ? parsed : [];
+      } catch {
+        return [];
+      }
+    })());
+  }
+  return f20AllowlistCache.get(allowlistPath);
+}
+
+function isF20Allowlisted(rules, artifactName, key) {
+  return rules.some(rule => rule?.artifact === artifactName && rule?.key === key);
+}
+
+/** The filterMode the runtime resolver would need for a contract field. */
+function f20ExpectedMode(field) {
+  const mapped = F20_EXPECTED_MODES.get(field.columnType ?? field.type);
+  if (mapped) return mapped;
+  if (Array.isArray(field.enumValues) && field.enumValues.length > 0) return 'enumLabel';
+  return 'text';
+}
+
+/**
+ * Index every contract field by name across ALL entities (header, lines, …).
+ * A name present on two entities keeps both candidates so the lookup can
+ * disambiguate by the grid column's local `column` value.
+ */
+function f20IndexContractFields(contract) {
+  const index = new Map();
+  for (const [entity, entityDef] of Object.entries(contract.frontendContract?.entities ?? {})) {
+    for (const field of entityDef?.fields ?? []) {
+      if (!field?.name) continue;
+      const candidates = index.get(field.name) ?? [];
+      candidates.push({
+        entity,
+        type: field.type ?? null,
+        columnType: field.columnType ?? null,
+        column: field.column ?? null,
+        enumValues: field.enumValues ?? null,
+      });
+      index.set(field.name, candidates);
+    }
+  }
+  return index;
+}
+
+function f20LookupContractField(index, entry) {
+  const candidates = index.get(entry.key);
+  if (!candidates?.length) return null;
+  if (candidates.length === 1) return candidates[0];
+  return (entry.column && candidates.find(c => c.column === entry.column)) || candidates[0];
+}
+
+function f20LiteralString(node) {
+  return node?.type === 'StringLiteral' ? node.value : null;
+}
+
+/**
+ * Flatten an ObjectExpression into a name → value-node map, reporting whether it
+ * carries a spread (which could inject `filterMode` from elsewhere).
+ */
+function f20ReadObjectProps(objectNode) {
+  const props = new Map();
+  let hasSpread = false;
+  for (const prop of objectNode.properties ?? []) {
+    if (prop?.type === 'SpreadElement' || prop?.type === 'SpreadProperty') {
+      hasSpread = true;
+      continue;
+    }
+    if (prop?.computed) continue;
+    const name = prop?.key?.name ?? f20LiteralString(prop?.key);
+    if (name) props.set(name, prop.value);
+  }
+  return { props, hasSpread };
+}
+
+/**
+ * Turn an ObjectExpression into a grid column descriptor, or null when it has no
+ * string-literal `key` property (i.e. it is not a statically readable column).
+ */
+function f20ToColumnEntry(objectNode) {
+  const { props, hasSpread } = f20ReadObjectProps(objectNode);
+  const key = f20LiteralString(props.get('key'));
+  if (key === null) return null;
+
+  const typeNode = props.get('type');
+  const type = f20LiteralString(typeNode);
+  const hasFilterMode = props.has('filterMode');
+  const filterModeResolved = !hasFilterMode || f20LiteralString(props.get('filterMode')) !== null;
+
+  return {
+    key,
+    column: f20LiteralString(props.get('column')),
+    type,
+    hasFilterMode,
+    hasBackendFilterKey: props.has('backendFilterKey'),
+    indeterminate: hasSpread || (typeNode !== undefined && type === null) || !filterModeResolved,
+  };
+}
+
+/** Every statically readable column descriptor found in any column-array literal. */
+function f20CollectColumnEntries(ast, walkAst) {
+  const entries = [];
+  walkAst(ast, (node) => {
+    if (node.type !== 'ArrayExpression') return;
+    const candidates = (node.elements ?? [])
+      .filter(element => element?.type === 'ObjectExpression')
+      .map(f20ToColumnEntry)
+      .filter(Boolean);
+    entries.push(...candidates);
+  });
+  return entries;
+}
+
+async function f20ParseFile(filePath, shared) {
+  if (!f20AstCache.has(filePath)) {
+    let ast = null;
+    try {
+      ast = shared.parseModuleSource(await readFile(filePath, 'utf-8'), filePath);
+    } catch {
+      ast = null; // unparseable custom module — not this rule's business
+    }
+    f20AstCache.set(filePath, ast);
+  }
+  return f20AstCache.get(filePath);
+}
+
+function f20CheckEntry({ entry, artifactName, index, rules, relFile }) {
+  if (entry.type !== 'custom' || entry.hasFilterMode || entry.indeterminate) return null;
+  // Neither `column` (AD field) nor `backendFilterKey` means a purely
+  // client-rendered synthetic cell with no backend property to filter against:
+  // `isFilterableColumn` in AdvancedFilterBuilder.jsx drops exactly this shape
+  // from the Advanced Filter field list (ETP-4609), so there is no filter mode
+  // to get wrong and demanding one would be the wrong remedy.
+  if (!entry.column && !entry.hasBackendFilterKey) return null;
+  const field = f20LookupContractField(index, entry);
+  if (!field) return null; // purely synthetic render cell — no backing column
+  const expected = f20ExpectedMode(field);
+  if (expected === 'text') return null;
+  // An `_ID` column (or an explicit backendFilterKey) already resolves to the
+  // identifier path at runtime, so annotating it would be pure noise.
+  if (expected === 'identifier' && (/_ID$/i.test(entry.column ?? '') || entry.hasBackendFilterKey)) return null;
+  if (isF20Allowlisted(rules, artifactName, entry.key)) return null;
+
+  const typeLabel = field.columnType ?? field.type ?? 'unknown';
+  return violation(
+    'F20', artifactName, 'BLOCK',
+    `custom grid column '${entry.key}' in ${relFile} declares no filterMode, but contract field type '${typeLabel}' implies filterMode '${expected}'`,
+    `Add filterMode: '${expected}' to the '${entry.key}' column, or add { "artifact": "${artifactName}", "key": "${entry.key}", "reason": "..." } to cli/src/validate-pipeline-f20-allowlist.json.`,
+  );
+}
+
+async function f20CheckFile({ filePath, artifactName, index, rules, root, shared }) {
+  const ast = await f20ParseFile(filePath, shared);
+  if (!ast) return null;
+  const relFile = shared.repoRelative(root, filePath);
+  for (const entry of f20CollectColumnEntries(ast, shared.walkAst)) {
+    const found = f20CheckEntry({ entry, artifactName, index, rules, relFile });
+    if (found) return found;
+  }
+  return null;
+}
+
+async function f20CustomFiles(artifactDir, artifactName, root, shared) {
+  const dirs = [
+    join(root, 'tools', 'app-shell', 'src', 'windows', 'custom', artifactName),
+    join(artifactDir, 'custom'),
+  ];
+  const files = [];
+  for (const dir of dirs) {
+    if (!(await dirExists(dir))) continue;
+    files.push(...shared.collectSourceFiles(
+      dir,
+      filePath => shared.isJavaScriptModule(filePath) && !filePath.split(sep).includes('__tests__'),
+    ));
+  }
+  return files;
+}
+
+/**
+ * F20: a hand-written grid column declared `type: 'custom'` must declare an
+ * explicit `filterMode` whenever the contract says the underlying field is not
+ * textual (ETP-4681).
+ *
+ * WHY: `type: 'custom'` means the cell has a bespoke `render`, so the runtime
+ * resolver (`resolveFilterMode` in app-shell-core/lib/gridQuery.js) cannot infer
+ * the data type — it falls through the `_ID` foreign-key heuristic to `'text'`.
+ * A numeric or date column then silently offers text-only operators, and a
+ * preloaded condition such as `outstandingAmount greaterThan 0` renders with an
+ * empty operator select.
+ *
+ * SCOPE: hand-written custom components only — both conventions
+ * (`tools/app-shell/src/windows/custom/<window>/` and `artifacts/<window>/custom/`).
+ * Generated tables are correct by construction (the generator emits the concrete
+ * type), so a window with no custom directory is never reported. Columns are
+ * matched to `frontendContract.entities.*.fields[].name`; a column with no
+ * contract counterpart is a synthetic render cell and is ignored.
+ *
+ * LIMITATIONS (deliberate, to keep the inference noise-free):
+ *   - A `custom` column that declares neither `column` nor `backendFilterKey` is
+ *     never reported, even when its `key` matches a numeric/date contract field:
+ *     `isFilterableColumn` (the ETP-4609 guard in AdvancedFilterBuilder.jsx) drops
+ *     that exact shape from the Advanced Filter field list, so it has no backend
+ *     property to filter against and no filter mode to get wrong. A column opting
+ *     back in with `filterable: true` + a bespoke `buildCriteria` is skipped too.
+ *   - Static analysis only. A column object carrying a spread, or whose `type` /
+ *     `filterMode` is not a string literal, is treated as indeterminate and skipped —
+ *     `filterMode` could be injected dynamically.
+ *   - A column whose own `column` value is not a string literal loses both the
+ *     `_ID` exemption and the synthetic-cell exemption above, so a `foreignKey`
+ *     field may be reported; declare `filterMode: 'identifier'` or allowlist it.
+ *   - Only the FIRST violation per artifact is reported (same as F18).
+ *   - Runs on the committed contract, so a not-yet-regenerated contract can mask
+ *     or invent a type mismatch — F1/F2 cover that staleness.
+ *
+ * @param {string} artifactDir
+ * @param {string} artifactName
+ * @param {string} [root] - repo root (for resolving app-shell custom paths)
+ * @param {Array<{artifact: string, key: string}>} [allowlist] - override; empty means "load the side file"
+ * @returns {Promise<object|null>}
+ */
+export async function ruleF20(artifactDir, artifactName, root = ROOT, allowlist = []) {
+  const contractPath = join(artifactDir, 'contract.json');
+  if (!(await fileExists(contractPath))) return null;
+
+  let shared;
+  try {
+    shared = await import('./quality-gate/checks/shared.js');
+  } catch {
+    return skipped('F20', artifactName, 'JS parser unavailable — F20 check skipped');
+  }
+
+  const files = await f20CustomFiles(artifactDir, artifactName, root, shared);
+  if (files.length === 0) return null; // generated tables are correct by construction
+
+  let contract;
+  try {
+    contract = await readJSON(contractPath);
+  } catch {
+    return skipped('F20', artifactName, 'contract.json could not be parsed — F20 check skipped');
+  }
+
+  const index = f20IndexContractFields(contract);
+  if (index.size === 0) return null;
+
+  const rules = allowlist.length > 0 ? allowlist : await loadF20Allowlist();
+  for (const filePath of files) {
+    const found = await f20CheckFile({ filePath, artifactName, index, rules, root, shared });
+    if (found) return found;
+  }
+  return null;
+}
+
+// ---------------------------------------------------------------------------
 // Artifact discovery
 // ---------------------------------------------------------------------------
 
@@ -1306,6 +1599,7 @@ async function runWindowChecks(artifactDir, artifactName, registryContent, root,
     { rule: 'F17', run: () => ruleF17(artifactDir, artifactName) },
     { rule: 'F18', run: () => ruleF18(artifactDir, artifactName) },
     { rule: 'F19', run: () => ruleF19(artifactDir, artifactName, root, f19Allowlist) },
+    { rule: 'F20', run: () => ruleF20(artifactDir, artifactName, root) },
   ], skipSet);
 }
 
