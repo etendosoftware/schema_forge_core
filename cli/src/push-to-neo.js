@@ -280,6 +280,8 @@ export async function pushToNeo(windowName, options = {}) {
   const entityPreconditions = buildEntityPreconditionsMap(decisionsData);
   const entityAgentPrompts = buildEntityAgentPromptMap(decisionsData);
   const specAgentPrompt = normalizeAgentPrompt(decisionsData.window?.agentPrompt);
+  // Opt-out MCP visibility (ETP-4278): only an explicit `false` hides the spec.
+  const specShowInMcp = decisionsData.window?.showInMcp;
   const allFields = extractFieldsFromContract(contract.backendContract);
 
   if (options.dryRun === true) {
@@ -295,6 +297,7 @@ export async function pushToNeo(windowName, options = {}) {
     entityPreconditions,
     entityAgentPrompts,
     specAgentPrompt,
+    specShowInMcp,
     specName,
     windowId,
     moduleId: options.moduleId || process.env.SF_MODULE_ID || GO_MODULE_ID,
@@ -422,6 +425,7 @@ export function buildSpecUpsertParams(ctx, existingSpecId) {
     specType: 'W',
     specId: existingSpecId,
     agentPrompt: ctx.specAgentPrompt ?? null,
+    showInMcp: ctx.specShowInMcp,
     audit: ctx.auditOpts,
   };
 }

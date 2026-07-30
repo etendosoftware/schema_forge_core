@@ -223,6 +223,21 @@ describe('push-to-neo agentPrompt upsert params', () => {
     assert.equal(params.name, 'purchase-order');
   });
 
+  it('forwards window.showInMcp opt-out into upsertSpec params', () => {
+    // Absent → undefined (upsertSpec treats anything but false as 'Y').
+    const shown = buildSpecUpsertParams({
+      specName: 'purchase-order', moduleId: 'MOD1', windowId: 'WIN1', auditOpts: {},
+    }, 'SPEC1');
+    assert.equal(shown.showInMcp, undefined);
+
+    // Explicit false is the only value that hides the spec from the MCP.
+    const hidden = buildSpecUpsertParams({
+      specName: 'return-to-vendor', moduleId: 'MOD1', windowId: 'WIN1',
+      specShowInMcp: false, auditOpts: {},
+    }, 'SPEC2');
+    assert.equal(hidden.showInMcp, false);
+  });
+
   it('passes field agentPrompt into upsertField params', () => {
     const params = buildFieldUpdateParams(
       {
