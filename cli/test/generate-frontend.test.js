@@ -2690,3 +2690,89 @@ describe('resolveSecondaryTabDefs headerEntity collision (ETP-4482)', () => {
     assert.equal(formImportCount, 1, 'AccountingForm must be imported exactly once');
   });
 });
+
+// ---------------------------------------------------------------------------
+// secondaryTabs.<key>.maxDetailLines (ETP-4565) — caps a single secondary tab's
+// child count, mirroring window.maxDetailLines for the detailEntity pattern but
+// scoped per-tab so a window with several secondaryTabs (e.g. contacts'
+// customerAccounting / vendorAccounting) can cap each independently.
+// ---------------------------------------------------------------------------
+
+function buildSecondaryTabMaxLinesContract(accountingCfgOverrides = {}) {
+  return {
+    frontendContract: {
+      window: {
+        id: '900', name: 'Product', primaryEntity: 'product', category: 'masterdata',
+        secondaryTabs: {
+          accounting: {
+            label: 'Accounting',
+            tabOrder: 1,
+            addLineFields: ['fixedAsset'],
+            ...accountingCfgOverrides,
+          },
+        },
+      },
+      entities: {
+        product: {
+          fields: [
+            { name: 'name', column: 'Name', type: 'string', tsType: 'string',
+              visibility: 'editable', required: true, grid: true, form: true },
+          ],
+          searchableFields: ['name'],
+          computedFields: [],
+        },
+        accounting: {
+          fields: [
+            { name: 'fixedAsset', column: 'M_Product_Category_ID', type: 'foreignKey', tsType: 'string',
+              visibility: 'editable', required: true, grid: true, form: true, reference: 'ProductCategory' },
+          ],
+          searchableFields: [],
+          computedFields: [],
+        },
+      },
+    },
+    backendContract: { processEndpoints: [] },
+  };
+}
+
+// Locates the accounting secondary-tab entry's full literal, from its opening
+// `{` through its OWN matching `}` — a plain `[^}]*` regex (or a naive
+// `indexOf('},')`) stops at the first inner `}`, which here is the nested
+// `addLineFields: { entry: [ { key: 'fixedAsset', ... }, ], ... }` sub-object
+// (itself containing another nested entry-literal), truncating before
+// trailing top-level props like `maxDetailLines`. Tracks brace depth instead
+// so it always returns the whole entry regardless of nesting.
+function extractSecondaryTabEntry(code, key) {
+  const keyIdx = code.indexOf(`key: '${key}'`);
+  assert.ok(keyIdx >= 0, `expected a secondary-tab entry for key '${key}'`);
+  const start = code.lastIndexOf('{', keyIdx);
+  let depth = 0;
+  for (let i = start; i < code.length; i++) {
+    if (code[i] === '{') depth++;
+    else if (code[i] === '}') {
+      depth--;
+      if (depth === 0) return code.slice(start, i + 1);
+    }
+  }
+  throw new Error(`unbalanced braces looking for the end of the '${key}' secondary-tab entry`);
+}
+
+describe('resolveSecondaryTabDefs / buildSecondaryTabPropEntry — maxDetailLines (ETP-4565)', () => {
+  it('emits maxDetailLines: 1 on the secondary tab entry when declared', () => {
+    const code = generatePageComponent('product', null, buildSecondaryTabMaxLinesContract({ maxDetailLines: 1 }));
+    const entry = extractSecondaryTabEntry(code, 'accounting');
+    assert.ok(entry.includes('maxDetailLines: 1'), 'expected maxDetailLines: 1 in the secondary-tab entry');
+  });
+
+  it('emits maxDetailLines: 0 (import-only-style cap) — must check `!= null`, not truthiness', () => {
+    const code = generatePageComponent('product', null, buildSecondaryTabMaxLinesContract({ maxDetailLines: 0 }));
+    const entry = extractSecondaryTabEntry(code, 'accounting');
+    assert.ok(entry.includes('maxDetailLines: 0'), 'expected maxDetailLines: 0 to be emitted, not silently dropped');
+  });
+
+  it('omits maxDetailLines entirely when not declared (default: uncapped)', () => {
+    const code = generatePageComponent('product', null, buildSecondaryTabMaxLinesContract());
+    const entry = extractSecondaryTabEntry(code, 'accounting');
+    assert.ok(!entry.includes('maxDetailLines'), 'maxDetailLines must not appear when undeclared');
+  });
+});
