@@ -586,6 +586,12 @@ const FIELD_ATTR_SPECS = [
   ['excludeValueOf', 'verbatim'],
   ['customRenderer', 'verbatim'],
   ['editModal', 'verbatim'],
+  // ETP-4681 — appended at the tail on purpose: FIELD_ATTR_SPECS order is the
+  // emitted key order, and the offline regen drift check byte-compares
+  // generated output. Adding these anywhere else would rewrite every window's
+  // contract.json. Absent on every window today, so output is unchanged.
+  ['filterMode', 'verbatim'],
+  ['backendFilterKey', 'verbatim'],
 ];
 
 function mapFieldAttributes(f, mapped) {
