@@ -1,0 +1,15 @@
+{
+  "version": "v2",
+  "frontendContract": {
+    "window": { "primaryEntity": "header" },
+    "entities": {
+      "header": {
+        "searchableFields": ["documentNo"],
+        "fields": [
+          { "name": "documentNo", "column": "DocumentNo", "type": "string" },
+          { "name": "grandTotalAmount", "column": "GrandTotal", "type": "amount" }
+        ]
+      }
+    }
+  }
+}
