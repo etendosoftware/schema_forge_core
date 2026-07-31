@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { Lock, Mail, Eye, EyeOff, Loader2, ArrowLeft, Check } from 'lucide-react';
 import { Button } from '@etendosoftware/app-shell-core/components/ui/button';
 import { useUI, useLocaleSwitch } from '@etendosoftware/app-shell-core/i18n';
-import { loginAccount, loginWithSsoProvider, requestPasswordReset, confirmPasswordReset, fetchAccount, fetchEnvironments } from '../api.js';
+import { loginAccount, loginWithSsoProvider, requestPasswordReset, confirmPasswordReset, fetchAccount, fetchEnvironments, AUTH_ERROR_UI_KEYS } from '../api.js';
 import { getConfiguredSsoProviders, renderSsoProviderButton } from '../sso.js';
 import { trackOnboarding } from '../tracking.js';
 import { AuthShell } from '../components/AuthShell.jsx';
@@ -192,7 +192,9 @@ export function LoginStep({ config, stepData, onNext, onBack, goToStep, setToken
         action: 'login',
         status: 'failed',
       });
-      setLoginError(ui(err.code || 'onboardingConnectionError'));
+      // ETP-4664: translate by the backend's stable error code — never show its
+      // raw (English) message directly.
+      setLoginError(ui(AUTH_ERROR_UI_KEYS[err.code] || 'onboardingConnectionError'));
       setLoginLoading(false);
     }
   };

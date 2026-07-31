@@ -11,6 +11,25 @@ export const ONBOARDING_ERROR_CODES = {
   missingResult: 'onboardingMissingResult',
 };
 
+// ETP-4664 — maps the stable, SCREAMING_SNAKE `error.code` returned by the
+// register/login endpoints (EtendoGoJwtServlet) to the i18n key that
+// translates it. `error.code` is machine-readable and NOT itself a valid
+// dictionary key — always resolve it through this table (or the
+// 'onboardingConnectionError' fallback) instead of passing it to ui() directly.
+export const AUTH_ERROR_UI_KEYS = {
+  WEAK_PASSWORD: 'onboardingWeakPassword',
+  INVALID_REQUEST: 'onboardingInvalidRequest',
+  REGISTER_MISSING_FIELDS: 'onboardingRegisterMissingFields',
+  REGISTER_EMPTY_FIELDS: 'onboardingRegisterEmptyFields',
+  INVALID_EMAIL_FORMAT: 'onboardingInvalidEmailFormat',
+  EMAIL_ALREADY_REGISTERED: 'onboardingEmailAlreadyRegistered',
+  REGISTER_SERVER_ERROR: 'onboardingRegisterServerError',
+  LOGIN_MISSING_FIELDS: 'onboardingLoginMissingFields',
+  INVALID_CREDENTIALS: 'onboardingInvalidCredentials',
+  LOGIN_SERVER_ERROR: 'onboardingLoginServerError',
+  INTERNAL_ERROR: 'onboardingConnectionError',
+};
+
 const SSO_PAYLOAD_BUILDERS = {
   google: (payload = {}) => ({
     credential: payload.credential,
