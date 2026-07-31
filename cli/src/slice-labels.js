@@ -31,7 +31,7 @@ import { SHARED_LABEL_COLUMNS } from './shared-label-columns.js';
 /**
  * Windows that have a contract but never load as a standalone UI chunk
  * (consumed via fetch by other components). They must NOT get a labels.js,
- * and F18 must not flag them as missing. Mirrors registry.js `apiOnlyWindows`.
+ * and F19 must not flag them as missing. Mirrors registry.js `apiOnlyWindows`.
  */
 const API_ONLY_WINDOWS = new Set([
   'sii-config', 'tbai-config', 'verifactu-config',
@@ -75,7 +75,7 @@ export function collectWindowColumns(contract) {
 /**
  * Columns that are actually rendered (form or grid). A missing label only hurts
  * the user for these — non-rendered columns (e.g. custom `EM_*` with form/grid
- * false) carry no user-visible label, so they must not trip the F18 warning.
+ * false) carry no user-visible label, so they must not trip the F19 warning.
  * @returns {Set<string>}
  */
 export function collectRenderedColumns(contract) {
@@ -178,7 +178,7 @@ function windowGeneratedDir(artifactsDir, name) {
  *
  * Emits only `labels.js` — the slice is a build-time artifact (gitignored),
  * regenerated on every build, so there is no committed slice to go stale and no
- * manifest checksum to maintain. F18 validates by reproducing and comparing the
+ * manifest checksum to maintain. F19 validates by reproducing and comparing the
  * slice content directly (not via a stored checksum).
  */
 export async function sliceWindow(name, dicts, { artifactsDir, dryRun = false }) {
@@ -187,7 +187,7 @@ export async function sliceWindow(name, dicts, { artifactsDir, dryRun = false })
   const rendered = collectRenderedColumns(contract);
   const { slice, missing } = sliceLabels(columns, dicts);
 
-  // A missing label only matters for rendered columns — that is the F18 signal.
+  // A missing label only matters for rendered columns — that is the F19 signal.
   const missingRendered = {};
   for (const [locale, cols] of Object.entries(missing)) {
     const hit = cols.filter(c => rendered.has(c));
