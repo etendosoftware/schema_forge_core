@@ -58,6 +58,20 @@ export function selectPreferredOrg(role) {
 // the channel is gone. Purging keys a pre-cookie session may have left behind
 // is app-shell-core's purgeLegacyAuthStorage, which owns the canonical list.
 
+// sf_last_environment is a UX preference, not authentication state. It
+// deliberately survives logout and must never be grouped with the removed
+// sf_auth_* handoff keys.
+export const LAST_ENVIRONMENT_KEY = 'sf_last_environment';
+
+export function rememberEnvironment(clientId) {
+  if (typeof localStorage === 'undefined' || !localStorage || !clientId) return;
+  try {
+    localStorage.setItem(LAST_ENVIRONMENT_KEY, clientId);
+  } catch {
+    // Remembering the choice is an optimisation and must never block login.
+  }
+}
+
 export function isProfileStepValid(form) {
   return Boolean(form.fullName?.trim() && form.countryCode);
 }

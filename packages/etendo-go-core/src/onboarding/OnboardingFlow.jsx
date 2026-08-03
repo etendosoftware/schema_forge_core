@@ -3,6 +3,7 @@ import { Loader2 } from 'lucide-react';
 import { useUI } from '@etendosoftware/app-shell-core/i18n';
 import { purgeLegacyAuthStorage } from '@etendosoftware/app-shell-core/auth';
 import { fetchSession, fetchEnvironments, loginEnvironment, fetchOnboardingDraft, saveOnboardingDraft } from './api.js';
+import { rememberEnvironment } from './state.js';
 import { buildAppReturnToHref, getSafeReturnTo } from './oauthReturnTo.js';
 import { trackOnboarding } from './tracking.js';
 import { createOnboardingLogout } from './logout.js';
@@ -121,7 +122,9 @@ export function OnboardingFlow({ steps = [], config = {} }) {
     }
   }, [apiBase, goToStep, config.defaultForm, steps]);
 
-  // Route by environments list: 0 -> profile (restore draft), 1+ -> loginEnvironment and redirect
+  // Route by environments list: 0 -> profile (restore draft), 1+ -> auto-login and
+  // redirect. Accounts with several environments return to the last one used;
+  // a stale preference falls back to the first environment.
   const routeByEnvironments = useCallback(async (csrfToken) => {
     setLoadingEnvs(true);
     try {
@@ -130,15 +133,16 @@ export function OnboardingFlow({ steps = [], config = {} }) {
       if (envs.length === 0) {
         await restoreOnboardingDraft();
       } else {
-        // Auto-login to first environment
         try {
-          const env = envs[0];
+          const lastUsedId = localStorage.getItem('sf_last_environment');
+          const env = envs.find((candidate) => candidate.clientId === lastUsedId) || envs[0];
           trackOnboarding(config, 'onboarding_environment_enter_submitted', {
             action: 'enter_environment',
             status: 'started',
           });
           const data = await loginEnvironment(fetch, apiBase, csrfToken, env);
           if (data.status === 'success') {
+            rememberEnvironment(env.clientId);
             // Clear all SW caches on login to guarantee fresh resources
             if ('caches' in window) {
               try {

@@ -143,6 +143,64 @@ describe('resolveCurated — rawField.defaultValue passthrough', () => {
 });
 
 // ---------------------------------------------------------------------------
+// decisions.json defaultValue override (ETP-4671) — buildCuratedField
+//
+// Root cause: buildCuratedField only ever copied rawField.defaultValue; a
+// decisions.json field-level defaultValue override was silently dropped for
+// any field carrying a raw/computed AD default (e.g. movementQuantity on
+// goods-receipt lines: decisions.json says "1", the raw AD default is "0",
+// and "0" always won). Confirmed live via the pipeline (make regen) and via
+// contract.mcp.json showing the same wrong value.
+// ---------------------------------------------------------------------------
+
+describe('resolveCurated — decisions.json defaultValue overrides raw AD default', () => {
+  const schemaRaw = makeSchema('order', [
+    {
+      name: 'movementQuantity',
+      columnName: 'MovementQty',
+      label: 'Movement Quantity',
+      type: 'number',
+      visibility: 'editable',
+      derivation: { type: 'computed', source: '0' },
+      defaultValue: '0',
+    },
+  ]);
+
+  it('uses the decision defaultValue instead of the raw AD default when explicitly set', async () => {
+    const decisions = makeDecisions('order', {
+      name: 'order',
+      fields: { movementQuantity: { defaultValue: '1' } },
+    });
+    const { schema } = await resolveCurated(schemaRaw, { rules: [] }, decisions);
+    const field = schema.entities[0].fields.find(f => f.name === 'movementQuantity');
+    assert.equal(field.defaultValue, '1',
+      "decisions.json's defaultValue must win over the raw/computed AD default");
+  });
+
+  it('falls back to the raw AD default when the decision does not set defaultValue', async () => {
+    const decisions = makeDecisions('order', {
+      name: 'order',
+      fields: { movementQuantity: {} },
+    });
+    const { schema } = await resolveCurated(schemaRaw, { rules: [] }, decisions);
+    const field = schema.entities[0].fields.find(f => f.name === 'movementQuantity');
+    assert.equal(field.defaultValue, '0',
+      'raw AD default must still apply when decisions.json has no override');
+  });
+
+  it('honors an explicit defaultValue: null decision as "no default" (mirrors derivation: null)', async () => {
+    const decisions = makeDecisions('order', {
+      name: 'order',
+      fields: { movementQuantity: { defaultValue: null } },
+    });
+    const { schema } = await resolveCurated(schemaRaw, { rules: [] }, decisions);
+    const field = schema.entities[0].fields.find(f => f.name === 'movementQuantity');
+    assert.equal(field.defaultValue, undefined,
+      'defaultValue: null in decisions should suppress the raw default entirely');
+  });
+});
+
+// ---------------------------------------------------------------------------
 // derivation: null suppression — lines 370-371
 // ---------------------------------------------------------------------------
 

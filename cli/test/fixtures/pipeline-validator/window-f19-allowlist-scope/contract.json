@@ -1,0 +1,14 @@
+{
+  "version": "v2",
+  "frontendContract": {
+    "window": { "primaryEntity": "widget" },
+    "entities": {
+      "widget": {
+        "fields": [
+          { "name": "asset", "column": "A_Asset_ID", "required": false }
+        ]
+      }
+    }
+  },
+  "agentProfile": {}
+}

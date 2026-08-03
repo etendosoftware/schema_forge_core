@@ -19,7 +19,14 @@ import { buildFieldValidation } from './lib/field-validation.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
-const ROOT = join(__dirname, '..', '..');
+// SF_ROOT (exported by the Makefile / cli/sf-local — see docs/repo-topology.md)
+// lets LOCAL_CORE dev mode run this core script's CODE against the FUNCTIONAL
+// repo's DATA (artifacts/). Every other extractor/generator in cli/src/ already
+// honors this override (extract-fields.js, extract-rules.js, push-to-neo.js,
+// regen-all.js, pipeline.js, …) — this one was missing it, so `./cli/sf-local
+// sf-resolve-curated --window <w> --write` silently read/wrote schema_forge_core's
+// OWN artifacts/ dir instead of the caller's.
+const ROOT = process.env.SF_ROOT || join(__dirname, '..', '..');
 
 // ---------------------------------------------------------------------------
 // Entity name helpers
@@ -193,11 +200,23 @@ const FIELD_DECISION_COPY_PROPS = [
   'grow',
   'columnWidth',
   'gridReadOnly',
+  // ETP-4603 — composite list column. On a "host" grid field, an object that
+  // absorbs sibling fields into one column: { subtitle, media: { field, kind,
+  // fallback }, parts: [{ field, sortable, filterable }], partSeparator }. The
+  // generator emits it as a `type: 'multiField'` column and hides the absorbed
+  // sibling columns (their data still arrives — the list fetch has no projection).
+  'multiField',
   'inlineToggle',
   'inlineEdit',
   'noTrailing',
   'inline',
   'addLineFromSibling',
+  // Opt-in (ETP-4529): collect this field into the ONE synthetic `dimensionsPanel`
+  // grid column instead of rendering it as its own column. Read regardless of the
+  // field's own `grid` value (typically `grid: false`, since it renders inside the
+  // expand-row panel, not as a standalone column) — see generate-frontend.js's
+  // generateTableComponent.
+  'dimensionsPanel',
   // Selector exclusion: filter out the option whose id equals the current value of
   // another field on the same row (e.g. newStorageBin excludeValueOf storageBin —
   // can't move stock to the same bin it came from).
@@ -235,6 +254,14 @@ const FIELD_DECISION_COPY_PROPS = [
   // (not disabled/hidden via CSS) from the grid column and from any
   // statusPill that references it, whenever useHasCapability(key) is false.
   'visibleWhenCapability',
+  // ETP-4681 — grid filter overrides consumed by resolveFilterMode() /
+  // getFilteredKey() in app-shell-core's gridQuery.js. Only needed when the
+  // emitted column `type` hides the real data type: a `columnType` override of
+  // 'custom' (or any type resolveFilterMode does not recognize) degrades the
+  // advanced filter to text operators. `backendFilterKey` overrides the entity
+  // property the criteria is built against.
+  'filterMode',
+  'backendFilterKey',
 ];
 
 const FIELD_RAW_COPY_PROPS = [
@@ -242,6 +269,11 @@ const FIELD_RAW_COPY_PROPS = [
   'enumValues',
   'processId',
   'processType',
+  // EPL-1807 computed-column attributes (freshness indicator). Passed through
+  // unchanged; generate-contract.js derives the compact `computed` hint from them.
+  'computedMode',
+  'refreshMode',
+  'computationFunction',
 ];
 
 function resolveFieldVisibility(rawField, fieldDecision, discardPatterns) {
@@ -295,6 +327,10 @@ function applyFieldDecisionProps(field, fieldDecision) {
   if (fieldDecision.summable) field.summable = true;
   if (fieldDecision.businessCritical) field.businessCritical = true;
   if (fieldDecision.gridOrder != null) field.gridOrder = fieldDecision.gridOrder;
+  // EPL-1807 escape hatch: force-show/force-hide the computed freshness indicator
+  // regardless of AD auto-detection. `false` is meaningful (force-hide), so copy
+  // it explicitly rather than via the truthy-only decision-copy loop.
+  if (fieldDecision.computedHint !== undefined) field.computedHint = fieldDecision.computedHint;
   applyFlatBound(field, fieldDecision, 'min');
   applyFlatBound(field, fieldDecision, 'max');
   // ETP-4542 — flat `integer` bound (whole-number constraint), same sentinel handling as min/max.
@@ -384,7 +420,16 @@ function buildCuratedField(rawField, fieldDecision, discardPatterns) {
   if (isVisible && Array.isArray(fieldDecision.forceCalloutFields) && fieldDecision.forceCalloutFields.length > 0)
     field.forceCalloutFields = fieldDecision.forceCalloutFields;
 
-  if (rawField.defaultValue !== undefined) {
+  // decisions.json can override a field's default value (e.g. movementQuantity: "1" on
+  // goods-receipt lines instead of the raw/computed AD default "0"). Mirrors the
+  // `derivation: null` suppression pattern below: an explicit `defaultValue: null` means
+  // "no default at all" (suppress the raw value), any other explicit value wins outright,
+  // and an absent key falls back to the raw AD-derived default exactly as before (ETP-4671).
+  if (Object.prototype.hasOwnProperty.call(fieldDecision, 'defaultValue')) {
+    if (fieldDecision.defaultValue !== null) {
+      field.defaultValue = fieldDecision.defaultValue;
+    }
+  } else if (rawField.defaultValue !== undefined) {
     field.defaultValue = rawField.defaultValue;
   }
 

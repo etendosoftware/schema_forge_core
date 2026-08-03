@@ -3,6 +3,7 @@ import { Loader2, Building2, Plus, RefreshCw } from 'lucide-react';
 import { Button } from '@etendosoftware/app-shell-core/components/ui/button';
 import { useUI } from '@etendosoftware/app-shell-core/i18n';
 import { loginEnvironment, fetchEnvironments } from '../api.js';
+import { rememberEnvironment } from '../state.js';
 import { buildAppReturnToHref, getSafeReturnTo } from '../oauthReturnTo.js';
 import { trackOnboarding } from '../tracking.js';
 import { PageHeader } from '../components/PageHeader.jsx';
@@ -22,6 +23,7 @@ export function EnvSelectStep({ config, stepData, onNext, onBack, goToStep, toke
     try {
       const data = await loginEnvironment(fetch, apiBase, token, env);
       if (data.status === 'success') {
+        rememberEnvironment(env.clientId);
         // Clear all SW caches on login to guarantee fresh resources
         if ('caches' in window) {
           try {

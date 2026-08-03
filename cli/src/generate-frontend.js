@@ -188,6 +188,16 @@ function optProp(name, val) {
 }
 
 /**
+ * Emit `, <name>: '<val>'` for a string-valued optional prop, single-quote
+ * escaped. Returns '' when the value is absent, so callers stay byte-identical
+ * for windows that do not declare the prop.
+ */
+function quotedProp(name, val) {
+  if (!val) return '';
+  return `, ${name}: '${String(val).replace(/'/g, "\\'")}'`;
+}
+
+/**
  * Return `fragment` when `cond` is truthy, otherwise an empty string.
  * Used to conditionally append optional prop fragments to generated code.
  */
@@ -253,12 +263,141 @@ export function pick(cond, whenTrue, whenFalse) {
 }
 
 /**
+
+ * ETP-4603 — resolve the declared `parts` of a `multiField` host field against
+ * the contract so each part behaves like a real column for per-part sort and
+ * advanced-filter expansion. Each part's `field` is looked up in `fieldByName`
+ * to fill `key/column/type/label(s)`; unresolved fields degrade to a plain
+ * string key. A part may carry its own `labels`/`label`, which override the
+ * contract field's. `sortable`/`filterable` are only emitted when explicitly false
+ * (both default true downstream). When the decorator omits `parts`, defaults to
+ * [title, subtitle] (subtitle only when present).
+ */
+export function resolveMultiFieldParts(f, fieldByName) {
+  const mf = f.multiField;
+  const partDefs = (Array.isArray(mf.parts) && mf.parts.length > 0)
+    ? mf.parts
+    : [{ field: f.name }, ...(mf.subtitle ? [{ field: mf.subtitle }] : [])];
+  return partDefs.map(p => {
+    const cf = fieldByName.get(p.field);
+    const part = cf
+      ? { key: cf.name, column: cf.column, type: mapFieldType(cf) }
+      : { key: p.field, column: p.field, type: 'string' };
+    // Decorator part label(s) win over the contract field's own so a host like
+    // Product can show "Identifier & Name" without renaming the underlying field.
+    const labels = p.labels ?? cf?.labels;
+    const label = p.label ?? cf?.label;
+    if (labels) part.labels = labels;
+    if (label) part.label = label;
+    if (p.sortable === false) part.sortable = false;
+    if (p.filterable === false) part.filterable = false;
+    return part;
+  });
+}
+
+/**
+ * ETP-4603 — emit the runtime column object for a `multiField` host grid field:
+ * a single composite column (`type: 'multiField'`) whose renderer reads
+ * `row[title]` (bold), `row[subtitle]` (chip) and `row[media.field]` (image),
+ * and whose `parts` drive per-part header sort + advanced-filter expansion.
+ */
+export function buildMultiFieldColumnLine(f, fieldByName) {
+  const mf = f.multiField;
+  const esc = (v) => String(v).replace(/'/g, "\\'");
+  const parts = resolveMultiFieldParts(f, fieldByName);
+  const titlePart = `, title: '${esc(f.name)}'`;
+  const subtitlePart = mf.subtitle ? `, subtitle: '${esc(mf.subtitle)}'` : '';
+  const mediaPart = jsonWrapIf(', media: ', mf.media);
+  const separatorPart = mf.partSeparator ? `, partSeparator: '${esc(mf.partSeparator)}'` : '';
+  const partsPart = `, parts: ${JSON.stringify(parts)}`;
+  return `  { key: '${esc(f.name)}', column: '${esc(f.column)}', type: 'multiField'${titlePart}${subtitlePart}${mediaPart}${partsPart}${separatorPart} },`;
+}
+
+/**
+ * ETP-4603 — names of grid fields absorbed by any `multiField` host (its
+ * subtitle, media field, and each non-host part). These must NOT render as their
+ * own columns; their data still arrives because the list fetch sends no field
+ * projection (NEO Headless returns every configured entity field).
+ */
+export function collectMultiFieldAbsorbed(gridFields) {
+  const absorbed = new Set();
+  for (const f of gridFields) {
+    const mf = f.multiField;
+    if (!mf) continue;
+    if (mf.subtitle) absorbed.add(mf.subtitle);
+    if (mf.media?.field) absorbed.add(mf.media.field);
+    const partDefs = Array.isArray(mf.parts) ? mf.parts : [];
+    for (const p of partDefs) {
+      if (p.field && p.field !== f.name) absorbed.add(p.field);
+    }
+  }
+  return absorbed;
+}
+
+/**
+ * Build one `dimensionFields` entry for the synthetic `dimensionsPanel` column
+ * (see `buildDimensionsPanelColumn` / `generateTableComponent`). Reuses the same
+ * per-field extraction the normal grid columns use above — `mapFieldType` for
+ * `type`, a static baked `label` (same convention as every other column; AD
+ * labels are already localized at extraction time), FK `reference`/`inputMode`,
+ * `required`/`lookup`/`popup` — but trimmed to what the shared building blocks
+ * that actually consume `dimensionFields` read: `DimensionsPanel.jsx`
+ * (`DimSummary`/`DimensionGrid`), `SelectorInput`, and `selectorCatalog.js`'s
+ * `getSelectorCatalogKeys` (which falls back to `field.reference` as a mock-
+ * catalog key). Badge/enum/grid-cosmetic props (badge, summable, grow, …) are
+ * deliberately NOT extracted — they only apply to a real `DataTable`/
+ * `InlineLinesPanel` grid column, not a field rendered inside the panel.
+ */
+function buildDimensionFieldLiteral(f) {
+  const type = mapFieldType(f);
+  const labelPart = f.label ? `, label: '${f.label.replace(/'/g, "\\'")}'` : '';
+  const referencePart = wrapIf(", reference: '", f.reference, "'");
+  const inputModePart = wrapIf(", inputMode: '", f.inputMode, "'");
+  const requiredPart = fragmentIf(f.required, ', required: true');
+  const lookupPart = fragmentIf(f.lookup, ', lookup: true');
+  const popupPart = fragmentIf(f.popup, ', popup: true');
+  return `    { key: '${f.name}', column: '${f.column}', type: '${type}'${labelPart}${referencePart}${inputModePart}${requiredPart}${lookupPart}${popupPart} },`;
+}
+
+/**
+ * Build the ONE synthetic `type: 'dimensionsPanel'` column literal for an
+ * entity's `dimensionFieldsRaw` (fields flagged `dimensionsPanel: true` in
+ * `decisions.json` — see docs/decisions-reference.md). Returns `''` when there
+ * are none, so the caller can always append the result: an entity with zero
+ * such fields gets byte-for-byte the same `columns` array as before this
+ * feature existed.
+ *
+ * Always emitted LAST in the columns array — simplest, least-surprising
+ * position; `gridOrder` (which only reorders `gridFieldsRaw`) does not apply
+ * to it. The panel title is baked as a `labels` map (checked before `label` by
+ * `resolveColumnLabel.js`) using the same two strings as the hand-written
+ * `dimensionsPanelTitle` i18n key (`en_US.json`/`es_ES.json`), since this
+ * `const columns = [...]` array is module-scope code — it cannot call the
+ * `useUI()` hook the way a real component body can.
+ */
+function buildDimensionsPanelColumn(dimensionFieldsRaw) {
+  if (dimensionFieldsRaw.length === 0) return '';
+  const fieldsLiteral = dimensionFieldsRaw.map(buildDimensionFieldLiteral).join('\n');
+  return `
+  { key: 'dimensions', type: 'dimensionsPanel', label: 'Accounting dimensions', labels: { en_US: 'Accounting dimensions', es_ES: 'Dimensiones contables' }, dimensionFields: [
+${fieldsLiteral}
+  ] },`;
+}
+
+/**
  * Generate a data table component for an entity.
  * Produces a thin declarative component that imports DataTable from contract-ui.
  */
 export function generateTableComponent(entityName, contract) {
   const entity = contract.frontendContract.entities[entityName];
-  const gridFieldsRaw = entity.fields.filter(f => f.grid && f.visibility !== 'discarded');
+  // ETP-4529 — fields flagged `dimensionsPanel: true` never become their own grid
+  // column: they are collected below into ONE synthetic `type: 'dimensionsPanel'`
+  // column instead (regardless of their own `grid` value — see
+  // buildDimensionsPanelColumn). Excluding them here is what makes this additive:
+  // an entity with zero such fields sees byte-for-byte the same gridFieldsRaw as
+  // before this feature existed.
+  const gridFieldsRaw = entity.fields.filter(f => f.grid && f.visibility !== 'discarded' && !f.dimensionsPanel);
+  const dimensionFieldsRaw = entity.fields.filter(f => f.dimensionsPanel && f.visibility !== 'discarded');
   // gridOrder: absolute insertion position (1-based). Only the tagged fields move;
   // all other fields stay in their original relative order.
   const pinned = [...gridFieldsRaw].filter(f => f.gridOrder != null).sort((a, b) => a.gridOrder - b.gridOrder);
@@ -274,7 +413,17 @@ export function generateTableComponent(entityName, contract) {
   // Collect known cell type render helpers needed by this table
   const neededCellTypes = new Set(gridFields.map(f => f.cellType).filter(Boolean));
 
-  const columnsArray = gridFields.map(f => {
+  // ETP-4603 — composite multiField columns: a host field's decorator absorbs
+  // sibling columns (subtitle/media/extra parts). Keep hosts; drop absorbed
+  // siblings from the column set (their data still arrives — the list fetch has
+  // no field projection).
+  const fieldByName = new Map(entity.fields.map(f => [f.name, f]));
+  const absorbedByMultiField = collectMultiFieldAbsorbed(gridFields);
+
+  const columnsArray = gridFields
+    .filter(f => f.multiField || !absorbedByMultiField.has(f.name))
+    .map(f => {
+    if (f.multiField) return buildMultiFieldColumnLine(f, fieldByName);
     const type = mapFieldType(f);
     const selectionPart = fragmentIf(f.isSelectionColumn, ', isSelectionColumn: true');
     const enumLabelsPart = ((type === 'enum' || type === 'status') && f.enumValues?.length)
@@ -315,11 +464,21 @@ export function generateTableComponent(entityName, contract) {
     const filterOnlyPart = fragmentIf((f.filterOnly || f.filterable === false), ', filterable: false');
     const dotPart = fragmentIf(f.dot === false, ', dot: false');
     const gridReadOnlyPart = fragmentIf(f.gridReadOnly, ', readOnly: true');
+    // Stored computed column (EPL-1807): carry the contract `computed` hint onto
+    // the grid column so DataTable renders the freshness clock in the header.
+    // Auto-detected — no per-window config; emitted only for mode: 'stored'.
+    const computedPart = jsonWrapIf(', computed: ', f.computed, '', f.computed?.mode === 'stored');
     // ETP-4520 — opt-in capability gate: DataTable resolves useHasCapability(key) at
     // runtime and omits the column entirely (not disabled/hidden via CSS) when false.
     const visibleWhenCapabilityPart = f.visibleWhenCapability ? `, visibleWhenCapability: '${String(f.visibleWhenCapability).replace(/'/g, "\\'")}'` : '';
-    return `  { key: '${f.name}', column: '${f.column}', type: '${type}'${labelsPart}${labelPart}${enumLabelsPart}${enumVariantsPart}${selectionPart}${togglePart}${badgePart}${badgeLabelsPart}${badgeColorsPart}${badgeVariantsPart}${summablePart}${displayPart}${renderPart}${requiredPart}${lookupPart}${lookupDrawerColPart}${excludeValueOfColPart}${popupPart}${minColPart}${maxColPart}${growPart}${columnWidthPart}${noTrailingPart}${filterOnlyPart}${dotPart}${gridReadOnlyPart}${visibleWhenCapabilityPart} },`;
-  }).join('\n');
+    // ETP-4681 — grid filter overrides for resolveFilterMode()/getFilteredKey().
+    // Appended at the tail so the emitted output stays byte-identical for every
+    // window that does not declare them (the offline regen drift check and F16
+    // byte-compare generated files).
+    const filterModePart = quotedProp('filterMode', f.filterMode);
+    const backendFilterKeyPart = quotedProp('backendFilterKey', f.backendFilterKey);
+    return `  { key: '${f.name}', column: '${f.column}', type: '${type}'${labelsPart}${labelPart}${enumLabelsPart}${enumVariantsPart}${selectionPart}${togglePart}${badgePart}${badgeLabelsPart}${badgeColorsPart}${badgeVariantsPart}${summablePart}${displayPart}${renderPart}${requiredPart}${lookupPart}${lookupDrawerColPart}${excludeValueOfColPart}${popupPart}${minColPart}${maxColPart}${growPart}${columnWidthPart}${noTrailingPart}${filterOnlyPart}${dotPart}${gridReadOnlyPart}${computedPart}${visibleWhenCapabilityPart}${filterModePart}${backendFilterKeyPart} },`;
+  }).join('\n') + buildDimensionsPanelColumn(dimensionFieldsRaw);
 
   const filtersArray = searchableFields.map(f => `'${f}'`).join(', ');
 
@@ -1399,7 +1558,11 @@ function buildListModalColumns(entity) {
     const tonesPart = jsonWrapIf(', tones: ', f.tones);
     // ETP-4520 — same opt-in capability gate as the standard DataTable columns.
     const visibleWhenCapabilityPart = f.visibleWhenCapability ? `, visibleWhenCapability: '${String(f.visibleWhenCapability).replace(/'/g, "\\'")}'` : '';
-    return `  { key: '${f.name}', column: '${f.column}', type: '${type}'${labelPart}${labelKeyPart}${enumLabelsPart}${enumVariantsPart}${togglePart}${inlineEditPart}${badgePart}${displayPart}${cellTypePart}${subFieldPart}${subEmptyKeyPart}${kindFieldPart}${patternFieldPart}${kindLabelsPart}${tonesPart}${visibleWhenCapabilityPart} },`;
+    // ETP-4681 — same grid filter overrides as the standard DataTable columns,
+    // likewise appended at the tail to keep existing output byte-identical.
+    const filterModePart = quotedProp('filterMode', f.filterMode);
+    const backendFilterKeyPart = quotedProp('backendFilterKey', f.backendFilterKey);
+    return `  { key: '${f.name}', column: '${f.column}', type: '${type}'${labelPart}${labelKeyPart}${enumLabelsPart}${enumVariantsPart}${togglePart}${inlineEditPart}${badgePart}${displayPart}${cellTypePart}${subFieldPart}${subEmptyKeyPart}${kindFieldPart}${patternFieldPart}${kindLabelsPart}${tonesPart}${visibleWhenCapabilityPart}${filterModePart}${backendFilterKeyPart} },`;
   }).join('\n');
 }
 
@@ -1722,6 +1885,13 @@ function resolveSecondaryTabDefs(secondaryTabsDecl, contract, headerEntity, deta
       const TableName = cfg.customTable ?? `${toJsIdentifier(key)}Table`;
       const addLineFieldKeys = cfg.addLineFields ?? [];
       const requireSavedRecord = cfg.requireSavedRecord === true;
+      // ETP-4565 — caps the tab's child count, mirroring window.maxDetailLines'
+      // semantics for the detailEntity pattern (N>0: hide add affordances once the
+      // count reaches N; 0: disable manual add entirely — import-only-style). Unlike
+      // the top-level flag this is per-tab, since a window can have several
+      // secondaryTabs with independent caps (e.g. contacts' customerAccounting vs.
+      // vendorAccounting).
+      const maxDetailLines = cfg.maxDetailLines ?? null;
       const customAddModalName = cfg.customAddModal ?? null;
       const entityFields = contract.frontendContract.entities[key]?.fields ?? [];
       const addLineEntries = addLineFieldKeys.map(fk => {
@@ -1755,7 +1925,7 @@ function resolveSecondaryTabDefs(secondaryTabsDecl, contract, headerEntity, deta
       const readOnlyLogicJs = cfg.readOnlyLogic
         ? convertLogicToJs(cfg.readOnlyLogic, headerColumnMap, headerBooleanFields)
         : null;
-      return { key, label: cfg.label ?? toLabel(key), isFormTab, isPanelTab, isCustomForm: !!cfg.customForm, isCustomTable: !!cfg.customTable, PanelName, FormName, TableName, addLineEntries, requireSavedRecord, isCustomAddModal: !!customAddModalName, CustomAddModalName: customAddModalName, readOnlyLogicJs };
+      return { key, label: cfg.label ?? toLabel(key), isFormTab, isPanelTab, isCustomForm: !!cfg.customForm, isCustomTable: !!cfg.customTable, PanelName, FormName, TableName, addLineEntries, requireSavedRecord, maxDetailLines, isCustomAddModal: !!customAddModalName, CustomAddModalName: customAddModalName, readOnlyLogicJs };
     });
 }
 
@@ -1794,6 +1964,9 @@ function buildSecondaryTabPropEntry(t) {
   const readOnlyLogicPart = t.readOnlyLogicJs
     ? `, readOnlyLogic: (record) => ${t.readOnlyLogicJs}`
     : '';
+  // ETP-4565 — 0 is a legitimate cap (import-only-style, no manual add at all), so
+  // this must check `!= null`, not truthiness.
+  const maxDetailLinesPart = t.maxDetailLines != null ? `, maxDetailLines: ${t.maxDetailLines}` : '';
   if (t.isFormTab) {
     return `          { key: '${t.key}', label: '${t.label}', isFormTab: true, Form: ${t.FormName}${requireSavedPart}${readOnlyLogicPart} },`;
   }
@@ -1805,7 +1978,7 @@ function buildSecondaryTabPropEntry(t) {
     : '';
   const customAddModalPart = wrapIf(', customAddModal: ', t.CustomAddModalName);
   const formProp = (t.isCustomAddModal && !t.isCustomForm) ? '' : `, Form: ${t.FormName}`;
-  return `          { key: '${t.key}', label: '${t.label}', Table: ${t.TableName}${formProp}${addLinePart}${customAddModalPart}${requireSavedPart}${readOnlyLogicPart} },`;
+  return `          { key: '${t.key}', label: '${t.label}', Table: ${t.TableName}${formProp}${addLinePart}${customAddModalPart}${requireSavedPart}${readOnlyLogicPart}${maxDetailLinesPart} },`;
 }
 
 function buildDetailProcessesForPage(detailEntity, contract, processOverrides) {
@@ -1886,6 +2059,20 @@ export function generatePageComponent(headerEntity, detailEntity, contract) {
   // Detail entity editable fields for the add-line mini form
   const detailFields = contract.frontendContract.entities[detailEntity]?.fields ?? [];
   const detailEditableFields = detailFields.filter(f => f.form && f.visibility !== 'readOnly');
+
+  // ETP-4610 — field keys flagged `dimensionsPanel: true` on the LINES entity,
+  // forwarded to DetailView as `dimensionsPanelFieldKeys` so it can scope its
+  // `lineHiddenColumns` dimension-macro trust to fields THIS window's own
+  // decisions.json declared as accounting-dimension candidates (see
+  // `buildDimensionsPanelColumn` above, which collects the same fields for the
+  // grid's synthetic panel column) — instead of only the small, global
+  // `DIMENSION_MACRO_KEYS` allowlist baked into DetailView.jsx. Fully additive:
+  // an entity with zero dimensionsPanel fields yields an empty array and no
+  // prop is emitted at all (see dimensionsPanelFieldKeysProp below), so every
+  // window that predates this feature regenerates byte-for-byte identical.
+  const dimensionsPanelFieldKeys = detailFields
+    .filter(f => f.dimensionsPanel && f.visibility !== 'discarded')
+    .map(f => f.name);
 
   // Status field gets a badge in the header; summary strip uses only fields with explicit section:'summary'.
   // Prefer DocStatus column (document workflow status) if present, even when form:false.
@@ -2058,6 +2245,13 @@ export function generatePageComponent(headerEntity, detailEntity, contract) {
     documentPreview
   );
   const notesFieldProp = wrapIf('\n        notesField="', notesField, '"');
+  // ETP-4610 — see `dimensionsPanelFieldKeys` computation above.
+  const dimensionsPanelFieldKeysProp = jsonWrapIf(
+    '\n        dimensionsPanelFieldKeys={',
+    dimensionsPanelFieldKeys,
+    '}',
+    dimensionsPanelFieldKeys.length > 0
+  );
   // customTabs accumulator — DetailView supports items with shape
   //   { key, label, Component, placement?: 'tab' | 'footer', props?: {} }
   // `placement: 'tab'` renders as a main tab (Lines/Notes style);
@@ -2320,8 +2514,20 @@ export function generatePageComponent(headerEntity, detailEntity, contract) {
     windowAccessGuardBlock,
     effectiveWindowProp
   } = buildWindowAccessWiring(windowAccessId);
+  // ETP-4730 — ListView and DetailView are imported from their own modules, NOT from the
+  // '@/components/contract-ui' barrel. Do not "tidy" these two back into the barrel import.
+  //
+  // The barrel re-exports ~25 modules, so importing it pulls every one of them into the
+  // importer's dependency closure. That makes DetailView reachable from the tests of any
+  // module that touches the barrel for something unrelated, which is how a change to
+  // DetailView came to invalidate 81 test files while only 33 actually import it.
+  //
+  // Measured with etendo-ci-analysis/measure-change-surface.mjs over the generated pages:
+  // DetailView's test surface 81 -> 49 and ListView's 51 -> 19. In CI-amplification terms
+  // (changes x tests reached) that is 33,210 -> 20,090 and 5,661 -> 2,109.
   return `import { ${useStateImport}${useMemoImport}useEffect } from 'react';
-import { ListView, DetailView } from '@/components/contract-ui';${windowAccessImport}${fragmentIf(customListIcons, `\nimport { SortIcon, RefreshIcon } from '@/components/ui/custom-icons';`)}${fragmentIf(menuActionsConfig.length > 0, `\nimport { toast } from 'sonner';`)}${wrapIf('\nimport { ', lineConfigSymbol, ` } from '@/hooks/useLineGrossAmount';`)}
+import { ListView } from '@/components/contract-ui/ListView.jsx';
+import { DetailView } from '@/components/contract-ui/DetailView.jsx';${windowAccessImport}${fragmentIf(customListIcons, `\nimport { SortIcon, RefreshIcon } from '@/components/ui/custom-icons';`)}${fragmentIf(menuActionsConfig.length > 0, `\nimport { toast } from 'sonner';`)}${wrapIf('\nimport { ', lineConfigSymbol, ` } from '@/hooks/useLineGrossAmount';`)}
 ${headerTableImport}
 import ${headerName}Form from './${headerName}Form';${(buildDetailImports(detailEntity, detailName, customLinesComp))}
 ${fragmentIf(secondaryTabDefs.length > 0, `${secondaryTabsImports}\n`)}${formFooterImport}${customLinesImport}${primaryTabsImports}${listKpiCardsImport}${relatedDocsImport}${attachmentsImport}${extraTabsImport}${customCompImportBlock}import catalogs from './mockCatalogs';
@@ -2410,7 +2616,7 @@ ${menuActionStateStatements}`)}${fragmentIf(confirmModalName, `
         detailLabel="${entityDetailLabel}"` : ''}
         windowName={windowName}
         recordId={recordId}
-        breadcrumb={breadcrumb}${apiProp}${detailTabIndexProp}${secondaryTabsProp}${formFooterProp}${customLinesProp}${primaryTabsProp}${othersLabelProp}${documentPreviewProp}${hideDeleteProp}${hideDeleteButtonProp}${customTabsAfterBottomProp}${hidePrintProp}${hideSaveStatusesProp}${hideMoreMenuProp}${hideMoreDetailsProp}${noHeaderBorderProp}${toolbarBorderBottomProp}${compactSidebarPaddingProp}${whiteFormBackgroundProp}${autoSaveOnBlurProp}${hideFormCardProp}${sidebarAboveTabsOnlyProp}${tabsSeparatorProp}${sidebarClassNameProp}${tabsBarPaddingXProp}${primaryTabsVariantProp}${toolbarPaddingXProp}${toolbarButtonSizeProp}${contentBgProp}${formCardPaddingProp}${formScrollPaddingXProp}${notesFieldProp}${customTabsProp}${customCompPropsBlock}${menuActionsProp}${draftModeProp}${requiredHeaderFieldsProp}${addLineGuardProp}${headerContentProp}${detailSortByProp}${titleFieldProp}${documentDateFieldProp}${salesThemeProp}${disableProcessedLockProp}${statusEnumLabelsProp}${statusFieldLabelProp}${lockedAlertProp}${showDetailFooterTotalsProp}${labelOverridesProp}${lineConfigProp}${linesLayoutProp}${balanceFooterProp}${sendDocumentDetailProp}${selectorPriceCurrencyProp}
+        breadcrumb={breadcrumb}${apiProp}${detailTabIndexProp}${secondaryTabsProp}${formFooterProp}${customLinesProp}${primaryTabsProp}${othersLabelProp}${documentPreviewProp}${hideDeleteProp}${hideDeleteButtonProp}${customTabsAfterBottomProp}${hidePrintProp}${hideSaveStatusesProp}${hideMoreMenuProp}${hideMoreDetailsProp}${noHeaderBorderProp}${toolbarBorderBottomProp}${compactSidebarPaddingProp}${whiteFormBackgroundProp}${autoSaveOnBlurProp}${hideFormCardProp}${sidebarAboveTabsOnlyProp}${tabsSeparatorProp}${sidebarClassNameProp}${tabsBarPaddingXProp}${primaryTabsVariantProp}${toolbarPaddingXProp}${toolbarButtonSizeProp}${contentBgProp}${formCardPaddingProp}${formScrollPaddingXProp}${notesFieldProp}${dimensionsPanelFieldKeysProp}${customTabsProp}${customCompPropsBlock}${menuActionsProp}${draftModeProp}${requiredHeaderFieldsProp}${addLineGuardProp}${headerContentProp}${detailSortByProp}${titleFieldProp}${documentDateFieldProp}${salesThemeProp}${disableProcessedLockProp}${statusEnumLabelsProp}${statusFieldLabelProp}${lockedAlertProp}${showDetailFooterTotalsProp}${labelOverridesProp}${lineConfigProp}${linesLayoutProp}${balanceFooterProp}${sendDocumentDetailProp}${selectorPriceCurrencyProp}
         {...props}${effectiveWindowProp}${sidebarContentProp}
       />
 ${menuActionModals}${confirmModalName ? `

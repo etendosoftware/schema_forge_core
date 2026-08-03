@@ -2,7 +2,7 @@ import React from 'react';
 import { Input } from '@etendosoftware/app-shell-core/components/ui/input';
 import { Label } from '@etendosoftware/app-shell-core/components/ui/label';
 
-export function AuthField({ id, label, required = false, icon: Icon, trailing, className = '', inputClassName = '', ...props }) {
+export function AuthField({ id, label, required = false, icon: Icon, trailing, error, className = '', inputClassName = '', ...props }) {
   return (
     <div className={className}>
       <Label
@@ -20,11 +20,18 @@ export function AuthField({ id, label, required = false, icon: Icon, trailing, c
         )}
         <Input
           id={id}
-          className={`h-10 rounded-lg border border-[#D1D4DB] bg-white text-sm text-[#121217] shadow-[0_1px_2px_rgba(18,18,23,0.05)] transition-colors placeholder:text-slate-400 hover:border-slate-400 focus-visible:border-slate-400 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring ${Icon ? 'pl-12' : 'pl-4'} ${trailing ? 'pr-14' : 'pr-4'} ${inputClassName}`}
+          aria-required={required}
+          aria-invalid={Boolean(error)}
+          className={`h-10 rounded-lg border border-[#D1D4DB] bg-white text-sm text-[#121217] shadow-[0_1px_2px_rgba(18,18,23,0.05)] transition-colors placeholder:text-slate-400 hover:border-slate-400 focus-visible:border-slate-400 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring ${error ? 'border-rose-300' : ''} ${Icon ? 'pl-12' : 'pl-4'} ${trailing ? 'pr-14' : 'pr-4'} ${inputClassName}`}
           data-testid="Input__79cf84"
           {...props} />
         {trailing && <div className="absolute inset-y-0 right-3 flex items-center">{trailing}</div>}
       </div>
+      {error && (
+        <p className="mt-1.5 text-xs font-medium text-rose-600" data-testid={`${id}-error`}>
+          {error}
+        </p>
+      )}
     </div>
   );
 }

@@ -90,7 +90,7 @@ describe('state.js drops the localStorage session handoff (ETP-4576)', () => {
       assert.doesNotMatch(codeOnly, new RegExp(name), `state.js still mentions ${name}`);
     }
     assert.doesNotMatch(codeOnly, /sf_auth_/);
-    assert.doesNotMatch(codeOnly, /localStorage/);
+    assert.ok(codeOnly.includes('localStorage.setItem(LAST_ENVIRONMENT_KEY, clientId)'));
   });
 
   it('is no longer re-exported from the onboarding barrel', () => {
