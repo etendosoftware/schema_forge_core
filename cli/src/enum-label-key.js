@@ -1,5 +1,10 @@
 function toWords(str) {
   return String(str || '')
+    // Preserve +/- as meaningful words instead of dropping them as mere
+    // separators — e.g. AD_Ref_List's MovementType has "Production -" and
+    // "Production +" as distinct values that must not collapse to one key.
+    .replace(/\+/g, ' Plus ')
+    .replace(/-/g, ' Minus ')
     // Split PascalCase/camelCase compounds (e.g. "ProductType") into words
     // before splitting on non-alphanumeric separators.
     .replace(/([a-z0-9])([A-Z])/g, '$1 $2')
