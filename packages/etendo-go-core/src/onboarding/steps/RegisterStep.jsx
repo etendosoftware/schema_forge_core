@@ -5,6 +5,8 @@ import { useUI, useLocaleSwitch } from '@etendosoftware/app-shell-core/i18n';
 import { registerAccount, loginWithSsoProvider } from '../api.js';
 import { getConfiguredSsoProviders, renderSsoProviderButton } from '../sso.js';
 import { getPasswordChecks, isStrongPassword, PASSWORD_RULES } from '../passwordPolicy.js';
+import { ONBOARDING_FIELD_LIMITS } from '../fieldLimits.js';
+import { resolveOnboardingErrorMessage } from '../errorMessages.js';
 import { trackOnboarding } from '../tracking.js';
 import { AuthShell } from '../components/AuthShell.jsx';
 import { AuthField } from '../components/AuthField.jsx';
@@ -153,9 +155,7 @@ export function RegisterStep({ config, stepData, onNext, onBack, goToStep, setTo
         action: 'register',
         status: 'failed',
       });
-      setRegisterError(err.code === 'WEAK_PASSWORD'
-        ? ui('onboardingWeakPassword')
-        : (err.userMessage || ui(err.code || 'onboardingConnectionError')));
+      setRegisterError(resolveOnboardingErrorMessage(ui, err, 'onboardingConnectionError'));
     } finally {
       setRegisterLoading(false);
     }
@@ -206,6 +206,7 @@ export function RegisterStep({ config, stepData, onNext, onBack, goToStep, setTo
           disabled={registerLoading}
           placeholder={ui('onboardingNamePlaceholder')}
           autoComplete="name"
+          maxLength={ONBOARDING_FIELD_LIMITS.accountName}
           required
           data-testid="AuthField__79cf84" />
 
@@ -219,6 +220,7 @@ export function RegisterStep({ config, stepData, onNext, onBack, goToStep, setTo
           disabled={registerLoading}
           placeholder={ui('onboardingEmailPlaceholder')}
           autoComplete="email"
+          maxLength={ONBOARDING_FIELD_LIMITS.email}
           required
           data-testid="AuthField__79cf84" />
 
@@ -232,6 +234,7 @@ export function RegisterStep({ config, stepData, onNext, onBack, goToStep, setTo
           disabled={registerLoading}
           placeholder={ui('onboardingPasswordPlaceholder')}
           autoComplete="new-password"
+          maxLength={ONBOARDING_FIELD_LIMITS.password}
           required
           trailing={(
             <button

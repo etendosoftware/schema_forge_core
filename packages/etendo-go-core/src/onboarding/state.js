@@ -1,3 +1,5 @@
+import { ONBOARDING_FIELD_LIMITS, fullNameLimitFor, exceedsLimit } from './fieldLimits.js';
+
 export const SETUP_STEP_DEFINITIONS = [
   { name: 'setup', estimate: '1s' },
   { name: 'client', estimate: '2 min' },
@@ -100,11 +102,17 @@ export function clearEnvironmentSession() {
 }
 
 export function isProfileStepValid(form) {
-  return Boolean(form.fullName?.trim() && form.countryCode);
+  if (!form.fullName?.trim() || !form.countryCode) return false;
+  // Freelancers reuse the full name as the client name, so the stricter
+  // AD_CLIENT.VALUE limit applies to them (ETP-4665). Blocking here keeps a
+  // value that provisioning would reject from ever reaching the next step.
+  return !exceedsLimit(form.fullName.trim(), fullNameLimitFor(form.businessType));
 }
 
 export function isCompanyStepValid(form) {
   // Tax ID (fiscalIdValue) is optional: it is not sent to provisioning, so it
   // must not gate the step. Only the company name is required.
-  return Boolean(form.clientName?.trim());
+  if (!form.clientName?.trim()) return false;
+  return !exceedsLimit(form.clientName.trim(), ONBOARDING_FIELD_LIMITS.clientName)
+    && !exceedsLimit(form.address?.trim(), ONBOARDING_FIELD_LIMITS.address);
 }
