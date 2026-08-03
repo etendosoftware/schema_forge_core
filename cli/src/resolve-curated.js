@@ -623,9 +623,47 @@ function buildDraftMode(draftModeDecision, enabled) {
   return draftMode;
 }
 
+/**
+ * Normalize the hand-authored `entities.<e>.namedFilters` decision (ETP-4601) into a clean array
+ * the contract can carry verbatim. Each entry is a named, documented HQL WHERE fragment the MCP
+ * exposes and applies for `filters:{status:"<name>"}`. Entries without a non-empty `name` and
+ * `where` are dropped; `label`/`description` are optional. The alias `e` refers to the entity root
+ * (matching the MCP's HQL builder), and authors must only reference persisted (non-computed) columns.
+ * @param {Array} raw the raw decision array
+ * @returns {Array<{name:string, where:string, label?:string, description?:string}>}
+ */
+function normalizeNamedFilters(raw) {
+  const result = [];
+  const seen = new Set();
+  for (const f of raw) {
+    if (!f || typeof f !== 'object') continue;
+    const name = typeof f.name === 'string' ? f.name.trim() : '';
+    const where = typeof f.where === 'string' ? f.where.trim() : '';
+    if (!name || !where || seen.has(name)) continue;
+    seen.add(name);
+    const entry = { name, where };
+    if (typeof f.label === 'string' && f.label.trim()) entry.label = f.label.trim();
+    if (typeof f.description === 'string' && f.description.trim()) {
+      entry.description = f.description.trim();
+    }
+    result.push(entry);
+  }
+  return result;
+}
+
 function applyEntityDecisions(entity, entityDecision) {
   if (entityDecision.javaQualifier) {
     entity.javaQualifier = entityDecision.javaQualifier;
+  }
+  // Per-entity named filters (ETP-4601): hand-authored HQL WHERE fragments the MCP exposes as
+  // documentation and applies for filters:{status:"<name>"}. Carried verbatim into the backend
+  // contract and pushed to ETGO_SF_ENTITY.NAMED_FILTERS. Normalized here so the curated schema is
+  // already clean; absent/empty leaves the entity without the property (backward compatible).
+  if (Array.isArray(entityDecision.namedFilters)) {
+    const filters = normalizeNamedFilters(entityDecision.namedFilters);
+    if (filters.length > 0) {
+      entity.namedFilters = filters;
+    }
   }
   if (entityDecision.draftMode) {
     entity.draftMode = buildDraftMode(

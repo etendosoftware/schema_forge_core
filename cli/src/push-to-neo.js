@@ -605,7 +605,7 @@ async function buildEntityLookupMaps(client, popResult, specId, schemaRawData) {
   return { entityMapByTabId, entityMapByName, entityMapByTableName, curatedToTable };
 }
 
-function buildDesiredEntitiesMap(schemaRawData, contract) {
+export function buildDesiredEntitiesMap(schemaRawData, contract) {
   const schemaEntities = (schemaRawData.entities || []).map((ent) => ({
     name: ent.name,
     tabName: ent.tabName,
@@ -630,6 +630,9 @@ function buildDesiredEntitiesMap(schemaRawData, contract) {
       tabName: data.tabName || schemaFallback?.tabName || null,
       tableName: data.tableName || schemaFallback?.tableName || null,
       javaQualifier: data.javaQualifier ?? undefined,
+      namedFilters: Array.isArray(data.namedFilters) && data.namedFilters.length > 0
+        ? data.namedFilters
+        : null,
     });
   }
   return desired;
@@ -651,15 +654,22 @@ async function renameEntitiesToContractNames(client, ctx, entityMaps) {
     // written unconditionally so an undeclared/cleared prompt resets the DB
     // value, and surfaced additively by neo_discover's entity summary.
     const entityAgentPrompt = ctx.entityAgentPrompts?.[ent.name] ?? null;
+    // Serialize the declared entity-level named filters (ETP-4601). Written
+    // unconditionally (null when undeclared) so a stale DB value is cleared,
+    // mirroring preconditions/agentPrompt. The MCP reads this JSON to resolve
+    // named business-status filters per spec and expose them as documentation.
+    const namedFiltersJson = Array.isArray(ent.namedFilters) && ent.namedFilters.length > 0
+      ? JSON.stringify(ent.namedFilters)
+      : null;
     if (ent.javaQualifier !== undefined) {
       await client.query(
-        'UPDATE etgo_sf_entity SET name = $1, java_qualifier = $2, preconditions = $3, agent_prompt = $4 WHERE etgo_sf_entity_id = $5',
-        [ent.name, ent.javaQualifier, preconditionsJson, entityAgentPrompt, entityId],
+        'UPDATE etgo_sf_entity SET name = $1, java_qualifier = $2, preconditions = $3, agent_prompt = $4, named_filters = $5 WHERE etgo_sf_entity_id = $6',
+        [ent.name, ent.javaQualifier, preconditionsJson, entityAgentPrompt, namedFiltersJson, entityId],
       );
     } else {
       await client.query(
-        'UPDATE etgo_sf_entity SET name = $1, preconditions = $2, agent_prompt = $3 WHERE etgo_sf_entity_id = $4',
-        [ent.name, preconditionsJson, entityAgentPrompt, entityId],
+        'UPDATE etgo_sf_entity SET name = $1, preconditions = $2, agent_prompt = $3, named_filters = $4 WHERE etgo_sf_entity_id = $5',
+        [ent.name, preconditionsJson, entityAgentPrompt, namedFiltersJson, entityId],
       );
     }
     entityMaps.entityMapByName[ent.name] = entityId;
