@@ -2514,8 +2514,20 @@ export function generatePageComponent(headerEntity, detailEntity, contract) {
     windowAccessGuardBlock,
     effectiveWindowProp
   } = buildWindowAccessWiring(windowAccessId);
+  // ETP-4730 — ListView and DetailView are imported from their own modules, NOT from the
+  // '@/components/contract-ui' barrel. Do not "tidy" these two back into the barrel import.
+  //
+  // The barrel re-exports ~25 modules, so importing it pulls every one of them into the
+  // importer's dependency closure. That makes DetailView reachable from the tests of any
+  // module that touches the barrel for something unrelated, which is how a change to
+  // DetailView came to invalidate 81 test files while only 33 actually import it.
+  //
+  // Measured with etendo-ci-analysis/measure-change-surface.mjs over the generated pages:
+  // DetailView's test surface 81 -> 49 and ListView's 51 -> 19. In CI-amplification terms
+  // (changes x tests reached) that is 33,210 -> 20,090 and 5,661 -> 2,109.
   return `import { ${useStateImport}${useMemoImport}useEffect } from 'react';
-import { ListView, DetailView } from '@/components/contract-ui';${windowAccessImport}${fragmentIf(customListIcons, `\nimport { SortIcon, RefreshIcon } from '@/components/ui/custom-icons';`)}${fragmentIf(menuActionsConfig.length > 0, `\nimport { toast } from 'sonner';`)}${wrapIf('\nimport { ', lineConfigSymbol, ` } from '@/hooks/useLineGrossAmount';`)}
+import { ListView } from '@/components/contract-ui/ListView.jsx';
+import { DetailView } from '@/components/contract-ui/DetailView.jsx';${windowAccessImport}${fragmentIf(customListIcons, `\nimport { SortIcon, RefreshIcon } from '@/components/ui/custom-icons';`)}${fragmentIf(menuActionsConfig.length > 0, `\nimport { toast } from 'sonner';`)}${wrapIf('\nimport { ', lineConfigSymbol, ` } from '@/hooks/useLineGrossAmount';`)}
 ${headerTableImport}
 import ${headerName}Form from './${headerName}Form';${(buildDetailImports(detailEntity, detailName, customLinesComp))}
 ${fragmentIf(secondaryTabDefs.length > 0, `${secondaryTabsImports}\n`)}${formFooterImport}${customLinesImport}${primaryTabsImports}${listKpiCardsImport}${relatedDocsImport}${attachmentsImport}${extraTabsImport}${customCompImportBlock}import catalogs from './mockCatalogs';
