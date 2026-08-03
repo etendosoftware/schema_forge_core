@@ -293,8 +293,20 @@ describe('buildBackendFilter', () => {
   });
 
   it('builds booleanLabel equals', () => {
+    // ETP-4705: NEO Headless stores boolean columns as the char 'Y'/'N' and
+    // filters with an exact string `equals` — a JS boolean never matches.
     expect(buildBackendFilter({ key: 'b' }, { mode: 'booleanLabel', value: true })).toEqual([
-      { fieldName: 'b', operator: 'equals', value: true },
+      { fieldName: 'b', operator: 'equals', value: 'Y' },
+    ]);
+  });
+
+  it('ETP-4705: serializes booleanLabel filters to Y/N chars for NEO, not JS booleans', () => {
+    const col = { key: 'posted', type: 'boolean', badgeLabels: { true: 'Posted', false: 'Not posted' } };
+    expect(buildBackendFilter(col, { mode: 'booleanLabel', value: true })).toEqual([
+      { fieldName: 'posted', operator: 'equals', value: 'Y' },
+    ]);
+    expect(buildBackendFilter(col, { mode: 'booleanLabel', value: false })).toEqual([
+      { fieldName: 'posted', operator: 'equals', value: 'N' },
     ]);
   });
 
@@ -689,7 +701,7 @@ describe('buildAdvancedFilterCriteria', () => {
       conditions: [{ field: 'active', operator: 'equals', value: 'true' }],
     };
     const result = buildAdvancedFilterCriteria(filter, cols);
-    expect(result).toEqual([{ fieldName: 'active', operator: 'equals', value: true }]);
+    expect(result).toEqual([{ fieldName: 'active', operator: 'equals', value: 'Y' }]);
   });
 
   it('handles booleanLabel mode with false value', () => {
@@ -699,7 +711,7 @@ describe('buildAdvancedFilterCriteria', () => {
       conditions: [{ field: 'active', operator: 'equals', value: false }],
     };
     const result = buildAdvancedFilterCriteria(filter, cols);
-    expect(result).toEqual([{ fieldName: 'active', operator: 'equals', value: false }]);
+    expect(result).toEqual([{ fieldName: 'active', operator: 'equals', value: 'N' }]);
   });
 
   it('uses buildCriteria from column when provided', () => {
@@ -1042,7 +1054,7 @@ describe('buildBackendFilter — edge cases', () => {
       { key: 'b', backendFilterKey: 'isActive' },
       { mode: 'booleanLabel', value: false },
     )).toEqual([
-      { fieldName: 'isActive', operator: 'equals', value: false },
+      { fieldName: 'isActive', operator: 'equals', value: 'N' },
     ]);
   });
 
