@@ -971,39 +971,35 @@ function resolveSendDocumentConfig(windowConfig, allEntityFields) {
 function buildCustomComponentImportsAndProps(customComponents, specName, customPanelTabs, newActionsConfig, menuActionsConfig = []) {
   const customComponentImports = [];
   const customComponentProps = [];
-  if (customComponents.bottomSection) {
-    customComponentImports.push(`import ${customComponents.bottomSection} from ${resolveCustomImport(specName, customComponents.bottomSection)};`);
-    customComponentProps.push(`\n        bottomSection={${customComponents.bottomSection}}`);
+  // Emit the import for a declared slot; returns whether it was declared, so a
+  // dependent prop can be gated on its owner with `&&` instead of nesting. The
+  // per-slot `if` lives here rather than repeated in the caller — that repetition
+  // was what took this function's cognitive complexity to 18.
+  const addImport = (name) => {
+    const comp = customComponents[name];
+    if (!comp) return false;
+    customComponentImports.push(`import ${comp} from ${resolveCustomImport(specName, comp)};`);
+    return true;
+  };
+  // The common shape: an import plus `propName={Component}`, the prop named after
+  // the slot unless the component prop differs (moreMenuContent -> customMenuContent).
+  const addSlot = (name, propName = name) => {
+    if (!addImport(name)) return false;
+    customComponentProps.push(`\n        ${propName}={${customComponents[name]}}`);
+    return true;
+  };
+  addSlot('bottomSection');
+  addSlot('topbarRight');
+  addSlot('topbarExtra');
+  addImport('bulkActions');
+  if (addSlot('sidePanel') && customComponents.sidePanelStyle) {
+    customComponentProps.push(`\n        sidePanelStyle={${JSON.stringify(customComponents.sidePanelStyle)}}`);
   }
-  if (customComponents.topbarRight) {
-    customComponentImports.push(`import ${customComponents.topbarRight} from ${resolveCustomImport(specName, customComponents.topbarRight)};`);
-    customComponentProps.push(`\n        topbarRight={${customComponents.topbarRight}}`);
-  }
-  if (customComponents.topbarExtra) {
-    customComponentImports.push(`import ${customComponents.topbarExtra} from ${resolveCustomImport(specName, customComponents.topbarExtra)};`);
-    customComponentProps.push(`\n        topbarExtra={${customComponents.topbarExtra}}`);
-  }
-  if (customComponents.bulkActions) {
-    customComponentImports.push(`import ${customComponents.bulkActions} from ${resolveCustomImport(specName, customComponents.bulkActions)};`);
-  }
-  if (customComponents.sidePanel) {
-    customComponentImports.push(`import ${customComponents.sidePanel} from ${resolveCustomImport(specName, customComponents.sidePanel)};`);
-    customComponentProps.push(`\n        sidePanel={${customComponents.sidePanel}}`);
-    if (customComponents.sidePanelStyle) {
-      customComponentProps.push(`\n        sidePanelStyle={${JSON.stringify(customComponents.sidePanelStyle)}}`);
-    }
-  }
-  if (customComponents.moreMenuContent) {
-    customComponentImports.push(`import ${customComponents.moreMenuContent} from ${resolveCustomImport(specName, customComponents.moreMenuContent)};`);
-    customComponentProps.push(`\n        customMenuContent={${customComponents.moreMenuContent}}`);
-  }
-  if (customComponents.subHeader) {
-    customComponentImports.push(`import ${customComponents.subHeader} from ${resolveCustomImport(specName, customComponents.subHeader)};`);
+  addSlot('moreMenuContent', 'customMenuContent');
+  if (addImport('subHeader')) {
     customComponentProps.push(`\n        headerContent={(data) => <${customComponents.subHeader} data={data} />}`);
   }
-  if (customComponents.newRecordComponent) {
-    customComponentImports.push(`import ${customComponents.newRecordComponent} from ${resolveCustomImport(specName, customComponents.newRecordComponent)};`);
-  }
+  addImport('newRecordComponent');
   // customPanelTabs — import each panel component
   for (const pt of customPanelTabs) {
     customComponentImports.push(`import ${pt.component} from ${resolveCustomImport(specName, pt.component)};`);
@@ -1016,21 +1012,14 @@ function buildCustomComponentImportsAndProps(customComponents, specName, customP
   for (const action of menuActionsConfig.filter(a => a.component)) {
     customComponentImports.push(`import ${action.component} from ${resolveCustomImport(specName, action.component)};`);
   }
-  if (customComponents.processConfirmModal) {
-    customComponentImports.push(`import ${customComponents.processConfirmModal} from ${resolveCustomImport(specName, customComponents.processConfirmModal)};`);
-    customComponentProps.push(`\n        processConfirmModal={${customComponents.processConfirmModal}}`);
-  }
+  addSlot('processConfirmModal');
   // Rich delete cartel replacing DetailView's generic delete Dialog (payments show
   // conditional Conciliación/Asiento items). `deleteConfirmModalProps` carries the
-  // modal's own config (e.g. { dir: 'in' } for the cobro/pago wording) and is nested
-  // here — and gated on the modal — so it can never be emitted without its owner,
-  // exactly like sidePanelStyle under sidePanel above.
-  if (customComponents.deleteConfirmModal) {
-    customComponentImports.push(`import ${customComponents.deleteConfirmModal} from ${resolveCustomImport(specName, customComponents.deleteConfirmModal)};`);
-    customComponentProps.push(`\n        deleteConfirmModal={${customComponents.deleteConfirmModal}}`);
-    if (customComponents.deleteConfirmModalProps) {
-      customComponentProps.push(`\n        deleteConfirmModalProps={${JSON.stringify(customComponents.deleteConfirmModalProps)}}`);
-    }
+  // modal's own config (e.g. { dir: 'in' } for the cobro/pago wording) and is gated
+  // on the modal so it can never be emitted without its owner, exactly like
+  // sidePanelStyle under sidePanel above.
+  if (addSlot('deleteConfirmModal') && customComponents.deleteConfirmModalProps) {
+    customComponentProps.push(`\n        deleteConfirmModalProps={${JSON.stringify(customComponents.deleteConfirmModalProps)}}`);
   }
   const customCompImportBlock = customComponentImports.length > 0
     ? customComponentImports.join('\n') + '\n'
@@ -1393,6 +1382,27 @@ import ${detailName}Form from './${detailName}Form';` : '';
  * have to agree on the value — which is why that hook can live in either repo.
  */
 const DEFAULT_PRICE_TRIGGER_FIELD = 'product';
+
+/**
+ * The `lineConfig` prop and the preset symbol its import needs.
+ *
+ * A window that renames the price-callout trigger field spreads the preset and
+ * overrides that one key; a window that does not just passes the preset through.
+ * An overriding window still needs SOME preset to spread, so it falls back to the
+ * same ORDER default DetailView itself falls back to.
+ *
+ * Extracted from generatePageComponent, whose cognitive complexity reached 16 once
+ * the epic merge combined this branch with the epic's own additions.
+ */
+function buildLineConfigProp(windowConfig, lineConfigSymbol) {
+  const priceTriggerField = windowConfig.priceTriggerField ?? DEFAULT_PRICE_TRIGGER_FIELD;
+  const overridesPriceTrigger = priceTriggerField !== DEFAULT_PRICE_TRIGGER_FIELD;
+  const lineConfigBaseSymbol = lineConfigSymbol ?? (overridesPriceTrigger ? 'ORDER_LINE_CONFIG' : null);
+  const lineConfigProp = overridesPriceTrigger
+    ? `\n        lineConfig={{ ...${lineConfigBaseSymbol}, priceTriggerField: '${String(priceTriggerField).replace(/'/g, "\\'")}' }}`
+    : wrapIf('\n        lineConfig={', lineConfigSymbol, '}');
+  return { lineConfigBaseSymbol, lineConfigProp };
+}
 
 function getLineConfigSymbol(lineEntityConfig, LINE_CONFIG_SYMBOLS) {
   return lineEntityConfig ? (LINE_CONFIG_SYMBOLS[lineEntityConfig] ?? null) : null;
@@ -2381,14 +2391,7 @@ export function generatePageComponent(headerEntity, detailEntity, contract) {
   // generated code. Gated on INEQUALITY with the default, not on truthiness — the
   // default is a non-empty string, so a truthy gate would emit it for every window
   // and defeat R3 (declare only what overrides the default).
-  const priceTriggerField = windowConfig.priceTriggerField ?? DEFAULT_PRICE_TRIGGER_FIELD;
-  const overridesPriceTrigger = priceTriggerField !== DEFAULT_PRICE_TRIGGER_FIELD;
-  // An overriding window still needs a preset to spread; windows without an explicit
-  // lineEntityConfig use the same ORDER default DetailView falls back to.
-  const lineConfigBaseSymbol = lineConfigSymbol ?? (overridesPriceTrigger ? 'ORDER_LINE_CONFIG' : null);
-  const lineConfigProp = overridesPriceTrigger
-    ? `\n        lineConfig={{ ...${lineConfigBaseSymbol}, priceTriggerField: '${String(priceTriggerField).replace(/'/g, "\\'")}' }}`
-    : wrapIf('\n        lineConfig={', lineConfigSymbol, '}');
+  const { lineConfigBaseSymbol, lineConfigProp } = buildLineConfigProp(windowConfig, lineConfigSymbol);
   // ListView toolbar props
   const hidePrintListProp = fragmentIf(hidePrint, '\n      hidePrint');
   const hideCreateProp = fragmentIf(hideCreate, '\n      hideCreate');
