@@ -188,6 +188,16 @@ function optProp(name, val) {
 }
 
 /**
+ * Emit `, <name>: '<val>'` for a string-valued optional prop, single-quote
+ * escaped. Returns '' when the value is absent, so callers stay byte-identical
+ * for windows that do not declare the prop.
+ */
+function quotedProp(name, val) {
+  if (!val) return '';
+  return `, ${name}: '${String(val).replace(/'/g, "\\'")}'`;
+}
+
+/**
  * Return `fragment` when `cond` is truthy, otherwise an empty string.
  * Used to conditionally append optional prop fragments to generated code.
  */
@@ -461,7 +471,13 @@ export function generateTableComponent(entityName, contract) {
     // ETP-4520 — opt-in capability gate: DataTable resolves useHasCapability(key) at
     // runtime and omits the column entirely (not disabled/hidden via CSS) when false.
     const visibleWhenCapabilityPart = f.visibleWhenCapability ? `, visibleWhenCapability: '${String(f.visibleWhenCapability).replace(/'/g, "\\'")}'` : '';
-    return `  { key: '${f.name}', column: '${f.column}', type: '${type}'${labelsPart}${labelPart}${enumLabelsPart}${enumVariantsPart}${selectionPart}${togglePart}${badgePart}${badgeLabelsPart}${badgeColorsPart}${badgeVariantsPart}${summablePart}${displayPart}${renderPart}${requiredPart}${lookupPart}${lookupDrawerColPart}${excludeValueOfColPart}${popupPart}${minColPart}${maxColPart}${growPart}${columnWidthPart}${noTrailingPart}${filterOnlyPart}${dotPart}${gridReadOnlyPart}${computedPart}${visibleWhenCapabilityPart} },`;
+    // ETP-4681 — grid filter overrides for resolveFilterMode()/getFilteredKey().
+    // Appended at the tail so the emitted output stays byte-identical for every
+    // window that does not declare them (the offline regen drift check and F16
+    // byte-compare generated files).
+    const filterModePart = quotedProp('filterMode', f.filterMode);
+    const backendFilterKeyPart = quotedProp('backendFilterKey', f.backendFilterKey);
+    return `  { key: '${f.name}', column: '${f.column}', type: '${type}'${labelsPart}${labelPart}${enumLabelsPart}${enumVariantsPart}${selectionPart}${togglePart}${badgePart}${badgeLabelsPart}${badgeColorsPart}${badgeVariantsPart}${summablePart}${displayPart}${renderPart}${requiredPart}${lookupPart}${lookupDrawerColPart}${excludeValueOfColPart}${popupPart}${minColPart}${maxColPart}${growPart}${columnWidthPart}${noTrailingPart}${filterOnlyPart}${dotPart}${gridReadOnlyPart}${computedPart}${visibleWhenCapabilityPart}${filterModePart}${backendFilterKeyPart} },`;
   }).join('\n') + buildDimensionsPanelColumn(dimensionFieldsRaw);
 
   const filtersArray = searchableFields.map(f => `'${f}'`).join(', ');
@@ -1542,7 +1558,11 @@ function buildListModalColumns(entity) {
     const tonesPart = jsonWrapIf(', tones: ', f.tones);
     // ETP-4520 — same opt-in capability gate as the standard DataTable columns.
     const visibleWhenCapabilityPart = f.visibleWhenCapability ? `, visibleWhenCapability: '${String(f.visibleWhenCapability).replace(/'/g, "\\'")}'` : '';
-    return `  { key: '${f.name}', column: '${f.column}', type: '${type}'${labelPart}${labelKeyPart}${enumLabelsPart}${enumVariantsPart}${togglePart}${inlineEditPart}${badgePart}${displayPart}${cellTypePart}${subFieldPart}${subEmptyKeyPart}${kindFieldPart}${patternFieldPart}${kindLabelsPart}${tonesPart}${visibleWhenCapabilityPart} },`;
+    // ETP-4681 — same grid filter overrides as the standard DataTable columns,
+    // likewise appended at the tail to keep existing output byte-identical.
+    const filterModePart = quotedProp('filterMode', f.filterMode);
+    const backendFilterKeyPart = quotedProp('backendFilterKey', f.backendFilterKey);
+    return `  { key: '${f.name}', column: '${f.column}', type: '${type}'${labelPart}${labelKeyPart}${enumLabelsPart}${enumVariantsPart}${togglePart}${inlineEditPart}${badgePart}${displayPart}${cellTypePart}${subFieldPart}${subEmptyKeyPart}${kindFieldPart}${patternFieldPart}${kindLabelsPart}${tonesPart}${visibleWhenCapabilityPart}${filterModePart}${backendFilterKeyPart} },`;
   }).join('\n');
 }
 

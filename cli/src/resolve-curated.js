@@ -254,6 +254,14 @@ const FIELD_DECISION_COPY_PROPS = [
   // (not disabled/hidden via CSS) from the grid column and from any
   // statusPill that references it, whenever useHasCapability(key) is false.
   'visibleWhenCapability',
+  // ETP-4681 — grid filter overrides consumed by resolveFilterMode() /
+  // getFilteredKey() in app-shell-core's gridQuery.js. Only needed when the
+  // emitted column `type` hides the real data type: a `columnType` override of
+  // 'custom' (or any type resolveFilterMode does not recognize) degrades the
+  // advanced filter to text operators. `backendFilterKey` overrides the entity
+  // property the criteria is built against.
+  'filterMode',
+  'backendFilterKey',
 ];
 
 const FIELD_RAW_COPY_PROPS = [
