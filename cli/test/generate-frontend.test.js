@@ -528,9 +528,27 @@ describe('generateFormComponent', () => {
 // ---------------------------------------------------------------------------
 
 describe('generatePageComponent', () => {
-  it('imports ListView and DetailView from contract-ui', () => {
+  it('imports ListView and DetailView from their own modules, not the barrel', () => {
     const code = generatePageComponent('order', 'orderLine', masterDetailContract);
-    assert.ok(code.includes("import { ListView, DetailView } from '@/components/contract-ui'"));
+    assert.ok(code.includes("import { ListView } from '@/components/contract-ui/ListView.jsx'"));
+    assert.ok(code.includes("import { DetailView } from '@/components/contract-ui/DetailView.jsx'"));
+  });
+
+  // ETP-4730 — this is the load-bearing half of the assertion above. The barrel
+  // re-exports ~25 modules, so routing these two through it puts them in the
+  // dependency closure of every importer, and therefore in the test surface of
+  // modules that never touch them: DetailView was reachable from 81 test files
+  // while only 33 import it. Emitting the direct paths took that to 49, and
+  // ListView's from 51 to 19. A future "tidy the imports" change that merges these
+  // back into `from '@/components/contract-ui'` would silently undo it, so the
+  // regression is pinned negatively rather than left to review.
+  it('does NOT route ListView or DetailView through the contract-ui barrel', () => {
+    const code = generatePageComponent('order', 'orderLine', masterDetailContract);
+    const barrelImports = code.match(/import \{[^}]*\} from '@\/components\/contract-ui';/g) ?? [];
+    for (const line of barrelImports) {
+      assert.ok(!/\bListView\b/.test(line), `ListView must not come from the barrel: ${line}`);
+      assert.ok(!/\bDetailView\b/.test(line), `DetailView must not come from the barrel: ${line}`);
+    }
   });
 
   it('exports a named component with PascalCase header entity name + Page', () => {
@@ -2403,6 +2421,80 @@ describe('generateTableComponent — gridReadOnly', () => {
 });
 
 // ---------------------------------------------------------------------------
+// generateTableComponent — dimensionsPanel column (ETP-4529)
+// ---------------------------------------------------------------------------
+// Fields flagged `dimensionsPanel: true` are collected into ONE synthetic
+// `type: 'dimensionsPanel'` column instead of becoming their own grid column,
+// regardless of their own `grid` value.
+describe('generateTableComponent — dimensionsPanel column (ETP-4529)', () => {
+  const dimensionsPanelContract = {
+    frontendContract: {
+      window: { id: '901', name: 'Sales Invoice', primaryEntity: 'lines', category: 'sales' },
+      entities: {
+        lines: {
+          fields: [
+            { name: 'product', column: 'M_Product_ID', type: 'foreignKey', tsType: 'string',
+              visibility: 'editable', required: true, grid: true, form: true, lookup: true },
+            { name: 'project', column: 'C_Project_ID', type: 'foreignKey', tsType: 'string',
+              visibility: 'editable', required: false, grid: false, form: true,
+              reference: 'Project', inputMode: 'search', lookup: true, dimensionsPanel: true },
+            { name: 'costcenter', column: 'C_Costcenter_ID', type: 'foreignKey', tsType: 'string',
+              visibility: 'editable', required: false, grid: false, form: true,
+              reference: 'Costcenter', inputMode: 'selector', dimensionsPanel: true },
+          ],
+          searchableFields: [],
+          computedFields: [],
+        },
+      },
+    },
+    backendContract: { processEndpoints: [] },
+  };
+
+  const noDimensionsContract = {
+    frontendContract: {
+      window: { id: '902', name: 'Physical Inventory', primaryEntity: 'lines', category: 'inventory' },
+      entities: {
+        lines: {
+          fields: [
+            { name: 'product', column: 'M_Product_ID', type: 'foreignKey', tsType: 'string',
+              visibility: 'editable', required: true, grid: true, form: true, lookup: true },
+          ],
+          searchableFields: [],
+          computedFields: [],
+        },
+      },
+    },
+    backendContract: { processEndpoints: [] },
+  };
+
+  it('emits exactly one dimensionsPanel column carrying both flagged fields', () => {
+    const code = generateTableComponent('lines', dimensionsPanelContract);
+    const matches = code.match(/type: 'dimensionsPanel'/g) ?? [];
+    assert.equal(matches.length, 1, 'exactly one dimensionsPanel column should be emitted');
+    assert.ok(code.includes("key: 'dimensions'"), 'synthetic column should use key: \'dimensions\'');
+    assert.ok(code.includes("key: 'project'") && code.includes("key: 'costcenter'"),
+      'both flagged fields should appear inside dimensionFields');
+    assert.ok(code.includes("reference: 'Project'"), 'reference should be carried through per field');
+  });
+
+  it('does NOT emit project/costcenter as their own top-level grid columns', () => {
+    const code = generateTableComponent('lines', dimensionsPanelContract);
+    const columnsBlock = code.slice(code.indexOf('const columns'), code.indexOf('const filters'));
+    const topLevelEntries = columnsBlock.match(/^  \{ key: '\w+'/gm) ?? [];
+    const topLevelKeys = topLevelEntries.map(l => l.match(/key: '(\w+)'/)[1]);
+    assert.ok(!topLevelKeys.includes('project'), 'project must not be its own top-level column');
+    assert.ok(!topLevelKeys.includes('costcenter'), 'costcenter must not be its own top-level column');
+    assert.ok(topLevelKeys.includes('product'), 'unflagged fields keep rendering as normal columns');
+  });
+
+  it('is fully additive: an entity with zero dimensionsPanel fields emits no dimensionsPanel column', () => {
+    const code = generateTableComponent('lines', noDimensionsContract);
+    assert.ok(!code.includes('dimensionsPanel'), 'no dimensionsPanel column/import should appear');
+    assert.ok(code.includes("key: 'product'"), 'the unrelated field still renders normally');
+  });
+});
+
+// ---------------------------------------------------------------------------
 // buildEntryFieldLine — skipDefault (HandleDefaults opt-out)
 // ---------------------------------------------------------------------------
 // A line field flagged skipDefault must surface in the add-row entry literal so
@@ -2614,5 +2706,91 @@ describe('resolveSecondaryTabDefs headerEntity collision (ETP-4482)', () => {
     const formImportCount = (code.match(/import AccountingForm from '\.\/AccountingForm';/g) || []).length;
     assert.equal(tableImportCount, 1, 'AccountingTable must be imported exactly once');
     assert.equal(formImportCount, 1, 'AccountingForm must be imported exactly once');
+  });
+});
+
+// ---------------------------------------------------------------------------
+// secondaryTabs.<key>.maxDetailLines (ETP-4565) — caps a single secondary tab's
+// child count, mirroring window.maxDetailLines for the detailEntity pattern but
+// scoped per-tab so a window with several secondaryTabs (e.g. contacts'
+// customerAccounting / vendorAccounting) can cap each independently.
+// ---------------------------------------------------------------------------
+
+function buildSecondaryTabMaxLinesContract(accountingCfgOverrides = {}) {
+  return {
+    frontendContract: {
+      window: {
+        id: '900', name: 'Product', primaryEntity: 'product', category: 'masterdata',
+        secondaryTabs: {
+          accounting: {
+            label: 'Accounting',
+            tabOrder: 1,
+            addLineFields: ['fixedAsset'],
+            ...accountingCfgOverrides,
+          },
+        },
+      },
+      entities: {
+        product: {
+          fields: [
+            { name: 'name', column: 'Name', type: 'string', tsType: 'string',
+              visibility: 'editable', required: true, grid: true, form: true },
+          ],
+          searchableFields: ['name'],
+          computedFields: [],
+        },
+        accounting: {
+          fields: [
+            { name: 'fixedAsset', column: 'M_Product_Category_ID', type: 'foreignKey', tsType: 'string',
+              visibility: 'editable', required: true, grid: true, form: true, reference: 'ProductCategory' },
+          ],
+          searchableFields: [],
+          computedFields: [],
+        },
+      },
+    },
+    backendContract: { processEndpoints: [] },
+  };
+}
+
+// Locates the accounting secondary-tab entry's full literal, from its opening
+// `{` through its OWN matching `}` — a plain `[^}]*` regex (or a naive
+// `indexOf('},')`) stops at the first inner `}`, which here is the nested
+// `addLineFields: { entry: [ { key: 'fixedAsset', ... }, ], ... }` sub-object
+// (itself containing another nested entry-literal), truncating before
+// trailing top-level props like `maxDetailLines`. Tracks brace depth instead
+// so it always returns the whole entry regardless of nesting.
+function extractSecondaryTabEntry(code, key) {
+  const keyIdx = code.indexOf(`key: '${key}'`);
+  assert.ok(keyIdx >= 0, `expected a secondary-tab entry for key '${key}'`);
+  const start = code.lastIndexOf('{', keyIdx);
+  let depth = 0;
+  for (let i = start; i < code.length; i++) {
+    if (code[i] === '{') depth++;
+    else if (code[i] === '}') {
+      depth--;
+      if (depth === 0) return code.slice(start, i + 1);
+    }
+  }
+  throw new Error(`unbalanced braces looking for the end of the '${key}' secondary-tab entry`);
+}
+
+describe('resolveSecondaryTabDefs / buildSecondaryTabPropEntry — maxDetailLines (ETP-4565)', () => {
+  it('emits maxDetailLines: 1 on the secondary tab entry when declared', () => {
+    const code = generatePageComponent('product', null, buildSecondaryTabMaxLinesContract({ maxDetailLines: 1 }));
+    const entry = extractSecondaryTabEntry(code, 'accounting');
+    assert.ok(entry.includes('maxDetailLines: 1'), 'expected maxDetailLines: 1 in the secondary-tab entry');
+  });
+
+  it('emits maxDetailLines: 0 (import-only-style cap) — must check `!= null`, not truthiness', () => {
+    const code = generatePageComponent('product', null, buildSecondaryTabMaxLinesContract({ maxDetailLines: 0 }));
+    const entry = extractSecondaryTabEntry(code, 'accounting');
+    assert.ok(entry.includes('maxDetailLines: 0'), 'expected maxDetailLines: 0 to be emitted, not silently dropped');
+  });
+
+  it('omits maxDetailLines entirely when not declared (default: uncapped)', () => {
+    const code = generatePageComponent('product', null, buildSecondaryTabMaxLinesContract());
+    const entry = extractSecondaryTabEntry(code, 'accounting');
+    assert.ok(!entry.includes('maxDetailLines'), 'maxDetailLines must not appear when undeclared');
   });
 });

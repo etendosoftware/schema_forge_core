@@ -73,7 +73,7 @@ SELECT * FROM (
       WHERE f2.AD_Tab_ID = t.AD_Tab_ID AND f2.AD_Column_ID = c.AD_Column_ID
     )
 ) combined
-ORDER BY tab_seq, tab_name, AD_Tab_ID, field_seq, ColumnName, ad_field_id NULLS LAST`,
+ORDER BY tab_seq, tab_name COLLATE "C", AD_Tab_ID COLLATE "C", field_seq, ColumnName COLLATE "C", ad_field_id COLLATE "C" NULLS LAST`,
 
   callouts: `
 SELECT co.AD_Callout_ID, co.Name AS callout_name,
@@ -84,7 +84,7 @@ JOIN AD_Column col ON col.AD_Callout_ID = co.AD_Callout_ID
 JOIN AD_Tab t ON col.AD_Table_ID = t.AD_Table_ID
 LEFT JOIN AD_Model_Object mo ON mo.AD_Callout_ID = co.AD_Callout_ID
 WHERE t.AD_Window_ID = $1
-ORDER BY co.AD_Callout_ID, col.AD_Table_ID, col.ColumnName`,
+ORDER BY co.AD_Callout_ID COLLATE "C", col.AD_Table_ID COLLATE "C", col.ColumnName COLLATE "C"`,
 
   'validation-rules': `
 SELECT vr.AD_Val_Rule_ID, vr.Name, vr.Code, c.ColumnName
@@ -102,9 +102,10 @@ JOIN AD_Column c ON f.AD_Column_ID = c.AD_Column_ID
 JOIN AD_Tab t ON f.AD_Tab_ID = t.AD_Tab_ID
 WHERE t.AD_Window_ID = $1
   AND (f.DisplayLogic IS NOT NULL OR c.ReadOnlyLogic IS NOT NULL)
-ORDER BY c.ColumnName, f.Name, f.AD_Field_ID`,
+ORDER BY c.ColumnName COLLATE "C", f.Name COLLATE "C", f.AD_Field_ID COLLATE "C"`,
 
   'document-processes': `
+SELECT * FROM (
 SELECT 'tab_process' AS mechanism,
        p.AD_Process_ID AS process_id, NULL AS obuiapp_process_id,
        p.Name, p.Classname, NULL AS column_name
@@ -127,7 +128,8 @@ FROM OBUIAPP_Process op
 JOIN AD_Column c ON c.EM_OBUIAPP_Process_ID = op.OBUIAPP_Process_ID
 JOIN AD_Tab t ON c.AD_Table_ID = t.AD_Table_ID
 WHERE t.AD_Window_ID = $1
-ORDER BY mechanism, name`,
+) q
+ORDER BY mechanism COLLATE "C", name COLLATE "C", column_name COLLATE "C" NULLS LAST, process_id COLLATE "C" NULLS LAST, obuiapp_process_id COLLATE "C" NULLS LAST`,
 
   'auxiliary-inputs': `
 SELECT ai.Name, ai.Code AS validation_code, t.Name AS tab_name, t.AD_Tab_ID

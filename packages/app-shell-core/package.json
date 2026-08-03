@@ -25,6 +25,7 @@
     "./hooks/useCurrency.jsx": "./src/hooks/useCurrency.jsx",
     "./hooks/use-mobile.jsx": "./src/hooks/use-mobile.jsx",
     "./hooks/useDistinctValues.js": "./src/hooks/useDistinctValues.js",
+    "./hooks/useNeoImage.js": "./src/hooks/useNeoImage.js",
     "./lib/gridQuery.js": "./src/lib/gridQuery.js",
     "./lib/validation": "./src/lib/validation/index.js",
     "./styles.css": "./src/styles.css",
