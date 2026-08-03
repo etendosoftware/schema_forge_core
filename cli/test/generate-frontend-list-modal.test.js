@@ -298,6 +298,19 @@ describe('generatePageComponent — cell-renderer registry columns', () => {
     assert.ok(line.includes('"A":"green"') || line.includes('"A": "green"'),
       'tones should map A → green');
   });
+
+  it('emits enumLabels as column-scoped i18n keys, not raw English names (ETP-4685)', () => {
+    const line = columnsBlock().split('\n').find(l => l.includes("key: 'matchType'"));
+    assert.ok(line, 'matchType column should exist');
+    // The filter picker (DistinctEnumPicker) resolves enumLabels through
+    // ui()/genericLabels — it needs an i18n key here, not the literal English
+    // AD_Ref_List.Name, or the filter shows untranslated English values
+    // regardless of the active interface language.
+    assert.ok(line.includes("'A': 'matchTypeAuto'"), 'expected column-scoped i18n key for value A');
+    assert.ok(line.includes("'M': 'matchTypeManual'"), 'expected column-scoped i18n key for value M');
+    assert.ok(!line.includes("'A': 'Auto'"), 'must not emit the raw English literal for value A');
+    assert.ok(!line.includes("'M': 'Manual'"), 'must not emit the raw English literal for value M');
+  });
 });
 
 describe('generatePageComponent — listModalConfig toolbar back + filters', () => {

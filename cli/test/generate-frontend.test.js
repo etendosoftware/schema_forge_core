@@ -272,6 +272,41 @@ describe('generateTableComponent', () => {
     assert.ok(code.includes("type: 'status'"));
   });
 
+  it('emits enumLabels as column-scoped i18n keys, not raw English names (ETP-4685)', () => {
+    const contract = {
+      frontendContract: {
+        window: { id: '1', name: 'Product', primaryEntity: 'product', category: 'master' },
+        entities: {
+          product: {
+            fields: [
+              {
+                name: 'productType', column: 'ProductType', type: 'enum', tsType: 'string',
+                visibility: 'editable', grid: true, form: true,
+                enumValues: [
+                  { value: 'I', name: 'Item' },
+                  { value: 'S', name: 'Service' },
+                ],
+              },
+            ],
+            searchableFields: [],
+            computedFields: [],
+          },
+        },
+      },
+    };
+
+    const code = generateTableComponent('product', contract);
+
+    // The selector's filter picker (DistinctEnumPicker) resolves enumLabels
+    // through ui()/genericLabels — it needs an i18n key here, not the literal
+    // English AD_Ref_List.Name, or the filter shows untranslated English values
+    // regardless of the active interface language.
+    assert.ok(code.includes("'I': 'productTypeItem'"), 'expected column-scoped i18n key for value I');
+    assert.ok(code.includes("'S': 'productTypeService'"), 'expected column-scoped i18n key for value S');
+    assert.ok(!code.includes("'I': 'Item'"), 'must not emit the raw English literal for value I');
+    assert.ok(!code.includes("'S': 'Service'"), 'must not emit the raw English literal for value S');
+  });
+
   it('emits column keys instead of labels for i18n resolution', () => {
     const code = generateTableComponent('order', masterDetailContract);
     assert.ok(code.includes("column: 'DocumentNo'"));
