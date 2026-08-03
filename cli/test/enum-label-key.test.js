@@ -55,4 +55,15 @@ describe('buildEnumLabelKey', () => {
     const key = buildEnumLabelKey('ProductType', 'Expense type');
     assert.match(key, /^[a-zA-Z][a-zA-Z0-9]*$/);
   });
+
+  it('disambiguates value names that differ only by a trailing +/- sign', () => {
+    // Real AD_Ref_List collision found in MovementType: "Production -" and
+    // "Production +" must not collapse to the same key, or the two directions
+    // would share one (wrong) translated label.
+    const minus = buildEnumLabelKey('MovementType', 'Production -');
+    const plus = buildEnumLabelKey('MovementType', 'Production +');
+    assert.notEqual(minus, plus);
+    assert.equal(minus, 'movementTypeProductionMinus');
+    assert.equal(plus, 'movementTypeProductionPlus');
+  });
 });
