@@ -706,7 +706,10 @@ export function generateFormComponent(entityName, contract) {
     const clearablePart = f.clearable === false ? ', clearable: false' : '';
     const customRendererPart = f.customRenderer ? `, customRenderer: ${f.customRenderer}` : '';
     const editModalPart = wrapIf(", editModal: '", f.editModal, "'");
-    const fieldLine = `  { key: '${f.name}', column: '${f.column}', type: '${type}'${formLabelPart}${requiredPart}${lookupPart}${popupPart}${readOnlyPart}${inlinePart}${sectionPart}${referencePart}${inputModePart}${searchSelectPart}${allowCreatePart}${createPart}${dependsOnPart}${optionsPart}${valueTypePart}${defaultValuePart}${helpPart}${placeholderPart}${emptyOptionPart}${fieldGroupPart}${precisionPart}${minPart}${integerPart}${displayLogicPart}${readOnlyLogicPart}${spanPart}${rowsPart}${clearablePart}${customRendererPart}${editModalPart} },`;
+    // ETP-4749: fixed chip rendered before the input (e.g. "https://"); see EntityForm's
+    // renderInputField and recipientEdits.js's format validators.
+    const inputPrefixPart = wrapIf(", inputPrefix: '", f.inputPrefix, "'");
+    const fieldLine = `  { key: '${f.name}', column: '${f.column}', type: '${type}'${formLabelPart}${requiredPart}${lookupPart}${popupPart}${readOnlyPart}${inlinePart}${sectionPart}${referencePart}${inputModePart}${searchSelectPart}${allowCreatePart}${createPart}${dependsOnPart}${optionsPart}${valueTypePart}${defaultValuePart}${helpPart}${placeholderPart}${emptyOptionPart}${fieldGroupPart}${precisionPart}${minPart}${integerPart}${displayLogicPart}${readOnlyLogicPart}${spanPart}${rowsPart}${clearablePart}${customRendererPart}${editModalPart}${inputPrefixPart} },`;
     return [...slotLines, fieldLine].join('\n');
   }).join('\n');
 

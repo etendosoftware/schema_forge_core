@@ -1588,6 +1588,10 @@ const uiHintsContract = {
           { name: 'plainField', column: 'PlainCol', type: 'string', tsType: 'string', visibility: 'editable', required: false, grid: true, form: true },
           { name: 'escapedHelp', column: 'EscapedCol', type: 'string', tsType: 'string', visibility: 'editable', required: false, grid: false, form: true,
             defaultValue: "it's a test", help: "don't forget" },
+          // ETP-4749: fixed, non-editable chip rendered before the input (e.g. a
+          // website field whose stored value is only the part after "https://").
+          { name: 'etgoWeb', column: 'EM_Etgo_Web', type: 'string', tsType: 'string', visibility: 'editable', required: false, grid: false, form: true,
+            inputPrefix: 'https://' },
         ],
         searchableFields: [],
         computedFields: [],
@@ -1631,12 +1635,20 @@ describe('generateFormComponent - UI hints', () => {
     assert.ok(!plainLine.includes('help'), 'plainField should not have help');
     assert.ok(!plainLine.includes('fieldGroup'), 'plainField should not have fieldGroup');
     assert.ok(!plainLine.includes('precision'), 'plainField should not have precision');
+    assert.ok(!plainLine.includes('inputPrefix'), 'plainField should not have inputPrefix');
   });
 
   it('escapes single quotes in defaultValue and help', () => {
     const code = generateFormComponent('order', uiHintsContract);
     assert.ok(code.includes("defaultValue: 'it\\'s a test'"), 'should escape single quotes in defaultValue');
     assert.ok(code.includes("help: 'don\\'t forget'"), 'should escape single quotes in help');
+  });
+
+  // ETP-4749 — same mechanical pattern as `help`/`placeholderKey`: emitted verbatim
+  // into the generated field descriptor only when present.
+  it('field with inputPrefix emits inputPrefix in output', () => {
+    const code = generateFormComponent('order', uiHintsContract);
+    assert.ok(code.includes("inputPrefix: 'https://'"), 'should emit inputPrefix');
   });
 
   it('field groups comment is not generated when no fieldGroup fields exist', () => {

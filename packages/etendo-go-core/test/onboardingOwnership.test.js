@@ -93,6 +93,27 @@ describe('Core-owned onboarding API contract', () => {
     assert.equal(calls[0].options.body, JSON.stringify({ draft: { fullName: 'Ada' } }));
     assert.deepEqual(messages.map(({ type }) => type), ['progress', 'result']);
   });
+
+  it('includes fiscalIdValue in the /onboarding POST body when provided, and omits it when blank (ETP-4749)', async () => {
+    const calls = [];
+    const fetchImpl = async (url, options = {}) => {
+      calls.push({ url, options });
+      return streamResponse([{ type: 'result', success: true }]);
+    };
+
+    await runOnboardingStream(fetchImpl, '', 'token', {
+      clientName: 'Core', currency: 'EUR', language: 'en_US', countryCode: 'ES', fiscalIdValue: '1234',
+    }, () => {});
+    assert.deepEqual(JSON.parse(calls[0].options.body), {
+      clientName: 'Core', currency: 'EUR', language: 'en_US', countryCode: 'ES', fiscalIdValue: '1234',
+    });
+
+    await runOnboardingStream(fetchImpl, '', 'token', {
+      clientName: 'Core', currency: 'EUR', language: 'en_US', countryCode: 'ES', fiscalIdValue: '',
+    }, () => {});
+    const secondBody = JSON.parse(calls[1].options.body);
+    assert.equal('fiscalIdValue' in secondBody, false);
+  });
 });
 
 describe('Core-owned onboarding state and SSO helpers', () => {
@@ -102,8 +123,9 @@ describe('Core-owned onboarding state and SSO helpers', () => {
     first[0].status = 'done';
     assert.equal(second[0].status, 'pending');
     assert.equal(applyProgressMessage(second, { type: 'progress', step: 'client', status: 'error', message: 'failed' })[1].status, 'failed');
-    assert.deepEqual(buildOnboardingPayload({ clientName: 'Core', currency: 'EUR', language: 'en_US', countryCode: 'ES', fiscalIdValue: 'private' }), {
-      clientName: 'Core', currency: 'EUR', language: 'en_US', countryCode: 'ES', address: undefined,
+    // ETP-4749: fiscalIdValue is now a provisioning contract field (previously stripped).
+    assert.deepEqual(buildOnboardingPayload({ clientName: 'Core', currency: 'EUR', language: 'en_US', countryCode: 'ES', fiscalIdValue: '1234' }), {
+      clientName: 'Core', currency: 'EUR', language: 'en_US', countryCode: 'ES', address: undefined, fiscalIdValue: '1234',
     });
     assert.equal(isProfileStepValid({ fullName: 'Ada', countryCode: 'ES' }), true);
     assert.equal(isCompanyStepValid({ clientName: 'Core' }), true);

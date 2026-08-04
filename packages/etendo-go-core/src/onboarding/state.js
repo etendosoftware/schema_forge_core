@@ -42,6 +42,10 @@ export function buildOnboardingPayload(form) {
     language: form.language,
     countryCode: form.countryCode,
     address: form.address,
+    // Optional Tax ID from the Company step — sent to provisioning when provided
+    // (ETP-4749; previously dropped here, matching the old api.js/SetupProgressStep.jsx
+    // behavior that this same fix reverses).
+    fiscalIdValue: form.fiscalIdValue,
   };
 }
 
@@ -104,7 +108,9 @@ export function isProfileStepValid(form) {
 }
 
 export function isCompanyStepValid(form) {
-  // Tax ID (fiscalIdValue) is optional: it is not sent to provisioning, so it
-  // must not gate the step. Only the company name is required.
+  // Tax ID (fiscalIdValue) is optional: it IS sent to provisioning when the user fills
+  // it in (ETP-4749 — see SetupProgressStep.jsx's formPayload and api.js's
+  // runOnboardingStream), but it must still not gate the step. Only the company name
+  // is required to advance.
   return Boolean(form.clientName?.trim());
 }

@@ -239,6 +239,12 @@ const FIELD_DECISION_COPY_PROPS = [
   // renders LocationModalField, which opens the shared LocationEditorModal to
   // create/edit the referenced record inline (ETP-4526, Warehouse Location/Address).
   'editModal',
+  // Fixed, non-editable text shown as a chip immediately before the input (e.g.
+  // "https://" for a website field whose stored value is only the part after the
+  // scheme). Rendered by EntityForm's renderInputField; read again by
+  // recipientEdits.js's format validators to reconstruct the full value before
+  // checking (e.g. isSecureUrl(field.inputPrefix + value)). ETP-4749.
+  'inputPrefix',
   // i18n key for the inline "+ create" action label (e.g. "+ New transaction type").
   'createLabelKey',
   // i18n keys for the inline-create modal: dialog title + name-input placeholder.

@@ -346,6 +346,51 @@ describe('resolveCurated — excludeValueOf passthrough', () => {
   });
 });
 
+// ETP-4749 — fixed, non-editable chip rendered before a text input (e.g. "https://"
+// for a website field whose stored value is only the part after the scheme).
+describe('resolveCurated — inputPrefix passthrough', () => {
+  const schemaRaw = {
+    window: { id: '123', name: 'Contacts' },
+    entities: [{
+      name: 'businessPartner',
+      tableName: 'C_BPartner',
+      tabId: '10',
+      tabName: 'Business Partner',
+      fields: [
+        { name: 'etgoWeb', columnName: 'EM_Etgo_Web', label: 'Web', type: 'string', visibility: 'editable' },
+        { name: 'plain', columnName: 'PlainCol', label: 'Plain', type: 'string', visibility: 'editable' },
+      ],
+    }],
+  };
+
+  const decisions = {
+    version: 2,
+    window: { name: 'Contacts' },
+    entities: {
+      businessPartner: {
+        name: 'businessPartner',
+        fields: {
+          etgoWeb: { inputPrefix: 'https://' },
+          plain: {},
+        },
+      },
+    },
+    rules: {},
+  };
+
+  it('copies field inputPrefix into the curated field', async () => {
+    const { schema } = await resolveCurated(schemaRaw, { rules: [] }, decisions);
+    const web = schema.entities[0].fields.find(f => f.name === 'etgoWeb');
+    assert.equal(web.inputPrefix, 'https://');
+  });
+
+  it('omits inputPrefix when a field does not declare one', async () => {
+    const { schema } = await resolveCurated(schemaRaw, { rules: [] }, decisions);
+    const plain = schema.entities[0].fields.find(f => f.name === 'plain');
+    assert.equal(plain.inputPrefix, undefined);
+  });
+});
+
 // ─── virtualFields — appendVirtualFields exercised via resolveCurated ───
 describe('resolveCurated — virtualFields', () => {
   const baseSchema = {
