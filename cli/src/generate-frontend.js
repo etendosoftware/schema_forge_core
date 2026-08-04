@@ -2163,7 +2163,7 @@ export function generatePageComponent(headerEntity, detailEntity, contract) {
   const toolbarButtonSize = windowConfig.toolbarButtonSize ?? null;
   const listbarPaddingX = windowConfig.listbarPaddingX ?? null;
   const tablePaddingX = windowConfig.tablePaddingX ?? null;
-  const linesLayout = windowConfig.linesLayout ?? 'classic';
+  const linesLayout = windowConfig.linesLayout ?? 'inlineEditable';
   const balanceFooter = windowConfig.balanceFooter ?? null;
   const listViewOptions = windowConfig.listViewOptions ?? null;
   const listBaseFilter = windowConfig.listBaseFilter ?? null;
@@ -2292,8 +2292,9 @@ export function generatePageComponent(headerEntity, detailEntity, contract) {
   const listbarPaddingXProp = wrapIf('\n      listbarPaddingX="', listbarPaddingX, '"');
   const tablePaddingXProp = wrapIf('\n      tablePaddingX="', tablePaddingX, '"');
   // linesLayout prop (DetailView). Only emit when non-default to keep generated
-  // output diff-free for windows that don't opt in.
-  const cond = linesLayout && linesLayout !== 'classic';
+  // output diff-free for windows that don't opt in. Default is 'inlineEditable',
+  // so only the explicit 'classic' opt-out is emitted.
+  const cond = linesLayout && linesLayout !== 'inlineEditable';
   const linesLayoutProp = wrapIf('\n        linesLayout="', linesLayout, '"', cond);
   // balanceFooter prop (DetailView) — { debitField, creditField } for double-entry windows.
   const balanceFooterProp = jsonWrapIf('\n        balanceFooter={', balanceFooter, '}');
