@@ -34,6 +34,7 @@ concurrency:
 
 permissions:
   contents: write   # push develop and main
+  actions: write    # dispatch release.yml after the push
 
 jobs:
   promote:
@@ -122,6 +123,7 @@ jobs:
 
       # --- Point of no return: everything above passed -----------------------
       - name: Push develop and main (atomic)
+        id: push
         if: ${{ inputs.dry_run == false }}
         env:
           EPIC: ${{ inputs.epic_branch }}
@@ -132,6 +134,7 @@ jobs:
              && [ "$(git rev-parse develop)" = "$(git rev-parse origin/develop)" ] \
              && [ "$(git rev-parse main)" = "$(git rev-parse origin/main)" ]; then
             echo "develop and main are already up to date with '$EPIC' — nothing to promote."
+            echo "pushed=false" >> "$GITHUB_OUTPUT"
             exit 0
           fi
 
@@ -141,9 +144,24 @@ jobs:
           # core.hooksPath at .githooks; the local pre-push dev hook is for
           # workstations, not CI (which just ran its own gates above).
           git push --atomic --no-verify origin develop main
+          echo "pushed=true" >> "$GITHUB_OUTPUT"
 
           echo "Promoted '$EPIC' → develop → main."
           echo "release.yml will now bump the patch version and publish."
+
+      # --- Chain the release explicitly --------------------------------------
+      # GitHub does NOT trigger workflows from events created with the default
+      # GITHUB_TOKEN (anti-recursion rule), so the push above never fires
+      # release.yml's `push: branches: [main]` trigger. `workflow_dispatch` and
+      # `repository_dispatch` are the documented EXCEPTIONS to that rule, so this
+      # works with the default token — no PAT needed.
+      # Gated on the push step's own outcome: skipped on a dry run, and skipped
+      # when there was nothing to promote (no new commits reached main).
+      - name: Trigger release
+        if: ${{ inputs.dry_run == false && steps.push.outputs.pushed == 'true' }}
+        run: gh workflow run release.yml --ref main
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Dry run — push skipped
         if: ${{ inputs.dry_run == true }}
