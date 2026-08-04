@@ -981,6 +981,24 @@ describe('Rule F20 — missing filterMode on custom grid columns', () => {
   });
 });
 
+// ─── F21 — customTabsAfterBottom + tabOrder incompatibility (ETP-4415) ─────
+
+describe('Rule F21 — customTabsAfterBottom + tabOrder', () => {
+  it('F21: customTabsAfterBottom with a tabOrder on a custom tab is blocked', async () => {
+    const result = await runOnFixtures(['window-f21-bad-combo']);
+    const f21 = result.violations.find(v => v.rule === 'F21');
+    assert.ok(f21, 'F21 should fire when customTabsAfterBottom + a custom tabOrder coexist');
+    assert.equal(f21.severity, 'BLOCK');
+    assert.match(f21.message, /customPanelTabs\.pricing/);
+  });
+
+  it('F21: customTabsAfterBottom without any custom tabOrder passes', async () => {
+    const result = await runOnFixtures(['window-f21-ok']);
+    const f21 = result.violations.find(v => v.rule === 'F21');
+    assert.ok(!f21, 'F21 should not fire when no custom tab declares tabOrder');
+  });
+});
+
 // ─── F19 — custom table `required` flag drift (ETP-4609 follow-up) ─────────
 // These fixtures need a real tools/app-shell/src/windows/custom/<name>/ tree
 // to resolve against, so `root` is overridden to the fixtures dir itself (the
