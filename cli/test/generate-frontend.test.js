@@ -1883,14 +1883,26 @@ const inlineEditableContract = {
 };
 
 describe('generatePageComponent — linesLayout', () => {
-  it('emits linesLayout="inlineEditable" on DetailView when window declares it', () => {
+  it('does NOT emit linesLayout prop when window declares inlineEditable (now the default)', () => {
     const code = generatePageComponent('order', 'orderLine', inlineEditableContract);
-    assert.ok(code.includes('linesLayout="inlineEditable"'), 'DetailView must receive linesLayout prop');
+    assert.ok(!code.includes('linesLayout='), 'inlineEditable is the default, so no linesLayout prop is emitted');
   });
 
-  it('does NOT emit linesLayout prop for classic layout (default)', () => {
+  it('does NOT emit linesLayout prop when window omits linesLayout (default is inlineEditable)', () => {
     const code = generatePageComponent('order', 'orderLine', masterDetailContract);
-    assert.ok(!code.includes('linesLayout='), 'classic layout must not emit any linesLayout prop');
+    assert.ok(!code.includes('linesLayout='), 'omitting linesLayout falls back to the inlineEditable default, so no prop is emitted');
+  });
+
+  it('emits linesLayout="classic" when window explicitly opts out to classic', () => {
+    const classicContract = {
+      ...inlineEditableContract,
+      frontendContract: {
+        ...inlineEditableContract.frontendContract,
+        window: { ...inlineEditableContract.frontendContract.window, linesLayout: 'classic' },
+      },
+    };
+    const code = generatePageComponent('order', 'orderLine', classicContract);
+    assert.ok(code.includes('linesLayout="classic"'), 'explicit classic opt-out must emit the linesLayout prop');
   });
 
   it('generated table component uses forwardRef for inline-editable windows', () => {
