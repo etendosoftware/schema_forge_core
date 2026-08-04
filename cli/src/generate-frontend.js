@@ -431,8 +431,11 @@ export function generateTableComponent(entityName, contract) {
     // at runtime), not the raw English AD_Ref_List.Name, so filter/grid enum
     // labels respect the active interface language. Built from the stable
     // Value code (o.value), not the mutable display Name (o.name).
+    const enumLabelEntries = f.enumValues?.length
+      ? f.enumValues.map(o => `'${o.value}': '${buildEnumLabelKey(f.column, o.value)}'`).join(', ')
+      : '';
     const enumLabelsPart = ((type === 'enum' || type === 'status') && f.enumValues?.length)
-      ? `, enumLabels: { ${f.enumValues.map(o => `'${o.value}': '${buildEnumLabelKey(f.column, o.value)}'`).join(', ')} }`
+      ? `, enumLabels: { ${enumLabelEntries} }`
       : '';
     const labelPart = f.label ? `, label: '${f.label.replace(/'/g, "\\'")}'` : '';
     const togglePart = fragmentIf(f.inlineToggle, ', toggle: true');
