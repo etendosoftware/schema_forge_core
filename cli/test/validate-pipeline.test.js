@@ -5,7 +5,7 @@ import { fileURLToPath } from 'node:url';
 import { dirname } from 'node:path';
 import { mkdtemp, mkdir, rm, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
-import { validatePipeline, classifyArtifact, getChangedArtifactsSince, parseCLIArgs, ruleF20, loadF20Allowlist } from '../src/validate-pipeline.js';
+import { validatePipeline, classifyArtifact, getChangedArtifactsSince, parseCLIArgs, ruleF20, ruleF21, loadF20Allowlist } from '../src/validate-pipeline.js';
 import { generateContract, splitWindowContractArtifacts } from '../src/generate-contract.js';
 import { generateAll } from '../src/generate-frontend.js';
 
@@ -978,6 +978,93 @@ describe('Rule F20 — missing filterMode on custom grid columns', () => {
 
   it('returns null when the artifact has no contract.json', async () => {
     assert.equal(await ruleF20(join(FIXTURES, 'report-incomplete'), 'report-incomplete', F20_ROOT), null);
+  });
+});
+
+// ─── F21 — declared read-only intent vs the contract's resolved methods ────
+// (ETP-4254). Both write paths — push-to-neo → live DB and lib/neo-delta → XML
+// — set ETGO_SF_ENTITY.ISGET/…/ISDELETE from the contract, so a stale contract
+// silently re-opens a read-only window for writes on the next push.
+
+/** Run F21 alone against a fixture window (bypasses the other rules). */
+function runF21(windowName) {
+  return ruleF21(join(FIXTURES, windowName), windowName);
+}
+
+describe('Rule F21 — read-only intent vs contract methods', () => {
+  it('passes when a read-only window has a regenerated contract', async () => {
+    assert.equal(await runF21('window-f21-ok'), null);
+  });
+
+  it('BLOCK when window.readOnly is declared but the contract was not regenerated', async () => {
+    const v = await runF21('window-f21-stale-contract');
+    assert.ok(v, 'F21 must fire for a stale contract');
+    assert.equal(v.rule, 'F21');
+    assert.equal(v.severity, 'BLOCK');
+    assert.match(v.message, /entity 'log' resolves to methods \[GET, GETBYID\]/);
+    assert.match(v.message, /would push \[GET, GETBYID, POST, PUT, PATCH, DELETE\]/);
+  });
+
+  it('passes a per-entity readOnly restriction on a writable window', async () => {
+    assert.equal(await runF21('window-f21-entity-readonly'), null);
+  });
+
+  it('passes a per-entity readOnly:false opt-out of a read-only window', async () => {
+    assert.equal(await runF21('window-f21-entity-optout'), null);
+  });
+
+  it('passes a per-entity methods allowlist', async () => {
+    assert.equal(await runF21('window-f21-methods-allowlist'), null);
+  });
+
+  it('passes an unrestricted window, including an entity-level hideDelete', async () => {
+    // `lines.delete: false` is the UI affordance opt-out (ETP-4512) and must NOT
+    // be read as an HTTP-method restriction.
+    assert.equal(await runF21('window-f21-unrestricted'), null);
+  });
+
+  it('BLOCK when a contract methods array omits read access', async () => {
+    const v = await runF21('window-f21-bad-invariant');
+    assert.ok(v, 'F21 must fire on the GET-always-granted invariant');
+    assert.equal(v.severity, 'BLOCK');
+    assert.match(v.message, /omits GET \+ GETBYID/);
+  });
+
+  it('BLOCK when a restricting declaration matches no contract entity', async () => {
+    const v = await runF21('window-f21-orphan-decl');
+    assert.ok(v, 'F21 must fire for a mistyped entities key');
+    assert.equal(v.severity, 'BLOCK');
+    assert.match(v.message, /entities\.lognLine declares a read-only restriction/);
+  });
+
+  it('returns null when the artifact has no decisions.json or contract.json', async () => {
+    assert.equal(await runF21('report-incomplete'), null);
+    assert.equal(await runF21('window-orphan-output'), null);
+  });
+
+  it('skips an unparseable decisions.json instead of throwing', async () => {
+    const tmpRoot = await mkdtemp(join(tmpdir(), 'sf-f21-'));
+    try {
+      await writeFile(join(tmpRoot, 'decisions.json'), '{ not json');
+      await writeFile(join(tmpRoot, 'contract.json'), '{}');
+      const result = await ruleF21(tmpRoot, 'broken');
+      assert.equal(result.kind, 'skipped');
+      assert.equal(result.rule, 'F21');
+    } finally {
+      await rm(tmpRoot, { recursive: true, force: true });
+    }
+  });
+
+  it('is registered in the window checks (reachable through validatePipeline)', async () => {
+    const result = await runOnFixtures(['window-f21-stale-contract']);
+    const v = result.violations.find(v => v.rule === 'F21');
+    assert.ok(v, 'F21 must run as part of the window check registry');
+    assert.equal(v.severity, 'BLOCK');
+  });
+
+  it('is skippable via --skip=F21', async () => {
+    const result = await runOnFixtures(['window-f21-stale-contract'], { skip: ['F21'] });
+    assert.equal(result.violations.find(v => v.rule === 'F21'), undefined);
   });
 });
 

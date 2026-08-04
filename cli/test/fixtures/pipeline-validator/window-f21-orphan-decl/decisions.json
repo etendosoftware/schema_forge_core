@@ -1,0 +1,7 @@
+{
+  "version": "v2",
+  "window": {},
+  "entities": {
+    "lognLine": { "readOnly": true }
+  }
+}

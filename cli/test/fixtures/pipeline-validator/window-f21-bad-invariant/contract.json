@@ -1,0 +1,13 @@
+{
+  "version": "v2",
+  "frontendContract": {
+    "window": { "primaryEntity": "log" },
+    "entities": { "log": { "fields": [] } }
+  },
+  "apiPrediction": {
+    "crud": {
+      "log": { "get": false, "getById": false, "post": true, "put": false, "patch": false, "delete": false, "methods": ["POST"] }
+    }
+  },
+  "agentProfile": {}
+}
