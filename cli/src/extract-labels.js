@@ -58,14 +58,13 @@ ORDER BY rl.value, rlt.name NULLS LAST`,
   // enumLabels in generated grid/filter columns. Unlike `statuses` above, this
   // is NOT restricted to a whitelist: every List column's values are covered,
   // scoped by column name (via buildEnumLabelKey) to avoid collisions between
-  // unrelated reference lists that happen to share a short Value code.
-  // base_name is always the untranslated AD_Ref_List.Name so the resulting key
-  // is identical across every language pass (only `label` changes per $1).
+  // unrelated reference lists that happen to share a short Value code. Keyed
+  // by rl.value (stable, language-independent — matches the `statuses`
+  // convention above), never by rl.name, which is a mutable display label.
   enumLabels: `
 SELECT DISTINCT ON (c.columnname, rl.value)
   c.columnname AS column_name,
   rl.value AS value,
-  rl.name AS base_name,
   COALESCE(rlt.name, rl.name) AS label
 FROM ad_column c
 JOIN ad_ref_list rl ON rl.ad_reference_id = c.ad_reference_value_id
@@ -126,7 +125,7 @@ function buildKeyLabelMap(rows) {
 function buildEnumLabelMap(rows) {
   const result = {};
   for (const row of rows) {
-    const key = buildEnumLabelKey(row.column_name, row.base_name);
+    const key = buildEnumLabelKey(row.column_name, row.value);
     // Last-write-wins for duplicates, consistent with buildKeyLabelMap.
     result[key] = { label: row.label || '' };
   }

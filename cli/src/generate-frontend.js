@@ -429,9 +429,10 @@ export function generateTableComponent(entityName, contract) {
     const selectionPart = fragmentIf(f.isSelectionColumn, ', isSelectionColumn: true');
     // ETP-4685 — emit a column-scoped i18n key (resolved via ui()/genericLabels
     // at runtime), not the raw English AD_Ref_List.Name, so filter/grid enum
-    // labels respect the active interface language.
+    // labels respect the active interface language. Built from the stable
+    // Value code (o.value), not the mutable display Name (o.name).
     const enumLabelsPart = ((type === 'enum' || type === 'status') && f.enumValues?.length)
-      ? `, enumLabels: { ${f.enumValues.map(o => `'${o.value}': '${buildEnumLabelKey(f.column, o.name)}'`).join(', ')} }`
+      ? `, enumLabels: { ${f.enumValues.map(o => `'${o.value}': '${buildEnumLabelKey(f.column, o.value)}'`).join(', ')} }`
       : '';
     const labelPart = f.label ? `, label: '${f.label.replace(/'/g, "\\'")}'` : '';
     const togglePart = fragmentIf(f.inlineToggle, ', toggle: true');
@@ -1543,7 +1544,8 @@ function buildListModalColumns(entity) {
     if ((type === 'enum' || type === 'status') && f.enumValues?.length) {
       // ETP-4685 — same column-scoped i18n key as the standard DataTable columns
       // (generateTableComponent), instead of the raw English AD_Ref_List.Name.
-      const enumEntries = f.enumValues.map(o => `'${o.value}': '${buildEnumLabelKey(f.column, o.name)}'`).join(', ');
+      // Built from the stable Value code, not the mutable display Name.
+      const enumEntries = f.enumValues.map(o => `'${o.value}': '${buildEnumLabelKey(f.column, o.value)}'`).join(', ');
       enumLabelsPart = `, enumLabels: { ${enumEntries} }`;
     }
     const enumVariantsPart = jsonWrapIf(', enumVariants: ', f.enumVariants);
