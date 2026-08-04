@@ -1,12 +1,12 @@
 name: Publish preview packages
 
 # Publishes a throwaway PREVIEW (prerelease) of ALL publishable packages, in
-# lockstep, on every push to a feature branch — so the published-package path can
-# be tested without cutting a real `latest` release.
+# lockstep, only when the feature branch has an open PR — so the
+# published-package path can be tested without cutting a real `latest` release.
 #
 # See docs/plans/2026-07-14-preview-package-publishing.md (in etendo_schema_forge).
 #
-#   - Trigger: push to feature/** (auto) + manual workflow_dispatch.        (D4)
+#   - Trigger: push to feature/** (auto) + manual workflow_dispatch, gated by PR.
 #   - Version: <base>-preview.<branchid>.<timestamp>.<shortsha>.            (D3)
 #   - dist-tag: alpha — never `latest`, so consumers are unaffected.        (D2)
 #   - Scope: the 6 publishable packages, lockstep.                         (D6)
@@ -31,7 +31,30 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+  find-pr:
+    name: Check for an open feature PR
+    runs-on: ubuntu-latest
+    outputs:
+      number: ${{ steps.pr.outputs.number }}
+    steps:
+      - id: pr
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          BRANCH: ${{ github.ref_name }}
+          REPO: ${{ github.repository }}
+        run: |
+          PR=$(gh pr list --repo "$REPO" --head "$BRANCH" --state open \
+                 --json number --jq '.[0].number // empty')
+          echo "number=$PR" >> "$GITHUB_OUTPUT"
+          if [ -z "$PR" ]; then
+            echo "No open PR for $BRANCH — preview publication is skipped."
+          else
+            echo "Open PR #$PR found for $BRANCH."
+          fi
+
   preview:
+    needs: find-pr
+    if: needs.find-pr.outputs.number != ''
     name: Build, test & publish preview
     runs-on: ubuntu-latest
     steps:
@@ -110,12 +133,12 @@ jobs:
       # A) Commit status: pins "alpha: <version>" to this SHA, so it shows as a
       #    check on the commit AND in the PR's checks list — no need to open the
       #    run to see what was published. Links back to this run.
-      # B) PR comment: if the branch has an open PR, post a single fresh comment
+      # B) PR comment: post a single fresh comment on the PR that gated publishing.
       #    with the version and the exact pin snippet. On each push the previous
       #    bot comment (matched by marker) is deleted and a NEW one is posted, so
       #    it always lands at the bottom of the PR and notifies subscribers
       #    (editing in place would leave it buried and silent). Skipped silently
-      #    when there is no open PR (e.g. pre-PR pushes).
+      #    when there is no open PR (the find-pr job skips this entire job).
       # Both are fail-soft: a comment/status hiccup must never fail the publish.
       - name: Pin published version to the commit (status)
         continue-on-error: true
@@ -134,16 +157,10 @@ jobs:
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           VERSION: ${{ steps.ver.outputs.version }}
-          BRANCH: ${{ github.ref_name }}
+          PR: ${{ needs.find-pr.outputs.number }}
           REPO: ${{ github.repository }}
         run: |
           set -euo pipefail
-          PR=$(gh pr list --repo "$REPO" --head "$BRANCH" --state open \
-                 --json number --jq '.[0].number // empty')
-          if [ -z "$PR" ]; then
-            echo "No open PR for $BRANCH — skipping comment."
-            exit 0
-          fi
           MARKER='<!-- preview-packages-bot -->'
           BODY="${MARKER}
           📦 **Preview packages published** — dist-tag \`alpha\`

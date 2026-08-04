@@ -1888,6 +1888,13 @@ function resolveSecondaryTabDefs(secondaryTabsDecl, contract, headerEntity, deta
       const TableName = cfg.customTable ?? `${toJsIdentifier(key)}Table`;
       const addLineFieldKeys = cfg.addLineFields ?? [];
       const requireSavedRecord = cfg.requireSavedRecord === true;
+      // ETP-4565 — caps the tab's child count, mirroring window.maxDetailLines'
+      // semantics for the detailEntity pattern (N>0: hide add affordances once the
+      // count reaches N; 0: disable manual add entirely — import-only-style). Unlike
+      // the top-level flag this is per-tab, since a window can have several
+      // secondaryTabs with independent caps (e.g. contacts' customerAccounting vs.
+      // vendorAccounting).
+      const maxDetailLines = cfg.maxDetailLines ?? null;
       const customAddModalName = cfg.customAddModal ?? null;
       const entityFields = contract.frontendContract.entities[key]?.fields ?? [];
       const addLineEntries = addLineFieldKeys.map(fk => {
@@ -1921,7 +1928,7 @@ function resolveSecondaryTabDefs(secondaryTabsDecl, contract, headerEntity, deta
       const readOnlyLogicJs = cfg.readOnlyLogic
         ? convertLogicToJs(cfg.readOnlyLogic, headerColumnMap, headerBooleanFields)
         : null;
-      return { key, label: cfg.label ?? toLabel(key), isFormTab, isPanelTab, isCustomForm: !!cfg.customForm, isCustomTable: !!cfg.customTable, PanelName, FormName, TableName, addLineEntries, requireSavedRecord, isCustomAddModal: !!customAddModalName, CustomAddModalName: customAddModalName, readOnlyLogicJs };
+      return { key, label: cfg.label ?? toLabel(key), isFormTab, isPanelTab, isCustomForm: !!cfg.customForm, isCustomTable: !!cfg.customTable, PanelName, FormName, TableName, addLineEntries, requireSavedRecord, maxDetailLines, isCustomAddModal: !!customAddModalName, CustomAddModalName: customAddModalName, readOnlyLogicJs };
     });
 }
 
@@ -1960,6 +1967,9 @@ function buildSecondaryTabPropEntry(t) {
   const readOnlyLogicPart = t.readOnlyLogicJs
     ? `, readOnlyLogic: (record) => ${t.readOnlyLogicJs}`
     : '';
+  // ETP-4565 — 0 is a legitimate cap (import-only-style, no manual add at all), so
+  // this must check `!= null`, not truthiness.
+  const maxDetailLinesPart = t.maxDetailLines != null ? `, maxDetailLines: ${t.maxDetailLines}` : '';
   if (t.isFormTab) {
     return `          { key: '${t.key}', label: '${t.label}', isFormTab: true, Form: ${t.FormName}${requireSavedPart}${readOnlyLogicPart} },`;
   }
@@ -1971,7 +1981,7 @@ function buildSecondaryTabPropEntry(t) {
     : '';
   const customAddModalPart = wrapIf(', customAddModal: ', t.CustomAddModalName);
   const formProp = (t.isCustomAddModal && !t.isCustomForm) ? '' : `, Form: ${t.FormName}`;
-  return `          { key: '${t.key}', label: '${t.label}', Table: ${t.TableName}${formProp}${addLinePart}${customAddModalPart}${requireSavedPart}${readOnlyLogicPart} },`;
+  return `          { key: '${t.key}', label: '${t.label}', Table: ${t.TableName}${formProp}${addLinePart}${customAddModalPart}${requireSavedPart}${readOnlyLogicPart}${maxDetailLinesPart} },`;
 }
 
 function buildDetailProcessesForPage(detailEntity, contract, processOverrides) {
@@ -2507,8 +2517,20 @@ export function generatePageComponent(headerEntity, detailEntity, contract) {
     windowAccessGuardBlock,
     effectiveWindowProp
   } = buildWindowAccessWiring(windowAccessId);
+  // ETP-4730 — ListView and DetailView are imported from their own modules, NOT from the
+  // '@/components/contract-ui' barrel. Do not "tidy" these two back into the barrel import.
+  //
+  // The barrel re-exports ~25 modules, so importing it pulls every one of them into the
+  // importer's dependency closure. That makes DetailView reachable from the tests of any
+  // module that touches the barrel for something unrelated, which is how a change to
+  // DetailView came to invalidate 81 test files while only 33 actually import it.
+  //
+  // Measured with etendo-ci-analysis/measure-change-surface.mjs over the generated pages:
+  // DetailView's test surface 81 -> 49 and ListView's 51 -> 19. In CI-amplification terms
+  // (changes x tests reached) that is 33,210 -> 20,090 and 5,661 -> 2,109.
   return `import { ${useStateImport}${useMemoImport}useEffect } from 'react';
-import { ListView, DetailView } from '@/components/contract-ui';${windowAccessImport}${fragmentIf(customListIcons, `\nimport { SortIcon, RefreshIcon } from '@/components/ui/custom-icons';`)}${fragmentIf(menuActionsConfig.length > 0, `\nimport { toast } from 'sonner';`)}${wrapIf('\nimport { ', lineConfigSymbol, ` } from '@/hooks/useLineGrossAmount';`)}
+import { ListView } from '@/components/contract-ui/ListView.jsx';
+import { DetailView } from '@/components/contract-ui/DetailView.jsx';${windowAccessImport}${fragmentIf(customListIcons, `\nimport { SortIcon, RefreshIcon } from '@/components/ui/custom-icons';`)}${fragmentIf(menuActionsConfig.length > 0, `\nimport { toast } from 'sonner';`)}${wrapIf('\nimport { ', lineConfigSymbol, ` } from '@/hooks/useLineGrossAmount';`)}
 ${headerTableImport}
 import ${headerName}Form from './${headerName}Form';${(buildDetailImports(detailEntity, detailName, customLinesComp))}
 ${fragmentIf(secondaryTabDefs.length > 0, `${secondaryTabsImports}\n`)}${formFooterImport}${customLinesImport}${primaryTabsImports}${listKpiCardsImport}${relatedDocsImport}${attachmentsImport}${extraTabsImport}${customCompImportBlock}import catalogs from './mockCatalogs';

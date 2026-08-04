@@ -68,7 +68,26 @@ export const ENVIRONMENT_SESSION_KEYS = [
   'sf_auth_selected_org',
 ];
 
+/**
+ * Remembers which environment was last entered, so signing in again returns to
+ * it instead of to whichever one happens to be first. Deliberately NOT in
+ * {@link ENVIRONMENT_SESSION_KEYS}: the session is cleared on logout, the
+ * preference is not.
+ */
+export const LAST_ENVIRONMENT_KEY = 'sf_last_environment';
+
+export function rememberEnvironment(clientId) {
+  if (typeof localStorage === 'undefined' || !localStorage || !clientId) return;
+  try {
+    localStorage.setItem(LAST_ENVIRONMENT_KEY, clientId);
+  } catch {
+    // Storage may be unavailable or throw (SSR / private mode); the preference
+    // is an optimisation, never a requirement.
+  }
+}
+
 export function buildEnvironmentSessionStorage(env, loginResponse) {
+  rememberEnvironment(env.clientId);
   const values = {
     sf_auth_token: loginResponse.token,
     sf_auth_user: env.adminUserName || env.adminUser || '',
