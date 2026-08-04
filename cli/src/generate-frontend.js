@@ -1947,7 +1947,12 @@ function buildDetailTableAndFormProps(detailEntity, customLinesComp, hideDetailF
 }
 
 function buildEnumOptionStr(o) {
-  return `{ value: '${o.value}', label: '${o.name.replace(/'/g, "\\'")}' }`;
+  // ETP-4685 — mirror getS()'s per-option labels dict. Without it, a select
+  // field declared on a secondary tab (e.g. contacts' bankAccount.bankFormat)
+  // shows the raw AD Name regardless of locale once rendered by DataTable's
+  // InlineAddRow / InlineLinesPanel's EditCell.
+  const labelsPart = o.labels ? `, labels: ${JSON.stringify(o.labels)}` : '';
+  return `{ value: '${o.value}', label: '${o.name.replace(/'/g, "\\'")}'${labelsPart} }`;
 }
 
 function buildSecondaryTabImport(t, specName) {
