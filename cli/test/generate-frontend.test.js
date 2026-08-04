@@ -2209,6 +2209,70 @@ describe('generatePageComponent — clearsField and labels in secondary-tab addL
   });
 });
 
+// ---------------------------------------------------------------------------
+// ETP-4685 — per-option `labels` on a `type: 'select'` field's `options` array
+// in secondary-tab addLineFields. getS() (used by getOptionsPart for header/
+// form fields) already emits per-option labels; buildEnumOptionStr() (used
+// here, for secondary-tab addLineFields) must do the same, or a select field
+// declared on a secondary tab (e.g. contacts' bankAccount.bankFormat) shows
+// the raw AD Name regardless of locale once rendered by DataTable's
+// InlineAddRow / InlineLinesPanel's EditCell.
+// ---------------------------------------------------------------------------
+
+const selectOptionsTabContract = {
+  frontendContract: {
+    window: {
+      id: '820',
+      name: 'Contacts',
+      primaryEntity: 'businessPartner',
+      category: 'reference',
+      secondaryTabs: {
+        bankAccount: {
+          label: 'Cuenta Bancaria',
+          tabOrder: 1,
+          addLineFields: ['bankFormat'],
+        },
+      },
+    },
+    entities: {
+      businessPartner: {
+        fields: [
+          { name: 'name', column: 'Name', type: 'string', tsType: 'string',
+            visibility: 'editable', required: true, grid: true, form: true },
+        ],
+        searchableFields: ['name'],
+        computedFields: [],
+      },
+      bankAccount: {
+        fields: [
+          { name: 'bankFormat', column: 'BankFormat', tsType: 'string',
+            visibility: 'editable', required: true, grid: true, form: true,
+            label: 'Bank Account Format',
+            enumValues: [
+              { value: 'GENERIC', name: 'Use Generic Account No.', labels: { es_ES: 'Utilizar Número Genérico de Cuenta' } },
+              { value: 'IBAN', name: 'Use IBAN', labels: { es_ES: 'Utilizar IBAN' } },
+            ] },
+        ],
+        searchableFields: [],
+        computedFields: [],
+      },
+    },
+  },
+  backendContract: { processEndpoints: [] },
+};
+
+describe('generatePageComponent — per-option labels on select fields in secondary-tab addLineFields', () => {
+  it('emits the per-option labels dict for a select field, matching getS()/getOptionsPart', () => {
+    const code = generatePageComponent('businessPartner', null, selectOptionsTabContract);
+    const entry = code.match(/\{\s*key:\s*'bankFormat'[^}]*options: \[[^\]]*\][^}]*\}/);
+    assert.ok(entry, 'expected the bankFormat addLineFields entry to be emitted');
+    assert.ok(
+      entry[0].includes('labels') && entry[0].includes('Utilizar Número Genérico de Cuenta'),
+      `expected per-option labels in the options array, got: ${entry[0]}`,
+    );
+  });
+});
+
 describe('fragmentIf', () => {
   it('returns the string when the condition is truthy', () => {
     assert.equal(fragmentIf(true, ', required: true'), ', required: true');
