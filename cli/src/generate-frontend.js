@@ -1315,9 +1315,13 @@ function getDetailName(detailEntity) {
 
 function pushAttachmentsTab(attachmentsEnabled, attachmentsOpts, customTabItems, headerTableName) {
   if (attachmentsEnabled) {
-    const optsLiteral = JSON.stringify(attachmentsOpts);
+    // ETP-4415 — tabOrder is an ordering concern for the tab strip, not an
+    // AttachmentsTab display option, so it is excluded from the forwarded config.
+    const { tabOrder, ...restOpts } = attachmentsOpts;
+    const optsLiteral = JSON.stringify(restOpts);
+    const tabOrderPart = tabOrder != null ? `, tabOrder: ${tabOrder}` : '';
     customTabItems.push(
-      `{ key: 'attachments', labelKey: 'attachments', Component: AttachmentsTab, placement: 'tab', props: { tableName: ${JSON.stringify(headerTableName)}, config: ${optsLiteral} } }`
+      `{ key: 'attachments', labelKey: 'attachments', Component: AttachmentsTab, placement: 'tab'${tabOrderPart}, props: { tableName: ${JSON.stringify(headerTableName)}, config: ${optsLiteral} } }`
     );
   }
 }
@@ -1384,15 +1388,17 @@ export function getCustomTabItems(relatedDocuments, customPanelTabs, attachments
   }
   customPanelTabs.forEach(pt => {
     const labelPart = pt.labelKey ? `labelKey: '${pt.labelKey}'` : `label: '${pt.label}'`;
+    const tabOrderPart = pt.tabOrder != null ? `, tabOrder: ${pt.tabOrder}` : '';
     customTabItems.push(
-        `{ key: '${pt.key}', ${labelPart}, Component: ${pt.component}, placement: 'tab' }`
+        `{ key: '${pt.key}', ${labelPart}, Component: ${pt.component}, placement: 'tab'${tabOrderPart} }`
     );
   });
   pushAttachmentsTab(attachmentsEnabled, attachmentsOpts, customTabItems, headerTableName);
   extraTabs.forEach(et => {
     const labelPart = et.labelKey ? `labelKey: '${et.labelKey}'` : `label: '${JSON.stringify(et.label)}'`;
+    const tabOrderPart = et.tabOrder != null ? `, tabOrder: ${et.tabOrder}` : '';
     customTabItems.push(
-        `{ key: '${et.key}', ${labelPart}, Component: ${et.component}, placement: 'tab' }`
+        `{ key: '${et.key}', ${labelPart}, Component: ${et.component}, placement: 'tab'${tabOrderPart} }`
     );
   });
   return customTabItems;
