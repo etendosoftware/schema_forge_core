@@ -146,10 +146,10 @@ describe('upsertSpec (update)', () => {
     assert.equal(client.inserts.length, 0);
 
     // UPDATE params: [name, specType, windowId, processId, moduleId,
-    //                 description, agentPrompt, updated, updatedby, existingId]
+    //                 description, agentPrompt, showInMcp, updated, updatedby, existingId]
     const params = client.updates[0];
     assert.equal(params[0], 'purchase-order');
-    assert.equal(params[9], 'SPEC123', 'WHERE id is the existing spec id');
+    assert.equal(params[10], 'SPEC123', 'WHERE id is the existing spec id');
   });
 
   it('updates when no other spec uses the name (dup check returns nothing)', async () => {
@@ -211,7 +211,59 @@ describe('upsertSpec (agentPrompt)', () => {
 
     const params = client.updates[0];
     assert.equal(params[6], 'Be careful.', 'agent_prompt is the SET param after description');
-    assert.equal(params[9], 'SPEC123', 'WHERE id remains the last param');
+    assert.equal(params[10], 'SPEC123', 'WHERE id remains the last param');
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Show in MCP opt-out flag (ETP-4278)
+// ---------------------------------------------------------------------------
+
+describe('upsertSpec (showInMcp)', () => {
+  it("defaults to 'Y' on INSERT when omitted", async () => {
+    const client = createMockClient();
+
+    await upsertSpec(client, { name: 'tax', moduleId: 'MOD001', windowId: 'WIN001' });
+
+    // showinmcp is the final INSERT column (index 15), after agent_prompt (14).
+    assert.equal(client.inserts[0][15], 'Y');
+  });
+
+  it("stays 'Y' on INSERT when showInMcp is true", async () => {
+    const client = createMockClient();
+
+    await upsertSpec(client, {
+      name: 'tax', moduleId: 'MOD001', windowId: 'WIN001', showInMcp: true,
+    });
+
+    assert.equal(client.inserts[0][15], 'Y');
+  });
+
+  it("writes 'N' on INSERT only when showInMcp is explicitly false", async () => {
+    const client = createMockClient();
+
+    await upsertSpec(client, {
+      name: 'tax', moduleId: 'MOD001', windowId: 'WIN001', showInMcp: false,
+    });
+
+    assert.equal(client.inserts[0][15], 'N');
+  });
+
+  it("writes showInMcp as the SET param after agent_prompt on UPDATE", async () => {
+    const client = createMockClient({
+      existingSpecs: [{ etgo_sf_spec_id: 'SPEC123', name: 'purchase-order' }],
+    });
+
+    await upsertSpec(client, {
+      name: 'purchase-order',
+      moduleId: 'MOD001',
+      windowId: 'WIN001',
+      specId: 'SPEC123',
+      showInMcp: false,
+    });
+
+    // UPDATE SET order: ... agent_prompt ($7 → idx 6), showinmcp ($8 → idx 7)
+    assert.equal(client.updates[0][7], 'N');
   });
 });
 
