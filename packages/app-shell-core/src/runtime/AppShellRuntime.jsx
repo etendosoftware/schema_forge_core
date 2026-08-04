@@ -20,12 +20,19 @@ function DefaultLoginRedirect({ loginPath }) {
 
 export function AuthGate({ children, loginPath = '/login', fallback, bootingFallback = null }) {
   const { isAuthenticated, status } = useAuth();
-  // ETP-4576 — hosts that opt into the cookie-session restore (via
-  // auth.restoreSession) go through a real 'booting' state first; render
-  // this instead of falling through to the unauthenticated redirect, or
-  // every reload would flash a login screen before the restore resolves.
-  // Hosts that don't pass restoreSession never see 'booting' (status
-  // resolves synchronously), so this branch is a no-op for them.
+  // ETP-4576 — the cookie-session restore goes through a real 'booting' state
+  // first; render this instead of falling through to the unauthenticated
+  // redirect, or every reload would flash a login screen before the restore
+  // resolves.
+  //
+  // Restore is ON BY DEFAULT: AuthContext defaults `restoreSession` to
+  // `fetchCookieSession`, so a host that simply omits it still starts in
+  // 'booting' and this branch is very much not a no-op. Opting out takes an
+  // explicit `restoreSession: null` — passing `undefined` re-arms the default,
+  // because a default parameter only fills in for `undefined`. A host that
+  // omits it and supplies no `bootingFallback` renders nothing until the
+  // restore settles, and if that request cannot succeed (jsdom, no backend)
+  // the status lands on 'anonymous' and guarded routes redirect to login.
   if (status === 'booting') return bootingFallback;
   if (isAuthenticated) return children;
   return fallback || <DefaultLoginRedirect loginPath={loginPath} data-testid="DefaultLoginRedirect__b517b2" />;
