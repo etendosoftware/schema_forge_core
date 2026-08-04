@@ -357,22 +357,22 @@ describe('extractLabels', () => {
   // --- ETP-4685: enumLabels section (List reference values, no whitelist) ---
 
   describe('enumLabels section', () => {
-    it('maps enum rows into column-scoped i18n keys', async () => {
+    it('maps enum rows into column-scoped i18n keys built from the Value code', async () => {
       const pool = createMockPool({
         fields: [],
         windows: [],
         tabs: [],
         menus: [],
         enumLabels: [
-          { column_name: 'ProductType', value: 'I', base_name: 'Item', label: 'Artículo' },
-          { column_name: 'ProductType', value: 'S', base_name: 'Service', label: 'Servicio' },
+          { column_name: 'ProductType', value: 'I', label: 'Artículo' },
+          { column_name: 'ProductType', value: 'S', label: 'Servicio' },
         ],
       });
 
       const result = await extractLabels(pool, 'es_ES');
 
-      assert.equal(result.enumLabels.productTypeItem.label, 'Artículo');
-      assert.equal(result.enumLabels.productTypeService.label, 'Servicio');
+      assert.equal(result.enumLabels.productTypeI.label, 'Artículo');
+      assert.equal(result.enumLabels.productTypeS.label, 'Servicio');
     });
 
     it('is not restricted to a fixed whitelist of value codes (unlike statuses)', async () => {
@@ -383,46 +383,49 @@ describe('extractLabels', () => {
         menus: [],
         // 'ZZ' is not part of the statuses whitelist — enumLabels must still pick it up
         enumLabels: [
-          { column_name: 'DeliveryTerms', value: 'ZZ', base_name: 'Custom Term', label: 'Custom Term' },
+          { column_name: 'DeliveryTerms', value: 'ZZ', label: 'Custom Term' },
         ],
       });
 
       const result = await extractLabels(pool, 'en_US');
 
-      assert.equal(result.enumLabels.deliveryTermsCustomTerm.label, 'Custom Term');
+      assert.equal(result.enumLabels.deliveryTermsZz.label, 'Custom Term');
     });
 
-    it('uses base_name (language-independent) to build the key so it stays stable across locales', async () => {
-      const rows = [
-        { column_name: 'ProductType', value: 'I', base_name: 'Item', label: 'Item' },
-      ];
-      const poolEn = createMockPool({ fields: [], windows: [], tabs: [], menus: [], enumLabels: rows });
+    it('keys by the Value code (language-independent) so it stays stable across locales', async () => {
+      // Renaming the display Name (e.g. "Item" -> "Article") must NOT change the
+      // key — only the Value code (which never changes) drives it, matching the
+      // stability of the `statuses` section's own rl.value-keyed convention.
+      const poolEn = createMockPool({
+        fields: [], windows: [], tabs: [], menus: [],
+        enumLabels: [{ column_name: 'ProductType', value: 'I', label: 'Item' }],
+      });
       const poolEs = createMockPool({
         fields: [], windows: [], tabs: [], menus: [],
-        enumLabels: [{ column_name: 'ProductType', value: 'I', base_name: 'Item', label: 'Artículo' }],
+        enumLabels: [{ column_name: 'ProductType', value: 'I', label: 'Artículo' }],
       });
 
       const resultEn = await extractLabels(poolEn, 'en_US');
       const resultEs = await extractLabels(poolEs, 'es_ES');
 
       assert.deepEqual(Object.keys(resultEn.enumLabels), Object.keys(resultEs.enumLabels));
-      assert.equal(resultEn.enumLabels.productTypeItem.label, 'Item');
-      assert.equal(resultEs.enumLabels.productTypeItem.label, 'Artículo');
+      assert.equal(resultEn.enumLabels.productTypeI.label, 'Item');
+      assert.equal(resultEs.enumLabels.productTypeI.label, 'Artículo');
     });
 
-    it('scopes keys by column name so two lists sharing a value name do not collide', async () => {
+    it('scopes keys by column name so two lists sharing a value code do not collide', async () => {
       const pool = createMockPool({
         fields: [], windows: [], tabs: [], menus: [],
         enumLabels: [
-          { column_name: 'ProductType', value: 'S', base_name: 'Service', label: 'Servicio' },
-          { column_name: 'DeliveryTerms', value: 'S', base_name: 'Service', label: 'A domicilio' },
+          { column_name: 'ProductType', value: 'S', label: 'Servicio' },
+          { column_name: 'DeliveryTerms', value: 'S', label: 'A domicilio' },
         ],
       });
 
       const result = await extractLabels(pool, 'es_ES');
 
-      assert.equal(result.enumLabels.productTypeService.label, 'Servicio');
-      assert.equal(result.enumLabels.deliveryTermsService.label, 'A domicilio');
+      assert.equal(result.enumLabels.productTypeS.label, 'Servicio');
+      assert.equal(result.enumLabels.deliveryTermsS.label, 'A domicilio');
     });
   });
 

@@ -305,9 +305,10 @@ describe('generatePageComponent — cell-renderer registry columns', () => {
     // The filter picker (DistinctEnumPicker) resolves enumLabels through
     // ui()/genericLabels — it needs an i18n key here, not the literal English
     // AD_Ref_List.Name, or the filter shows untranslated English values
-    // regardless of the active interface language.
-    assert.ok(line.includes("'A': 'matchTypeAuto'"), 'expected column-scoped i18n key for value A');
-    assert.ok(line.includes("'M': 'matchTypeManual'"), 'expected column-scoped i18n key for value M');
+    // regardless of the active interface language. Keyed by the stable Value
+    // code ('A'/'M'), not the mutable display Name.
+    assert.ok(line.includes("'A': 'matchTypeA'"), 'expected column-scoped i18n key for value A');
+    assert.ok(line.includes("'M': 'matchTypeM'"), 'expected column-scoped i18n key for value M');
     assert.ok(!line.includes("'A': 'Auto'"), 'must not emit the raw English literal for value A');
     assert.ok(!line.includes("'M': 'Manual'"), 'must not emit the raw English literal for value M');
   });

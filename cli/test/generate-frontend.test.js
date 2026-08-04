@@ -300,9 +300,11 @@ describe('generateTableComponent', () => {
     // The selector's filter picker (DistinctEnumPicker) resolves enumLabels
     // through ui()/genericLabels — it needs an i18n key here, not the literal
     // English AD_Ref_List.Name, or the filter shows untranslated English values
-    // regardless of the active interface language.
-    assert.ok(code.includes("'I': 'productTypeItem'"), 'expected column-scoped i18n key for value I');
-    assert.ok(code.includes("'S': 'productTypeService'"), 'expected column-scoped i18n key for value S');
+    // regardless of the active interface language. The key is built from the
+    // stable Value code ('I'/'S'), not the mutable display Name, matching the
+    // `statuses` section's own rl.value-keyed convention.
+    assert.ok(code.includes("'I': 'productTypeI'"), 'expected column-scoped i18n key for value I');
+    assert.ok(code.includes("'S': 'productTypeS'"), 'expected column-scoped i18n key for value S');
     assert.ok(!code.includes("'I': 'Item'"), 'must not emit the raw English literal for value I');
     assert.ok(!code.includes("'S': 'Service'"), 'must not emit the raw English literal for value S');
   });
