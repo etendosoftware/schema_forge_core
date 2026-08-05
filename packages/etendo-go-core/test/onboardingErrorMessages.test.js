@@ -138,9 +138,23 @@ describe('the flow routes its failures through the resolver (ETP-4665)', () => {
     assert.doesNotMatch(step, /error: msg\.success \? null : msg\.message/);
   });
 
-  it('resolves register failures through the same helper', () => {
+  it('localizes a register length violation with the limit the backend reported', () => {
+    // ETP-4664 resolves register errors through the flat AUTH_ERROR_UI_KEYS table,
+    // which cannot interpolate a parameter. FIELD_TOO_LONG carries `max` and its
+    // message embeds it, so it is handled just before that table is consulted.
     const step = read(join('steps', 'RegisterStep.jsx'));
-    assert.match(step, /resolveOnboardingErrorMessage\(ui, err, 'onboardingConnectionError'\)/);
+    assert.match(step, /if \(err\.code === 'FIELD_TOO_LONG' && err\.max\)/);
+    assert.match(step, /ui\('onboardingFieldTooLong', \{ max: err\.max \}\)/);
+    assert.match(step, /ui\(AUTH_ERROR_UI_KEYS\[err\.code\] \|\| 'onboardingConnectionError'\)/);
+  });
+
+  it('never shows the raw backend sentence on the register screen (ETP-4664)', () => {
+    const step = read(join('steps', 'RegisterStep.jsx'));
+    const handleRegister = step.slice(
+      step.indexOf('const handleRegister ='),
+      step.indexOf('const authFeatureLabels ='),
+    );
+    assert.doesNotMatch(handleRegister, /err\.userMessage/);
   });
 
   it('carries the field and max details out of the JSON error envelope', () => {
