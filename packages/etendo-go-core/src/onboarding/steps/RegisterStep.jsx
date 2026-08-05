@@ -5,6 +5,7 @@ import { useUI, useLocaleSwitch } from '@etendosoftware/app-shell-core/i18n';
 import { registerAccount, loginWithSsoProvider, AUTH_ERROR_UI_KEYS } from '../api.js';
 import { getConfiguredSsoProviders, renderSsoProviderButton } from '../sso.js';
 import { getPasswordChecks, isStrongPassword, PASSWORD_RULES } from '../passwordPolicy.js';
+import { ONBOARDING_FIELD_LIMITS } from '../fieldLimits.js';
 import { isValidEmailFormat } from '../emailPolicy.js';
 import { trackOnboarding } from '../tracking.js';
 import { AuthShell } from '../components/AuthShell.jsx';
@@ -42,16 +43,14 @@ export function RegisterStep({ config, stepData, onNext, onBack, goToStep, setTo
     special: 'onboardingPasswordReqSpecial',
   };
 
-  const handleAuthSuccess = useCallback((token, account, { route = true, authMethod = 'password' } = {}) => {
-    localStorage.setItem('sf_platform_token', token);
-    localStorage.setItem('sf_platform_auth_method', authMethod);
-    if (setToken) setToken(token);
+  const handleAuthSuccess = useCallback((csrfToken, account, { route = true } = {}) => {
+    if (setToken) setToken(csrfToken);
     if (setAccountName) setAccountName(account?.name || account?.email || null);
     setShowRegisterPassword(false);
     setSsoError(null);
     setSsoLoadingProvider(null);
     if (route && handleRegisterSuccess) {
-      handleRegisterSuccess(token, account);
+      handleRegisterSuccess(csrfToken, account);
     }
   }, [setToken, setAccountName, handleRegisterSuccess]);
 
@@ -66,13 +65,13 @@ export function RegisterStep({ config, stepData, onNext, onBack, goToStep, setTo
     setSsoLoadingProvider(provider);
     try {
       const data = await loginWithSsoProvider(fetch, apiBase, provider, payload);
-      if (data.token) {
+      if (data.csrfToken) {
         trackOnboarding(config, 'onboarding_auth_succeeded', {
           action: 'sso',
           provider,
           status: 'success',
         });
-        handleAuthSuccess(data.token, data.account, { authMethod: 'sso' });
+        handleAuthSuccess(data.csrfToken, data.account);
       } else {
         trackOnboarding(config, 'onboarding_auth_failed', {
           action: 'sso',
@@ -139,12 +138,12 @@ export function RegisterStep({ config, stepData, onNext, onBack, goToStep, setTo
         ...registerForm,
         language: locale || config.defaultForm?.language || '',
       });
-      if (data.token) {
+      if (data.csrfToken) {
         trackOnboarding(config, 'onboarding_auth_succeeded', {
           action: 'register',
           status: 'success',
         });
-        handleAuthSuccess(data.token, data.account);
+        handleAuthSuccess(data.csrfToken, data.account);
       } else {
         trackOnboarding(config, 'onboarding_auth_failed', {
           action: 'register',
@@ -159,7 +158,13 @@ export function RegisterStep({ config, stepData, onNext, onBack, goToStep, setTo
       });
       // ETP-4664: translate by the backend's stable error code — never show its
       // raw (English) userMessage/message directly.
-      setRegisterError(ui(AUTH_ERROR_UI_KEYS[err.code] || 'onboardingConnectionError'));
+      // ETP-4665: FIELD_TOO_LONG carries the limit that was exceeded, and its
+      // message interpolates it, so it cannot go through the flat code→key table.
+      if (err.code === 'FIELD_TOO_LONG' && err.max) {
+        setRegisterError(ui('onboardingFieldTooLong', { max: err.max }));
+      } else {
+        setRegisterError(ui(AUTH_ERROR_UI_KEYS[err.code] || 'onboardingConnectionError'));
+      }
     } finally {
       setRegisterLoading(false);
     }
@@ -229,6 +234,7 @@ export function RegisterStep({ config, stepData, onNext, onBack, goToStep, setTo
           disabled={registerLoading}
           placeholder={ui('onboardingNamePlaceholder')}
           autoComplete="name"
+          maxLength={ONBOARDING_FIELD_LIMITS.accountName}
           required
           data-testid="AuthField__79cf84" />
 
@@ -242,6 +248,7 @@ export function RegisterStep({ config, stepData, onNext, onBack, goToStep, setTo
           disabled={registerLoading}
           placeholder={ui('onboardingEmailPlaceholder')}
           autoComplete="email"
+          maxLength={ONBOARDING_FIELD_LIMITS.email}
           required
           trailing={registerEmailTouched ? (
             registerEmailValid
@@ -260,6 +267,7 @@ export function RegisterStep({ config, stepData, onNext, onBack, goToStep, setTo
           disabled={registerLoading}
           placeholder={ui('onboardingPasswordPlaceholder')}
           autoComplete="new-password"
+          maxLength={ONBOARDING_FIELD_LIMITS.password}
           required
           trailing={(
             <button

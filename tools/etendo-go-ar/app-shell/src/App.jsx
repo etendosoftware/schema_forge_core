@@ -9,8 +9,15 @@ import es_AR from './locales/es_AR.json';
 const LOCALE_DICTIONARIES = { es_AR };
 
 function AuthGuard({ children }) {
-  const { isAuthenticated } = useAuth();
+  const { isAuthenticated, status } = useAuth();
   const location = useLocation();
+  // ETP-4576 — the session now lives in a __Host- cookie, so AuthProvider has to
+  // ask the server on mount and `isAuthenticated` is still false while that is in
+  // flight. This check MUST come before the redirect below, or every reload
+  // bounces an authenticated user back to onboarding mid-restore.
+  if (status === 'booting') {
+    return null;
+  }
   if (!isAuthenticated) {
     return (
       <Navigate

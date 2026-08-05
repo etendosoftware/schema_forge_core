@@ -4,6 +4,7 @@ import { Button } from '@etendosoftware/app-shell-core/components/ui/button';
 import { Label } from '@etendosoftware/app-shell-core/components/ui/label';
 import { useUI, useLocaleSwitch } from '@etendosoftware/app-shell-core/i18n';
 import { isProfileStepValid } from '../state.js';
+import { ONBOARDING_FIELD_LIMITS, fullNameLimitFor, exceedsLimit } from '../fieldLimits.js';
 import { trackOnboarding } from '../tracking.js';
 import { SetupShell } from '../components/SetupShell.jsx';
 import { OnboardingSessionAction } from '../components/OnboardingSessionAction.jsx';
@@ -63,6 +64,14 @@ export function ProfileStep({ config, stepData, onNext, onBack, goToStep, accoun
     icon: value === 'company' ? Building2 : value === 'freelancer' ? User : MessageCircle,
   }));
 
+  // Freelancers reuse this full name as their invoicing (client) name, which is
+  // capped tighter than AD_USER.NAME. maxLength stays at the looser limit so a
+  // company/advisory user is never truncated; the stricter case surfaces as an
+  // inline error instead (ETP-4665).
+  const fullNameLimit = fullNameLimitFor(form.businessType);
+  // Trim to match isProfileStepValid, so the inline error and the Continue button
+  // never disagree on a value padded with spaces.
+  const fullNameTooLong = exceedsLimit(form.fullName?.trim(), fullNameLimit);
   const isValid = isProfileStepValid(form);
   const setupGreetingName = (form.fullName || accountName || ui('onboardingGreetingFallback')).trim().split(/\s+/)[0];
   const sessionAction = token && (
@@ -104,6 +113,8 @@ export function ProfileStep({ config, stepData, onNext, onBack, goToStep, accoun
             value={form.fullName}
             onChange={e => updateField('fullName', e.target.value)}
             placeholder={ui('onboardingFullNamePlaceholder')}
+            maxLength={ONBOARDING_FIELD_LIMITS.fullName}
+            error={fullNameTooLong ? ui('onboardingFieldTooLong', { max: fullNameLimit }) : null}
             data-testid="SetupField__79cf84" />
 
           <div>
