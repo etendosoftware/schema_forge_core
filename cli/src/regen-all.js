@@ -18,6 +18,7 @@
 import { readFile, access } from 'node:fs/promises';
 import { fileURLToPath } from 'node:url';
 import { dirname, join } from 'node:path';
+import { resolveAgentPromptRefs } from './lib/agent-prompt-ref.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -165,6 +166,10 @@ async function runPipeline(name, windowId, { pushToNeo, skipExtract }) {
     await wf(decisionsPath, JSON.stringify(decisions, null, 2) + '\n', 'utf-8');
     console.log(`    decisions.json auto-migrated: v${fromV} → v${result.toVersion}`);
   }
+
+  // Resolve any `#REF#<path>` agentPrompt references (spec + fields) before the
+  // curated schema / contract are built, so they carry literal prompt text.
+  resolveAgentPromptRefs(decisions, ROOT);
 
   const resolved = await resolveCurated(schemaRaw, rulesRaw, decisions);
   const totalFields = resolved.schema.entities.reduce((sum, e) => sum + e.fields.length, 0);
