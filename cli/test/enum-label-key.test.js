@@ -1,6 +1,6 @@
 import { describe, it } from 'node:test';
 import { strict as assert } from 'node:assert';
-import { buildEnumLabelKey } from '../src/enum-label-key.js';
+import { buildEnumLabelKey, resolveEnumLabelKey } from '../src/enum-label-key.js';
 
 // ETP-4685 — filter selectors for List-type fields (AD_Ref_List) showed the raw
 // English AD_Ref_List.Name instead of a translated value. buildEnumLabelKey()
@@ -71,5 +71,27 @@ describe('buildEnumLabelKey', () => {
     assert.notEqual(minus, plus);
     assert.equal(minus, 'movementTypePMinus');
     assert.equal(plus, 'movementTypePPlus');
+  });
+});
+
+// ETP-4685 — some fields (e.g. amortization's synthetic boolean "processed"
+// Y/N status) get `enumValues[].name` pre-set to an ALREADY-VALID generic
+// i18n key ('statusDraft'/'statusProcessed'), not a raw AD_Ref_List display
+// name. resolveEnumLabelKey() must tell the two apart: pass an already-key-
+// shaped name through unchanged, or a working, already-translated status
+// regresses to a fresh, untranslated column-scoped key.
+describe('resolveEnumLabelKey', () => {
+  it('passes an already-key-shaped name through unchanged (does not re-derive it)', () => {
+    assert.equal(resolveEnumLabelKey('Processed', { value: 'N', name: 'statusDraft' }), 'statusDraft');
+    assert.equal(resolveEnumLabelKey('Processed', { value: 'Y', name: 'statusProcessed' }), 'statusProcessed');
+  });
+
+  it('derives a fresh column-scoped key (from the Value code) for a raw AD_Ref_List display name', () => {
+    assert.equal(resolveEnumLabelKey('ProductType', { value: 'I', name: 'Item' }), 'productTypeI');
+    assert.equal(resolveEnumLabelKey('DocStatus', { value: 'DR', name: 'Draft' }), 'docStatusDr');
+  });
+
+  it('treats a name with spaces or capitals as raw text, even if short', () => {
+    assert.equal(resolveEnumLabelKey('BankFormat', { value: 'IBAN', name: 'Use IBAN' }), 'bankFormatIban');
   });
 });

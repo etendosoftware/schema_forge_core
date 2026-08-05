@@ -309,6 +309,44 @@ describe('generateTableComponent', () => {
     assert.ok(!code.includes("'S': 'Service'"), 'must not emit the raw English literal for value S');
   });
 
+  // ETP-4685 — a synthetic boolean-style status field (e.g. amortization's
+  // "processed" Y/N flag) gets `enumValues[].name` pre-set to an ALREADY-VALID
+  // generic i18n key ('statusDraft'/'statusProcessed' — matching the hardcoded
+  // MAP + already-translated genericLabels entries in statusBadge.js), not a
+  // raw AD_Ref_List display name. buildEnumLabelKey(column, value) must not
+  // clobber it with a fresh column-scoped key ('processedN'), or a
+  // working, already-translated status regresses to an untranslated raw key.
+  it('preserves an already-key-shaped enumValues.name instead of deriving a new column-scoped key', () => {
+    const contract = {
+      frontendContract: {
+        window: { id: '1', name: 'Amortization', primaryEntity: 'header', category: 'finance' },
+        entities: {
+          header: {
+            fields: [
+              {
+                name: 'processed', column: 'Processed', type: 'status', tsType: 'string',
+                visibility: 'editable', grid: true, form: false,
+                enumValues: [
+                  { value: 'N', name: 'statusDraft' },
+                  { value: 'Y', name: 'statusProcessed' },
+                ],
+              },
+            ],
+            searchableFields: [],
+            computedFields: [],
+          },
+        },
+      },
+    };
+
+    const code = generateTableComponent('header', contract);
+
+    assert.ok(code.includes("'N': 'statusDraft'"), 'expected the pre-set generic key to survive unchanged for value N');
+    assert.ok(code.includes("'Y': 'statusProcessed'"), 'expected the pre-set generic key to survive unchanged for value Y');
+    assert.ok(!code.includes("'N': 'processedN'"), 'must not derive a fresh column-scoped key when name is already key-shaped');
+    assert.ok(!code.includes("'Y': 'processedY'"), 'must not derive a fresh column-scoped key when name is already key-shaped');
+  });
+
   it('emits column keys instead of labels for i18n resolution', () => {
     const code = generateTableComponent('order', masterDetailContract);
     assert.ok(code.includes("column: 'DocumentNo'"));
