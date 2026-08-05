@@ -2,7 +2,7 @@ import { readFileSync, writeFileSync, mkdirSync, readdirSync, existsSync } from 
 import { resolve, dirname } from 'node:path';
 import { MARKERS } from './custom-section-markers.js';
 import { convertLogicToJs } from './generate-contract.js';
-import { buildEnumLabelKey } from './enum-label-key.js';
+import { resolveEnumLabelKey } from './enum-label-key.js';
 
 const FRONTEND_ACTION_PROJECTION = [
   ['entity', 'entity'],
@@ -432,7 +432,7 @@ export function generateTableComponent(entityName, contract) {
     // labels respect the active interface language. Built from the stable
     // Value code (o.value), not the mutable display Name (o.name).
     const enumLabelEntries = f.enumValues?.length
-      ? f.enumValues.map(o => `'${o.value}': '${buildEnumLabelKey(f.column, o.value)}'`).join(', ')
+      ? f.enumValues.map(o => `'${o.value}': '${resolveEnumLabelKey(f.column, o)}'`).join(', ')
       : '';
     const enumLabelsPart = ((type === 'enum' || type === 'status') && f.enumValues?.length)
       ? `, enumLabels: { ${enumLabelEntries} }`
@@ -1548,7 +1548,7 @@ function buildListModalColumns(entity) {
       // ETP-4685 — same column-scoped i18n key as the standard DataTable columns
       // (generateTableComponent), instead of the raw English AD_Ref_List.Name.
       // Built from the stable Value code, not the mutable display Name.
-      const enumEntries = f.enumValues.map(o => `'${o.value}': '${buildEnumLabelKey(f.column, o.value)}'`).join(', ');
+      const enumEntries = f.enumValues.map(o => `'${o.value}': '${resolveEnumLabelKey(f.column, o)}'`).join(', ');
       enumLabelsPart = `, enumLabels: { ${enumEntries} }`;
     }
     const enumVariantsPart = jsonWrapIf(', enumVariants: ', f.enumVariants);
