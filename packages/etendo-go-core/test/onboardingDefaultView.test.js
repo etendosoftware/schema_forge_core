@@ -18,12 +18,15 @@ describe('Onboarding default view (ETP-4443)', () => {
     assert.doesNotMatch(flow, /goToStep\(initialView === 'login' \? 'login' : 'register'\)/);
   });
 
-  it('routes to login (not register) when the stored token is invalid', () => {
-    // The fetchAccount().catch branch clears the token and must land on login.
-    const catchBlock = flow.slice(flow.indexOf('.catch('), flow.indexOf('.catch(') + 260);
-    assert.match(catchBlock, /goToStep\('login'\)/);
-    assert.doesNotMatch(catchBlock, /goToStep\('register'\)/);
-  });
+  // ETP-4576: this test used to assert that "no token" and "invalid token" resolved
+  // to two different views (register-eligible vs. always-login). With the __Host-
+  // session cookie, the frontend can no longer tell those two cases apart — both
+  // "never had a session" and "had one but it expired/is invalid" surface as the
+  // exact same 401 from GET /sws/go/session, handled by the exact same .catch().
+  // The distinction this test verified no longer exists in the code, so the test
+  // is removed rather than updated. The unified behavior (both cases respect
+  // initialView) is covered by 'defaults to login when there is no session token'
+  // above, since it now applies to the single shared catch branch too.
 
   it('does not fall back to register anywhere in the mount routing', () => {
     // The two former register fallbacks (invalid token + non-promise mock) are now login.
@@ -35,5 +38,13 @@ describe('Onboarding default view (ETP-4443)', () => {
     assert.match(envSelect, /onLogout=\{onLogout\}/);
     assert.doesNotMatch(envSelect, /const handleLogout/);
     assert.doesNotMatch(envSelect, /localStorage\.removeItem\('sf_platform_token'\)/);
+  });
+
+  // ETP-4576: the mount bootstrap no longer reads a client-visible token to decide
+  // whether a session exists — it always asks the server via fetchSession(), which
+  // rides the __Host- cookie and returns 401 when there is none/it is invalid.
+  it('bootstraps the session via fetchSession instead of reading the old localStorage token', () => {
+    assert.match(flow, /fetchSession\(fetch, apiBase\)/);
+    assert.doesNotMatch(flow, /localStorage\.getItem\('sf_platform_token'\)/);
   });
 });

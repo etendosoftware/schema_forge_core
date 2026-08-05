@@ -70,6 +70,12 @@ General findings about how the Etendo Application Dictionary works. Not window-s
 |------|-------------|
 | [i18n-guide.md](i18n-guide.md) | **i18n reference**: hooks (`useUI`, `useLabel`, `useMenuLabel`), locale JSON structure, rules for adding translations, decision tree |
 
+## Onboarding
+
+| Path | Description |
+|------|-------------|
+| [onboarding-field-limits.md](onboarding-field-limits.md) | **Onboarding length limits**: the AD column behind every field cap, why there is no bcrypt truncation, how a length rejection surfaces (maxLength / inline / server 400), and how `@CreateClientFailed@` is resolved to localized text |
+
 ## Generated/custom windows
 
 | Path | Description |
