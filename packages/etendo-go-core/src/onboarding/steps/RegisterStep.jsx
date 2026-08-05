@@ -1,20 +1,22 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
-import { UserPlus, Mail, Lock, Eye, EyeOff, Check, Loader2 } from 'lucide-react';
+import { UserPlus, Mail, Lock, Eye, EyeOff, Check, AlertCircle, Loader2 } from 'lucide-react';
 import { Button } from '@etendosoftware/app-shell-core/components/ui/button';
 import { useUI, useLocaleSwitch } from '@etendosoftware/app-shell-core/i18n';
-import { registerAccount, loginWithSsoProvider } from '../api.js';
+import { registerAccount, loginWithSsoProvider, AUTH_ERROR_UI_KEYS } from '../api.js';
 import { getConfiguredSsoProviders, renderSsoProviderButton } from '../sso.js';
 import { getPasswordChecks, isStrongPassword, PASSWORD_RULES } from '../passwordPolicy.js';
+import { isValidEmailFormat } from '../emailPolicy.js';
 import { trackOnboarding } from '../tracking.js';
 import { AuthShell } from '../components/AuthShell.jsx';
 import { AuthField } from '../components/AuthField.jsx';
 import { AuthSsoOptions } from '../components/AuthSsoOptions.jsx';
+import { OnboardingLanguageSelect } from '../components/OnboardingLanguageSelect.jsx';
 
 const AUTH_FEATURE_KEYS = ['onboardingAuthFeatureNoCard', 'onboardingAuthFeatureTrial', 'onboardingAuthFeatureInstantAccess'];
 
 export function RegisterStep({ config, stepData, onNext, onBack, goToStep, setToken, setAccountName, handleRegisterSuccess }) {
   const ui = useUI();
-  const { locale } = useLocaleSwitch();
+  const { locale, setLocale } = useLocaleSwitch();
 
   const [registerForm, setRegisterForm] = useState({ name: '', email: '', password: '' });
   const [registerError, setRegisterError] = useState(null);
@@ -30,6 +32,8 @@ export function RegisterStep({ config, stepData, onNext, onBack, goToStep, setTo
 
   const registerPasswordChecks = getPasswordChecks(registerForm.password);
   const registerPasswordStrong = isStrongPassword(registerForm.password);
+  const registerEmailTouched = registerForm.email.trim().length > 0;
+  const registerEmailValid = isValidEmailFormat(registerForm.email);
   const passwordRuleLabels = {
     minLength: 'onboardingPasswordReqMinLength',
     uppercase: 'onboardingPasswordReqUppercase',
@@ -153,15 +157,33 @@ export function RegisterStep({ config, stepData, onNext, onBack, goToStep, setTo
         action: 'register',
         status: 'failed',
       });
-      setRegisterError(err.code === 'WEAK_PASSWORD'
-        ? ui('onboardingWeakPassword')
-        : (err.userMessage || ui(err.code || 'onboardingConnectionError')));
+      // ETP-4664: translate by the backend's stable error code — never show its
+      // raw (English) userMessage/message directly.
+      setRegisterError(ui(AUTH_ERROR_UI_KEYS[err.code] || 'onboardingConnectionError'));
     } finally {
       setRegisterLoading(false);
     }
   };
 
   const authFeatureLabels = AUTH_FEATURE_KEYS.map((key) => ui(key));
+
+  const setOnboardingLocale = (nextLocale) => {
+    if (setLocale) setLocale(nextLocale);
+  };
+
+  const languageOptions = (config.localeCodes || []).map((code) => ({
+    value: code,
+    label: code.startsWith('es') ? ui('onboardingLanguageSpanish') : ui('onboardingLanguageEnglish'),
+  }));
+
+  const localeControl = setLocale ? (
+    <OnboardingLanguageSelect
+      label={ui('language')}
+      locale={locale}
+      onChange={setOnboardingLocale}
+      options={languageOptions}
+      data-testid="OnboardingLanguageSelect__79cf84" />
+  ) : null;
 
   return (
     <AuthShell
@@ -175,6 +197,7 @@ export function RegisterStep({ config, stepData, onNext, onBack, goToStep, setTo
         if (goToStep) goToStep('login');
       }}
       brandLabel={config.brandLabel || 'Etendo GO'}
+      headerContent={localeControl}
       marketingTitle={ui('onboardingMarketingTitle')}
       marketingDescription={ui('onboardingMarketingDescription')}
       featureLabels={authFeatureLabels}
@@ -220,6 +243,11 @@ export function RegisterStep({ config, stepData, onNext, onBack, goToStep, setTo
           placeholder={ui('onboardingEmailPlaceholder')}
           autoComplete="email"
           required
+          trailing={registerEmailTouched ? (
+            registerEmailValid
+              ? <Check className="h-5 w-5 text-emerald-500" data-testid="RegisterEmailValid__79cf84" />
+              : <AlertCircle className="h-5 w-5 text-rose-500" data-testid="RegisterEmailInvalid__79cf84" />
+          ) : null}
           data-testid="AuthField__79cf84" />
 
         <AuthField
@@ -281,7 +309,7 @@ export function RegisterStep({ config, stepData, onNext, onBack, goToStep, setTo
         <Button
           type="submit"
           data-testid="action-register-submit"
-          disabled={registerLoading || !registerPasswordStrong}
+          disabled={registerLoading || !registerPasswordStrong || !registerEmailValid}
           className="h-12 w-full rounded-lg bg-[#121217] text-base font-medium text-white hover:bg-accent-highlight hover:text-accent-highlight-foreground"
         >
           {registerLoading
