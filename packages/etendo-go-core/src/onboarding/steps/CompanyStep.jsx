@@ -4,6 +4,7 @@ import { Button } from '@etendosoftware/app-shell-core/components/ui/button';
 import { Label } from '@etendosoftware/app-shell-core/components/ui/label';
 import { useUI } from '@etendosoftware/app-shell-core/i18n';
 import { isCompanyStepValid } from '../state.js';
+import { ONBOARDING_FIELD_LIMITS } from '../fieldLimits.js';
 import { trackOnboarding } from '../tracking.js';
 import { SetupShell } from '../components/SetupShell.jsx';
 import { OnboardingSessionAction } from '../components/OnboardingSessionAction.jsx';
@@ -101,6 +102,7 @@ export function CompanyStep({ config, stepData, onNext, onBack, goToStep, onChan
               value={form.clientName}
               onChange={e => updateField('clientName', e.target.value)}
               placeholder={ui('onboardingCompanyNamePlaceholder')}
+              maxLength={ONBOARDING_FIELD_LIMITS.clientName}
               data-testid="SetupField__79cf84" />
           )}
 
@@ -122,6 +124,7 @@ export function CompanyStep({ config, stepData, onNext, onBack, goToStep, onChan
                   value={form.fiscalIdValue}
                   onChange={e => updateField('fiscalIdValue', e.target.value)}
                   placeholder={ui('onboardingFiscalIdPlaceholder')}
+                  maxLength={ONBOARDING_FIELD_LIMITS.fiscalId}
                   className="h-10 w-full border-0 px-4 text-base text-slate-900 outline-none placeholder:text-slate-400"
                 />
               </div>
@@ -135,6 +138,7 @@ export function CompanyStep({ config, stepData, onNext, onBack, goToStep, onChan
             value={form.address}
             onChange={e => updateField('address', e.target.value)}
             placeholder={ui('onboardingAddressPlaceholder')}
+            maxLength={ONBOARDING_FIELD_LIMITS.address}
             data-testid="SetupField__79cf84" />
 
           <SetupSelect

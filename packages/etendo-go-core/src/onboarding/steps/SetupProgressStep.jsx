@@ -2,8 +2,9 @@ import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { Loader2, Check, Sparkles, Building2, Settings } from 'lucide-react';
 import { useUI } from '@etendosoftware/app-shell-core/i18n';
 import { runOnboardingStream, fetchEnvironments, loginEnvironment } from '../api.js';
-import { initialSetupSteps, applyProgressMessage, buildEnvironmentSessionStorage } from '../state.js';
+import { initialSetupSteps, applyProgressMessage, rememberEnvironment } from '../state.js';
 import { buildAppReturnToHref, getSafeReturnTo } from '../oauthReturnTo.js';
+import { resolveOnboardingErrorMessage } from '../errorMessages.js';
 import { trackOnboarding } from '../tracking.js';
 import { SetupProgressShell } from '../components/SetupProgressShell.jsx';
 import { SetupProgressCard } from '../components/SetupProgressCard.jsx';
@@ -70,10 +71,8 @@ export function SetupProgressStep({ config, stepData, onNext, onBack, goToStep, 
     try {
       const data = await loginEnvironment(fetch, apiBase, token, env);
       if (!isMountedRef.current) return;
-      if (data.token) {
-        const storageValues = buildEnvironmentSessionStorage(env, data);
-        Object.entries(storageValues).forEach(([key, value]) => localStorage.setItem(key, value));
-
+      if (data.status === 'success') {
+        rememberEnvironment(env.clientId);
         // Clear all SW caches on login to guarantee fresh resources
         if ('caches' in window) {
           try {
@@ -85,7 +84,7 @@ export function SetupProgressStep({ config, stepData, onNext, onBack, goToStep, 
         }
 
         if (requireReadiness && config.checkReadiness) {
-          const readiness = await config.checkReadiness(fetch, apiBase, data.token);
+          const readiness = await config.checkReadiness(fetch, apiBase);
           if (!isMountedRef.current) return;
           if (!readiness.ready) {
             trackOnboarding(config, 'onboarding_environment_enter_failed', {
@@ -154,7 +153,10 @@ export function SetupProgressStep({ config, stepData, onNext, onBack, goToStep, 
         if (msg.type === 'result') {
           const resultObj = {
             status: msg.success ? 'success' : 'failed',
-            error: msg.success ? null : msg.message,
+            // Provisioning reports failures as raw Etendo AD message keys
+            // (e.g. "@CreateClientFailed@") or as stable codes; resolve both
+            // to a localized sentence so no literal key reaches the user.
+            error: msg.success ? null : resolveOnboardingErrorMessage(ui, msg),
           };
           setResult(resultObj);
           if (msg.success) {
@@ -179,7 +181,7 @@ export function SetupProgressStep({ config, stepData, onNext, onBack, goToStep, 
         action: 'create_environment',
         status: 'failed',
       });
-      setResult({ status: 'failed', error: err.userMessage || ui(err.code || 'onboardingGenericError') });
+      setResult({ status: 'failed', error: resolveOnboardingErrorMessage(ui, err) });
     } finally {
       if (!isMountedRef.current) return;
       setRunning(false);
@@ -191,7 +193,7 @@ export function SetupProgressStep({ config, stepData, onNext, onBack, goToStep, 
             await new Promise(r => setTimeout(r, delay));
             if (!isMountedRef.current) return;
             try {
-              const envs = await fetchEnvironments(fetch, apiBase, token);
+              const envs = await fetchEnvironments(fetch, apiBase);
               if (envs.length > 0) {
                 loginToEnvironment(envs[0], { requireReadiness: true });
                 return;
