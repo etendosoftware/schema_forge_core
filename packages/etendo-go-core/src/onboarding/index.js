@@ -34,7 +34,6 @@ export {
   applyProgressMessage,
   buildOnboardingPayload,
   selectPreferredOrg,
-  buildEnvironmentSessionStorage,
   isProfileStepValid,
   isCompanyStepValid,
 } from './state.js';
