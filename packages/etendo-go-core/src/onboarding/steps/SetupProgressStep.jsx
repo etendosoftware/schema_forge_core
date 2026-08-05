@@ -4,6 +4,7 @@ import { useUI } from '@etendosoftware/app-shell-core/i18n';
 import { runOnboardingStream, fetchEnvironments, loginEnvironment } from '../api.js';
 import { initialSetupSteps, applyProgressMessage, rememberEnvironment } from '../state.js';
 import { buildAppReturnToHref, getSafeReturnTo } from '../oauthReturnTo.js';
+import { resolveOnboardingErrorMessage } from '../errorMessages.js';
 import { trackOnboarding } from '../tracking.js';
 import { SetupProgressShell } from '../components/SetupProgressShell.jsx';
 import { SetupProgressCard } from '../components/SetupProgressCard.jsx';
@@ -149,7 +150,10 @@ export function SetupProgressStep({ config, stepData, onNext, onBack, goToStep, 
         if (msg.type === 'result') {
           const resultObj = {
             status: msg.success ? 'success' : 'failed',
-            error: msg.success ? null : msg.message,
+            // Provisioning reports failures as raw Etendo AD message keys
+            // (e.g. "@CreateClientFailed@") or as stable codes; resolve both
+            // to a localized sentence so no literal key reaches the user.
+            error: msg.success ? null : resolveOnboardingErrorMessage(ui, msg),
           };
           setResult(resultObj);
           if (msg.success) {
@@ -174,7 +178,7 @@ export function SetupProgressStep({ config, stepData, onNext, onBack, goToStep, 
         action: 'create_environment',
         status: 'failed',
       });
-      setResult({ status: 'failed', error: err.userMessage || ui(err.code || 'onboardingGenericError') });
+      setResult({ status: 'failed', error: resolveOnboardingErrorMessage(ui, err) });
     } finally {
       if (!isMountedRef.current) return;
       setRunning(false);

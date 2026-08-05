@@ -50,6 +50,10 @@ function buildApiError(data, fallbackCode, status) {
   error.code = data?.error?.code || fallbackCode;
   error.userMessage = data?.error?.userMessage || data?.error?.message || data?.message || null;
   error.status = status;
+  // Length-violation details (ETP-4665): the backend reports which field
+  // overflowed and its limit so the UI can localize "no more than N characters".
+  error.field = data?.error?.field ?? null;
+  error.max = data?.error?.max ?? null;
   return error;
 }
 
