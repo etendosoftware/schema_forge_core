@@ -42,7 +42,14 @@ const useLocaleState = readFileSync(
 // projects the selected item's content into the closed trigger automatically.
 // These tests pin the new spec down so it doesn't drift again in either
 // direction.
-describe('OnboardingLanguageSelect wiring (ETP-4444, Login-only scope)', () => {
+//
+// ETP-4663 override: product re-confirmed the selector must also be visible
+// on the Create Account screen (users choosing a language before they even
+// have an account). This intentionally reverses the "Login-only" half of the
+// ETP-4444 scope narrowing above — RegisterStep now wires the same
+// localeControl/OnboardingLanguageSelect pattern as LoginStep. The other 3
+// steps (Profile/Company/EnvSelect) are unaffected and stay selector-less.
+describe('OnboardingLanguageSelect wiring (ETP-4444 scope, ETP-4663 Register override)', () => {
   it('imports OnboardingLanguageSelect in LoginStep', () => {
     assert.match(
       loginStep,
@@ -50,11 +57,10 @@ describe('OnboardingLanguageSelect wiring (ETP-4444, Login-only scope)', () => {
     );
   });
 
-  it('does not reference OnboardingLanguageSelect in the other 4 onboarding steps', () => {
+  it('does not reference OnboardingLanguageSelect in the other 3 onboarding steps', () => {
     for (const [name, content] of [
       ['ProfileStep', profileStep],
       ['CompanyStep', companyStep],
-      ['RegisterStep', registerStep],
       ['EnvSelectStep', envSelectStep],
     ]) {
       assert.doesNotMatch(
@@ -63,6 +69,22 @@ describe('OnboardingLanguageSelect wiring (ETP-4444, Login-only scope)', () => {
         `${name} must not import or render OnboardingLanguageSelect`,
       );
     }
+  });
+
+  it('imports OnboardingLanguageSelect in RegisterStep (ETP-4663)', () => {
+    assert.match(
+      registerStep,
+      /import\s*\{\s*OnboardingLanguageSelect\s*\}\s*from\s*'\.\.\/components\/OnboardingLanguageSelect\.jsx'/,
+    );
+  });
+
+  it('renders OnboardingLanguageSelect in the Register header, not just imports it', () => {
+    const localeControlBlock = registerStep.slice(
+      registerStep.indexOf('const localeControl ='),
+      registerStep.indexOf('<AuthShell'),
+    );
+    assert.match(localeControlBlock, /<OnboardingLanguageSelect/);
+    assert.match(registerStep, /headerContent=\{localeControl\}/);
   });
 
   it('renders OnboardingLanguageSelect in the Login header, not just imports it', () => {

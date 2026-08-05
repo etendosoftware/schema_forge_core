@@ -44,6 +44,9 @@ jobs:
       - name: App shell core package tests
         run: npm test --workspace=packages/app-shell-core
 
+      - name: Etendo GO core package tests
+        run: npm test --workspace=packages/etendo-go-core
+
       - name: App shell core consumer smoke
         run: npm run test:consumer --workspace=packages/app-shell-core
 

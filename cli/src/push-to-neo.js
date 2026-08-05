@@ -22,6 +22,7 @@ import {
   upsertField as writerUpsertField,
 } from './neo-writer.js';
 import { computeWindowDelta, serializeDelta } from './lib/neo-delta.js';
+import { resolveAgentPromptRefs } from './lib/agent-prompt-ref.js';
 import { loadEtgoXmlSnapshot } from './lib/etgo-xml-parser.js';
 import { GO_MODULE_ID } from './lib/constants.js';
 import { methodsToWriterFlags, NEO_HTTP_METHODS, resolveContractEntityMethods } from './lib/entity-methods.js';
@@ -271,14 +272,17 @@ export async function pushToNeo(windowName, options = {}) {
   const projectRoot = options.projectRoot || ROOT;
   const artifactsDir = join(projectRoot, 'artifacts', windowName);
 
-  const { contract, schemaRawData, decisionsData } = await loadPushArtifacts(artifactsDir, windowName);
+  const { contract, schemaRawData, decisionsData } = await loadPushArtifacts(artifactsDir, windowName, projectRoot);
   const windowId = resolveWindowId(schemaRawData, contract, options);
   const windowDisplayName = schemaRawData.window.name;
   const specName = windowName;
   const fieldDefaultExprs = buildFieldDefaultExprMap(decisionsData);
   const fieldAgentPrompts = buildFieldAgentPromptMap(decisionsData);
   const entityPreconditions = buildEntityPreconditionsMap(decisionsData);
+  const entityAgentPrompts = buildEntityAgentPromptMap(decisionsData);
   const specAgentPrompt = normalizeAgentPrompt(decisionsData.window?.agentPrompt);
+  // Opt-out MCP visibility (ETP-4278): only an explicit `false` hides the spec.
+  const specShowInMcp = decisionsData.window?.showInMcp;
   const allFields = extractFieldsFromContract(contract.backendContract);
 
   if (options.dryRun === true) {
@@ -292,7 +296,9 @@ export async function pushToNeo(windowName, options = {}) {
     fieldDefaultExprs,
     fieldAgentPrompts,
     entityPreconditions,
+    entityAgentPrompts,
     specAgentPrompt,
+    specShowInMcp,
     specName,
     windowId,
     moduleId: options.moduleId || process.env.SF_MODULE_ID || GO_MODULE_ID,
@@ -305,7 +311,7 @@ export async function pushToNeo(windowName, options = {}) {
 // pushToNeo helpers (private)
 // ---------------------------------------------------------------------------
 
-async function loadPushArtifacts(artifactsDir, windowName) {
+async function loadPushArtifacts(artifactsDir, windowName, projectRoot) {
   let contractRaw, schemaRawJson;
   try {
     contractRaw = await readFile(join(artifactsDir, 'contract.json'), 'utf-8');
@@ -322,6 +328,9 @@ async function loadPushArtifacts(artifactsDir, windowName) {
     const decisionsRaw = await readFile(join(artifactsDir, 'decisions.json'), 'utf-8');
     decisionsData = JSON.parse(decisionsRaw);
   } catch { /* optional — not all windows have decisions.json */ }
+  // Resolve any `#REF#<path>` agentPrompt references (spec + fields) against the
+  // repo root so every downstream consumer only sees literal prompt text.
+  resolveAgentPromptRefs(decisionsData, projectRoot || ROOT);
   return {
     contract: JSON.parse(contractRaw),
     schemaRawData: JSON.parse(schemaRawJson),
@@ -387,6 +396,28 @@ export function buildEntityPreconditionsMap(decisionsData) {
   return map;
 }
 
+/**
+ * Build an `entityName` -> agentPrompt map from decisions.json. Mirrors
+ * buildEntityPreconditionsMap: resolves the entity name the same way
+ * (`entityConf.name` falling back to the decisions key) so it matches the
+ * contract entity name used when the ETGO_SF_ENTITY row is written. Only
+ * entities that declare an `agentPrompt` key are included; the value is the
+ * normalized string (or null to clear a stale DB value). Serialized into
+ * ETGO_SF_ENTITY.agent_prompt by push-to-neo so NEO Headless can surface
+ * entity-level agent guidance in neo_discover, additive to the spec-level and
+ * per-field prompts (ETP-4278).
+ */
+export function buildEntityAgentPromptMap(decisionsData) {
+  const map = {};
+  for (const [entityKey, entityConf] of Object.entries(decisionsData.entities || {})) {
+    const entityName = entityConf.name || entityKey;
+    if (Object.hasOwn(entityConf, 'agentPrompt')) {
+      map[entityName] = normalizeAgentPrompt(entityConf.agentPrompt);
+    }
+  }
+  return map;
+}
+
 export function buildSpecUpsertParams(ctx, existingSpecId) {
   return {
     name: ctx.specName,
@@ -395,6 +426,7 @@ export function buildSpecUpsertParams(ctx, existingSpecId) {
     specType: 'W',
     specId: existingSpecId,
     agentPrompt: ctx.specAgentPrompt ?? null,
+    showInMcp: ctx.specShowInMcp,
     audit: ctx.auditOpts,
   };
 }
@@ -674,15 +706,19 @@ async function renameEntitiesToContractNames(client, ctx, entityMaps) {
     // cleared, mirroring how field agentPrompt clears itself (ETP-4275).
     const preconditions = ctx.entityPreconditions?.[ent.name] ?? null;
     const preconditionsJson = preconditions ? JSON.stringify(preconditions) : null;
+    // Serialize the declared entity-level agentPrompt the same way (ETP-4278):
+    // written unconditionally so an undeclared/cleared prompt resets the DB
+    // value, and surfaced additively by neo_discover's entity summary.
+    const entityAgentPrompt = ctx.entityAgentPrompts?.[ent.name] ?? null;
     if (ent.javaQualifier !== undefined) {
       await client.query(
-        'UPDATE etgo_sf_entity SET name = $1, java_qualifier = $2, preconditions = $3 WHERE etgo_sf_entity_id = $4',
-        [ent.name, ent.javaQualifier, preconditionsJson, entityId],
+        'UPDATE etgo_sf_entity SET name = $1, java_qualifier = $2, preconditions = $3, agent_prompt = $4 WHERE etgo_sf_entity_id = $5',
+        [ent.name, ent.javaQualifier, preconditionsJson, entityAgentPrompt, entityId],
       );
     } else {
       await client.query(
-        'UPDATE etgo_sf_entity SET name = $1, preconditions = $2 WHERE etgo_sf_entity_id = $3',
-        [ent.name, preconditionsJson, entityId],
+        'UPDATE etgo_sf_entity SET name = $1, preconditions = $2, agent_prompt = $3 WHERE etgo_sf_entity_id = $4',
+        [ent.name, preconditionsJson, entityAgentPrompt, entityId],
       );
     }
     entityMaps.entityMapByName[ent.name] = entityId;
@@ -1229,7 +1265,7 @@ export async function dumpDelta(windowName, options) {
 
   // 1) Load the contract / schema-raw / decisions ----------------------------
   const { contract, schemaRawData, decisionsData } =
-    await loadPushArtifacts(artifactsDir, windowName);
+    await loadPushArtifacts(artifactsDir, windowName, projectRoot);
 
   // 2) Guard: only window specs are supported in this slice.
   const specType = contract.backendContract?.specType

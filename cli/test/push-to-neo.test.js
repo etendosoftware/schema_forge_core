@@ -15,6 +15,7 @@ import {
   dumpDelta,
   buildFieldAgentPromptMap,
   buildEntityPreconditionsMap,
+  buildEntityAgentPromptMap,
   normalizePreconditions,
   buildFieldUpdateParams,
   buildSpecUpsertParams,
@@ -139,6 +140,59 @@ describe('buildEntityPreconditionsMap', () => {
   });
 });
 
+describe('buildEntityAgentPromptMap', () => {
+  it('maps entityName -> agentPrompt, resolving entity name like preconditions', () => {
+    const decisions = {
+      entities: {
+        header: { name: 'Account', agentPrompt: "the company's own financial account" },
+        lines: { fields: { qty: {} } },
+      },
+    };
+
+    assert.deepEqual(buildEntityAgentPromptMap(decisions), {
+      Account: "the company's own financial account",
+    });
+  });
+
+  it('falls back to the decisions key when no name override is given', () => {
+    const decisions = {
+      entities: {
+        bankAccount: { agentPrompt: "a contact's own bank account" },
+      },
+    };
+    assert.deepEqual(buildEntityAgentPromptMap(decisions), {
+      bankAccount: "a contact's own bank account",
+    });
+  });
+
+  it('returns an empty object when no entity declares agentPrompt', () => {
+    assert.deepEqual(buildEntityAgentPromptMap({}), {});
+    assert.deepEqual(buildEntityAgentPromptMap({ entities: {} }), {});
+    assert.deepEqual(
+      buildEntityAgentPromptMap({ entities: { header: { name: 'Account' } } }),
+      {},
+    );
+  });
+
+  it('maps a whitespace-only or empty prompt to null to clear stale DB values', () => {
+    assert.deepEqual(
+      buildEntityAgentPromptMap({ entities: { header: { agentPrompt: '   ' } } }),
+      { header: null },
+    );
+    assert.deepEqual(
+      buildEntityAgentPromptMap({ entities: { header: { agentPrompt: null } } }),
+      { header: null },
+    );
+  });
+
+  it('trims surrounding whitespace on a real prompt', () => {
+    assert.deepEqual(
+      buildEntityAgentPromptMap({ entities: { header: { agentPrompt: '  hello  ' } } }),
+      { header: 'hello' },
+    );
+  });
+});
+
 describe('normalizePreconditions', () => {
   it('returns null for empty, null, or malformed values', () => {
     assert.equal(normalizePreconditions(null), null);
@@ -167,6 +221,21 @@ describe('push-to-neo agentPrompt upsert params', () => {
     assert.equal(params.agentPrompt, 'Confirm before completing.');
     assert.equal(params.specId, 'SPEC1');
     assert.equal(params.name, 'purchase-order');
+  });
+
+  it('forwards window.showInMcp opt-out into upsertSpec params', () => {
+    // Absent → undefined (upsertSpec treats anything but false as 'Y').
+    const shown = buildSpecUpsertParams({
+      specName: 'purchase-order', moduleId: 'MOD1', windowId: 'WIN1', auditOpts: {},
+    }, 'SPEC1');
+    assert.equal(shown.showInMcp, undefined);
+
+    // Explicit false is the only value that hides the spec from the MCP.
+    const hidden = buildSpecUpsertParams({
+      specName: 'return-to-vendor', moduleId: 'MOD1', windowId: 'WIN1',
+      specShowInMcp: false, auditOpts: {},
+    }, 'SPEC2');
+    assert.equal(hidden.showInMcp, false);
   });
 
   it('passes field agentPrompt into upsertField params', () => {
