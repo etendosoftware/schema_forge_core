@@ -2536,12 +2536,27 @@ describe('generateTableComponent — gridReadOnly', () => {
     );
   });
 
-  it('does NOT emit readOnly: true for fields without gridReadOnly', () => {
+  it('emits readOnly: true for a field whose visibility is readOnly, even without gridReadOnly (ETP-4735)', () => {
+    // documentNo has visibility: 'readOnly' and no gridReadOnly flag — the grid
+    // column must still be locked, matching the Form-column builder's behavior
+    // for the same field (f.visibility === 'readOnly'). Before ETP-4735 this
+    // builder only checked the explicit gridReadOnly opt-in and ignored
+    // visibility entirely, so a readOnly AD field (e.g. orderQuantity on
+    // goodsReceiptLine/goodsShipmentLine) rendered editable in inlineEditable
+    // grids despite being correctly locked in the sidebar Form.
     const code = generateTableComponent('shipment', gridReadOnlyContract);
-    // Only the quantity field has gridReadOnly — verify that the count of
-    // readOnly: true occurrences matches exactly one field
+    const lines = code.split('\n');
+    const documentNoLine = lines.find(l => l.includes("key: 'documentNo'"));
+    assert.ok(documentNoLine, 'documentNo column should exist');
+    assert.ok(documentNoLine.includes(', readOnly: true'), 'documentNo (visibility: readOnly) should have readOnly: true in its grid column');
+  });
+
+  it('emits readOnly: true for exactly the fields that are visibility:readOnly OR gridReadOnly', () => {
+    const code = generateTableComponent('shipment', gridReadOnlyContract);
+    // documentNo (visibility: readOnly) + quantity (gridReadOnly: true) = 2.
+    // product (visibility: editable, no gridReadOnly) must stay unlocked.
     const matches = code.match(/, readOnly: true/g) ?? [];
-    assert.equal(matches.length, 1, 'exactly one column should have readOnly: true');
+    assert.equal(matches.length, 2, 'exactly two columns should have readOnly: true');
   });
 
   it('gridReadOnly field still appears as a column in the table', () => {
@@ -2556,6 +2571,60 @@ describe('generateTableComponent — gridReadOnly', () => {
     const productLine = lines.find(l => l.includes("key: 'product'"));
     assert.ok(productLine, 'product column should exist');
     assert.ok(!productLine.includes('readOnly: true'), 'product column should not have readOnly: true');
+  });
+});
+
+// ---------------------------------------------------------------------------
+// generateTableComponent — gridReadOnly OR visibility:'readOnly' (ETP-4735)
+// ---------------------------------------------------------------------------
+// Dedicated minimal fixtures, one field per case, mirroring the QA-agreed test
+// plan exactly (bug: "Cantidad Pedida" / orderQuantity editable in the grid
+// after import on goods-receipt/goods-shipment — the field is correctly
+// visibility:'readOnly' in decisions.json, but generateTableComponent's grid
+// column builder only checked the explicit gridReadOnly opt-in and ignored
+// visibility, so the correct decision never reached inlineEditable grids).
+describe('generateTableComponent — gridReadOnly OR visibility:readOnly (ETP-4735)', () => {
+  function contractWithField(field) {
+    return {
+      frontendContract: {
+        window: { id: '901', name: 'ETP-4735 Fixture', primaryEntity: 'line', category: 'purchasing' },
+        entities: {
+          line: {
+            fields: [field],
+            searchableFields: [],
+            computedFields: [],
+          },
+        },
+      },
+      backendContract: { processEndpoints: [] },
+    };
+  }
+
+  it('emits readOnly: true for visibility:readOnly + grid:true, with no gridReadOnly flag at all', () => {
+    const contract = contractWithField({
+      name: 'orderQuantity', column: 'QuantityOrder', type: 'number', tsType: 'number',
+      visibility: 'readOnly', grid: true, form: true,
+    });
+    const code = generateTableComponent('line', contract);
+    assert.ok(code.includes(', readOnly: true'), 'visibility:readOnly field should emit readOnly: true even without gridReadOnly');
+  });
+
+  it('does NOT emit readOnly: true for visibility:editable + grid:true (negative — no overzealous fix)', () => {
+    const contract = contractWithField({
+      name: 'movementQuantity', column: 'MovementQty', type: 'number', tsType: 'number',
+      visibility: 'editable', grid: true, form: true,
+    });
+    const code = generateTableComponent('line', contract);
+    assert.ok(!code.includes('readOnly: true'), 'visibility:editable field with no gridReadOnly should stay editable in the grid');
+  });
+
+  it('still emits readOnly: true for visibility:editable + gridReadOnly:true (opt-in preserved — OR, not a replacement)', () => {
+    const contract = contractWithField({
+      name: 'someField', column: 'SomeCol', type: 'number', tsType: 'number',
+      visibility: 'editable', grid: true, form: true, gridReadOnly: true,
+    });
+    const code = generateTableComponent('line', contract);
+    assert.ok(code.includes(', readOnly: true'), 'the explicit gridReadOnly opt-in must keep working after the fix');
   });
 });
 
