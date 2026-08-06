@@ -439,6 +439,11 @@ export function buildFieldUpdateParams(f, ctx, fieldId, entityId) {
     moduleId: ctx.moduleId,
     isIncluded: vis.isIncluded,
     isReadOnly: vis.isReadOnly,
+    // Stored alongside — not instead of — the two booleans above. mapVisibility
+    // collapses four curated values into two flags, which is what NEO's runtime
+    // needs but loses the distinction agents are told to act on (`system` and
+    // `readOnly` both map to Y/Y). neo_schema reads this column verbatim.
+    visibility: f.visibility ?? null,
     isBusinessCritical: f.businessCritical ? 'Y' : 'N',
     audit: ctx.auditOpts,
   };
@@ -468,7 +473,13 @@ function reportDryRunPlan({ allFields, specName, windowId, windowDisplayName, wi
       return {
         action: 'upsertField',
         entityName: f.entityName,
-        params: { entityId: '(from populate)', column: f.column, isIncluded: vis.isIncluded, isReadOnly: vis.isReadOnly },
+        params: {
+          entityId: '(from populate)',
+          column: f.column,
+          isIncluded: vis.isIncluded,
+          isReadOnly: vis.isReadOnly,
+          visibility: f.visibility ?? null,
+        },
       };
     }),
   };

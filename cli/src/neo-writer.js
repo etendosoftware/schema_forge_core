@@ -27,6 +27,39 @@ const SYSTEM_COLUMNS = [
 ];
 
 /**
+ * The four field visibility values of the curated schema, as stored in
+ * ETGO_SF_FIELD.VISIBILITY (VARCHAR(20)) and read back by the MCP layer
+ * (McpSchemaFieldBuilder) to emit `visibility` / `userRequired` on neo_schema.
+ *
+ * Kept as data rather than validated inline so the set has exactly one
+ * definition on the writer side. NULL is also legal and means "not classified":
+ * populateSpec creates a row per AD column before any contract is applied, and
+ * columns the contract never mentions legitimately stay NULL.
+ */
+export const FIELD_VISIBILITIES = ['editable', 'readOnly', 'system', 'discarded'];
+
+/**
+ * Validate a visibility value on its way to the DB.
+ *
+ * Fails loudly on an unknown value instead of storing it: the MCP layer serves
+ * this column to agents as authoritative metadata, so a typo silently persisted
+ * here becomes a wrong instruction there.
+ *
+ * @param {string|null|undefined} visibility
+ * @returns {string|null} the value, or null when unclassified
+ */
+export function normalizeVisibility(visibility) {
+  if (visibility == null || visibility === '') return null;
+  if (!FIELD_VISIBILITIES.includes(visibility)) {
+    throw new Error(
+      `upsertField: invalid visibility "${visibility}" `
+      + `(expected one of ${FIELD_VISIBILITIES.join(', ')}, or null)`,
+    );
+  }
+  return visibility;
+}
+
+/**
  * Generate an Etendo-compatible UUID (32-char uppercase hex, no dashes).
  */
 export function generateId() {
@@ -237,6 +270,10 @@ export async function upsertEntity(client, params) {
  * @param {string} [params.fieldId] - If provided, UPDATE instead of INSERT
  * @param {string} [params.isIncluded='Y']
  * @param {string} [params.isReadOnly='N']
+ * @param {string} [params.visibility] - Curated visibility (see FIELD_VISIBILITIES).
+ *   Orthogonal to isIncluded/isReadOnly, which drive NEO runtime behaviour: this
+ *   column is agent-facing metadata only, and preserves the distinction those two
+ *   booleans collapse (`system` and `readOnly` share the same Y/Y pair).
  * @param {string} [params.defaultValue]
  * @param {string} [params.agentPrompt] - Per-field agent guidance for neo_schema
  * @param {string} [params.javaQualifier]
@@ -294,6 +331,10 @@ export async function upsertField(client, params) {
       setClauses.push(`isbusinesscritical = $${paramIndex++}`);
       values.push(params.isBusinessCritical ?? 'N');
     }
+    if ('visibility' in params) {
+      setClauses.push(`visibility = $${paramIndex++}`);
+      values.push(normalizeVisibility(params.visibility));
+    }
 
     setClauses.push(`updated = $${paramIndex++}`);
     values.push(auditVals.updated);
@@ -313,6 +354,7 @@ export async function upsertField(client, params) {
   const javaQualifier = params.javaQualifier ?? null;
   const seqNo = params.seqNo ?? null;
   const agentPrompt = params.agentPrompt ?? null;
+  const visibility = normalizeVisibility(params.visibility);
 
   const fieldId = generateId();
   await client.query(
@@ -320,13 +362,13 @@ export async function upsertField(client, params) {
      (etgo_sf_field_id, etgo_sf_entity_id, ad_column_id, ad_module_id,
       isincluded, isreadonly, isbusinesscritical, defaultvalue, java_qualifier, seqno,
       ad_client_id, ad_org_id, isactive, created, createdby, updated, updatedby,
-      agent_prompt)
-     VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18)`,
+      agent_prompt, visibility)
+     VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19)`,
     [fieldId, entityId, columnId, moduleId,
      isIncluded, isReadOnly, isBusinessCritical, defaultValue, javaQualifier, seqNo,
      auditVals.ad_client_id, auditVals.ad_org_id, auditVals.isactive,
      auditVals.created, auditVals.createdby, auditVals.updated, auditVals.updatedby,
-     agentPrompt],
+     agentPrompt, visibility],
   );
   return { fieldId, created: true };
 }
