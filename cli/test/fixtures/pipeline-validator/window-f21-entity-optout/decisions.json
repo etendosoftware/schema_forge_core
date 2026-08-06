@@ -1,0 +1,7 @@
+{
+  "version": "v2",
+  "window": { "readOnly": true },
+  "entities": {
+    "acknowledgement": { "readOnly": false }
+  }
+}

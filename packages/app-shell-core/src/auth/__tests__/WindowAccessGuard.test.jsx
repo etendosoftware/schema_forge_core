@@ -6,18 +6,6 @@ import { WindowAccessGuard } from '../WindowAccessGuard.jsx';
 
 afterEach(cleanup);
 
-// ETP-4576 cycle 4a — `restoreSession` is no longer opt-in: AuthProvider defaults
-// it to the platform cookie fetcher (fetchCookieSession). Every provider mounted
-// without the prop would therefore call `fetch` on mount, fail under jsdom, and
-// take the fail-closed path — which runs logout(), wiping the very
-// windowAccess/capabilities these tests just seeded via selectRole().
-// This suite's subject is the guard's tier gating, NOT the session restore, so we
-// neutralise the default with a never-settling override: the provider parks in
-// 'booting', no purge/logout ever fires, the default fetcher is never invoked (so
-// no `fetch` stub is needed either), and every assertion below keeps verifying
-// exactly what it verified before the default existed. Do not remove.
-const NEVER_SETTLES = () => new Promise(() => {});
-
 function RoleSelector({ role }) {
   const { selectRole } = useAuth();
   return (
@@ -29,10 +17,7 @@ function RoleSelector({ role }) {
 
 function renderGuarded({ fetchWindowAccess, windowId = '147' } = {}) {
   return render(
-    <AuthProvider
-      storage={createMemoryAuthStorage()}
-      fetchWindowAccess={fetchWindowAccess}
-      restoreSession={NEVER_SETTLES}>
+    <AuthProvider storage={createMemoryAuthStorage()} fetchWindowAccess={fetchWindowAccess}>
       <RoleSelector role={{ id: 'role-1' }} />
       <WindowAccessGuard windowId={windowId}>
         <div data-testid="protected-content">Protected</div>
@@ -51,7 +36,7 @@ describe('WindowAccessGuard (ETP-4520)', () => {
 
   it('blocks rendering when windowId is missing (fail closed)', () => {
     render(
-      <AuthProvider storage={createMemoryAuthStorage()} restoreSession={NEVER_SETTLES}>
+      <AuthProvider storage={createMemoryAuthStorage()}>
         <WindowAccessGuard>
           <div data-testid="protected-content">Protected</div>
         </WindowAccessGuard>

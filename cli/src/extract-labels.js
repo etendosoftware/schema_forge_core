@@ -3,6 +3,7 @@
 import { mkdir, readFile, writeFile } from 'node:fs/promises';
 import { dirname } from 'node:path';
 import { createDbPool, closePool } from './db.js';
+import { buildEnumLabelKey } from './enum-label-key.js';
 
 const QUERIES = {
   fields: `
@@ -52,6 +53,27 @@ WHERE rl.value IN (
 )
 AND rl.isactive = 'Y'
 ORDER BY rl.value, rlt.name NULLS LAST`,
+
+  // ETP-4685 — translations for List-reference (AD_Ref_List) values used as
+  // enumLabels in generated grid/filter columns. Unlike `statuses` above, this
+  // is NOT restricted to a whitelist: every List column's values are covered,
+  // scoped by column name (via buildEnumLabelKey) to avoid collisions between
+  // unrelated reference lists that happen to share a short Value code. Keyed
+  // by rl.value (stable, language-independent — matches the `statuses`
+  // convention above), never by rl.name, which is a mutable display label.
+  enumLabels: `
+SELECT DISTINCT ON (c.columnname, rl.value)
+  c.columnname AS column_name,
+  rl.value AS value,
+  COALESCE(rlt.name, rl.name) AS label
+FROM ad_column c
+JOIN ad_ref_list rl ON rl.ad_reference_id = c.ad_reference_value_id
+LEFT JOIN ad_ref_list_trl rlt
+  ON rl.ad_ref_list_id = rlt.ad_ref_list_id AND rlt.ad_language = $1
+WHERE c.ad_reference_id = '17'
+  AND c.isactive = 'Y'
+  AND rl.isactive = 'Y'
+ORDER BY c.columnname, rl.value, rl.name COLLATE "C"`,
 };
 
 /**
@@ -96,16 +118,32 @@ function buildKeyLabelMap(rows) {
 }
 
 /**
+ * Build a key->label map for List-reference (AD_Ref_List) values, keyed by a
+ * column-scoped i18n key (see buildEnumLabelKey) instead of the raw Value
+ * code — avoids collisions between unrelated lists sharing a short code.
+ */
+function buildEnumLabelMap(rows) {
+  const result = {};
+  for (const row of rows) {
+    const key = buildEnumLabelKey(row.column_name, row.value);
+    // Last-write-wins for duplicates, consistent with buildKeyLabelMap.
+    result[key] = { label: row.label || '' };
+  }
+  return result;
+}
+
+/**
  * Extract labels from the database for the given language.
  * Accepts a pool (or pool-like object with a query method) for testability.
  */
 export async function extractLabels(pool, lang) {
-  const [fieldsRes, windowsRes, tabsRes, menusRes, statusesRes] = await Promise.all([
+  const [fieldsRes, windowsRes, tabsRes, menusRes, statusesRes, enumLabelsRes] = await Promise.all([
     pool.query(QUERIES.fields, [lang]),
     pool.query(QUERIES.windows, [lang]),
     pool.query(QUERIES.tabs, [lang]),
     pool.query(QUERIES.menus, [lang]),
     pool.query(QUERIES.statuses, [lang]),
+    pool.query(QUERIES.enumLabels, [lang]),
   ]);
 
   return {
@@ -114,6 +152,28 @@ export async function extractLabels(pool, lang) {
     tabs: buildKeyLabelMap(tabsRes.rows),
     menus: buildKeyLabelMap(menusRes.rows),
     statuses: buildKeyLabelMap(statusesRes.rows),
+    enumLabels: buildEnumLabelMap(enumLabelsRes.rows),
+  };
+}
+
+/**
+ * Merge freshly extracted labels into an existing locale file's contents.
+ * `enumLabels` is nested into `genericLabels` (keyed by its i18n key, valued
+ * by its translated label text) instead of becoming its own top-level
+ * section — this is what useUI()/ui() actually reads (see ETP-4685). Other
+ * hand-maintained genericLabels entries are preserved; only the extracted
+ * enum keys are added/overwritten.
+ */
+export function mergeLocaleFile(existing, labels) {
+  const base = existing || {};
+  const { enumLabels, ...rest } = labels;
+  const enumEntries = Object.fromEntries(
+    Object.entries(enumLabels || {}).map(([key, entry]) => [key, entry.label]),
+  );
+  return {
+    ...base,
+    ...rest,
+    genericLabels: { ...(base.genericLabels || {}), ...enumEntries },
   };
 }
 
@@ -157,27 +217,29 @@ async function main() {
     const tabCount = Object.keys(labels.tabs).length;
     const menuCount = Object.keys(labels.menus).length;
     const statusCount = Object.keys(labels.statuses).length;
+    const enumLabelCount = Object.keys(labels.enumLabels).length;
 
     console.log(`Extracted labels for "${lang}":`);
-    console.log(`  fields:   ${fieldCount}`);
-    console.log(`  windows:  ${windowCount}`);
-    console.log(`  tabs:     ${tabCount}`);
-    console.log(`  menus:    ${menuCount}`);
-    console.log(`  statuses: ${statusCount}`);
+    console.log(`  fields:      ${fieldCount}`);
+    console.log(`  windows:     ${windowCount}`);
+    console.log(`  tabs:        ${tabCount}`);
+    console.log(`  menus:       ${menuCount}`);
+    console.log(`  statuses:    ${statusCount}`);
+    console.log(`  enumLabels:  ${enumLabelCount} (merged into genericLabels)`);
 
     // Merge with existing file to preserve non-extracted sections (e.g. genericLabels, ui)
     await mkdir(dirname(out), { recursive: true });
-    let merged = labels;
+    let existing = null;
     try {
-      const existing = JSON.parse(await readFile(out, 'utf-8'));
-      merged = { ...existing, ...labels };
-      const preserved = Object.keys(existing).filter(k => !(k in labels));
+      existing = JSON.parse(await readFile(out, 'utf-8'));
+      const preserved = Object.keys(existing).filter(k => !(k in labels) && k !== 'genericLabels');
       if (preserved.length) {
         console.log(`  preserved: ${preserved.join(', ')}`);
       }
     } catch {
       // File doesn't exist yet — write fresh
     }
+    const merged = mergeLocaleFile(existing, labels);
     await writeFile(out, JSON.stringify(merged, null, 2) + '\n', 'utf-8');
     console.log(`\nWritten to ${out}`);
   } finally {
