@@ -10,6 +10,7 @@ import {
   extractFieldsFromContract,
   formatDuplicateFieldsError,
   loadConfig,
+  buildDesiredEntitiesMap,
 } from '../src/push-to-neo.js';
 
 describe('toSpecName', () => {
@@ -608,5 +609,45 @@ describe('extractFieldsFromContract — edge cases', () => {
     assert.equal(fields[0].column, 'C1');
     assert.equal(fields[0].visibility, 'editable');
     assert.equal(fields[0].entityName, 'header');
+  });
+});
+
+describe('buildDesiredEntitiesMap — namedFilters carry-through (ETP-4601)', () => {
+  const schemaRaw = {
+    entities: [{ name: 'header', tabName: 'Header', tableName: 'C_Invoice' }],
+  };
+
+  it('carries an entity namedFilters array from the contract into the desired map', () => {
+    const namedFilters = [
+      { name: 'completed', label: 'Paid', where: 'e.paymentComplete = true' },
+      { name: 'pending', where: 'e.paymentComplete = false' },
+    ];
+    const contract = {
+      backendContract: {
+        entities: { header: { tabName: 'Header', tableName: 'C_Invoice', namedFilters } },
+      },
+    };
+    const desired = buildDesiredEntitiesMap(schemaRaw, contract);
+    assert.deepEqual(desired.get('Header').namedFilters, namedFilters);
+  });
+
+  it('sets namedFilters to null when the contract entity declares none', () => {
+    const contract = {
+      backendContract: {
+        entities: { header: { tabName: 'Header', tableName: 'C_Invoice' } },
+      },
+    };
+    const desired = buildDesiredEntitiesMap(schemaRaw, contract);
+    assert.equal(desired.get('Header').namedFilters, null);
+  });
+
+  it('sets namedFilters to null when the contract entity declares an empty array', () => {
+    const contract = {
+      backendContract: {
+        entities: { header: { tabName: 'Header', tableName: 'C_Invoice', namedFilters: [] } },
+      },
+    };
+    const desired = buildDesiredEntitiesMap(schemaRaw, contract);
+    assert.equal(desired.get('Header').namedFilters, null);
   });
 });

@@ -642,6 +642,11 @@ export function generateBackendContract(schema, rules = [], processes = []) {
 
     const beEntity = { tableName: entity.tableName, tabId: entity.tabId, tabName: entity.tabName, fields };
     if (entity.javaQualifier) beEntity.javaQualifier = entity.javaQualifier;
+    // Named filters (ETP-4601): hand-authored HQL WHERE fragments the MCP exposes/applies. Already
+    // normalized in resolve-curated; carried verbatim so push-to-neo can persist them.
+    if (Array.isArray(entity.namedFilters) && entity.namedFilters.length > 0) {
+      beEntity.namedFilters = entity.namedFilters;
+    }
     entities[entity.name] = beEntity;
 
     const searchableFields = entity.fields
