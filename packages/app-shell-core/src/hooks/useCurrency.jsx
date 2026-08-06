@@ -21,7 +21,7 @@ const CurrencyContext = createContext(null);
 
 /**
  * Place this provider inside <AuthProvider> at the app root so the
- * currency fetch starts as soon as the session is authenticated — before
+ * currency fetch starts as soon as the token is available — before
  * any dashboard or window component mounts and needs the value.
  *
  * @example
@@ -32,7 +32,7 @@ const CurrencyContext = createContext(null);
  * </AuthProvider>
  */
 export function CurrencyProvider({ children, value, apiBaseUrl, fetcher = globalThis.fetch }) {
-  const { isAuthenticated, selectedOrg } = useAuth();
+  const { token, selectedOrg } = useAuth();
   const [currencyCode, setCurrencyCode] = useState(null);
 
   useEffect(() => {
@@ -41,19 +41,18 @@ export function CurrencyProvider({ children, value, apiBaseUrl, fetcher = global
       return;
     }
 
-    if (!isAuthenticated) {
+    if (!token) {
       setCurrencyCode(null);
       return;
     }
 
     let cancelled = false;
     const base = apiBaseUrl || `${getApiBase()}/sws/neo`;
+    const headers = { Authorization: `Bearer ${token}` };
 
     async function resolve() {
       try {
-        // ETP-4576 — the session lives in the __Host- cookie now; send it via
-        // credentials instead of a client-held Bearer token.
-        const res = await fetcher(`${base}/session`, { credentials: 'include' });
+        const res = await fetcher(`${base}/session`, { headers });
         if (res.ok) {
           const json = await res.json();
           const code = json?.currencyCode;
@@ -66,7 +65,7 @@ export function CurrencyProvider({ children, value, apiBaseUrl, fetcher = global
 
     resolve();
     return () => { cancelled = true; };
-  }, [apiBaseUrl, fetcher, isAuthenticated, selectedOrg?.id, value]);
+  }, [apiBaseUrl, fetcher, token, selectedOrg?.id, value]);
 
   return (
     <CurrencyContext.Provider value={currencyCode}>

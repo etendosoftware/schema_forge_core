@@ -6,9 +6,9 @@ import { createQueryCache } from './queryCache.js';
  * DataProvider
  *
  * Owns the app-wide query cache and enforces session isolation:
- * whenever the authentication identity (token or csrfToken / client /
- * role / org) changes, previously cached business data is cleared so
- * it can never leak across a session, role or organization boundary.
+ * whenever the authentication identity (token / client / role / org)
+ * changes, previously cached business data is cleared so it can never
+ * leak across a session, role or organization boundary.
  *
  * Freshness policies are differentiated: `recordStaleTime` applies to
  * records and lists; `catalogStaleTime` to relatively stable
@@ -40,7 +40,7 @@ export function DataProvider({
   recordStaleTime = DEFAULT_RECORD_STALE_TIME,
   catalogStaleTime = DEFAULT_CATALOG_STALE_TIME,
 }) {
-  const { token, csrfToken, clientId, selectedRole, selectedOrg } = useAuth();
+  const { token, clientId, selectedRole, selectedOrg } = useAuth();
 
   // The cache lives for the lifetime of the provider (survives re-renders).
   const cacheRef = useRef(null);
@@ -49,17 +49,12 @@ export function DataProvider({
 
   const scope = useMemo(
     () => ({
-      // ETP-4576 — cookie-session hosts (using AuthProvider's restoreSession)
-      // never populate session.token, so csrfToken (which rotates on login,
-      // logout and environment switch, per ADR-0001) is the identity signal
-      // for them. Legacy hosts that still set session.token directly keep
-      // using it unchanged.
-      auth: token ?? csrfToken ?? null,
+      auth: token ?? null,
       client: clientId ?? null,
       role: idOf(selectedRole),
       org: idOf(selectedOrg),
     }),
-    [token, csrfToken, clientId, selectedRole, selectedOrg],
+    [token, clientId, selectedRole, selectedOrg],
   );
 
   // Clear the cache when the identity changes (but not on first mount, so

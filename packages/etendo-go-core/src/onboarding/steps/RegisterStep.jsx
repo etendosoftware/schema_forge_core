@@ -43,14 +43,16 @@ export function RegisterStep({ config, stepData, onNext, onBack, goToStep, setTo
     special: 'onboardingPasswordReqSpecial',
   };
 
-  const handleAuthSuccess = useCallback((csrfToken, account, { route = true } = {}) => {
-    if (setToken) setToken(csrfToken);
+  const handleAuthSuccess = useCallback((token, account, { route = true, authMethod = 'password' } = {}) => {
+    localStorage.setItem('sf_platform_token', token);
+    localStorage.setItem('sf_platform_auth_method', authMethod);
+    if (setToken) setToken(token);
     if (setAccountName) setAccountName(account?.name || account?.email || null);
     setShowRegisterPassword(false);
     setSsoError(null);
     setSsoLoadingProvider(null);
     if (route && handleRegisterSuccess) {
-      handleRegisterSuccess(csrfToken, account);
+      handleRegisterSuccess(token, account);
     }
   }, [setToken, setAccountName, handleRegisterSuccess]);
 
@@ -65,13 +67,13 @@ export function RegisterStep({ config, stepData, onNext, onBack, goToStep, setTo
     setSsoLoadingProvider(provider);
     try {
       const data = await loginWithSsoProvider(fetch, apiBase, provider, payload);
-      if (data.csrfToken) {
+      if (data.token) {
         trackOnboarding(config, 'onboarding_auth_succeeded', {
           action: 'sso',
           provider,
           status: 'success',
         });
-        handleAuthSuccess(data.csrfToken, data.account);
+        handleAuthSuccess(data.token, data.account, { authMethod: 'sso' });
       } else {
         trackOnboarding(config, 'onboarding_auth_failed', {
           action: 'sso',
@@ -138,12 +140,12 @@ export function RegisterStep({ config, stepData, onNext, onBack, goToStep, setTo
         ...registerForm,
         language: locale || config.defaultForm?.language || '',
       });
-      if (data.csrfToken) {
+      if (data.token) {
         trackOnboarding(config, 'onboarding_auth_succeeded', {
           action: 'register',
           status: 'success',
         });
-        handleAuthSuccess(data.csrfToken, data.account);
+        handleAuthSuccess(data.token, data.account);
       } else {
         trackOnboarding(config, 'onboarding_auth_failed', {
           action: 'register',

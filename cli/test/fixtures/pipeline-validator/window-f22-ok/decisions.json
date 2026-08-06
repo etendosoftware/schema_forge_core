@@ -1,0 +1,10 @@
+{
+  "version": "v2",
+  "window": {
+    "customTabsAfterBottom": true,
+    "customPanelTabs": [
+      { "key": "pricing", "label": "Price", "component": "PriceBar" }
+    ]
+  },
+  "entities": {}
+}
