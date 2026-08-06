@@ -471,7 +471,16 @@ export function generateTableComponent(entityName, contract) {
     const noTrailingPart = fragmentIf(f.noTrailing, ', noTrailing: true');
     const filterOnlyPart = fragmentIf((f.filterOnly || f.filterable === false), ', filterable: false');
     const dotPart = fragmentIf(f.dot === false, ', dot: false');
-    const gridReadOnlyPart = fragmentIf(f.gridReadOnly, ', readOnly: true');
+    // ETP-4735 — a field whose visibility is 'readOnly' must stay locked in the
+    // grid too, not just in the Form (see the Form-column builder's readOnlyPart
+    // below, which already checks f.visibility === 'readOnly'). Before this fix,
+    // this builder only honored the explicit gridReadOnly opt-in, so a readOnly
+    // AD field that's also grid:true (e.g. orderQuantity on
+    // goodsReceiptLine/goodsShipmentLine) rendered editable in inlineEditable
+    // grids despite being correctly locked everywhere else. OR, not a
+    // replacement — gridReadOnly stays available to lock an otherwise-editable
+    // column in the grid only.
+    const gridReadOnlyPart = fragmentIf(f.visibility === 'readOnly' || f.gridReadOnly, ', readOnly: true');
     // Stored computed column (EPL-1807): carry the contract `computed` hint onto
     // the grid column so DataTable renders the freshness clock in the header.
     // Auto-detected — no per-window config; emitted only for mode: 'stored'.
