@@ -16,6 +16,7 @@ import { classifyRule } from './pre-classify.js';
 import { toCamelCase, isMainModule } from './utils.js';
 import { migrateDecisions, needsMigration, getVersion } from './migrations/index.js';
 import { buildFieldValidation } from './lib/field-validation.js';
+import { normalizeMethodList } from './lib/entity-methods.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -697,6 +698,32 @@ function applyEntityDecisions(entity, entityDecision) {
   if (entityDecision.hideDelete === true) {
     entity.hideDelete = true;
   }
+  applyEntityMethodDecisions(entity, entityDecision);
+}
+
+/**
+ * Carry the declared per-entity HTTP-method intent (ETP-4254) onto the curated
+ * entity so generate-contract can resolve it into `apiPrediction.crud`.
+ *
+ * This is the ONLY place a `decisions.entities.<key>` block is matched to a
+ * curated entity by name (see findEntityDecision) — hence the resolution starts
+ * here rather than at push time, where only the AD tab name is known.
+ *
+ *   readOnly: true   → this entity is read-only (GET + GETBYID)
+ *   readOnly: false  → explicit opt-out of a read-only WINDOW (all methods)
+ *   methods: [...]   → explicit allowlist; GET + GETBYID always added back
+ *
+ * `readOnly: false` is carried through deliberately (not treated as "absent"):
+ * it is the escape hatch for a mixed window that is read-only except for one
+ * action entity. `methods` is normalized here so the contract only ever carries
+ * canonical, deduplicated, GET-inclusive lists.
+ */
+function applyEntityMethodDecisions(entity, entityDecision) {
+  if (typeof entityDecision.readOnly === 'boolean') {
+    entity.readOnly = entityDecision.readOnly;
+  }
+  const methods = normalizeMethodList(entityDecision.methods);
+  if (methods) entity.methods = methods;
 }
 
 /**
