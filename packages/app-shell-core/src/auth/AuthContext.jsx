@@ -1,5 +1,6 @@
 import { createContext, useContext, useState, useCallback, useMemo, useRef, useEffect } from 'react';
 import { deleteCookieSession, fetchCookieSession } from './api.js';
+import { CREDENTIAL_MODES, setSessionCredentials } from './sessionCredentials.js';
 import {
   createMemoryAuthStorage,
   mapRestoredSession,
@@ -15,6 +16,13 @@ export function AuthProvider({
   initialSession,
   onSessionChange,
   fetchWindowAccess,
+  // ETP-4576 — which credential scheme requests use: 'bearer' (today's shipped
+  // behaviour, the default) or 'cookie'. The host resolves this from the backend
+  // preference that gates the cookie session and passes it down, so turning the
+  // migration on or off is a database change rather than a redeploy. Sourcing it
+  // is deliberately the host's job: the core stays unaware of how the instance
+  // is configured.
+  credentialMode = CREDENTIAL_MODES.bearer,
   // ETP-4576 — defaults to the platform cookie fetcher, so every host gets the
   // server-side session without wiring anything (an opt-in prop left hosts that
   // pass no props unable to authenticate at all once the localStorage handoff
@@ -239,6 +247,15 @@ export function AuthProvider({
     // this effect's own identity only needs to track the role value.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [session.selectedRole]);
+
+  // ETP-4576 — hand the active scheme and both credentials to
+  // ./sessionCredentials.js, which is what every request builder in the core and
+  // the host reads. Runs on each change so a token refresh, an environment
+  // switch or a preference flip all take effect without a reload. This is the
+  // ONLY writer: nothing else may call setSessionCredentials.
+  useEffect(() => {
+    setSessionCredentials({ mode: credentialMode, token: session.token, csrfToken });
+  }, [credentialMode, session.token, csrfToken]);
 
   const setSession = useCallback((nextSession) => {
     persistSession({ ...session, ...nextSession });
