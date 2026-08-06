@@ -589,9 +589,22 @@ diverge (a divergence would turn `regen-check` red).
 
 **Not the same as field-level read-only.** `fields.{name}.visibility: "readOnly"`
 sets `ETGO_SF_FIELD.ISREADONLY` for one column. This block controls whole-entity
-HTTP verbs. Likewise `window.hideDelete` / `entities.{name}.hideDelete` only hide
-the UI affordance (`api.crud.delete = false`) — they do **not** disable the
-`DELETE` method. Use `methods` when the HTTP verb itself must be refused.
+HTTP verbs.
+
+**`hideDelete` also disables the `DELETE` method (ETP-4745).** `window.hideDelete`
+/ `entities.{name}.hideDelete` set `apiPrediction.crud.{entity}.delete = false` on
+the contract — and since ETP-4745, `resolveContractEntityMethods()` (the single
+function both write paths read) folds that flag into the resolved method list, so
+`ETGO_SF_ENTITY.ISDELETE` is written as `N` too. Before ETP-4745 this flag only
+hid the UI delete affordance; the live DB and the predicted XML delta kept
+granting `DELETE` regardless — a wiring gap, not an intentional split. `methods`
+is still the tool for restricting anything beyond DELETE (e.g. blocking `POST` or
+`PUT` on one entity); for DELETE alone, `hideDelete` is now equivalent and reads
+more intentionally. `window.hideDelete`'s effect composes with
+`entities.{name}.readOnly: false`: an entity that explicitly opts out of a
+`window.readOnly` window regains DELETE too, exactly like the other write
+methods (see [Entity HTTP Methods](#entity-http-methods-entitiesnamereadonly--entitiesnamemethods)) — a standalone `window.hideDelete` (declared without
+`window.readOnly`) has no such opt-out and still clobbers every entity.
 
 ### Line HandleDefaults (`entities.{name}.handlesDefaults`)
 

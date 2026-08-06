@@ -1017,10 +1017,24 @@ describe('Rule F21 — read-only intent vs contract methods', () => {
     assert.equal(await runF21('window-f21-methods-allowlist'), null);
   });
 
-  it('passes an unrestricted window, including an entity-level hideDelete', async () => {
-    // `lines.delete: false` is the UI affordance opt-out (ETP-4512) and must NOT
-    // be read as an HTTP-method restriction.
+  it('passes an unrestricted window with an entity-level hideDelete', async () => {
+    // `entities.lines.hideDelete: true` is declared and the contract already
+    // carries the matching `lines.delete: false` (ETP-4745 — hideDelete now also
+    // drops the enforced DELETE method, not just the UI affordance), so the
+    // "expected" and "actual" resolved method lists agree: no BLOCK.
     assert.equal(await runF21('window-f21-unrestricted'), null);
+  });
+
+  it('BLOCK when entities.<key>.hideDelete is declared but the contract was not regenerated', async () => {
+    // ETP-4745 — same stale-contract hazard F21 already catches for
+    // window.readOnly, but for the narrower hideDelete-only declaration: the
+    // contract still grants DELETE, so the next push would silently re-enable it.
+    const v = await runF21('window-f21-hidedelete-stale');
+    assert.ok(v, 'F21 must fire when a declared hideDelete has not reached the contract');
+    assert.equal(v.rule, 'F21');
+    assert.equal(v.severity, 'BLOCK');
+    assert.match(v.message, /entity 'lines' resolves to methods \[GET, GETBYID, POST, PUT, PATCH\]/);
+    assert.match(v.message, /would push \[GET, GETBYID, POST, PUT, PATCH, DELETE\]/);
   });
 
   it('BLOCK when a contract methods array omits read access', async () => {
@@ -1035,6 +1049,16 @@ describe('Rule F21 — read-only intent vs contract methods', () => {
     assert.ok(v, 'F21 must fire for a mistyped entities key');
     assert.equal(v.severity, 'BLOCK');
     assert.match(v.message, /entities\.lognLine declares a read-only restriction/);
+  });
+
+  it('BLOCK when a mistyped hideDelete-only declaration matches no contract entity', async () => {
+    // ETP-4745 — a hideDelete-only block is a restriction too, so `entities.lignes`
+    // (typo of `lines`) must be caught the same way a mistyped readOnly/methods
+    // key already is, or the declaration silently no-ops.
+    const v = await runF21('window-f21-orphan-hidedelete');
+    assert.ok(v, 'F21 must fire for a mistyped hideDelete-only entities key');
+    assert.equal(v.severity, 'BLOCK');
+    assert.match(v.message, /entities\.lignes declares a read-only restriction/);
   });
 
   it('returns null when the artifact has no decisions.json or contract.json', async () => {
