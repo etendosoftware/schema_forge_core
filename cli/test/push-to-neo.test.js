@@ -582,6 +582,45 @@ describe('pushToNeo dry run', () => {
     assert.equal(result.plan.fields[0].action, 'upsertField');
   });
 
+  it('reports no restricted entity methods when nothing is declared (ETP-4254)', async () => {
+    const result = await pushToNeo('sales-order', {
+      dryRun: true,
+      projectRoot: tmpDir,
+    });
+
+    assert.deepEqual(result.plan.populate.entityMethods, {});
+  });
+
+  it('reports the restricted entity methods a read-only window would push (ETP-4254)', async () => {
+    const artifactsDir = join(tmpDir, 'artifacts', 'read-only-window');
+    await mkdir(artifactsDir, { recursive: true });
+    await writeFile(join(artifactsDir, 'schema-raw.json'), JSON.stringify({
+      window: { id: '900', name: 'Conversion Rate Downloader Log' },
+      entities: [],
+    }));
+    await writeFile(join(artifactsDir, 'contract.json'), JSON.stringify({
+      backendContract: { entities: { log: { fields: [] } } },
+      apiPrediction: {
+        window: { readOnly: true },
+        crud: {
+          log: { get: true, getById: true, post: false, put: false, patch: false, delete: false },
+          acknowledgement: {
+            get: true, getById: true, post: true, put: true, patch: true, delete: true,
+            methods: ['GET', 'GETBYID', 'POST', 'PUT', 'PATCH', 'DELETE'],
+          },
+        },
+      },
+    }));
+
+    const result = await pushToNeo('read-only-window', {
+      dryRun: true,
+      projectRoot: tmpDir,
+    });
+
+    assert.deepEqual(result.plan.populate.entityMethods, { log: ['GET', 'GETBYID'] },
+      'only the restricted entity is listed — the opted-out one keeps all six methods');
+  });
+
   it('derives spec name from schema window name', async () => {
     const result = await pushToNeo('sales-order', {
       dryRun: true,

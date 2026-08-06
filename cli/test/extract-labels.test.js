@@ -1,10 +1,12 @@
 import { describe, it } from 'node:test';
 import { strict as assert } from 'node:assert';
-import { extractLabels } from '../src/extract-labels.js';
+import { extractLabels, mergeLocaleFile } from '../src/extract-labels.js';
 
 /**
  * Create a mock pool that returns predefined rows for each query type.
  * Identifies query type by checking for table names in the SQL.
+ * The enumLabels query is checked before the generic ad_ref_list one since
+ * it also references ad_ref_list (joined from ad_column).
  */
 function createMockPool(mockData) {
   return {
@@ -20,6 +22,9 @@ function createMockPool(mockData) {
       }
       if (sql.includes('ad_menu')) {
         return Promise.resolve({ rows: mockData.menus || [] });
+      }
+      if (sql.includes('ad_column')) {
+        return Promise.resolve({ rows: mockData.enumLabels || [] });
       }
       if (sql.includes('ad_ref_list')) {
         return Promise.resolve({ rows: mockData.statuses || [] });
@@ -45,11 +50,13 @@ describe('extractLabels', () => {
     assert.ok(result.tabs, 'should have tabs section');
     assert.ok(result.menus, 'should have menus section');
     assert.ok(result.statuses, 'should have statuses section');
+    assert.ok(result.enumLabels, 'should have enumLabels section');
     assert.equal(typeof result.fields, 'object');
     assert.equal(typeof result.windows, 'object');
     assert.equal(typeof result.tabs, 'object');
     assert.equal(typeof result.menus, 'object');
     assert.equal(typeof result.statuses, 'object');
+    assert.equal(typeof result.enumLabels, 'object');
   });
 
   it('maps field rows by column_key with label and description', async () => {
@@ -172,6 +179,7 @@ describe('extractLabels', () => {
     assert.deepEqual(result.tabs, {});
     assert.deepEqual(result.menus, {});
     assert.deepEqual(result.statuses, {});
+    assert.deepEqual(result.enumLabels, {});
   });
 
   it('passes language parameter to pool.query', async () => {
@@ -185,8 +193,9 @@ describe('extractLabels', () => {
 
     await extractLabels(pool, 'es_AR');
 
-    // All 5 queries should receive the language parameter
-    assert.equal(capturedParams.length, 5);
+    // All 6 queries (fields, windows, tabs, menus, statuses, enumLabels) should
+    // receive the language parameter
+    assert.equal(capturedParams.length, 6);
     for (const params of capturedParams) {
       assert.deepEqual(params, ['es_AR']);
     }
@@ -321,7 +330,7 @@ describe('extractLabels', () => {
     assert.equal(result.fields.Col_0.label, 'Label 0');
   });
 
-  it('all five queries run concurrently via Promise.all', async () => {
+  it('all six queries run concurrently via Promise.all', async () => {
     const callOrder = [];
     let resolveCount = 0;
     const pool = {
@@ -340,8 +349,152 @@ describe('extractLabels', () => {
 
     await extractLabels(pool, 'en_US');
 
-    // All 5 queries should have started before any ended
+    // All 6 queries should have started before any ended
     const starts = callOrder.filter((e) => e.startsWith('start-'));
-    assert.equal(starts.length, 5, 'all 5 queries should start');
+    assert.equal(starts.length, 6, 'all 6 queries should start');
+  });
+
+  // --- ETP-4685: enumLabels section (List reference values, no whitelist) ---
+
+  describe('enumLabels section', () => {
+    it('maps enum rows into column-scoped i18n keys built from the Value code', async () => {
+      const pool = createMockPool({
+        fields: [],
+        windows: [],
+        tabs: [],
+        menus: [],
+        enumLabels: [
+          { column_name: 'ProductType', value: 'I', label: 'Artículo' },
+          { column_name: 'ProductType', value: 'S', label: 'Servicio' },
+        ],
+      });
+
+      const result = await extractLabels(pool, 'es_ES');
+
+      assert.equal(result.enumLabels.productTypeI.label, 'Artículo');
+      assert.equal(result.enumLabels.productTypeS.label, 'Servicio');
+    });
+
+    it('is not restricted to a fixed whitelist of value codes (unlike statuses)', async () => {
+      const pool = createMockPool({
+        fields: [],
+        windows: [],
+        tabs: [],
+        menus: [],
+        // 'ZZ' is not part of the statuses whitelist — enumLabels must still pick it up
+        enumLabels: [
+          { column_name: 'DeliveryTerms', value: 'ZZ', label: 'Custom Term' },
+        ],
+      });
+
+      const result = await extractLabels(pool, 'en_US');
+
+      assert.equal(result.enumLabels.deliveryTermsZz.label, 'Custom Term');
+    });
+
+    it('keys by the Value code (language-independent) so it stays stable across locales', async () => {
+      // Renaming the display Name (e.g. "Item" -> "Article") must NOT change the
+      // key — only the Value code (which never changes) drives it, matching the
+      // stability of the `statuses` section's own rl.value-keyed convention.
+      const poolEn = createMockPool({
+        fields: [], windows: [], tabs: [], menus: [],
+        enumLabels: [{ column_name: 'ProductType', value: 'I', label: 'Item' }],
+      });
+      const poolEs = createMockPool({
+        fields: [], windows: [], tabs: [], menus: [],
+        enumLabels: [{ column_name: 'ProductType', value: 'I', label: 'Artículo' }],
+      });
+
+      const resultEn = await extractLabels(poolEn, 'en_US');
+      const resultEs = await extractLabels(poolEs, 'es_ES');
+
+      assert.deepEqual(Object.keys(resultEn.enumLabels), Object.keys(resultEs.enumLabels));
+      assert.equal(resultEn.enumLabels.productTypeI.label, 'Item');
+      assert.equal(resultEs.enumLabels.productTypeI.label, 'Artículo');
+    });
+
+    it('scopes keys by column name so two lists sharing a value code do not collide', async () => {
+      const pool = createMockPool({
+        fields: [], windows: [], tabs: [], menus: [],
+        enumLabels: [
+          { column_name: 'ProductType', value: 'S', label: 'Servicio' },
+          { column_name: 'DeliveryTerms', value: 'S', label: 'A domicilio' },
+        ],
+      });
+
+      const result = await extractLabels(pool, 'es_ES');
+
+      assert.equal(result.enumLabels.productTypeS.label, 'Servicio');
+      assert.equal(result.enumLabels.deliveryTermsS.label, 'A domicilio');
+    });
+  });
+
+  // --- ETP-4685: merging enumLabels into genericLabels (non-destructive) ---
+
+  describe('mergeLocaleFile', () => {
+    it('nests enumLabels into genericLabels, keyed by label text', () => {
+      const existing = { genericLabels: { save: 'Save' } };
+      const extracted = {
+        fields: {}, windows: {}, tabs: {}, menus: {}, statuses: {},
+        enumLabels: { productTypeItem: { label: 'Item' }, productTypeService: { label: 'Service' } },
+      };
+
+      const merged = mergeLocaleFile(existing, extracted);
+
+      assert.equal(merged.genericLabels.save, 'Save', 'pre-existing genericLabels keys must be preserved');
+      assert.equal(merged.genericLabels.productTypeItem, 'Item');
+      assert.equal(merged.genericLabels.productTypeService, 'Service');
+    });
+
+    it('does not leave a stray top-level enumLabels key in the merged output', () => {
+      const existing = {};
+      const extracted = {
+        fields: {}, windows: {}, tabs: {}, menus: {}, statuses: {},
+        enumLabels: { productTypeItem: { label: 'Item' } },
+      };
+
+      const merged = mergeLocaleFile(existing, extracted);
+
+      assert.equal(merged.enumLabels, undefined);
+      assert.equal(merged.genericLabels.productTypeItem, 'Item');
+    });
+
+    it('overwrites a stale enum key translation on re-extraction but keeps unrelated genericLabels keys', () => {
+      const existing = { genericLabels: { productTypeItem: 'Stale Value', unrelatedKey: 'Keep me' } };
+      const extracted = {
+        fields: {}, windows: {}, tabs: {}, menus: {}, statuses: {},
+        enumLabels: { productTypeItem: { label: 'Item' } },
+      };
+
+      const merged = mergeLocaleFile(existing, extracted);
+
+      assert.equal(merged.genericLabels.productTypeItem, 'Item');
+      assert.equal(merged.genericLabels.unrelatedKey, 'Keep me');
+    });
+
+    it('preserves other top-level sections not produced by extraction (e.g. ui)', () => {
+      const existing = { ui: { locale: 'custom' }, genericLabels: {} };
+      const extracted = {
+        fields: { Col: { label: 'x', description: '' } }, windows: {}, tabs: {}, menus: {}, statuses: {},
+        enumLabels: {},
+      };
+
+      const merged = mergeLocaleFile(existing, extracted);
+
+      assert.deepEqual(merged.ui, { locale: 'custom' });
+      assert.equal(merged.fields.Col.label, 'x');
+    });
+
+    it('starts fresh (no existing file) without throwing', () => {
+      const extracted = {
+        fields: {}, windows: {}, tabs: {}, menus: {}, statuses: {},
+        enumLabels: { productTypeItem: { label: 'Item' } },
+      };
+
+      const merged = mergeLocaleFile(null, extracted);
+
+      assert.equal(merged.genericLabels.productTypeItem, 'Item');
+      assert.equal(merged.enumLabels, undefined);
+    });
   });
 });

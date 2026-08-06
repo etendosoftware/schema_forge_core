@@ -1,0 +1,18 @@
+{
+  "version": "v2",
+  "frontendContract": {
+    "window": { "primaryEntity": "log", "readOnly": true },
+    "entities": { "log": { "fields": [] }, "acknowledgement": { "fields": [] } }
+  },
+  "apiPrediction": {
+    "window": { "readOnly": true },
+    "crud": {
+      "log": { "get": true, "getById": true, "post": false, "put": false, "patch": false, "delete": false },
+      "acknowledgement": {
+        "get": true, "getById": true, "post": true, "put": true, "patch": true, "delete": true,
+        "methods": ["GET", "GETBYID", "POST", "PUT", "PATCH", "DELETE"]
+      }
+    }
+  },
+  "agentProfile": {}
+}

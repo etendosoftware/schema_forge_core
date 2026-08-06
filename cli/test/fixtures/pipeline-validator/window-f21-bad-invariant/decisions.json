@@ -1,0 +1,7 @@
+{
+  "version": "v2",
+  "window": {},
+  "entities": {
+    "log": { "methods": ["POST"] }
+  }
+}

@@ -3,13 +3,13 @@ import { createApiFetch } from './api.js';
 import { useAuth } from './AuthContext.jsx';
 
 export function useApiFetch(baseUrl) {
-  const { csrfToken, logout } = useAuth();
+  const { token, logout } = useAuth();
 
   return useMemo(() => {
-    function getCsrfToken() {
-      return csrfToken;
+    function getToken() {
+      return token;
     }
 
-    return createApiFetch(baseUrl, getCsrfToken, logout);
-  }, [baseUrl, csrfToken, logout]);
+    return createApiFetch(baseUrl, getToken, logout);
+  }, [baseUrl, token, logout]);
 }

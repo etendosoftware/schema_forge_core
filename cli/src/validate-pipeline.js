@@ -23,6 +23,12 @@ import { execFile } from 'node:child_process';
 import { promisify } from 'node:util';
 import { needsMigration } from './migrations/index.js';
 import { collectSourceFiles, isJavaScriptModule, parseModuleSource, walkAst } from './quality-gate/checks/shared.js';
+import {
+  canonicalizeMethod,
+  NEO_READ_METHODS,
+  resolveContractEntityMethods,
+  resolveEntityMethods,
+} from './lib/entity-methods.js';
 
 const execFileAsync = promisify(execFile);
 
@@ -766,6 +772,38 @@ async function ruleF17(artifactDir, artifactName) {
     }
   }
   return null;
+}
+
+/**
+ * F22: window.customTabsAfterBottom renders custom tabs in a strip below
+ * bottomSection, entirely outside buildInitialTabs' sorted tab list (ETP-4415).
+ * A tabOrder declared on a custom tab in that mode is a silent no-op.
+ */
+async function ruleF22(artifactDir, artifactName) {
+  const decisionsPath = join(artifactDir, 'decisions.json');
+  if (!(await fileExists(decisionsPath))) return null;
+  let decisions;
+  try {
+    decisions = JSON.parse(await readFile(decisionsPath, 'utf8'));
+  } catch {
+    return skipped('F22', artifactName, 'decisions.json could not be parsed — F22 check skipped');
+  }
+  const win = decisions?.window;
+  if (!win?.customTabsAfterBottom) return null;
+  const offendingKeys = [];
+  for (const pt of win.customPanelTabs ?? []) {
+    if (pt.tabOrder != null) offendingKeys.push(`customPanelTabs.${pt.key}`);
+  }
+  for (const et of win.extraTabs ?? []) {
+    if (et.tabOrder != null) offendingKeys.push(`extraTabs.${et.key}`);
+  }
+  if (typeof win.attachments === 'object' && win.attachments?.tabOrder != null) {
+    offendingKeys.push('attachments');
+  }
+  if (offendingKeys.length === 0) return null;
+  return violation('F22', artifactName, 'BLOCK',
+    `window.customTabsAfterBottom is true, so tabOrder on ${offendingKeys.join(', ')} has no effect — those tabs render in a separate strip below bottomSection, outside the sorted tab list.`,
+    'Remove window.customTabsAfterBottom, or remove tabOrder from the listed custom tab(s).');
 }
 
 /**
@@ -1525,6 +1563,159 @@ export async function ruleF20(artifactDir, artifactName, root = ROOT, allowlist 
 }
 
 // ---------------------------------------------------------------------------
+// F21 — declared read-only intent must match the contract's resolved methods
+// ---------------------------------------------------------------------------
+
+/**
+ * Find the `decisions.entities.*` block that corresponds to a contract entity
+ * name. Uses the same convention as `buildEntityPreconditionsMap` in
+ * push-to-neo.js: match the decisions KEY first, then any block whose explicit
+ * `name` override equals the contract entity name.
+ *
+ * @param {object} decisions
+ * @param {string} entityName
+ * @returns {object|null}
+ */
+function f21DecisionsEntityFor(decisions, entityName) {
+  const entities = decisions?.entities;
+  if (!entities || typeof entities !== 'object') return null;
+  const direct = entities[entityName];
+  if (direct && typeof direct === 'object') return direct;
+  for (const conf of Object.values(entities)) {
+    if (conf && typeof conf === 'object' && conf.name === entityName) return conf;
+  }
+  return null;
+}
+
+/** True when the entity block declares a RESTRICTION (not just an opt-out). */
+function f21DeclaresRestriction(conf) {
+  return conf?.readOnly === true || Array.isArray(conf?.methods);
+}
+
+/**
+ * The GET-always-granted invariant, checked against the RAW contract array (so a
+ * hand-edited `"methods": ["POST"]` is reported instead of silently repaired by
+ * the resolver).
+ */
+function f21CheckReadInvariant(artifactName, entityName, rawMethods) {
+  if (!Array.isArray(rawMethods)) return null;
+  const canonical = new Set(rawMethods.map(canonicalizeMethod).filter(Boolean));
+  const missing = NEO_READ_METHODS.filter(method => !canonical.has(method));
+  if (missing.length === 0) return null;
+  return violation(
+    'F21', artifactName, 'BLOCK',
+    `apiPrediction.crud.${entityName}.methods omits ${missing.join(' + ')} — an entity with no read access is never a valid outcome`,
+    `Never hand-edit the contract. Declare the intent in decisions.json (window.readOnly, entities.${entityName}.readOnly or entities.${entityName}.methods) and regenerate — the resolver always grants GET + GETBYID.`,
+  );
+}
+
+/**
+ * Compare the methods the contract will push for one entity against the methods
+ * the decisions declaration resolves to.
+ */
+function f21CheckEntityMethods({ artifactName, contract, decisions, entityName, windowReadOnly }) {
+  const conf = f21DecisionsEntityFor(decisions, entityName);
+  const expected = resolveEntityMethods({
+    windowReadOnly,
+    entityReadOnly: typeof conf?.readOnly === 'boolean' ? conf.readOnly : undefined,
+    entityMethods: conf?.methods,
+  });
+  const actual = resolveContractEntityMethods(contract, entityName);
+  if (expected.join(',') === actual.join(',')) return null;
+  return violation(
+    'F21', artifactName, 'BLOCK',
+    `entity '${entityName}' resolves to methods [${expected.join(', ')}] from decisions.json but the contract would push [${actual.join(', ')}]`,
+    `Regenerate the contract (make regen ONLY=${artifactName}) so apiPrediction.crud.${entityName}.methods matches the declared read-only intent — push-to-neo and the XML delta both read the flags from the contract.`,
+  );
+}
+
+/**
+ * A declared restriction that matches no contract entity is a silent no-op —
+ * usually a mistyped `entities.<key>`.
+ */
+function f21CheckOrphanDeclarations(artifactName, decisions, crudNames) {
+  for (const [key, conf] of Object.entries(decisions?.entities ?? {})) {
+    if (!f21DeclaresRestriction(conf) || conf.exclude === true) continue;
+    const entityName = conf.name || key;
+    if (crudNames.has(entityName)) continue;
+    return violation(
+      'F21', artifactName, 'BLOCK',
+      `entities.${key} declares a read-only restriction but '${entityName}' is not an entity of this window's contract — the declaration does nothing`,
+      `Use the contract entity name as the decisions key (see apiPrediction.crud keys in contract.json), or remove the declaration.`,
+    );
+  }
+  return null;
+}
+
+/**
+ * F21: the declared read-only intent in `decisions.json` must match the resolved
+ * HTTP methods the contract carries, because BOTH write paths — the live DB push
+ * (`push-to-neo.js` → `neo-writer.populateWindowSpec`) and the offline XML delta
+ * (`lib/neo-delta.js`) — read `apiPrediction.crud.<entity>.methods` /
+ * `apiPrediction.window.readOnly` to set `ETGO_SF_ENTITY.ISGET/ISGETBYID/ISPOST/
+ * ISPUT/ISPATCH/ISDELETE` (ETP-4254).
+ *
+ * A stale contract is therefore not cosmetic: a window declared read-only in
+ * decisions whose contract was not regenerated gets every write method granted
+ * again on the next `make regen PUSH_TO_NEO=1`, silently re-opening a monitor/log
+ * window to MCP agents.
+ *
+ * What it checks, per window artifact:
+ *   1. GET + GETBYID appear in every emitted `crud.<entity>.methods` array.
+ *   2. For every contract entity, `resolveContractEntityMethods(contract, entity)`
+ *      (what the push WILL write) equals `resolveEntityMethods(decisions intent)`
+ *      (what was declared). This subsumes the window-level case: `window.readOnly`
+ *      with a non-regenerated contract shows up as
+ *      `[GET, GETBYID]` expected vs `[GET, …, DELETE]` actual.
+ *   3. Every restricting `entities.<key>` declaration maps to a real contract
+ *      entity, so a mistyped key cannot silently no-op.
+ *
+ * Only the FIRST violation per artifact is reported (same as F18/F20).
+ *
+ * Not covered: the exported `ETGO_SF_ENTITY.xml` sourcedata, which lives in the
+ * `com.etendoerp.go` repo and is out of this validator's reach. That side is
+ * covered by `xml-regeneration-check` / `sf-push-neo --dump-delta`, and holds by
+ * construction because both write paths share `lib/entity-methods.js`.
+ *
+ * @param {string} artifactDir
+ * @param {string} artifactName
+ * @returns {Promise<object|null>}
+ */
+export async function ruleF21(artifactDir, artifactName) {
+  const decisionsPath = join(artifactDir, 'decisions.json');
+  const contractPath = join(artifactDir, 'contract.json');
+  const [hasDecisions, hasContract] = await Promise.all([
+    fileExists(decisionsPath),
+    fileExists(contractPath),
+  ]);
+  if (!hasDecisions || !hasContract) return null;
+
+  let decisions;
+  let contract;
+  try {
+    decisions = JSON.parse(await readFile(decisionsPath, 'utf8'));
+    contract = JSON.parse(await readFile(contractPath, 'utf8'));
+  } catch {
+    return skipped('F21', artifactName, 'decisions.json or contract.json could not be parsed — F21 check skipped');
+  }
+
+  const crud = contract?.apiPrediction?.crud;
+  if (!crud || typeof crud !== 'object') return null;
+
+  const windowReadOnly = decisions?.window?.readOnly === true;
+  for (const entityName of Object.keys(crud)) {
+    const invariant = f21CheckReadInvariant(artifactName, entityName, crud[entityName]?.methods);
+    if (invariant) return invariant;
+    const mismatch = f21CheckEntityMethods({
+      artifactName, contract, decisions, entityName, windowReadOnly,
+    });
+    if (mismatch) return mismatch;
+  }
+
+  return f21CheckOrphanDeclarations(artifactName, decisions, new Set(Object.keys(crud)));
+}
+
+// ---------------------------------------------------------------------------
 // Artifact discovery
 // ---------------------------------------------------------------------------
 
@@ -1600,6 +1791,8 @@ async function runWindowChecks(artifactDir, artifactName, registryContent, root,
     { rule: 'F18', run: () => ruleF18(artifactDir, artifactName) },
     { rule: 'F19', run: () => ruleF19(artifactDir, artifactName, root, f19Allowlist) },
     { rule: 'F20', run: () => ruleF20(artifactDir, artifactName, root) },
+    { rule: 'F21', run: () => ruleF21(artifactDir, artifactName) },
+    { rule: 'F22', run: () => ruleF22(artifactDir, artifactName) },
   ], skipSet);
 }
 
