@@ -769,6 +769,38 @@ async function ruleF17(artifactDir, artifactName) {
 }
 
 /**
+ * F21: window.customTabsAfterBottom renders custom tabs in a strip below
+ * bottomSection, entirely outside buildInitialTabs' sorted tab list (ETP-4415).
+ * A tabOrder declared on a custom tab in that mode is a silent no-op.
+ */
+async function ruleF21(artifactDir, artifactName) {
+  const decisionsPath = join(artifactDir, 'decisions.json');
+  if (!(await fileExists(decisionsPath))) return null;
+  let decisions;
+  try {
+    decisions = JSON.parse(await readFile(decisionsPath, 'utf8'));
+  } catch {
+    return skipped('F21', artifactName, 'decisions.json could not be parsed — F21 check skipped');
+  }
+  const win = decisions?.window;
+  if (!win?.customTabsAfterBottom) return null;
+  const offendingKeys = [];
+  for (const pt of win.customPanelTabs ?? []) {
+    if (pt.tabOrder != null) offendingKeys.push(`customPanelTabs.${pt.key}`);
+  }
+  for (const et of win.extraTabs ?? []) {
+    if (et.tabOrder != null) offendingKeys.push(`extraTabs.${et.key}`);
+  }
+  if (typeof win.attachments === 'object' && win.attachments?.tabOrder != null) {
+    offendingKeys.push('attachments');
+  }
+  if (offendingKeys.length === 0) return null;
+  return violation('F21', artifactName, 'BLOCK',
+    `window.customTabsAfterBottom is true, so tabOrder on ${offendingKeys.join(', ')} has no effect — those tabs render in a separate strip below bottomSection, outside the sorted tab list.`,
+    'Remove window.customTabsAfterBottom, or remove tabOrder from the listed custom tab(s).');
+}
+
+/**
  * Collect the field names declared on the line (non-header / detail) entity of
  * the frontend contract. Real generated contracts populate
  * frontendContract.entities.<entity>.fields[].name — contract.formState is
@@ -1600,6 +1632,7 @@ async function runWindowChecks(artifactDir, artifactName, registryContent, root,
     { rule: 'F18', run: () => ruleF18(artifactDir, artifactName) },
     { rule: 'F19', run: () => ruleF19(artifactDir, artifactName, root, f19Allowlist) },
     { rule: 'F20', run: () => ruleF20(artifactDir, artifactName, root) },
+    { rule: 'F21', run: () => ruleF21(artifactDir, artifactName) },
   ], skipSet);
 }
 
