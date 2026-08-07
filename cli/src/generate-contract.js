@@ -2,7 +2,7 @@ import { createHash } from 'node:crypto';
 import { toSpecName } from './push-to-neo.js';
 import { autoSimplifyEntityName, reorderKeys, WINDOW_KEY_ORDER } from './resolve-curated.js';
 import { projectValidation } from './lib/field-validation.js';
-import { applyMethodsToCrudPrediction, resolveEntityMethods } from './lib/entity-methods.js';
+import { applyMethodsToCrudPrediction, resolveEntityHideDelete, resolveEntityMethods } from './lib/entity-methods.js';
 
 // Slug helper for deterministic test IDs: collapse non-alphanumerics to hyphens, trim.
 const slug = (s) => String(s ?? '')
@@ -1336,7 +1336,25 @@ export function generateApiPrediction(schema, frontendContract, backendContract)
 
     // CRUD — NEO Headless enables all methods by default via PopulateSpec
     crud[entityName] = buildCrudPrediction(baseUrl, entityName, feEntity);
-    if (frontendContract.window?.hideDelete) crud[entityName].delete = false;
+    const windowReadOnly = frontendContract.window?.readOnly === true;
+    // window.hideDelete (explicit, or the `readOnly: true` sugar — see
+    // applyWindowDecisions in resolve-curated.js) hides delete for every entity,
+    // UNLESS this one entity explicitly opts out of the read-only window via
+    // `entities.{name}.readOnly: false` (ETP-4254/ETP-4745): that override must
+    // fully restore write access — delete included — matching the same per-entity
+    // precedence `resolveEntityMethods` applies a few lines below. A standalone
+    // `window.hideDelete` (declared without `window.readOnly`) has no such opt-out
+    // and still clobbers every entity unconditionally. Shared with F21's
+    // `f21CheckEntityMethods` via `resolveEntityHideDelete` so decisions.json and
+    // the generated contract cannot silently diverge on this point either.
+    if (resolveEntityHideDelete({
+      windowReadOnly,
+      windowHideDelete: frontendContract.window?.hideDelete === true,
+      entityReadOnly: entity.readOnly,
+      entityHideDelete: feEntity?.hideDelete === true,
+    })) {
+      crud[entityName].delete = false;
+    }
     // ETP-4254 — resolve the declared HTTP-method intent (window.readOnly,
     // entities.<key>.readOnly, entities.<key>.methods) into the crud booleans and,
     // when the entity is restricted, into `crud.methods`. That array is the value
@@ -1344,7 +1362,6 @@ export function generateApiPrediction(schema, frontendContract, backendContract)
     // back to set ETGO_SF_ENTITY.ISGET/ISPOST/… — so a read-only window stops
     // being silently re-opened for writes on the next push. Read-only windows
     // therefore also lose their write methods here, as they did before.
-    const windowReadOnly = frontendContract.window?.readOnly === true;
     applyMethodsToCrudPrediction(
       crud[entityName],
       resolveEntityMethods({
