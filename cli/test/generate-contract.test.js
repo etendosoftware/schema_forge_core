@@ -370,6 +370,24 @@ describe('generateBackendContract', () => {
     assert.ok(processEndpoint);
     assert.equal(processEndpoint.method, 'POST');
   });
+
+  it('carries entity namedFilters into the backend contract (ETP-4601)', () => {
+    const namedFilters = [
+      { name: 'completed', label: 'Paid', where: 'e.paymentComplete = true' },
+      { name: 'pending', where: 'e.paymentComplete = false' },
+    ];
+    const schemaWithFilters = {
+      ...minimalSchema,
+      entities: [{ ...minimalSchema.entities[0], namedFilters }],
+    };
+    const bc = generateBackendContract(schemaWithFilters, sampleRules, sampleProcesses);
+    assert.deepEqual(bc.entities.order.namedFilters, namedFilters);
+  });
+
+  it('omits namedFilters when the entity declares none (ETP-4601)', () => {
+    const bc = generateBackendContract(minimalSchema, sampleRules, sampleProcesses);
+    assert.equal(bc.entities.order.namedFilters, undefined);
+  });
 });
 
 describe('generateTestManifest', () => {

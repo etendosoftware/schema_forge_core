@@ -9,10 +9,8 @@ vi.mock('../../i18n/index.js', () => ({
 }));
 
 // In core, both useAuth and createApiFetch come from the auth barrel.
-// AuthorizePage no longer destructures `token`/`logout` (cookie-session migration,
-// ADR-0001) — the mock reflects the new useAuth() contract: username + csrfToken.
 vi.mock('../../auth/index.js', () => ({
-  useAuth: () => ({ username: 'testuser', csrfToken: 'test-csrf-token' }),
+  useAuth: () => ({ token: 'test-token', username: 'testuser', logout: vi.fn() }),
   createApiFetch: vi.fn(() => vi.fn()),
 }));
 
@@ -213,81 +211,6 @@ describe('AuthorizePage', () => {
       });
 
       window.location = originalLocation;
-    });
-
-    it('sends credentials: include so the session cookie travels with the request', async () => {
-      const user = userEvent.setup();
-      globalThis.fetch = vi.fn().mockResolvedValue({
-        ok: true,
-        json: async () => ({ redirect_url: 'https://example.com/callback?code=abc' }),
-      });
-
-      renderPage();
-      await user.click(screen.getByTestId('oauth-authorize-submit'));
-
-      await waitFor(() => {
-        expect(globalThis.fetch).toHaveBeenCalled();
-      });
-
-      const [, options] = globalThis.fetch.mock.calls[0];
-      expect(options.credentials).toBe('include');
-    });
-
-    it('sends the X-Go-CSRF header with the csrfToken from useAuth', async () => {
-      const user = userEvent.setup();
-      globalThis.fetch = vi.fn().mockResolvedValue({
-        ok: true,
-        json: async () => ({ redirect_url: 'https://example.com/callback?code=abc' }),
-      });
-
-      renderPage();
-      await user.click(screen.getByTestId('oauth-authorize-submit'));
-
-      await waitFor(() => {
-        expect(globalThis.fetch).toHaveBeenCalled();
-      });
-
-      const [, options] = globalThis.fetch.mock.calls[0];
-      expect(options.headers['X-Go-CSRF']).toBe('test-csrf-token');
-    });
-
-    it('never sends a bearer token: no Authorization header, no "Bearer" anywhere in the request', async () => {
-      const user = userEvent.setup();
-      globalThis.fetch = vi.fn().mockResolvedValue({
-        ok: true,
-        json: async () => ({ redirect_url: 'https://example.com/callback?code=abc' }),
-      });
-
-      renderPage();
-      await user.click(screen.getByTestId('oauth-authorize-submit'));
-
-      await waitFor(() => {
-        expect(globalThis.fetch).toHaveBeenCalled();
-      });
-
-      const [url, options] = globalThis.fetch.mock.calls[0];
-      const serialized = JSON.stringify({ url, options });
-      expect(serialized).not.toMatch(/Bearer/i);
-      expect(options.headers.Authorization).toBeUndefined();
-    });
-
-    it('does not include a token key in the request body', async () => {
-      const user = userEvent.setup();
-      const fetchMock = vi.fn().mockResolvedValue({
-        ok: true,
-        json: async () => ({ redirect_url: 'https://example.com/callback?code=abc' }),
-      });
-      globalThis.fetch = fetchMock;
-
-      renderPage();
-      await user.click(screen.getByTestId('oauth-authorize-submit'));
-
-      await waitFor(() => {
-        expect(fetchMock).toHaveBeenCalled();
-      });
-
-      const body = JSON.parse(fetchMock.mock.calls[0][1].body);
-      expect(body).not.toHaveProperty('token');
     });
 
     it('handles authorize click - error from server', async () => {

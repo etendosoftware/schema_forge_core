@@ -254,6 +254,22 @@ describe('resolveCurated — field-level drawer + display passthroughs (F3)', ()
   });
 });
 
+describe('resolveCurated — window.detailTabOrder passthrough (ETP-4415)', () => {
+  const schemaRaw = { window: { id: '900', name: 'Item' }, entities: [] };
+
+  it('passes window.detailTabOrder through to the curated window object', async () => {
+    const decisions = { window: { detailTabOrder: 7 } };
+    const { schema } = await resolveCurated(schemaRaw, { rules: [] }, decisions);
+    assert.equal(schema.window.detailTabOrder, 7);
+  });
+
+  it('does not add detailTabOrder when not declared', async () => {
+    const decisions = { window: {} };
+    const { schema } = await resolveCurated(schemaRaw, { rules: [] }, decisions);
+    assert.equal(schema.window.detailTabOrder, undefined);
+  });
+});
+
 describe('resolveCurated — agentPrompt passthrough (ETP-4252)', () => {
   const schemaRaw = {
     window: { id: '700', name: 'Purchase Order' },
@@ -295,6 +311,83 @@ describe('resolveCurated — agentPrompt passthrough (ETP-4252)', () => {
     const { schema } = await resolveCurated(schemaRaw, { rules: [] }, decisions);
     const plain = schema.entities[0].fields.find(f => f.name === 'plain');
     assert.equal(plain.agentPrompt, undefined);
+  });
+});
+
+describe('resolveCurated — namedFilters normalization (ETP-4601)', () => {
+  const schemaRaw = {
+    window: { id: '710', name: 'Sales Invoice' },
+    entities: [{
+      name: 'header', tableName: 'C_Invoice', tabId: '1', tabName: 'Header',
+      fields: [
+        { name: 'documentNo', columnName: 'DocumentNo', label: 'No', type: 'string', visibility: 'editable' },
+      ],
+    }],
+  };
+
+  it('copies valid named filters (trimmed) into the curated entity', async () => {
+    const decisions = {
+      version: 2,
+      window: { name: 'Sales Invoice' },
+      entities: {
+        header: {
+          name: 'header',
+          namedFilters: [
+            { name: '  completed ', label: ' Paid ', description: ' Paid in full ', where: ' e.paymentComplete = true ' },
+            { name: 'pending', where: 'e.paymentComplete = false' },
+          ],
+          fields: { documentNo: {} },
+        },
+      },
+      rules: {},
+    };
+    const { schema } = await resolveCurated(schemaRaw, { rules: [] }, decisions);
+    assert.deepEqual(schema.entities[0].namedFilters, [
+      { name: 'completed', label: 'Paid', description: 'Paid in full', where: 'e.paymentComplete = true' },
+      { name: 'pending', where: 'e.paymentComplete = false' },
+    ]);
+  });
+
+  it('drops entries missing a name or where, and dedupes by name (first wins)', async () => {
+    const decisions = {
+      version: 2,
+      window: { name: 'Sales Invoice' },
+      entities: {
+        header: {
+          name: 'header',
+          namedFilters: [
+            { name: 'completed', where: 'e.paymentComplete = true' },
+            { name: '', where: 'e.x = 1' },
+            { name: 'nowhere' },
+            { where: 'e.y = 2' },
+            { name: 'completed', where: 'e.other = true' },
+          ],
+          fields: { documentNo: {} },
+        },
+      },
+      rules: {},
+    };
+    const { schema } = await resolveCurated(schemaRaw, { rules: [] }, decisions);
+    assert.deepEqual(schema.entities[0].namedFilters, [
+      { name: 'completed', where: 'e.paymentComplete = true' },
+    ]);
+  });
+
+  it('omits namedFilters when none are declared or all are invalid', async () => {
+    const decisions = {
+      version: 2,
+      window: { name: 'Sales Invoice' },
+      entities: {
+        header: {
+          name: 'header',
+          namedFilters: [{ name: 'bad' }],
+          fields: { documentNo: {} },
+        },
+      },
+      rules: {},
+    };
+    const { schema } = await resolveCurated(schemaRaw, { rules: [] }, decisions);
+    assert.equal(schema.entities[0].namedFilters, undefined);
   });
 });
 

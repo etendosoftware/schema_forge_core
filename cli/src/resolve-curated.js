@@ -16,6 +16,7 @@ import { classifyRule } from './pre-classify.js';
 import { toCamelCase, isMainModule } from './utils.js';
 import { migrateDecisions, needsMigration, getVersion } from './migrations/index.js';
 import { buildFieldValidation } from './lib/field-validation.js';
+import { normalizeMethodList } from './lib/entity-methods.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -637,9 +638,47 @@ function buildDraftMode(draftModeDecision, enabled) {
   return draftMode;
 }
 
+/**
+ * Normalize the hand-authored `entities.<e>.namedFilters` decision (ETP-4601) into a clean array
+ * the contract can carry verbatim. Each entry is a named, documented HQL WHERE fragment the MCP
+ * exposes and applies for `filters:{status:"<name>"}`. Entries without a non-empty `name` and
+ * `where` are dropped; `label`/`description` are optional. The alias `e` refers to the entity root
+ * (matching the MCP's HQL builder), and authors must only reference persisted (non-computed) columns.
+ * @param {Array} raw the raw decision array
+ * @returns {Array<{name:string, where:string, label?:string, description?:string}>}
+ */
+function normalizeNamedFilters(raw) {
+  const result = [];
+  const seen = new Set();
+  for (const f of raw) {
+    if (!f || typeof f !== 'object') continue;
+    const name = typeof f.name === 'string' ? f.name.trim() : '';
+    const where = typeof f.where === 'string' ? f.where.trim() : '';
+    if (!name || !where || seen.has(name)) continue;
+    seen.add(name);
+    const entry = { name, where };
+    if (typeof f.label === 'string' && f.label.trim()) entry.label = f.label.trim();
+    if (typeof f.description === 'string' && f.description.trim()) {
+      entry.description = f.description.trim();
+    }
+    result.push(entry);
+  }
+  return result;
+}
+
 function applyEntityDecisions(entity, entityDecision) {
   if (entityDecision.javaQualifier) {
     entity.javaQualifier = entityDecision.javaQualifier;
+  }
+  // Per-entity named filters (ETP-4601): hand-authored HQL WHERE fragments the MCP exposes as
+  // documentation and applies for filters:{status:"<name>"}. Carried verbatim into the backend
+  // contract and pushed to ETGO_SF_ENTITY.NAMED_FILTERS. Normalized here so the curated schema is
+  // already clean; absent/empty leaves the entity without the property (backward compatible).
+  if (Array.isArray(entityDecision.namedFilters)) {
+    const filters = normalizeNamedFilters(entityDecision.namedFilters);
+    if (filters.length > 0) {
+      entity.namedFilters = filters;
+    }
   }
   if (entityDecision.draftMode) {
     entity.draftMode = buildDraftMode(
@@ -665,6 +704,32 @@ function applyEntityDecisions(entity, entityDecision) {
   if (entityDecision.hideDelete === true) {
     entity.hideDelete = true;
   }
+  applyEntityMethodDecisions(entity, entityDecision);
+}
+
+/**
+ * Carry the declared per-entity HTTP-method intent (ETP-4254) onto the curated
+ * entity so generate-contract can resolve it into `apiPrediction.crud`.
+ *
+ * This is the ONLY place a `decisions.entities.<key>` block is matched to a
+ * curated entity by name (see findEntityDecision) — hence the resolution starts
+ * here rather than at push time, where only the AD tab name is known.
+ *
+ *   readOnly: true   → this entity is read-only (GET + GETBYID)
+ *   readOnly: false  → explicit opt-out of a read-only WINDOW (all methods)
+ *   methods: [...]   → explicit allowlist; GET + GETBYID always added back
+ *
+ * `readOnly: false` is carried through deliberately (not treated as "absent"):
+ * it is the escape hatch for a mixed window that is read-only except for one
+ * action entity. `methods` is normalized here so the contract only ever carries
+ * canonical, deduplicated, GET-inclusive lists.
+ */
+function applyEntityMethodDecisions(entity, entityDecision) {
+  if (typeof entityDecision.readOnly === 'boolean') {
+    entity.readOnly = entityDecision.readOnly;
+  }
+  const methods = normalizeMethodList(entityDecision.methods);
+  if (methods) entity.methods = methods;
 }
 
 /**
@@ -824,7 +889,7 @@ const WINDOW_BOOLEAN_TRUE_PROPS = [
 // decisions.json reaches the contract and disables the AttachmentsTab in the
 // generator. Accepted shapes: boolean | { enabled?: boolean, ...options }.
 const WINDOW_DEFINED_PROPS = ['contentBg', 'breadcrumb', 'attachments', 'sidebarClassName', 'tabsBarPaddingX', 'primaryTabsVariant', 'toolbarPaddingX', 'toolbarButtonSize', 'listbarPaddingX', 'tablePaddingX', 'customLinesComponent', 'customLinesLabel', 'formCardPadding', 'formScrollPaddingX', 'maxDetailLines', 'agentPrompt', 'import'];
-const WINDOW_NOT_NULL_PROPS = ['detailTabIndex', 'salesTheme'];
+const WINDOW_NOT_NULL_PROPS = ['detailTabIndex', 'detailTabOrder', 'salesTheme'];
 
 // Canonical key order for the contract window object. Stabilizes contract.json
 // output so internal refactors of the resolver/generator don't produce cosmetic
@@ -837,7 +902,7 @@ export const WINDOW_KEY_ORDER = [
   'hideMoreMenu', 'hideMoreDetails', 'hideDetailForm', 'hideDelete', 'hideDeleteButton', 'contentBg',
   'hideListFilters', 'hideStatusFilter', 'hideLink', 'hideEyeCount', 'customListIcons', 'breadcrumb',
   'customComponents', 'menuActions', 'processOverrides',
-  'entityLabel', 'detailLabel', 'detailTabIndex', 'secondaryTabs',
+  'entityLabel', 'detailLabel', 'detailTabIndex', 'detailTabOrder', 'secondaryTabs',
   'detailEntity', 'statusBar', 'statusField', 'summaryFields',
   'detailSortBy', 'listSortBy', 'salesTheme', 'listKpiCards', 'headerExtra', 'documentDateField',
   'labelOverrides', 'primaryTabs', 'othersLabel',
