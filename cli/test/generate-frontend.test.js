@@ -689,6 +689,38 @@ describe('generatePageComponent', () => {
     assert.ok(code.includes('const statusField = null'));
   });
 
+  // ETP-4835 — regression: no DocStatus column, no override, but an unrelated
+  // readOnly field whose name contains "status" (e.g. Contacts' VIES tax-ID
+  // validation status). Must resolve to null, not name-sniff that field — it
+  // previously rendered a stray "X P" status pill on the Contacts window.
+  it('does not fall back to name-sniffing an unrelated readOnly "status" field', () => {
+    const unrelatedStatusContract = {
+      frontendContract: {
+        window: { id: '1', name: 'Test', primaryEntity: 'header', category: 'test' },
+        entities: {
+          header: {
+            fields: [
+              { name: 'name', column: 'Name', type: 'string', tsType: 'string', visibility: 'readOnly', required: true, grid: true, form: true },
+              { name: 'oBTIKVIESStatus', column: 'OBTIK_VIES_Status', type: 'string', tsType: 'string', visibility: 'readOnly', required: false, grid: false, form: true },
+            ],
+            searchableFields: [],
+            computedFields: [],
+          },
+          detail: {
+            fields: [
+              { name: 'item', column: 'Item', type: 'string', tsType: 'string', visibility: 'editable', required: true, grid: true, form: true },
+            ],
+            searchableFields: [],
+            computedFields: [],
+          },
+        },
+      },
+      backendContract: { processEndpoints: [] },
+    };
+    const code = generatePageComponent('header', 'detail', unrelatedStatusContract);
+    assert.ok(code.includes('const statusField = null'));
+  });
+
   it('declares processes array with positive/destructive styles', () => {
     const code = generatePageComponent('order', 'orderLine', masterDetailContract);
     assert.ok(code.includes("name: 'completeOrder'"));
