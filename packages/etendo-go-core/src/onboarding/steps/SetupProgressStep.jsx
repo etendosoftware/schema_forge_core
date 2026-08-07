@@ -140,6 +140,9 @@ export function SetupProgressStep({ config, stepData, onNext, onBack, goToStep, 
       clientName: stepData.clientName,
       fullName: stepData.fullName,
       address: stepData.address,
+      // Optional Tax ID from the Company step (ETP-4749) — runOnboardingStream only
+      // includes it in the request body when non-empty, same as address/fullName.
+      fiscalIdValue: stepData.fiscalIdValue,
       countryCode: stepData.countryCode || config.defaultForm?.countryCode || '',
       language: stepData.language || config.defaultForm?.language || '',
       currency: config.defaultForm?.currency || '',

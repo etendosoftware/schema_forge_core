@@ -21,9 +21,13 @@
  *   entities.<key>.readOnly: false           → opt this entity OUT of a
  *                                              read-only window (all methods)
  *   entities.<key>.methods: ["GET","PUT"]    → explicit allowlist
+ *   window.hideDelete: true                  → DELETE off for every entity
+ *   entities.<key>.hideDelete: true          → DELETE off for that entity
  *
  * Precedence: `entities.<key>.methods` > `entities.<key>.readOnly` >
- * `window.readOnly` > default (all six methods).
+ * `window.readOnly` > default (all six methods), with `hideDelete` folded in
+ * afterwards as a DELETE-only override (ETP-4745) — see
+ * `resolveContractEntityMethods()`.
  *
  * Invariant: GET and GETBYID are ALWAYS granted, whatever is declared. An
  * entity with no read access is the pre-ETP-4254 `includeAllMethods=false` bug,
@@ -147,6 +151,40 @@ export function resolveEntityMethods(intent = {}) {
 }
 
 /**
+ * ETP-4745 — resolve whether DELETE should be dropped for one entity from the
+ * declared `hideDelete` intent (`window.hideDelete` / `entities.<key>.hideDelete`
+ * in decisions.json — the `window.readOnly` sugar counts as `windowHideDelete`
+ * too, see `applyWindowDecisions` in resolve-curated.js), BEFORE any contract
+ * exists. This is the declaration-side counterpart to reading `crud.<entity>.
+ * delete` back off an already-generated contract (done inline inside
+ * `resolveContractEntityMethods`) — used by `generate-contract.js` to decide
+ * whether to clobber `crud.<entity>.delete`, and by the pipeline validator's
+ * F21 rule to compute the same "expected" outcome independently, so the two
+ * cannot silently diverge.
+ *
+ * `entityHideDelete: true` always wins. Otherwise a window-level hideDelete
+ * drops DELETE for every entity UNLESS this one entity explicitly opts back out
+ * of a read-only window via `entityReadOnly: false` — that override means
+ * "fully writable", delete included, mirroring the same per-entity precedence
+ * `resolveEntityMethods` applies to the other five methods. A `hideDelete`
+ * declared independently of `readOnly` has no such opt-out.
+ *
+ * @param {object} [intent]
+ * @param {boolean} [intent.windowReadOnly=false]
+ * @param {boolean} [intent.windowHideDelete=false]
+ * @param {boolean} [intent.entityReadOnly] - `undefined` = undeclared
+ * @param {boolean} [intent.entityHideDelete=false]
+ * @returns {boolean}
+ */
+export function resolveEntityHideDelete(intent = {}) {
+  const { windowReadOnly = false, windowHideDelete = false, entityReadOnly, entityHideDelete = false } = intent;
+  if (entityHideDelete === true) return true;
+  if (windowHideDelete !== true) return false;
+  const entityOptedOutOfWindowReadOnly = windowReadOnly === true && entityReadOnly === false;
+  return !entityOptedOutOfWindowReadOnly;
+}
+
+/**
  * Compare two canonically-ordered method lists.
  *
  * @param {string[]} a
@@ -243,6 +281,17 @@ export function applyMethodsToCrudPrediction(crud, methods, opts = {}) {
  *      an ETGO_SF_ENTITY row from `populateWindowSpec`)
  *   3. all six methods — pre-ETP-4254 behaviour, unchanged
  *
+ * ETP-4745 — `crud.<entityName>.delete === false` (set by `window.hideDelete` /
+ * `entities.<key>.hideDelete`, see `generate-contract.js`'s `buildCrudPrediction`)
+ * is folded in as a final, DELETE-only override. Those two decisions.json flags
+ * express "hide the delete affordance", a narrower claim than the `methods`
+ * allowlist above, and previously only ever reached the frontend contract — the
+ * live DB (`ETGO_SF_ENTITY.ISDELETE`) and the predicted XML delta kept granting
+ * DELETE regardless, because neither write path read `crud.<entityName>.delete`.
+ * This is additive-only: it can remove DELETE from an otherwise-granted set, but
+ * never adds it back, so an entity already read-only via `methods`/`readOnly`
+ * is unaffected.
+ *
  * @param {object|null|undefined} contract - parsed contract.json
  * @param {string} entityName - contract/curated entity name written to NAME
  * @returns {string[]}
@@ -250,6 +299,9 @@ export function applyMethodsToCrudPrediction(crud, methods, opts = {}) {
 export function resolveContractEntityMethods(contract, entityName) {
   const api = contract?.apiPrediction;
   const declared = normalizeMethodList(api?.crud?.[entityName]?.methods);
-  if (declared) return declared;
-  return contractFallbackMethods(api?.window?.readOnly === true);
+  const methods = declared ?? contractFallbackMethods(api?.window?.readOnly === true);
+  if (api?.crud?.[entityName]?.delete === false) {
+    return methods.filter((method) => method !== 'DELETE');
+  }
+  return methods;
 }
