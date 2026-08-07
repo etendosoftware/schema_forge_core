@@ -945,7 +945,12 @@ function resolveStatusAndSummaryFields(requiredHeaderFieldNames, allEntityFields
   } else if (statusFieldOverride) {
     statusField = allEntityFields.find(f => f.name === statusFieldOverride) ?? null;
   } else {
-    statusField = docStatusField ?? allEntityFields.find(f => f.visibility === 'readOnly' && f.name.toLowerCase().includes('status'));
+    // ETP-4835 — do NOT fall back to name-sniffing any readOnly field whose name
+    // contains "status". That heuristic grabbed unrelated fields (e.g. an EU VIES
+    // tax-ID validation status on BusinessPartner) and rendered a stray status pill
+    // in windows with no real document status. Only an exact `DocStatus` column or
+    // an explicit `window.statusField` override may select the status field.
+    statusField = docStatusField ?? null;
   }
   const summaryFieldsOverride = contract.frontendContract.window.summaryFields;
   const summaryFields = getSummaryFields(summaryFieldsOverride, readOnlyFields, statusField);
