@@ -2,6 +2,7 @@ import { createHash } from 'node:crypto';
 import { toSpecName } from './push-to-neo.js';
 import { autoSimplifyEntityName, reorderKeys, WINDOW_KEY_ORDER } from './resolve-curated.js';
 import { projectValidation } from './lib/field-validation.js';
+import { applyMethodsToCrudPrediction, resolveEntityMethods } from './lib/entity-methods.js';
 
 // Slug helper for deterministic test IDs: collapse non-alphanumerics to hyphens, trim.
 const slug = (s) => String(s ?? '')
@@ -1332,13 +1333,23 @@ export function generateApiPrediction(schema, frontendContract, backendContract)
     // CRUD — NEO Headless enables all methods by default via PopulateSpec
     crud[entityName] = buildCrudPrediction(baseUrl, entityName, feEntity);
     if (frontendContract.window?.hideDelete) crud[entityName].delete = false;
-    // Read-only windows (GO view-only) expose no write methods at all.
-    if (frontendContract.window?.readOnly) {
-      crud[entityName].post = false;
-      crud[entityName].put = false;
-      crud[entityName].patch = false;
-      crud[entityName].delete = false;
-    }
+    // ETP-4254 — resolve the declared HTTP-method intent (window.readOnly,
+    // entities.<key>.readOnly, entities.<key>.methods) into the crud booleans and,
+    // when the entity is restricted, into `crud.methods`. That array is the value
+    // BOTH write paths (push-to-neo → live DB, lib/neo-delta → XML delta) read
+    // back to set ETGO_SF_ENTITY.ISGET/ISPOST/… — so a read-only window stops
+    // being silently re-opened for writes on the next push. Read-only windows
+    // therefore also lose their write methods here, as they did before.
+    const windowReadOnly = frontendContract.window?.readOnly === true;
+    applyMethodsToCrudPrediction(
+      crud[entityName],
+      resolveEntityMethods({
+        windowReadOnly,
+        entityReadOnly: entity.readOnly,
+        entityMethods: entity.methods,
+      }),
+      { windowReadOnly },
+    );
 
     // Selectors — FK fields that are visible (editable or readOnly)
     selectors.push(...collectSelectorPredictions(feEntity, entityName, baseUrl, windowCategory, schema, frontendContract));

@@ -8,25 +8,12 @@ import { useWindowAccess, useHasCapability } from '../useWindowAccess.js';
 // explicit cleanup so mounted providers don't bleed between tests.
 afterEach(cleanup);
 
-// ETP-4576 cycle 4a — `restoreSession` is no longer opt-in: AuthProvider defaults
-// it to the platform cookie fetcher (fetchCookieSession). Every provider mounted
-// without the prop would therefore call `fetch` on mount, fail under jsdom, and
-// take the fail-closed path — which runs logout(), wiping the very
-// windowAccess/capabilities these tests just seeded via selectRole().
-// This suite's subject is the windowAccess/capabilities lookups, NOT the session
-// restore, so the wrapper neutralises the default with a never-settling override:
-// the provider parks in 'booting', no purge/logout ever fires, the default fetcher
-// is never invoked (so no `fetch` stub is needed either), and every assertion below
-// keeps verifying exactly what it verified before the default existed. Do not remove.
-const NEVER_SETTLES = () => new Promise(() => {});
-
 function wrapperWith({ initialSession, fetchWindowAccess } = {}) {
   return function Wrapper({ children }) {
     return (
       <AuthProvider
         storage={createMemoryAuthStorage(initialSession)}
         fetchWindowAccess={fetchWindowAccess}
-        restoreSession={NEVER_SETTLES}
       >
         {children}
       </AuthProvider>

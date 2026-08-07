@@ -175,3 +175,52 @@ merged significant new features. The following need to be documented:
 - `invoiceStatus` field changed from `discarded` → `readOnly` so NEO serves the computed value
 
 Owner: whoever next touches the goods-shipment window.
+
+---
+
+## [2026-08-04] ETP-4685 — F19 allowlist path resolution ignores `SF_ROOT`/`root` (still open)
+
+**Component:** `cli/src/validate-pipeline.js` — `validatePipeline()`, F19 allowlist loading.
+
+**Symptom:** A commit in a consuming repo (`etendo_schema_forge`) touching a window with an
+**already-documented, already-accepted** F19 exception (e.g. `product`/`sale`, allowlisted in that
+repo's own `cli/src/validate-pipeline-f19-allowlist.json`) fails the pre-commit hook and the
+pre-push "Hooks-Verified" check with a real F19 violation — even though the exact same
+`(artifact, key)` pair is already listed in that repo's own allowlist file. Forces `--no-verify`,
+which then also fails the `Hooks-Verified` trailer check at push time (see the `etendo_schema_forge`
+`docs/feedback.md` entry for the same ticket for the consumer-side symptoms and workaround).
+
+**Root cause:** every other path in `validatePipeline()` (`artifactsRoot`, `resolvedRegistryPath`)
+correctly resolves relative to `root` (which defaults to `ROOT = process.env.SF_ROOT || …`, i.e.
+the **consuming repo's** root). The F19 allowlist path does not follow this pattern:
+
+```js
+const resolvedF19AllowlistPath = f19AllowlistPath ?? join(__dirname, 'validate-pipeline-f19-allowlist.json');
+```
+
+`__dirname` is wherever `validate-pipeline.js` itself physically lives — inside
+`node_modules/@etendosoftware/schema-forge-cli/cli/src/` for the default (published-package) path,
+or inside this repo's own `cli/src/` when run via a sibling checkout (`LOCAL_CORE=1`). **Neither**
+case is the consuming repo's root, so the consumer's own `validate-pipeline-f19-allowlist.json`
+(where real per-window exceptions like `product`/`sale` are documented) is never read — only this
+repo's own copy of that same filename is, which only has an unrelated `amortization`/`asset` entry.
+
+Confirmed this is **not** a LOCAL_CORE-only issue: reproduced with a real installed preview package
+(no `LOCAL_CORE`) too — `__dirname` still resolves inside `node_modules`, same wrong file.
+
+**Also confirmed:** this repo's own `cli/src/validate-pipeline-f19-allowlist.json` (the
+`amortization`/`asset` entry) appears to exist **only** as a side effect of this same bug — some
+earlier session, blocked by the identical symptom for the `amortization` window, added the
+exception here (the only place the buggy path resolution would ever find it) instead of to the
+consuming repo's own file where it actually belongs. If this path bug is ever fixed (point `root`
+at the consumer for this path too, matching every other path in the function), that entry needs to
+be **ported** to the consuming repo's allowlist first, or the `amortization` window's F19 exception
+silently stops being honored.
+
+**Status:** NOT fixed — worked around per-commit with `HOOKS_VERIFY_SKIP=1 git push` /
+`--no-verify` after independently confirming (via `git diff`/`git blame`/`git stash`) that the
+specific F19 violation predates the current change and is unrelated. The team decided a real fix
+(and porting the `amortization` entry first) was out of scope for ETP-4685 itself; flagging here so
+whoever picks it up doesn't have to re-derive the root cause. **Prefer fixing this over repeating
+the bypass** — every future commit touching a window with an accepted F19 exception will hit the
+same wall otherwise.

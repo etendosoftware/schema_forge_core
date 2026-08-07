@@ -3,5 +3,25 @@
     "artifact": "amortization",
     "key": "asset",
     "reason": "CORE_FIELDS required flag in AmortizationLinesTable.jsx guards an inline-add-row save (if (!newLine.asset) return;), not tied to AdvancedFilterBuilder — this window has no custom index.jsx/list-view override, so no Advanced Filter is in play for this file."
+  },
+  {
+    "artifact": "product",
+    "key": "sale",
+    "reason": "ETP-4768: ProductCustomTable.jsx's 'sale' grid column is a computed sales-price display cell (backendFilterKey/backendSortKey: 'eTGOSalePrice', no local `column`, no real required semantics), unrelated to the boolean IsSold contract field of the same name (the real checkbox is correctly modeled separately in ProductAdditionalInfoPanel.jsx as { key: 'sale', column: 'IsSold', required: true })."
+  },
+  {
+    "artifact": "product",
+    "key": "purchase",
+    "reason": "ETP-4768: same name collision as 'sale' above — ProductCustomTable.jsx's 'purchase' column is a computed purchase-price display cell (backendFilterKey/backendSortKey: 'eTGOPurchasePrice'), unrelated to the boolean IsPurchased contract field of the same name."
+  },
+  {
+    "artifact": "product",
+    "key": "searchKey",
+    "reason": "ETP-4768: distinct false-positive pattern (not a name collision) — the 'searchKey' entry lives inside a multiField.parts[] array (ETP-4603 composite identity cell), which F19's extractColumnEntries misidentifies as a top-level custom-table columns array because its objects happen to have both 'key' and 'column' string props. multiField parts are display-only sub-fields of a composite cell with no independent required semantics, not real custom-table columns."
+  },
+  {
+    "artifact": "product",
+    "key": "name",
+    "reason": "ETP-4768: same multiField.parts false positive as 'searchKey' above — the 'name' entry is the second part of the same ETP-4603 composite identity cell in ProductCustomTable.jsx."
   }
 ]

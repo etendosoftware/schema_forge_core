@@ -25,6 +25,7 @@ import { computeWindowDelta, serializeDelta } from './lib/neo-delta.js';
 import { resolveAgentPromptRefs } from './lib/agent-prompt-ref.js';
 import { loadEtgoXmlSnapshot } from './lib/etgo-xml-parser.js';
 import { GO_MODULE_ID } from './lib/constants.js';
+import { methodsToWriterFlags, NEO_HTTP_METHODS, resolveContractEntityMethods } from './lib/entity-methods.js';
 import { isMainModule } from './utils.js';
 
 const __filename = fileURLToPath(import.meta.url);
@@ -285,7 +286,7 @@ export async function pushToNeo(windowName, options = {}) {
   const allFields = extractFieldsFromContract(contract.backendContract);
 
   if (options.dryRun === true) {
-    return reportDryRunPlan({ allFields, specName, windowId, windowDisplayName, windowName });
+    return reportDryRunPlan({ allFields, specName, windowId, windowDisplayName, windowName, contract });
   }
 
   return executePushTransaction({
@@ -464,10 +465,28 @@ export function buildFieldUpdateParams(f, ctx, fieldId, entityId) {
   return fieldParams;
 }
 
-function reportDryRunPlan({ allFields, specName, windowId, windowDisplayName, windowName }) {
+/**
+ * ETP-4254 — the per-entity HTTP methods the push would write, listed for the
+ * dry-run plan. Only entities whose resolved set is NOT all six methods appear,
+ * so an unrestricted window shows an empty object.
+ *
+ * @param {object} contract - parsed contract.json
+ * @returns {Record<string, string[]>} entityName → resolved methods
+ */
+function summarizeRestrictedEntityMethods(contract) {
+  const restricted = {};
+  for (const entityName of Object.keys(contract?.apiPrediction?.crud ?? {})) {
+    const methods = resolveContractEntityMethods(contract, entityName);
+    if (methods.length !== NEO_HTTP_METHODS.length) restricted[entityName] = methods;
+  }
+  return restricted;
+}
+
+function reportDryRunPlan({ allFields, specName, windowId, windowDisplayName, windowName, contract }) {
+  const entityMethods = summarizeRestrictedEntityMethods(contract);
   const plan = {
     spec: { action: 'upsertSpec', params: { windowId, name: specName, specType: 'W' } },
-    populate: { action: 'populateSpec', params: { specId: '(from step 1)' } },
+    populate: { action: 'populateSpec', params: { specId: '(from step 1)' }, entityMethods },
     fields: allFields.map(f => {
       const vis = mapVisibility(f.visibility);
       return {
@@ -492,6 +511,15 @@ function reportDryRunPlan({ allFields, specName, windowId, windowDisplayName, wi
   console.log(`    Params:`, plan.spec.params);
   console.log(`\n  Step 2: populateSpec`);
   console.log(`    Params: { specId: <returned from step 1> }`);
+  const restrictedNames = Object.keys(entityMethods);
+  if (restrictedNames.length === 0) {
+    console.log(`    Entity HTTP methods: all enabled (no read-only intent declared)`);
+  } else {
+    console.log(`    Entity HTTP methods (restricted):`);
+    for (const name of restrictedNames) {
+      console.log(`      ${name}: ${entityMethods[name].join(', ')}`);
+    }
+  }
   console.log(`\n  Step 3: ${plan.fields.length} field updates via upsertField`);
 
   const included = plan.fields.filter(f => f.params.isIncluded === 'Y');
@@ -570,12 +598,43 @@ async function stepUpsertSpec(client, ctx) {
   return specResult.specId;
 }
 
-async function stepPopulateSpec(client, { specId, moduleId, auditOpts }) {
+/**
+ * ETP-4254 — build the per-tab HTTP-method flag resolver handed to
+ * `populateWindowSpec`.
+ *
+ * `populateWindowSpec` only knows the AD tab, so the tab is first mapped to the
+ * contract entity NAME using the SAME `tabName → name` mapping
+ * `renameEntitiesToContractNames` uses to write that NAME. The resolved methods
+ * are then read off the contract by that name, exactly like `lib/neo-delta.js`
+ * does for the XML delta — so the two write paths cannot diverge: the flags are a
+ * pure function of (contract, NAME), and NAME is already asserted equal between
+ * the two paths by the XML regeneration check.
+ *
+ * A tab with no contract entity (excluded entity, extra AD tab) falls through to
+ * the window-level default inside `resolveContractEntityMethods` — i.e. still
+ * read-only for a `window.readOnly` window, all methods otherwise.
+ *
+ * @param {object} ctx - push context carrying `schemaRawData` + `contract`
+ * @returns {(tab: {name: string}) => object} writer method flags
+ */
+export function buildEntityMethodFlagsResolver({ schemaRawData, contract }) {
+  const byTabName = new Map();
+  for (const ent of buildDesiredEntitiesMap(schemaRawData ?? {}, contract ?? {}).values()) {
+    if (ent.tabName && ent.name) byTabName.set(ent.tabName, ent.name);
+  }
+  return (tab) => {
+    const entityName = byTabName.get(tab?.name) ?? tab?.name;
+    return methodsToWriterFlags(resolveContractEntityMethods(contract, entityName));
+  };
+}
+
+async function stepPopulateSpec(client, ctx) {
+  const { specId, moduleId, auditOpts } = ctx;
   console.log(`[2/4] Populating spec from AD metadata...`);
   const popResult = await writerPopulateSpec(client, {
     specId,
     moduleId,
-    includeAllMethods: true,
+    methodFlagsFor: buildEntityMethodFlagsResolver(ctx),
     audit: auditOpts,
   });
   console.log(`       Entities populated: ${popResult.entityCount}, Fields: ${popResult.fieldCount}`);

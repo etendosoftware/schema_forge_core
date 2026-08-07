@@ -1,40 +1,10 @@
 import { createContext, useContext, useState, useCallback, useMemo, useRef, useEffect } from 'react';
-import { deleteCookieSession, fetchCookieSession } from './api.js';
-import {
-  createMemoryAuthStorage,
-  mapRestoredSession,
-  normalizeAuthSession,
-  purgeLegacyAuthStorage,
-} from './session.js';
+import { createLocalAuthStorage, normalizeAuthSession } from './session.js';
 
 const AuthContext = createContext(null);
 
-export function AuthProvider({
-  children,
-  storage,
-  initialSession,
-  onSessionChange,
-  fetchWindowAccess,
-  // ETP-4576 — defaults to the platform cookie fetcher, so every host gets the
-  // server-side session without wiring anything (an opt-in prop left hosts that
-  // pass no props unable to authenticate at all once the localStorage handoff
-  // was removed). Pass your own function to override it.
-  //
-  // To opt OUT (keep the pre-cookie synchronous path, e.g. in a test whose
-  // subject is not the restore) pass an explicit `null`: any non-function makes
-  // the effect below return early and `status` resolve synchronously from
-  // `session.token`. Note `undefined` does NOT opt out — a default parameter
-  // only fills in for `undefined`, so it silently re-arms the fetcher.
-  restoreSession = fetchCookieSession,
-}) {
-  // ETP-4576 — memory, not localStorage. This was the last writer of the
-  // sf_auth_* keys: persistSession() wrote them on every login/role/org change.
-  // Persisting is no longer needed either, since restoreSession asks the server
-  // on every mount. It also closes a stale-tenant leak: the useState
-  // initializer below reads storage BEFORE the mount purge runs, so a token
-  // left by a previous tenant used to be hydrated into state and never reset.
-  // A host can still inject its own storage (including createLocalAuthStorage).
-  const authStorage = useMemo(() => storage || createMemoryAuthStorage(), [storage]);
+export function AuthProvider({ children, storage, initialSession, onSessionChange, fetchWindowAccess }) {
+  const authStorage = useMemo(() => storage || createLocalAuthStorage(), [storage]);
   const [session, setSessionState] = useState(() => normalizeAuthSession({
     ...authStorage.read(),
     ...initialSession,
@@ -47,24 +17,6 @@ export function AuthProvider({
   // / useHasCapability treat an unloaded map the same as "no access granted".
   const [windowAccess, setWindowAccess] = useState({});
   const [capabilities, setCapabilities] = useState({});
-  // ETP-4576 — the X-Go-CSRF proof (ADR-0001, com.etendoerp.go) issued by the
-  // backend in session responses. In-memory only, never persisted through
-  // authStorage: it is bound to the httpOnly session cookie, not a value the
-  // client should carry across reloads on its own.
-  const [csrfToken, setCsrfToken] = useState(null);
-  // ETP-4576 — tri-state auth status. Hosts that don't pass `restoreSession`
-  // (not yet migrated to the cookie-session restore flow) keep today's
-  // behavior verbatim: resolved synchronously from whatever session/token
-  // was already read above, never 'booting'. Hosts that opt in start
-  // 'booting' until GET /sws/go/session (via restoreSession) settles.
-  const [status, setStatus] = useState(() => (
-    typeof restoreSession === 'function' ? 'booting' : (session.token ? 'authenticated' : 'anonymous')
-  ));
-  // ETP-4576 — guards the mount-only restore effect below against firing
-  // more than once, since a host passing an inline arrow function as
-  // `restoreSession` would otherwise get a new function identity every
-  // render.
-  const hasRestoredRef = useRef(false);
   // ETP-4520 — request-sequencing guard against a stale-response race: if
   // role A is selected then role B before A's fetchWindowAccess resolves, A's
   // slower response can land AFTER B's and overwrite B's correct maps with
@@ -89,21 +41,13 @@ export function AuthProvider({
     return normalized;
   }, [authStorage, onSessionChange]);
 
-  // Resets every piece of client-side session state. Split out of logout()
-  // because the restore-failure path below needs exactly this and NOT the
-  // server-side revoke: there, the server just told us no session exists, so
-  // asking it to revoke one would be both wrong and a wasted round trip on
-  // every anonymous page load.
-  const clearLocalSession = useCallback(() => {
+  const logout = useCallback(() => {
     const clearedSession = normalizeAuthSession();
     setSessionState(clearedSession);
     authStorage.clear();
     onSessionChange?.(clearedSession);
     setWindowAccess({});
     setCapabilities({});
-    // ETP-4576 — the CSRF proof is tied to the session cookie being cleared;
-    // never let it survive into the next (anonymous) state.
-    setCsrfToken(null);
     // ETP-4520 — abandon any in-flight selectRole() fetch too: bumping the
     // ref makes its stale-response guard (`selectRoleRequestIdRef.current
     // !== thisRequestId`) discard a late-arriving resolution instead of
@@ -111,60 +55,6 @@ export function AuthProvider({
     selectRoleRequestIdRef.current += 1;
     fetchedForRoleRef.current = undefined;
   }, [authStorage, onSessionChange]);
-
-  const logout = useCallback(() => {
-    // ETP-4576 — revoke the session server-side, otherwise the cookie outlives
-    // this "logout" and the session stays valid. Read the CSRF proof BEFORE
-    // clearing local state below wipes it: DELETE is an unsafe method, so
-    // sending it empty earns a 403 and silently leaves the session alive.
-    //
-    // Fire-and-forget on purpose: local state clears immediately so the UI
-    // responds at once, the revoke travels in parallel, and
-    // deleteCookieSession never throws — a network failure must not trap a
-    // user in a session they asked to leave.
-    deleteCookieSession(csrfToken);
-    clearLocalSession();
-  }, [clearLocalSession, csrfToken]);
-
-  // ETP-4576 — session restore on mount. `restoreSession` defaults to the
-  // platform cookie fetcher (a host can override it, or opt out with an
-  // explicit null), so this runs for every host: purges the legacy
-  // sf_auth_*/sf_platform_* localStorage keys once ("on first read", per the
-  // PRD), then consumes GET /sws/go/session through the host-supplied
-  // fetcher. Success moves the tri-state status to 'authenticated' and
-  // stores the restored CSRF proof; any failure (no active session, network
-  // error) fails closed through the same logout() path already used
-  // elsewhere, so session/windowAccess/capabilities/csrfToken end up
-  // consistently cleared. Deliberately does not touch `session`'s shape —
-  // mapping {account, environment, roleList} into it is a follow-up cycle.
-  useEffect(() => {
-    if (typeof restoreSession !== 'function') return;
-    if (hasRestoredRef.current) return;
-    hasRestoredRef.current = true;
-
-    purgeLegacyAuthStorage();
-
-    Promise.resolve()
-      .then(() => restoreSession())
-      .then((result) => {
-        if (!result) throw new Error('No active session');
-        setCsrfToken(result.csrfToken ?? null);
-        // Set state WITHOUT persisting: purgeLegacyAuthStorage() just ran above,
-        // so writing through authStorage here would immediately rewrite the very
-        // legacy keys it deleted. The server response is the authoritative copy.
-        const restoredSession = normalizeAuthSession(mapRestoredSession(result));
-        setSessionState(restoredSession);
-        onSessionChange?.(restoredSession);
-        setStatus('authenticated');
-      })
-      .catch(() => {
-        // Local clear only, deliberately not logout(): the server just told us
-        // there is no session, so there is nothing to revoke.
-        clearLocalSession();
-        setStatus('anonymous');
-      });
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
 
   const selectOrg = useCallback((org) => {
     persistSession({ ...session, selectedOrg: org || null });
@@ -246,25 +136,17 @@ export function AuthProvider({
 
   const value = useMemo(() => ({
     ...session,
-    // ETP-4576 — cookie-session hosts (restoreSession) never populate
-    // session.token, so `status` is their only authentication signal. Legacy
-    // hosts still need the session.token check: their `status` is computed
-    // once on mount and never recomputed, so a post-mount login() would
-    // otherwise leave isAuthenticated stuck at false.
-    isAuthenticated: !!session.token || status === 'authenticated',
+    isAuthenticated: !!session.token,
     windowAccess,
     capabilities,
-    csrfToken,
-    status,
     setWindowAccess,
     setCapabilities,
-    setCsrfToken,
     setSession,
     login: setSession,
     selectRole,
     selectOrg,
     logout,
-  }), [session, windowAccess, capabilities, csrfToken, status, setSession, selectRole, selectOrg, logout]);
+  }), [session, windowAccess, capabilities, setSession, selectRole, selectOrg, logout]);
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 }

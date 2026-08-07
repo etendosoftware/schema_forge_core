@@ -1,0 +1,7 @@
+{
+  "version": "v2",
+  "window": {},
+  "entities": {
+    "header": { "methods": ["GET", "PUT", "PATCH"] }
+  }
+}

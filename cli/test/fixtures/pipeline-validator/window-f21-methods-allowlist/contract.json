@@ -1,0 +1,16 @@
+{
+  "version": "v2",
+  "frontendContract": {
+    "window": { "primaryEntity": "header" },
+    "entities": { "header": { "fields": [] } }
+  },
+  "apiPrediction": {
+    "crud": {
+      "header": {
+        "get": true, "getById": true, "post": false, "put": true, "patch": true, "delete": false,
+        "methods": ["GET", "GETBYID", "PUT", "PATCH"]
+      }
+    }
+  },
+  "agentProfile": {}
+}

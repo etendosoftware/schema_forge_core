@@ -254,6 +254,22 @@ describe('resolveCurated — field-level drawer + display passthroughs (F3)', ()
   });
 });
 
+describe('resolveCurated — window.detailTabOrder passthrough (ETP-4415)', () => {
+  const schemaRaw = { window: { id: '900', name: 'Item' }, entities: [] };
+
+  it('passes window.detailTabOrder through to the curated window object', async () => {
+    const decisions = { window: { detailTabOrder: 7 } };
+    const { schema } = await resolveCurated(schemaRaw, { rules: [] }, decisions);
+    assert.equal(schema.window.detailTabOrder, 7);
+  });
+
+  it('does not add detailTabOrder when not declared', async () => {
+    const decisions = { window: {} };
+    const { schema } = await resolveCurated(schemaRaw, { rules: [] }, decisions);
+    assert.equal(schema.window.detailTabOrder, undefined);
+  });
+});
+
 describe('resolveCurated — agentPrompt passthrough (ETP-4252)', () => {
   const schemaRaw = {
     window: { id: '700', name: 'Purchase Order' },
