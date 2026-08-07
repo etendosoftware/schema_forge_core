@@ -2,6 +2,7 @@ import { readFileSync, writeFileSync, mkdirSync, readdirSync, existsSync } from 
 import { resolve, dirname } from 'node:path';
 import { MARKERS } from './custom-section-markers.js';
 import { convertLogicToJs } from './generate-contract.js';
+import { resolveEnumLabelKey } from './enum-label-key.js';
 
 const FRONTEND_ACTION_PROJECTION = [
   ['entity', 'entity'],
@@ -426,8 +427,15 @@ export function generateTableComponent(entityName, contract) {
     if (f.multiField) return buildMultiFieldColumnLine(f, fieldByName);
     const type = mapFieldType(f);
     const selectionPart = fragmentIf(f.isSelectionColumn, ', isSelectionColumn: true');
+    // ETP-4685 — emit a column-scoped i18n key (resolved via ui()/genericLabels
+    // at runtime), not the raw English AD_Ref_List.Name, so filter/grid enum
+    // labels respect the active interface language. Built from the stable
+    // Value code (o.value), not the mutable display Name (o.name).
+    const enumLabelEntries = f.enumValues?.length
+      ? f.enumValues.map(o => `'${o.value}': '${resolveEnumLabelKey(f.column, o)}'`).join(', ')
+      : '';
     const enumLabelsPart = ((type === 'enum' || type === 'status') && f.enumValues?.length)
-      ? `, enumLabels: { ${f.enumValues.map(o => `'${o.value}': '${o.name.replace(/'/g, "\\'")}'`).join(', ')} }`
+      ? `, enumLabels: { ${enumLabelEntries} }`
       : '';
     const labelPart = f.label ? `, label: '${f.label.replace(/'/g, "\\'")}'` : '';
     const togglePart = fragmentIf(f.inlineToggle, ', toggle: true');
@@ -1315,9 +1323,13 @@ function getDetailName(detailEntity) {
 
 function pushAttachmentsTab(attachmentsEnabled, attachmentsOpts, customTabItems, headerTableName) {
   if (attachmentsEnabled) {
-    const optsLiteral = JSON.stringify(attachmentsOpts);
+    // ETP-4415 — tabOrder is an ordering concern for the tab strip, not an
+    // AttachmentsTab display option, so it is excluded from the forwarded config.
+    const { tabOrder, ...restOpts } = attachmentsOpts;
+    const optsLiteral = JSON.stringify(restOpts);
+    const tabOrderPart = tabOrder != null ? `, tabOrder: ${tabOrder}` : '';
     customTabItems.push(
-      `{ key: 'attachments', labelKey: 'attachments', Component: AttachmentsTab, placement: 'tab', props: { tableName: ${JSON.stringify(headerTableName)}, config: ${optsLiteral} } }`
+      `{ key: 'attachments', labelKey: 'attachments', Component: AttachmentsTab, placement: 'tab'${tabOrderPart}, props: { tableName: ${JSON.stringify(headerTableName)}, config: ${optsLiteral} } }`
     );
   }
 }
@@ -1377,22 +1389,24 @@ function buildCustomLinesParts(windowConfig, specName) {
   return {customLinesComp, customLinesImport, customLinesProp};
 }
 
-function getCustomTabItems(relatedDocuments, customPanelTabs, attachmentsEnabled, attachmentsOpts, headerTableName, extraTabs) {
+export function getCustomTabItems(relatedDocuments, customPanelTabs, attachmentsEnabled, attachmentsOpts, headerTableName, extraTabs) {
   const customTabItems = [];
   if (relatedDocuments) {
     customTabItems.push(`{ key: 'related', labelKey: 'relatedDocuments', Component: RelatedDocuments }`);
   }
   customPanelTabs.forEach(pt => {
     const labelPart = pt.labelKey ? `labelKey: '${pt.labelKey}'` : `label: '${pt.label}'`;
+    const tabOrderPart = pt.tabOrder != null ? `, tabOrder: ${pt.tabOrder}` : '';
     customTabItems.push(
-        `{ key: '${pt.key}', ${labelPart}, Component: ${pt.component}, placement: 'tab' }`
+        `{ key: '${pt.key}', ${labelPart}, Component: ${pt.component}, placement: 'tab'${tabOrderPart} }`
     );
   });
   pushAttachmentsTab(attachmentsEnabled, attachmentsOpts, customTabItems, headerTableName);
   extraTabs.forEach(et => {
     const labelPart = et.labelKey ? `labelKey: '${et.labelKey}'` : `label: '${JSON.stringify(et.label)}'`;
+    const tabOrderPart = et.tabOrder != null ? `, tabOrder: ${et.tabOrder}` : '';
     customTabItems.push(
-        `{ key: '${et.key}', ${labelPart}, Component: ${et.component}, placement: 'tab' }`
+        `{ key: '${et.key}', ${labelPart}, Component: ${et.component}, placement: 'tab'${tabOrderPart} }`
     );
   });
   return customTabItems;
@@ -1537,7 +1551,10 @@ function buildListModalColumns(entity) {
     const labelPart = f.label ? `, label: '${f.label.replace(/'/g, "\\'")}'` : '';
     let enumLabelsPart = '';
     if ((type === 'enum' || type === 'status') && f.enumValues?.length) {
-      const enumEntries = f.enumValues.map(o => `'${o.value}': '${o.name.replace(/'/g, "\\'")}'`).join(', ');
+      // ETP-4685 — same column-scoped i18n key as the standard DataTable columns
+      // (generateTableComponent), instead of the raw English AD_Ref_List.Name.
+      // Built from the stable Value code, not the mutable display Name.
+      const enumEntries = f.enumValues.map(o => `'${o.value}': '${resolveEnumLabelKey(f.column, o)}'`).join(', ');
       enumLabelsPart = `, enumLabels: { ${enumEntries} }`;
     }
     const enumVariantsPart = jsonWrapIf(', enumVariants: ', f.enumVariants);
@@ -1840,7 +1857,7 @@ function buildEntryFieldLine(f, i, firstSearchIdx) {
   return `    { key: '${f.name}', column: '${f.column}', type: '${type}'${requiredPart}${lookupPart}${labelPart}${labelsDictPart}${clearsFieldPart}${skipDefaultPart}${referencePart}${inputModePart}${dependsOnPart}${defaultValuePart}${forceCalloutFieldsPart}${lookupDrawerPart}${lookupTitlePart}${onSelectMappingsPart}${displayFromCatalogPart}${minEntryPart}${maxEntryPart}${excludeValueOfPart} },`;
 }
 
-function resolveSecondaryTabDefs(secondaryTabsDecl, contract, headerEntity, detailEntity, headerColumnMap, headerBooleanFields) {
+export function resolveSecondaryTabDefs(secondaryTabsDecl, contract, headerEntity, detailEntity, headerColumnMap, headerBooleanFields) {
   if (!secondaryTabsDecl) {
     // Fallback: hardcoded known list + entity inference (backward compat)
     const allEntityEntries = Object.entries(contract.frontendContract.entities);
@@ -1925,7 +1942,7 @@ function resolveSecondaryTabDefs(secondaryTabsDecl, contract, headerEntity, deta
       const readOnlyLogicJs = cfg.readOnlyLogic
         ? convertLogicToJs(cfg.readOnlyLogic, headerColumnMap, headerBooleanFields)
         : null;
-      return { key, label: cfg.label ?? toLabel(key), isFormTab, isPanelTab, isCustomForm: !!cfg.customForm, isCustomTable: !!cfg.customTable, PanelName, FormName, TableName, addLineEntries, requireSavedRecord, maxDetailLines, isCustomAddModal: !!customAddModalName, CustomAddModalName: customAddModalName, readOnlyLogicJs };
+      return { key, label: cfg.label ?? toLabel(key), isFormTab, isPanelTab, isCustomForm: !!cfg.customForm, isCustomTable: !!cfg.customTable, PanelName, FormName, TableName, addLineEntries, requireSavedRecord, maxDetailLines, isCustomAddModal: !!customAddModalName, CustomAddModalName: customAddModalName, readOnlyLogicJs, tabOrder: cfg.tabOrder };
     });
 }
 
@@ -1936,7 +1953,12 @@ function buildDetailTableAndFormProps(detailEntity, customLinesComp, hideDetailF
 }
 
 function buildEnumOptionStr(o) {
-  return `{ value: '${o.value}', label: '${o.name.replace(/'/g, "\\'")}' }`;
+  // ETP-4685 — mirror getS()'s per-option labels dict. Without it, a select
+  // field declared on a secondary tab (e.g. contacts' bankAccount.bankFormat)
+  // shows the raw AD Name regardless of locale once rendered by DataTable's
+  // InlineAddRow / InlineLinesPanel's EditCell.
+  const labelsPart = o.labels ? `, labels: ${JSON.stringify(o.labels)}` : '';
+  return `{ value: '${o.value}', label: '${o.name.replace(/'/g, "\\'")}'${labelsPart} }`;
 }
 
 function buildSecondaryTabImport(t, specName) {
@@ -1959,7 +1981,7 @@ function buildSecondaryTabImport(t, specName) {
   return `import ${t.TableName} from '${tableImportPath}';${formImport}${customModalImport}`;
 }
 
-function buildSecondaryTabPropEntry(t) {
+export function buildSecondaryTabPropEntry(t) {
   const requireSavedPart = t.requireSavedRecord ? ', requireSavedRecord: true' : '';
   const readOnlyLogicPart = t.readOnlyLogicJs
     ? `, readOnlyLogic: (record) => ${t.readOnlyLogicJs}`
@@ -1967,18 +1989,21 @@ function buildSecondaryTabPropEntry(t) {
   // ETP-4565 — 0 is a legitimate cap (import-only-style, no manual add at all), so
   // this must check `!= null`, not truthiness.
   const maxDetailLinesPart = t.maxDetailLines != null ? `, maxDetailLines: ${t.maxDetailLines}` : '';
+  // ETP-4415 — cross-group tab ordering; omitted when undeclared so the runtime
+  // sort's own default (99) applies, matching today's behavior exactly.
+  const tabOrderPart = t.tabOrder != null ? `, tabOrder: ${t.tabOrder}` : '';
   if (t.isFormTab) {
-    return `          { key: '${t.key}', label: '${t.label}', isFormTab: true, Form: ${t.FormName}${requireSavedPart}${readOnlyLogicPart} },`;
+    return `          { key: '${t.key}', label: '${t.label}', isFormTab: true, Form: ${t.FormName}${requireSavedPart}${readOnlyLogicPart}${tabOrderPart} },`;
   }
   if (t.isPanelTab) {
-    return `          { key: '${t.key}', label: '${t.label}', Panel: ${t.PanelName}${requireSavedPart}${readOnlyLogicPart} },`;
+    return `          { key: '${t.key}', label: '${t.label}', Panel: ${t.PanelName}${requireSavedPart}${readOnlyLogicPart}${tabOrderPart} },`;
   }
   const addLinePart = t.addLineEntries.length > 0
     ? `, addLineFields: { entry: [\n${t.addLineEntries.join(',\n')},\n          ], derived: [], hidden: [] }`
     : '';
   const customAddModalPart = wrapIf(', customAddModal: ', t.CustomAddModalName);
   const formProp = (t.isCustomAddModal && !t.isCustomForm) ? '' : `, Form: ${t.FormName}`;
-  return `          { key: '${t.key}', label: '${t.label}', Table: ${t.TableName}${formProp}${addLinePart}${customAddModalPart}${requireSavedPart}${readOnlyLogicPart}${maxDetailLinesPart} },`;
+  return `          { key: '${t.key}', label: '${t.label}', Table: ${t.TableName}${formProp}${addLinePart}${customAddModalPart}${requireSavedPart}${readOnlyLogicPart}${maxDetailLinesPart}${tabOrderPart} },`;
 }
 
 function buildDetailProcessesForPage(detailEntity, contract, processOverrides) {
@@ -2384,6 +2409,7 @@ export function generatePageComponent(headerEntity, detailEntity, contract) {
   let entityLabel = windowConfig.entityLabel || toLabel(headerEntity);
   const entityDetailLabel = getEntityDetailLabel(detailEntity, windowConfig, contract);
   const detailTabIndexProp = wrapIf('\n        detailTabIndex={', windowConfig.detailTabIndex, '}', windowConfig.detailTabIndex != null);
+  const detailTabOrderProp = wrapIf('\n        detailTabOrder={', windowConfig.detailTabOrder, '}', windowConfig.detailTabOrder != null);
 
   // StatusBar component generation
   const {
@@ -2617,7 +2643,7 @@ ${menuActionStateStatements}`)}${fragmentIf(confirmModalName, `
         detailLabel="${entityDetailLabel}"` : ''}
         windowName={windowName}
         recordId={recordId}
-        breadcrumb={breadcrumb}${apiProp}${detailTabIndexProp}${secondaryTabsProp}${formFooterProp}${customLinesProp}${primaryTabsProp}${othersLabelProp}${documentPreviewProp}${hideDeleteProp}${hideDeleteButtonProp}${customTabsAfterBottomProp}${hidePrintProp}${hideSaveStatusesProp}${hideMoreMenuProp}${hideMoreDetailsProp}${noHeaderBorderProp}${toolbarBorderBottomProp}${compactSidebarPaddingProp}${whiteFormBackgroundProp}${autoSaveOnBlurProp}${hideFormCardProp}${sidebarAboveTabsOnlyProp}${tabsSeparatorProp}${sidebarClassNameProp}${tabsBarPaddingXProp}${primaryTabsVariantProp}${toolbarPaddingXProp}${toolbarButtonSizeProp}${contentBgProp}${formCardPaddingProp}${formScrollPaddingXProp}${notesFieldProp}${dimensionsPanelFieldKeysProp}${customTabsProp}${customCompPropsBlock}${menuActionsProp}${draftModeProp}${requiredHeaderFieldsProp}${addLineGuardProp}${headerContentProp}${detailSortByProp}${titleFieldProp}${documentDateFieldProp}${salesThemeProp}${disableProcessedLockProp}${statusEnumLabelsProp}${statusFieldLabelProp}${lockedAlertProp}${showDetailFooterTotalsProp}${labelOverridesProp}${lineConfigProp}${linesLayoutProp}${balanceFooterProp}${sendDocumentDetailProp}${selectorPriceCurrencyProp}
+        breadcrumb={breadcrumb}${apiProp}${detailTabIndexProp}${detailTabOrderProp}${secondaryTabsProp}${formFooterProp}${customLinesProp}${primaryTabsProp}${othersLabelProp}${documentPreviewProp}${hideDeleteProp}${hideDeleteButtonProp}${customTabsAfterBottomProp}${hidePrintProp}${hideSaveStatusesProp}${hideMoreMenuProp}${hideMoreDetailsProp}${noHeaderBorderProp}${toolbarBorderBottomProp}${compactSidebarPaddingProp}${whiteFormBackgroundProp}${autoSaveOnBlurProp}${hideFormCardProp}${sidebarAboveTabsOnlyProp}${tabsSeparatorProp}${sidebarClassNameProp}${tabsBarPaddingXProp}${primaryTabsVariantProp}${toolbarPaddingXProp}${toolbarButtonSizeProp}${contentBgProp}${formCardPaddingProp}${formScrollPaddingXProp}${notesFieldProp}${dimensionsPanelFieldKeysProp}${customTabsProp}${customCompPropsBlock}${menuActionsProp}${draftModeProp}${requiredHeaderFieldsProp}${addLineGuardProp}${headerContentProp}${detailSortByProp}${titleFieldProp}${documentDateFieldProp}${salesThemeProp}${disableProcessedLockProp}${statusEnumLabelsProp}${statusFieldLabelProp}${lockedAlertProp}${showDetailFooterTotalsProp}${labelOverridesProp}${lineConfigProp}${linesLayoutProp}${balanceFooterProp}${sendDocumentDetailProp}${selectorPriceCurrencyProp}
         {...props}${effectiveWindowProp}${sidebarContentProp}
       />
 ${menuActionModals}${confirmModalName ? `

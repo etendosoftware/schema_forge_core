@@ -39,6 +39,7 @@
 
 import { newEtendoId } from './etendo-uuid.js';
 import { indexByNaturalKey } from './etgo-xml-parser.js';
+import { methodsToXmlFlags, resolveContractEntityMethods } from './entity-methods.js';
 
 /**
  * Local copy of mapVisibility() from push-to-neo.js. Inlined to keep this
@@ -281,14 +282,13 @@ export function computeWindowDelta(args) {
       NAME: entityName,
       SEQNO: String(entitySeq * 10),
       ISINCLUDED: 'Y',
-      // populateWindowSpec is called with includeAllMethods=true in
-      // push-to-neo.js → stepPopulateSpec, so all CRUD flags are 'Y'.
-      ISGET: 'Y',
-      ISGETBYID: 'Y',
-      ISPOST: 'Y',
-      ISPUT: 'Y',
-      ISPATCH: 'Y',
-      ISDELETE: 'Y',
+      // ETP-4254 — the CRUD flags are NO LONGER hardcoded to 'Y'. push-to-neo's
+      // stepPopulateSpec hands populateWindowSpec a per-tab resolver built from
+      // the SAME contract value read here (see buildEntityMethodFlagsResolver),
+      // so the predicted XML row and the live DB row always agree. `entityName`
+      // is the NAME written on the row, which is exactly the key the live path
+      // resolves methods by.
+      ...methodsToXmlFlags(resolveContractEntityMethods(contract, entityName)),
       ...ENTITY_DEFAULTS,
     };
     if (javaQualifier != null) entityRow.JAVA_QUALIFIER = javaQualifier;
