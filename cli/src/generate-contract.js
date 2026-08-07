@@ -593,6 +593,10 @@ const FIELD_ATTR_SPECS = [
   // contract.json. Absent on every window today, so output is unchanged.
   ['filterMode', 'verbatim'],
   ['backendFilterKey', 'verbatim'],
+  // ETP-4749 — same append-at-tail rule as above. Fixed prefix chip (e.g.
+  // "https://") rendered before a text input; see resolve-curated.js's
+  // FIELD_DECISION_COPY_PROPS for the full description.
+  ['inputPrefix', 'verbatim'],
 ];
 
 function mapFieldAttributes(f, mapped) {
