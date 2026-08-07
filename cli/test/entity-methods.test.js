@@ -15,6 +15,7 @@ import {
   NEO_READ_METHODS,
   normalizeMethodList,
   resolveContractEntityMethods,
+  resolveEntityHideDelete,
   resolveEntityMethods,
   sameMethods,
 } from '../src/lib/entity-methods.js';
@@ -254,5 +255,81 @@ describe('resolveContractEntityMethods', () => {
   it('repairs a hand-edited contract that dropped read access', () => {
     const contract = { apiPrediction: { crud: { log: { methods: ['POST'] } } } };
     assert.deepEqual(resolveContractEntityMethods(contract, 'log'), ['GET', 'GETBYID', 'POST']);
+  });
+
+  // ETP-4745 — `crud.<entity>.delete === false` (window.hideDelete /
+  // entities.<key>.hideDelete) must fold into the resolved method list, or the
+  // live DB / XML delta keep granting DELETE while the frontend hides it.
+  it('drops DELETE when crud.<entity>.delete is false, unrestricted entity', () => {
+    const contract = { apiPrediction: { crud: { log: { delete: false } } } };
+    assert.deepEqual(resolveContractEntityMethods(contract, 'log'), ['GET', 'GETBYID', 'POST', 'PUT', 'PATCH']);
+  });
+
+  it('drops DELETE from an explicit methods allowlist that still included it', () => {
+    const contract = {
+      apiPrediction: { crud: { log: { methods: ['GET', 'PUT', 'DELETE'], delete: false } } },
+    };
+    assert.deepEqual(resolveContractEntityMethods(contract, 'log'), ['GET', 'GETBYID', 'PUT']);
+  });
+
+  it('preserves DELETE by default when crud.<entity>.delete is true or absent', () => {
+    const trueCase = { apiPrediction: { crud: { log: { delete: true } } } };
+    const absentCase = { apiPrediction: { crud: { log: {} } } };
+    assert.deepEqual(resolveContractEntityMethods(trueCase, 'log'), ALL);
+    assert.deepEqual(resolveContractEntityMethods(absentCase, 'log'), ALL);
+  });
+
+  it('is a no-op on an already read-only entity (nothing left to drop)', () => {
+    const contract = {
+      apiPrediction: { window: { readOnly: true }, crud: { log: { delete: false } } },
+    };
+    assert.deepEqual(resolveContractEntityMethods(contract, 'log'), READ);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// resolveEntityHideDelete — ETP-4745, the declaration-side counterpart used by
+// generate-contract.js (before a contract exists) and the F21 validator rule
+// (to compute the same "expected" outcome independently of the contract).
+// ---------------------------------------------------------------------------
+
+describe('resolveEntityHideDelete', () => {
+  it('defaults to false when nothing is declared', () => {
+    assert.equal(resolveEntityHideDelete(), false);
+    assert.equal(resolveEntityHideDelete({}), false);
+  });
+
+  it('entity-level hideDelete always wins', () => {
+    assert.equal(resolveEntityHideDelete({ entityHideDelete: true }), true);
+    assert.equal(
+      resolveEntityHideDelete({ windowReadOnly: true, entityReadOnly: false, entityHideDelete: true }),
+      true,
+      'an entity-level hideDelete is not overridable by opting out of a read-only window',
+    );
+  });
+
+  it('window-level hideDelete drops DELETE for every entity by default', () => {
+    assert.equal(resolveEntityHideDelete({ windowHideDelete: true }), true);
+  });
+
+  it('window.readOnly implies windowHideDelete is honored the same way', () => {
+    assert.equal(resolveEntityHideDelete({ windowReadOnly: true, windowHideDelete: true }), true);
+  });
+
+  it('entities.<key>.readOnly:false fully opts an entity out of window hideDelete', () => {
+    assert.equal(
+      resolveEntityHideDelete({ windowReadOnly: true, windowHideDelete: true, entityReadOnly: false }),
+      false,
+    );
+  });
+
+  it('the readOnly:false opt-out only applies when windowReadOnly is true', () => {
+    // A standalone `window.hideDelete` (no `window.readOnly`) has no opt-out —
+    // `entityReadOnly: false` means nothing here because there was no read-only
+    // window to opt out of in the first place.
+    assert.equal(
+      resolveEntityHideDelete({ windowReadOnly: false, windowHideDelete: true, entityReadOnly: false }),
+      true,
+    );
   });
 });

@@ -181,6 +181,10 @@ describe('ETP-4254 — decisions → contract → both write paths', () => {
 
     assert.deepEqual(crud.logLine.methods, ['GET', 'GETBYID', 'POST', 'PUT', 'PATCH', 'DELETE'],
       'the opted-out entity must be pinned explicitly, or the window fallback would restrict it');
+    // ETP-4745 — window.readOnly's derived window.hideDelete must not clobber
+    // crud.delete for an entity that explicitly opted back out via readOnly:false;
+    // that opt-out means "fully writable", delete included.
+    assert.equal(crud.logLine.delete, true);
     assert.deepEqual(writerFlags.log, READ_ONLY);
     assert.deepEqual(writerFlags.logLine, ALL_Y);
     assert.deepEqual(xmlFlags.log, XML_READ_ONLY);
@@ -240,5 +244,73 @@ describe('ETP-4254 — decisions → contract → both write paths', () => {
     const { contract } = await runChain({ version: 'v2', window: { readOnly: true }, entities: {} });
     const resolver = buildEntityMethodFlagsResolver({ schemaRawData: schemaRaw(), contract });
     assert.deepEqual(resolver({ ad_tab_id: 'T9', name: 'someExtraTab' }), READ_ONLY);
+  });
+
+  // ETP-4745 — `hideDelete` previously only reached `apiPrediction.crud.<entity>.delete`
+  // (the frontend contract). Neither the live DB write (`writerFlags`, ETGO_SF_ENTITY.ISDELETE)
+  // nor the predicted XML delta ever read it, so delete stayed enabled on both backends
+  // regardless of the decision. These assert the fix reaches both write paths.
+  it('per-entity hideDelete disables DELETE only for that entity, on both write paths', async () => {
+    const { crud, writerFlags, xmlFlags } = await runChain({
+      version: 'v2', window: {}, entities: { log: { hideDelete: true } },
+    });
+
+    assert.equal(crud.log.delete, false);
+    assert.equal(crud.logLine.delete, true);
+    assert.deepEqual(writerFlags.log, {
+      isGet: 'Y', isGetbyid: 'Y', isPost: 'Y', isPut: 'Y', isPatch: 'Y', isDelete: 'N',
+    });
+    assert.deepEqual(writerFlags.logLine, ALL_Y, 'sibling entity must keep DELETE');
+    assert.deepEqual(xmlFlags.log, {
+      ISGET: 'Y', ISGETBYID: 'Y', ISPOST: 'Y', ISPUT: 'Y', ISPATCH: 'Y', ISDELETE: 'N',
+    });
+    assert.deepEqual(xmlFlags.logLine, XML_ALL_Y);
+    assertPathsAgree(writerFlags, xmlFlags);
+  });
+
+  it('window.hideDelete disables DELETE for every entity, on both write paths', async () => {
+    const { crud, writerFlags, xmlFlags } = await runChain({
+      version: 'v2', window: { hideDelete: true }, entities: {},
+    });
+
+    for (const entityName of ['log', 'logLine']) {
+      assert.equal(crud[entityName].delete, false);
+      assert.equal(writerFlags[entityName].isDelete, 'N');
+      assert.equal(xmlFlags[entityName].ISDELETE, 'N');
+      // Nothing else about the entity's methods is restricted — only DELETE.
+      assert.equal(writerFlags[entityName].isGet, 'Y');
+      assert.equal(writerFlags[entityName].isPost, 'Y');
+      assert.equal(writerFlags[entityName].isPut, 'Y');
+      assert.equal(writerFlags[entityName].isPatch, 'Y');
+    }
+    assertPathsAgree(writerFlags, xmlFlags);
+  });
+
+  it('hideDelete composes with a per-entity methods allowlist that still listed DELETE', async () => {
+    const { crud, writerFlags, xmlFlags } = await runChain({
+      version: 'v2',
+      window: {},
+      entities: { log: { methods: ['PUT', 'DELETE'], hideDelete: true } },
+    });
+
+    assert.deepEqual(crud.log.methods, ['GET', 'GETBYID', 'PUT', 'DELETE'],
+      'contract.methods still reflects the declared allowlist verbatim');
+    assert.equal(crud.log.delete, false);
+    assert.deepEqual(writerFlags.log, {
+      isGet: 'Y', isGetbyid: 'Y', isPost: 'N', isPut: 'Y', isPatch: 'N', isDelete: 'N',
+    });
+    assert.deepEqual(xmlFlags.log, {
+      ISGET: 'Y', ISGETBYID: 'Y', ISPOST: 'N', ISPUT: 'Y', ISPATCH: 'N', ISDELETE: 'N',
+    });
+    assertPathsAgree(writerFlags, xmlFlags);
+  });
+
+  it('without hideDelete, DELETE stays enabled by default (no regression)', async () => {
+    const { crud, writerFlags, xmlFlags } = await runChain({ version: 'v2', window: {}, entities: {} });
+
+    assert.equal(crud.log.delete, true);
+    assert.equal(writerFlags.log.isDelete, 'Y');
+    assert.equal(xmlFlags.log.ISDELETE, 'Y');
+    assertPathsAgree(writerFlags, xmlFlags);
   });
 });
