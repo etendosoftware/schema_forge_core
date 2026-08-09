@@ -689,11 +689,13 @@ describe('generatePageComponent', () => {
     assert.ok(code.includes('const statusField = null'));
   });
 
-  // ETP-4835 — regression: no DocStatus column, no override, but an unrelated
+  // ETP-4835 — regression: no DocStatus column, no override, but the only
   // readOnly field whose name contains "status" (e.g. Contacts' VIES tax-ID
-  // validation status). Must resolve to null, not name-sniff that field — it
-  // previously rendered a stray "X P" status pill on the Contacts window.
-  it('does not fall back to name-sniffing an unrelated readOnly "status" field', () => {
+  // validation status) only appears conditionally (@OBTIKTaxIDKey@='2').
+  // Must resolve to null, not name-sniff that field — it previously rendered
+  // a stray "X P" status pill on the Contacts window even when the VIES
+  // status field was not on screen.
+  it('does not fall back to name-sniffing a conditionally-displayed readOnly "status" field', () => {
     const unrelatedStatusContract = {
       frontendContract: {
         window: { id: '1', name: 'Test', primaryEntity: 'header', category: 'test' },
@@ -701,7 +703,11 @@ describe('generatePageComponent', () => {
           header: {
             fields: [
               { name: 'name', column: 'Name', type: 'string', tsType: 'string', visibility: 'readOnly', required: true, grid: true, form: true },
-              { name: 'oBTIKVIESStatus', column: 'OBTIK_VIES_Status', type: 'string', tsType: 'string', visibility: 'readOnly', required: false, grid: false, form: true },
+              {
+                name: 'oBTIKVIESStatus', column: 'OBTIK_VIES_Status', type: 'string', tsType: 'string',
+                visibility: 'readOnly', required: false, grid: false, form: true,
+                displayLogic: { raw: "@OBTIKTaxIDKey@='2'", js: "record.oBTIKTaxIDKey === '2'" },
+              },
             ],
             searchableFields: [],
             computedFields: [],
@@ -719,6 +725,40 @@ describe('generatePageComponent', () => {
     };
     const code = generatePageComponent('header', 'detail', unrelatedStatusContract);
     assert.ok(code.includes('const statusField = null'));
+  });
+
+  // ETP-4835 — the fallback IS legitimate for an unconditional, always-visible
+  // readOnly "status" field with no DocStatus column and no override — e.g.
+  // financial-account's PSD2 connection status. This mirrors 5 real windows
+  // (financial-account, conversion-rate-downloader-log, open-close-period-control,
+  // payment-in, payment-out) that rely on this exact fallback with no
+  // `window.statusField` override in decisions.json.
+  it('still name-sniffs an unconditional readOnly "status" field with no displayLogic', () => {
+    const alwaysVisibleStatusContract = {
+      frontendContract: {
+        window: { id: '1', name: 'Test', primaryEntity: 'header', category: 'test' },
+        entities: {
+          header: {
+            fields: [
+              { name: 'name', column: 'Name', type: 'string', tsType: 'string', visibility: 'readOnly', required: true, grid: true, form: true },
+              { name: 'pSD2ConnectionStatus', column: 'PSD2_Connection_Status', type: 'string', tsType: 'string', visibility: 'readOnly', required: false, grid: false, form: true },
+            ],
+            searchableFields: [],
+            computedFields: [],
+          },
+          detail: {
+            fields: [
+              { name: 'item', column: 'Item', type: 'string', tsType: 'string', visibility: 'editable', required: true, grid: true, form: true },
+            ],
+            searchableFields: [],
+            computedFields: [],
+          },
+        },
+      },
+      backendContract: { processEndpoints: [] },
+    };
+    const code = generatePageComponent('header', 'detail', alwaysVisibleStatusContract);
+    assert.ok(code.includes("const statusField = 'pSD2ConnectionStatus'"));
   });
 
   it('declares processes array with positive/destructive styles', () => {
