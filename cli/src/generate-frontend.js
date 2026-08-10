@@ -2188,6 +2188,7 @@ export function generatePageComponent(headerEntity, detailEntity, contract) {
   const hideMoreDetails = windowConfig.hideMoreDetails ?? false;
   const noHeaderBorder = windowConfig.noHeaderBorder ?? false;
   const toolbarBorderBottom = windowConfig.toolbarBorderBottom ?? false;
+  const saveBeforeProcesses = windowConfig.saveBeforeProcesses ?? false;
   const compactSidebarPadding = windowConfig.compactSidebarPadding ?? false;
   const whiteFormBackground = windowConfig.whiteFormBackground ?? false;
   const autoSaveOnBlur = windowConfig.autoSaveOnBlur ?? false;
@@ -2306,6 +2307,10 @@ export function generatePageComponent(headerEntity, detailEntity, contract) {
   const noHeaderBorderProp = fragmentIf(noHeaderBorder, '\n        noHeaderBorder');
   // toolbarBorderBottom prop (DetailView)
   const toolbarBorderBottomProp = fragmentIf(toolbarBorderBottom, '\n        toolbarBorderBottom');
+  // saveBeforeProcesses prop (DetailView) — renders Save before the process buttons so a
+  // window-defined confirm/complete action (processOverrides) lands to the right of Save,
+  // matching the draftMode Save+Confirm pair used elsewhere.
+  const saveBeforeProcessesProp = fragmentIf(saveBeforeProcesses, '\n        saveBeforeProcesses');
   // compactSidebarPadding prop (DetailView)
   const compactSidebarPaddingProp = fragmentIf(compactSidebarPadding, '\n        compactSidebarPadding');
   const whiteFormBackgroundProp = fragmentIf(whiteFormBackground, '\n        whiteFormBackground');
@@ -2646,7 +2651,7 @@ ${menuActionStateStatements}`)}${fragmentIf(confirmModalName, `
         detailLabel="${entityDetailLabel}"` : ''}
         windowName={windowName}
         recordId={recordId}
-        breadcrumb={breadcrumb}${apiProp}${detailTabIndexProp}${detailTabOrderProp}${secondaryTabsProp}${formFooterProp}${customLinesProp}${primaryTabsProp}${othersLabelProp}${documentPreviewProp}${hideDeleteProp}${hideDeleteButtonProp}${customTabsAfterBottomProp}${hidePrintProp}${hideSaveStatusesProp}${hideMoreMenuProp}${hideMoreDetailsProp}${noHeaderBorderProp}${toolbarBorderBottomProp}${compactSidebarPaddingProp}${whiteFormBackgroundProp}${autoSaveOnBlurProp}${hideFormCardProp}${sidebarAboveTabsOnlyProp}${tabsSeparatorProp}${sidebarClassNameProp}${tabsBarPaddingXProp}${primaryTabsVariantProp}${toolbarPaddingXProp}${toolbarButtonSizeProp}${contentBgProp}${formCardPaddingProp}${formScrollPaddingXProp}${notesFieldProp}${dimensionsPanelFieldKeysProp}${customTabsProp}${customCompPropsBlock}${menuActionsProp}${draftModeProp}${requiredHeaderFieldsProp}${addLineGuardProp}${headerContentProp}${detailSortByProp}${titleFieldProp}${documentDateFieldProp}${salesThemeProp}${disableProcessedLockProp}${statusEnumLabelsProp}${statusFieldLabelProp}${lockedAlertProp}${showDetailFooterTotalsProp}${labelOverridesProp}${lineConfigProp}${linesLayoutProp}${balanceFooterProp}${sendDocumentDetailProp}${selectorPriceCurrencyProp}
+        breadcrumb={breadcrumb}${apiProp}${detailTabIndexProp}${detailTabOrderProp}${secondaryTabsProp}${formFooterProp}${customLinesProp}${primaryTabsProp}${othersLabelProp}${documentPreviewProp}${hideDeleteProp}${hideDeleteButtonProp}${customTabsAfterBottomProp}${hidePrintProp}${hideSaveStatusesProp}${hideMoreMenuProp}${hideMoreDetailsProp}${noHeaderBorderProp}${toolbarBorderBottomProp}${saveBeforeProcessesProp}${compactSidebarPaddingProp}${whiteFormBackgroundProp}${autoSaveOnBlurProp}${hideFormCardProp}${sidebarAboveTabsOnlyProp}${tabsSeparatorProp}${sidebarClassNameProp}${tabsBarPaddingXProp}${primaryTabsVariantProp}${toolbarPaddingXProp}${toolbarButtonSizeProp}${contentBgProp}${formCardPaddingProp}${formScrollPaddingXProp}${notesFieldProp}${dimensionsPanelFieldKeysProp}${customTabsProp}${customCompPropsBlock}${menuActionsProp}${draftModeProp}${requiredHeaderFieldsProp}${addLineGuardProp}${headerContentProp}${detailSortByProp}${titleFieldProp}${documentDateFieldProp}${salesThemeProp}${disableProcessedLockProp}${statusEnumLabelsProp}${statusFieldLabelProp}${lockedAlertProp}${showDetailFooterTotalsProp}${labelOverridesProp}${lineConfigProp}${linesLayoutProp}${balanceFooterProp}${sendDocumentDetailProp}${selectorPriceCurrencyProp}
         {...props}${effectiveWindowProp}${sidebarContentProp}
       />
 ${menuActionModals}${confirmModalName ? `
