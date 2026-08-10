@@ -945,22 +945,17 @@ function resolveStatusAndSummaryFields(requiredHeaderFieldNames, allEntityFields
   } else if (statusFieldOverride) {
     statusField = allEntityFields.find(f => f.name === statusFieldOverride) ?? null;
   } else {
-    // ETP-4835 — the name-sniffing fallback (readOnly field whose name contains
-    // "status") is legitimate for windows with an unconditional, always-visible
-    // status field (e.g. financial-account's PSD2 connection status, or the
-    // background-job/period-control/payment "status" fields) — none of these
-    // declare an explicit `window.statusField` override, so removing the
-    // fallback entirely broke their status pill.
-    // The real bug was a field that only APPEARS conditionally (e.g. BusinessPartner's
-    // EU VIES tax-ID validation status, shown only when `oBTIKTaxIDKey === '2'`) getting
-    // name-sniffed into the always-visible status slot. Exclude fields with
-    // conditional display logic (`f.displayLogic`) from the fallback — a field that
-    // is not always on screen cannot stand in for the document's status.
-    statusField = docStatusField ?? allEntityFields.find(f =>
-      f.visibility === 'readOnly' &&
-      f.name.toLowerCase().includes('status') &&
-      !f.displayLogic
-    ) ?? null;
+    // ETP-4835 — do NOT fall back to name-sniffing any readOnly field whose name
+    // contains "status". That heuristic grabbed unrelated fields (e.g. BusinessPartner's
+    // EU VIES tax-ID validation status) and rendered a stray status pill in windows
+    // with no real document status. A "conditionally displayed" exclusion was tried
+    // and rejected: financial-account's legitimate `pSD2ConnectionStatus` also has
+    // conditional displayLogic (@Type@!'C'), so that signal doesn't distinguish a
+    // real status field from a coincidental one — it's a business decision, not
+    // something inferable from field shape. Only an exact `DocStatus` column or an
+    // explicit `window.statusField` override (declared in decisions.json) may select
+    // the status field now.
+    statusField = docStatusField ?? null;
   }
   const summaryFieldsOverride = contract.frontendContract.window.summaryFields;
   const summaryFields = getSummaryFields(summaryFieldsOverride, readOnlyFields, statusField);

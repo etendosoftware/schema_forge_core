@@ -689,13 +689,16 @@ describe('generatePageComponent', () => {
     assert.ok(code.includes('const statusField = null'));
   });
 
-  // ETP-4835 — regression: no DocStatus column, no override, but the only
+  // ETP-4835 — regression: no DocStatus column, no override, but there IS a
   // readOnly field whose name contains "status" (e.g. Contacts' VIES tax-ID
-  // validation status) only appears conditionally (@OBTIKTaxIDKey@='2').
-  // Must resolve to null, not name-sniff that field — it previously rendered
-  // a stray "X P" status pill on the Contacts window even when the VIES
-  // status field was not on screen.
-  it('does not fall back to name-sniffing a conditionally-displayed readOnly "status" field', () => {
+  // validation status). Must resolve to null, not name-sniff that field — it
+  // previously rendered a stray "X P" status pill on the Contacts window.
+  // Name-sniffing was tried and rejected as a heuristic entirely (not just for
+  // conditionally-displayed fields): financial-account's legitimate
+  // `pSD2ConnectionStatus` also has conditional displayLogic, so "always visible"
+  // isn't a reliable signal either. A window that needs a non-DocStatus status
+  // field must declare it explicitly via `window.statusField` in decisions.json.
+  it('does not fall back to name-sniffing any readOnly "status" field', () => {
     const unrelatedStatusContract = {
       frontendContract: {
         window: { id: '1', name: 'Test', primaryEntity: 'header', category: 'test' },
@@ -703,11 +706,7 @@ describe('generatePageComponent', () => {
           header: {
             fields: [
               { name: 'name', column: 'Name', type: 'string', tsType: 'string', visibility: 'readOnly', required: true, grid: true, form: true },
-              {
-                name: 'oBTIKVIESStatus', column: 'OBTIK_VIES_Status', type: 'string', tsType: 'string',
-                visibility: 'readOnly', required: false, grid: false, form: true,
-                displayLogic: { raw: "@OBTIKTaxIDKey@='2'", js: "record.oBTIKTaxIDKey === '2'" },
-              },
+              { name: 'oBTIKVIESStatus', column: 'OBTIK_VIES_Status', type: 'string', tsType: 'string', visibility: 'readOnly', required: false, grid: false, form: true },
             ],
             searchableFields: [],
             computedFields: [],
@@ -727,16 +726,14 @@ describe('generatePageComponent', () => {
     assert.ok(code.includes('const statusField = null'));
   });
 
-  // ETP-4835 — the fallback IS legitimate for an unconditional, always-visible
-  // readOnly "status" field with no DocStatus column and no override — e.g.
-  // financial-account's PSD2 connection status. This mirrors 5 real windows
-  // (financial-account, conversion-rate-downloader-log, open-close-period-control,
-  // payment-in, payment-out) that rely on this exact fallback with no
-  // `window.statusField` override in decisions.json.
-  it('still name-sniffs an unconditional readOnly "status" field with no displayLogic', () => {
-    const alwaysVisibleStatusContract = {
+  // ETP-4835 — the escape hatch: a window that genuinely needs a non-DocStatus
+  // status field (e.g. financial-account's PSD2 connection status) must declare
+  // it explicitly via `window.statusField` in decisions.json/contract — it is no
+  // longer inferred by name.
+  it('resolves an explicit window.statusField override even without a DocStatus column', () => {
+    const explicitStatusContract = {
       frontendContract: {
-        window: { id: '1', name: 'Test', primaryEntity: 'header', category: 'test' },
+        window: { id: '1', name: 'Test', primaryEntity: 'header', category: 'test', statusField: 'pSD2ConnectionStatus' },
         entities: {
           header: {
             fields: [
@@ -757,7 +754,7 @@ describe('generatePageComponent', () => {
       },
       backendContract: { processEndpoints: [] },
     };
-    const code = generatePageComponent('header', 'detail', alwaysVisibleStatusContract);
+    const code = generatePageComponent('header', 'detail', explicitStatusContract);
     assert.ok(code.includes("const statusField = 'pSD2ConnectionStatus'"));
   });
 
