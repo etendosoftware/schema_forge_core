@@ -362,6 +362,21 @@
     --status-neutral-bg: #F5F7F9;
     --status-neutral-fg: #3F3F50;
     --status-neutral-border: #E8EAEF;
+
+    /* Organization "Tipo de negocio" selected-state tokens — ETP-4749.
+       Moved here from the functional repo's own tools/app-shell/src/index.css (QA
+       review round) — this is the canonical design-token registry consumed by the
+       whole app (see the Status tag tokens above, and status-tag-tokens.js), not a
+       per-window CSS file. Consumers: BusinessTypeCards.jsx / OrganizationPage.jsx
+       (organization window), referenced via bg-[var(--eg-yellow)] etc.
+       NOTE: --eg-ink (#121217) is the exact same color as --accent-highlight-foreground
+       above (240 12% 8% converts to #121217) — kept as its own token for now since the
+       two consumer files reference --eg-ink by name; worth consolidating later. */
+    --eg-yellow: #F8D414;            /* selected check-dot background; unsaved-changes banner dot */
+    --eg-yellow-soft: #FFF9EB;       /* selected business-type card background */
+    --eg-yellow-line: #FFE7AD;       /* selected business-type card border */
+    --eg-yellow-dot-border: #E0BC0B; /* selected check-dot border */
+    --eg-ink: #121217;               /* check icon color on the selected yellow dot — never turns yellow */
   }
 
   .dark {
@@ -429,6 +444,15 @@
     --status-neutral-bg: #1F2937;
     --status-neutral-fg: #D1D5DB;
     --status-neutral-border: #4B5563;
+
+    /* Organization "Tipo de negocio" tokens — ETP-4749. Same fixed values as light mode
+       (like --accent-highlight above): this is a brand-yellow selected-state, not a
+       theme-adaptive semantic color. */
+    --eg-yellow: #F8D414;
+    --eg-yellow-soft: #FFF9EB;
+    --eg-yellow-line: #FFE7AD;
+    --eg-yellow-dot-border: #E0BC0B;
+    --eg-ink: #121217;
   }
 
   .dark .bg-white {
