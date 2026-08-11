@@ -748,8 +748,21 @@ function IdentifierMultiPicker({ col, entity, apiBaseUrl, rows, value, onChange,
   // the picker shows all values in the filterable universe, not only those on
   // currently-loaded rows. Falls back silently to in-memory rows when the
   // backend is unavailable (entity / apiBaseUrl missing).
+  //
+  // ETP-4770: also fetch eagerly when re-editing an existing condition (i.e.
+  // `selected` is already populated on mount), not only once the popover is
+  // opened. `rows` is the grid's CURRENT rows, already filtered by the very
+  // condition being edited — for "equals" it only contains the selected
+  // value(s) (no other option to pick from until the backend fetch lands),
+  // and for "notEqual" it EXCLUDES the selected value(s) (no in-memory label
+  // for them at all, so the closed trigger falls back to showing the raw
+  // id). Gating solely on `open` meant the trigger rendered with an
+  // incomplete/wrong label before the user ever touched the picker, and a
+  // remount (popover reopen) reset `distinct.values` back to `[]`. Fetching
+  // whenever there is a pre-existing selection makes the picker resolve
+  // full labels and full searchable options independent of the grid.
   const distinct = useDistinctValues(entity, col?.key, {
-    enabled: !!(entity && apiBaseUrl && col?.key && open),
+    enabled: !!(entity && apiBaseUrl && col?.key && (open || selected.length > 0)),
     apiBaseUrl,
   });
 

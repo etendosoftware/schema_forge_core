@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeAll, afterEach } from 'vitest';
+import { describe, it, expect, vi, beforeAll, beforeEach, afterEach } from 'vitest';
 import '@testing-library/jest-dom/vitest';
 import { render, screen, cleanup } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
@@ -6,6 +6,9 @@ import userEvent from '@testing-library/user-event';
 // Core vitest runs without `globals: true`, so RTL's automatic afterEach
 // cleanup is not registered — do it explicitly to avoid DOM bleed between tests.
 afterEach(cleanup);
+beforeEach(() => {
+  distinctCalls.length = 0;
+});
 
 // Mock i18n hooks
 vi.mock('../../../i18n/index.js', () => ({
@@ -33,16 +36,25 @@ vi.mock('../../../lib/gridQuery.js', () => ({
 // Defaults to an empty set (the original behavior the existing tests rely on).
 const distinctState = { values: [] };
 
+// Records every call's (entity, field, options) so tests can assert on the
+// `enabled` flag the component computed — the mocked hook always returns
+// `distinctState.values` regardless of `enabled`, so this is the only way to
+// verify the gating logic itself (ETP-4770).
+const distinctCalls = [];
+
 vi.mock('../../../hooks/useDistinctValues.js', () => ({
-  useDistinctValues: () => ({
-    values: distinctState.values,
-    loading: false,
-    loadingMore: false,
-    hasMore: false,
-    search: '',
-    setSearch: vi.fn(),
-    loadMore: vi.fn(),
-  }),
+  useDistinctValues: (entity, field, options) => {
+    distinctCalls.push({ entity, field, options });
+    return {
+      values: distinctState.values,
+      loading: false,
+      loadingMore: false,
+      hasMore: false,
+      search: '',
+      setSearch: vi.fn(),
+      loadMore: vi.fn(),
+    };
+  },
 }));
 
 // Render one option per code so tests can count duplicate labels. Mirrors the
@@ -873,5 +885,157 @@ describe('AdvancedFilterBuilder — content-based sizing (ETP-4705)', () => {
     // Must NOT grab free space via flex — the value cell keeps flex-1, so scope
     // the assertion to this operator wrapper only.
     expect(cls.split(/\s+/)).not.toContain('flex-1');
+  });
+
+  // ================================================================
+  // ETP-4770 — IdentifierMultiPicker re-edit label resolution
+  // ================================================================
+
+  describe('IdentifierMultiPicker — re-edit label resolution (ETP-4770)', () => {
+    const bpCol = { key: 'bp', label: 'Partner', type: 'selector', column: 'C_BPartner_ID' };
+
+    it('resolves the real label for a pre-selected "notEqual" value even though the grid excludes it', () => {
+      // Bug 3: grid rows already exclude the notEqual-filtered contact, so
+      // there is no in-memory label for it. The picker must still show the
+      // real name (from the backend distinct source), not the raw id.
+      distinctState.values = [{ id: 'BP1', _identifier: 'Acme Corp' }];
+      const value = {
+        rowOperator: 'and',
+        conditions: [{ field: 'bp', operator: 'notEqual', value: ['BP1'] }],
+      };
+      render(
+        <AdvancedFilterBuilder
+          columns={[bpCol]}
+          value={value}
+          rows={[]}
+          entity="business-partners"
+          apiBaseUrl="/api"
+        />,
+      );
+      expect(screen.getByText('Acme Corp')).toBeInTheDocument();
+      expect(screen.queryByText('BP1')).not.toBeInTheDocument();
+    });
+
+    it('fetches distinct values eagerly on mount when re-editing (selected already set)', () => {
+      // The picker's own popover is still closed (open=false) on mount — the
+      // fetch must not depend on the user clicking it open first.
+      distinctState.values = [{ id: 'BP1', _identifier: 'Acme Corp' }];
+      const value = {
+        rowOperator: 'and',
+        conditions: [{ field: 'bp', operator: 'equals', value: ['BP1'] }],
+      };
+      render(
+        <AdvancedFilterBuilder
+          columns={[bpCol]}
+          value={value}
+          rows={[{ bp: 'BP1', 'bp$_identifier': 'Acme Corp' }]}
+          entity="business-partners"
+          apiBaseUrl="/api"
+        />,
+      );
+      const call = distinctCalls.find((c) => c.field === 'bp');
+      expect(call).toBeDefined();
+      expect(call.options.enabled).toBe(true);
+    });
+
+    it('does not fetch eagerly for a fresh, empty condition (no selection yet)', () => {
+      // A brand new row (nothing selected) should stay lazy until the user
+      // opens the picker — no wasted network call.
+      const value = {
+        rowOperator: 'and',
+        conditions: [{ field: 'bp', operator: 'equals', value: [] }],
+      };
+      render(
+        <AdvancedFilterBuilder
+          columns={[bpCol]}
+          value={value}
+          rows={[]}
+          entity="business-partners"
+          apiBaseUrl="/api"
+        />,
+      );
+      const call = distinctCalls.find((c) => c.field === 'bp');
+      expect(call).toBeDefined();
+      expect(call.options.enabled).toBe(false);
+    });
+
+    it('opening the popover after re-editing "equals" surfaces other contacts, not just the grid-visible one', async () => {
+      // Bug 2: rows only contain the previously-selected contact. The
+      // backend distinct universe must still offer other contacts to
+      // search/select.
+      const user = userEvent.setup();
+      distinctState.values = [
+        { id: 'BP1', _identifier: 'Acme Corp' },
+        { id: 'BP2', _identifier: 'Globex Inc' },
+      ];
+      const value = {
+        rowOperator: 'and',
+        conditions: [{ field: 'bp', operator: 'equals', value: ['BP1'] }],
+      };
+      render(
+        <AdvancedFilterBuilder
+          columns={[bpCol]}
+          value={value}
+          rows={[{ bp: 'BP1', 'bp$_identifier': 'Acme Corp' }]}
+          entity="business-partners"
+          apiBaseUrl="/api"
+        />,
+      );
+      await user.click(screen.getByText('Acme Corp'));
+      expect(await screen.findByText('Globex Inc')).toBeInTheDocument();
+    });
+
+    // QA (ETP-4770): the eager-fetch gate is `selected.length > 0`, generic
+    // across every discrete identifier operator (equals/notEqual/inSet all
+    // funnel through IdentifierMultiPicker — see TEXTUAL_IDENT_OPS in the
+    // component). Verify "inSet" ("Es cualquiera de", multi-select equals)
+    // is covered too, not just single equals/notEqual.
+    it('fetches distinct values eagerly on mount when re-editing an "inSet" (multi-select) condition', () => {
+      distinctState.values = [
+        { id: 'BP1', _identifier: 'Acme Corp' },
+        { id: 'BP2', _identifier: 'Globex Inc' },
+      ];
+      const value = {
+        rowOperator: 'and',
+        conditions: [{ field: 'bp', operator: 'inSet', value: ['BP1', 'BP2'] }],
+      };
+      render(
+        <AdvancedFilterBuilder
+          columns={[bpCol]}
+          value={value}
+          rows={[{ bp: 'BP1', 'bp$_identifier': 'Acme Corp' }]}
+          entity="business-partners"
+          apiBaseUrl="/api"
+        />,
+      );
+      const call = distinctCalls.find((c) => c.field === 'bp');
+      expect(call).toBeDefined();
+      expect(call.options.enabled).toBe(true);
+      expect(screen.getByText(/Acme Corp/)).toBeInTheDocument();
+    });
+
+    // QA (ETP-4770): stale selected id whose backend record was deleted
+    // meanwhile — neither the distinct fetch nor the grid rows can resolve a
+    // label for it. The picker must fall back to the raw id without
+    // crashing (Alex's review note), not silently drop the selection.
+    it('falls back to the raw id (no crash) when a pre-selected id is missing from both distinct values and rows', () => {
+      distinctState.values = [{ id: 'BP2', _identifier: 'Globex Inc' }]; // BP1 no longer exists
+      const value = {
+        rowOperator: 'and',
+        conditions: [{ field: 'bp', operator: 'equals', value: ['BP1'] }],
+      };
+      expect(() =>
+        render(
+          <AdvancedFilterBuilder
+            columns={[bpCol]}
+            value={value}
+            rows={[]}
+            entity="business-partners"
+            apiBaseUrl="/api"
+          />,
+        ),
+      ).not.toThrow();
+      expect(screen.getByText('BP1')).toBeInTheDocument();
+    });
   });
 });
