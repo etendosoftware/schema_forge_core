@@ -538,6 +538,93 @@ describe('resolveCurated — window.statusFieldLabel propagates to curated schem
 });
 
 // ---------------------------------------------------------------------------
+// window.hidePrintWhen passthrough (ETP-4714)
+//
+// Generic field-condition gate for the Print button. resolve-curated.js does
+// NOT interpret the shape — it only copies `windowDecisions.hidePrintWhen`
+// onto `schema.window` verbatim when it is a truthy object. Interpretation of
+// the object's contents (operators, field names, etc.) lives in DetailView's
+// evaluateFieldCondition(), in the functional repo — out of scope here.
+// ---------------------------------------------------------------------------
+
+describe('resolveCurated — window.hidePrintWhen propagates to curated schema', () => {
+  const schemaRaw = makeSchema('finPayment', [
+    { name: 'status', columnName: 'Status', label: 'Status', type: 'string', visibility: 'readOnly' },
+  ]);
+
+  it('carries a plain object hidePrintWhen from decisions window to schema.window', async () => {
+    const decisions = makeDecisions('finPayment', { name: 'finPayment', fields: {} }, {
+      hidePrintWhen: { documentStatus: 'DR' },
+    });
+    const { schema } = await resolveCurated(schemaRaw, { rules: [] }, decisions);
+    assert.deepEqual(schema.window.hidePrintWhen, { documentStatus: 'DR' });
+  });
+
+  it('carries an object hidePrintWhen whose value is itself an array', async () => {
+    const decisions = makeDecisions('finPayment', { name: 'finPayment', fields: {} }, {
+      hidePrintWhen: { documentStatus: ['DR', 'CO'] },
+    });
+    const { schema } = await resolveCurated(schemaRaw, { rules: [] }, decisions);
+    assert.deepEqual(schema.window.hidePrintWhen, { documentStatus: ['DR', 'CO'] });
+  });
+
+  it('does not set hidePrintWhen when absent from decisions', async () => {
+    const decisions = makeDecisions('finPayment', { name: 'finPayment', fields: {} });
+    const { schema } = await resolveCurated(schemaRaw, { rules: [] }, decisions);
+    assert.equal('hidePrintWhen' in schema.window, false);
+  });
+
+  it('does not set hidePrintWhen when it is a string (typeof !== "object")', async () => {
+    const decisions = makeDecisions('finPayment', { name: 'finPayment', fields: {} }, {
+      hidePrintWhen: 'DR',
+    });
+    const { schema } = await resolveCurated(schemaRaw, { rules: [] }, decisions);
+    assert.equal('hidePrintWhen' in schema.window, false);
+  });
+
+  it('does not set hidePrintWhen when it is explicitly null (falsy guard)', async () => {
+    const decisions = makeDecisions('finPayment', { name: 'finPayment', fields: {} }, {
+      hidePrintWhen: null,
+    });
+    const { schema } = await resolveCurated(schemaRaw, { rules: [] }, decisions);
+    assert.equal('hidePrintWhen' in schema.window, false);
+  });
+
+  // `typeof [] === 'object'` in JS, so the guard explicitly excludes arrays via
+  // `!Array.isArray(...)` — otherwise a bare array would silently pass through even
+  // though it is not the documented "{ field: condition }" shape, and would reach
+  // evaluateFieldCondition() as a malformed condition that never matches.
+  it('does not set hidePrintWhen when it is a bare array (typeof [] === "object", excluded by Array.isArray guard)', async () => {
+    const decisions = makeDecisions('finPayment', { name: 'finPayment', fields: {} }, {
+      hidePrintWhen: ['DR'],
+    });
+    const { schema } = await resolveCurated(schemaRaw, { rules: [] }, decisions);
+    assert.equal('hidePrintWhen' in schema.window, false);
+  });
+
+  // Literal `true` (ETP-4714 purchase-invoice case): an unconditional hide on the
+  // form view only, without reaching for the sibling `hidePrint` flag that would
+  // also hide the unrelated list-view Print button. The guard has a dedicated
+  // `=== true` branch so this passes through as the boolean `true` itself, not
+  // as a truthy-object condition.
+  it('carries literal true hidePrintWhen through as the boolean true', async () => {
+    const decisions = makeDecisions('finPayment', { name: 'finPayment', fields: {} }, {
+      hidePrintWhen: true,
+    });
+    const { schema } = await resolveCurated(schemaRaw, { rules: [] }, decisions);
+    assert.equal(schema.window.hidePrintWhen, true);
+  });
+
+  it('does not set hidePrintWhen when it is explicitly false (falsy guard, documented explicitly)', async () => {
+    const decisions = makeDecisions('finPayment', { name: 'finPayment', fields: {} }, {
+      hidePrintWhen: false,
+    });
+    const { schema } = await resolveCurated(schemaRaw, { rules: [] }, decisions);
+    assert.equal('hidePrintWhen' in schema.window, false);
+  });
+});
+
+// ---------------------------------------------------------------------------
 // CLI entry point (lines 859-968)
 //
 // `runCli` and `printSchemaAndRules` are ONLY called when the module is executed

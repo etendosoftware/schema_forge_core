@@ -2182,13 +2182,13 @@ export function generatePageComponent(headerEntity, detailEntity, contract) {
   const hideDeleteButton = windowConfig.hideDeleteButton ?? false;
   const customTabsAfterBottom = windowConfig.customTabsAfterBottom ?? false;
   const hidePrint = windowConfig.hidePrint ?? false;
+  const hidePrintWhen = windowConfig.hidePrintWhen ?? null;
   const hideCreate = windowConfig.hideCreate ?? false;
   const hideSaveStatuses = windowConfig.hideSaveStatuses ?? [];
   const hideMoreMenu = windowConfig.hideMoreMenu ?? false;
   const hideMoreDetails = windowConfig.hideMoreDetails ?? false;
   const noHeaderBorder = windowConfig.noHeaderBorder ?? false;
   const toolbarBorderBottom = windowConfig.toolbarBorderBottom ?? false;
-  const saveBeforeProcesses = windowConfig.saveBeforeProcesses ?? false;
   const compactSidebarPadding = windowConfig.compactSidebarPadding ?? false;
   const whiteFormBackground = windowConfig.whiteFormBackground ?? false;
   const autoSaveOnBlur = windowConfig.autoSaveOnBlur ?? false;
@@ -2297,6 +2297,10 @@ export function generatePageComponent(headerEntity, detailEntity, contract) {
 
   // hidePrint prop (DetailView)
   const hidePrintProp = fragmentIf(hidePrint, '\n        hidePrint');
+  // hidePrintWhen prop (DetailView) — generic field-condition gate for the Print
+  // button, e.g. { documentStatus: 'DR' } or { quantity: { gt: 100 } }. Passed through
+  // as-is; DetailView's evaluateFieldCondition() interprets the shape.
+  const hidePrintWhenProp = jsonWrapIf('\n        hidePrintWhen={', hidePrintWhen, '}', !!hidePrintWhen);
   // hideSaveStatuses prop (DetailView)
   const hideSaveStatusesProp = jsonWrapIf('\n        hideSaveStatuses={', hideSaveStatuses, '}', hideSaveStatuses.length > 0);
   // hideMoreMenu prop (DetailView)
@@ -2307,10 +2311,6 @@ export function generatePageComponent(headerEntity, detailEntity, contract) {
   const noHeaderBorderProp = fragmentIf(noHeaderBorder, '\n        noHeaderBorder');
   // toolbarBorderBottom prop (DetailView)
   const toolbarBorderBottomProp = fragmentIf(toolbarBorderBottom, '\n        toolbarBorderBottom');
-  // saveBeforeProcesses prop (DetailView) — renders Save before the process buttons so a
-  // window-defined confirm/complete action (processOverrides) lands to the right of Save,
-  // matching the draftMode Save+Confirm pair used elsewhere.
-  const saveBeforeProcessesProp = fragmentIf(saveBeforeProcesses, '\n        saveBeforeProcesses');
   // compactSidebarPadding prop (DetailView)
   const compactSidebarPaddingProp = fragmentIf(compactSidebarPadding, '\n        compactSidebarPadding');
   const whiteFormBackgroundProp = fragmentIf(whiteFormBackground, '\n        whiteFormBackground');
@@ -2651,7 +2651,7 @@ ${menuActionStateStatements}`)}${fragmentIf(confirmModalName, `
         detailLabel="${entityDetailLabel}"` : ''}
         windowName={windowName}
         recordId={recordId}
-        breadcrumb={breadcrumb}${apiProp}${detailTabIndexProp}${detailTabOrderProp}${secondaryTabsProp}${formFooterProp}${customLinesProp}${primaryTabsProp}${othersLabelProp}${documentPreviewProp}${hideDeleteProp}${hideDeleteButtonProp}${customTabsAfterBottomProp}${hidePrintProp}${hideSaveStatusesProp}${hideMoreMenuProp}${hideMoreDetailsProp}${noHeaderBorderProp}${toolbarBorderBottomProp}${saveBeforeProcessesProp}${compactSidebarPaddingProp}${whiteFormBackgroundProp}${autoSaveOnBlurProp}${hideFormCardProp}${sidebarAboveTabsOnlyProp}${tabsSeparatorProp}${sidebarClassNameProp}${tabsBarPaddingXProp}${primaryTabsVariantProp}${toolbarPaddingXProp}${toolbarButtonSizeProp}${contentBgProp}${formCardPaddingProp}${formScrollPaddingXProp}${notesFieldProp}${dimensionsPanelFieldKeysProp}${customTabsProp}${customCompPropsBlock}${menuActionsProp}${draftModeProp}${requiredHeaderFieldsProp}${addLineGuardProp}${headerContentProp}${detailSortByProp}${titleFieldProp}${documentDateFieldProp}${salesThemeProp}${disableProcessedLockProp}${statusEnumLabelsProp}${statusFieldLabelProp}${lockedAlertProp}${showDetailFooterTotalsProp}${labelOverridesProp}${lineConfigProp}${linesLayoutProp}${balanceFooterProp}${sendDocumentDetailProp}${selectorPriceCurrencyProp}
+        breadcrumb={breadcrumb}${apiProp}${detailTabIndexProp}${detailTabOrderProp}${secondaryTabsProp}${formFooterProp}${customLinesProp}${primaryTabsProp}${othersLabelProp}${documentPreviewProp}${hideDeleteProp}${hideDeleteButtonProp}${customTabsAfterBottomProp}${hidePrintProp}${hidePrintWhenProp}${hideSaveStatusesProp}${hideMoreMenuProp}${hideMoreDetailsProp}${noHeaderBorderProp}${toolbarBorderBottomProp}${compactSidebarPaddingProp}${whiteFormBackgroundProp}${autoSaveOnBlurProp}${hideFormCardProp}${sidebarAboveTabsOnlyProp}${tabsSeparatorProp}${sidebarClassNameProp}${tabsBarPaddingXProp}${primaryTabsVariantProp}${toolbarPaddingXProp}${toolbarButtonSizeProp}${contentBgProp}${formCardPaddingProp}${formScrollPaddingXProp}${notesFieldProp}${dimensionsPanelFieldKeysProp}${customTabsProp}${customCompPropsBlock}${menuActionsProp}${draftModeProp}${requiredHeaderFieldsProp}${addLineGuardProp}${headerContentProp}${detailSortByProp}${titleFieldProp}${documentDateFieldProp}${salesThemeProp}${disableProcessedLockProp}${statusEnumLabelsProp}${statusFieldLabelProp}${lockedAlertProp}${showDetailFooterTotalsProp}${labelOverridesProp}${lineConfigProp}${linesLayoutProp}${balanceFooterProp}${sendDocumentDetailProp}${selectorPriceCurrencyProp}
         {...props}${effectiveWindowProp}${sidebarContentProp}
       />
 ${menuActionModals}${confirmModalName ? `
