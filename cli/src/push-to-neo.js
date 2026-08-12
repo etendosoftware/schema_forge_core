@@ -502,7 +502,7 @@ function summarizeExcludedEntities(contract, schemaRawData) {
   const names = (schemaRawData?.entities ?? [])
     .map((ent) => ent.name)
     .filter((name) => isEntityExcludedFromContract(contract, name));
-  return [...new Set(names)].sort();
+  return [...new Set(names)].sort((left, right) => left.localeCompare(right));
 }
 
 function reportDryRunPlan({
