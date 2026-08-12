@@ -1143,6 +1143,127 @@ describe('buildAdvancedFilterCriteria — booleanLabel mode (buildRowCriteria)',
 });
 
 // ---------------------------------------------------------------------------
+// ETP-4770: buildAdvancedFilterCriteria — date "Before" excludes boundary day
+// ---------------------------------------------------------------------------
+
+describe('buildAdvancedFilterCriteria — date lessThan (buildRowCriteria)', () => {
+  const columns = [{ key: 'orderDate', type: 'date', filterMode: 'date' }];
+
+  it('shifts the value back one day and uses lessOrEqual (excludes boundary)', () => {
+    const filter = {
+      rowOperator: 'and',
+      conditions: [{ field: 'orderDate', operator: 'lessThan', value: '2026-05-01' }],
+    };
+    const result = buildAdvancedFilterCriteria(filter, columns);
+    assert.deepEqual(result, [
+      { fieldName: 'orderDate', operator: 'lessOrEqual', value: '2026-04-30' },
+    ]);
+  });
+
+  it('does not affect greaterThan (After stays untouched)', () => {
+    const filter = {
+      rowOperator: 'and',
+      conditions: [{ field: 'orderDate', operator: 'greaterThan', value: '2026-05-01' }],
+    };
+    const result = buildAdvancedFilterCriteria(filter, columns);
+    assert.deepEqual(result, [
+      { fieldName: 'orderDate', operator: 'greaterThan', value: '2026-05-01' },
+    ]);
+  });
+
+  it('does not affect greaterOrEqual', () => {
+    const filter = {
+      rowOperator: 'and',
+      conditions: [{ field: 'orderDate', operator: 'greaterOrEqual', value: '2026-05-01' }],
+    };
+    const result = buildAdvancedFilterCriteria(filter, columns);
+    assert.deepEqual(result, [
+      { fieldName: 'orderDate', operator: 'greaterOrEqual', value: '2026-05-01' },
+    ]);
+  });
+
+  it('does not affect equals', () => {
+    const filter = {
+      rowOperator: 'and',
+      conditions: [{ field: 'orderDate', operator: 'equals', value: '2026-05-01' }],
+    };
+    const result = buildAdvancedFilterCriteria(filter, columns);
+    assert.deepEqual(result, [
+      { fieldName: 'orderDate', operator: 'equals', value: '2026-05-01' },
+    ]);
+  });
+
+  it('does not affect between', () => {
+    const filter = {
+      rowOperator: 'and',
+      conditions: [
+        { field: 'orderDate', operator: 'between', value: ['2026-04-01', '2026-04-30'] },
+      ],
+    };
+    const result = buildAdvancedFilterCriteria(filter, columns);
+    assert.deepEqual(result, [
+      { fieldName: 'orderDate', operator: 'greaterOrEqual', value: '2026-04-01' },
+      { fieldName: 'orderDate', operator: 'lessOrEqual', value: '2026-04-30' },
+    ]);
+  });
+
+  // QA (ETP-4770): boundary-crossing edge cases the shipped tests didn't
+  // exercise — year rollover and leap-year Feb 29, both handled by
+  // shiftDate()'s use of Date.setDate() rather than manual string math.
+  it('shifts back across a year boundary (Jan 1 -> Dec 31 previous year)', () => {
+    const filter = {
+      rowOperator: 'and',
+      conditions: [{ field: 'orderDate', operator: 'lessThan', value: '2026-01-01' }],
+    };
+    const result = buildAdvancedFilterCriteria(filter, columns);
+    assert.deepEqual(result, [
+      { fieldName: 'orderDate', operator: 'lessOrEqual', value: '2025-12-31' },
+    ]);
+  });
+
+  it('shifts back across a leap-year Feb 29 boundary', () => {
+    const filter = {
+      rowOperator: 'and',
+      conditions: [{ field: 'orderDate', operator: 'lessThan', value: '2028-03-01' }],
+    };
+    const result = buildAdvancedFilterCriteria(filter, columns);
+    assert.deepEqual(result, [
+      { fieldName: 'orderDate', operator: 'lessOrEqual', value: '2028-02-29' },
+    ]);
+  });
+
+  it('applies the shift inside an or-composed multi-condition row set', () => {
+    const filter = {
+      rowOperator: 'or',
+      conditions: [
+        { field: 'orderDate', operator: 'lessThan', value: '2026-05-01' },
+        { field: 'orderDate', operator: 'equals', value: '2026-06-15' },
+      ],
+    };
+    const result = buildAdvancedFilterCriteria(filter, columns);
+    assert.deepEqual(result, [
+      {
+        _constructor: 'AdvancedCriteria',
+        operator: 'or',
+        criteria: [
+          { fieldName: 'orderDate', operator: 'lessOrEqual', value: '2026-04-30' },
+          { fieldName: 'orderDate', operator: 'equals', value: '2026-06-15' },
+        ],
+      },
+    ]);
+  });
+
+  it('ignores lessThan with a null/empty value (no crash, no criteria emitted)', () => {
+    const filter = {
+      rowOperator: 'and',
+      conditions: [{ field: 'orderDate', operator: 'lessThan', value: null }],
+    };
+    const result = buildAdvancedFilterCriteria(filter, columns);
+    assert.equal(result, null);
+  });
+});
+
+// ---------------------------------------------------------------------------
 // Coverage: buildAdvancedFilterCriteria — empty/null/undefined value (line 490)
 // ---------------------------------------------------------------------------
 

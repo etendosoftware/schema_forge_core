@@ -215,6 +215,10 @@ export async function runOnboardingStream(fetchImpl, baseUrl, token, form, onMes
       countryCode: form.countryCode,
       ...(form.address ? { address: form.address } : {}),
       ...(form.fullName ? { fullName: form.fullName } : {}),
+      // Optional Tax ID from the Company step (ETP-4749) — matches
+      // com.etendoerp.go's EtendoGoJwtServlet, which reads this same JSON key
+      // ("fiscalIdValue") and persists it onto AD_OrgInfo.TaxID when non-blank.
+      ...(form.fiscalIdValue ? { fiscalIdValue: form.fiscalIdValue } : {}),
     }),
   });
 

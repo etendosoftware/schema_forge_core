@@ -27,6 +27,7 @@ import {
   canonicalizeMethod,
   NEO_READ_METHODS,
   resolveContractEntityMethods,
+  resolveEntityHideDelete,
   resolveEntityMethods,
 } from './lib/entity-methods.js';
 
@@ -1589,7 +1590,11 @@ function f21DecisionsEntityFor(decisions, entityName) {
 
 /** True when the entity block declares a RESTRICTION (not just an opt-out). */
 function f21DeclaresRestriction(conf) {
-  return conf?.readOnly === true || Array.isArray(conf?.methods);
+  // ETP-4745 — `hideDelete: true` is a restriction too (it now drops the
+  // enforced DELETE method, not just the UI affordance), so a mistyped
+  // `entities.<key>.hideDelete` key must be caught by the orphan check the same
+  // way a mistyped `readOnly`/`methods` key already is.
+  return conf?.readOnly === true || Array.isArray(conf?.methods) || conf?.hideDelete === true;
 }
 
 /**
@@ -1615,11 +1620,25 @@ function f21CheckReadInvariant(artifactName, entityName, rawMethods) {
  */
 function f21CheckEntityMethods({ artifactName, contract, decisions, entityName, windowReadOnly }) {
   const conf = f21DecisionsEntityFor(decisions, entityName);
-  const expected = resolveEntityMethods({
+  const entityReadOnly = typeof conf?.readOnly === 'boolean' ? conf.readOnly : undefined;
+  let expected = resolveEntityMethods({
     windowReadOnly,
-    entityReadOnly: typeof conf?.readOnly === 'boolean' ? conf.readOnly : undefined,
+    entityReadOnly,
     entityMethods: conf?.methods,
   });
+  // ETP-4745 — `hideDelete` (window- or entity-level) also drops DELETE from what
+  // the push will actually enforce (see `resolveContractEntityMethods`), so the
+  // "expected" side must fold it in too, via the same shared resolver, or a
+  // window/entity that declares hideDelete but no methods/readOnly restriction
+  // would falsely BLOCK here as a stale contract.
+  if (resolveEntityHideDelete({
+    windowReadOnly,
+    windowHideDelete: windowReadOnly || decisions?.window?.hideDelete === true,
+    entityReadOnly,
+    entityHideDelete: conf?.hideDelete === true,
+  })) {
+    expected = expected.filter((method) => method !== 'DELETE');
+  }
   const actual = resolveContractEntityMethods(contract, entityName);
   if (expected.join(',') === actual.join(',')) return null;
   return violation(
@@ -1653,7 +1672,12 @@ function f21CheckOrphanDeclarations(artifactName, decisions, crudNames) {
  * (`push-to-neo.js` → `neo-writer.populateWindowSpec`) and the offline XML delta
  * (`lib/neo-delta.js`) — read `apiPrediction.crud.<entity>.methods` /
  * `apiPrediction.window.readOnly` to set `ETGO_SF_ENTITY.ISGET/ISGETBYID/ISPOST/
- * ISPUT/ISPATCH/ISDELETE` (ETP-4254).
+ * ISPUT/ISPATCH/ISDELETE` (ETP-4254). Since ETP-4745 this also covers
+ * `window.hideDelete` / `entities.<key>.hideDelete`: those flags now drop the
+ * enforced DELETE method too (previously they only affected the frontend's
+ * `crud.<entity>.delete` — a UI-only affordance that never reached the DB row),
+ * so a hideDelete declaration whose contract wasn't regenerated is exactly as
+ * stale as a readOnly one, folded in via the shared `resolveEntityHideDelete()`.
  *
  * A stale contract is therefore not cosmetic: a window declared read-only in
  * decisions whose contract was not regenerated gets every write method granted
@@ -1664,9 +1688,12 @@ function f21CheckOrphanDeclarations(artifactName, decisions, crudNames) {
  *   1. GET + GETBYID appear in every emitted `crud.<entity>.methods` array.
  *   2. For every contract entity, `resolveContractEntityMethods(contract, entity)`
  *      (what the push WILL write) equals `resolveEntityMethods(decisions intent)`
- *      (what was declared). This subsumes the window-level case: `window.readOnly`
+ *      with `resolveEntityHideDelete(decisions intent)` folded in (what was
+ *      declared). This subsumes the window-level case: `window.readOnly`
  *      with a non-regenerated contract shows up as
- *      `[GET, GETBYID]` expected vs `[GET, …, DELETE]` actual.
+ *      `[GET, GETBYID]` expected vs `[GET, …, DELETE]` actual, and a declared
+ *      `hideDelete` with a non-regenerated contract shows up as DELETE missing
+ *      from the expected side but present in the actual side.
  *   3. Every restricting `entities.<key>` declaration maps to a real contract
  *      entity, so a mistyped key cannot silently no-op.
  *
