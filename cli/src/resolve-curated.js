@@ -873,7 +873,6 @@ const WINDOW_BOOLEAN_TRUE_PROPS = [
   'disableProcessedLock',
   'noHeaderBorder',
   'toolbarBorderBottom',
-  'saveBeforeProcesses',
   'compactSidebarPadding',
   'whiteFormBackground',
   'hideFormCard',
@@ -899,7 +898,7 @@ export const WINDOW_KEY_ORDER = [
   'id', 'name', 'primaryEntity', 'category', 'agentPrompt',
   'sidebarLayout', 'templateConfig',
   'documentPreview', 'notesField', 'relatedDocuments',
-  'hideDeleteWhenComplete', 'customTabsAfterBottom', 'hidePrint', 'hideCreate', 'readOnly', 'hideSaveStatuses',
+  'hideDeleteWhenComplete', 'customTabsAfterBottom', 'hidePrint', 'hidePrintWhen', 'hideCreate', 'readOnly', 'hideSaveStatuses',
   'hideMoreMenu', 'hideMoreDetails', 'hideDetailForm', 'hideDelete', 'hideDeleteButton', 'contentBg',
   'hideListFilters', 'hideStatusFilter', 'hideLink', 'hideEyeCount', 'customListIcons', 'breadcrumb',
   'customComponents', 'menuActions', 'processOverrides',
@@ -909,7 +908,7 @@ export const WINDOW_KEY_ORDER = [
   'labelOverrides', 'primaryTabs', 'othersLabel',
   'disableProcessedLock', 'titleField',
   'listViewOptions', 'listBaseFilter', 'quickFilters', 'subsetFilters',
-  'dateFilterKey', 'statusEnumLabels', 'statusFieldLabel', 'lockedAlert', 'noHeaderBorder', 'toolbarBorderBottom', 'saveBeforeProcesses', 'compactSidebarPadding', 'whiteFormBackground', 'hideFormCard', 'sidebarAboveTabsOnly', 'tabsSeparator', 'sidebarClassName', 'formCardPadding', 'formScrollPaddingX', 'tabsBarPaddingX', 'primaryTabsVariant', 'toolbarPaddingX', 'toolbarButtonSize', 'listbarPaddingX', 'tablePaddingX', 'lineEntityConfig',
+  'dateFilterKey', 'statusEnumLabels', 'statusFieldLabel', 'lockedAlert', 'noHeaderBorder', 'toolbarBorderBottom', 'compactSidebarPadding', 'whiteFormBackground', 'hideFormCard', 'sidebarAboveTabsOnly', 'tabsSeparator', 'sidebarClassName', 'formCardPadding', 'formScrollPaddingX', 'tabsBarPaddingX', 'primaryTabsVariant', 'toolbarPaddingX', 'toolbarButtonSize', 'listbarPaddingX', 'tablePaddingX', 'lineEntityConfig',
   'extraTabs', 'attachments', 'customPanelTabs', 'rowQuickActions',
   'sendDocument',
   'layoutType', 'linesLayout', 'balanceFooter', 'selectorPriceCurrency',
@@ -975,6 +974,16 @@ function applyWindowDecisions(window, windowDecisions) {
 
   if (windowDecisions.hideSaveStatuses?.length) {
     window.hideSaveStatuses = windowDecisions.hideSaveStatuses;
+  }
+  // Generic field-condition gate for the Print button (e.g. { documentStatus: 'DR' },
+  // { documentStatus: ['DR', 'CO'] }, { quantity: { gt: 100 } }, or literal `true` for an
+  // unconditional match that still only affects the detail view, not the list view's own
+  // `hidePrint`). Passed through as-is — DetailView's evaluateFieldCondition() (functional
+  // repo, not this package) is the only place that interprets the shape, so new operators
+  // never need a core publish.
+  if (windowDecisions.hidePrintWhen === true ||
+    (windowDecisions.hidePrintWhen && typeof windowDecisions.hidePrintWhen === 'object' && !Array.isArray(windowDecisions.hidePrintWhen))) {
+    window.hidePrintWhen = windowDecisions.hidePrintWhen;
   }
   if (Array.isArray(windowDecisions.summaryFields)) {
     window.summaryFields = windowDecisions.summaryFields;
