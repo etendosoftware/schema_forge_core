@@ -749,3 +749,122 @@ describe('populateSpec (report)', () => {
     );
   });
 });
+
+// ---------------------------------------------------------------------------
+// ETP-4793 — `exclude: true` on the live write path
+// ---------------------------------------------------------------------------
+
+/**
+ * `methodFlagsFor` now carries an `isIncluded` axis alongside the six HTTP verbs
+ * (see `buildEntityMethodFlagsResolver` in push-to-neo.js). When it answers 'N'
+ * for a tab, `populateWindowSpec` must close BOTH the ETGO_SF_ENTITY row and
+ * every ETGO_SF_FIELD row underneath it — closing the entity alone would be
+ * enough for behaviour, since every reader filters ISINCLUDED before it resolves
+ * a field, but field rows still claiming 'Y' misreport the agent surface.
+ */
+describe('populateSpec (window) — entities closed by exclude: true', () => {
+  const SPEC_ID = 'SPEC001';
+  const MODULE_ID = 'MOD001';
+  const WINDOW_ID = 'WIN001';
+  const OPEN_TAB = 'TAB001';
+  const CLOSED_TAB = 'TAB002';
+  const OPEN_TABLE = 'TBL001';
+  const CLOSED_TABLE = 'TBL002';
+
+  const ALL_VERBS_Y = {
+    isGet: 'Y', isGetbyid: 'Y', isPost: 'Y', isPut: 'Y', isPatch: 'Y', isDelete: 'Y',
+  };
+
+  function clientWithOneClosedTab() {
+    return createMockClient({
+      specs: [[SPEC_ID, { spec_type: 'W', ad_window_id: WINDOW_ID, ad_process_id: null }]],
+      tabs: [
+        { ad_tab_id: OPEN_TAB, name: 'Header', ad_table_id: OPEN_TABLE, seqno: 10, ad_window_id: WINDOW_ID },
+        { ad_tab_id: CLOSED_TAB, name: 'Audit Log', ad_table_id: CLOSED_TABLE, seqno: 20, ad_window_id: WINDOW_ID },
+      ],
+      columns: [
+        { ad_column_id: 'COL001', columnname: 'DocumentNo', position: 10, ad_table_id: OPEN_TABLE },
+        // Same column NAME on both tables — the entity-blind flat-column rule in
+        // push-to-neo would keep this one open, so the entity-level close has to
+        // be what shuts it.
+        { ad_column_id: 'COL002', columnname: 'DocumentNo', position: 10, ad_table_id: CLOSED_TABLE },
+        { ad_column_id: 'COL003', columnname: 'Rate', position: 20, ad_table_id: CLOSED_TABLE },
+      ],
+    });
+  }
+
+  /** The tab whose contract entity is missing answers isIncluded: 'N'. */
+  const methodFlagsFor = (tab) => ({
+    isIncluded: tab.ad_tab_id === CLOSED_TAB ? 'N' : 'Y',
+    ...ALL_VERBS_Y,
+  });
+
+  /** Entity INSERT param order: [id, specId, tabId, ?, name, isincluded, …]. */
+  function entityInsertsByName(client) {
+    const byName = {};
+    for (const q of client.queryLog) {
+      if (q.sql.includes('INSERT INTO etgo_sf_entity')) {
+        byName[q.params[4]] = { entityId: q.params[0], isIncluded: q.params[5] };
+      }
+    }
+    return byName;
+  }
+
+  /** Field INSERT param order: [id, entityId, columnId, moduleId, isincluded, …]. */
+  function fieldInsertsByColumn(client) {
+    const byColumn = {};
+    for (const q of client.queryLog) {
+      if (q.sql.includes('INSERT INTO etgo_sf_field')) {
+        byColumn[q.params[2]] = { entityId: q.params[1], isIncluded: q.params[4] };
+      }
+    }
+    return byColumn;
+  }
+
+  it("writes ISINCLUDED='N' on the closed entity and 'Y' on its sibling", async () => {
+    const client = clientWithOneClosedTab();
+
+    await populateSpec(client, { specId: SPEC_ID, moduleId: MODULE_ID, methodFlagsFor });
+
+    const entities = entityInsertsByName(client);
+    assert.equal(entities.Header.isIncluded, 'Y');
+    assert.equal(entities['Audit Log'].isIncluded, 'N');
+  });
+
+  it("closes every field of the closed entity, sharing a column name or not", async () => {
+    const client = clientWithOneClosedTab();
+
+    await populateSpec(client, { specId: SPEC_ID, moduleId: MODULE_ID, methodFlagsFor });
+
+    const fields = fieldInsertsByColumn(client);
+    assert.equal(fields.COL001.isIncluded, 'Y', 'Header.DocumentNo stays open');
+    assert.equal(
+      fields.COL002.isIncluded, 'N',
+      'Audit Log.DocumentNo is closed despite Header having a DocumentNo too',
+    );
+    assert.equal(fields.COL003.isIncluded, 'N', 'Audit Log.Rate is closed');
+  });
+
+  it('reports the closed entities in closedEntityCount', async () => {
+    const client = clientWithOneClosedTab();
+
+    const result = await populateSpec(client, { specId: SPEC_ID, moduleId: MODULE_ID, methodFlagsFor });
+
+    assert.equal(result.entityCount, 2, 'a closed entity is still written, not skipped');
+    assert.equal(result.fieldCount, 3);
+    assert.equal(result.closedEntityCount, 1);
+  });
+
+  it('counts nothing closed when every tab is included', async () => {
+    const client = clientWithOneClosedTab();
+
+    const result = await populateSpec(client, {
+      specId: SPEC_ID,
+      moduleId: MODULE_ID,
+      methodFlagsFor: () => ({ isIncluded: 'Y', ...ALL_VERBS_Y }),
+    });
+
+    assert.equal(result.closedEntityCount, 0);
+    for (const f of Object.values(fieldInsertsByColumn(client))) assert.equal(f.isIncluded, 'Y');
+  });
+});

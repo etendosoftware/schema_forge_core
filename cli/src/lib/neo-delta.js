@@ -39,7 +39,11 @@
 
 import { newEtendoId } from './etendo-uuid.js';
 import { indexByNaturalKey } from './etgo-xml-parser.js';
-import { methodsToXmlFlags, resolveContractEntityMethods } from './entity-methods.js';
+import {
+  isEntityExcludedFromContract,
+  methodsToXmlFlags,
+  resolveContractEntityMethods,
+} from './entity-methods.js';
 
 /**
  * Local copy of mapVisibility() from push-to-neo.js. Inlined to keep this
@@ -249,6 +253,10 @@ export function computeWindowDelta(args) {
   // Map from naturalKey → spec/entity/field UUID (for deterministic FKs).
   const entityIdByNK = new Map();
 
+  // ETP-4793 — entity UUIDs whose contract entity is absent (`exclude: true`).
+  // Their field rows are closed too, mirroring `populateWindowSpec`.
+  const closedEntityIds = new Set();
+
   let entitySeq = 0;
   for (const tab of adTabs) {
     entitySeq++;
@@ -273,6 +281,12 @@ export function computeWindowDelta(args) {
       || desiredEntityByTabName.get(tab.name)
       || tab.name;
 
+    // ETP-4793 — mirror the live push: a tab the contract does not declare
+    // (`exclude: true`) is closed on the entity row. The live counterpart is
+    // `buildEntityMethodFlagsResolver` → `upsertEntity({ isIncluded: 'N' })`.
+    const entityExcluded = isEntityExcludedFromContract(contract, entityName);
+    if (entityExcluded) closedEntityIds.add(entityId);
+
     const entityRow = {
       _naturalKey: entityNK,
       ETGO_SF_ENTITY_ID: entityId,
@@ -281,7 +295,7 @@ export function computeWindowDelta(args) {
       AD_MODULE_ID: moduleId,
       NAME: entityName,
       SEQNO: String(entitySeq * 10),
-      ISINCLUDED: 'Y',
+      ISINCLUDED: entityExcluded ? 'N' : 'Y',
       // ETP-4254 — the CRUD flags are NO LONGER hardcoded to 'Y'. push-to-neo's
       // stepPopulateSpec hands populateWindowSpec a per-tab resolver built from
       // the SAME contract value read here (see buildEntityMethodFlagsResolver),
@@ -323,11 +337,20 @@ export function computeWindowDelta(args) {
     entityIdByNK,
     prevFieldByNatural,
     fieldUpserts,
+    closedEntityIds,
   });
 
   // ---- Mirror live-push behaviour: never create NEW records with ISINCLUDED=N
   // stepExcludeNonContractFields only updates EXISTING rows; it never inserts
   // a fresh ETGO_SF_FIELD record for a field that was never in the DB.
+  //
+  // ETP-4793 — this also prunes the field rows of a NEWLY closed entity, while
+  // the live `populateWindowSpec` does insert them with ISINCLUDED='N'. That gap
+  // is pre-existing and unchanged in kind (it already applied to every
+  // non-contract field of a brand-new window); on the reference instance all 90
+  // closed entities already have their rows in the prev snapshot, so they are
+  // kept and flipped. Widening the rule was deliberately left out of this change
+  // rather than folded in unmeasured.
   const prunedFieldUpserts = fieldUpserts.filter(
     f => prevFieldByNatural.has(f._naturalKey) || f.ISINCLUDED === 'Y',
   );
@@ -563,6 +586,7 @@ function applyContractVisibilityToFields({
   entityIdByNK,
   prevFieldByNatural,
   fieldUpserts,
+  closedEntityIds = new Set(),
 }) {
   const contractFields = extractFieldsFromContract(contract.backendContract);
   const fieldDefaultExprs = buildFieldDefaultExprMap(decisions);
@@ -595,6 +619,15 @@ function applyContractVisibilityToFields({
   }
 
   for (const row of fieldUpserts) {
+    // ETP-4793 — a field of an entity the contract does not declare is closed
+    // outright, before the flat-column-set rule below gets a say. That rule is
+    // entity-blind on purpose (it mirrors `stepExcludeNonContractFields`
+    // bug-for-bug), which is exactly why an excluded entity's `Name` column used
+    // to survive: some OTHER entity's contract has a column called `Name`.
+    if (closedEntityIds.has(row.ETGO_SF_ENTITY_ID)) {
+      row.ISINCLUDED = 'N';
+      continue;
+    }
     const colHit = contractFieldByEntityAndColumn.get(
       `${row.ETGO_SF_ENTITY_ID}/${String(row.AD_COLUMN_ID)}`,
     );

@@ -25,7 +25,12 @@ import { computeWindowDelta, serializeDelta } from './lib/neo-delta.js';
 import { resolveAgentPromptRefs } from './lib/agent-prompt-ref.js';
 import { loadEtgoXmlSnapshot } from './lib/etgo-xml-parser.js';
 import { GO_MODULE_ID } from './lib/constants.js';
-import { methodsToWriterFlags, NEO_HTTP_METHODS, resolveContractEntityMethods } from './lib/entity-methods.js';
+import {
+  isEntityExcludedFromContract,
+  methodsToWriterFlags,
+  NEO_HTTP_METHODS,
+  resolveContractEntityMethods,
+} from './lib/entity-methods.js';
 import { isMainModule } from './utils.js';
 
 const __filename = fileURLToPath(import.meta.url);
@@ -286,7 +291,9 @@ export async function pushToNeo(windowName, options = {}) {
   const allFields = extractFieldsFromContract(contract.backendContract);
 
   if (options.dryRun === true) {
-    return reportDryRunPlan({ allFields, specName, windowId, windowDisplayName, windowName, contract });
+    return reportDryRunPlan({
+      allFields, specName, windowId, windowDisplayName, windowName, contract, schemaRawData,
+    });
   }
 
   return executePushTransaction({
@@ -482,11 +489,35 @@ function summarizeRestrictedEntityMethods(contract) {
   return restricted;
 }
 
-function reportDryRunPlan({ allFields, specName, windowId, windowDisplayName, windowName, contract }) {
+/**
+ * ETP-4793 — the entities the push would close (`ISINCLUDED = 'N'`) because the
+ * contract does not declare them. Read off `schemaRawData`, not the contract,
+ * precisely because these entities are the ones the contract is missing.
+ *
+ * @param {object} contract - parsed contract.json
+ * @param {object} schemaRawData - parsed schema-raw.json
+ * @returns {string[]} curated entity names, sorted
+ */
+function summarizeExcludedEntities(contract, schemaRawData) {
+  const names = (schemaRawData?.entities ?? [])
+    .map((ent) => ent.name)
+    .filter((name) => isEntityExcludedFromContract(contract, name));
+  return [...new Set(names)].sort();
+}
+
+function reportDryRunPlan({
+  allFields, specName, windowId, windowDisplayName, windowName, contract, schemaRawData,
+}) {
   const entityMethods = summarizeRestrictedEntityMethods(contract);
+  const excludedEntities = summarizeExcludedEntities(contract, schemaRawData);
   const plan = {
     spec: { action: 'upsertSpec', params: { windowId, name: specName, specType: 'W' } },
-    populate: { action: 'populateSpec', params: { specId: '(from step 1)' }, entityMethods },
+    populate: {
+      action: 'populateSpec',
+      params: { specId: '(from step 1)' },
+      entityMethods,
+      excludedEntities,
+    },
     fields: allFields.map(f => {
       const vis = mapVisibility(f.visibility);
       return {
@@ -520,6 +551,12 @@ function reportDryRunPlan({ allFields, specName, windowId, windowDisplayName, wi
       console.log(`      ${name}: ${entityMethods[name].join(', ')}`);
     }
   }
+  if (excludedEntities.length === 0) {
+    console.log(`    Entities closed (exclude: true): none`);
+  } else {
+    console.log(`    Entities closed (exclude: true) — ISINCLUDED='N' on entity + fields:`);
+    console.log(`      ${excludedEntities.join(', ')}`);
+  }
   console.log(`\n  Step 3: ${plan.fields.length} field updates via upsertField`);
 
   const included = plan.fields.filter(f => f.params.isIncluded === 'Y');
@@ -537,6 +574,7 @@ function reportDryRunPlan({ allFields, specName, windowId, windowDisplayName, wi
       included: included.length,
       excluded: excluded.length,
       readOnly: readOnly.length,
+      excludedEntities,
     },
   };
 }
@@ -610,12 +648,19 @@ async function stepUpsertSpec(client, ctx) {
  * pure function of (contract, NAME), and NAME is already asserted equal between
  * the two paths by the XML regeneration check.
  *
- * A tab with no contract entity (excluded entity, extra AD tab) falls through to
- * the window-level default inside `resolveContractEntityMethods` — i.e. still
- * read-only for a `window.readOnly` window, all methods otherwise.
+ * ETP-4793 — a tab with no contract entity (`exclude: true` in `decisions.json`,
+ * or an extra AD tab) now also gets `isIncluded: 'N'`, which is what actually
+ * closes it on both the REST and MCP surfaces; see
+ * `isEntityExcludedFromContract()` for why that column and not a new one. Its
+ * method flags still fall through to the window-level default, deliberately —
+ * they are unreachable once the entity is not included, and zeroing GET would
+ * break the invariant `entity-methods.js` enforces.
+ *
+ * `isIncluded` is `'Y'` for every entity the contract does declare, i.e. the
+ * value `upsertEntity` already defaults to, so nothing changes for them.
  *
  * @param {object} ctx - push context carrying `schemaRawData` + `contract`
- * @returns {(tab: {name: string}) => object} writer method flags
+ * @returns {(tab: {name: string}) => object} writer entity flags, `isIncluded` included
  */
 export function buildEntityMethodFlagsResolver({ schemaRawData, contract }) {
   const byTabName = new Map();
@@ -624,7 +669,10 @@ export function buildEntityMethodFlagsResolver({ schemaRawData, contract }) {
   }
   return (tab) => {
     const entityName = byTabName.get(tab?.name) ?? tab?.name;
-    return methodsToWriterFlags(resolveContractEntityMethods(contract, entityName));
+    return {
+      isIncluded: isEntityExcludedFromContract(contract, entityName) ? 'N' : 'Y',
+      ...methodsToWriterFlags(resolveContractEntityMethods(contract, entityName)),
+    };
   };
 }
 

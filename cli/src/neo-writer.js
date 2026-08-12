@@ -540,12 +540,18 @@ async function populateWindowSpec(client, { specId, windowId, moduleId, excludeS
   // flag to 'N' when not supplied, so an entity must ALWAYS receive an explicit
   // set: the old `includeAllMethods: false` path left entities with no read
   // access, which is never a legitimate outcome.
+  //
+  // ETP-4793 — the resolver may also return `isIncluded: 'N'` for a tab the
+  // contract does not declare (`exclude: true`). The default resolver keeps
+  // `upsertEntity`'s own `'Y'` default, so callers that pass no resolver are
+  // unaffected.
   const resolveMethodFlags = (tab) => (
     methodFlagsFor ? methodFlagsFor(tab) : { ...ALL_METHOD_FLAGS }
   );
 
   let entityCount = 0;
   let fieldCount = 0;
+  let closedEntityCount = 0;
   const entities = [];
   const changes = {
     entities: { created: 0, updated: 0, deleted: 0 },
@@ -561,6 +567,17 @@ async function populateWindowSpec(client, { specId, windowId, moduleId, excludeS
       || existingEntityByName.get(tab.name)
       || null;
 
+    const entityFlags = resolveMethodFlags(tab);
+    // ETP-4793 — an entity the contract does not declare is closed, and so are
+    // its fields. Closing the entity alone would suffice for behaviour (every
+    // reader filters ETGO_SF_ENTITY.ISINCLUDED before it ever reaches a field),
+    // but leaving 15 field rows per closed entity claiming ISINCLUDED='Y' makes
+    // the data lie to anyone counting the agent surface — which is how the gap
+    // went unnoticed. `visibility` is deliberately NOT written here: the offline
+    // XML delta does not model that column at all (IMP-26 §4.2), and NULL next
+    // to 'N'/'N' is already the coherent pair under `mapVisibility`.
+    const entityIsClosed = entityFlags.isIncluded === 'N';
+    if (entityIsClosed) closedEntityCount++;
     const { entityId, created: entityCreated } = await upsertEntity(client, {
       specId,
       tabId: tab.ad_tab_id,
@@ -568,7 +585,7 @@ async function populateWindowSpec(client, { specId, windowId, moduleId, excludeS
       name: tab.name,
       seqNo: entitySeqNo,
       entityId: existingEntityId,
-      ...resolveMethodFlags(tab),
+      ...entityFlags,
       audit,
     });
     entityCount++;
@@ -618,6 +635,7 @@ async function populateWindowSpec(client, { specId, windowId, moduleId, excludeS
         moduleId,
         fieldId: existingFieldId,
         seqNo: fieldSeqCounter * 10,
+        ...(entityIsClosed ? { isIncluded: 'N' } : {}),
         audit,
       });
       fieldCount++;
@@ -633,7 +651,7 @@ async function populateWindowSpec(client, { specId, windowId, moduleId, excludeS
   // Delete stale entities (exist in DB but tab no longer in AD)
   await deleteStaleEntities(existingEntityByTab, visitedEntityIds, client, changes);
 
-  return { entityCount, fieldCount, entities, changes };
+  return { entityCount, fieldCount, closedEntityCount, entities, changes };
 }
 
 async function deleteDuplicateEntities(existingEntityResult, entityId, client, changes) {
