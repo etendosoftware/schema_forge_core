@@ -761,10 +761,20 @@ function IdentifierMultiPicker({ col, entity, apiBaseUrl, rows, value, onChange,
   // remount (popover reopen) reset `distinct.values` back to `[]`. Fetching
   // whenever there is a pre-existing selection makes the picker resolve
   // full labels and full searchable options independent of the grid.
+  const willFetch = !!(entity && apiBaseUrl && col?.key);
   const distinct = useDistinctValues(entity, col?.key, {
-    enabled: !!(entity && apiBaseUrl && col?.key && (open || selected.length > 0)),
+    enabled: !!(willFetch && (open || selected.length > 0)),
     apiBaseUrl,
   });
+
+  // ETP-4770: tracks whether the FIRST distinct fetch for this mount has
+  // ever completed (settled), independent of the exact instant `distinct.
+  // loading` flips — see the `pending` derivation below for why this is
+  // needed in addition to `distinct.loading` and not a replacement for it.
+  const [settled, setSettled] = useState(false);
+  useEffect(() => {
+    if (willFetch && !distinct.loading) setSettled(true);
+  }, [willFetch, distinct.loading]);
 
   // In-memory seed: use the grid's $_identifier labels so the list shows
   // something usable before the backend fetch resolves. The backend will
@@ -801,11 +811,27 @@ function IdentifierMultiPicker({ col, entity, apiBaseUrl, rows, value, onChange,
         if (!byId.has(id)) byId.set(id, opt);
       }
     }
+    // ETP-4770: a selected id absent from both sources above is either
+    // (a) genuinely unresolvable (backend unavailable, or settled without
+    // ever finding it — e.g. paginated past it) or (b) still in flight —
+    // the very common "notEqual" case, where the grid excludes the
+    // selected row so `inMemoryOptions` never has it, and the eager
+    // distinct fetch (see `enabled` above) hasn't resolved yet. Only (a)
+    // may fall back to showing the raw id; (b) must render a loading
+    // placeholder instead — the raw id must never be visible to the user,
+    // not even for a single frame.
     for (const id of selected) {
-      if (!byId.has(id)) byId.set(id, { id, label: inMemoryOptions.get(id)?.label ?? id });
+      if (byId.has(id)) continue;
+      const knownLabel = inMemoryOptions.get(id)?.label;
+      if (knownLabel != null) {
+        byId.set(id, { id, label: knownLabel, pending: false });
+        continue;
+      }
+      const pending = willFetch && (distinct.loading || !settled);
+      byId.set(id, { id, label: pending ? '' : id, pending });
     }
     return [...byId.values()].sort((a, b) => a.label.localeCompare(b.label));
-  }, [distinct.values, distinct.search, inMemoryOptions, selected]);
+  }, [distinct.values, distinct.search, inMemoryOptions, selected, willFetch, settled]);
 
   useEffect(() => {
     const node = sentinelRef.current;
@@ -824,16 +850,24 @@ function IdentifierMultiPicker({ col, entity, apiBaseUrl, rows, value, onChange,
     onChange(next);
   };
 
+  // ETP-4770: carries `pending` alongside the label so the trigger can
+  // render a loading placeholder instead of ever falling back to the raw id.
   const selectedLabels = useMemo(() => {
-    const byId = new Map(mergedOptions.map((o) => [o.id, o.label]));
-    return selected.map((id) => byId.get(id) ?? id);
+    const byId = new Map(mergedOptions.map((o) => [o.id, o]));
+    return selected.map((id) => byId.get(id) ?? { id, label: id, pending: false });
   }, [mergedOptions, selected]);
 
+  const firstSelected = selectedLabels[0];
   const triggerLabel = selected.length === 0
     ? ui('advancedFilterSelectValue')
-    : selected.length === 1
-      ? selectedLabels[0]
-      : `${selectedLabels[0]} +${selected.length - 1}`;
+    : (
+      <span className="inline-flex items-center gap-1 truncate">
+        {firstSelected?.pending
+          ? <Loader2 className="h-3 w-3 animate-spin" data-testid="Loader2__4eedf1" />
+          : <span className="truncate">{firstSelected?.label}</span>}
+        {selected.length > 1 && <span>{`+${selected.length - 1}`}</span>}
+      </span>
+    );
 
   const colLabelKey = labelOf(col.column) ?? col.label ?? col.key;
 
@@ -848,7 +882,10 @@ function IdentifierMultiPicker({ col, entity, apiBaseUrl, rows, value, onChange,
           ].join(' ')}
         >
           <span className="truncate">{triggerLabel}</span>
-          {distinct.loading && (
+          {/* ETP-4770: the pending-label spinner inside `triggerLabel` already
+             covers "loading" when a selected value's name isn't known yet —
+             suppress this generic one then, or the two render side by side. */}
+          {distinct.loading && !firstSelected?.pending && (
             <Loader2
               className="h-3.5 w-3.5 animate-spin text-muted-foreground shrink-0 ml-1"
               data-testid="Loader2__4eedf1" />
@@ -892,7 +929,11 @@ function IdentifierMultiPicker({ col, entity, apiBaseUrl, rows, value, onChange,
                 >
                   {isSelected && <Check className="h-3 w-3" data-testid="Check__4eedf1" />}
                 </span>
-                <span className="flex-1 truncate">{opt.label}</span>
+                <span className="flex-1 truncate">
+                  {opt.pending
+                    ? <Loader2 className="h-3 w-3 animate-spin text-muted-foreground" data-testid="Loader2__4eedf1" />
+                    : opt.label}
+                </span>
               </button>
             );
           })}
