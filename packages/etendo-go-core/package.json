@@ -17,6 +17,7 @@
     "./onboarding/oauth-return-to": "./src/onboarding/oauthReturnTo.js",
     "./onboarding/field-limits": "./src/onboarding/fieldLimits.js",
     "./onboarding/error-messages": "./src/onboarding/errorMessages.js"
+    ,"./checkout": "./src/checkout/index.js"
   },
   "files": [
     "src",
