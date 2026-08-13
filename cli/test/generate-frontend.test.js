@@ -949,6 +949,39 @@ describe('generatePageComponent — window.hideDeleteButton', () => {
 });
 
 // ---------------------------------------------------------------------------
+// window.hidePrintWhen passthrough (ETP-4714)
+//
+// hidePrintWhen is a generic field-condition gate for the Print button
+// (e.g. { documentStatus: 'DR' }). generate-frontend.js does not interpret
+// its contents — it only JSON-stringifies whatever is in windowConfig and
+// emits it as a literal `hidePrintWhen={...}` prop on DetailView; the
+// component that actually evaluates the condition lives in another repo.
+// ---------------------------------------------------------------------------
+
+describe('generatePageComponent — window.hidePrintWhen (ETP-4714)', () => {
+  function withWindow(overrides) {
+    const clone = JSON.parse(JSON.stringify(masterDetailContract));
+    clone.frontendContract.window = { ...clone.frontendContract.window, ...overrides };
+    return clone;
+  }
+
+  it('emits hidePrintWhen as a literal JSON object when present', () => {
+    const code = generatePageComponent('order', 'orderLine', withWindow({ hidePrintWhen: { documentStatus: 'DR' } }));
+    assert.ok(code.includes('hidePrintWhen={{"documentStatus":"DR"}}'), 'should emit hidePrintWhen with the JSON-stringified object');
+  });
+
+  it('does NOT emit the hidePrintWhen prop when the flag is absent (no regression)', () => {
+    const code = generatePageComponent('order', 'orderLine', masterDetailContract);
+    assert.equal(code.includes('hidePrintWhen'), false, 'unset flag must not emit any hidePrintWhen reference');
+  });
+
+  it('does NOT emit the hidePrintWhen prop when explicitly null', () => {
+    const code = generatePageComponent('order', 'orderLine', withWindow({ hidePrintWhen: null }));
+    assert.equal(code.includes('hidePrintWhen'), false, 'explicit null must not emit any hidePrintWhen reference');
+  });
+});
+
+// ---------------------------------------------------------------------------
 // sendDocument recipient-policy override emission (ETP-4226)
 // ---------------------------------------------------------------------------
 
