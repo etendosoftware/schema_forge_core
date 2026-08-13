@@ -16,8 +16,21 @@ describe('DateField — exports and dependencies', () => {
     assert.match(src, /export default DateField/);
   });
 
-  it('imports the Calendar icon plus chevron icons from lucide-react', () => {
-    assert.match(src, /Calendar as CalendarIcon[\s\S]*?ChevronDown[\s\S]*?ChevronLeft[\s\S]*?ChevronRight[\s\S]*?from\s+['"]lucide-react['"]/);
+  it('imports only the Calendar icon from lucide-react (chevrons now live in date-picker-chrome.jsx, ETP-4771)', () => {
+    assert.match(src, /Calendar as CalendarIcon[\s\S]*?from\s+['"]lucide-react['"]/);
+    assert.doesNotMatch(src, /ChevronDown/);
+    assert.doesNotMatch(src, /ChevronLeft/);
+    assert.doesNotMatch(src, /ChevronRight/);
+  });
+
+  it('imports HeaderRow, PillButton, PickerTabs and PickerGrid from the shared date-picker-chrome.jsx (ETP-4771)', () => {
+    assert.match(src, /import\s*\{\s*HeaderRow,\s*PillButton,\s*PickerTabs,\s*PickerGrid\s*\}\s*from\s+['"]\.\/date-picker-chrome\.jsx['"]/);
+    // These subcomponents were moved out verbatim — they must not be redeclared locally.
+    assert.doesNotMatch(src, /function HeaderRow\(/);
+    assert.doesNotMatch(src, /function NavButton\(/);
+    assert.doesNotMatch(src, /function PillButton\(/);
+    assert.doesNotMatch(src, /function PickerTabs\(/);
+    assert.doesNotMatch(src, /function PickerGrid\(/);
   });
 
   it('imports Popover primitives', () => {
@@ -142,30 +155,23 @@ describe('DateField — calendar view (default)', () => {
     assert.doesNotMatch(src, /today:[\s\S]*?hover:bg-\[#FFD500\]/);
   });
 
-  it('filled PillButton (Hoy/Ok) hovers to Etendo yellow #FFD500 (active-button hover convention)', () => {
-    assert.match(src, /variant === 'filled'[\s\S]*?hover:bg-\[#FFD500\][\s\S]*?hover:text-\[#121217\]/);
+  it('renders the "Hoy" action as a filled PillButton (styling — filled hover-to-yellow — covered by date-picker-chrome.test.js)', () => {
+    assert.match(src, /<PillButton\s+variant="filled"\s+onClick=\{\(\)\s*=>\s*handleSelect\(new Date\(\)\)\}/);
   });
 
-  it('selected picker cell (Feb/2025) hovers to Etendo yellow #FFD500 (active-button hover convention)', () => {
-    assert.match(src, /isSelected[\s\S]*?bg-\[#121217\] text-white hover:bg-\[#FFD500\] hover:text-\[#121217\]/);
+  it('renders month/year cells via PickerGrid (selected-cell hover-to-yellow styling covered by date-picker-chrome.test.js)', () => {
+    assert.match(src, /<PickerGrid\s*\n?\s*items=\{monthItems\}\s*\n?\s*selectedValue=\{tempMonth\}\s*\n?\s*onSelect=\{setTempMonth\}/);
+    assert.match(src, /<PickerGrid\s*\n?\s*items=\{yearItems\}\s*\n?\s*selectedValue=\{tempYear\}\s*\n?\s*onSelect=\{setTempYear\}/);
   });
 });
 
 describe('DateField — header row', () => {
-  it('declares a HeaderRow subcomponent with label + chevron + nav arrows', () => {
-    assert.match(src, /function HeaderRow\(/);
-    assert.match(src, /<ChevronDown/);
-    assert.match(src, /<ChevronLeft/);
-    assert.match(src, /<ChevronRight/);
+  it('renders the shared HeaderRow with label + nav wiring (chevron/nav-arrow styling covered by date-picker-chrome.test.js)', () => {
+    assert.match(src, /<HeaderRow\s*\n?\s*label=\{headerLabel\}\s*\n?\s*onLabelClick=\{view === 'calendar' \? openPicker : cancelPicker\}\s*\n?\s*onPrev=\{navPrev\}\s*\n?\s*onNext=\{navNext\}\s*\n?\s*showLabelChevron=\{view === 'calendar'\}/);
   });
 
-  it('renders the label via the imported formatMonthYearLabel (locale-aware month/year, ETP-4544)', () => {
+  it('renders the label via the imported formatMonthYearLabel (locale-aware month/year, ETP-4544; capitalize styling covered by date-picker-chrome.test.js)', () => {
     assert.match(src, /const headerLabel\s*=\s*formatMonthYearLabel\(headerDate,\s*localeStr\)/);
-    assert.match(src, /capitalize/);
-  });
-
-  it('renders the prev/next arrows as circular pill buttons (24x24, border, shadow-xs)', () => {
-    assert.match(src, /h-6 w-6[\s\S]*?bg-white[\s\S]*?border border-\[#D1D4DB\][\s\S]*?rounded-full[\s\S]*?shadow-\[0px_1px_2px_rgba\(18,18,23,0\.05\)\]/);
   });
 });
 
@@ -206,17 +212,13 @@ describe('DateField — month/year picker view', () => {
     assert.match(src, /const cancelPicker\s*=\s*\(\)\s*=>\s*setView\('calendar'\)/);
   });
 
-  it('selected month/year cell uses the Figma filled-black style', () => {
-    assert.match(src, /isSelected[\s\S]*?bg-\[#121217\]\s*text-white/);
+  it('renders both month and year picker tabs via the shared PickerGrid (selected-cell styling covered by date-picker-chrome.test.js)', () => {
+    assert.match(src, /<PickerGrid\s*\n?\s*items=\{monthItems\}/);
+    assert.match(src, /<PickerGrid\s*\n?\s*items=\{yearItems\}/);
   });
 });
 
 describe('DateField — footer buttons', () => {
-  it('declares a PillButton subcomponent supporting filled and outlined variants', () => {
-    assert.match(src, /function PillButton\(/);
-    assert.match(src, /variant === 'filled'/);
-  });
-
   it('Calendar view footer shows Limpiar (outlined) + Hoy (filled)', () => {
     assert.match(src, /ui\('clear'\)/);
     assert.match(src, /ui\('dateRangeToday'\)/);
@@ -230,11 +232,9 @@ describe('DateField — footer buttons', () => {
     assert.match(src, /<PillButton variant="filled" onClick=\{commitPicker\}/);
   });
 
-  it('renders pill-shaped buttons (rounded-full, h-8, border for outlined, black for filled)', () => {
-    assert.match(src, /rounded-full/);
-    assert.match(src, /h-8 px-3/);
-    assert.match(src, /bg-\[#121217\] text-white/);
-    assert.match(src, /bg-white border border-\[#D1D4DB\] text-\[#121217\]/);
+  it('all four footer PillButtons are the shared component (pill-shape/variant styling covered by date-picker-chrome.test.js)', () => {
+    const occurrences = (src.match(/<PillButton\b/g) || []).length;
+    assert.equal(occurrences, 4, 'expected exactly 4 PillButton usages (clear, today, back, ok)');
   });
 });
 
