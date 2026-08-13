@@ -914,11 +914,11 @@ function f23FieldLabel({ row, entityName }) {
  *
  * @param {string} artifactDir
  * @param {string} artifactName - artifact dir name === spec name
- * @param {string} root
  * @param {string} [sourcedataDir]
+ * @param {string} [root]
  * @returns {Promise<object|null>}
  */
-async function ruleF23(artifactDir, artifactName, root = ROOT, sourcedataDir) {
+async function ruleF23(artifactDir, artifactName, sourcedataDir, root = ROOT) {
   const dir = sourcedataDir ?? resolveGoSourcedataDir(root);
   const bySpec = await loadF23FieldsBySpec(dir);
   if (bySpec === null) return null; // no runtime-module checkout — nothing to read
@@ -1964,7 +1964,7 @@ async function runEnabledChecks(checks, skipSet) {
   return (await Promise.all(pendingChecks)).filter(Boolean);
 }
 
-async function runWindowChecks(artifactDir, artifactName, registryContent, root, skipSet, f19Allowlist = [], goSourcedataDir) {
+async function runWindowChecks(artifactDir, artifactName, registryContent, root, skipSet, goSourcedataDir, f19Allowlist = []) {
   return runEnabledChecks([
     { rule: 'F1', run: () => ruleF1(artifactDir, artifactName) },
     { rule: 'F2', run: () => ruleF2(artifactDir, artifactName) },
@@ -1986,7 +1986,7 @@ async function runWindowChecks(artifactDir, artifactName, registryContent, root,
     { rule: 'F20', run: () => ruleF20(artifactDir, artifactName, root) },
     { rule: 'F21', run: () => ruleF21(artifactDir, artifactName) },
     { rule: 'F22', run: () => ruleF22(artifactDir, artifactName) },
-    { rule: 'F23', run: () => ruleF23(artifactDir, artifactName, root, goSourcedataDir) },
+    { rule: 'F23', run: () => ruleF23(artifactDir, artifactName, goSourcedataDir, root) },
   ], skipSet);
 }
 
@@ -2004,7 +2004,7 @@ async function runAggregateSectionChecks(artifactDir, artifactName, skipSet, roo
   const f9Results = await runSingleCheck('F9', () => ruleF9(artifactDir, artifactName), skipSet);
   const f4Results = await runSingleCheck('F4', () => ruleF4(artifactDir, artifactName), skipSet);
   const f23Results = await runSingleCheck(
-    'F23', () => ruleF23(artifactDir, artifactName, root, goSourcedataDir), skipSet,
+    'F23', () => ruleF23(artifactDir, artifactName, goSourcedataDir, root), skipSet,
   );
   return [...f9Results, ...f4Results, ...f23Results];
 }
@@ -2012,7 +2012,7 @@ async function runAggregateSectionChecks(artifactDir, artifactName, skipSet, roo
 async function runChecksForArtifact({ kind, artifactDir, artifactName, registryContent, root, skipSet, strict, f19Allowlist, goSourcedataDir }) {
   if (kind === 'window') {
     return tagArtifactKind(
-      await runWindowChecks(artifactDir, artifactName, registryContent, root, skipSet, f19Allowlist, goSourcedataDir),
+      await runWindowChecks(artifactDir, artifactName, registryContent, root, skipSet, goSourcedataDir, f19Allowlist),
       'window',
     );
   }
@@ -2030,7 +2030,7 @@ async function runChecksForArtifact({ kind, artifactDir, artifactName, registryC
     // only would have left 83 % of the defect invisible.
     return tagArtifactKind([
       ...await runSingleCheck('F9', () => ruleF9(artifactDir, artifactName), skipSet),
-      ...await runSingleCheck('F23', () => ruleF23(artifactDir, artifactName, root, goSourcedataDir), skipSet),
+      ...await runSingleCheck('F23', () => ruleF23(artifactDir, artifactName, goSourcedataDir, root), skipSet),
     ], 'aggregate');
   }
   if (kind === 'aggregate-section') {
