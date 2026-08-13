@@ -30,6 +30,8 @@ import {
   resolveEntityHideDelete,
   resolveEntityMethods,
 } from './lib/entity-methods.js';
+import { parseEtgoXmlFile } from './lib/etgo-xml-parser.js';
+import { visibilityMatchesFlags } from './lib/field-visibility.js';
 
 const execFileAsync = promisify(execFile);
 
@@ -805,6 +807,170 @@ async function ruleF22(artifactDir, artifactName) {
   return violation('F22', artifactName, 'BLOCK',
     `window.customTabsAfterBottom is true, so tabOrder on ${offendingKeys.join(', ')} has no effect — those tabs render in a separate strip below bottomSection, outside the sorted tab list.`,
     'Remove window.customTabsAfterBottom, or remove tabOrder from the listed custom tab(s).');
+}
+
+// ─── F23 — ETGO_SF_FIELD visibility vs the flags it projects to ─────────────
+// ETP-4793 / IMP-26 §5.3. `populateSpec` writes ISINCLUDED/ISREADONLY on every
+// push but VISIBILITY only on some paths, so the same decision — stored twice
+// on purpose, because neo_schema needs the curated word and the runtime needs
+// the booleans — can drift apart silently. This rule reads the exported
+// sourcedata and re-runs the projection over it.
+
+/**
+ * Resolve the com.etendoerp.go sourcedata directory holding the exported
+ * ETGO_SF_*.xml files. Mirrors `resolveDefaultPrevXmlDir` in push-to-neo.js.
+ *
+ * @param {string} root - schema_forge repo root
+ * @returns {string}
+ */
+function resolveGoSourcedataDir(root) {
+  if (process.env.SF_GO_SOURCEDATA_DIR) return process.env.SF_GO_SOURCEDATA_DIR;
+  const etendoRoot = process.env.ETENDO_ROOT || join(root, '..');
+  return join(etendoRoot, 'modules', 'com.etendoerp.go', 'src-db', 'database', 'sourcedata');
+}
+
+// One 8 MB XML parse per process, not per artifact. Keyed by directory so a
+// test pointing at a fixture never reads the cached production snapshot.
+const f23SnapshotCache = new Map();
+
+/**
+ * Parse the three sourcedata XMLs and index the field rows by spec name.
+ *
+ * Returns `null` — not an empty index — when the directory is absent, so the
+ * caller can tell "no .go checkout here" apart from "checkout present, spec has
+ * no rows".
+ *
+ * @param {string} sourcedataDir
+ * @returns {Promise<Map<string, Array<object>>|null>} spec name → field rows
+ */
+async function loadF23FieldsBySpec(sourcedataDir) {
+  if (f23SnapshotCache.has(sourcedataDir)) return f23SnapshotCache.get(sourcedataDir);
+  const pending = (async () => {
+    const paths = {
+      spec: join(sourcedataDir, 'ETGO_SF_SPEC.xml'),
+      entity: join(sourcedataDir, 'ETGO_SF_ENTITY.xml'),
+      field: join(sourcedataDir, 'ETGO_SF_FIELD.xml'),
+    };
+    const present = await Promise.all(Object.values(paths).map(fileExists));
+    if (present.some(ok => !ok)) return null;
+
+    const [specs, entities, fields] = await Promise.all([
+      parseEtgoXmlFile(paths.spec, 'ETGO_SF_SPEC').then(r => r.rows),
+      parseEtgoXmlFile(paths.entity, 'ETGO_SF_ENTITY').then(r => r.rows),
+      parseEtgoXmlFile(paths.field, 'ETGO_SF_FIELD').then(r => r.rows),
+    ]);
+
+    const specNameById = new Map(specs.map(s => [s.ETGO_SF_SPEC_ID, s.NAME]));
+    const entityById = new Map(entities.map(e => [e.ETGO_SF_ENTITY_ID, e]));
+
+    const bySpec = new Map();
+    for (const row of fields) {
+      if (row.ISACTIVE === 'N') continue; // retired config, not a live surface
+      const entity = entityById.get(row.ETGO_SF_ENTITY_ID);
+      const specName = entity && specNameById.get(entity.ETGO_SF_SPEC_ID);
+      if (!specName) continue; // orphan row — F23 is not the rule that owns that
+      if (!bySpec.has(specName)) bySpec.set(specName, []);
+      bySpec.get(specName).push({ row, entityName: entity.NAME });
+    }
+    return bySpec;
+  })();
+  f23SnapshotCache.set(sourcedataDir, pending);
+  return pending;
+}
+
+/**
+ * Human-readable identity for one offending field row.
+ *
+ * `JAVA_QUALIFIER` is only written when the curated key differs from the AD
+ * column name, so `AD_COLUMN_ID` is the usual identity. Some pushed rows carry
+ * neither — ETP-4793 found 105 field rows in the live export with no
+ * AD_COLUMN_ID, JAVA_QUALIFIER or SEQNO at all, just the two flags. Those are
+ * degenerate rows pointing at no AD column; label them by primary key and say
+ * so, because "entity.undefined" tells the reader nothing.
+ */
+function f23FieldLabel({ row, entityName }) {
+  const entity = entityName || '?';
+  const name = row.JAVA_QUALIFIER || row.AD_COLUMN_ID;
+  if (name) return `${entity}.${name}`;
+  return `${entity}.<no AD_COLUMN_ID, field ${row.ETGO_SF_FIELD_ID}>`;
+}
+
+/**
+ * F23: a pushed `ETGO_SF_FIELD` row whose `VISIBILITY` does not project to its
+ * stored `ISINCLUDED`/`ISREADONLY` pair.
+ *
+ * Two failure modes, deliberately scored differently:
+ *   - BLOCK `contradiction` — VISIBILITY holds a curated value that projects to
+ *     a different pair than the one stored. Only a writer bug or a hand-edit
+ *     gets you here, and it means the runtime and `neo_schema` disagree about
+ *     the same field.
+ *   - WARN `unwritten` — VISIBILITY is absent while the flags say the field is
+ *     included. Harmless to the runtime, but `neo_schema` reports no visibility
+ *     for that field, so an agent cannot tell `readOnly` from `system`.
+ *     Pre-existing backfill debt; a warning so it is counted, not so it blocks.
+ *
+ * Inert (returns null) without a com.etendoerp.go checkout — the exported XML is
+ * the only DB-free view of pushed state, and this repo can be used alone.
+ *
+ * @param {string} artifactDir
+ * @param {string} artifactName - artifact dir name === spec name
+ * @param {string} root
+ * @param {string} [sourcedataDir]
+ * @returns {Promise<object|null>}
+ */
+async function ruleF23(artifactDir, artifactName, root = ROOT, sourcedataDir) {
+  const dir = sourcedataDir ?? resolveGoSourcedataDir(root);
+  const bySpec = await loadF23FieldsBySpec(dir);
+  if (bySpec === null) return null; // no runtime-module checkout — nothing to read
+  const rows = bySpec.get(artifactName);
+  if (!rows || rows.length === 0) return null; // never pushed, or a different spec name
+
+  const contradictions = [];
+  const unwritten = [];
+  for (const entry of rows) {
+    const verdict = visibilityMatchesFlags({
+      visibility: entry.row.VISIBILITY,
+      isIncluded: entry.row.ISINCLUDED,
+      isReadOnly: entry.row.ISREADONLY,
+    });
+    if (verdict.ok) continue;
+    (verdict.kind === 'contradiction' ? contradictions : unwritten).push({ entry, verdict });
+  }
+
+  if (contradictions.length > 0) {
+    const shown = contradictions.slice(0, 3).map(({ entry, verdict }) => (
+      `${f23FieldLabel(entry)} (visibility='${entry.row.VISIBILITY}' projects to `
+      + `ISINCLUDED=${verdict.expected.isIncluded}/ISREADONLY=${verdict.expected.isReadOnly}, `
+      + `stored ${entry.row.ISINCLUDED}/${entry.row.ISREADONLY})`
+    ));
+    const more = contradictions.length > shown.length ? ` (+${contradictions.length - shown.length} more)` : '';
+    return violation(
+      'F23', artifactName, 'BLOCK',
+      `${contradictions.length} pushed ETGO_SF_FIELD row(s) store a VISIBILITY that contradicts their `
+      + `ISINCLUDED/ISREADONLY flags: ${shown.join('; ')}${more}. The runtime enforces the flags while `
+      + `neo_schema reports the visibility, so the two now describe the field differently.`,
+      `Re-push the window (make regen ONLY=${artifactName} PUSH_TO_NEO=1) and re-run `
+      + `./gradlew export.database in Etendo root. If the drift survives a clean push, the writer is `
+      + `at fault — fix cli/src/neo-writer.js populateSpec, not the XML.`,
+      { f23Contradictions: contradictions.length, f23Unwritten: unwritten.length },
+    );
+  }
+
+  if (unwritten.length > 0) {
+    const shown = unwritten.slice(0, 3).map(({ entry }) => f23FieldLabel(entry));
+    const more = unwritten.length > shown.length ? ` (+${unwritten.length - shown.length} more)` : '';
+    return violation(
+      'F23', artifactName, 'WARN',
+      `${unwritten.length} pushed ETGO_SF_FIELD row(s) are included (ISINCLUDED=Y) but carry no `
+      + `VISIBILITY value: ${shown.join(', ')}${more}. neo_schema reports these fields with no `
+      + `visibility, so an agent cannot distinguish readOnly from system.`,
+      `Re-push the window (make regen ONLY=${artifactName} PUSH_TO_NEO=1) then `
+      + `./gradlew export.database — populateSpec writes VISIBILITY on the fields it revisits.`,
+      { f23Contradictions: 0, f23Unwritten: unwritten.length },
+    );
+  }
+
+  return null;
 }
 
 /**
@@ -1798,7 +1964,7 @@ async function runEnabledChecks(checks, skipSet) {
   return (await Promise.all(pendingChecks)).filter(Boolean);
 }
 
-async function runWindowChecks(artifactDir, artifactName, registryContent, root, skipSet, f19Allowlist = []) {
+async function runWindowChecks(artifactDir, artifactName, registryContent, root, skipSet, f19Allowlist = [], goSourcedataDir) {
   return runEnabledChecks([
     { rule: 'F1', run: () => ruleF1(artifactDir, artifactName) },
     { rule: 'F2', run: () => ruleF2(artifactDir, artifactName) },
@@ -1820,6 +1986,7 @@ async function runWindowChecks(artifactDir, artifactName, registryContent, root,
     { rule: 'F20', run: () => ruleF20(artifactDir, artifactName, root) },
     { rule: 'F21', run: () => ruleF21(artifactDir, artifactName) },
     { rule: 'F22', run: () => ruleF22(artifactDir, artifactName) },
+    { rule: 'F23', run: () => ruleF23(artifactDir, artifactName, root, goSourcedataDir) },
   ], skipSet);
 }
 
@@ -1833,16 +2000,19 @@ function tagArtifactKind(results, artifactKind) {
   return results.map(result => ({ ...result, artifactKind }));
 }
 
-async function runAggregateSectionChecks(artifactDir, artifactName, skipSet) {
+async function runAggregateSectionChecks(artifactDir, artifactName, skipSet, root, goSourcedataDir) {
   const f9Results = await runSingleCheck('F9', () => ruleF9(artifactDir, artifactName), skipSet);
   const f4Results = await runSingleCheck('F4', () => ruleF4(artifactDir, artifactName), skipSet);
-  return [...f9Results, ...f4Results];
+  const f23Results = await runSingleCheck(
+    'F23', () => ruleF23(artifactDir, artifactName, root, goSourcedataDir), skipSet,
+  );
+  return [...f9Results, ...f4Results, ...f23Results];
 }
 
-async function runChecksForArtifact({ kind, artifactDir, artifactName, registryContent, root, skipSet, strict, f19Allowlist }) {
+async function runChecksForArtifact({ kind, artifactDir, artifactName, registryContent, root, skipSet, strict, f19Allowlist, goSourcedataDir }) {
   if (kind === 'window') {
     return tagArtifactKind(
-      await runWindowChecks(artifactDir, artifactName, registryContent, root, skipSet, f19Allowlist),
+      await runWindowChecks(artifactDir, artifactName, registryContent, root, skipSet, f19Allowlist, goSourcedataDir),
       'window',
     );
   }
@@ -1853,14 +2023,19 @@ async function runChecksForArtifact({ kind, artifactDir, artifactName, registryC
     );
   }
   if (kind === 'aggregate') {
-    return tagArtifactKind(
-      await runSingleCheck('F9', () => ruleF9(artifactDir, artifactName), skipSet),
-      'aggregate',
-    );
+    // F23 runs here too: an aggregate artifact pushes its own ETGO_SF_SPEC, so
+    // its field rows can drift exactly like a window's. ETP-4793 measured 340 of
+    // the 409 incoherent rows in the live export inside two aggregates
+    // (return-to-vendor, return-from-customer) — registering F23 for windows
+    // only would have left 83 % of the defect invisible.
+    return tagArtifactKind([
+      ...await runSingleCheck('F9', () => ruleF9(artifactDir, artifactName), skipSet),
+      ...await runSingleCheck('F23', () => ruleF23(artifactDir, artifactName, root, goSourcedataDir), skipSet),
+    ], 'aggregate');
   }
   if (kind === 'aggregate-section') {
     return tagArtifactKind(
-      await runAggregateSectionChecks(artifactDir, artifactName, skipSet),
+      await runAggregateSectionChecks(artifactDir, artifactName, skipSet, root, goSourcedataDir),
       'aggregate-section',
     );
   }
@@ -1956,6 +2131,10 @@ export async function validatePipeline({
   root = ROOT,
   registryPath,
   f19AllowlistPath,
+  // F23 reads the exported ETGO_SF_*.xml from the com.etendoerp.go checkout.
+  // Injectable so tests point at a fixture instead of whatever module tree
+  // happens to sit beside the developer's repo.
+  goSourcedataDir,
   _artifactsRoot,
 } = {}) {
   const artifactsRoot = _artifactsRoot ?? join(root, 'artifacts');
@@ -1982,6 +2161,7 @@ export async function validatePipeline({
       skipSet,
       strict,
       f19Allowlist,
+      goSourcedataDir,
     }));
   }
 

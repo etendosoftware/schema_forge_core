@@ -24,6 +24,7 @@ import {
 import { computeWindowDelta, serializeDelta } from './lib/neo-delta.js';
 import { resolveAgentPromptRefs } from './lib/agent-prompt-ref.js';
 import { loadEtgoXmlSnapshot } from './lib/etgo-xml-parser.js';
+import { mapVisibility } from './lib/field-visibility.js';
 import { GO_MODULE_ID } from './lib/constants.js';
 import {
   isEntityExcludedFromContract,
@@ -57,21 +58,12 @@ export function toSpecName(windowName) {
 /**
  * Map a field visibility value to NEO params.
  * Returns { isIncluded: "Y"|"N", isReadOnly: "Y"|"N" }.
+ *
+ * ETP-4793 — the implementation moved to `lib/field-visibility.js` so the
+ * offline delta path and validator rule F23 share it instead of re-declaring
+ * it. Re-exported here because this name is part of the module's public API.
  */
-export function mapVisibility(visibility) {
-  switch (visibility) {
-    case 'editable':
-      return { isIncluded: 'Y', isReadOnly: 'N' };
-    case 'readOnly':
-      return { isIncluded: 'Y', isReadOnly: 'Y' };
-    case 'system':
-      return { isIncluded: 'Y', isReadOnly: 'Y' };
-    case 'discarded':
-      return { isIncluded: 'N', isReadOnly: 'N' };
-    default:
-      return { isIncluded: 'N', isReadOnly: 'N' };
-  }
-}
+export { mapVisibility };
 
 /**
  * Build the full webhook URL from a base Etendo URL and webhook name.

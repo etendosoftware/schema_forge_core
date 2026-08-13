@@ -44,22 +44,11 @@ import {
   methodsToXmlFlags,
   resolveContractEntityMethods,
 } from './entity-methods.js';
-
-/**
- * Local copy of mapVisibility() from push-to-neo.js. Inlined to keep this
- * module free of circular imports (push-to-neo imports computeWindowDelta).
- * If you change one, mirror the change in the other — both are intentionally
- * tiny so divergence is easy to spot.
- */
-function mapVisibility(visibility) {
-  switch (visibility) {
-    case 'editable':  return { isIncluded: 'Y', isReadOnly: 'N' };
-    case 'readOnly':  return { isIncluded: 'Y', isReadOnly: 'Y' };
-    case 'system':    return { isIncluded: 'Y', isReadOnly: 'Y' };
-    case 'discarded': return { isIncluded: 'N', isReadOnly: 'N' };
-    default:          return { isIncluded: 'N', isReadOnly: 'N' };
-  }
-}
+// ETP-4793 — was an inlined copy (to dodge the push-to-neo → neo-delta import
+// cycle). Now a sibling in lib/, so there is no cycle and no second copy: the
+// live push, this offline projection and validator rule F23 all read the same
+// function.
+import { mapVisibility } from './field-visibility.js';
 
 function normalizeAgentPrompt(value) {
   if (value == null) return null;
@@ -69,8 +58,10 @@ function normalizeAgentPrompt(value) {
 
 /**
  * Local copy of normalizePreconditions() from push-to-neo.js. Inlined for the
- * same no-circular-import reason as mapVisibility/normalizeAgentPrompt — mirror
- * any change in the other. An explicit but empty declaration collapses to null
+ * same no-circular-import reason as normalizeAgentPrompt — mirror any change in
+ * the other. (mapVisibility used to be on this list; ETP-4793 moved it to
+ * lib/field-visibility.js instead, which is the better fix when a helper is
+ * needed by a third caller.) An explicit but empty declaration collapses to null
  * so a stale DB value gets cleared (ETP-4275).
  */
 function normalizePreconditions(value) {
