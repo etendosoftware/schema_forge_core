@@ -8,6 +8,7 @@ import userEvent from '@testing-library/user-event';
 afterEach(cleanup);
 beforeEach(() => {
   distinctCalls.length = 0;
+  distinctState.loading = false;
 });
 
 // Mock i18n hooks
@@ -34,7 +35,9 @@ vi.mock('../../../lib/gridQuery.js', () => ({
 
 // Mutable holder so individual tests can inject the distinct endpoint values.
 // Defaults to an empty set (the original behavior the existing tests rely on).
-const distinctState = { values: [] };
+// `loading` defaults to false to preserve every pre-existing test's behavior;
+// only the ETP-4770 pending-label tests below set it to true.
+const distinctState = { values: [], loading: false };
 
 // Records every call's (entity, field, options) so tests can assert on the
 // `enabled` flag the component computed — the mocked hook always returns
@@ -47,7 +50,7 @@ vi.mock('../../../hooks/useDistinctValues.js', () => ({
     distinctCalls.push({ entity, field, options });
     return {
       values: distinctState.values,
-      loading: false,
+      loading: distinctState.loading,
       loadingMore: false,
       hasMore: false,
       search: '',
@@ -1036,6 +1039,67 @@ describe('AdvancedFilterBuilder — content-based sizing (ETP-4705)', () => {
         ),
       ).not.toThrow();
       expect(screen.getByText('BP1')).toBeInTheDocument();
+    });
+
+    // ETP-4770 reject-cycle 3: the eager fetch (added above) fires correctly,
+    // but while it's still in flight the picker must show a loading
+    // placeholder — never the raw id, not even for one render. This is the
+    // generic case (label unknown + fetch pending), not specific to
+    // "notEqual" — it applies to any selected id absent from both
+    // `inMemoryOptions` and `distinct.values` while the fetch hasn't settled.
+    it('shows a loading placeholder — never the raw id — while the distinct fetch is still in flight', () => {
+      distinctState.loading = true;
+      distinctState.values = []; // not resolved yet
+      const value = {
+        rowOperator: 'and',
+        conditions: [{ field: 'bp', operator: 'notEqual', value: ['BP1'] }],
+      };
+      render(
+        <AdvancedFilterBuilder
+          columns={[bpCol]}
+          value={value}
+          rows={[]} // notEqual excludes the selected row from the grid
+          entity="business-partners"
+          apiBaseUrl="/api"
+        />,
+      );
+      expect(screen.queryByText('BP1')).not.toBeInTheDocument();
+      expect(screen.getAllByTestId('Loader2__4eedf1').length).toBeGreaterThan(0);
+    });
+
+    it('replaces the loading placeholder with the real label once the distinct fetch settles', () => {
+      distinctState.loading = true;
+      distinctState.values = [];
+      const value = {
+        rowOperator: 'and',
+        conditions: [{ field: 'bp', operator: 'notEqual', value: ['BP1'] }],
+      };
+      const { rerender } = render(
+        <AdvancedFilterBuilder
+          columns={[bpCol]}
+          value={value}
+          rows={[]}
+          entity="business-partners"
+          apiBaseUrl="/api"
+        />,
+      );
+      expect(screen.queryByText('BP1')).not.toBeInTheDocument();
+      expect(screen.queryByText('Acme Corp')).not.toBeInTheDocument();
+
+      // The fetch settles: values arrive, loading flips false.
+      distinctState.loading = false;
+      distinctState.values = [{ id: 'BP1', _identifier: 'Acme Corp' }];
+      rerender(
+        <AdvancedFilterBuilder
+          columns={[bpCol]}
+          value={value}
+          rows={[]}
+          entity="business-partners"
+          apiBaseUrl="/api"
+        />,
+      );
+      expect(screen.getByText('Acme Corp')).toBeInTheDocument();
+      expect(screen.queryByText('BP1')).not.toBeInTheDocument();
     });
   });
 });
