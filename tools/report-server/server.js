@@ -24,7 +24,7 @@ import { readFileSync, readdirSync, existsSync } from 'node:fs';
 import { createRequire } from 'node:module';
 import { resolve, join, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { registerReportHelpers, computeDocumentQrDataUrl } from '../../templates/reports/helpers/report-html-helpers.js';
+import { registerReportHelpers, computeDocumentQrDataUrl, buildJsreportHelpersString } from '../../templates/reports/helpers/report-html-helpers.js';
 
 const _require = createRequire(import.meta.url);
 const __dirname = dirname(fileURLToPath(import.meta.url));
@@ -59,6 +59,23 @@ function getDbConfig() {
 // ---------------------------------------------------------------------------
 // Helpers
 // ---------------------------------------------------------------------------
+
+// Instance-wide currency separators for the jsreport helper string, from the
+// same NEO config source the browser's formatCurrency.js reads (ETP-4314).
+// Cached for the process lifetime; falls back to './,' when NEO is unreachable.
+// Mirrors getReportCurrencySeparators() in the Vite dev plugin (report-api.js).
+let currencySeparatorsPromise = null;
+async function getReportCurrencySeparators() {
+  if (currencySeparatorsPromise) return currencySeparatorsPromise;
+  currencySeparatorsPromise = fetch(`${ETENDO_URL}/sws/neo/currency-format`)
+    .then((res) => (res.ok ? res.json() : Promise.reject(new Error(`status ${res.status}`))))
+    .then((data) => ({
+      thousandsSeparator: typeof data?.thousandsSeparator === 'string' ? data.thousandsSeparator : '.',
+      decimalSeparator: typeof data?.decimalSeparator === 'string' ? data.decimalSeparator : ',',
+    }))
+    .catch(() => ({ thousandsSeparator: '.', decimalSeparator: ',' }));
+  return currencySeparatorsPromise;
+}
 
 function getClientIdFromToken(authHeader) {
   try {
@@ -363,9 +380,15 @@ async function handleRequest(req, res) {
         return;
       }
 
-      // PDF/XLSX: delegate to jsreport
+      // PDF/XLSX: delegate to jsreport. jsreport runs in a separate container
+      // with its own sandbox, so it gets the canonical helper set as SOURCE
+      // TEXT plus only this report's specific extras — never the raw artifact
+      // helpers.js alone (post-ETP-4083 it no longer defines the formatting
+      // helpers, which broke every {{#ifCond}}/{{formatDate}} template here).
+      // Same composition as the Vite dev plugin (report-api.js).
+      const separators = await getReportCurrencySeparators();
       const payload = {
-        template: { content: templateContent, engine: 'handlebars', recipe, helpers: helpersCode },
+        template: { content: templateContent, engine: 'handlebars', recipe, helpers: buildJsreportHelpersString(helpersCode, undefined, separators) },
         data: templateData,
       };
       if (recipe === 'chrome-pdf') {

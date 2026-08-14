@@ -99,10 +99,12 @@ describe('report server render path (ETP-4908 regression guards)', () => {
     // formatDate resolves in the host's local timezone, so only the shape
     // (dd/mm/yyyy) is asserted here, not the exact day.
     assert.match(html, /\d{2}\/\d{2}\/2026/);
-    assert.match(html, /1,210\.00/);
+    // formatCurrency is the canonical es-ES grouped format (ETP-4314 sync).
+    // CLDR quirk: some ICU builds skip the separator for 4-digit es-ES numbers.
+    assert.match(html, /1\.?210,00/);
     assert.match(html, /Completed/);
-    assert.match(html, /10\.50/); // line unitPrice via formatCurrency
-    assert.match(html, /189\.50/);
+    assert.match(html, /10,50/); // line unitPrice via formatCurrency
+    assert.match(html, /189,50/);
   });
 
   it('throws "Missing helper" for a template invoking an unregistered helper', () => {
