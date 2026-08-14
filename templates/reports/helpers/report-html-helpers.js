@@ -119,6 +119,54 @@ export function createReportHelpers({ numberFormat } = {}) {
 }
 
 /**
+ * Build the text encoded in a document report's QR code.
+ *
+ * Exact port of the text-building logic of the historical per-report `qrCode`
+ * Handlebars helper (artifacts/print-*\/helpers.js). Kept pure so it can be
+ * tested without generating an actual QR image.
+ *
+ * @param {object} [header] Document header row.
+ * @returns {string} Pipe-joined field string, 'empty' when the header has no
+ *          known fields, or 'no data' when there is no header object at all.
+ */
+export function buildDocumentQrText(header) {
+  if (!header || typeof header !== 'object') return 'no data';
+  const parts = [];
+  if (header.doc_type) parts.push('T:' + header.doc_type);
+  if (header.documentno) parts.push('N:' + header.documentno);
+  if (header.dateinvoiced) parts.push('D:' + String(header.dateinvoiced).substring(0, 10));
+  if (header.bp_name) parts.push('BP:' + header.bp_name);
+  if (header.grandtotal) parts.push('$:' + header.grandtotal);
+  if (header.currency) parts.push('C:' + header.currency);
+  if (header.org_taxid) parts.push('TID:' + header.org_taxid);
+  if (header.status) parts.push('S:' + header.status);
+  return parts.length > 0 ? parts.join('|') : 'empty';
+}
+
+/**
+ * Precompute a document's QR code as a PNG data URL (`header.qrDataUrl`).
+ *
+ * This replaces the per-report async `qrCode` Handlebars helper: Handlebars
+ * compiles synchronously on the local HTML path, so the QR must be resolved
+ * BEFORE compile and injected as plain data. Templates reference it as
+ * `<img src="{{header.qrDataUrl}}">` on both the HTML and jsreport paths.
+ *
+ * NOT a Handlebars helper — deliberately excluded from `createReportHelpers()`.
+ *
+ * @param {object} [header] Document header row.
+ * @param {object} [options]
+ * @param {object} [options.qrcode] Pre-resolved `qrcode` module. The report
+ *        server passes its own (its Docker image installs node_modules only
+ *        under tools/report-server, unreachable from this module's path);
+ *        other consumers can omit it and rely on the lazy dynamic import.
+ * @returns {Promise<string>} PNG data URL.
+ */
+export async function computeDocumentQrDataUrl(header, { qrcode } = {}) {
+  const QRCode = qrcode || (await import('qrcode')).default;
+  return QRCode.toDataURL(buildDocumentQrText(header), { width: 120, margin: 1 });
+}
+
+/**
  * Statically recover the `formatNumber` Intl options from a report's
  * `helpers.js` source WITHOUT executing it. Returns the options object the
  * artifact's `formatNumber` passed to `Intl.NumberFormat`, or `undefined` when

@@ -24,7 +24,7 @@ import { readFileSync, readdirSync, existsSync } from 'node:fs';
 import { createRequire } from 'node:module';
 import { resolve, join, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { registerReportHelpers } from '../../templates/reports/helpers/report-html-helpers.js';
+import { registerReportHelpers, computeDocumentQrDataUrl } from '../../templates/reports/helpers/report-html-helpers.js';
 
 const _require = createRequire(import.meta.url);
 const __dirname = dirname(fileURLToPath(import.meta.url));
@@ -356,6 +356,7 @@ async function handleRequest(req, res) {
       calculateTotals(documentData, amountCols, rows, totals);
       const recordCount = getRowCount(rows);
       const templateData = buildTemplateData(documentData, css, { title, activeFilters, params, recordCount, totals, groupLabel, descriptionLabel, neoMeta, rows });
+      await injectDocumentQr(documentData, templateData);
       // HTML: render with Handlebars locally
       if (format === 'html') {
         renderTemplateWithHelpers(helpersCode, templateContent, templateData, res);
@@ -572,12 +573,27 @@ function renderTemplateWithHelpers(helpersCode, templateContent, templateData, r
   const Handlebars = _require('handlebars');
   // Register the trusted in-repo helper set — no dynamic code execution.
   // helpersCode is read (not executed) only to preserve a report's formatNumber
-  // decimals. Report-specific helpers (e.g. qrCode) are only needed by the
-  // jsreport PDF/XLSX path, which consumes the artifact helpers.js string directly.
+  // decimals. Document QR codes are precomputed as data (header.qrDataUrl) by
+  // injectDocumentQr() before this synchronous compile — never as a helper.
   registerReportHelpers(Handlebars, helpersCode);
   const html = Handlebars.compile(templateContent)(templateData);
   res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' });
   res.end(html);
+}
+
+// Document (print-*) reports render a QR of the header. QRCode.toDataURL is
+// async while Handlebars.compile is sync, so the QR cannot be a helper on the
+// local HTML path — precompute it once here, before the format branch, so both
+// the local HTML render and the jsreport PDF/XLSX payload see the same
+// {{header.qrDataUrl}}. A QR failure degrades to a report without QR instead
+// of failing the whole render.
+async function injectDocumentQr(documentData, templateData) {
+  if (!documentData?.header || !templateData.header) return;
+  try {
+    templateData.header.qrDataUrl = await computeDocumentQrDataUrl(documentData.header, { qrcode: _require('qrcode') });
+  } catch (e) {
+    console.warn('[render] QR generation failed:', e.message);
+  }
 }
 
 function isPostRequestForRender(method, renderMatch) {
