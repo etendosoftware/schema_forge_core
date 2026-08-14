@@ -122,8 +122,13 @@ export function createReportHelpers({ numberFormat } = {}) {
  * Build the text encoded in a document report's QR code.
  *
  * Exact port of the text-building logic of the historical per-report `qrCode`
- * Handlebars helper (artifacts/print-*\/helpers.js). Kept pure so it can be
- * tested without generating an actual QR image.
+ * Handlebars helpers (artifacts/print-*\/helpers.js). All 8 document reports
+ * shared the same structure and segment order; only the date field varied by
+ * document type (invoices: dateinvoiced, orders/quotations: dateordered,
+ * shipments/receipts: movementdate, payments: paymentdate) and the amount
+ * field (invoices/orders: grandtotal, payments: amount, shipments: none) —
+ * expressed here as fallback chains. Kept pure so it can be tested without
+ * generating an actual QR image.
  *
  * @param {object} [header] Document header row.
  * @returns {string} Pipe-joined field string, 'empty' when the header has no
@@ -131,12 +136,14 @@ export function createReportHelpers({ numberFormat } = {}) {
  */
 export function buildDocumentQrText(header) {
   if (!header || typeof header !== 'object') return 'no data';
+  const docDate = header.dateinvoiced || header.dateordered || header.movementdate || header.paymentdate;
+  const docAmount = header.grandtotal || header.amount;
   const parts = [];
   if (header.doc_type) parts.push('T:' + header.doc_type);
   if (header.documentno) parts.push('N:' + header.documentno);
-  if (header.dateinvoiced) parts.push('D:' + String(header.dateinvoiced).substring(0, 10));
+  if (docDate) parts.push('D:' + String(docDate).substring(0, 10));
   if (header.bp_name) parts.push('BP:' + header.bp_name);
-  if (header.grandtotal) parts.push('$:' + header.grandtotal);
+  if (docAmount) parts.push('$:' + docAmount);
   if (header.currency) parts.push('C:' + header.currency);
   if (header.org_taxid) parts.push('TID:' + header.org_taxid);
   if (header.status) parts.push('S:' + header.status);
