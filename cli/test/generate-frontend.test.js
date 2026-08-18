@@ -272,6 +272,81 @@ describe('generateTableComponent', () => {
     assert.ok(code.includes("type: 'status'"));
   });
 
+  it('emits enumLabels as column-scoped i18n keys, not raw English names (ETP-4685)', () => {
+    const contract = {
+      frontendContract: {
+        window: { id: '1', name: 'Product', primaryEntity: 'product', category: 'master' },
+        entities: {
+          product: {
+            fields: [
+              {
+                name: 'productType', column: 'ProductType', type: 'enum', tsType: 'string',
+                visibility: 'editable', grid: true, form: true,
+                enumValues: [
+                  { value: 'I', name: 'Item' },
+                  { value: 'S', name: 'Service' },
+                ],
+              },
+            ],
+            searchableFields: [],
+            computedFields: [],
+          },
+        },
+      },
+    };
+
+    const code = generateTableComponent('product', contract);
+
+    // The selector's filter picker (DistinctEnumPicker) resolves enumLabels
+    // through ui()/genericLabels — it needs an i18n key here, not the literal
+    // English AD_Ref_List.Name, or the filter shows untranslated English values
+    // regardless of the active interface language. The key is built from the
+    // stable Value code ('I'/'S'), not the mutable display Name, matching the
+    // `statuses` section's own rl.value-keyed convention.
+    assert.ok(code.includes("'I': 'productTypeI'"), 'expected column-scoped i18n key for value I');
+    assert.ok(code.includes("'S': 'productTypeS'"), 'expected column-scoped i18n key for value S');
+    assert.ok(!code.includes("'I': 'Item'"), 'must not emit the raw English literal for value I');
+    assert.ok(!code.includes("'S': 'Service'"), 'must not emit the raw English literal for value S');
+  });
+
+  // ETP-4685 — a synthetic boolean-style status field (e.g. amortization's
+  // "processed" Y/N flag) gets `enumValues[].name` pre-set to an ALREADY-VALID
+  // generic i18n key ('statusDraft'/'statusProcessed' — matching the hardcoded
+  // MAP + already-translated genericLabels entries in statusBadge.js), not a
+  // raw AD_Ref_List display name. buildEnumLabelKey(column, value) must not
+  // clobber it with a fresh column-scoped key ('processedN'), or a
+  // working, already-translated status regresses to an untranslated raw key.
+  it('preserves an already-key-shaped enumValues.name instead of deriving a new column-scoped key', () => {
+    const contract = {
+      frontendContract: {
+        window: { id: '1', name: 'Amortization', primaryEntity: 'header', category: 'finance' },
+        entities: {
+          header: {
+            fields: [
+              {
+                name: 'processed', column: 'Processed', type: 'status', tsType: 'string',
+                visibility: 'editable', grid: true, form: false,
+                enumValues: [
+                  { value: 'N', name: 'statusDraft' },
+                  { value: 'Y', name: 'statusProcessed' },
+                ],
+              },
+            ],
+            searchableFields: [],
+            computedFields: [],
+          },
+        },
+      },
+    };
+
+    const code = generateTableComponent('header', contract);
+
+    assert.ok(code.includes("'N': 'statusDraft'"), 'expected the pre-set generic key to survive unchanged for value N');
+    assert.ok(code.includes("'Y': 'statusProcessed'"), 'expected the pre-set generic key to survive unchanged for value Y');
+    assert.ok(!code.includes("'N': 'processedN'"), 'must not derive a fresh column-scoped key when name is already key-shaped');
+    assert.ok(!code.includes("'Y': 'processedY'"), 'must not derive a fresh column-scoped key when name is already key-shaped');
+  });
+
   it('emits column keys instead of labels for i18n resolution', () => {
     const code = generateTableComponent('order', masterDetailContract);
     assert.ok(code.includes("column: 'DocumentNo'"));
@@ -870,6 +945,39 @@ describe('generatePageComponent — window.hideDeleteButton', () => {
     if (rqaMatch) {
       assert.ok(!rqaMatch[1].includes('hideDeleteButton'), 'rowQuickActions must not carry the flag when unset');
     }
+  });
+});
+
+// ---------------------------------------------------------------------------
+// window.hidePrintWhen passthrough (ETP-4714)
+//
+// hidePrintWhen is a generic field-condition gate for the Print button
+// (e.g. { documentStatus: 'DR' }). generate-frontend.js does not interpret
+// its contents — it only JSON-stringifies whatever is in windowConfig and
+// emits it as a literal `hidePrintWhen={...}` prop on DetailView; the
+// component that actually evaluates the condition lives in another repo.
+// ---------------------------------------------------------------------------
+
+describe('generatePageComponent — window.hidePrintWhen (ETP-4714)', () => {
+  function withWindow(overrides) {
+    const clone = JSON.parse(JSON.stringify(masterDetailContract));
+    clone.frontendContract.window = { ...clone.frontendContract.window, ...overrides };
+    return clone;
+  }
+
+  it('emits hidePrintWhen as a literal JSON object when present', () => {
+    const code = generatePageComponent('order', 'orderLine', withWindow({ hidePrintWhen: { documentStatus: 'DR' } }));
+    assert.ok(code.includes('hidePrintWhen={{"documentStatus":"DR"}}'), 'should emit hidePrintWhen with the JSON-stringified object');
+  });
+
+  it('does NOT emit the hidePrintWhen prop when the flag is absent (no regression)', () => {
+    const code = generatePageComponent('order', 'orderLine', masterDetailContract);
+    assert.equal(code.includes('hidePrintWhen'), false, 'unset flag must not emit any hidePrintWhen reference');
+  });
+
+  it('does NOT emit the hidePrintWhen prop when explicitly null', () => {
+    const code = generatePageComponent('order', 'orderLine', withWindow({ hidePrintWhen: null }));
+    assert.equal(code.includes('hidePrintWhen'), false, 'explicit null must not emit any hidePrintWhen reference');
   });
 });
 
@@ -1606,6 +1714,10 @@ const uiHintsContract = {
           { name: 'plainField', column: 'PlainCol', type: 'string', tsType: 'string', visibility: 'editable', required: false, grid: true, form: true },
           { name: 'escapedHelp', column: 'EscapedCol', type: 'string', tsType: 'string', visibility: 'editable', required: false, grid: false, form: true,
             defaultValue: "it's a test", help: "don't forget" },
+          // ETP-4749: fixed, non-editable chip rendered before the input (e.g. a
+          // website field whose stored value is only the part after "https://").
+          { name: 'etgoWeb', column: 'EM_Etgo_Web', type: 'string', tsType: 'string', visibility: 'editable', required: false, grid: false, form: true,
+            inputPrefix: 'https://' },
         ],
         searchableFields: [],
         computedFields: [],
@@ -1649,12 +1761,20 @@ describe('generateFormComponent - UI hints', () => {
     assert.ok(!plainLine.includes('help'), 'plainField should not have help');
     assert.ok(!plainLine.includes('fieldGroup'), 'plainField should not have fieldGroup');
     assert.ok(!plainLine.includes('precision'), 'plainField should not have precision');
+    assert.ok(!plainLine.includes('inputPrefix'), 'plainField should not have inputPrefix');
   });
 
   it('escapes single quotes in defaultValue and help', () => {
     const code = generateFormComponent('order', uiHintsContract);
     assert.ok(code.includes("defaultValue: 'it\\'s a test'"), 'should escape single quotes in defaultValue');
     assert.ok(code.includes("help: 'don\\'t forget'"), 'should escape single quotes in help');
+  });
+
+  // ETP-4749 — same mechanical pattern as `help`/`placeholderKey`: emitted verbatim
+  // into the generated field descriptor only when present.
+  it('field with inputPrefix emits inputPrefix in output', () => {
+    const code = generateFormComponent('order', uiHintsContract);
+    assert.ok(code.includes("inputPrefix: 'https://'"), 'should emit inputPrefix');
   });
 
   it('field groups comment is not generated when no fieldGroup fields exist', () => {
@@ -1901,14 +2021,26 @@ const inlineEditableContract = {
 };
 
 describe('generatePageComponent — linesLayout', () => {
-  it('emits linesLayout="inlineEditable" on DetailView when window declares it', () => {
+  it('does NOT emit linesLayout prop when window declares inlineEditable (now the default)', () => {
     const code = generatePageComponent('order', 'orderLine', inlineEditableContract);
-    assert.ok(code.includes('linesLayout="inlineEditable"'), 'DetailView must receive linesLayout prop');
+    assert.ok(!code.includes('linesLayout='), 'inlineEditable is the default, so no linesLayout prop is emitted');
   });
 
-  it('does NOT emit linesLayout prop for classic layout (default)', () => {
+  it('does NOT emit linesLayout prop when window omits linesLayout (default is inlineEditable)', () => {
     const code = generatePageComponent('order', 'orderLine', masterDetailContract);
-    assert.ok(!code.includes('linesLayout='), 'classic layout must not emit any linesLayout prop');
+    assert.ok(!code.includes('linesLayout='), 'omitting linesLayout falls back to the inlineEditable default, so no prop is emitted');
+  });
+
+  it('emits linesLayout="classic" when window explicitly opts out to classic', () => {
+    const classicContract = {
+      ...inlineEditableContract,
+      frontendContract: {
+        ...inlineEditableContract.frontendContract,
+        window: { ...inlineEditableContract.frontendContract.window, linesLayout: 'classic' },
+      },
+    };
+    const code = generatePageComponent('order', 'orderLine', classicContract);
+    assert.ok(code.includes('linesLayout="classic"'), 'explicit classic opt-out must emit the linesLayout prop');
   });
 
   it('generated table component uses forwardRef for inline-editable windows', () => {
@@ -2169,6 +2301,70 @@ describe('generatePageComponent — clearsField and labels in secondary-tab addL
     const creditEntry = codeWithOneSide.match(/\{\s*key:\s*'credit'[^}]*\}/);
     assert.ok(creditEntry, 'expected credit entry to be emitted');
     assert.ok(!creditEntry[0].includes('clearsField'), 'credit entry must not include clearsField when not declared');
+  });
+});
+
+// ---------------------------------------------------------------------------
+// ETP-4685 — per-option `labels` on a `type: 'select'` field's `options` array
+// in secondary-tab addLineFields. getS() (used by getOptionsPart for header/
+// form fields) already emits per-option labels; buildEnumOptionStr() (used
+// here, for secondary-tab addLineFields) must do the same, or a select field
+// declared on a secondary tab (e.g. contacts' bankAccount.bankFormat) shows
+// the raw AD Name regardless of locale once rendered by DataTable's
+// InlineAddRow / InlineLinesPanel's EditCell.
+// ---------------------------------------------------------------------------
+
+const selectOptionsTabContract = {
+  frontendContract: {
+    window: {
+      id: '820',
+      name: 'Contacts',
+      primaryEntity: 'businessPartner',
+      category: 'reference',
+      secondaryTabs: {
+        bankAccount: {
+          label: 'Cuenta Bancaria',
+          tabOrder: 1,
+          addLineFields: ['bankFormat'],
+        },
+      },
+    },
+    entities: {
+      businessPartner: {
+        fields: [
+          { name: 'name', column: 'Name', type: 'string', tsType: 'string',
+            visibility: 'editable', required: true, grid: true, form: true },
+        ],
+        searchableFields: ['name'],
+        computedFields: [],
+      },
+      bankAccount: {
+        fields: [
+          { name: 'bankFormat', column: 'BankFormat', tsType: 'string',
+            visibility: 'editable', required: true, grid: true, form: true,
+            label: 'Bank Account Format',
+            enumValues: [
+              { value: 'GENERIC', name: 'Use Generic Account No.', labels: { es_ES: 'Utilizar Número Genérico de Cuenta' } },
+              { value: 'IBAN', name: 'Use IBAN', labels: { es_ES: 'Utilizar IBAN' } },
+            ] },
+        ],
+        searchableFields: [],
+        computedFields: [],
+      },
+    },
+  },
+  backendContract: { processEndpoints: [] },
+};
+
+describe('generatePageComponent — per-option labels on select fields in secondary-tab addLineFields', () => {
+  it('emits the per-option labels dict for a select field, matching getS()/getOptionsPart', () => {
+    const code = generatePageComponent('businessPartner', null, selectOptionsTabContract);
+    const entry = code.match(/\{\s*key:\s*'bankFormat'[^}]*options: \[[^\]]*\][^}]*\}/);
+    assert.ok(entry, 'expected the bankFormat addLineFields entry to be emitted');
+    assert.ok(
+      entry[0].includes('labels') && entry[0].includes('Utilizar Número Genérico de Cuenta'),
+      `expected per-option labels in the options array, got: ${entry[0]}`,
+    );
   });
 });
 

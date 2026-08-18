@@ -314,6 +314,40 @@ describe('generateFrontendContract — forceCalloutFields', () => {
   });
 });
 
+// ETP-4749 — fixed, non-editable chip rendered before a text input (e.g. "https://").
+// Own tiny fixture (not minimalSchema) so it doesn't disturb the exact field-count
+// assertions elsewhere in this file.
+const inputPrefixSchema = {
+  version: '0.1.0',
+  window: { id: '123', name: 'Contacts', primaryEntity: 'businessPartner', category: 'test' },
+  entities: [{
+    name: 'businessPartner',
+    table: 'C_BPartner',
+    level: 'header',
+    fields: [
+      { name: 'etgoWeb', column: 'EM_Etgo_Web', type: 'string', visibility: 'editable',
+        required: false, searchable: false, grid: true, form: true, inputPrefix: 'https://' },
+      { name: 'name', column: 'Name', type: 'string', visibility: 'editable',
+        required: true, searchable: true, grid: true, form: true },
+    ],
+  }],
+};
+
+describe('generateFrontendContract — inputPrefix (ETP-4749)', () => {
+  it('passes inputPrefix through verbatim onto the mapped field', () => {
+    const fc = generateFrontendContract(inputPrefixSchema);
+    const web = fc.entities.businessPartner.fields.find(f => f.name === 'etgoWeb');
+    assert.equal(web.inputPrefix, 'https://');
+  });
+
+  it('omits inputPrefix entirely for a field that does not declare it', () => {
+    const fc = generateFrontendContract(inputPrefixSchema);
+    const name = fc.entities.businessPartner.fields.find(f => f.name === 'name');
+    assert.equal(name.inputPrefix, undefined);
+    assert.ok(!('inputPrefix' in name), 'name field should not even have the key');
+  });
+});
+
 describe('generateBackendContract', () => {
   it('includes all fields including system', () => {
     const bc = generateBackendContract(minimalSchema, sampleRules, sampleProcesses);
@@ -335,6 +369,24 @@ describe('generateBackendContract', () => {
     const processEndpoint = bc.processEndpoints.find(p => p.name === 'completeOrder');
     assert.ok(processEndpoint);
     assert.equal(processEndpoint.method, 'POST');
+  });
+
+  it('carries entity namedFilters into the backend contract (ETP-4601)', () => {
+    const namedFilters = [
+      { name: 'completed', label: 'Paid', where: 'e.paymentComplete = true' },
+      { name: 'pending', where: 'e.paymentComplete = false' },
+    ];
+    const schemaWithFilters = {
+      ...minimalSchema,
+      entities: [{ ...minimalSchema.entities[0], namedFilters }],
+    };
+    const bc = generateBackendContract(schemaWithFilters, sampleRules, sampleProcesses);
+    assert.deepEqual(bc.entities.order.namedFilters, namedFilters);
+  });
+
+  it('omits namedFilters when the entity declares none (ETP-4601)', () => {
+    const bc = generateBackendContract(minimalSchema, sampleRules, sampleProcesses);
+    assert.equal(bc.entities.order.namedFilters, undefined);
   });
 });
 

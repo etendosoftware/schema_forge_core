@@ -92,6 +92,8 @@ This is not a decisions.json opt-in; it applies automatically to every generated
 | `documentPreview` | object | `null` | `{ titlePrefix: string }` | Enables the document preview button in the detail header. `titlePrefix` is shown in the preview drawer title (e.g., `"Order"`, `"Invoice"`). |
 | `breadcrumb` | string | `"{category} / {name}"` | Any string | Overrides the auto-generated breadcrumb path shown in the topbar. Useful when the default category/name combination is too verbose (e.g., `"Product"` instead of `"Reference / Product"`). |
 | `hideCreate` | boolean | `false` | — | Hides the generic Create/New button in the list toolbar. Use this when creation is handled by a window-specific action or custom component. |
+| `hideDelete` | boolean | `false` | — | Disables the CRUD delete capability at the API level for every entity in the window — sets `apiPrediction.crud.<entity>.delete: false` on the contract, and (since ETP-4745) `ETGO_SF_ENTITY.ISDELETE = 'N'` server-side, so NEO Headless answers `405` for `DELETE` on the affected entities. Before ETP-4745 this flag only affected `contract.json`/the UI-derived delete affordance; a raw API `DELETE` call still succeeded regardless. Override one entity with `entities.{name}.hideDelete: false`. See [Entity HTTP Methods](#entity-http-methods-entitiesnamereadonly--entitiesnamemethods) for the full precedence with `readOnly`/`methods`. |
+| `readOnly` | boolean | `false` | — | **View-only window, UI *and* API.** Derives `hideCreate: true` + `hideDelete: true`, makes `DetailView` block edit/save, and — since ETP-4254 — restricts **every entity of the window to `GET` + `GETBYID`** on `ETGO_SF_ENTITY`, so NEO Headless answers `405 "<METHOD> not enabled for <entity>"` and MCP's `neo_discover` reports `readOnly: true`. Use it for monitor/log windows. Override one entity with `entities.{name}.readOnly: false`. See [Entity HTTP Methods](#entity-http-methods-entitiesnamereadonly--entitiesnamemethods). |
 | `hidePrint` | boolean | `false` | — | Hides the print button in the detail view action bar. |
 | `hideMoreMenu` | boolean | `false` | — | Hides the triple-dot "more" menu in the detail view action bar. |
 | `hideStatusFilter` | boolean | `false` | — | Hides the status-filter dropdown ("All statuses") in the list toolbar, even when a `status`-typed column exists. The rest of the filter bar (date filter, Filters) is unaffected. |
@@ -530,6 +532,81 @@ Entity keys use **camelCase from tabName** (e.g., `"header"`, `"lines"`, `"basic
 | `javaQualifier` | string | `null` | CDI qualifier for custom NeoHandler. |
 | `preconditions` | object | `null` | Process preconditions checked by NEO Headless before a button/action process runs. Keyed by `AD_Process_ID`. See [Process Preconditions](#process-preconditions-entitiesnamepreconditions). |
 | `handlesDefaults` | boolean | `true` | **HandleDefaults.** When `true` (default), a new detail line's add-row fetches `GET /{detailEntity}/defaults?parentId=…` on open and pre-fills empty editable fields from the backend-resolved defaults (reusing the header-defaults normalization). Set `false` to opt this detail entity out — the add-row keeps literal-only seeding and no `/defaults` request is made. Emitted to the contract / runtime `api.crud` only when `false`. |
+| `readOnly` | boolean | _(inherits `window.readOnly`)_ | **Per-entity API read-only.** `true` restricts this entity to `GET` + `GETBYID`; `false` opts it OUT of a read-only window. Wins over `window.readOnly` in both directions. See [Entity HTTP Methods](#entity-http-methods-entitiesnamereadonly--entitiesnamemethods). |
+| `methods` | string[] | `null` | **Explicit HTTP-method allowlist** for this entity, e.g. `["GET", "PUT", "PATCH"]`. Wins over both `readOnly` levels. `GET` and `GETBYID` are always added back. See [Entity HTTP Methods](#entity-http-methods-entitiesnamereadonly--entitiesnamemethods). |
+| `hideDelete` | boolean | _(inherits `window.hideDelete`)_ | **Per-entity API delete gate (ETP-4745).** `true` disables `DELETE` for this entity only; `false` opts it OUT of a `window.hideDelete` window, regaining `DELETE` even while other entities stay restricted. Wins over `window.hideDelete` in both directions, same precedence shape as `readOnly`. See [Entity HTTP Methods](#entity-http-methods-entitiesnamereadonly--entitiesnamemethods). |
+
+### Entity HTTP Methods (`entities.{name}.readOnly` / `entities.{name}.methods`)
+
+Controls the per-entity HTTP method flags on `ETGO_SF_ENTITY`
+(`ISGET`, `ISGETBYID`, `ISPOST`, `ISPUT`, `ISPATCH`, `ISDELETE`). NEO Headless
+**enforces** them: a disabled method answers `405 "<METHOD> not enabled for
+<entity>"`, and MCP's `neo_discover` reports the remaining set as
+`{"methods":[…],"readOnly":true}`. This is the lever that makes a monitor/log
+window genuinely read-only for MCP agents (ETP-4254).
+
+```json
+{
+  "window": { "readOnly": true },
+  "entities": {
+    "log":             { },                                  // read-only (inherits the window)
+    "acknowledgement": { "readOnly": false },                // opts out — all six methods
+    "header":          { "methods": ["GET", "PUT", "PATCH"] }// allowlist (POST/DELETE disabled)
+  }
+}
+```
+
+**Precedence:** `entities.{name}.methods` → `entities.{name}.readOnly` →
+`window.readOnly` → default (all six methods enabled).
+
+**Invariants**
+
+- `GET` and `GETBYID` are **always** granted. An empty or write-only `methods`
+  array still resolves to `["GET","GETBYID"]` — an entity with no read access is
+  never a valid outcome, and the resolver enforces this rather than trusting call
+  sites.
+- Declaring nothing leaves **all six methods enabled**, so existing windows are
+  untouched.
+- Method tokens are case- and separator-insensitive: `getById`, `GET_BY_ID` and
+  `GETBYID` are the same method.
+
+**How it reaches the database.** The declaration is resolved once, in
+`resolve-curated.js`, and lands on the contract as
+`apiPrediction.crud.<entity>.methods` (emitted only when the entity's resolved set
+differs from the window-level default, so unrestricted windows produce no contract
+churn) plus `apiPrediction.window.readOnly`. **Both** write paths then read that
+value back through `resolveContractEntityMethods()` in
+`cli/src/lib/entity-methods.js`:
+
+- `push-to-neo.js` → `neo-writer.populateWindowSpec()` → live `ETGO_SF_ENTITY` row
+- `cli/src/lib/neo-delta.js` → predicted `ETGO_SF_ENTITY.xml` row (`--dump-delta`)
+
+They share one function and one input, so the live DB and the XML delta cannot
+diverge (a divergence would turn `regen-check` red).
+
+> **Regenerate before pushing.** Because the flags are read off the contract,
+> editing `decisions.json` and pushing without regenerating leaves the old flags in
+> place. Validator rule **F21** blocks exactly that (see
+> `docs/pipeline-validator-reference.md`).
+
+**Not the same as field-level read-only.** `fields.{name}.visibility: "readOnly"`
+sets `ETGO_SF_FIELD.ISREADONLY` for one column. This block controls whole-entity
+HTTP verbs.
+
+**`hideDelete` also disables the `DELETE` method (ETP-4745).** `window.hideDelete`
+/ `entities.{name}.hideDelete` set `apiPrediction.crud.{entity}.delete = false` on
+the contract — and since ETP-4745, `resolveContractEntityMethods()` (the single
+function both write paths read) folds that flag into the resolved method list, so
+`ETGO_SF_ENTITY.ISDELETE` is written as `N` too. Before ETP-4745 this flag only
+hid the UI delete affordance; the live DB and the predicted XML delta kept
+granting `DELETE` regardless — a wiring gap, not an intentional split. `methods`
+is still the tool for restricting anything beyond DELETE (e.g. blocking `POST` or
+`PUT` on one entity); for DELETE alone, `hideDelete` is now equivalent and reads
+more intentionally. `window.hideDelete`'s effect composes with
+`entities.{name}.readOnly: false`: an entity that explicitly opts out of a
+`window.readOnly` window regains DELETE too, exactly like the other write
+methods (see [Entity HTTP Methods](#entity-http-methods-entitiesnamereadonly--entitiesnamemethods)) — a standalone `window.hideDelete` (declared without
+`window.readOnly`) has no such opt-out and still clobbers every entity.
 
 ### Line HandleDefaults (`entities.{name}.handlesDefaults`)
 

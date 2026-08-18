@@ -1,6 +1,7 @@
 #!/usr/bin/env node
 
 import { toSpecName, pushProcessToNeo } from './push-to-neo.js';
+import { resolveAgentPromptRefs } from './lib/agent-prompt-ref.js';
 
 /**
  * Resolve a window's spec name (kebab-case) from its AD_Window_ID by querying
@@ -779,6 +780,9 @@ export async function loadDecisionsAndResolve(windowName, pipelineContext) {
 
   const decisionsPath = `artifacts/${windowName}/decisions.json`;
   const decisions = await loadWindowDecisions(readFile, windowName, schemaRaw, decisionsPath);
+  // Resolve any `#REF#<path>` agentPrompt references (spec + fields) before the
+  // curated schema is built, so the contract carries literal prompt text.
+  resolveAgentPromptRefs(decisions, process.cwd());
 
   await runResolveCuratedStep(resolveCurated, schemaRaw, rulesRaw, decisions, pipelineContext);
 }

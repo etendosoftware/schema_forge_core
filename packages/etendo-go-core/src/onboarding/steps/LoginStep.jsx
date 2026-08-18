@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { Lock, Mail, Eye, EyeOff, Loader2, ArrowLeft, Check } from 'lucide-react';
 import { Button } from '@etendosoftware/app-shell-core/components/ui/button';
 import { useUI, useLocaleSwitch } from '@etendosoftware/app-shell-core/i18n';
-import { loginAccount, loginWithSsoProvider, requestPasswordReset, confirmPasswordReset, fetchAccount, fetchEnvironments } from '../api.js';
+import { loginAccount, loginWithSsoProvider, requestPasswordReset, confirmPasswordReset, fetchAccount, fetchEnvironments, AUTH_ERROR_UI_KEYS } from '../api.js';
 import { getConfiguredSsoProviders, renderSsoProviderButton } from '../sso.js';
 import { trackOnboarding } from '../tracking.js';
 import { AuthShell } from '../components/AuthShell.jsx';
@@ -65,14 +65,16 @@ export function LoginStep({ config, stepData, onNext, onBack, goToStep, setToken
     }
   }, []);
 
-  const handleAuthSuccess = useCallback((csrfToken, account, { route = true } = {}) => {
-    if (setToken) setToken(csrfToken);
+  const handleAuthSuccess = useCallback(async (token, account, { route = true, authMethod = 'password' } = {}) => {
+    localStorage.setItem('sf_platform_token', token);
+    localStorage.setItem('sf_platform_auth_method', authMethod);
+    if (setToken) setToken(token);
     if (setAccountName) setAccountName(account?.name || account?.email || null);
     setShowLoginPassword(false);
     setSsoError(null);
     setSsoLoadingProvider(null);
     if (route && routeByEnvironments) {
-      return routeByEnvironments(csrfToken);
+      await routeByEnvironments(token);
     }
   }, [setToken, setAccountName, routeByEnvironments]);
 
@@ -87,13 +89,13 @@ export function LoginStep({ config, stepData, onNext, onBack, goToStep, setToken
     setSsoLoadingProvider(provider);
     try {
       const data = await loginWithSsoProvider(fetch, apiBase, provider, payload);
-      if (data.csrfToken) {
+      if (data.token) {
         trackOnboarding(config, 'onboarding_auth_succeeded', {
           action: 'sso',
           provider,
           status: 'success',
         });
-        handleAuthSuccess(data.csrfToken, data.account);
+        handleAuthSuccess(data.token, data.account, { authMethod: 'sso' });
       } else {
         trackOnboarding(config, 'onboarding_auth_failed', {
           action: 'sso',
@@ -167,13 +169,16 @@ export function LoginStep({ config, stepData, onNext, onBack, goToStep, setToken
     setLoginLoading(true);
     try {
       const data = await loginAccount(fetch, apiBase, loginForm);
-      if (data.csrfToken) {
+      if (data.token) {
         trackOnboarding(config, 'onboarding_auth_succeeded', {
           action: 'login',
           status: 'success',
         });
-        // Keep the loading state on while routing or redirecting.
-        await handleAuthSuccess(data.csrfToken, data.account);
+        // Keep the loading state on: routeByEnvironments always ends by either
+        // navigating away (window.location.href) or switching to another
+        // onboarding step, so LoginStep unmounts. Resetting it here would flash
+        // the button back to its normal state during that hand-off window.
+        await handleAuthSuccess(data.token, data.account);
       } else {
         trackOnboarding(config, 'onboarding_auth_failed', {
           action: 'login',
@@ -187,7 +192,9 @@ export function LoginStep({ config, stepData, onNext, onBack, goToStep, setToken
         action: 'login',
         status: 'failed',
       });
-      setLoginError(ui(err.code || 'onboardingConnectionError'));
+      // ETP-4664: translate by the backend's stable error code — never show its
+      // raw (English) message directly.
+      setLoginError(ui(AUTH_ERROR_UI_KEYS[err.code] || 'onboardingConnectionError'));
       setLoginLoading(false);
     }
   };
@@ -217,6 +224,8 @@ export function LoginStep({ config, stepData, onNext, onBack, goToStep, setToken
     setResetLoading(true);
     try {
       await confirmPasswordReset(fetch, apiBase, resetForm);
+      localStorage.removeItem('sf_platform_token');
+      localStorage.removeItem('sf_platform_auth_method');
       if (setToken) setToken(null);
       if (setAccountName) setAccountName(null);
       setResetSuccess(true);

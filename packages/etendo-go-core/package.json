@@ -14,7 +14,10 @@
     "./onboarding/sso": "./src/onboarding/sso.js",
     "./onboarding/state": "./src/onboarding/state.js",
     "./onboarding/password-policy": "./src/onboarding/passwordPolicy.js",
-    "./onboarding/oauth-return-to": "./src/onboarding/oauthReturnTo.js"
+    "./onboarding/oauth-return-to": "./src/onboarding/oauthReturnTo.js",
+    "./onboarding/field-limits": "./src/onboarding/fieldLimits.js",
+    "./onboarding/error-messages": "./src/onboarding/errorMessages.js"
+    ,"./checkout": "./src/checkout/index.js"
   },
   "files": [
     "src",

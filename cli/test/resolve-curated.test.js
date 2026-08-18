@@ -254,6 +254,22 @@ describe('resolveCurated — field-level drawer + display passthroughs (F3)', ()
   });
 });
 
+describe('resolveCurated — window.detailTabOrder passthrough (ETP-4415)', () => {
+  const schemaRaw = { window: { id: '900', name: 'Item' }, entities: [] };
+
+  it('passes window.detailTabOrder through to the curated window object', async () => {
+    const decisions = { window: { detailTabOrder: 7 } };
+    const { schema } = await resolveCurated(schemaRaw, { rules: [] }, decisions);
+    assert.equal(schema.window.detailTabOrder, 7);
+  });
+
+  it('does not add detailTabOrder when not declared', async () => {
+    const decisions = { window: {} };
+    const { schema } = await resolveCurated(schemaRaw, { rules: [] }, decisions);
+    assert.equal(schema.window.detailTabOrder, undefined);
+  });
+});
+
 describe('resolveCurated — agentPrompt passthrough (ETP-4252)', () => {
   const schemaRaw = {
     window: { id: '700', name: 'Purchase Order' },
@@ -295,6 +311,83 @@ describe('resolveCurated — agentPrompt passthrough (ETP-4252)', () => {
     const { schema } = await resolveCurated(schemaRaw, { rules: [] }, decisions);
     const plain = schema.entities[0].fields.find(f => f.name === 'plain');
     assert.equal(plain.agentPrompt, undefined);
+  });
+});
+
+describe('resolveCurated — namedFilters normalization (ETP-4601)', () => {
+  const schemaRaw = {
+    window: { id: '710', name: 'Sales Invoice' },
+    entities: [{
+      name: 'header', tableName: 'C_Invoice', tabId: '1', tabName: 'Header',
+      fields: [
+        { name: 'documentNo', columnName: 'DocumentNo', label: 'No', type: 'string', visibility: 'editable' },
+      ],
+    }],
+  };
+
+  it('copies valid named filters (trimmed) into the curated entity', async () => {
+    const decisions = {
+      version: 2,
+      window: { name: 'Sales Invoice' },
+      entities: {
+        header: {
+          name: 'header',
+          namedFilters: [
+            { name: '  completed ', label: ' Paid ', description: ' Paid in full ', where: ' e.paymentComplete = true ' },
+            { name: 'pending', where: 'e.paymentComplete = false' },
+          ],
+          fields: { documentNo: {} },
+        },
+      },
+      rules: {},
+    };
+    const { schema } = await resolveCurated(schemaRaw, { rules: [] }, decisions);
+    assert.deepEqual(schema.entities[0].namedFilters, [
+      { name: 'completed', label: 'Paid', description: 'Paid in full', where: 'e.paymentComplete = true' },
+      { name: 'pending', where: 'e.paymentComplete = false' },
+    ]);
+  });
+
+  it('drops entries missing a name or where, and dedupes by name (first wins)', async () => {
+    const decisions = {
+      version: 2,
+      window: { name: 'Sales Invoice' },
+      entities: {
+        header: {
+          name: 'header',
+          namedFilters: [
+            { name: 'completed', where: 'e.paymentComplete = true' },
+            { name: '', where: 'e.x = 1' },
+            { name: 'nowhere' },
+            { where: 'e.y = 2' },
+            { name: 'completed', where: 'e.other = true' },
+          ],
+          fields: { documentNo: {} },
+        },
+      },
+      rules: {},
+    };
+    const { schema } = await resolveCurated(schemaRaw, { rules: [] }, decisions);
+    assert.deepEqual(schema.entities[0].namedFilters, [
+      { name: 'completed', where: 'e.paymentComplete = true' },
+    ]);
+  });
+
+  it('omits namedFilters when none are declared or all are invalid', async () => {
+    const decisions = {
+      version: 2,
+      window: { name: 'Sales Invoice' },
+      entities: {
+        header: {
+          name: 'header',
+          namedFilters: [{ name: 'bad' }],
+          fields: { documentNo: {} },
+        },
+      },
+      rules: {},
+    };
+    const { schema } = await resolveCurated(schemaRaw, { rules: [] }, decisions);
+    assert.equal(schema.entities[0].namedFilters, undefined);
   });
 });
 
@@ -343,6 +436,51 @@ describe('resolveCurated — excludeValueOf passthrough', () => {
     assert.equal(plain.excludeValueOf, undefined);
     const originBin = schema.entities[0].fields.find(f => f.name === 'storageBin');
     assert.equal(originBin.excludeValueOf, undefined);
+  });
+});
+
+// ETP-4749 — fixed, non-editable chip rendered before a text input (e.g. "https://"
+// for a website field whose stored value is only the part after the scheme).
+describe('resolveCurated — inputPrefix passthrough', () => {
+  const schemaRaw = {
+    window: { id: '123', name: 'Contacts' },
+    entities: [{
+      name: 'businessPartner',
+      tableName: 'C_BPartner',
+      tabId: '10',
+      tabName: 'Business Partner',
+      fields: [
+        { name: 'etgoWeb', columnName: 'EM_Etgo_Web', label: 'Web', type: 'string', visibility: 'editable' },
+        { name: 'plain', columnName: 'PlainCol', label: 'Plain', type: 'string', visibility: 'editable' },
+      ],
+    }],
+  };
+
+  const decisions = {
+    version: 2,
+    window: { name: 'Contacts' },
+    entities: {
+      businessPartner: {
+        name: 'businessPartner',
+        fields: {
+          etgoWeb: { inputPrefix: 'https://' },
+          plain: {},
+        },
+      },
+    },
+    rules: {},
+  };
+
+  it('copies field inputPrefix into the curated field', async () => {
+    const { schema } = await resolveCurated(schemaRaw, { rules: [] }, decisions);
+    const web = schema.entities[0].fields.find(f => f.name === 'etgoWeb');
+    assert.equal(web.inputPrefix, 'https://');
+  });
+
+  it('omits inputPrefix when a field does not declare one', async () => {
+    const { schema } = await resolveCurated(schemaRaw, { rules: [] }, decisions);
+    const plain = schema.entities[0].fields.find(f => f.name === 'plain');
+    assert.equal(plain.inputPrefix, undefined);
   });
 });
 

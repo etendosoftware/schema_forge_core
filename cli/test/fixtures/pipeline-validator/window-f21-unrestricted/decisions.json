@@ -1,0 +1,8 @@
+{
+  "version": "v2",
+  "window": { "title": "Sales Order" },
+  "entities": {
+    "header": { "fields": { "documentNo": { "visibility": "readOnly" } } },
+    "lines": { "hideDelete": true }
+  }
+}

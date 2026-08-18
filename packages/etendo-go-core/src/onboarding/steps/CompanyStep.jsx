@@ -4,6 +4,7 @@ import { Button } from '@etendosoftware/app-shell-core/components/ui/button';
 import { Label } from '@etendosoftware/app-shell-core/components/ui/label';
 import { useUI } from '@etendosoftware/app-shell-core/i18n';
 import { isCompanyStepValid } from '../state.js';
+import { ONBOARDING_FIELD_LIMITS } from '../fieldLimits.js';
 import { trackOnboarding } from '../tracking.js';
 import { SetupShell } from '../components/SetupShell.jsx';
 import { OnboardingSessionAction } from '../components/OnboardingSessionAction.jsx';
@@ -59,9 +60,6 @@ export function CompanyStep({ config, stepData, onNext, onBack, goToStep, onChan
   }));
 
   const isValid = isCompanyStepValid(form);
-  // Freelancers invoice under their personal tax id, captured elsewhere — hide the
-  // company Tax ID field for them.
-  const showTaxId = !isFreelancer;
   const sessionAction = token && (
     <OnboardingSessionAction onLogout={onLogout} label={ui('logout')} />
   );
@@ -101,32 +99,32 @@ export function CompanyStep({ config, stepData, onNext, onBack, goToStep, onChan
               value={form.clientName}
               onChange={e => updateField('clientName', e.target.value)}
               placeholder={ui('onboardingCompanyNamePlaceholder')}
+              maxLength={ONBOARDING_FIELD_LIMITS.clientName}
               data-testid="SetupField__79cf84" />
           )}
 
-          {showTaxId && (
-            <div>
-              <Label
-                htmlFor="fiscalIdValue"
-                className="mb-2 block text-sm font-medium leading-6 text-slate-900"
-                data-testid="Label__79cf84">
-                {ui('onboardingFiscalIdLabel')} <span className="ml-2 font-normal text-slate-500">({ui('optional')})</span>
-              </Label>
-              <div className="flex overflow-hidden rounded-lg border border-[#D1D4DB] bg-white shadow-[0_1px_2px_rgba(18,18,23,0.05)] transition-colors hover:border-slate-400 focus-within:border-slate-400 focus-within:ring-4 focus-within:ring-slate-900/5">
-                <div className="flex min-w-[88px] items-center justify-center border-r border-[#D1D4DB] px-4 text-base text-slate-500">
-                  {form.fiscalIdType}
-                </div>
-                <input
-                  id="fiscalIdValue"
-                  type="text"
-                  value={form.fiscalIdValue}
-                  onChange={e => updateField('fiscalIdValue', e.target.value)}
-                  placeholder={ui('onboardingFiscalIdPlaceholder')}
-                  className="h-10 w-full border-0 px-4 text-base text-slate-900 outline-none placeholder:text-slate-400"
-                />
+          <div>
+            <Label
+              htmlFor="fiscalIdValue"
+              className="mb-2 block text-sm font-medium leading-6 text-slate-900"
+              data-testid="Label__79cf84">
+              {ui('onboardingFiscalIdLabel')} <span className="ml-2 font-normal text-slate-500">({ui('optional')})</span>
+            </Label>
+            <div className="flex overflow-hidden rounded-lg border border-[#D1D4DB] bg-white shadow-[0_1px_2px_rgba(18,18,23,0.05)] transition-colors hover:border-slate-400 focus-within:border-slate-400 focus-within:ring-4 focus-within:ring-slate-900/5">
+              <div className="flex min-w-[88px] items-center justify-center border-r border-[#D1D4DB] px-4 text-base text-slate-500">
+                {form.fiscalIdType}
               </div>
+              <input
+                id="fiscalIdValue"
+                type="text"
+                value={form.fiscalIdValue}
+                onChange={e => updateField('fiscalIdValue', e.target.value)}
+                placeholder={ui('onboardingFiscalIdPlaceholder')}
+                maxLength={ONBOARDING_FIELD_LIMITS.fiscalId}
+                className="h-10 w-full border-0 px-4 text-base text-slate-900 outline-none placeholder:text-slate-400"
+              />
             </div>
-          )}
+          </div>
 
           <SetupField
             id="address"
@@ -135,6 +133,7 @@ export function CompanyStep({ config, stepData, onNext, onBack, goToStep, onChan
             value={form.address}
             onChange={e => updateField('address', e.target.value)}
             placeholder={ui('onboardingAddressPlaceholder')}
+            maxLength={ONBOARDING_FIELD_LIMITS.address}
             data-testid="SetupField__79cf84" />
 
           <SetupSelect

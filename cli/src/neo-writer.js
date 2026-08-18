@@ -11,6 +11,12 @@
 
 import { randomUUID } from 'node:crypto';
 import { GO_MODULE_ID } from './lib/constants.js';
+import { methodsToWriterFlags, NEO_HTTP_METHODS } from './lib/entity-methods.js';
+
+// ETP-4254 — the "nothing declared" default for a window entity: every HTTP
+// method enabled. Kept as a frozen constant so the default cannot drift away
+// from lib/entity-methods.js.
+const ALL_METHOD_FLAGS = Object.freeze(methodsToWriterFlags([...NEO_HTTP_METHODS]));
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -65,6 +71,8 @@ export function auditDefaults(opts = {}) {
  * @param {string} [params.specType='W'] - 'W' (window) or 'P' (process)
  * @param {string} [params.description]
  * @param {string} [params.agentPrompt] - Agent guidance returned by neo_discover
+ * @param {boolean} [params.showInMcp] - Opt-out flag: only `false` hides the spec
+ *   from the MCP (discover + tools). Absent/true keeps it visible (default 'Y').
  * @param {string} [params.specId] - If provided, UPDATE instead of INSERT
  * @param {object} [params.audit] - Override audit defaults
  * @returns {{ specId: string, created: boolean }}
@@ -78,9 +86,13 @@ export async function upsertSpec(client, params) {
     specType = 'W',
     description = null,
     agentPrompt = null,
+    showInMcp = null,
     specId: existingId = null,
     audit = {},
   } = params;
+
+  // Opt-out: only an explicit `false` hides the spec from the MCP.
+  const showInMcpVal = showInMcp === false ? 'N' : 'Y';
 
   // Check for duplicate name
   const dupCheck = await client.query(
@@ -101,10 +113,10 @@ export async function upsertSpec(client, params) {
     await client.query(
       `UPDATE etgo_sf_spec
        SET name = $1, spec_type = $2, ad_window_id = $3, ad_process_id = $4,
-           ad_module_id = $5, description = $6, agent_prompt = $7,
-           updated = $8, updatedby = $9
-       WHERE etgo_sf_spec_id = $10`,
-      [name, specType, windowId, processId, moduleId, description, agentPrompt,
+           ad_module_id = $5, description = $6, agent_prompt = $7, showinmcp = $8,
+           updated = $9, updatedby = $10
+       WHERE etgo_sf_spec_id = $11`,
+      [name, specType, windowId, processId, moduleId, description, agentPrompt, showInMcpVal,
        auditVals.updated, auditVals.updatedby, existingId],
     );
     return { specId: existingId, created: false };
@@ -116,12 +128,12 @@ export async function upsertSpec(client, params) {
     `INSERT INTO etgo_sf_spec
      (etgo_sf_spec_id, name, spec_type, ad_window_id, ad_process_id, ad_module_id,
       description, ad_client_id, ad_org_id, isactive, created, createdby, updated, updatedby,
-      agent_prompt)
-     VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15)`,
+      agent_prompt, showinmcp)
+     VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16)`,
     [specId, name, specType, windowId, processId, moduleId, description,
      auditVals.ad_client_id, auditVals.ad_org_id, auditVals.isactive,
      auditVals.created, auditVals.createdby, auditVals.updated, auditVals.updatedby,
-     agentPrompt],
+     agentPrompt, showInMcpVal],
   );
   return { specId, created: true };
 }
@@ -340,7 +352,13 @@ export async function upsertField(client, params) {
  * @param {string} params.specId - The spec to populate
  * @param {string} params.moduleId - AD_Module_ID for new rows
  * @param {boolean} [params.excludeSystemColumns=true]
- * @param {boolean} [params.includeAllMethods=false]
+ * @param {(tab: {ad_tab_id: string, name: string, ad_table_id: string}) => object} [params.methodFlagsFor]
+ *   ETP-4254 — per-tab resolver returning the `is*` method flags for that entity
+ *   (see `lib/entity-methods.js → methodsToWriterFlags`). Replaces the old
+ *   `includeAllMethods` boolean, which could only say "all Y" or "all N" — the
+ *   latter producing an entity with no read access at all. When omitted, every
+ *   method is enabled, which is the documented default and what keeps existing
+ *   AD_Tab-backed entities untouched.
  * @param {object} [params.audit] - Override audit defaults
  * @returns {{ entityCount: number, fieldCount: number, entities: Array, changes: object }}
  */
@@ -349,7 +367,7 @@ export async function populateSpec(client, params) {
     specId,
     moduleId = process.env.SF_MODULE_ID || GO_MODULE_ID,
     excludeSystemColumns = true,
-    includeAllMethods = false,
+    methodFlagsFor = null,
     audit = {},
   } = params;
 
@@ -364,7 +382,7 @@ export async function populateSpec(client, params) {
   const spec = specResult.rows[0];
 
   if (spec.spec_type === 'W') {
-    return populateWindowSpec(client, { specId, windowId: spec.ad_window_id, moduleId, excludeSystemColumns, includeAllMethods, audit });
+    return populateWindowSpec(client, { specId, windowId: spec.ad_window_id, moduleId, excludeSystemColumns, methodFlagsFor, audit });
   } else if (spec.spec_type === 'P') {
     return populateProcessSpec(client, { specId, processId: spec.ad_process_id, moduleId, audit });
   } else if (spec.spec_type === 'R') {
@@ -453,7 +471,7 @@ function indexEntitiesByTabAndName(existingEntitiesResult, existingEntityByTab, 
  * Populate entities + fields for a Window-type spec from AD_Tab/AD_Column.
  * Incremental: matches entities by ad_tab_id, fields by ad_column_id.
  */
-async function populateWindowSpec(client, { specId, windowId, moduleId, excludeSystemColumns, includeAllMethods, audit }) {
+async function populateWindowSpec(client, { specId, windowId, moduleId, excludeSystemColumns, methodFlagsFor, audit }) {
   // Get active tabs ordered by seqno. name + ad_tab_id are tiebreakers:
   // when two modules attach tabs to the same window with the same SeqNo the
   // primary sort is ambiguous, and the entity SEQNO assigned below is derived
@@ -476,9 +494,13 @@ async function populateWindowSpec(client, { specId, windowId, moduleId, excludeS
   const existingEntityByName = new Map();
   indexEntitiesByTabAndName(existingEntitiesResult, existingEntityByTab, existingEntityByName);
 
-  const methodFlags = includeAllMethods
-    ? { isGet: 'Y', isGetbyid: 'Y', isPost: 'Y', isPut: 'Y', isPatch: 'Y', isDelete: 'Y' }
-    : {};
+  // ETP-4254 — resolve the method flags per tab. `upsertEntity` defaults every
+  // flag to 'N' when not supplied, so an entity must ALWAYS receive an explicit
+  // set: the old `includeAllMethods: false` path left entities with no read
+  // access, which is never a legitimate outcome.
+  const resolveMethodFlags = (tab) => (
+    methodFlagsFor ? methodFlagsFor(tab) : { ...ALL_METHOD_FLAGS }
+  );
 
   let entityCount = 0;
   let fieldCount = 0;
@@ -504,7 +526,7 @@ async function populateWindowSpec(client, { specId, windowId, moduleId, excludeS
       name: tab.name,
       seqNo: entitySeqNo,
       entityId: existingEntityId,
-      ...methodFlags,
+      ...resolveMethodFlags(tab),
       audit,
     });
     entityCount++;
