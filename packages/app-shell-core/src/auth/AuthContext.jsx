@@ -1,5 +1,6 @@
 import { createContext, useContext, useState, useCallback, useMemo, useRef, useEffect } from 'react';
 import { deleteCookieSession, fetchCookieSession } from './api.js';
+import { CREDENTIAL_MODES, setSessionCredentials } from './sessionCredentials.js';
 import {
   createMemoryAuthStorage,
   mapRestoredSession,
@@ -15,17 +16,31 @@ export function AuthProvider({
   initialSession,
   onSessionChange,
   fetchWindowAccess,
-  // ETP-4576 — defaults to the platform cookie fetcher, so every host gets the
-  // server-side session without wiring anything (an opt-in prop left hosts that
-  // pass no props unable to authenticate at all once the localStorage handoff
-  // was removed). Pass your own function to override it.
+  // ETP-4576 — which credential scheme requests use: 'bearer' (today's shipped
+  // behaviour, the default) or 'cookie'. The host resolves this from the backend
+  // preference that gates the cookie session and passes it down, so turning the
+  // migration on or off is a database change rather than a redeploy. Sourcing it
+  // is deliberately the host's job: the core stays unaware of how the instance
+  // is configured.
+  credentialMode = CREDENTIAL_MODES.bearer,
+  // ETP-4576 — DERIVED from `credentialMode`, so one switch governs the whole
+  // scheme. Under `cookie` it defaults to the platform fetcher (the server-side
+  // session is the credential, so the restore is mandatory); under `bearer` it
+  // defaults to off, and the host keeps the pre-cookie synchronous path verbatim.
   //
-  // To opt OUT (keep the pre-cookie synchronous path, e.g. in a test whose
-  // subject is not the restore) pass an explicit `null`: any non-function makes
-  // the effect below return early and `status` resolve synchronously from
-  // `session.token`. Note `undefined` does NOT opt out — a default parameter
-  // only fills in for `undefined`, so it silently re-arms the fetcher.
-  restoreSession = fetchCookieSession,
+  // It used to default to fetchCookieSession unconditionally. The reasoning was
+  // sound at the time — #101 removed the localStorage handoff, so an opt-in prop
+  // left a host that passes no props unable to authenticate at all — but it made
+  // every host, migrated or not, request a cookie session on mount. That is what
+  // broke the app when #101 landed without its backend (ETP-4575), and is why
+  // #101 was reverted. The bearer scheme is a working path again, so the default
+  // no longer has to force the cookie one on everybody.
+  //
+  // Pass your own function to override, or an explicit `null` to opt out even
+  // under the cookie mode (e.g. a test whose subject is not the restore): any
+  // non-function makes the effect below return early and `status` resolve
+  // synchronously from `session.token`.
+  restoreSession = credentialMode === CREDENTIAL_MODES.cookie ? fetchCookieSession : null,
 }) {
   // ETP-4576 — memory, not localStorage. This was the last writer of the
   // sf_auth_* keys: persistSession() wrote them on every login/role/org change.
@@ -239,6 +254,15 @@ export function AuthProvider({
     // this effect's own identity only needs to track the role value.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [session.selectedRole]);
+
+  // ETP-4576 — hand the active scheme and both credentials to
+  // ./sessionCredentials.js, which is what every request builder in the core and
+  // the host reads. Runs on each change so a token refresh, an environment
+  // switch or a preference flip all take effect without a reload. This is the
+  // ONLY writer: nothing else may call setSessionCredentials.
+  useEffect(() => {
+    setSessionCredentials({ mode: credentialMode, token: session.token, csrfToken });
+  }, [credentialMode, session.token, csrfToken]);
 
   const setSession = useCallback((nextSession) => {
     persistSession({ ...session, ...nextSession });

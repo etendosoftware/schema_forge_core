@@ -84,6 +84,49 @@ describe('AuthProvider publishes the credential scheme on mount', () => {
   });
 });
 
+// One switch, not two. `restoreSession` defaults off under bearer and on under
+// cookie, so a host cannot end up half-migrated: requesting a cookie session on
+// mount while its requests still authenticate with a bearer token, or the
+// reverse. Asserted on the network, because the prop default is exactly the kind
+// of thing that reads correct and behaves otherwise.
+describe('credentialMode alone decides whether the session is restored', () => {
+  function mountWithoutRestoreProp(credentialMode) {
+    function Wrapper({ children }) {
+      return <AuthProvider credentialMode={credentialMode}>{children}</AuthProvider>;
+    }
+    return renderHook(() => useAuth(), { wrapper: Wrapper });
+  }
+
+  it('does NOT call the session endpoint under the bearer default', async () => {
+    // The regression that broke the app when #101 landed without its backend:
+    // every host, migrated or not, requested a cookie session on mount.
+    await act(async () => { mountWithoutRestoreProp(undefined); });
+    expect(globalThis.fetch).not.toHaveBeenCalled();
+  });
+
+  it('does NOT call it for an explicit bearer mode either', async () => {
+    await act(async () => { mountWithoutRestoreProp(CREDENTIAL_MODES.bearer); });
+    expect(globalThis.fetch).not.toHaveBeenCalled();
+  });
+
+  it('DOES call it under the cookie mode, with no restoreSession prop', async () => {
+    // The other half: opting into the cookie scheme must not also require
+    // remembering to wire the restore, or the session would never be picked up.
+    await act(async () => { mountWithoutRestoreProp(CREDENTIAL_MODES.cookie); });
+    expect(globalThis.fetch).toHaveBeenCalled();
+    const [url, init] = globalThis.fetch.mock.calls[0];
+    expect(String(url)).toContain('/sws/go/session');
+    expect(init.credentials).toBe('include');
+  });
+
+  it('resolves status synchronously under bearer, instead of booting forever', async () => {
+    // With no restore in flight there is nothing to wait for. A host left in
+    // 'booting' renders its fallback and never leaves it.
+    const { result } = mountWithoutRestoreProp(CREDENTIAL_MODES.bearer);
+    expect(result.current.status).toBe('anonymous');
+  });
+});
+
 describe('AuthProvider publishes the credentials the session holds', () => {
   // The bearer token arrives through login(), NOT through restoreSession:
   // mapRestoredSession (session.js) deliberately keeps only the identity fields and

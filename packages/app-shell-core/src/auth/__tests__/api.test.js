@@ -24,13 +24,19 @@ const src = readFileSync(join(__dirname, '..', 'api.js'), 'utf8');
 // onboardingCookieHandoff.test.js. Positive `match` assertions keep using `src`.
 const codeOnly = src.replace(/^\s*\/\/.*$/gm, '');
 
-describe('buildHeaders — no more client-side bearer token', () => {
+describe('buildHeaders — adds the locale on top of the shared credential builder', () => {
   it('is exported as a zero-argument function (no token parameter)', () => {
     assert.match(src, /export function buildHeaders\s*\(\s*\)/);
   });
 
-  it('sets Content-Type to application/json', () => {
-    assert.match(src, /Content-Type.*application\/json/);
+  // Content-Type is no longer asserted here: it comes from jsonHeaders, which
+  // owns that contract and is covered by sessionCredentials.test.js. Asserting
+  // the delegation instead is what keeps the scheme switchable — a buildHeaders
+  // that hardcodes its own headers silently ignores the active scheme, which is
+  // how the bearer fallback broke before the preference existed.
+  it('delegates the credential decision to jsonHeaders rather than building one', () => {
+    assert.match(src, /import \{[^}]*jsonHeaders[^}]*\} from '\.\/sessionCredentials\.js'/);
+    assert.match(src, /export function buildHeaders\s*\(\s*\)\s*\{\s*return \{\s*\.\.\.jsonHeaders\(\)/);
   });
 
   it('sets Accept-Language header using getStoredLocale for backend i18n', () => {
@@ -44,6 +50,27 @@ describe('buildHeaders — no more client-side bearer token', () => {
 
   it('never references a Bearer-token scheme anywhere in the module', () => {
     assert.doesNotMatch(src, /Bearer/);
+  });
+});
+
+// The write-path pair of buildHeaders. It exists so no caller has to remember to
+// append the proof by hand: every site that did (13 of them across the host)
+// silently omitted it the moment the variable it read went out of scope.
+describe('buildWriteHeaders — the write-path pair of buildHeaders', () => {
+  it('is exported as a zero-argument function', () => {
+    assert.match(src, /export function buildWriteHeaders\s*\(\s*\)/);
+  });
+
+  it('delegates to writeHeaders so unsafe methods carry the active scheme proof', () => {
+    assert.match(src, /import \{[^}]*writeHeaders[^}]*\} from '\.\/sessionCredentials\.js'/);
+    assert.match(src, /export function buildWriteHeaders\s*\(\s*\)\s*\{\s*return \{\s*\.\.\.writeHeaders\(\)/);
+  });
+
+  it('carries the locale too, so write responses are translated like reads', () => {
+    assert.match(
+      src,
+      /export function buildWriteHeaders\s*\(\s*\)\s*\{\s*return \{[^}]*'Accept-Language': getStoredLocale\(\)/,
+    );
   });
 });
 

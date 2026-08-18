@@ -2,6 +2,7 @@ import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { renderHook, cleanup, act, waitFor } from '@testing-library/react';
 import { createLocalAuthStorage, createMemoryAuthStorage } from '../session.js';
 import { AuthProvider, useAuth } from '../AuthContext.jsx';
+import { CREDENTIAL_MODES } from '../sessionCredentials.js';
 
 afterEach(cleanup);
 
@@ -461,27 +462,30 @@ describe('AuthContext — session restore (ETP-4576)', () => {
     window.localStorage.clear();
   });
 
-  // ETP-4576 cycle 4a — this describe used to be
-  // 'without restoreSession (default, backward-compatible behavior)' and pinned
-  // the OPT-IN semantics: a host that did not pass the prop kept the legacy
-  // synchronous mode (status resolved from localStorage on the first render, no
-  // purge, no server call). That opt-out is deleted, and its three tests are
-  // inverted here, because it left a hole with no way out: three separate
-  // consumers already needed the very same GET /sws/go/session fetcher, and one
-  // of them — tools/etendo-go-ar/app-shell — mounts <AuthProvider> with no
-  // props at all. Once the onboarding flow stopped writing the `sf_auth_*`
-  // handoff keys (same epic), the legacy path had nothing left to read: that
-  // host's isAuthenticated was false forever and its AuthGuard never let anyone
-  // through. Making the platform fetcher the DEFAULT of the prop closes the
-  // hole without every host having to be migrated by hand, and removes the
-  // duplicated fetcher. Consequence: `restoreSession` is ALWAYS a function, so
-  // the synchronous legacy mode is gone — every host boots in 'booting', purges
-  // the legacy keys, and asks the server who it is.
-  describe('without an explicit restoreSession (the platform cookie fetcher is the default)', () => {
+  // ETP-4576 — this describe pins the COOKIE scheme's restore contract: with
+  // `credentialMode` set to cookie, the platform fetcher is the default of the
+  // `restoreSession` prop, so opting into the scheme is enough and no host has to
+  // wire the fetcher by hand.
+  //
+  // Two earlier revisions of this block are worth knowing about, because each was
+  // right about something. It first pinned OPT-IN semantics (no prop, no server
+  // call), which left a hole: tools/etendo-go-ar/app-shell mounts <AuthProvider>
+  // with no props at all, and once onboarding stopped writing the sf_auth_*
+  // handoff keys that host had nothing to read — isAuthenticated false forever.
+  // It was then inverted to make the fetcher an UNCONDITIONAL default, which
+  // closed that hole but forced the cookie scheme on every other host, migrated
+  // or not, and is why ETP-4576 had to be reverted (PR #111).
+  //
+  // Deriving the default from `credentialMode` satisfies both: the onboarding host
+  // opts in explicitly (it does so in its own App.jsx now) and everyone else stays
+  // on the bearer token. The tests below therefore all select the cookie scheme —
+  // what they verify is unchanged, only the premise is now stated instead of
+  // assumed.
+  describe('under the cookie scheme, the platform fetcher is the restoreSession default', () => {
     it('starts in "booting" instead of resolving status synchronously, even when the initial session already carries a token', () => {
       const { result } = renderHook(() => useAuth(), {
         wrapper: ({ children }) => (
-          <AuthProvider storage={createMemoryAuthStorage()} initialSession={{ token: 'tok-1' }}>
+          <AuthProvider credentialMode={CREDENTIAL_MODES.cookie} storage={createMemoryAuthStorage()} initialSession={{ token: 'tok-1' }}>
             {children}
           </AuthProvider>
         ),
@@ -496,7 +500,7 @@ describe('AuthContext — session restore (ETP-4576)', () => {
     it('settles to "anonymous" once the default fetcher gets the 401 "no active session" answer', async () => {
       const { result } = renderHook(() => useAuth(), {
         wrapper: ({ children }) => (
-          <AuthProvider storage={createMemoryAuthStorage()}>{children}</AuthProvider>
+          <AuthProvider credentialMode={CREDENTIAL_MODES.cookie} storage={createMemoryAuthStorage()}>{children}</AuthProvider>
         ),
       });
 
@@ -521,7 +525,7 @@ describe('AuthContext — session restore (ETP-4576)', () => {
 
       const { result } = renderHook(() => useAuth(), {
         wrapper: ({ children }) => (
-          <AuthProvider storage={createMemoryAuthStorage()}>{children}</AuthProvider>
+          <AuthProvider credentialMode={CREDENTIAL_MODES.cookie} storage={createMemoryAuthStorage()}>{children}</AuthProvider>
         ),
       });
 
@@ -536,7 +540,7 @@ describe('AuthContext — session restore (ETP-4576)', () => {
     it('asks GET /sws/go/session with the cookie attached and never sends an Authorization/Bearer header', async () => {
       renderHook(() => useAuth(), {
         wrapper: ({ children }) => (
-          <AuthProvider storage={createMemoryAuthStorage()}>{children}</AuthProvider>
+          <AuthProvider credentialMode={CREDENTIAL_MODES.cookie} storage={createMemoryAuthStorage()}>{children}</AuthProvider>
         ),
       });
 
@@ -561,7 +565,7 @@ describe('AuthContext — session restore (ETP-4576)', () => {
 
       const { result } = renderHook(() => useAuth(), {
         wrapper: ({ children }) => (
-          <AuthProvider storage={createMemoryAuthStorage()}>{children}</AuthProvider>
+          <AuthProvider credentialMode={CREDENTIAL_MODES.cookie} storage={createMemoryAuthStorage()}>{children}</AuthProvider>
         ),
       });
 
@@ -585,7 +589,7 @@ describe('AuthContext — session restore (ETP-4576)', () => {
 
       const { result } = renderHook(() => useAuth(), {
         wrapper: ({ children }) => (
-          <AuthProvider storage={createMemoryAuthStorage()} restoreSession={restoreSession}>
+          <AuthProvider credentialMode={CREDENTIAL_MODES.cookie} storage={createMemoryAuthStorage()} restoreSession={restoreSession}>
             {children}
           </AuthProvider>
         ),
@@ -1174,7 +1178,13 @@ describe('AuthContext — the default auth storage is memory, never localStorage
       }),
     });
 
-    const { result } = renderHook(() => useAuth(), { wrapper: defaultStorageWrapper() });
+    // The cookie scheme is declared, not inherited: there IS no restore under the
+    // bearer default, so without this the session never settles and the test would
+    // be asserting "nothing was written" about a request that never happened.
+    // `storage` is still deliberately absent — that is this suite's subject.
+    const { result } = renderHook(() => useAuth(), {
+      wrapper: defaultStorageWrapper({ credentialMode: CREDENTIAL_MODES.cookie }),
+    });
 
     await waitFor(() => {
       expect(result.current.status).toBe('authenticated');

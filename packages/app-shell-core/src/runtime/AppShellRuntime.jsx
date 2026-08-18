@@ -77,6 +77,11 @@ export function AppShellProviders({
         initialSession={auth?.initialSession}
         onSessionChange={auth?.onSessionChange}
         fetchWindowAccess={auth?.fetchWindowAccess}
+        // ETP-4576 — the host's single switch. Selects the credential scheme AND,
+        // through AuthProvider's derived default, whether the session is restored
+        // from the server on mount. Left undefined it stays on the bearer token,
+        // so a host that has not opted in behaves exactly as before.
+        credentialMode={auth?.credentialMode}
         restoreSession={auth?.restoreSession}
         data-testid="AuthProvider__b517b2">
         <DataProvider
