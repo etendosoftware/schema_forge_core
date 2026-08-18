@@ -158,4 +158,23 @@ describe('generate-report-template', () => {
       assert.ok(warehouseHeaders.some(h => h.field === 'address'));
     });
   });
+
+  describe('QR emission (ETP-4908)', () => {
+    // Document QR codes are precomputed as data (header.qrDataUrl) by the
+    // report server — the async qrCode Handlebars helper is retired because
+    // Handlebars compiles synchronously on the local HTML path.
+    it('never emits a {{qrCode}} helper call in templates', () => {
+      for (const contract of [listingContract, groupedContract]) {
+        const { template } = generateTemplate(contract);
+        assert.ok(!template.includes('{{qrCode'), `template for ${contract.reportId} must not call the qrCode helper`);
+      }
+    });
+
+    it('never emits a qrCode helper or qrcode require in helpers code', () => {
+      for (const contract of [listingContract, groupedContract]) {
+        const { helpers } = generateTemplate(contract);
+        assert.ok(!/qrCode|require\(['"]qrcode['"]\)/.test(helpers), `helpers for ${contract.reportId} must not define a qrCode helper`);
+      }
+    });
+  });
 });

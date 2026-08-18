@@ -1,0 +1,12 @@
+<!DOCTYPE html>
+<html lang="en">
+<body>
+  <div class="document-header">
+    <div class="doc-no">{{header.documentno}}</div>
+    {{!-- This report-specific helper is intentionally NOT part of the
+         canonical whitelist (registerReportHelpers). It exercises the
+         Missing-helper failure mode that ETP-4908 fixed for QR codes. --}}
+    <img class="doc-qr" src="{{qrCode header}}" alt="QR">
+  </div>
+</body>
+</html>
