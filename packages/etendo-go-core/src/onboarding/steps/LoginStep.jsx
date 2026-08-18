@@ -65,16 +65,14 @@ export function LoginStep({ config, stepData, onNext, onBack, goToStep, setToken
     }
   }, []);
 
-  const handleAuthSuccess = useCallback(async (token, account, { route = true, authMethod = 'password' } = {}) => {
-    localStorage.setItem('sf_platform_token', token);
-    localStorage.setItem('sf_platform_auth_method', authMethod);
-    if (setToken) setToken(token);
+  const handleAuthSuccess = useCallback((csrfToken, account, { route = true } = {}) => {
+    if (setToken) setToken(csrfToken);
     if (setAccountName) setAccountName(account?.name || account?.email || null);
     setShowLoginPassword(false);
     setSsoError(null);
     setSsoLoadingProvider(null);
     if (route && routeByEnvironments) {
-      await routeByEnvironments(token);
+      return routeByEnvironments(csrfToken);
     }
   }, [setToken, setAccountName, routeByEnvironments]);
 
@@ -89,13 +87,13 @@ export function LoginStep({ config, stepData, onNext, onBack, goToStep, setToken
     setSsoLoadingProvider(provider);
     try {
       const data = await loginWithSsoProvider(fetch, apiBase, provider, payload);
-      if (data.token) {
+      if (data.csrfToken) {
         trackOnboarding(config, 'onboarding_auth_succeeded', {
           action: 'sso',
           provider,
           status: 'success',
         });
-        handleAuthSuccess(data.token, data.account, { authMethod: 'sso' });
+        handleAuthSuccess(data.csrfToken, data.account);
       } else {
         trackOnboarding(config, 'onboarding_auth_failed', {
           action: 'sso',
@@ -169,16 +167,13 @@ export function LoginStep({ config, stepData, onNext, onBack, goToStep, setToken
     setLoginLoading(true);
     try {
       const data = await loginAccount(fetch, apiBase, loginForm);
-      if (data.token) {
+      if (data.csrfToken) {
         trackOnboarding(config, 'onboarding_auth_succeeded', {
           action: 'login',
           status: 'success',
         });
-        // Keep the loading state on: routeByEnvironments always ends by either
-        // navigating away (window.location.href) or switching to another
-        // onboarding step, so LoginStep unmounts. Resetting it here would flash
-        // the button back to its normal state during that hand-off window.
-        await handleAuthSuccess(data.token, data.account);
+        // Keep the loading state on while routing or redirecting.
+        await handleAuthSuccess(data.csrfToken, data.account);
       } else {
         trackOnboarding(config, 'onboarding_auth_failed', {
           action: 'login',
@@ -224,8 +219,6 @@ export function LoginStep({ config, stepData, onNext, onBack, goToStep, setToken
     setResetLoading(true);
     try {
       await confirmPasswordReset(fetch, apiBase, resetForm);
-      localStorage.removeItem('sf_platform_token');
-      localStorage.removeItem('sf_platform_auth_method');
       if (setToken) setToken(null);
       if (setAccountName) setAccountName(null);
       setResetSuccess(true);
