@@ -1,4 +1,5 @@
 import { getStoredLocale } from '../i18n/useLocaleState.js';
+import { jsonHeaders, writeHeaders } from './sessionCredentials.js';
 
 export function detectBaseUrl() {
   const path = window.location.pathname;
@@ -10,13 +11,24 @@ export function detectBaseUrl() {
 const DEFAULT_BASE_URL = detectBaseUrl();
 console.log('[api.js] DEFAULT_BASE_URL:', JSON.stringify(DEFAULT_BASE_URL), 'pathname:', window.location.pathname, 'VITE_API_BASE:', import.meta.env?.VITE_API_BASE);
 
+// Read headers: whichever credential the active scheme uses, plus the UI locale
+// so the backend resolves AD_Message translations in the language the user
+// selected in the frontend.
+//
+// ETP-4576 — this function does NOT decide how a request authenticates; it adds
+// the locale on top of the shared builder. That is what lets one preference flip
+// the whole app between the bearer token and the `__Host-` session cookie. It
+// used to take a token parameter; callers that still pass one are harmless (the
+// argument is ignored) but no longer needed.
 export function buildHeaders() {
-  return {
-    'Content-Type': 'application/json',
-    // Propagate the UI locale so the backend resolves AD_Message translations
-    // in the language the user selected in the frontend.
-    'Accept-Language': getStoredLocale(),
-  };
+  return { ...jsonHeaders(), 'Accept-Language': getStoredLocale() };
+}
+
+// Write headers: the same, plus whatever proof the active scheme requires on
+// unsafe methods. Never use `buildHeaders` for a POST/PUT/PATCH/DELETE — under
+// the cookie session that omits the CSRF proof and the backend answers 403.
+export function buildWriteHeaders() {
+  return { ...writeHeaders(), 'Accept-Language': getStoredLocale() };
 }
 
 // ETP-4576 — restores the backend-managed session (ADR-0001). This is the
