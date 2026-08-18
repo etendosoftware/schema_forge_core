@@ -208,6 +208,35 @@ describe('AuthProvider republishes when the scheme or the credentials change', (
   });
 });
 
+// A security property that must hold in BOTH schemes, which is why it lives next
+// to the scheme tests. It was only ever enforced by the mount purge inside the
+// session-restore effect — a path the bearer scheme does not schedule — so under
+// bearer a stale credential survived a logout. The host caught it (eight logout
+// specs in runtime-routes-integration went red the moment the restore stopped
+// being unconditional); it is pinned here because this is where the behaviour is.
+describe('logout leaves no credential in localStorage, under either scheme', () => {
+  const LEGACY_KEYS = ['sf_auth_token', 'sf_platform_token'];
+
+  for (const credentialMode of [CREDENTIAL_MODES.bearer, CREDENTIAL_MODES.cookie]) {
+    it(`purges the legacy keys on logout under the ${credentialMode} scheme`, async () => {
+      // The keys are seeded AFTER mount, deliberately. Seeding them before proves
+      // nothing: the mount purge inside the restore effect would clear them and the
+      // test would pass with no logout purge at all — verified by mutation, this is
+      // exactly how the first version of this test failed to catch its own bug.
+      // Post-mount also models the real case: another tab, or the onboarding app,
+      // writing a key into a session that is already running.
+      const { result } = mount({ credentialMode });
+      for (const key of LEGACY_KEYS) window.localStorage.setItem(key, 'stale');
+
+      await act(async () => { result.current.logout(); });
+
+      for (const key of LEGACY_KEYS) {
+        expect(window.localStorage.getItem(key)).toBeNull();
+      }
+    });
+  }
+});
+
 describe('AuthProvider never mixes the two schemes', () => {
   it('holds both credentials but emits only the active scheme\'s', async () => {
     // The session legitimately carries both during a migration window. The MODE

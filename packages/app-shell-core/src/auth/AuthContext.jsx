@@ -113,6 +113,15 @@ export function AuthProvider({
     const clearedSession = normalizeAuthSession();
     setSessionState(clearedSession);
     authStorage.clear();
+    // ETP-4576 — also purge the legacy sf_auth_*/sf_platform_* localStorage keys,
+    // and do it regardless of the credential scheme. `authStorage.clear()` only
+    // clears the storage the host injected, which under the default (memory) is
+    // not where those keys live — so a stale credential left by an earlier version
+    // or by the onboarding app used to survive a logout untouched. The mount purge
+    // does not cover this: it runs inside the session-restore effect, which the
+    // bearer scheme does not schedule at all. Logout is exactly the moment when
+    // nothing may survive, in either scheme.
+    purgeLegacyAuthStorage();
     onSessionChange?.(clearedSession);
     setWindowAccess({});
     setCapabilities({});
