@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <style>{{{css}}}</style>
+</head>
+<body>
+  <div class="document-header">
+    <div class="doc-type">{{header.doc_type}}</div>
+    <div class="doc-no">{{header.documentno}}</div>
+    <div class="doc-date">{{formatDate header.dateinvoiced}}</div>
+    <div class="doc-total">{{formatCurrency header.grandtotal}}</div>
+    <div class="doc-status">
+      {{#ifCond header.status '===' 'CO'}}Completed{{else}}Pending{{/ifCond}}
+    </div>
+    <img class="doc-qr" src="{{header.qrDataUrl}}" alt="QR">
+  </div>
+  <table class="document-lines">
+    <thead>
+      <tr>
+        <th>Line</th>
+        <th>Quantity</th>
+        <th>Unit Price</th>
+      </tr>
+    </thead>
+    <tbody>
+      {{#each lines}}
+        <tr>
+          <td>{{this.name}}</td>
+          <td>{{formatNumber this.qty}}</td>
+          <td>{{formatCurrency this.unitPrice}}</td>
+        </tr>
+      {{/each}}
+    </tbody>
+  </table>
+</body>
+</html>

@@ -24,7 +24,7 @@ import { readFileSync, readdirSync, existsSync } from 'node:fs';
 import { createRequire } from 'node:module';
 import { resolve, join, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { registerReportHelpers } from '../../templates/reports/helpers/report-html-helpers.js';
+import { registerReportHelpers, computeDocumentQrDataUrl, buildJsreportHelpersString } from '../../templates/reports/helpers/report-html-helpers.js';
 
 const _require = createRequire(import.meta.url);
 const __dirname = dirname(fileURLToPath(import.meta.url));
@@ -59,6 +59,23 @@ function getDbConfig() {
 // ---------------------------------------------------------------------------
 // Helpers
 // ---------------------------------------------------------------------------
+
+// Instance-wide currency separators for the jsreport helper string, from the
+// same NEO config source the browser's formatCurrency.js reads (ETP-4314).
+// Cached for the process lifetime; falls back to './,' when NEO is unreachable.
+// Mirrors getReportCurrencySeparators() in the Vite dev plugin (report-api.js).
+let currencySeparatorsPromise = null;
+async function getReportCurrencySeparators() {
+  if (currencySeparatorsPromise) return currencySeparatorsPromise;
+  currencySeparatorsPromise = fetch(`${ETENDO_URL}/sws/neo/currency-format`)
+    .then((res) => (res.ok ? res.json() : Promise.reject(new Error(`status ${res.status}`))))
+    .then((data) => ({
+      thousandsSeparator: typeof data?.thousandsSeparator === 'string' ? data.thousandsSeparator : '.',
+      decimalSeparator: typeof data?.decimalSeparator === 'string' ? data.decimalSeparator : ',',
+    }))
+    .catch(() => ({ thousandsSeparator: '.', decimalSeparator: ',' }));
+  return currencySeparatorsPromise;
+}
 
 function getClientIdFromToken(authHeader) {
   try {
@@ -356,15 +373,22 @@ async function handleRequest(req, res) {
       calculateTotals(documentData, amountCols, rows, totals);
       const recordCount = getRowCount(rows);
       const templateData = buildTemplateData(documentData, css, { title, activeFilters, params, recordCount, totals, groupLabel, descriptionLabel, neoMeta, rows });
+      await injectDocumentQr(documentData, templateData);
       // HTML: render with Handlebars locally
       if (format === 'html') {
         renderTemplateWithHelpers(helpersCode, templateContent, templateData, res);
         return;
       }
 
-      // PDF/XLSX: delegate to jsreport
+      // PDF/XLSX: delegate to jsreport. jsreport runs in a separate container
+      // with its own sandbox, so it gets the canonical helper set as SOURCE
+      // TEXT plus only this report's specific extras — never the raw artifact
+      // helpers.js alone (post-ETP-4083 it no longer defines the formatting
+      // helpers, which broke every {{#ifCond}}/{{formatDate}} template here).
+      // Same composition as the Vite dev plugin (report-api.js).
+      const separators = await getReportCurrencySeparators();
       const payload = {
-        template: { content: templateContent, engine: 'handlebars', recipe, helpers: helpersCode },
+        template: { content: templateContent, engine: 'handlebars', recipe, helpers: buildJsreportHelpersString(helpersCode, undefined, separators) },
         data: templateData,
       };
       if (recipe === 'chrome-pdf') {
@@ -572,12 +596,27 @@ function renderTemplateWithHelpers(helpersCode, templateContent, templateData, r
   const Handlebars = _require('handlebars');
   // Register the trusted in-repo helper set — no dynamic code execution.
   // helpersCode is read (not executed) only to preserve a report's formatNumber
-  // decimals. Report-specific helpers (e.g. qrCode) are only needed by the
-  // jsreport PDF/XLSX path, which consumes the artifact helpers.js string directly.
+  // decimals. Document QR codes are precomputed as data (header.qrDataUrl) by
+  // injectDocumentQr() before this synchronous compile — never as a helper.
   registerReportHelpers(Handlebars, helpersCode);
   const html = Handlebars.compile(templateContent)(templateData);
   res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' });
   res.end(html);
+}
+
+// Document (print-*) reports render a QR of the header. QRCode.toDataURL is
+// async while Handlebars.compile is sync, so the QR cannot be a helper on the
+// local HTML path — precompute it once here, before the format branch, so both
+// the local HTML render and the jsreport PDF/XLSX payload see the same
+// {{header.qrDataUrl}}. A QR failure degrades to a report without QR instead
+// of failing the whole render.
+async function injectDocumentQr(documentData, templateData) {
+  if (!documentData?.header || !templateData.header) return;
+  try {
+    templateData.header.qrDataUrl = await computeDocumentQrDataUrl(documentData.header, { qrcode: _require('qrcode') });
+  } catch (e) {
+    console.warn('[render] QR generation failed:', e.message);
+  }
 }
 
 function isPostRequestForRender(method, renderMatch) {
