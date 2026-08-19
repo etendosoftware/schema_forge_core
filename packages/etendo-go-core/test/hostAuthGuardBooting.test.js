@@ -84,11 +84,33 @@ describe('etendo-go-ar AuthGuard handles the restore boot window (ETP-4576)', ()
     assert.match(authGuardSrc, /replace/);
   });
 
-  it('does NOT pass a restoreSession prop to AuthProvider — the platform default is the fix', () => {
-    // The whole point of moving the fetcher into app-shell-core: this host is
-    // repaired without being migrated. If a restoreSession prop shows up here,
-    // the duplication the default was meant to remove has come back.
+  it('selects the cookie scheme, and still passes no restoreSession prop', () => {
+    // Half of this assertion is unchanged and half is inverted, on purpose.
+    //
+    // UNCHANGED: no `restoreSession` prop. Moving the fetcher into app-shell-core
+    // was meant to remove the duplication of every host wiring its own; if the prop
+    // shows up here again, that duplication is back.
+    //
+    // INVERTED: the provider is no longer mounted prop-free. It used to rely on
+    // `restoreSession` defaulting to the cookie fetcher UNCONDITIONALLY, which did
+    // repair this host without migrating it — but it also forced the cookie scheme
+    // on every OTHER host, migrated or not, and that is why ETP-4576 was reverted
+    // (PR #111). The default now derives from `credentialMode`, so this host — the
+    // onboarding flow, where the `__Host-` session cookie is actually issued — says
+    // out loud which scheme it wants, and everyone else stays on the bearer token.
+    //
+    // The prop IS the restore: selecting `cookie` is what makes AuthProvider fetch
+    // the session on mount, which is what the booting window above depends on.
     assert.doesNotMatch(appSrc, /restoreSession/);
-    assert.match(appSrc, /<AuthProvider>/, 'AuthProvider is still mounted prop-free');
+    assert.match(
+      appSrc,
+      /<AuthProvider\s+credentialMode=\{CREDENTIAL_MODES\.cookie\}>/,
+      'the onboarding host must opt into the cookie scheme explicitly',
+    );
+    assert.match(
+      appSrc,
+      /import\s*\{[^}]*\bCREDENTIAL_MODES\b[^}]*\}\s*from\s*['"]@etendosoftware\/app-shell-core\/auth['"]/,
+      'CREDENTIAL_MODES must come from the platform, not be a local string literal',
+    );
   });
 });
