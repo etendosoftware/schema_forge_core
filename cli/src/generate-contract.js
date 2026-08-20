@@ -139,10 +139,37 @@ export function convertLogicToJs(rawExpr, columnMap, booleanFields) {
 }
 
 /**
+ * ETP-4933 — does every `@Token@` in `rawExpr` matching `pattern` name an actual column
+ * of the schema?
+ *
+ * A session-variable pattern that names a real column is a FIELD reference in this
+ * window, not a context variable. `IsSOTrx` is the motivating case: it IS a genuine
+ * column on C_Invoice / C_Order / M_InOut, so disqualifying the whole expression
+ * because of it silently drops readOnly logic. Measured impact when the AD added an
+ * `@IsSOTrx@` clause: 8 fields across sii-monitor's four invoice entities lost their
+ * lock and became editable on posted documents.
+ *
+ * Prefix-only patterns (`APRM_`, `ACCS_Account_Ope`, `HAS_C_INVOICELINES`) never match
+ * a column name, so they keep disqualifying exactly as before. Requires ALL matching
+ * tokens to be columns — one genuine session variable still disqualifies.
+ */
+function patternIsColumnBacked(rawExpr, pattern, columnMap) {
+  const matching = (rawExpr.match(/@(\w+)@/g) ?? [])
+    .map(t => t.slice(1, -1))
+    .filter(t => t.startsWith(pattern));
+  return matching.length > 0
+    && matching.every(t => Object.prototype.hasOwnProperty.call(columnMap, t));
+}
+
+/**
  * Classify whether a raw display/readOnly logic expression can be evaluated client-side.
  * Returns { evaluable: true } or { evaluable: false, reason: string }.
+ *
+ * `columnMap` (AD column -> field name) is optional and defaults to empty, which
+ * reproduces the pre-ETP-4933 behaviour: with no schema to consult, every
+ * session-variable pattern disqualifies.
  */
-function classifyEvaluability(rawExpr) {
+function classifyEvaluability(rawExpr, columnMap = {}) {
   if (!rawExpr) return { evaluable: true };
 
   // Server-expanded macro
@@ -167,9 +194,11 @@ function classifyEvaluability(rawExpr) {
     'IsMultiCurrencyEnabled', 'NotAllowChangeExchange', 'isReceipt',
   ];
   for (const pattern of sessionVarPatterns) {
-    if (rawExpr.includes(`@${pattern}`)) {
-      return { evaluable: false, reason: 'session-variable' };
-    }
+    if (!rawExpr.includes(`@${pattern}`)) continue;
+    // A pattern backed by a real column of this schema is a field reference, not a
+    // session variable — see patternIsColumnBacked.
+    if (patternIsColumnBacked(rawExpr, pattern, columnMap)) continue;
+    return { evaluable: false, reason: 'session-variable' };
   }
   // Auxiliary inputs (SQL-computed values — lowercase start or known patterns)
   if (/@SQL@/i.test(rawExpr)) {
@@ -186,7 +215,7 @@ function applyReadOnlyLogic(mapped, f, rules, columnMap, booleanFields) {
   if (matchingRule && matchingRule.translated) {
     mapped.readOnlyLogic.js = matchingRule.translated;
   }
-  const evalInfo = classifyEvaluability(f.readOnlyLogic);
+  const evalInfo = classifyEvaluability(f.readOnlyLogic, columnMap);
   mapped.readOnlyLogic.evaluable = evalInfo.evaluable;
   if (!evalInfo.evaluable) {
     mapped.readOnlyLogic.reason = evalInfo.reason;
@@ -418,7 +447,7 @@ export function generateFrontendContract(schema, rules = []) {
 
       // Behavioral metadata: displayLogic
       if (f.displayLogic) {
-        processDisplayLogic(mapped, f, rules);
+        processDisplayLogic(mapped, f, rules, columnMap);
       }
       // Standalone displayLogicJs on custom fields that have no raw displayLogic
       if (f.displayLogicJs != null && !mapped.displayLogic) {
@@ -531,13 +560,13 @@ function processCalloutMetadata(mapped, f, rules) {
   }
 }
 
-function processDisplayLogic(mapped, f, rules) {
+function processDisplayLogic(mapped, f, rules, columnMap) {
   mapped.displayLogic = { raw: f.displayLogic };
   const matchingRule = findMatchingRule(rules, f.displayLogic, 'displayLogic');
   if (matchingRule && matchingRule.translated) {
     mapped.displayLogic.js = matchingRule.translated;
   }
-  const evalInfo = classifyEvaluability(f.displayLogic);
+  const evalInfo = classifyEvaluability(f.displayLogic, columnMap);
   mapped.displayLogic.evaluable = evalInfo.evaluable;
   if (!evalInfo.evaluable) {
     mapped.displayLogic.reason = evalInfo.reason;
