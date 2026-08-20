@@ -735,6 +735,14 @@ export function generateFormComponent(entityName, contract) {
     ? '\n' + customRenderers.map(comp => `import ${comp} from ${resolveCustomImport(specName, comp)};`).join('\n')
     : '';
 
+  // ETP-4933 — the emitted `<Comp>.fields = fields;` static below exposes the descriptor
+  // set WITHOUT rendering the form. DetailView already receives this component as its
+  // `Form` prop, so `Form.fields` gives it the complete required-field set regardless of
+  // which section/tab happens to be mounted. Primary-action gating cannot use the
+  // mounted-form registry for that: the "Others" tab only mounts while it is the active
+  // tab, which would make a button's enabled state depend on the open tab. Same
+  // static-on-component idiom as `hasCollapsedFields`. Kept as a generator-side comment
+  // on purpose — emitting it would repeat six lines of rationale in every generated form.
   return `import { EntityForm } from '@/components/contract-ui';${rendererImportLines}
 
 ${MARKERS.GENERATED_START(`fields:${entityName}`)}
@@ -747,12 +755,6 @@ ${MARKERS.GENERATED_START(`component:${compName}`)}
 export default function ${compName}(props) {
   return <EntityForm fields={fields}${colsProp} {...props} />;
 }
-// ETP-4933: the descriptor set, reachable WITHOUT rendering the form. DetailView
-// already receives this component as its \`Form\` prop, so \`Form.fields\` gives it the
-// complete required-field set regardless of which section/tab happens to be mounted.
-// Primary-action gating cannot use the mounted-form registry for that: the "Others"
-// tab only mounts while it is the active tab, which would make the button's enabled
-// state depend on the open tab. Same static-on-component idiom as hasCollapsedFields.
 ${compName}.fields = fields;
 ${hasCollapsed ? `${compName}.hasCollapsedFields = true;\n` : ''}
 ${MARKERS.GENERATED_END(`component:${compName}`)}
