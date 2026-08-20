@@ -15,11 +15,11 @@ import { OnboardingLanguageSelect } from '../components/OnboardingLanguageSelect
 
 const AUTH_FEATURE_KEYS = ['onboardingAuthFeatureNoCard', 'onboardingAuthFeatureTrial', 'onboardingAuthFeatureInstantAccess'];
 
-export function RegisterStep({ config, stepData, onNext, onBack, goToStep, setToken, setAccountName, handleRegisterSuccess }) {
+export function RegisterStep({ config, stepData, onNext, onBack, goToStep, setToken, setAccountName, handleRegisterSuccess, initialName, initialEmail, emailReadOnly = false, registerHandler, onRegistered }) {
   const ui = useUI();
   const { locale, setLocale } = useLocaleSwitch();
 
-  const [registerForm, setRegisterForm] = useState({ name: '', email: '', password: '' });
+  const [registerForm, setRegisterForm] = useState({ name: initialName || stepData?.name || '', email: initialEmail || stepData?.email || '', password: '' });
   const [registerError, setRegisterError] = useState(null);
   const [registerLoading, setRegisterLoading] = useState(false);
   const [showRegisterPassword, setShowRegisterPassword] = useState(false);
@@ -134,16 +134,22 @@ export function RegisterStep({ config, stepData, onNext, onBack, goToStep, setTo
     setRegisterError(null);
     setRegisterLoading(true);
     try {
-      const data = await registerAccount(fetch, apiBase, {
-        ...registerForm,
-        language: locale || config.defaultForm?.language || '',
-      });
+      const data = registerHandler
+        ? await registerHandler({ ...registerForm, language: locale || config.defaultForm?.language || '' })
+        : await registerAccount(fetch, apiBase, {
+          ...registerForm,
+          language: locale || config.defaultForm?.language || '',
+        });
+      // ETP-4576 — `csrfToken` is what marks an authenticated response here: the
+      // session is the `__Host-` cookie, so there is no bearer token to check for.
+      // A host-supplied `registerHandler` (ETP-4905) must return the same shape.
       if (data.csrfToken) {
         trackOnboarding(config, 'onboarding_auth_succeeded', {
           action: 'register',
           status: 'success',
         });
-        handleAuthSuccess(data.csrfToken, data.account);
+        handleAuthSuccess(data.csrfToken, data.account, { route: !onRegistered });
+        if (onRegistered) await onRegistered(data.csrfToken, data.account);
       } else {
         trackOnboarding(config, 'onboarding_auth_failed', {
           action: 'register',
@@ -245,7 +251,7 @@ export function RegisterStep({ config, stepData, onNext, onBack, goToStep, setTo
           icon={Mail}
           value={registerForm.email}
           onChange={e => setRegisterForm(f => ({ ...f, email: e.target.value }))}
-          disabled={registerLoading}
+          disabled={registerLoading || emailReadOnly}
           placeholder={ui('onboardingEmailPlaceholder')}
           autoComplete="email"
           maxLength={ONBOARDING_FIELD_LIMITS.email}

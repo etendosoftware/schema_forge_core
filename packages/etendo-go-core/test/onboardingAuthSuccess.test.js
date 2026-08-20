@@ -57,7 +57,7 @@ describe('LoginStep handleAuthSuccess contract (ETP-4576, cookie session migrati
     const block = extractFunctionBlock(loginStep, 'const handleSsoProviderLogin', 'useEffect(() => {\n    if (view');
     assert.match(block, /if \(data\.csrfToken\)/);
     assert.doesNotMatch(block, /if \(data\.token\)/);
-    assert.match(block, /handleAuthSuccess\(data\.csrfToken,\s*data\.account\)/);
+    assert.match(block, /handleAuthSuccess\(data\.csrfToken,\s*data\.account[,)]/);
     assert.doesNotMatch(block, /handleAuthSuccess\(data\.(csrfToken|token),\s*data\.account,\s*\{\s*authMethod:\s*'sso'\s*\}\)/);
   });
 
@@ -65,7 +65,7 @@ describe('LoginStep handleAuthSuccess contract (ETP-4576, cookie session migrati
     const block = extractFunctionBlock(loginStep, 'const handleLogin =', 'const handleForgotPassword');
     assert.match(block, /if \(data\.csrfToken\)/);
     assert.doesNotMatch(block, /if \(data\.token\)/);
-    assert.match(block, /handleAuthSuccess\(data\.csrfToken,\s*data\.account\)/);
+    assert.match(block, /handleAuthSuccess\(data\.csrfToken,\s*data\.account[,)]/);
   });
 
   it('handleResetPassword no longer clears the removed localStorage keys', () => {
@@ -106,7 +106,7 @@ describe('RegisterStep handleAuthSuccess contract (ETP-4576, cookie session migr
     const block = extractFunctionBlock(registerStep, 'const handleSsoProviderLogin', 'useEffect(() => {');
     assert.match(block, /if \(data\.csrfToken\)/);
     assert.doesNotMatch(block, /if \(data\.token\)/);
-    assert.match(block, /handleAuthSuccess\(data\.csrfToken,\s*data\.account\)/);
+    assert.match(block, /handleAuthSuccess\(data\.csrfToken,\s*data\.account[,)]/);
     assert.doesNotMatch(block, /handleAuthSuccess\(data\.(csrfToken|token),\s*data\.account,\s*\{\s*authMethod:\s*'sso'\s*\}\)/);
   });
 
@@ -114,7 +114,7 @@ describe('RegisterStep handleAuthSuccess contract (ETP-4576, cookie session migr
     const block = extractFunctionBlock(registerStep, 'const handleRegister =', 'const authFeatureLabels');
     assert.match(block, /if \(data\.csrfToken\)/);
     assert.doesNotMatch(block, /if \(data\.token\)/);
-    assert.match(block, /handleAuthSuccess\(data\.csrfToken,\s*data\.account\)/);
+    assert.match(block, /handleAuthSuccess\(data\.csrfToken,\s*data\.account[,)]/);
   });
 });
 

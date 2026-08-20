@@ -2529,6 +2529,23 @@ describe('generateFrontendContract — window.import', () => {
     assert.equal(field.type, 'string');
   });
 
+  it('keeps an explicit import required override for partial imports', () => {
+    const schema = {
+      ...minimalSchema,
+      window: {
+        ...minimalSchema.window,
+        import: {
+          enabled: true,
+          spec: 'contacts',
+          entity: 'businessPartner',
+          fields: [{ target: 'documentNo', aliases: ['name'], required: false }],
+        },
+      },
+    };
+    const fc = generateFrontendContract(schema);
+    assert.equal(fc.window.import.fields[0].required, false);
+  });
+
   it('accepts fields with no contract backing if they declare their own label inline', () => {
     const schema = {
       ...minimalSchema,
@@ -2829,4 +2846,3 @@ describe('generateContract — field-order stability lock precedence (ETP-4566)'
     assert.deepEqual(names, ['fieldA', 'brandNewField']);
   });
 });
-
