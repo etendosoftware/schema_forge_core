@@ -134,7 +134,7 @@ describe('onboarding draft persistence', () => {
     const loginStep = readFileSync(join(onboardingSrc, 'steps', 'LoginStep.jsx'), 'utf8');
 
     assert.match(flow, /draftSaveWarning=\{draftSaveWarning\}/);
-    assert.match(loginStep, /routeByEnvironments, draftSaveWarning \}/);
+    assert.match(loginStep, /routeByEnvironments, draftSaveWarning,/);
     const draftSaveWarning = readFileSync(join(onboardingSrc, 'components', 'DraftSaveWarning.jsx'), 'utf8');
     assert.match(draftSaveWarning, /if \(!show\) return null;/);
     assert.match(draftSaveWarning, /data-testid="draft-save-warning"/);
