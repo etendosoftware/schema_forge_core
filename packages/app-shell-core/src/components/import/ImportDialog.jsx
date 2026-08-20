@@ -82,10 +82,11 @@ export function ImportDialog({ open, onOpenChange, config, token, postBatch, sim
   const [isRevalidating, setIsRevalidating] = useState(false);
   // Two independent filters, not one shared value — the design spec is explicit that
   // the preview (pre-send) and result (post-send) review queues each remember their own
-  // filter state. 'error' (errors + skipped) is the default, matching the original
-  // "show only errors" behavior — most rows are usually fine, so open on the ones that
-  // need attention.
-  const [statusFilterPreSend, setStatusFilterPreSend] = useState('error');
+  // filter state. 'ok' is the default so a newly loaded file opens on the happy
+  // path: users can immediately review the rows that will be imported. Errors
+  // remain available through the Errors tab and are still highlighted by the
+  // row validation state.
+  const [statusFilterPreSend, setStatusFilterPreSend] = useState('ok');
   const [statusFilterPostSend, setStatusFilterPostSend] = useState('error');
   const [progress, setProgress] = useState(0);
   // Debug-phase aid (per explicit request while the backend integration is still being
@@ -169,6 +170,9 @@ export function ImportDialog({ open, onOpenChange, config, token, postBatch, sim
 
   const handleFileSelected = useCallback(async (file) => {
     try {
+      // A new file starts a fresh review session. Do not carry a previous
+      // Errors/All selection into the next upload.
+      setStatusFilterPreSend('ok');
       const buffer = await file.arrayBuffer();
       const text2 = decodeCsvBuffer(buffer);
       const { headers: parsedHeaders, rows } = parseDelimited(text2);
@@ -305,11 +309,15 @@ export function ImportDialog({ open, onOpenChange, config, token, postBatch, sim
     // above for why this exists alongside the review queue. A duplicate is expected,
     // benign server behavior, not worth a blocking "system error" dialog.
     const lastFailure = trueFailures.at(-1);
-    setSystemError(lastFailure ? {
-      message: lastFailure.error?.message || 'Unknown error',
-      raw: lastFailure.error?.raw,
-      row: lastFailure.row,
-      operations: lastFailure.operations,
+    // A descriptor/build failure (operations === null) is actionable row data,
+    // not an unexpected backend/system failure. Keep it in the result queue so
+    // users get the row-specific message without a misleading support dialog.
+    const lastSystemFailure = lastFailure?.operations !== null ? lastFailure : null;
+    setSystemError(lastSystemFailure ? {
+      message: lastSystemFailure.error?.message || 'Unknown error',
+      raw: lastSystemFailure.error?.raw,
+      row: lastSystemFailure.row,
+      operations: lastSystemFailure.operations,
     } : null);
     // Reports failedCount alongside okCount (not just a bare success count) so the caller
     // can decide whether it's actually safe to close the dialog. The design spec is

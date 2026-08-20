@@ -1,4 +1,7 @@
 export { OnboardingFlow } from './OnboardingFlow.jsx';
+export { LoginStep } from './steps/LoginStep.jsx';
+export { RegisterStep } from './steps/RegisterStep.jsx';
+export { AuthShell } from './components/AuthShell.jsx';
 export { coreSteps } from './steps/index.js';
 export { buildOnboardingReturnTo, getSafeReturnTo, buildAppReturnToHref } from './oauthReturnTo.js';
 
