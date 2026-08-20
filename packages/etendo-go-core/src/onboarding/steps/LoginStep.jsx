@@ -19,14 +19,14 @@ function maskEmail(email) {
   return `${email[0]}******${email.slice(at)}`;
 }
 
-export function LoginStep({ config, stepData, onNext, onBack, goToStep, setToken, setAccountName, routeByEnvironments, draftSaveWarning }) {
+export function LoginStep({ config, stepData, onNext, onBack, goToStep, setToken, setAccountName, routeByEnvironments, draftSaveWarning, initialEmail, emailReadOnly = false, onAuthenticated }) {
   const ui = useUI();
   const { locale, setLocale } = useLocaleSwitch();
 
   const resetTokenFromUrl = new URLSearchParams(window.location.search).get('resetToken') || '';
   const [view, setView] = useState(resetTokenFromUrl ? 'reset-password' : 'login'); // 'login' | 'forgot-password' | 'reset-password'
 
-  const [loginForm, setLoginForm] = useState({ email: '', password: '' });
+  const [loginForm, setLoginForm] = useState({ email: initialEmail || stepData?.email || '', password: '' });
   const [loginError, setLoginError] = useState(null);
   const [loginFieldErrors, setLoginFieldErrors] = useState({ email: null, password: null });
   const [loginNotice, setLoginNotice] = useState(null);
@@ -178,7 +178,12 @@ export function LoginStep({ config, stepData, onNext, onBack, goToStep, setToken
         // navigating away (window.location.href) or switching to another
         // onboarding step, so LoginStep unmounts. Resetting it here would flash
         // the button back to its normal state during that hand-off window.
-        await handleAuthSuccess(data.token, data.account);
+        await handleAuthSuccess(data.token, data.account, {
+          route: !onAuthenticated,
+        });
+        if (onAuthenticated) {
+          await onAuthenticated(data.token, data.account);
+        }
       } else {
         trackOnboarding(config, 'onboarding_auth_failed', {
           action: 'login',
@@ -527,7 +532,7 @@ export function LoginStep({ config, stepData, onNext, onBack, goToStep, setToken
             setLoginForm(f => ({ ...f, email: e.target.value }));
             setLoginFieldErrors(errors => (errors.email ? { ...errors, email: null } : errors));
           }}
-          disabled={loginLoading}
+          disabled={loginLoading || emailReadOnly}
           placeholder={ui('onboardingEmailPlaceholder')}
           autoComplete="email"
           required
