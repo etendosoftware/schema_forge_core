@@ -25,6 +25,15 @@
  *
  * The auth provider owns the write side: it calls `setSessionCredentials`
  * whenever the session or the preference changes. Nothing else should.
+ *
+ * DELIBERATELY IMPORT-FREE, and exported as its own `./auth/sessionCredentials.js`
+ * subpath alongside the `./auth` barrel. The barrel re-exports `AuthContext.jsx`,
+ * so importing the header builders through it drags React — and a `.jsx` file —
+ * into the module graph. That is fine under Vite and fatal under plain Node:
+ * `node --test` has no JSX loader, so every host unit test whose subject
+ * transitively imports a header builder dies with ERR_UNKNOWN_FILE_EXTENSION
+ * before a single assertion runs. Asking "what headers does a request carry?"
+ * must not require a provider, so keep this file a leaf: no imports, ever.
  */
 
 const BEARER = 'bearer';
