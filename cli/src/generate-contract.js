@@ -502,7 +502,16 @@ export function generateFrontendContract(schema, rules = []) {
         }
         throw new Error(`window.import.fields references unknown field "${f.target}"`);
       }
-      return { ...f, label: f.label ?? match.label, required: !!match.required, type: match.type, reference: match.reference };
+      return {
+        ...f,
+        label: f.label ?? match.label,
+        // Importability is a window-level decision. A field may be mandatory in
+        // the entity contract while still being legitimately omitted from a
+        // partial import (for example, a company import with only legal name).
+        required: f.required ?? !!match.required,
+        type: match.type,
+        reference: match.reference,
+      };
     });
   }
 
