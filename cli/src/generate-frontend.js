@@ -747,6 +747,13 @@ ${MARKERS.GENERATED_START(`component:${compName}`)}
 export default function ${compName}(props) {
   return <EntityForm fields={fields}${colsProp} {...props} />;
 }
+// ETP-4933: the descriptor set, reachable WITHOUT rendering the form. DetailView
+// already receives this component as its \`Form\` prop, so \`Form.fields\` gives it the
+// complete required-field set regardless of which section/tab happens to be mounted.
+// Primary-action gating cannot use the mounted-form registry for that: the "Others"
+// tab only mounts while it is the active tab, which would make the button's enabled
+// state depend on the open tab. Same static-on-component idiom as hasCollapsedFields.
+${compName}.fields = fields;
 ${hasCollapsed ? `${compName}.hasCollapsedFields = true;\n` : ''}
 ${MARKERS.GENERATED_END(`component:${compName}`)}
 `;
