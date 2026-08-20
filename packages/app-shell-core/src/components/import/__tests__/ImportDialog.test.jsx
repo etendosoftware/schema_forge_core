@@ -77,6 +77,18 @@ describe('ImportDialog', () => {
     expect(screen.getByTestId('ImportColumnMapping__chip-Email').textContent).toContain('Email');
   });
 
+  it('opens a newly loaded file on the Correct rows tab', async () => {
+    render(<ImportDialog open config={config} token="t" postBatch={vi.fn()} simSearchFn={vi.fn()} onImported={() => {}} />);
+    await uploadFile('Name,Email\nLucia,lucia@x.com');
+
+    // The happy path is the useful first view for a clean import. Errors are
+    // still counted and available through the Errors tab when a row needs
+    // correction.
+    expect(screen.getByTestId('ImportReviewQueue__statusFilter-ok')).toBeDefined();
+    expect(screen.getByTestId('ImportReviewQueue__value-0-name')).toBeDefined();
+    expect(screen.queryByTestId('ImportReviewQueue__rowError-0')).toBeNull();
+  });
+
   it('regression: does not collapse distinct rows into duplicates of each other (config.dedupe.key, not a flat dedupeKeyTargets)', async () => {
     render(<ImportDialog open config={config} token="t" postBatch={vi.fn()} simSearchFn={vi.fn()} onImported={() => {}} />);
     await uploadFile('Name,Email\nLucia,lucia@x.com\nAndres,andres@x.com\nSofia,sofia@x.com');
@@ -106,6 +118,7 @@ describe('ImportDialog', () => {
   it('flags an invalid email as a review-queue error before sending', async () => {
     render(<ImportDialog open config={config} token="t" postBatch={vi.fn()} simSearchFn={vi.fn()} onImported={() => {}} />);
     await uploadFile('Name,Email\nAndres,not-an-email');
+    fireEvent.click(screen.getByTestId('ImportReviewQueue__statusFilter-error'));
     await waitFor(() => screen.getByTestId('ImportReviewQueue__fieldError-0-email'));
   });
 
@@ -140,6 +153,22 @@ describe('ImportDialog', () => {
     // ("Invalid value for OBTIKTaxIDKey", an uncontrolled leak) is no longer rendered here;
     // it is preserved on error.raw for the system-error dialog's report.
     expect(screen.getByTestId('ImportReviewQueue__rowError-0').textContent).toMatch(/could not be imported/i);
+  });
+
+  it('keeps descriptor validation failures in the row queue without opening the system-error dialog', async () => {
+    const descriptorFn = vi.fn().mockRejectedValue(new Error('Category is ambiguous'));
+    registerImportDescriptor('validation-only-descriptor', descriptorFn);
+    const descriptorConfig = { ...config, descriptor: 'validation-only-descriptor' };
+    const postBatch = vi.fn();
+    render(<ImportDialog open config={descriptorConfig} token="t" postBatch={postBatch} simSearchFn={vi.fn()} onImported={() => {}} />);
+    await uploadFile('Name,Email\nLucia,lucia@x.com');
+    fireEvent.click(screen.getByTestId('ImportDialog__importButton'));
+    fireEvent.click(screen.getByTestId('ImportConfirmStep__confirm'));
+
+    await waitFor(() => expect(screen.getByTestId('ImportReviewQueue__rowError-0')).toBeDefined());
+    expect(screen.getByTestId('ImportReviewQueue__rowError-0').textContent).toContain('Category is ambiguous');
+    expect(screen.queryByTestId('ImportSystemErrorDialog__title')).toBeNull();
+    expect(postBatch).not.toHaveBeenCalled();
   });
 
   it('regression: shows the ImportSystemErrorDialog with the last failure\'s message, row data, request sent, and raw trace after a failed send', async () => {
@@ -338,6 +367,7 @@ describe('ImportDialog', () => {
   it('does not show a Retry/Re-validate button in the pre-send mapping step', async () => {
     render(<ImportDialog open config={config} token="t" postBatch={vi.fn()} simSearchFn={vi.fn()} onImported={() => {}} />);
     await uploadFile('Name,Email\nLucia,not-an-email');
+    fireEvent.click(screen.getByTestId('ImportReviewQueue__statusFilter-error'));
     await waitFor(() => screen.getByTestId('ImportReviewQueue__fieldError-0-email'));
     expect(screen.queryByTestId('ImportReviewQueue__retry-0')).toBeNull();
   });
@@ -345,6 +375,7 @@ describe('ImportDialog', () => {
   it('re-derives the grid from the raw file using the new mapping after Save in the edit-match modal', async () => {
     render(<ImportDialog open config={config} token="t" postBatch={vi.fn()} simSearchFn={vi.fn()} onImported={() => {}} />);
     await uploadFile('Name,Email\nLucia,not-an-email');
+    fireEvent.click(screen.getByTestId('ImportReviewQueue__statusFilter-error'));
     await waitFor(() => screen.getByTestId('ImportReviewQueue__fieldError-0-email'));
     // Unmap the "Email" CSV header entirely — proves entries are rebuilt from the
     // persisted raw rows with the new mapping, not just cosmetically relabeled: the

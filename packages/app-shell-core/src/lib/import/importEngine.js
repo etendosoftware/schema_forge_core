@@ -24,6 +24,11 @@ const IMPORT_ERROR_FALLBACKS = {
   importErrorDuplicateUser: () => 'A user with this name already exists for the contact. Try a different name.',
   importErrorValueTooLong: () => 'A value is too long for one of its fields.',
   importErrorGeneric: () => 'This row could not be imported. Open the details for the technical report or contact support.',
+  importErrorDependentAmbiguous: (p) => `Multiple records match "${p.value}". Please specify an exact code.`,
+  importErrorDependentUnresolved: (p) => `Record "${p.value}" could not be resolved.`,
+  importErrorDependentInvalidName: (p) => `Cannot generate a valid identifier from "${p.value}".`,
+  importErrorDependentKeyConflict: (p) => `Derived code "${p.key}" conflicts with existing record "${p.existing}".`,
+  importErrorCategoryUnresolved: (p) => `The category "${p.category}" could not be resolved or created.`,
 };
 
 /** snake_case / camelCase DB column → a human-readable "Title Case" label, self-contained. */

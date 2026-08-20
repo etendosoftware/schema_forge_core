@@ -42,7 +42,7 @@ describe('RegisterStep email format wiring (ETP-4664)', () => {
       registerStep.indexOf('id="reg-email"'),
       registerStep.indexOf('id="reg-password"'),
     );
-    assert.match(emailFieldBlock, /disabled=\{registerLoading\}/);
+    assert.match(emailFieldBlock, /disabled=\{registerLoading(?: \|\| emailReadOnly)?\}/);
   });
 
   it('blocks account creation while the email format is invalid, via the submit button gate', () => {
