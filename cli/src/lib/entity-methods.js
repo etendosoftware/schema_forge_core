@@ -270,6 +270,50 @@ export function applyMethodsToCrudPrediction(crud, methods, opts = {}) {
 }
 
 /**
+ * Is this AD tab's entity absent from the contract — i.e. did a human write
+ * `entities.<key>.exclude: true` in `decisions.json`?
+ *
+ * ETP-4793 — `exclude: true` had exactly one consumer, `resolve-curated.js`
+ * (`if (entityDecision.exclude === true) continue;`), so its whole effect was
+ * "absent from `contract.json`". Neither write path acted on it:
+ * `populateWindowSpec` walks `AD_Tab`, not the contract, so the entity still got
+ * an `ETGO_SF_ENTITY` row plus one `ETGO_SF_FIELD` row per AD column at the
+ * populate-step default `ISINCLUDED = 'Y'`, and nothing downstream closed them —
+ * `stepExcludeNonContractFields` compares column names against a FLAT set
+ * gathered across all contract entities, so an excluded entity's column survives
+ * whenever a contract entity happens to have a column of the same name.
+ *
+ * The measured consequence on the reference instance: 102 entities marked
+ * `exclude: true` across 28 specs, 90 of them present in `ETGO_SF_ENTITY`, 386
+ * of their field rows still `ISINCLUDED = 'Y'` — and one of them (`taxZone`)
+ * served with MORE verbs than the curated `tax` entity beside it, because a tab
+ * with no contract entity falls through to the window-level default while the
+ * curated entity is restricted by its own contract.
+ *
+ * Both write paths now consult this predicate and write `ISINCLUDED = 'N'` on
+ * the entity row, which is the lever every reader already honours: 24 call sites
+ * across the REST and MCP surfaces filter on `SFEntity.PROPERTY_ISINCLUDED`
+ * before touching an entity (`findIncludedEntity`, `listIncludedEntities`,
+ * `NeoServlet`, `NeoDiscoveryHelper`, …), and entity resolution always precedes
+ * field access. No new column, and no AD records, were needed.
+ *
+ * The empty-set guard is load-bearing: a contract with no `backendContract`
+ * entities at all (an older or partially-generated artifact) must answer `false`
+ * for every entity, or a single malformed contract would close an entire window.
+ *
+ * @param {object|null|undefined} contract - parsed contract.json
+ * @param {string} entityName - the NAME written to the ETGO_SF_ENTITY row
+ * @returns {boolean} true when the entity must be closed on both surfaces
+ */
+export function isEntityExcludedFromContract(contract, entityName) {
+  const entities = contract?.backendContract?.entities;
+  if (!entities || !entityName) return false;
+  const names = Object.keys(entities);
+  if (names.length === 0) return false;
+  return !names.includes(entityName);
+}
+
+/**
  * Read the resolved method list for an entity back off a generated contract.
  * This is the ONLY function the two write paths (`push-to-neo.js` and
  * `lib/neo-delta.js`) should use, so they cannot disagree.
@@ -278,7 +322,11 @@ export function applyMethodsToCrudPrediction(crud, methods, opts = {}) {
  *   1. `apiPrediction.crud.<entityName>.methods` — the resolved allowlist
  *   2. `apiPrediction.window.readOnly` — window-level default, which also covers
  *      AD tabs that have no contract entity at all (excluded entities still get
- *      an ETGO_SF_ENTITY row from `populateWindowSpec`)
+ *      an ETGO_SF_ENTITY row from `populateWindowSpec`). Those rows now carry
+ *      `ISINCLUDED = 'N'` — see `isEntityExcludedFromContract()` — so the method
+ *      flags resolved here are unreachable for them, and are deliberately left
+ *      at the window default rather than zeroed: an all-`N` set would break the
+ *      GET/GETBYID invariant this file enforces.
  *   3. all six methods — pre-ETP-4254 behaviour, unchanged
  *
  * ETP-4745 — `crud.<entityName>.delete === false` (set by `window.hideDelete` /

@@ -25,6 +25,7 @@ import { createRequire } from 'node:module';
 import { resolve, join, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { registerReportHelpers, computeDocumentQrDataUrl, buildJsreportHelpersString } from '../../templates/reports/helpers/report-html-helpers.js';
+import { listReportDescriptors } from '../../cli/src/report-descriptor.js';
 
 const _require = createRequire(import.meta.url);
 const __dirname = dirname(fileURLToPath(import.meta.url));
@@ -104,34 +105,12 @@ function json(res, status, data) {
 // Report manifest
 // ---------------------------------------------------------------------------
 
+// Delegates to the canonical descriptor module — this function used to keep its
+// own copy of the field list and silently dropped `sections`, so servers served
+// a report list the frontend couldn't build its accordion sidebar from while
+// every dev machine looked fine. See cli/src/report-descriptor.js.
 function listReports() {
-  const reports = [];
-  for (const dir of readdirSync(ARTIFACTS_DIR, { withFileTypes: true })) {
-    if (!dir.isDirectory()) continue;
-    const contractPath = join(ARTIFACTS_DIR, dir.name, 'report-contract.json');
-    if (!existsSync(contractPath)) continue;
-    try {
-      const contract = JSON.parse(readFileSync(contractPath, 'utf8'));
-      if (
-        contract.reportId &&
-        contract.outputs?.length > 0 &&
-        contract.type !== 'document' &&
-        (contract.source === 'jasper-migration' || contract.source === 'manual' ||
-          contract.source === 'sql' || contract.source === 'neo' || contract.mockDataFile)
-      ) {
-        reports.push({
-          id: contract.reportId,
-          title: contract.title,
-          type: contract.type,
-          category: contract.category || 'other',
-          orientation: contract.orientation,
-          outputs: contract.outputs,
-          parameters: contract.parameters || [],
-        });
-      }
-    } catch { /* skip malformed */ }
-  }
-  return reports;
+  return listReportDescriptors(ARTIFACTS_DIR);
 }
 
 // ---------------------------------------------------------------------------
