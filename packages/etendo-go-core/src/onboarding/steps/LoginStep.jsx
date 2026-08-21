@@ -4,6 +4,7 @@ import { Button } from '@etendosoftware/app-shell-core/components/ui/button';
 import { useUI, useLocaleSwitch } from '@etendosoftware/app-shell-core/i18n';
 import { loginAccount, loginWithSsoProvider, requestPasswordReset, confirmPasswordReset, fetchAccount, fetchEnvironments, AUTH_ERROR_UI_KEYS } from '../api.js';
 import { getConfiguredSsoProviders, renderSsoProviderButton } from '../sso.js';
+import { completeAuthentication } from '../postAuth.js';
 import { trackOnboarding } from '../tracking.js';
 import { AuthShell } from '../components/AuthShell.jsx';
 import { AuthField } from '../components/AuthField.jsx';
@@ -95,7 +96,13 @@ export function LoginStep({ config, stepData, onNext, onBack, goToStep, setToken
           provider,
           status: 'success',
         });
-        handleAuthSuccess(data.token, data.account, { authMethod: 'sso' });
+        await completeAuthentication({
+          token: data.token,
+          account: data.account,
+          authMethod: 'sso',
+          persistAuth: handleAuthSuccess,
+          onAuthenticated,
+        });
       } else {
         trackOnboarding(config, 'onboarding_auth_failed', {
           action: 'sso',
@@ -114,7 +121,7 @@ export function LoginStep({ config, stepData, onNext, onBack, goToStep, setToken
     } finally {
       setSsoLoadingProvider(null);
     }
-  }, [handleAuthSuccess, ui, apiBase, config]);
+  }, [handleAuthSuccess, onAuthenticated, ui, apiBase, config]);
 
   useEffect(() => {
     if (view !== 'login' || !loginSsoButtonRef.current || !SSO_PROVIDERS.length) {
@@ -178,12 +185,13 @@ export function LoginStep({ config, stepData, onNext, onBack, goToStep, setToken
         // navigating away (window.location.href) or switching to another
         // onboarding step, so LoginStep unmounts. Resetting it here would flash
         // the button back to its normal state during that hand-off window.
-        await handleAuthSuccess(data.token, data.account, {
-          route: !onAuthenticated,
+        await completeAuthentication({
+          token: data.token,
+          account: data.account,
+          authMethod: 'password',
+          persistAuth: handleAuthSuccess,
+          onAuthenticated,
         });
-        if (onAuthenticated) {
-          await onAuthenticated(data.token, data.account);
-        }
       } else {
         trackOnboarding(config, 'onboarding_auth_failed', {
           action: 'login',
