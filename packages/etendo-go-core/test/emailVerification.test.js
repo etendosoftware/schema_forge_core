@@ -189,6 +189,60 @@ describe('OnboardingFlow consumes the confirmation link (ETP-4798)', () => {
   });
 });
 
+describe('the resend cooldown (ETP-4798)', () => {
+  const wall = readFileSync(
+    join(__dirname, '..', 'src', 'onboarding', 'steps', 'VerifyEmailStep.jsx'),
+    'utf8',
+  );
+
+  it('waits 60 seconds after a successful resend', () => {
+    assert.match(wall, /RESEND_COOLDOWN_MS = 60_000/);
+  });
+
+  it('only starts the cooldown on success, so a failed send stays retryable', () => {
+    const handler = wall.slice(
+      wall.indexOf('const handleResend'),
+      wall.indexOf('return (', wall.indexOf('const handleResend')),
+    );
+    const successAt = handler.indexOf('writeCooldownDeadline');
+    const catchAt = handler.indexOf('} catch {');
+    assert.ok(successAt > -1 && catchAt > -1);
+    assert.ok(successAt < catchAt, 'the deadline must be written in the try, never the catch');
+    assert.doesNotMatch(handler.slice(catchAt), /writeCooldownDeadline/);
+  });
+
+  it('refuses a second send while cooling, not only while in flight', () => {
+    assert.match(wall, /if \(state === 'sending' \|\| cooling\) return;/);
+  });
+
+  it('persists the deadline, so the documented refresh does not reset it', () => {
+    // This screen tells users to refresh (that is how confirming on a phone unblocks a desktop),
+    // so a state-only timer would be bypassed by the very action they are told to take.
+    assert.match(wall, /localStorage\.setItem/);
+    assert.match(wall, /localStorage\.getItem/);
+    assert.match(wall, /useState\(\(\) => readCooldownDeadline\(accountEmail\)\)/);
+  });
+
+  it('keys the deadline per address', () => {
+    assert.match(wall, /sf_verify_resend_until:\$\{email \|\| 'unknown'\}/);
+  });
+
+  it('survives storage being unavailable instead of breaking the screen', () => {
+    const reader = wall.slice(wall.indexOf('function readCooldownDeadline'), wall.indexOf('function writeCooldownDeadline'));
+    assert.match(reader, /catch \{/);
+  });
+
+  it('clears its interval on unmount', () => {
+    assert.match(wall, /return \(\) => clearInterval\(id\);/);
+  });
+
+  it('no longer parks the button on a terminal sent state', () => {
+    // Before the cooldown the button was replaced by a permanent "sent" message, so a legitimate
+    // second resend needed a page reload.
+    assert.doesNotMatch(wall, /state === 'sent'/);
+  });
+});
+
 describe('the confirm-your-email wall (ETP-4798)', () => {
   it('is a registered step, placed so it cannot break the handleNext index chain', () => {
     const ids = stepIdsInOrder();
