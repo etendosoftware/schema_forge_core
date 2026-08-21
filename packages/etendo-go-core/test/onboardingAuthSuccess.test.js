@@ -110,11 +110,27 @@ describe('RegisterStep handleAuthSuccess contract (ETP-4576, cookie session migr
     assert.doesNotMatch(block, /handleAuthSuccess\(data\.(csrfToken|token),\s*data\.account,\s*\{\s*authMethod:\s*'sso'\s*\}\)/);
   });
 
-  it('handleRegister checks data.csrfToken, not data.token', () => {
+  // The SSO branch above stays cookie-only: it posts to `/sws/go/session/sso/*`,
+  // which always issues the cookie. Password registration is different, because
+  // a host may supply its own `registerHandler` fronting an endpoint that never
+  // joined the session family and still answers with a bearer `token` (Etendo
+  // GO's `/company-invitations/register-and-accept`, ETP-4894). Gating on
+  // `csrfToken` alone made that success path unreachable — the account was
+  // created and the invitation accepted server-side while the UI reported a
+  // failure — so a credential of either kind now counts as authenticated.
+  //
+  // What must NOT happen is relabelling: the two kinds are not interchangeable
+  // downstream (a bearer token belongs in `Authorization`, a proof in
+  // `X-Go-CSRF`), so the value is passed through unchanged and the caller owns
+  // its interpretation. Hence `data.csrfToken ?? data.token`, preferring the
+  // cookie proof when both are present, and never rewriting either.
+  it('handleRegister accepts a credential of either kind, preferring the CSRF proof', () => {
     const block = extractFunctionBlock(registerStep, 'const handleRegister =', 'const authFeatureLabels');
-    assert.match(block, /if \(data\.csrfToken\)/);
-    assert.doesNotMatch(block, /if \(data\.token\)/);
-    assert.match(block, /handleAuthSuccess\(data\.csrfToken,\s*data\.account[,)]/);
+    assert.match(block, /const credential = data\.csrfToken \?\? data\.token;/);
+    assert.match(block, /if \(credential\)/);
+    // Passed through as-is, to both the internal success handler and the host hook.
+    assert.match(block, /handleAuthSuccess\(credential,\s*data\.account[,)]/);
+    assert.match(block, /onRegistered\(credential,\s*data\.account\)/);
   });
 });
 

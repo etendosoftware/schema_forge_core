@@ -140,16 +140,30 @@ export function RegisterStep({ config, stepData, onNext, onBack, goToStep, setTo
           ...registerForm,
           language: locale || config.defaultForm?.language || '',
         });
-      // ETP-4576 — `csrfToken` is what marks an authenticated response here: the
-      // session is the `__Host-` cookie, so there is no bearer token to check for.
-      // A host-supplied `registerHandler` (ETP-4905) must return the same shape.
-      if (data.csrfToken) {
+      // ETP-4576 — a credential of EITHER kind marks an authenticated response.
+      //
+      // `/sws/go/session/register` sets the `__Host-` cookie and answers with
+      // `csrfToken`, which is the scheme this task moves the product to. But a
+      // host-supplied `registerHandler` may front an endpoint that never joined
+      // the session family and still answers with a bearer `token` — Etendo GO's
+      // `/company-invitations/register-and-accept` (ETP-4894) is exactly that,
+      // and gating on `csrfToken` alone made its success path unreachable: the
+      // account WAS created and the invitation accepted server-side, while the
+      // UI reported a registration failure.
+      //
+      // Accepting either is the dual-scheme promise applied here. The credential
+      // is passed through unchanged and the caller owns its interpretation — the
+      // two kinds are NOT interchangeable downstream (a bearer token belongs in
+      // `Authorization`, a proof in `X-Go-CSRF`), so nothing here relabels one
+      // as the other.
+      const credential = data.csrfToken ?? data.token;
+      if (credential) {
         trackOnboarding(config, 'onboarding_auth_succeeded', {
           action: 'register',
           status: 'success',
         });
-        handleAuthSuccess(data.csrfToken, data.account, { route: !onRegistered });
-        if (onRegistered) await onRegistered(data.csrfToken, data.account);
+        handleAuthSuccess(credential, data.account, { route: !onRegistered });
+        if (onRegistered) await onRegistered(credential, data.account);
       } else {
         trackOnboarding(config, 'onboarding_auth_failed', {
           action: 'register',
