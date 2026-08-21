@@ -31,6 +31,12 @@ async function runOnFixtures(windowNames, opts = {}) {
     // opts.f19AllowlistPath; otherwise this falls through to the real
     // (production) allowlist file, which never matches fixture artifact names.
     f19AllowlistPath: opts.f19AllowlistPath,
+    // F23 reads the exported ETGO_SF_*.xml from a com.etendoerp.go checkout.
+    // Default every test at a fixture holding valid-but-empty XMLs: without
+    // this, F23 would resolve the conventional `<root>/../modules/...` path and
+    // its verdict would depend on whether the developer happens to have the
+    // runtime module checked out next to this repo. F23's own tests override it.
+    goSourcedataDir: opts.goSourcedataDir ?? join(FIXTURES, '..', 'f23-sourcedata-empty'),
     // Override the artifacts root to point at our fixture directory
     _artifactsRoot: FIXTURES,
   });
@@ -1107,6 +1113,103 @@ describe('Rule F22 — customTabsAfterBottom + tabOrder', () => {
     const result = await runOnFixtures(['window-f22-ok']);
     const f22 = result.violations.find(v => v.rule === 'F22');
     assert.ok(!f22, 'F22 should not fire when no custom tab declares tabOrder');
+  });
+});
+
+// ─── F23 — ETGO_SF_FIELD.VISIBILITY vs the flags it projects to ────────────
+// ETP-4793 / IMP-26 §5.3. Every fixture below declares its spec NAME as
+// 'window-ok' so it lines up with an existing window artifact — F23 keys the
+// XML rows by spec name, and the artifact directory name IS the spec name.
+
+const F23_FIXTURES = join(FIXTURES, '..');
+
+function runF23(sourcedataFixture) {
+  return runOnFixtures(['window-ok'], {
+    goSourcedataDir: sourcedataFixture === null ? join(F23_FIXTURES, 'f23-no-such-dir') : join(F23_FIXTURES, sourcedataFixture),
+  });
+}
+
+describe('Rule F23 — pushed visibility vs ISINCLUDED/ISREADONLY', () => {
+  it('BLOCK when a stored VISIBILITY contradicts the flags it projects to', async () => {
+    const result = await runF23('f23-sourcedata-contradiction');
+    const f23 = result.violations.find(v => v.rule === 'F23');
+    assert.ok(f23, 'F23 should fire on a curated visibility that disagrees with the flags');
+    assert.equal(f23.severity, 'BLOCK');
+    assert.match(f23.message, /header\.documentNo/);
+    assert.match(f23.message, /visibility='editable'/);
+    assert.equal(f23.f23Contradictions, 1);
+  });
+
+  it('reports the contradiction rather than the unwritten row when both exist', async () => {
+    // The same fixture also holds an included row with no VISIBILITY. A rule
+    // returns one entry, so the blocking class must win — otherwise a real
+    // contradiction hides behind pre-existing backfill debt.
+    const result = await runF23('f23-sourcedata-contradiction');
+    const f23 = result.violations.find(v => v.rule === 'F23');
+    assert.equal(f23.severity, 'BLOCK');
+    assert.equal(f23.f23Unwritten, 1, 'the unwritten row is still counted, just not the headline');
+    assert.ok(!/orderDate/.test(f23.message), 'the WARN-class row must not be listed as a contradiction');
+  });
+
+  it('WARN when included rows carry no VISIBILITY at all', async () => {
+    const result = await runF23('f23-sourcedata-unwritten');
+    const f23 = result.violations.find(v => v.rule === 'F23');
+    assert.ok(f23, 'F23 should report the backfill gap');
+    assert.equal(f23.severity, 'WARN');
+    assert.equal(f23.f23Unwritten, 2);
+    assert.match(f23.message, /header\.orderDate/);
+    assert.match(f23.message, /header\.businessPartner/);
+    assert.ok(!/documentNo/.test(f23.message), 'the coherent editable row must not be reported');
+  });
+
+  it('passes when every row projects correctly, including a closed row with no VISIBILITY', async () => {
+    // N/N with no VISIBILITY is exactly mapVisibility's default, so it is
+    // coherent — the ETP-4793 exclude fix relies on that and must stay green.
+    const result = await runF23('f23-sourcedata-clean');
+    assert.ok(!result.violations.find(v => v.rule === 'F23'), 'F23 must not fire on coherent rows');
+  });
+
+  it('ignores rows flagged ISACTIVE=N', async () => {
+    const result = await runF23('f23-sourcedata-inactive');
+    assert.ok(!result.violations.find(v => v.rule === 'F23'), 'retired config is not a live surface');
+  });
+
+  it('is inert — not skipped — without a com.etendoerp.go checkout', async () => {
+    const result = await runF23(null);
+    assert.ok(!result.violations.find(v => v.rule === 'F23'), 'no violation without the XML');
+    assert.ok(!result.skipped.find(s => s.rule === 'F23'),
+      'and no skipped entry either: one per artifact would drown the report on a functional-only checkout');
+  });
+
+  it('also runs on aggregate artifacts, which push their own spec', async () => {
+    // The regression this pins: F23 was first registered for kind === 'window'
+    // only and reported 69 of the 409 incoherent rows in the live export — the
+    // other 340 sat in two aggregate artifacts (return-to-vendor,
+    // return-from-customer) that the rule never visited.
+    const result = await runOnFixtures(['aggregate-ok'], {
+      goSourcedataDir: join(F23_FIXTURES, 'f23-sourcedata-aggregate'),
+    });
+    const f23 = result.violations.find(v => v.rule === 'F23');
+    assert.ok(f23, 'F23 must visit aggregate artifacts');
+    assert.equal(f23.severity, 'BLOCK');
+    assert.equal(f23.artifactKind, 'aggregate');
+    assert.match(f23.message, /lines\.returnQty/);
+  });
+
+  it('labels a row with no AD_COLUMN_ID by primary key, not "undefined"', async () => {
+    const result = await runF23('f23-sourcedata-blank');
+    const f23 = result.violations.find(v => v.rule === 'F23');
+    assert.ok(f23);
+    assert.ok(!/\.undefined/.test(f23.message), 'an unidentifiable field makes the warning useless');
+    assert.match(f23.message, /no AD_COLUMN_ID, field F0{30}1/);
+  });
+
+  it('honours --skip=F23', async () => {
+    const result = await runOnFixtures(['window-ok'], {
+      goSourcedataDir: join(F23_FIXTURES, 'f23-sourcedata-contradiction'),
+      skip: ['F23'],
+    });
+    assert.ok(!result.violations.find(v => v.rule === 'F23'));
   });
 });
 
