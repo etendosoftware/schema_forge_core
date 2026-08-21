@@ -11,7 +11,54 @@ import {
   formatDuplicateFieldsError,
   loadConfig,
   buildDesiredEntitiesMap,
+  buildFieldUpdateParams,
 } from '../src/push-to-neo.js';
+
+function updateParams(visibility) {
+  return buildFieldUpdateParams(
+    { entityName: 'header', fieldName: 'docStatus', column: 'DocStatus', visibility },
+    { moduleId: 'MOD1', fieldDefaultExprs: {}, auditOpts: {} },
+    'FLD1',
+    'ENT1',
+  );
+}
+
+describe('buildFieldUpdateParams (visibility passthrough)', () => {
+  it('forwards the curated visibility verbatim', () => {
+    assert.equal(updateParams('system').visibility, 'system');
+  });
+
+  it('distinguishes system from readOnly even though both map to Y/Y', () => {
+    const system = updateParams('system');
+    const readOnly = updateParams('readOnly');
+
+    // The booleans are deliberately identical — that collapse is what NEO's
+    // runtime wants, and it is also why the curated value must travel
+    // separately: neo_schema tells agents to skip system fields and display
+    // readOnly ones, a distinction Y/Y cannot express.
+    assert.equal(system.isIncluded, readOnly.isIncluded);
+    assert.equal(system.isReadOnly, readOnly.isReadOnly);
+    assert.notEqual(system.visibility, readOnly.visibility);
+  });
+
+  it('distinguishes discarded from an unknown value even though both map to N/N', () => {
+    const discarded = updateParams('discarded');
+    const unknown = updateParams(undefined);
+
+    assert.equal(discarded.isIncluded, unknown.isIncluded);
+    assert.equal(discarded.visibility, 'discarded');
+    assert.equal(unknown.visibility, null, 'unclassified stays null, never a made-up value');
+  });
+
+  it('keeps the mapVisibility pair untouched for every curated value', () => {
+    for (const visibility of ['editable', 'readOnly', 'system', 'discarded']) {
+      const params = updateParams(visibility);
+      const expected = mapVisibility(visibility);
+      assert.equal(params.isIncluded, expected.isIncluded);
+      assert.equal(params.isReadOnly, expected.isReadOnly);
+    }
+  });
+});
 
 describe('toSpecName', () => {
   it('converts simple display name to kebab-case', () => {
