@@ -6,6 +6,20 @@ Entries are listed chronologically (oldest first). Each entry names the affected
 
 ---
 
+## SSO Invitation Acceptance Return
+
+**Component:** `LoginStep.jsx` — SSO authentication callback (ETP-4958)
+
+**Symptom:** Accepting a company invitation as an existing account via SSO authenticated the user but left the login form on screen — nothing appeared to happen and the invitation was never consumed. The password form on the very same screen worked.
+
+**Root cause:** `LoginStep` carried two independent copies of the post-authentication continuation, one per authentication branch. When the caller-owned `onAuthenticated` prop was introduced, only the password copy was updated; the SSO branch kept calling `handleAuthSuccess(token, account, { authMethod: 'sso' })` and never invoked the callback. The invitation page therefore never flipped `existingAuthenticated`, so it re-rendered the same login step with a valid session already in `localStorage`. Because that page passes no `routeByEnvironments`, the failure surfaced as a silent dead end rather than a wrong redirect.
+
+**Fix:** The continuation is now a single exported helper (`onboarding/postAuth.js → completeAuthentication`) that both branches call. It persists auth state first, skips environment routing whenever the caller owns the continuation, and only then hands over the authenticated session. The missing `onAuthenticated` entry was also added to the `handleSsoProviderLogin` dependency array, which otherwise captured a stale callback for any caller that memoizes `config`.
+
+**Lesson:** Two copies of one contract will drift — the second copy is where the bug lands. When a shared entry point grows a caller-owned continuation, extract it once instead of mirroring it per branch. Note too that the original regression test asserted on the literal source text of `LoginStep.jsx`; a change detector like that passes even when the code path is unreachable. Test the behaviour, not the characters.
+
+---
+
 ## Double-Discount on Line PATCH
 
 **Component:** `InlineLinesPanel.jsx` — inline row edit (PATCH flow)

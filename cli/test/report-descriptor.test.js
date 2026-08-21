@@ -177,6 +177,10 @@ describe('isListableReport', () => {
     assert.equal(isListableReport(contract({ type: 'document' })), false);
   });
 
+  it('rejects type="custom" (an internal NEO endpoint backing a specific page, e.g. financial-accounts-page — not a runnable report, ETP-4901)', () => {
+    assert.equal(isListableReport(contract({ type: 'custom' })), false);
+  });
+
   it('rejects null/undefined without throwing', () => {
     assert.equal(isListableReport(null), false);
     assert.equal(isListableReport(undefined), false);
