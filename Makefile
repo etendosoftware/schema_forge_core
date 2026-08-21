@@ -7,6 +7,8 @@ test: ## Run all unit tests (CLI + core packages)
 	npm test --workspace=packages/schema-forge-core
 	npm test --workspace=packages/app-shell-core
 	npm run test:vitest --workspace=packages/app-shell-core
+	npm test --workspace=packages/etendo-go-core
+	npm run test:vitest --workspace=packages/etendo-go-core
 
 test-all-coverage: ## Run ALL unit tests (Node + Vitest) with coverage reports
 	@mkdir -p coverage

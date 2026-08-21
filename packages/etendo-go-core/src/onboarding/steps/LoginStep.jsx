@@ -4,6 +4,7 @@ import { Button } from '@etendosoftware/app-shell-core/components/ui/button';
 import { useUI, useLocaleSwitch } from '@etendosoftware/app-shell-core/i18n';
 import { loginAccount, loginWithSsoProvider, requestPasswordReset, confirmPasswordReset, fetchAccount, fetchEnvironments, AUTH_ERROR_UI_KEYS } from '../api.js';
 import { getConfiguredSsoProviders, renderSsoProviderButton } from '../sso.js';
+import { completeAuthentication } from '../postAuth.js';
 import { trackOnboarding } from '../tracking.js';
 import { AuthShell } from '../components/AuthShell.jsx';
 import { AuthField } from '../components/AuthField.jsx';
@@ -93,7 +94,17 @@ export function LoginStep({ config, stepData, onNext, onBack, goToStep, setToken
           provider,
           status: 'success',
         });
-        handleAuthSuccess(data.csrfToken, data.account);
+        // The epic's `completeAuthentication` centralises the persist +
+        // hand-off pair; its `token` parameter is the generic credential slot,
+        // and under the cookie scheme what travels in it is the CSRF proof —
+        // the session itself is the `__Host-` cookie the page cannot read.
+        await completeAuthentication({
+          token: data.csrfToken,
+          account: data.account,
+          authMethod: 'sso',
+          persistAuth: handleAuthSuccess,
+          onAuthenticated,
+        });
       } else {
         trackOnboarding(config, 'onboarding_auth_failed', {
           action: 'sso',
@@ -112,7 +123,7 @@ export function LoginStep({ config, stepData, onNext, onBack, goToStep, setToken
     } finally {
       setSsoLoadingProvider(null);
     }
-  }, [handleAuthSuccess, ui, apiBase, config]);
+  }, [handleAuthSuccess, onAuthenticated, ui, apiBase, config]);
 
   useEffect(() => {
     if (view !== 'login' || !loginSsoButtonRef.current || !SSO_PROVIDERS.length) {
@@ -178,15 +189,21 @@ export function LoginStep({ config, stepData, onNext, onBack, goToStep, setToken
         // the button back to its normal state during that hand-off window.
         //
         // ETP-4576 — the login response carries `csrfToken`, not a bearer token:
-        // the session itself is the `__Host-` cookie the browser cannot read. The
-        // `onAuthenticated` hand-off (ETP-4905) therefore receives the CSRF proof
-        // as its first argument, the same value handleAuthSuccess takes.
-        await handleAuthSuccess(data.csrfToken, data.account, {
-          route: !onAuthenticated,
+        // the session itself is the `__Host-` cookie the browser cannot read, so
+        // the credential handed to `completeAuthentication` (and through it to
+        // `handleAuthSuccess` and the ETP-4905 `onAuthenticated` hook) is the
+        // CSRF proof. Unlike password REGISTRATION, this path needs no
+        // either-kind fallback: both endpoints it calls (`/sws/go/session` and
+        // `/sws/go/session/sso/*`) belong to the session family and always issue
+        // the cookie, and there is no host hook here that could front a legacy
+        // bearer endpoint.
+        await completeAuthentication({
+          token: data.csrfToken,
+          account: data.account,
+          authMethod: 'password',
+          persistAuth: handleAuthSuccess,
+          onAuthenticated,
         });
-        if (onAuthenticated) {
-          await onAuthenticated(data.csrfToken, data.account);
-        }
       } else {
         trackOnboarding(config, 'onboarding_auth_failed', {
           action: 'login',

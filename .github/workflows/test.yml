@@ -47,6 +47,13 @@ jobs:
       - name: Etendo GO core package tests
         run: npm test --workspace=packages/etendo-go-core
 
+      # ETP-4959: `npm test` above is `node --test`, which cannot render .jsx.
+      # Component tests live in a separate Vitest suite and need their own step
+      # or they never run. (packages/app-shell-core has the same gap — it is red
+      # on the epic today and is wired in separately under ETP-4961.)
+      - name: Etendo GO core component tests
+        run: npm run test:vitest --workspace=packages/etendo-go-core
+
       - name: App shell core consumer smoke
         run: npm run test:consumer --workspace=packages/app-shell-core
 

@@ -53,19 +53,25 @@ describe('LoginStep handleAuthSuccess contract (ETP-4576, cookie session migrati
     assert.match(handlerBlock, /if \(route && routeByEnvironments\)/);
   });
 
-  it('handleSsoProviderLogin checks data.csrfToken, not data.token, and drops the authMethod override', () => {
+  // The epic (ETP-4969's block) routed both login paths through
+  // `completeAuthentication`, which centralises persist + hand-off. Its `token`
+  // parameter is the generic credential slot; what must travel in it here is the
+  // CSRF proof, because both endpoints these paths call belong to the session
+  // family and the session itself is the `__Host-` cookie the page cannot read.
+  it('handleSsoProviderLogin hands completeAuthentication the CSRF proof, not a bearer token', () => {
     const block = extractFunctionBlock(loginStep, 'const handleSsoProviderLogin', 'useEffect(() => {\n    if (view');
     assert.match(block, /if \(data\.csrfToken\)/);
     assert.doesNotMatch(block, /if \(data\.token\)/);
-    assert.match(block, /handleAuthSuccess\(data\.csrfToken,\s*data\.account[,)]/);
-    assert.doesNotMatch(block, /handleAuthSuccess\(data\.(csrfToken|token),\s*data\.account,\s*\{\s*authMethod:\s*'sso'\s*\}\)/);
+    assert.match(block, /completeAuthentication\(\{[\s\S]*?token: data\.csrfToken/);
+    assert.doesNotMatch(block, /token: data\.token/);
   });
 
-  it('handleLogin checks data.csrfToken, not data.token', () => {
+  it('handleLogin hands completeAuthentication the CSRF proof, not a bearer token', () => {
     const block = extractFunctionBlock(loginStep, 'const handleLogin =', 'const handleForgotPassword');
     assert.match(block, /if \(data\.csrfToken\)/);
     assert.doesNotMatch(block, /if \(data\.token\)/);
-    assert.match(block, /handleAuthSuccess\(data\.csrfToken,\s*data\.account[,)]/);
+    assert.match(block, /completeAuthentication\(\{[\s\S]*?token: data\.csrfToken/);
+    assert.doesNotMatch(block, /token: data\.token/);
   });
 
   it('handleResetPassword no longer clears the removed localStorage keys', () => {
