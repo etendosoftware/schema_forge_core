@@ -27,12 +27,16 @@ export const VALID_SOURCES = new Set(['jasper-migration', 'manual', 'sql', 'neo'
 /**
  * Whether a parsed contract belongs in the `/api/reports` list at all.
  * Documents (invoices, orders…) are printed from their own window, never listed
- * as reports, and a contract with no outputs has nothing to render.
+ * as reports, and a contract with no outputs has nothing to render. `custom`
+ * contracts (ETP-4901) are internal NEO endpoints that back a specific page's
+ * own data needs (e.g. financial-accounts-page powers the Cuentas landing
+ * page's sidebar widgets) — real, still-served endpoints, just never meant to
+ * show up as a runnable report a user picks from the catalog.
  */
 export function isListableReport(contract) {
   if (!contract || !contract.reportId) return false;
   if (!Array.isArray(contract.outputs) || contract.outputs.length <= 0) return false;
-  if (contract.type === 'document') return false;
+  if (contract.type === 'document' || contract.type === 'custom') return false;
   return VALID_SOURCES.has(contract.source) || Boolean(contract.mockDataFile);
 }
 
