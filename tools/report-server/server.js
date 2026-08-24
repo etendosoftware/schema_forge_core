@@ -27,6 +27,7 @@ import { fileURLToPath } from 'node:url';
 import { registerReportHelpers, computeDocumentQrDataUrl, buildJsreportHelpersString } from '../../templates/reports/helpers/report-html-helpers.js';
 import { listReportDescriptors } from '../../cli/src/report-descriptor.js';
 import { pickLabel, pickUiStrings, buildContractLabels } from '../../cli/src/report-i18n.js';
+import { resolveGrouping, buildNestedGroups, buildAccountReportTree } from '../../cli/src/report-grouping.js';
 
 const _require = createRequire(import.meta.url);
 const __dirname = dirname(fileURLToPath(import.meta.url));
@@ -180,7 +181,26 @@ async function fetchReportData(reportId, { limit, authToken, params = {} } = {})
   const pool = new pg.default.Pool(getDbConfig());
   try {
     const { rows } = await pool.query(sql);
-    return { rows, contract };
+
+    // Optional secondary queries. Libro Mayor's "Initial Balance" (openingQuery,
+    // ETP-4898) and Profit & Loss's computed formula nodes (operandsQuery,
+    // ETP-4899) are declared per report in its contract. They were never run
+    // here, so the account trees and opening balances had no data to render
+    // server-side even once the functions that build them were available.
+    // Same placeholder rules as the main query, no LIMIT — both are already
+    // aggregated in SQL.
+    let openingRows = null;
+    if (contract.sql?.openingQuery) {
+      openingRows = (await pool.query(
+        applyPlaceholders(contract.sql.openingQuery, contract, authToken, params))).rows;
+    }
+    let operandRows = null;
+    if (contract.sql?.operandsQuery) {
+      operandRows = (await pool.query(
+        applyPlaceholders(contract.sql.operandsQuery, contract, authToken, params))).rows;
+    }
+
+    return { rows, contract, openingRows, operandRows };
   } finally {
     await pool.end();
   }
@@ -236,6 +256,17 @@ async function buildReportSql(contract, reportId, authToken, params) {
 
   if (!sql) throw new Error(`No data source configured for report '${reportId}'`);
 
+  return applyPlaceholders(sql, contract, authToken, params);
+}
+
+/**
+ * Placeholder/scoping rewrites shared by a report's main query and its optional
+ * secondary queries (`openingQuery`, `operandsQuery`). Extracted so those run
+ * under IDENTICAL rules — a secondary query scoped to a different client or
+ * language than the rows it annotates is the kind of bug nobody spots in a
+ * rendered report.
+ */
+function applyPlaceholders(sql, contract, authToken, params) {
   const clientId = getClientIdFromToken(`Bearer ${authToken}`) || '0';
   sql = sql.replaceAll('__CLIENT_ID__', clientId);
   for (const [k, v] of Object.entries(params)) {
@@ -283,8 +314,132 @@ function extractRowsFromData(data, contract, limit) {
 }
 
 // ---------------------------------------------------------------------------
+// Report data resolution
+// ---------------------------------------------------------------------------
+
+/**
+ * Turns fetchReportData's flat SQL result into what the template needs to
+ * render: the account tree (when the contract declares operandsQuery), then
+ * the groupBy dimension resolution. Extracted out of handleRequest's render
+ * branch — pure sequencing, no behavior change — because inlining both steps
+ * there pushed handleRequest's cognitive complexity past the Sonar budget.
+ */
+function resolveReportData(result, params, locale) {
+  let { rows } = result;
+  const { contract, operandRows, openingRows } = result;
+
+  // Account-report tree reports (ETP-4899 — Profit & Loss, Balance Sheet): the
+  // SQL returns the FLAT node list, and the indented tree (roll-up, formula
+  // nodes, account-level cutoff) is assembled here, replacing `rows` so
+  // recordCount/totals and the Excel/CSV templates keep working unchanged.
+  if (contract.sql?.operandsQuery !== undefined && Array.isArray(rows)) {
+    rows = buildAccountReportTree(rows, operandRows, {
+      accountLevel: params.accountLevel || 'S',
+      showOnlyWithValue: params.showOnlyAccountsWithValue === 'true',
+    });
+  }
+
+  const grouped = resolveGrouping(contract, params, rows, locale);
+  return { ...grouped, openingRows };
+}
+
+// ---------------------------------------------------------------------------
 // Request handler
 // ---------------------------------------------------------------------------
+
+/**
+ * Handles POST /api/reports/:id/render — resolves the report data, builds the
+ * template data and either renders HTML locally or delegates to jsreport for
+ * PDF/XLSX/CSV. Extracted out of handleRequest, whose own job is now just
+ * routing: the try/catch and branching that belong to this ONE route were
+ * counted against handleRequest's cognitive complexity budget even though
+ * every other route here is a plain two-line if/return.
+ */
+async function renderReport(renderMatch, req, res) {
+  const reportId = renderMatch[1];
+  const body = await readBody(req);
+  const { format = 'html', limit, params = {}, locale = 'en_US' } = JSON.parse(body || '{}');
+
+  try {
+    const authToken = (req.headers.authorization || '').replace(/^Bearer\s+/i, '');
+    const result = await fetchReportData(reportId, { limit, authToken, params });
+    const { contract, documentData, neoMeta = {} } = result;
+    const {
+      rows, groupLabel, descriptionLabel, dimensionLabel, dimensionField, tbGroups, openingRows,
+    } = resolveReportData(result, params, locale);
+
+    const activeFilters = filterAndTransformParams(params, contract, locale);
+
+    const artifactDir = join(ARTIFACTS_DIR, reportId);
+    const templateContent = readFileSync(join(artifactDir, 'template.hbs'), 'utf8');
+    const helpersPath = join(artifactDir, 'helpers.js');
+    const helpersCode = loadHelpersFromFile(helpersPath);
+    const cssPath = join(ROOT, 'templates', 'reports', 'base.css');
+    const css = readCssFile(cssPath);
+
+    const recipeMap = { html: 'html', pdf: 'chrome-pdf', xlsx: 'html-to-xlsx', csv: 'text' };
+    const recipe = recipeMap[format] || 'html';
+    const title = pickLabel(contract.title, locale, reportId);
+
+    const amountCols = (contract.columns || []).filter(c => c.type === 'amount');
+    const totals = {};
+    calculateTotals(documentData, amountCols, rows, totals);
+    const recordCount = getRowCount(rows);
+    const ui = pickUiStrings(locale);
+    const labels = buildContractLabels(contract, locale);
+    // Always built (ETP-4898): every account — grouped by a dimension or not —
+    // needs its opening balance / running balance / subtotal / total, so both
+    // the flat and nested-card templates read the same `meta.groups` shape.
+    const groups = (!documentData && Array.isArray(rows))
+      ? buildNestedGroups(rows, dimensionField, openingRows)
+      : null;
+    const templateData = buildTemplateData(documentData, css, { title, activeFilters, params, recordCount, totals, groupLabel, descriptionLabel, neoMeta, rows, locale, ui, labels, dimensionLabel, dimensionField, groups, tbGroups });
+    await injectDocumentQr(documentData, templateData);
+    // HTML: render with Handlebars locally
+    if (format === 'html') {
+      renderTemplateWithHelpers(helpersCode, templateContent, templateData, res);
+      return;
+    }
+
+    // PDF/XLSX: delegate to jsreport. jsreport runs in a separate container
+    // with its own sandbox, so it gets the canonical helper set as SOURCE
+    // TEXT plus only this report's specific extras — never the raw artifact
+    // helpers.js alone (post-ETP-4083 it no longer defines the formatting
+    // helpers, which broke every {{#ifCond}}/{{formatDate}} template here).
+    // Same composition as the Vite dev plugin (report-api.js).
+    const separators = await getReportCurrencySeparators();
+    const payload = {
+      template: { content: templateContent, engine: 'handlebars', recipe, helpers: buildJsreportHelpersString(helpersCode, undefined, separators) },
+      data: templateData,
+    };
+    if (recipe === 'chrome-pdf') {
+      payload.template.chrome = {
+        landscape: contract.orientation === 'landscape' || params.showLandscape === 'true',
+        format: 'A4', marginTop: '10mm', marginBottom: '10mm', marginLeft: '10mm', marginRight: '10mm',
+      };
+    }
+
+    const jsRes = await fetch(`${JSREPORT_URL}/api/report`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload),
+    });
+
+    if (!jsRes.ok) {
+      const text = await jsRes.text();
+      throw new Error(`jsreport ${jsRes.status}: ${text.slice(0, 200)}`);
+    }
+
+    const contentType = jsRes.headers.get('content-type') || 'text/html';
+    const buffer = Buffer.from(await jsRes.arrayBuffer());
+    res.writeHead(200, { 'Content-Type': contentType });
+    res.end(buffer);
+
+  } catch (e) {
+    console.error('[render]', e.message);
+    json(res, 500, { error: e.message });
+  }
+}
 
 async function handleRequest(req, res) {
   const url = new URL(req.url, `http://localhost`);
@@ -321,85 +476,7 @@ async function handleRequest(req, res) {
   // POST /api/reports/:id/render
   const renderMatch = new RegExp(/^\/api\/reports\/([\w-]+)\/render$/).exec(path);
   if (isPostRequestForRender(method, renderMatch)) {
-    const reportId = renderMatch[1];
-    const body = await readBody(req);
-    const { format = 'html', limit, params = {}, locale = 'en_US' } = JSON.parse(body || '{}');
-
-    try {
-      const authToken = (req.headers.authorization || '').replace(/^Bearer\s+/i, '');
-      const result = await fetchReportData(reportId, { limit, authToken, params });
-      let { rows, contract, documentData, neoMeta = {} } = result;
-
-      // groupBy logic
-      let groupLabel;
-      let descriptionLabel;
-      ({ groupLabel, descriptionLabel, rows } = getGroupedData(contract, params, rows, locale));
-
-      const activeFilters = filterAndTransformParams(params, contract, locale);
-
-      const artifactDir = join(ARTIFACTS_DIR, reportId);
-      const templateContent = readFileSync(join(artifactDir, 'template.hbs'), 'utf8');
-      const helpersPath = join(artifactDir, 'helpers.js');
-      const helpersCode = loadHelpersFromFile(helpersPath);
-      const cssPath = join(ROOT, 'templates', 'reports', 'base.css');
-      const css = readCssFile(cssPath);
-
-      const recipeMap = { html: 'html', pdf: 'chrome-pdf', xlsx: 'html-to-xlsx', csv: 'text' };
-      const recipe = recipeMap[format] || 'html';
-      const title = pickLabel(contract.title, locale, reportId);
-
-      const amountCols = (contract.columns || []).filter(c => c.type === 'amount');
-      const totals = {};
-      calculateTotals(documentData, amountCols, rows, totals);
-      const recordCount = getRowCount(rows);
-      const ui = pickUiStrings(locale);
-      const labels = buildContractLabels(contract, locale);
-      const templateData = buildTemplateData(documentData, css, { title, activeFilters, params, recordCount, totals, groupLabel, descriptionLabel, neoMeta, rows, locale, ui, labels });
-      await injectDocumentQr(documentData, templateData);
-      // HTML: render with Handlebars locally
-      if (format === 'html') {
-        renderTemplateWithHelpers(helpersCode, templateContent, templateData, res);
-        return;
-      }
-
-      // PDF/XLSX: delegate to jsreport. jsreport runs in a separate container
-      // with its own sandbox, so it gets the canonical helper set as SOURCE
-      // TEXT plus only this report's specific extras — never the raw artifact
-      // helpers.js alone (post-ETP-4083 it no longer defines the formatting
-      // helpers, which broke every {{#ifCond}}/{{formatDate}} template here).
-      // Same composition as the Vite dev plugin (report-api.js).
-      const separators = await getReportCurrencySeparators();
-      const payload = {
-        template: { content: templateContent, engine: 'handlebars', recipe, helpers: buildJsreportHelpersString(helpersCode, undefined, separators) },
-        data: templateData,
-      };
-      if (recipe === 'chrome-pdf') {
-        payload.template.chrome = {
-          landscape: contract.orientation === 'landscape' || params.showLandscape === 'true',
-          format: 'A4', marginTop: '10mm', marginBottom: '10mm', marginLeft: '10mm', marginRight: '10mm',
-        };
-      }
-
-      const jsRes = await fetch(`${JSREPORT_URL}/api/report`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload),
-      });
-
-      if (!jsRes.ok) {
-        const text = await jsRes.text();
-        throw new Error(`jsreport ${jsRes.status}: ${text.slice(0, 200)}`);
-      }
-
-      const contentType = jsRes.headers.get('content-type') || 'text/html';
-      const buffer = Buffer.from(await jsRes.arrayBuffer());
-      res.writeHead(200, { 'Content-Type': contentType });
-      res.end(buffer);
-
-    } catch (e) {
-      console.error('[render]', e.message);
-      json(res, 500, { error: e.message });
-    }
+    await renderReport(renderMatch, req, res);
     return;
   }
 
@@ -432,31 +509,16 @@ server.listen(PORT, () => {
   console.log(`[report-server] ETENDO_URL=${ETENDO_URL}`);
   console.log(`[report-server] ARTIFACTS_DIR=${ARTIFACTS_DIR}`);
 });
-function buildTemplateData(documentData, css, { title, activeFilters, params, recordCount, totals, groupLabel, descriptionLabel, neoMeta, rows, locale, ui, labels }) {
+function buildTemplateData(documentData, css, { title, activeFilters, params, recordCount, totals, groupLabel, descriptionLabel, neoMeta, rows, locale, ui, labels, dimensionLabel, dimensionField, groups, tbGroups }) {
   // `locale`/`ui`/`labels` go into BOTH branches on purpose: print-* document
   // reports render their own headings from meta.labels just like listings do,
   // and that branch is the easy one to forget.
   if (documentData) {
     return { css, meta: { title, generatedAt: new Date().toISOString(), filters: activeFilters, params, locale, ui, labels }, header: documentData.header, lines: documentData.lines, taxes: documentData.taxes };
   }
-  return { css, meta: { title, generatedAt: new Date().toISOString(), recordCount, filters: activeFilters, params, locale, ui, labels, totals, groupLabel, descriptionLabel, ...neoMeta }, rows };
+  return { css, meta: { title, generatedAt: new Date().toISOString(), recordCount, filters: activeFilters, params, locale, ui, labels, totals, groupLabel, descriptionLabel, dimensionLabel, dimensionField, groups, tbGroups, ...neoMeta }, rows };
 }
 
-function getGroupedData(contract, params, rows, locale = 'en_US') {
-  let groupLabel = pickLabel(contract.groups?.[0]?.label, locale, 'Account');
-  let descriptionLabel = pickLabel((contract.columns || []).find(c => c.field === 'groupbyname')?.label, locale, 'Description');
-  if (params.groupBy && rows) {
-    const dimensionParam = (contract.parameters || []).find(p => p.groupByValue === params.groupBy && p.groupByField);
-    if (dimensionParam) {
-      const sourceField = dimensionParam.groupByField;
-      groupLabel = pickLabel(dimensionParam.label, locale, params.groupBy);
-      descriptionLabel = pickLabel(dimensionParam.label, locale, descriptionLabel);
-      rows = [...rows].sort((a, b) => (a[sourceField] || '').toLowerCase().localeCompare((b[sourceField] || '').toLowerCase()));
-      rows = rows.map(r => ({ ...r, name: r[sourceField] || '', value: '' }));
-    }
-  }
-  return { groupLabel, descriptionLabel, rows };
-}
 
 function filterAndTransformParams(params, contract, locale = 'en_US') {
   return Object.entries(params)

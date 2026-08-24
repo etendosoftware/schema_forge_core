@@ -12,6 +12,9 @@ import { fileURLToPath } from 'node:url';
 // (cli/src/report-i18n.js), imported by server.js itself. Copying it here would
 // reintroduce the very drift this module was created to end.
 import { pickLabel } from '../../../cli/src/report-i18n.js';
+// resolveGrouping replaced server.js's own getGroupedData: it is shared
+// production code now, so it is imported, never replicated.
+import { resolveGrouping } from '../../../cli/src/report-grouping.js';
 
 const SERVER_SRC = readFileSync(fileURLToPath(new URL('../server.js', import.meta.url)), 'utf8');
 
@@ -71,21 +74,6 @@ function calculateTotals(documentData, amountCols, rows, totals) {
   }
 }
 
-function getGroupedData(contract, params, rows, locale = 'en_US') {
-  let groupLabel = pickLabel(contract.groups?.[0]?.label, locale, 'Account');
-  let descriptionLabel = pickLabel((contract.columns || []).find(c => c.field === 'groupbyname')?.label, locale, 'Description');
-  if (params.groupBy && rows) {
-    const dimensionParam = (contract.parameters || []).find(p => p.groupByValue === params.groupBy && p.groupByField);
-    if (dimensionParam) {
-      const sourceField = dimensionParam.groupByField;
-      groupLabel = pickLabel(dimensionParam.label, locale, params.groupBy);
-      descriptionLabel = pickLabel(dimensionParam.label, locale, descriptionLabel);
-      rows = [...rows].sort((a, b) => (a[sourceField] || '').toLowerCase().localeCompare((b[sourceField] || '').toLowerCase()));
-      rows = rows.map(r => ({ ...r, name: r[sourceField] || '', value: '' }));
-    }
-  }
-  return { groupLabel, descriptionLabel, rows };
-}
 
 function extractRowsFromData(data, contract, limit) {
   let rows = data;
@@ -320,14 +308,19 @@ describe('report-server helpers', () => {
     });
   });
 
-  describe('getGroupedData', () => {
+  describe('resolveGrouping', () => {
     it('returns defaults when no groupBy', () => {
-      const result = getGroupedData({ columns: [] }, {}, [{ x: 1 }]);
+      const result = resolveGrouping({ columns: [] }, {}, [{ x: 1 }]);
       assert.equal(result.groupLabel, 'Account');
       assert.equal(result.descriptionLabel, 'Description');
     });
 
-    it('sorts and remaps rows when groupBy matches a dimension param', () => {
+    // Sorted, NOT remapped. server.js's old getGroupedData overwrote every row's
+    // `name` with the dimension value and blanked `value`, destroying the account
+    // name and code the template needs to nest the Account band inside the
+    // dimension band. The dev engine never did that; the shared function keeps
+    // the rows intact.
+    it('sorts rows by the dimension without overwriting account name/value', () => {
       const contract = {
         columns: [],
         parameters: [{ name: 'dim', groupByValue: 'bp', groupByField: 'bpartnerName', label: { en_US: 'Partner' } }],
@@ -336,10 +329,18 @@ describe('report-server helpers', () => {
         { bpartnerName: 'Zeta', amount: 10 },
         { bpartnerName: 'Alpha', amount: 20 },
       ];
-      const result = getGroupedData(contract, { groupBy: 'bp' }, rows);
-      assert.equal(result.groupLabel, 'Partner');
-      assert.equal(result.rows[0].name, 'Alpha');
-      assert.equal(result.rows[1].name, 'Zeta');
+      const result = resolveGrouping(contract, { groupBy: 'bp' }, rows);
+      // The dimension label is its OWN field. server.js used to overwrite
+      // groupLabel/descriptionLabel with it, collapsing two bands into one — the
+      // template reads meta.groupLabel for the Account band and
+      // meta.dimensionLabel for the dimension band above it.
+      assert.equal(result.dimensionLabel, 'Partner');
+      assert.equal(result.groupLabel, 'Account', 'the Account band label survives grouping');
+      assert.equal(result.dimensionField, 'bpartnerName');
+      assert.equal(result.rows[0].bpartnerName, 'Alpha');
+      assert.equal(result.rows[1].bpartnerName, 'Zeta');
+      assert.equal(result.rows[0].amount, 20, 'the sorted row keeps its own data');
+      assert.ok(!('name' in result.rows[0]), 'name must not be synthesised onto the row');
     });
   });
 
@@ -516,14 +517,14 @@ describe('report i18n', () => {
   };
 
   it('resolves group labels in the requested locale', () => {
-    const { groupLabel, descriptionLabel } = getGroupedData(contract, {}, [], 'es_ES');
+    const { groupLabel, descriptionLabel } = resolveGrouping(contract, {}, [], 'es_ES');
     assert.equal(groupLabel, 'Almacén');
     assert.equal(descriptionLabel, 'Descripción');
   });
 
   it('resolves the groupBy dimension label in the requested locale', () => {
-    const { groupLabel } = getGroupedData(contract, { groupBy: 'wh' }, [{ whName: 'Main' }], 'es_ES');
-    assert.equal(groupLabel, 'Almacén');
+    const { dimensionLabel } = resolveGrouping(contract, { groupBy: 'wh' }, [{ whName: 'Main' }], 'es_ES');
+    assert.equal(dimensionLabel, 'Almacén');
   });
 
   it('resolves filter chip labels in the requested locale', () => {
@@ -537,7 +538,7 @@ describe('report i18n', () => {
   });
 
   it('still defaults to en_US when no locale is passed', () => {
-    assert.equal(getGroupedData(contract, {}, []).groupLabel, 'Warehouse');
+    assert.equal(resolveGrouping(contract, {}, []).groupLabel, 'Warehouse');
   });
 
   it('carries locale/ui/labels into the meta of BOTH template branches', () => {
@@ -579,6 +580,27 @@ describe('report i18n', () => {
     it('feeds ui and labels into the template data', () => {
       assert.match(SERVER_SRC, /const ui = pickUiStrings\(locale\)/);
       assert.match(SERVER_SRC, /const labels = buildContractLabels\(contract, locale\)/);
+    });
+
+    it('groups through the shared module instead of its own copy', () => {
+      assert.match(SERVER_SRC, /from '\.\.\/\.\.\/cli\/src\/report-grouping\.js'/);
+      assert.doesNotMatch(SERVER_SRC, /function getGroupedData/,
+        'getGroupedData was a near-copy of resolveGrouping and must not come back');
+    });
+
+    it('runs the optional openingQuery and operandsQuery', () => {
+      // Without these the account trees and opening balances have no data to
+      // render, however faithfully the builders are shared.
+      assert.match(SERVER_SRC, /contract\.sql\?\.openingQuery/);
+      assert.match(SERVER_SRC, /contract\.sql\?\.operandsQuery/);
+    });
+
+    it('carries the grouping outputs into meta', () => {
+      const meta = SERVER_SRC.match(/return \{ css, meta: \{ title[^}]*recordCount[^}]*\}/);
+      assert.ok(meta, 'could not locate the listing meta literal');
+      for (const key of ['dimensionLabel', 'dimensionField', 'groups', 'tbGroups']) {
+        assert.ok(meta[0].includes(key), `listing meta is missing ${key}`);
+      }
     });
   });
 });
