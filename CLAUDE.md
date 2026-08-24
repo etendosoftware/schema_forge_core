@@ -240,6 +240,29 @@ Contract tests (Node.js), Unit tests (JUnit in Etendo Go), Integration tests (OB
 Run `make test` for CLI tests. See `docs/e2e-testing-guide.md` for E2E setup, conventions, and `data-testid` patterns.
 Every process must declare >=3 edge cases. Every kept rule must have a behavioral test.
 
+### Two runners per package — pick by what you need to render
+
+| Runner | Script | Files | Use for |
+|---|---|---|---|
+| `node --test` | `npm test --workspace=packages/<pkg>` | `test/*.test.js` | Pure JS/ESM modules — no JSX, no DOM |
+| Vitest + jsdom | `npm run test:vitest --workspace=packages/<pkg>` | `src/**/*.vitest.{js,jsx}` | Anything that must **render a component** |
+
+`node --test` cannot parse `.jsx`. If a behaviour only exists once a component is
+mounted — props wiring, effects, callback contracts between a shared component and its
+caller — it belongs in the Vitest suite. **Never fall back to asserting on a component's
+source text** (`readFileSync` + `assert.match`): that passes even when the code path is
+unreachable and breaks on harmless reformatting. ETP-4958 shipped a user-visible bug
+behind exactly such a test.
+
+Configured in `packages/app-shell-core` and `packages/etendo-go-core`
+(`vitest.config.js` + `test/vitest-setup.js`). To add the runner to another package,
+copy those two files and the `test:vitest` script.
+
+**Every suite needs its own CI step.** `.github/workflows/test.yml` runs `npm test` per
+workspace, which is `node --test` only — a Vitest suite added without an explicit
+`test:vitest` step silently never runs. Add both the workflow step and the `make test`
+line when you introduce one.
+
 **Delegation rule (MANDATORY):** Any task that writes, extends, or fixes tests — unit (Vitest / Node test runner), source-reading, or Playwright E2E — MUST be delegated to the `test-generator` subagent (Tester). Spawn it with `subagent_type="general-purpose"` and include Tester's identity from `.claude/agents/test-generator.md`. Before writing or asking Tester to write a Playwright spec, the agent (and the coordinator) MUST read `docs/e2e-testing-guide.md` first; the canonical mocked-spec reference is `e2e/tests/flows/row-quick-actions.mocked.spec.js`.
 
 ## Pipeline Validation
