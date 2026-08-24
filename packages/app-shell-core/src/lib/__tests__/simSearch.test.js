@@ -1,6 +1,11 @@
-import { describe, it } from 'node:test';
+import { describe, it, beforeEach, afterEach } from 'node:test';
 import assert from 'node:assert/strict';
-import { parseSimSearchEnvelope } from '../simSearch.js';
+import { parseSimSearchEnvelope, simSearch } from '../simSearch.js';
+import {
+  CREDENTIAL_MODES,
+  setSessionCredentials,
+  resetSessionCredentials,
+} from '../../auth/sessionCredentials.js';
 
 describe('parseSimSearchEnvelope', () => {
   it('returns array of nulls when envelope is missing', () => {
@@ -132,5 +137,72 @@ describe('parseSimSearchEnvelope', () => {
     };
     const [first] = parseSimSearchEnvelope(envelope, 1);
     assert.equal(first.similarityPercent, '85');
+  });
+});
+
+/**
+ * ETP-4576 regression guard.
+ *
+ * `simSearch` used to start with `if (!token || ...) return nulls` and build its
+ * own `Authorization: Bearer`. Under a cookie session no caller holds a token,
+ * so that guard cancelled every similarity search and returned the same
+ * all-nulls array a genuine no-match produces — indistinguishable from "nothing
+ * matched", with no request on the wire and nothing logged. Downstream that
+ * surfaced as valid CSV rows needing manual review.
+ *
+ * The cookie case is the one that regresses if the guard ever comes back, so it
+ * is asserted on behaviour (a request IS issued) rather than on the source.
+ */
+describe('simSearch credential handling', () => {
+  const realFetch = globalThis.fetch;
+  const hadWindow = 'window' in globalThis;
+  const realWindow = globalThis.window;
+  let calls;
+
+  beforeEach(() => {
+    calls = [];
+    // A path containing `/web/` — the real shape in the browser. It matters:
+    // detectEtendoBase only falls through to `import.meta.env` when the segment
+    // is absent, and `import.meta.env` does not exist under `node --test`.
+    globalThis.window = { location: { pathname: '/etendo/web/com.etendoerp.go/index.html' } };
+    globalThis.fetch = async (url, init) => {
+      calls.push({ url, init });
+      return { ok: true, json: async () => ({ item_0: { data: [] } }) };
+    };
+  });
+
+  afterEach(() => {
+    globalThis.fetch = realFetch;
+    if (hadWindow) globalThis.window = realWindow;
+    else delete globalThis.window;
+    resetSessionCredentials();
+  });
+
+  it('issues the request under a cookie session, where no token is ever held', async () => {
+    setSessionCredentials({ mode: CREDENTIAL_MODES.cookie, csrfToken: 'c' });
+    await simSearch({ entityName: 'Country', items: ['Spain'] });
+    assert.equal(calls.length, 1, 'a cookie session must not cancel the search');
+    assert.equal(calls[0].init.credentials, 'include');
+    assert.equal(calls[0].init.headers.Authorization, undefined);
+  });
+
+  it('carries the bearer under a bearer session', async () => {
+    setSessionCredentials({ mode: CREDENTIAL_MODES.bearer, token: 'tok' });
+    await simSearch({ entityName: 'Country', items: ['Spain'] });
+    assert.equal(calls.length, 1);
+    assert.equal(calls[0].init.headers.Authorization, 'Bearer tok');
+  });
+
+  it('sends no Content-Type — it is a bodyless GET and would force a preflight', async () => {
+    setSessionCredentials({ mode: CREDENTIAL_MODES.bearer, token: 'tok' });
+    await simSearch({ entityName: 'Country', items: ['Spain'] });
+    assert.equal(calls[0].init.headers['Content-Type'], undefined);
+  });
+
+  it('still short-circuits on a missing entity or an empty item list', async () => {
+    setSessionCredentials({ mode: CREDENTIAL_MODES.bearer, token: 'tok' });
+    assert.deepEqual(await simSearch({ entityName: '', items: ['Spain'] }), [null]);
+    assert.deepEqual(await simSearch({ entityName: 'Country', items: [] }), []);
+    assert.equal(calls.length, 0, 'neither case should reach the network');
   });
 });

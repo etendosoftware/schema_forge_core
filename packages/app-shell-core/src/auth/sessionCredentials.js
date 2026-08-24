@@ -108,6 +108,24 @@ export function writeHeaders() {
 }
 
 /**
+ * The active credential with NO `Content-Type`, for a request that must not
+ * declare one: a bodyless GET against a cross-origin backend, where
+ * `application/json` is not a CORS-safelisted value and forces a preflight
+ * OPTIONS on every call. Safe methods only — a read carries no CSRF proof.
+ *
+ * Under `cookie` this is an empty object, which is correct: the browser
+ * attaches the `__Host-` cookie and nothing else is needed. A caller must
+ * therefore never treat "no headers" as "not authenticated" — that assumption
+ * is exactly what a `!token` gate encodes, and it silently cancels the request
+ * under a cookie session.
+ */
+export function readCredentialHeaders() {
+  const headers = { ...jsonHeaders() };
+  delete headers['Content-Type'];
+  return headers;
+}
+
+/**
  * Fetch options every caller should spread, so the cookie travels under
  * `cookie` and the choice stays in one place.
  *
