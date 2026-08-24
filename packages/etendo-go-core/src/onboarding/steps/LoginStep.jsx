@@ -66,7 +66,14 @@ export function LoginStep({ config, stepData, onNext, onBack, goToStep, setToken
     }
   }, []);
 
-  const handleAuthSuccess = useCallback((csrfToken, account, { route = true } = {}) => {
+  const handleAuthSuccess = useCallback((csrfToken, account, { route = true, authMethod = 'password' } = {}) => {
+    // ETP-4576 — the auth METHOD stays in localStorage; the credential does not.
+    // They were removed together at first, which was too broad: this key is not a
+    // credential, it is "how did you sign in", and UserAvatarButton reads it to
+    // hide the change-password action from SSO users. With nothing written,
+    // `getItem(...) !== 'sso'` is true for everyone and an SSO user is offered a
+    // password they do not have.
+    localStorage.setItem('sf_platform_auth_method', authMethod);
     if (setToken) setToken(csrfToken);
     if (setAccountName) setAccountName(account?.name || account?.email || null);
     setShowLoginPassword(false);
@@ -88,7 +95,10 @@ export function LoginStep({ config, stepData, onNext, onBack, goToStep, setToken
     setSsoLoadingProvider(provider);
     try {
       const data = await loginWithSsoProvider(fetch, apiBase, provider, payload);
-      if (data.csrfToken) {
+      // Either credential counts as authenticated. See the note on the password
+      // branch below for why this is not "just in case".
+      const credential = data.csrfToken ?? data.token;
+      if (credential) {
         trackOnboarding(config, 'onboarding_auth_succeeded', {
           action: 'sso',
           provider,
@@ -96,10 +106,9 @@ export function LoginStep({ config, stepData, onNext, onBack, goToStep, setToken
         });
         // The epic's `completeAuthentication` centralises the persist +
         // hand-off pair; its `token` parameter is the generic credential slot,
-        // and under the cookie scheme what travels in it is the CSRF proof —
-        // the session itself is the `__Host-` cookie the page cannot read.
+        // and what travels in it is whichever credential the response carried.
         await completeAuthentication({
-          token: data.csrfToken,
+          token: credential,
           account: data.account,
           authMethod: 'sso',
           persistAuth: handleAuthSuccess,
@@ -178,7 +187,8 @@ export function LoginStep({ config, stepData, onNext, onBack, goToStep, setToken
     setLoginLoading(true);
     try {
       const data = await loginAccount(fetch, apiBase, loginForm);
-      if (data.csrfToken) {
+      const credential = data.csrfToken ?? data.token;
+      if (credential) {
         trackOnboarding(config, 'onboarding_auth_succeeded', {
           action: 'login',
           status: 'success',
@@ -188,17 +198,18 @@ export function LoginStep({ config, stepData, onNext, onBack, goToStep, setToken
         // onboarding step, so LoginStep unmounts. Resetting it here would flash
         // the button back to its normal state during that hand-off window.
         //
-        // ETP-4576 — the login response carries `csrfToken`, not a bearer token:
-        // the session itself is the `__Host-` cookie the browser cannot read, so
-        // the credential handed to `completeAuthentication` (and through it to
-        // `handleAuthSuccess` and the ETP-4905 `onAuthenticated` hook) is the
-        // CSRF proof. Unlike password REGISTRATION, this path needs no
-        // either-kind fallback: both endpoints it calls (`/sws/go/session` and
-        // `/sws/go/session/sso/*`) belong to the session family and always issue
-        // the cookie, and there is no host hook here that could front a legacy
-        // bearer endpoint.
+        // ETP-4576 — `csrfToken ?? token`, both here and on the SSO branch.
+        // Under the cookie scheme the session is the `__Host-` cookie the browser
+        // cannot read and the response carries only the CSRF proof; under bearer
+        // it carries a token. Gating on `csrfToken` alone made a bearer login
+        // fall through to "invalid credentials" — a login that fails with the
+        // right password, which is how the ETP-4958 continuation tests caught it.
+        //
+        // This is deliberate, not defensive: the scheme is chosen by a backend
+        // preference, so both shapes are reachable at runtime by design, and the
+        // frontend can ship before the preference is switched on.
         await completeAuthentication({
-          token: data.csrfToken,
+          token: credential,
           account: data.account,
           authMethod: 'password',
           persistAuth: handleAuthSuccess,

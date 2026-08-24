@@ -43,7 +43,14 @@ export function RegisterStep({ config, stepData, onNext, onBack, goToStep, setTo
     special: 'onboardingPasswordReqSpecial',
   };
 
-  const handleAuthSuccess = useCallback((csrfToken, account, { route = true } = {}) => {
+  const handleAuthSuccess = useCallback((csrfToken, account, { route = true, authMethod = 'password' } = {}) => {
+    // ETP-4576 — the auth METHOD stays in localStorage; the credential does not.
+    // They were removed together at first, which was too broad: this key is not a
+    // credential, it is "how did you sign in", and UserAvatarButton reads it to
+    // hide the change-password action from SSO users. With nothing written,
+    // `getItem(...) !== 'sso'` is true for everyone and an SSO user is offered a
+    // password they do not have.
+    localStorage.setItem('sf_platform_auth_method', authMethod);
     if (setToken) setToken(csrfToken);
     if (setAccountName) setAccountName(account?.name || account?.email || null);
     setShowRegisterPassword(false);
@@ -65,13 +72,16 @@ export function RegisterStep({ config, stepData, onNext, onBack, goToStep, setTo
     setSsoLoadingProvider(provider);
     try {
       const data = await loginWithSsoProvider(fetch, apiBase, provider, payload);
-      if (data.csrfToken) {
+      // Either credential counts, same as the password-registration path below:
+      // gating on csrfToken alone made a bearer SSO registration report failure.
+      const ssoCredential = data.csrfToken ?? data.token;
+      if (ssoCredential) {
         trackOnboarding(config, 'onboarding_auth_succeeded', {
           action: 'sso',
           provider,
           status: 'success',
         });
-        handleAuthSuccess(data.csrfToken, data.account);
+        handleAuthSuccess(ssoCredential, data.account, { authMethod: 'sso' });
       } else {
         trackOnboarding(config, 'onboarding_auth_failed', {
           action: 'sso',

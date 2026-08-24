@@ -10,18 +10,28 @@ const loginStep = readFileSync(join(onboardingSrc, 'steps', 'LoginStep.jsx'), 'u
 const registerStep = readFileSync(join(onboardingSrc, 'steps', 'RegisterStep.jsx'), 'utf8');
 
 // ETP-4576: Etendo Go's session moves from Bearer+localStorage to a server-side
-// __Host- cookie. The backend responses for POST /sws/go/session (login),
-// /session/register and /session/sso/{provider} carry { status, account, csrfToken }
-// and NEVER a `token` field. handleAuthSuccess in both LoginStep and RegisterStep
-// must stop persisting anything to localStorage, drop the now-unused `authMethod`
-// parameter, and every call site must branch on `data.csrfToken` instead of
-// `data.token`.
+// __Host- cookie. The session endpoints (POST /sws/go/session, /session/register,
+// /session/sso/{provider}) answer with { status, account, csrfToken }.
 //
-// TDD red step: this test targets the NEW contract, not the current code. It is
-// expected to fail against today's LoginStep.jsx/RegisterStep.jsx (which still
-// take `authMethod`, still write to localStorage, and still check `data.token`).
-// LoginStep.jsx and RegisterStep.jsx are NOT touched by this change — implementation
-// is a separate follow-up.
+// Two claims this file used to make turned out to be wrong, and both cost a CI
+// cycle, so they are written down rather than quietly corrected:
+//
+//  1. "the response NEVER carries a `token`". Which scheme is active comes from a
+//     backend preference, so the frontend can ship before it is switched on and
+//     both shapes are reachable at runtime by design. Every call site resolves
+//     `csrfToken ?? token`; gating on `csrfToken` alone turned a valid bearer
+//     login into "invalid credentials".
+//  2. "stop persisting ANYTHING to localStorage". Too broad: it swept up
+//     `sf_platform_auth_method`, which is not a credential — it records how the
+//     user signed in, and UserAvatarButton reads it to hide change-password from
+//     SSO users. The credential is what must never be stored.
+
+// Source-reading assertions run over the whole file, so a key name mentioned in
+// the prose above the code that writes it matches too — a doesNotMatch then fails
+// for the wrong reason (and, worse, a match can pass for one).
+const stripComments = (src) => src
+  .replace(/\/\*[\s\S]*?\*\//g, '')
+  .replace(/^\s*\/\/.*$/gm, '');
 
 function extractFunctionBlock(src, startMarker, endMarker) {
   const start = src.indexOf(startMarker);
@@ -32,19 +42,16 @@ function extractFunctionBlock(src, startMarker, endMarker) {
 }
 
 describe('LoginStep handleAuthSuccess contract (ETP-4576, cookie session migration)', () => {
-  it('handleAuthSuccess no longer accepts an authMethod parameter', () => {
+  it('handleAuthSuccess keeps the authMethod parameter completeAuthentication passes', () => {
     assert.match(
       loginStep,
-      /handleAuthSuccess\s*=\s*useCallback\(\s*\(\s*\w+\s*,\s*account\s*,\s*\{\s*route\s*=\s*true\s*\}\s*=\s*\{\}\s*\)/,
-      'handleAuthSuccess signature must be (token-like, account, { route = true } = {}) with no authMethod',
+      /handleAuthSuccess\s*=\s*useCallback\(\s*\(\s*\w+\s*,\s*account\s*,\s*\{\s*route\s*=\s*true\s*,\s*authMethod\s*=\s*'password'\s*\}\s*=\s*\{\}\s*\)/,
+      "signature must be (credential, account, { route = true, authMethod = 'password' } = {})",
     );
-    const handlerBlock = extractFunctionBlock(loginStep, 'const handleAuthSuccess', 'const handleSsoProviderLogin');
-    assert.doesNotMatch(handlerBlock, /authMethod/);
   });
 
-  it('no longer persists the session token/auth method to localStorage', () => {
+  it('never writes the credential to localStorage', () => {
     assert.doesNotMatch(loginStep, /localStorage\.setItem\('sf_platform_token'/);
-    assert.doesNotMatch(loginStep, /localStorage\.setItem\('sf_platform_auth_method'/);
   });
 
   it('still calls setToken and routeByEnvironments with the first argument', () => {
@@ -55,24 +62,23 @@ describe('LoginStep handleAuthSuccess contract (ETP-4576, cookie session migrati
 
   // The epic (ETP-4969's block) routed both login paths through
   // `completeAuthentication`, which centralises persist + hand-off. Its `token`
-  // parameter is the generic credential slot; what must travel in it here is the
-  // CSRF proof, because both endpoints these paths call belong to the session
-  // family and the session itself is the `__Host-` cookie the page cannot read.
-  it('handleSsoProviderLogin hands completeAuthentication the CSRF proof, not a bearer token', () => {
-    const block = extractFunctionBlock(loginStep, 'const handleSsoProviderLogin', 'useEffect(() => {\n    if (view');
-    assert.match(block, /if \(data\.csrfToken\)/);
-    assert.doesNotMatch(block, /if \(data\.token\)/);
-    assert.match(block, /completeAuthentication\(\{[\s\S]*?token: data\.csrfToken/);
-    assert.doesNotMatch(block, /token: data\.token/);
-  });
-
-  it('handleLogin hands completeAuthentication the CSRF proof, not a bearer token', () => {
-    const block = extractFunctionBlock(loginStep, 'const handleLogin =', 'const handleForgotPassword');
-    assert.match(block, /if \(data\.csrfToken\)/);
-    assert.doesNotMatch(block, /if \(data\.token\)/);
-    assert.match(block, /completeAuthentication\(\{[\s\S]*?token: data\.csrfToken/);
-    assert.doesNotMatch(block, /token: data\.token/);
-  });
+  // parameter is the generic credential slot: whichever credential the response
+  // carried travels in it. Both paths resolve `csrfToken ?? token` — see claim 1
+  // in the header for why gating on `csrfToken` alone was wrong.
+  for (const [label, startMarker, endMarker] of [
+    ['handleSsoProviderLogin', 'const handleSsoProviderLogin', 'useEffect(() => {\n    if (view'],
+    ['handleLogin', 'const handleLogin =', 'const handleForgotPassword'],
+  ]) {
+    it(`${label} accepts either credential and hands it to completeAuthentication`, () => {
+      const block = stripComments(extractFunctionBlock(loginStep, startMarker, endMarker));
+      assert.match(block, /const credential = data\.csrfToken \?\? data\.token;/);
+      assert.match(block, /if \(credential\)/);
+      assert.match(block, /completeAuthentication\(\{[\s\S]*?token: credential/);
+      // The old shapes must be gone: either alone would drop one scheme.
+      assert.doesNotMatch(block, /if \(data\.csrfToken\)/);
+      assert.doesNotMatch(block, /if \(data\.token\)/);
+    });
+  }
 
   it('handleResetPassword no longer clears the removed localStorage keys', () => {
     const block = extractFunctionBlock(loginStep, 'const handleResetPassword =', 'const setOnboardingLocale');
@@ -86,19 +92,22 @@ describe('LoginStep handleAuthSuccess contract (ETP-4576, cookie session migrati
 });
 
 describe('RegisterStep handleAuthSuccess contract (ETP-4576, cookie session migration)', () => {
-  it('handleAuthSuccess no longer accepts an authMethod parameter', () => {
+  it('handleAuthSuccess keeps the authMethod parameter its SSO path overrides', () => {
     assert.match(
       registerStep,
-      /handleAuthSuccess\s*=\s*useCallback\(\s*\(\s*\w+\s*,\s*account\s*,\s*\{\s*route\s*=\s*true\s*\}\s*=\s*\{\}\s*\)/,
-      'handleAuthSuccess signature must be (token-like, account, { route = true } = {}) with no authMethod',
+      /handleAuthSuccess\s*=\s*useCallback\(\s*\(\s*\w+\s*,\s*account\s*,\s*\{\s*route\s*=\s*true\s*,\s*authMethod\s*=\s*'password'\s*\}\s*=\s*\{\}\s*\)/,
+      "signature must be (credential, account, { route = true, authMethod = 'password' } = {})",
     );
-    const handlerBlock = extractFunctionBlock(registerStep, 'const handleAuthSuccess', 'const handleSsoProviderLogin');
-    assert.doesNotMatch(handlerBlock, /authMethod/);
+    // An SSO registration must say so, or UserAvatarButton offers the user a
+    // password they never set.
+    assert.match(
+      stripComments(registerStep),
+      /handleAuthSuccess\(ssoCredential,\s*data\.account,\s*\{\s*authMethod: 'sso'\s*\}\)/,
+    );
   });
 
-  it('no longer persists the session token/auth method to localStorage', () => {
+  it('never writes the credential to localStorage', () => {
     assert.doesNotMatch(registerStep, /localStorage\.setItem\('sf_platform_token'/);
-    assert.doesNotMatch(registerStep, /localStorage\.setItem\('sf_platform_auth_method'/);
   });
 
   it('still calls setToken and handleRegisterSuccess with the first argument', () => {
@@ -108,18 +117,19 @@ describe('RegisterStep handleAuthSuccess contract (ETP-4576, cookie session migr
     assert.match(handlerBlock, /handleRegisterSuccess\(\w+,\s*account\)/);
   });
 
-  it('handleSsoProviderLogin checks data.csrfToken, not data.token, and drops the authMethod override', () => {
-    const block = extractFunctionBlock(registerStep, 'const handleSsoProviderLogin', 'useEffect(() => {');
-    assert.match(block, /if \(data\.csrfToken\)/);
+  it('handleSsoProviderLogin accepts either credential and marks the method as sso', () => {
+    const block = stripComments(extractFunctionBlock(registerStep, 'const handleSsoProviderLogin', 'useEffect(() => {'));
+    assert.match(block, /const ssoCredential = data\.csrfToken \?\? data\.token;/);
+    assert.match(block, /if \(ssoCredential\)/);
+    assert.match(block, /handleAuthSuccess\(ssoCredential,\s*data\.account,\s*\{\s*authMethod: 'sso'\s*\}\)/);
+    assert.doesNotMatch(block, /if \(data\.csrfToken\)/);
     assert.doesNotMatch(block, /if \(data\.token\)/);
-    assert.match(block, /handleAuthSuccess\(data\.csrfToken,\s*data\.account[,)]/);
-    assert.doesNotMatch(block, /handleAuthSuccess\(data\.(csrfToken|token),\s*data\.account,\s*\{\s*authMethod:\s*'sso'\s*\}\)/);
   });
 
-  // The SSO branch above stays cookie-only: it posts to `/sws/go/session/sso/*`,
-  // which always issues the cookie. Password registration is different, because
-  // a host may supply its own `registerHandler` fronting an endpoint that never
-  // joined the session family and still answers with a bearer `token` (Etendo
+  // Password registration needs the same either-kind resolution for a second,
+  // independent reason: a host may supply its own `registerHandler` fronting an
+  // endpoint that never joined the session family and still answers with a
+  // bearer `token` (Etendo
   // GO's `/company-invitations/register-and-accept`, ETP-4894). Gating on
   // `csrfToken` alone made that success path unreachable — the account was
   // created and the invitation accepted server-side while the UI reported a
@@ -140,14 +150,36 @@ describe('RegisterStep handleAuthSuccess contract (ETP-4576, cookie session migr
   });
 });
 
-describe('No lingering sf_platform_token/sf_platform_auth_method references (ETP-4576)', () => {
-  it('LoginStep.jsx has no references to the removed localStorage keys', () => {
-    assert.doesNotMatch(loginStep, /sf_platform_token/);
-    assert.doesNotMatch(loginStep, /sf_platform_auth_method/);
-  });
+/**
+ * The credential must not be stored; the auth METHOD must.
+ *
+ * Both keys were banned together at first. That was too broad, and the ban hid a
+ * regression rather than preventing one: `sf_platform_auth_method` is not a
+ * credential — it records how the user signed in, and UserAvatarButton reads it
+ * to hide the change-password action from SSO users. With nothing written,
+ * `getItem(...) !== 'sso'` holds for everyone and an SSO user is offered a
+ * password they never set.
+ *
+ * So the assertions are asymmetric on purpose: absence for the token, presence
+ * for the method. Comments are stripped first — both key names appear in the
+ * prose above the code that writes them, and a whole-file regex would match
+ * those and pass (or fail) for the wrong reason.
+ */
+describe('localStorage keys after authentication (ETP-4576)', () => {
+  const stripComments = (src) => src
+    .replace(/\/\*[\s\S]*?\*\//g, '')
+    .replace(/^\s*\/\/.*$/gm, '');
 
-  it('RegisterStep.jsx has no references to the removed localStorage keys', () => {
-    assert.doesNotMatch(registerStep, /sf_platform_token/);
-    assert.doesNotMatch(registerStep, /sf_platform_auth_method/);
-  });
+  for (const [name, src] of [['LoginStep.jsx', loginStep], ['RegisterStep.jsx', registerStep]]) {
+    it(`${name} never writes the credential to localStorage`, () => {
+      assert.doesNotMatch(stripComments(src), /sf_platform_token/);
+    });
+
+    it(`${name} still records the auth method UserAvatarButton reads`, () => {
+      assert.match(
+        stripComments(src),
+        /localStorage\.setItem\('sf_platform_auth_method',\s*authMethod\)/,
+      );
+    });
+  }
 });

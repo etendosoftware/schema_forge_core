@@ -103,17 +103,23 @@ describe('LoginStep authentication continuation (ETP-4958)', () => {
       expect(routeByEnvironments).not.toHaveBeenCalled();
     });
 
+    // ETP-4576 changed WHERE the credential lands, not the ordering this test
+    // exists to pin. It is never written to localStorage now — it is handed to
+    // `setToken`, so that is what the callback observes. The auth-method key is
+    // still asserted: it is metadata, not a credential, and UserAvatarButton
+    // reads it to hide change-password from SSO users.
     it('persists the session before handing over', async () => {
       const seen = [];
+      let setToken;
       const onAuthenticated = vi.fn(async () => {
-        seen.push(globalThis.localStorage.getItem('sf_platform_token'));
+        seen.push(setToken.mock.calls.map(([credential]) => credential));
       });
-      renderLoginStep({ onAuthenticated });
+      ({ setToken } = renderLoginStep({ onAuthenticated }));
 
       await completeSsoCredential();
 
       await waitFor(() => expect(onAuthenticated).toHaveBeenCalled());
-      expect(seen).toEqual([TOKEN]);
+      expect(seen).toEqual([[TOKEN]]);
       expect(globalThis.localStorage.getItem('sf_platform_auth_method')).toBe('sso');
     });
 
