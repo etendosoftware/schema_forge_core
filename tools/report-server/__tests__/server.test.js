@@ -5,6 +5,15 @@
  */
 import { describe, it } from 'node:test';
 import { strict as assert } from 'node:assert';
+import { readFileSync } from 'node:fs';
+import { fileURLToPath } from 'node:url';
+
+// pickLabel is NOT replicated: it is shared production code now
+// (cli/src/report-i18n.js), imported by server.js itself. Copying it here would
+// reintroduce the very drift this module was created to end.
+import { pickLabel } from '../../../cli/src/report-i18n.js';
+
+const SERVER_SRC = readFileSync(fileURLToPath(new URL('../server.js', import.meta.url)), 'utf8');
 
 // --- Replicated pure functions from server.js ---
 
@@ -36,7 +45,7 @@ function getRowCount(rows) {
   return Array.isArray(rows) ? rows.length : undefined;
 }
 
-function filterAndTransformParams(params, contract) {
+function filterAndTransformParams(params, contract, locale = 'en_US') {
   return Object.entries(params)
     .filter(([k, v]) => v && v !== '' && !k.startsWith('_display_'))
     .map(([k, v]) => {
@@ -44,7 +53,7 @@ function filterAndTransformParams(params, contract) {
       let displayValue = params['_display_' + k] || v;
       if (k === 'groupBy') {
         const dimParam = (contract.parameters || []).find(p => p.groupByValue === v);
-        displayValue = dimParam?.label?.en_US || v;
+        displayValue = pickLabel(dimParam?.label, locale, v);
       }
       if (typeof displayValue === 'string' && displayValue.includes(' | '))
         displayValue = displayValue.split(' | ').filter(Boolean).join(', ');
@@ -52,7 +61,7 @@ function filterAndTransformParams(params, contract) {
         const [y, m, d] = displayValue.split('-');
         displayValue = `${d}/${m}/${y}`;
       }
-      return { label: paramDef?.label?.en_US || k, value: displayValue };
+      return { label: pickLabel(paramDef?.label, locale, k), value: displayValue };
     });
 }
 
@@ -62,15 +71,15 @@ function calculateTotals(documentData, amountCols, rows, totals) {
   }
 }
 
-function getGroupedData(contract, params, rows) {
-  let groupLabel = contract.groups?.[0]?.label?.en_US || 'Account';
-  let descriptionLabel = (contract.columns || []).find(c => c.field === 'groupbyname')?.label?.en_US || 'Description';
+function getGroupedData(contract, params, rows, locale = 'en_US') {
+  let groupLabel = pickLabel(contract.groups?.[0]?.label, locale, 'Account');
+  let descriptionLabel = pickLabel((contract.columns || []).find(c => c.field === 'groupbyname')?.label, locale, 'Description');
   if (params.groupBy && rows) {
     const dimensionParam = (contract.parameters || []).find(p => p.groupByValue === params.groupBy && p.groupByField);
     if (dimensionParam) {
       const sourceField = dimensionParam.groupByField;
-      groupLabel = dimensionParam.label?.en_US || params.groupBy;
-      descriptionLabel = dimensionParam.label?.en_US || descriptionLabel;
+      groupLabel = pickLabel(dimensionParam.label, locale, params.groupBy);
+      descriptionLabel = pickLabel(dimensionParam.label, locale, descriptionLabel);
       rows = [...rows].sort((a, b) => (a[sourceField] || '').toLowerCase().localeCompare((b[sourceField] || '').toLowerCase()));
       rows = rows.map(r => ({ ...r, name: r[sourceField] || '', value: '' }));
     }
@@ -117,11 +126,11 @@ function isPostRequestForRender(method, renderMatch) {
 }
 
 function buildTemplateData(documentData, css, opts) {
-  const { title, activeFilters, params, recordCount, totals, groupLabel, descriptionLabel, neoMeta, rows } = opts;
+  const { title, activeFilters, params, recordCount, totals, groupLabel, descriptionLabel, neoMeta, rows, locale, ui, labels } = opts;
   if (documentData) {
-    return { css, meta: { title, generatedAt: new Date().toISOString(), filters: activeFilters, params }, header: documentData.header, lines: documentData.lines, taxes: documentData.taxes };
+    return { css, meta: { title, generatedAt: new Date().toISOString(), filters: activeFilters, params, locale, ui, labels }, header: documentData.header, lines: documentData.lines, taxes: documentData.taxes };
   }
-  return { css, meta: { title, generatedAt: new Date().toISOString(), recordCount, filters: activeFilters, params, totals, groupLabel, descriptionLabel, ...neoMeta }, rows };
+  return { css, meta: { title, generatedAt: new Date().toISOString(), recordCount, filters: activeFilters, params, locale, ui, labels, totals, groupLabel, descriptionLabel, ...neoMeta }, rows };
 }
 
 function injectDateFilters(contract, params, sql) {
@@ -486,6 +495,90 @@ describe('report-server helpers', () => {
       req.emit('data', 'world');
       req.emit('end');
       assert.equal(await promise, 'hello world');
+    });
+  });
+});
+
+/**
+ * Rendered-report i18n.
+ *
+ * The helpers above are hand-copied from server.js, so on their own they prove
+ * nothing about what actually ships — they passed unchanged while server.js
+ * resolved every label as `.en_US`. The source-scan block therefore asserts
+ * against the REAL server.js text: that is the part that fails if someone
+ * reintroduces a hardcoded locale or drops the `locale` the frontend sends.
+ */
+describe('report i18n', () => {
+  const contract = {
+    groups: [{ field: 'warehouse', label: { en_US: 'Warehouse', es_ES: 'Almacén' } }],
+    columns: [{ field: 'groupbyname', label: { en_US: 'Description', es_ES: 'Descripción' } }],
+    parameters: [{ name: 'dim', groupByValue: 'wh', groupByField: 'whName', label: { en_US: 'Warehouse', es_ES: 'Almacén' } }],
+  };
+
+  it('resolves group labels in the requested locale', () => {
+    const { groupLabel, descriptionLabel } = getGroupedData(contract, {}, [], 'es_ES');
+    assert.equal(groupLabel, 'Almacén');
+    assert.equal(descriptionLabel, 'Descripción');
+  });
+
+  it('resolves the groupBy dimension label in the requested locale', () => {
+    const { groupLabel } = getGroupedData(contract, { groupBy: 'wh' }, [{ whName: 'Main' }], 'es_ES');
+    assert.equal(groupLabel, 'Almacén');
+  });
+
+  it('resolves filter chip labels in the requested locale', () => {
+    const [chip] = filterAndTransformParams({ dim: 'wh' }, contract, 'es_ES');
+    assert.equal(chip.label, 'Almacén');
+  });
+
+  it("resolves a groupBy chip's VALUE to its dimension label, in the requested locale", () => {
+    const [chip] = filterAndTransformParams({ groupBy: 'wh' }, contract, 'es_ES');
+    assert.equal(chip.value, 'Almacén');
+  });
+
+  it('still defaults to en_US when no locale is passed', () => {
+    assert.equal(getGroupedData(contract, {}, []).groupLabel, 'Warehouse');
+  });
+
+  it('carries locale/ui/labels into the meta of BOTH template branches', () => {
+    const opts = { title: 'T', activeFilters: [], params: {}, locale: 'es_ES', ui: { total: 'Total' }, labels: { a: 'A' } };
+    const listing = buildTemplateData(null, '', { ...opts, rows: [] });
+    const document = buildTemplateData({ header: {}, lines: [] }, '', opts);
+    for (const [name, built] of [['listing', listing], ['document', document]]) {
+      assert.equal(built.meta.locale, 'es_ES', `${name} meta lost locale`);
+      assert.deepEqual(built.meta.ui, opts.ui, `${name} meta lost ui`);
+      assert.deepEqual(built.meta.labels, opts.labels, `${name} meta lost labels`);
+    }
+  });
+
+  describe('server.js source', () => {
+    it('imports the shared i18n module instead of rebuilding it', () => {
+      assert.match(SERVER_SRC, /from '\.\.\/\.\.\/cli\/src\/report-i18n\.js'/);
+    });
+
+    it('reads the locale the frontend already sends on render', () => {
+      assert.match(SERVER_SRC, /locale = 'en_US' \} = JSON\.parse\(body/);
+    });
+
+    it('has no hardcoded en_US lookups left', () => {
+      // Flag EVERY `.en_US` reference and subtract only the two legitimate ones,
+      // rather than pattern-matching the shapes we happen to remember. The first
+      // version of this test matched `?.label?.en_US` and sailed straight past
+      // `contract.title?.en_US` — a guard that misses the bug it was written for
+      // is worse than none, because it reads as proof.
+      const ALLOWED = [
+        /AD_LANGUAGE/,          // rewrites the SQL's language filter; dev does the same
+        /locale = 'en_US'/,     // parameter/body defaults
+      ];
+      const offenders = SERVER_SRC.split('\n')
+        .map((line, i) => ({ line: i + 1, text: line.trim() }))
+        .filter(({ text }) => text.includes('en_US') && !ALLOWED.some(re => re.test(text)));
+      assert.deepEqual(offenders, [], `hardcoded en_US lookups: ${JSON.stringify(offenders, null, 2)}`);
+    });
+
+    it('feeds ui and labels into the template data', () => {
+      assert.match(SERVER_SRC, /const ui = pickUiStrings\(locale\)/);
+      assert.match(SERVER_SRC, /const labels = buildContractLabels\(contract, locale\)/);
     });
   });
 });

@@ -26,6 +26,7 @@ import { resolve, join, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { registerReportHelpers, computeDocumentQrDataUrl, buildJsreportHelpersString } from '../../templates/reports/helpers/report-html-helpers.js';
 import { listReportDescriptors } from '../../cli/src/report-descriptor.js';
+import { pickLabel, pickUiStrings, buildContractLabels } from '../../cli/src/report-i18n.js';
 
 const _require = createRequire(import.meta.url);
 const __dirname = dirname(fileURLToPath(import.meta.url));
@@ -322,7 +323,7 @@ async function handleRequest(req, res) {
   if (isPostRequestForRender(method, renderMatch)) {
     const reportId = renderMatch[1];
     const body = await readBody(req);
-    const { format = 'html', limit, params = {} } = JSON.parse(body || '{}');
+    const { format = 'html', limit, params = {}, locale = 'en_US' } = JSON.parse(body || '{}');
 
     try {
       const authToken = (req.headers.authorization || '').replace(/^Bearer\s+/i, '');
@@ -332,9 +333,9 @@ async function handleRequest(req, res) {
       // groupBy logic
       let groupLabel;
       let descriptionLabel;
-      ({ groupLabel, descriptionLabel, rows } = getGroupedData(contract, params, rows));
+      ({ groupLabel, descriptionLabel, rows } = getGroupedData(contract, params, rows, locale));
 
-      const activeFilters = filterAndTransformParams(params, contract);
+      const activeFilters = filterAndTransformParams(params, contract, locale);
 
       const artifactDir = join(ARTIFACTS_DIR, reportId);
       const templateContent = readFileSync(join(artifactDir, 'template.hbs'), 'utf8');
@@ -345,13 +346,15 @@ async function handleRequest(req, res) {
 
       const recipeMap = { html: 'html', pdf: 'chrome-pdf', xlsx: 'html-to-xlsx', csv: 'text' };
       const recipe = recipeMap[format] || 'html';
-      const title = contract.title?.en_US || reportId;
+      const title = pickLabel(contract.title, locale, reportId);
 
       const amountCols = (contract.columns || []).filter(c => c.type === 'amount');
       const totals = {};
       calculateTotals(documentData, amountCols, rows, totals);
       const recordCount = getRowCount(rows);
-      const templateData = buildTemplateData(documentData, css, { title, activeFilters, params, recordCount, totals, groupLabel, descriptionLabel, neoMeta, rows });
+      const ui = pickUiStrings(locale);
+      const labels = buildContractLabels(contract, locale);
+      const templateData = buildTemplateData(documentData, css, { title, activeFilters, params, recordCount, totals, groupLabel, descriptionLabel, neoMeta, rows, locale, ui, labels });
       await injectDocumentQr(documentData, templateData);
       // HTML: render with Handlebars locally
       if (format === 'html') {
@@ -429,22 +432,25 @@ server.listen(PORT, () => {
   console.log(`[report-server] ETENDO_URL=${ETENDO_URL}`);
   console.log(`[report-server] ARTIFACTS_DIR=${ARTIFACTS_DIR}`);
 });
-function buildTemplateData(documentData, css, { title, activeFilters, params, recordCount, totals, groupLabel, descriptionLabel, neoMeta, rows }) {
+function buildTemplateData(documentData, css, { title, activeFilters, params, recordCount, totals, groupLabel, descriptionLabel, neoMeta, rows, locale, ui, labels }) {
+  // `locale`/`ui`/`labels` go into BOTH branches on purpose: print-* document
+  // reports render their own headings from meta.labels just like listings do,
+  // and that branch is the easy one to forget.
   if (documentData) {
-    return { css, meta: { title, generatedAt: new Date().toISOString(), filters: activeFilters, params }, header: documentData.header, lines: documentData.lines, taxes: documentData.taxes };
+    return { css, meta: { title, generatedAt: new Date().toISOString(), filters: activeFilters, params, locale, ui, labels }, header: documentData.header, lines: documentData.lines, taxes: documentData.taxes };
   }
-  return { css, meta: { title, generatedAt: new Date().toISOString(), recordCount, filters: activeFilters, params, totals, groupLabel, descriptionLabel, ...neoMeta }, rows };
+  return { css, meta: { title, generatedAt: new Date().toISOString(), recordCount, filters: activeFilters, params, locale, ui, labels, totals, groupLabel, descriptionLabel, ...neoMeta }, rows };
 }
 
-function getGroupedData(contract, params, rows) {
-  let groupLabel = contract.groups?.[0]?.label?.en_US || 'Account';
-  let descriptionLabel = (contract.columns || []).find(c => c.field === 'groupbyname')?.label?.en_US || 'Description';
+function getGroupedData(contract, params, rows, locale = 'en_US') {
+  let groupLabel = pickLabel(contract.groups?.[0]?.label, locale, 'Account');
+  let descriptionLabel = pickLabel((contract.columns || []).find(c => c.field === 'groupbyname')?.label, locale, 'Description');
   if (params.groupBy && rows) {
     const dimensionParam = (contract.parameters || []).find(p => p.groupByValue === params.groupBy && p.groupByField);
     if (dimensionParam) {
       const sourceField = dimensionParam.groupByField;
-      groupLabel = dimensionParam.label?.en_US || params.groupBy;
-      descriptionLabel = dimensionParam.label?.en_US || descriptionLabel;
+      groupLabel = pickLabel(dimensionParam.label, locale, params.groupBy);
+      descriptionLabel = pickLabel(dimensionParam.label, locale, descriptionLabel);
       rows = [...rows].sort((a, b) => (a[sourceField] || '').toLowerCase().localeCompare((b[sourceField] || '').toLowerCase()));
       rows = rows.map(r => ({ ...r, name: r[sourceField] || '', value: '' }));
     }
@@ -452,7 +458,7 @@ function getGroupedData(contract, params, rows) {
   return { groupLabel, descriptionLabel, rows };
 }
 
-function filterAndTransformParams(params, contract) {
+function filterAndTransformParams(params, contract, locale = 'en_US') {
   return Object.entries(params)
     .filter(([k, v]) => v && v !== '' && !k.startsWith('_display_'))
     .map(([k, v]) => {
@@ -460,7 +466,7 @@ function filterAndTransformParams(params, contract) {
       let displayValue = params['_display_' + k] || v;
       if (k === 'groupBy') {
         const dimParam = (contract.parameters || []).find(p => p.groupByValue === v);
-        displayValue = dimParam?.label?.en_US || v;
+        displayValue = pickLabel(dimParam?.label, locale, v);
       }
       if (typeof displayValue === 'string' && displayValue.includes(' | '))
         displayValue = displayValue.split(' | ').filter(Boolean).join(', ');
@@ -468,7 +474,7 @@ function filterAndTransformParams(params, contract) {
         const [y, m, d] = displayValue.split('-');
         displayValue = `${d}/${m}/${y}`;
       }
-      return { label: paramDef?.label?.en_US || k, value: displayValue };
+      return { label: pickLabel(paramDef?.label, locale, k), value: displayValue };
     });
 }
 
