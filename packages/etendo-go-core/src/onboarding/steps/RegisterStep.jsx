@@ -12,6 +12,7 @@ import { AuthShell } from '../components/AuthShell.jsx';
 import { AuthField } from '../components/AuthField.jsx';
 import { AuthSsoOptions } from '../components/AuthSsoOptions.jsx';
 import { OnboardingLanguageSelect } from '../components/OnboardingLanguageSelect.jsx';
+import { persistAuthMethod } from '../postAuth.js';
 
 const AUTH_FEATURE_KEYS = ['onboardingAuthFeatureNoCard', 'onboardingAuthFeatureTrial', 'onboardingAuthFeatureInstantAccess'];
 
@@ -44,13 +45,7 @@ export function RegisterStep({ config, stepData, onNext, onBack, goToStep, setTo
   };
 
   const handleAuthSuccess = useCallback((csrfToken, account, { route = true, authMethod = 'password' } = {}) => {
-    // ETP-4576 — the auth METHOD stays in localStorage; the credential does not.
-    // They were removed together at first, which was too broad: this key is not a
-    // credential, it is "how did you sign in", and UserAvatarButton reads it to
-    // hide the change-password action from SSO users. With nothing written,
-    // `getItem(...) !== 'sso'` is true for everyone and an SSO user is offered a
-    // password they do not have.
-    localStorage.setItem('sf_platform_auth_method', authMethod);
+    persistAuthMethod(authMethod);
     if (setToken) setToken(csrfToken);
     if (setAccountName) setAccountName(account?.name || account?.email || null);
     setShowRegisterPassword(false);

@@ -25,6 +25,28 @@
  * @param {(token: string, account: object) => Promise<void>} [params.onAuthenticated]
  *        Caller-owned continuation. When present, default routing is skipped.
  */
+/**
+ * Where the auth METHOD is recorded. Not the credential — that is never stored.
+ *
+ * The distinction is the whole reason this export exists. ETP-4576 removed both
+ * keys at once, which was too broad: this one is not a credential, it records
+ * how the user signed in, and the host's UserAvatarButton reads it to hide the
+ * change-password action from SSO users. With nothing written,
+ * `getItem(...) !== 'sso'` holds for everyone and an SSO user is offered a
+ * password they never set.
+ */
+export const AUTH_METHOD_STORAGE_KEY = 'sf_platform_auth_method';
+
+/**
+ * Records how the session was obtained. Called by every step that authenticates,
+ * so the note above lives in one place instead of being pasted into each.
+ *
+ * @param {'password'|'sso'} authMethod
+ */
+export function persistAuthMethod(authMethod) {
+  localStorage.setItem(AUTH_METHOD_STORAGE_KEY, authMethod);
+}
+
 export async function completeAuthentication({
   token,
   account,

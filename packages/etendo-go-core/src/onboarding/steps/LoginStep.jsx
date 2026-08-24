@@ -4,7 +4,7 @@ import { Button } from '@etendosoftware/app-shell-core/components/ui/button';
 import { useUI, useLocaleSwitch } from '@etendosoftware/app-shell-core/i18n';
 import { loginAccount, loginWithSsoProvider, requestPasswordReset, confirmPasswordReset, fetchAccount, fetchEnvironments, AUTH_ERROR_UI_KEYS } from '../api.js';
 import { getConfiguredSsoProviders, renderSsoProviderButton } from '../sso.js';
-import { completeAuthentication } from '../postAuth.js';
+import { completeAuthentication, persistAuthMethod } from '../postAuth.js';
 import { trackOnboarding } from '../tracking.js';
 import { AuthShell } from '../components/AuthShell.jsx';
 import { AuthField } from '../components/AuthField.jsx';
@@ -67,13 +67,7 @@ export function LoginStep({ config, stepData, onNext, onBack, goToStep, setToken
   }, []);
 
   const handleAuthSuccess = useCallback((csrfToken, account, { route = true, authMethod = 'password' } = {}) => {
-    // ETP-4576 — the auth METHOD stays in localStorage; the credential does not.
-    // They were removed together at first, which was too broad: this key is not a
-    // credential, it is "how did you sign in", and UserAvatarButton reads it to
-    // hide the change-password action from SSO users. With nothing written,
-    // `getItem(...) !== 'sso'` is true for everyone and an SSO user is offered a
-    // password they do not have.
-    localStorage.setItem('sf_platform_auth_method', authMethod);
+    persistAuthMethod(authMethod);
     if (setToken) setToken(csrfToken);
     if (setAccountName) setAccountName(account?.name || account?.email || null);
     setShowLoginPassword(false);

@@ -175,11 +175,16 @@ describe('localStorage keys after authentication (ETP-4576)', () => {
       assert.doesNotMatch(stripComments(src), /sf_platform_token/);
     });
 
+    // The write itself lives in postAuth.js (`persistAuthMethod`) — it was
+    // pasted into both steps and Copilot flagged the duplicated block. What each
+    // step still owns is CALLING it with the method it authenticated by, so that
+    // is what is asserted here; the key name is covered where it is written.
     it(`${name} still records the auth method UserAvatarButton reads`, () => {
-      assert.match(
-        stripComments(src),
-        /localStorage\.setItem\('sf_platform_auth_method',\s*authMethod\)/,
-      );
+      assert.match(stripComments(src), /persistAuthMethod\(authMethod\)/);
+    });
+
+    it(`${name} does not write the key itself`, () => {
+      assert.doesNotMatch(stripComments(src), /localStorage\.setItem\('sf_platform_auth_method'/);
     });
   }
 });
