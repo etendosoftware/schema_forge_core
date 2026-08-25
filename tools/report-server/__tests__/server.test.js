@@ -5,6 +5,18 @@
  */
 import { describe, it } from 'node:test';
 import { strict as assert } from 'node:assert';
+import { readFileSync } from 'node:fs';
+import { fileURLToPath } from 'node:url';
+
+// pickLabel is NOT replicated: it is shared production code now
+// (cli/src/report-i18n.js), imported by server.js itself. Copying it here would
+// reintroduce the very drift this module was created to end.
+import { pickLabel } from '../../../cli/src/report-i18n.js';
+// resolveGrouping replaced server.js's own getGroupedData: it is shared
+// production code now, so it is imported, never replicated.
+import { resolveGrouping } from '../../../cli/src/report-grouping.js';
+
+const SERVER_SRC = readFileSync(fileURLToPath(new URL('../server.js', import.meta.url)), 'utf8');
 
 // --- Replicated pure functions from server.js ---
 
@@ -28,15 +40,12 @@ function applyLimitToSql(limit, sql) {
   return sql;
 }
 
-function formatIdForSql() {
-  return id => `'${id.trim()}'`;
-}
 
 function getRowCount(rows) {
   return Array.isArray(rows) ? rows.length : undefined;
 }
 
-function filterAndTransformParams(params, contract) {
+function filterAndTransformParams(params, contract, locale = 'en_US') {
   return Object.entries(params)
     .filter(([k, v]) => v && v !== '' && !k.startsWith('_display_'))
     .map(([k, v]) => {
@@ -44,7 +53,7 @@ function filterAndTransformParams(params, contract) {
       let displayValue = params['_display_' + k] || v;
       if (k === 'groupBy') {
         const dimParam = (contract.parameters || []).find(p => p.groupByValue === v);
-        displayValue = dimParam?.label?.en_US || v;
+        displayValue = pickLabel(dimParam?.label, locale, v);
       }
       if (typeof displayValue === 'string' && displayValue.includes(' | '))
         displayValue = displayValue.split(' | ').filter(Boolean).join(', ');
@@ -52,7 +61,7 @@ function filterAndTransformParams(params, contract) {
         const [y, m, d] = displayValue.split('-');
         displayValue = `${d}/${m}/${y}`;
       }
-      return { label: paramDef?.label?.en_US || k, value: displayValue };
+      return { label: pickLabel(paramDef?.label, locale, k), value: displayValue };
     });
 }
 
@@ -62,21 +71,6 @@ function calculateTotals(documentData, amountCols, rows, totals) {
   }
 }
 
-function getGroupedData(contract, params, rows) {
-  let groupLabel = contract.groups?.[0]?.label?.en_US || 'Account';
-  let descriptionLabel = (contract.columns || []).find(c => c.field === 'groupbyname')?.label?.en_US || 'Description';
-  if (params.groupBy && rows) {
-    const dimensionParam = (contract.parameters || []).find(p => p.groupByValue === params.groupBy && p.groupByField);
-    if (dimensionParam) {
-      const sourceField = dimensionParam.groupByField;
-      groupLabel = dimensionParam.label?.en_US || params.groupBy;
-      descriptionLabel = dimensionParam.label?.en_US || descriptionLabel;
-      rows = [...rows].sort((a, b) => (a[sourceField] || '').toLowerCase().localeCompare((b[sourceField] || '').toLowerCase()));
-      rows = rows.map(r => ({ ...r, name: r[sourceField] || '', value: '' }));
-    }
-  }
-  return { groupLabel, descriptionLabel, rows };
-}
 
 function extractRowsFromData(data, contract, limit) {
   let rows = data;
@@ -117,11 +111,11 @@ function isPostRequestForRender(method, renderMatch) {
 }
 
 function buildTemplateData(documentData, css, opts) {
-  const { title, activeFilters, params, recordCount, totals, groupLabel, descriptionLabel, neoMeta, rows } = opts;
+  const { title, activeFilters, params, recordCount, totals, groupLabel, descriptionLabel, neoMeta, rows, locale, ui, labels } = opts;
   if (documentData) {
-    return { css, meta: { title, generatedAt: new Date().toISOString(), filters: activeFilters, params }, header: documentData.header, lines: documentData.lines, taxes: documentData.taxes };
+    return { css, meta: { title, generatedAt: new Date().toISOString(), filters: activeFilters, params, locale, ui, labels }, header: documentData.header, lines: documentData.lines, taxes: documentData.taxes };
   }
-  return { css, meta: { title, generatedAt: new Date().toISOString(), recordCount, filters: activeFilters, params, totals, groupLabel, descriptionLabel, ...neoMeta }, rows };
+  return { css, meta: { title, generatedAt: new Date().toISOString(), recordCount, filters: activeFilters, params, locale, ui, labels, totals, groupLabel, descriptionLabel, ...neoMeta }, rows };
 }
 
 function injectDateFilters(contract, params, sql) {
@@ -225,18 +219,6 @@ describe('report-server helpers', () => {
     });
   });
 
-  describe('formatIdForSql', () => {
-    it('wraps id in single quotes', () => {
-      const fn = formatIdForSql();
-      assert.equal(fn('ABC'), "'ABC'");
-    });
-
-    it('trims whitespace', () => {
-      const fn = formatIdForSql();
-      assert.equal(fn('  XYZ  '), "'XYZ'");
-    });
-  });
-
   describe('getRowCount', () => {
     it('returns length for arrays', () => {
       assert.equal(getRowCount([1, 2, 3]), 3);
@@ -311,14 +293,19 @@ describe('report-server helpers', () => {
     });
   });
 
-  describe('getGroupedData', () => {
+  describe('resolveGrouping', () => {
     it('returns defaults when no groupBy', () => {
-      const result = getGroupedData({ columns: [] }, {}, [{ x: 1 }]);
+      const result = resolveGrouping({ columns: [] }, {}, [{ x: 1 }]);
       assert.equal(result.groupLabel, 'Account');
       assert.equal(result.descriptionLabel, 'Description');
     });
 
-    it('sorts and remaps rows when groupBy matches a dimension param', () => {
+    // Sorted, NOT remapped. server.js's old getGroupedData overwrote every row's
+    // `name` with the dimension value and blanked `value`, destroying the account
+    // name and code the template needs to nest the Account band inside the
+    // dimension band. The dev engine never did that; the shared function keeps
+    // the rows intact.
+    it('sorts rows by the dimension without overwriting account name/value', () => {
       const contract = {
         columns: [],
         parameters: [{ name: 'dim', groupByValue: 'bp', groupByField: 'bpartnerName', label: { en_US: 'Partner' } }],
@@ -327,10 +314,18 @@ describe('report-server helpers', () => {
         { bpartnerName: 'Zeta', amount: 10 },
         { bpartnerName: 'Alpha', amount: 20 },
       ];
-      const result = getGroupedData(contract, { groupBy: 'bp' }, rows);
-      assert.equal(result.groupLabel, 'Partner');
-      assert.equal(result.rows[0].name, 'Alpha');
-      assert.equal(result.rows[1].name, 'Zeta');
+      const result = resolveGrouping(contract, { groupBy: 'bp' }, rows);
+      // The dimension label is its OWN field. server.js used to overwrite
+      // groupLabel/descriptionLabel with it, collapsing two bands into one — the
+      // template reads meta.groupLabel for the Account band and
+      // meta.dimensionLabel for the dimension band above it.
+      assert.equal(result.dimensionLabel, 'Partner');
+      assert.equal(result.groupLabel, 'Account', 'the Account band label survives grouping');
+      assert.equal(result.dimensionField, 'bpartnerName');
+      assert.equal(result.rows[0].bpartnerName, 'Alpha');
+      assert.equal(result.rows[1].bpartnerName, 'Zeta');
+      assert.equal(result.rows[0].amount, 20, 'the sorted row keeps its own data');
+      assert.ok(!('name' in result.rows[0]), 'name must not be synthesised onto the row');
     });
   });
 
@@ -486,6 +481,111 @@ describe('report-server helpers', () => {
       req.emit('data', 'world');
       req.emit('end');
       assert.equal(await promise, 'hello world');
+    });
+  });
+});
+
+/**
+ * Rendered-report i18n.
+ *
+ * The helpers above are hand-copied from server.js, so on their own they prove
+ * nothing about what actually ships — they passed unchanged while server.js
+ * resolved every label as `.en_US`. The source-scan block therefore asserts
+ * against the REAL server.js text: that is the part that fails if someone
+ * reintroduces a hardcoded locale or drops the `locale` the frontend sends.
+ */
+describe('report i18n', () => {
+  const contract = {
+    groups: [{ field: 'warehouse', label: { en_US: 'Warehouse', es_ES: 'Almacén' } }],
+    columns: [{ field: 'groupbyname', label: { en_US: 'Description', es_ES: 'Descripción' } }],
+    parameters: [{ name: 'dim', groupByValue: 'wh', groupByField: 'whName', label: { en_US: 'Warehouse', es_ES: 'Almacén' } }],
+  };
+
+  it('resolves group labels in the requested locale', () => {
+    const { groupLabel, descriptionLabel } = resolveGrouping(contract, {}, [], 'es_ES');
+    assert.equal(groupLabel, 'Almacén');
+    assert.equal(descriptionLabel, 'Descripción');
+  });
+
+  it('resolves the groupBy dimension label in the requested locale', () => {
+    const { dimensionLabel } = resolveGrouping(contract, { groupBy: 'wh' }, [{ whName: 'Main' }], 'es_ES');
+    assert.equal(dimensionLabel, 'Almacén');
+  });
+
+  it('resolves filter chip labels in the requested locale', () => {
+    const [chip] = filterAndTransformParams({ dim: 'wh' }, contract, 'es_ES');
+    assert.equal(chip.label, 'Almacén');
+  });
+
+  it("resolves a groupBy chip's VALUE to its dimension label, in the requested locale", () => {
+    const [chip] = filterAndTransformParams({ groupBy: 'wh' }, contract, 'es_ES');
+    assert.equal(chip.value, 'Almacén');
+  });
+
+  it('still defaults to en_US when no locale is passed', () => {
+    assert.equal(resolveGrouping(contract, {}, []).groupLabel, 'Warehouse');
+  });
+
+  it('carries locale/ui/labels into the meta of BOTH template branches', () => {
+    const opts = { title: 'T', activeFilters: [], params: {}, locale: 'es_ES', ui: { total: 'Total' }, labels: { a: 'A' } };
+    const listing = buildTemplateData(null, '', { ...opts, rows: [] });
+    const document = buildTemplateData({ header: {}, lines: [] }, '', opts);
+    for (const [name, built] of [['listing', listing], ['document', document]]) {
+      assert.equal(built.meta.locale, 'es_ES', `${name} meta lost locale`);
+      assert.deepEqual(built.meta.ui, opts.ui, `${name} meta lost ui`);
+      assert.deepEqual(built.meta.labels, opts.labels, `${name} meta lost labels`);
+    }
+  });
+
+  describe('server.js source', () => {
+    it('imports the shared i18n module instead of rebuilding it', () => {
+      assert.match(SERVER_SRC, /from '\.\.\/\.\.\/cli\/src\/report-i18n\.js'/);
+    });
+
+    it('reads the locale the frontend already sends on render', () => {
+      assert.match(SERVER_SRC, /locale = 'en_US' \} = JSON\.parse\(body/);
+    });
+
+    it('has no hardcoded en_US lookups left', () => {
+      // Flag EVERY `.en_US` reference and subtract only the two legitimate ones,
+      // rather than pattern-matching the shapes we happen to remember. The first
+      // version of this test matched `?.label?.en_US` and sailed straight past
+      // `contract.title?.en_US` — a guard that misses the bug it was written for
+      // is worse than none, because it reads as proof.
+      const ALLOWED = [
+        /AD_LANGUAGE/,          // rewrites the SQL's language filter; dev does the same
+        /locale = 'en_US'/,     // parameter/body defaults
+      ];
+      const offenders = SERVER_SRC.split('\n')
+        .map((line, i) => ({ line: i + 1, text: line.trim() }))
+        .filter(({ text }) => text.includes('en_US') && !ALLOWED.some(re => re.test(text)));
+      assert.deepEqual(offenders, [], `hardcoded en_US lookups: ${JSON.stringify(offenders, null, 2)}`);
+    });
+
+    it('feeds ui and labels into the template data', () => {
+      assert.match(SERVER_SRC, /const ui = pickUiStrings\(locale\)/);
+      assert.match(SERVER_SRC, /const labels = buildContractLabels\(contract, locale\)/);
+    });
+
+    it('groups through the shared module instead of its own copy', () => {
+      assert.match(SERVER_SRC, /from '\.\.\/\.\.\/cli\/src\/report-grouping\.js'/);
+      assert.doesNotMatch(SERVER_SRC, /function getGroupedData/,
+        'getGroupedData was a near-copy of resolveGrouping and must not come back');
+    });
+
+    it('runs the optional openingQuery and operandsQuery', () => {
+      // Without these the account trees and opening balances have no data to
+      // render, however faithfully the builders are shared.
+      assert.match(SERVER_SRC, /contract\.sql\?\.openingQuery/);
+      assert.match(SERVER_SRC, /contract\.sql\?\.operandsQuery/);
+    });
+
+    it('carries the grouping outputs into meta', () => {
+      const meta = SERVER_SRC.match(/return \{ css, meta: \{ title[^}]*recordCount[^}]*\}/);
+      assert.ok(meta, 'could not locate the listing meta literal');
+      for (const key of ['dimensionLabel', 'dimensionField', 'groups', 'tbGroups']) {
+        assert.ok(meta[0].includes(key), `listing meta is missing ${key}`);
+      }
     });
   });
 });

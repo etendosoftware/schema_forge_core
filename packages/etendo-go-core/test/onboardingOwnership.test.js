@@ -36,6 +36,10 @@ function streamResponse(messages) {
   const payload = encoder.encode(`${messages.map(JSON.stringify).join('\n')}\n`);
   let read = false;
   return {
+    // A real streaming Response carries these too; the onboarding client checks them to tell a
+    // refusal sent as plain JSON (ETP-4798's email gate, ETP-4686's paywall) from a real stream.
+    ok: true,
+    status: 200,
     body: {
       getReader: () => ({
         read: async () => {

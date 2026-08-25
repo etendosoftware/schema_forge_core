@@ -28,6 +28,18 @@ describe('Onboarding default view (ETP-4443)', () => {
   // initialView) is covered by 'defaults to login when there is no session token'
   // above, since it now applies to the single shared catch branch too.
 
+  it('routes to login (not register) when the session probe fails', () => {
+    // Kept from the epic's version of the removed test above, re-anchored: the branch it guards
+    // is now fetchSession's, since that is what the bootstrap reads. The anchoring itself is the
+    // point — the mount effect grew an earlier awaited call with its own catch block (ETP-4798's
+    // confirmation link), so slicing from the first `.catch(` in the file would silently assert
+    // against verifyEmail's instead of the bootstrap's.
+    const bootstrap = flow.slice(flow.indexOf('fetchSession(fetch, apiBase)'));
+    const catchBlock = bootstrap.slice(bootstrap.indexOf('.catch('), bootstrap.indexOf('.catch(') + 260);
+    assert.match(catchBlock, /goToStep\(initialView === 'register' \? 'register' : 'login'\)/);
+    assert.doesNotMatch(catchBlock, /goToStep\('register'\)/);
+  });
+
   it('does not fall back to register anywhere in the mount routing', () => {
     // The two former register fallbacks (invalid token + non-promise mock) are now login.
     // The remaining goToStep('register') calls belong to the login->register switch link only.

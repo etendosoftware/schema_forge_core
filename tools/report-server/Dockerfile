@@ -14,6 +14,10 @@ COPY tools/report-server/server.js ./tools/report-server/server.js
 COPY artifacts/ ./artifacts/
 COPY templates/ ./templates/
 COPY cli/src/extract-from-jasper.js ./cli/src/extract-from-jasper.js
+# server.js imports this at module load time (added by ETP-4899 to keep the
+# deploy-time report list in sync with the dev one). Without it the container
+# dies on startup with ERR_MODULE_NOT_FOUND, never reaching a single request.
+COPY cli/src/report-descriptor.js ./cli/src/report-descriptor.js
 
 EXPOSE 3001
 

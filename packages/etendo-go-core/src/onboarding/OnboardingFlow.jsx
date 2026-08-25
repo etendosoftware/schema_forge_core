@@ -2,7 +2,7 @@ import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { Loader2 } from 'lucide-react';
 import { useUI } from '@etendosoftware/app-shell-core/i18n';
 import { purgeLegacyAuthStorage } from '@etendosoftware/app-shell-core/auth';
-import { fetchSession, fetchEnvironments, loginEnvironment, fetchOnboardingDraft, saveOnboardingDraft } from './api.js';
+import { fetchSession, fetchAccount, fetchEnvironments, loginEnvironment, fetchOnboardingDraft, saveOnboardingDraft, verifyEmail } from './api.js';
 import { rememberEnvironment } from './state.js';
 import { buildAppReturnToHref, getSafeReturnTo } from './oauthReturnTo.js';
 import { trackOnboarding } from './tracking.js';
@@ -18,6 +18,7 @@ export function OnboardingFlow({ steps = [], config = {} }) {
   // client-readable token, only the CSRF proof issued alongside it.
   const [csrfToken, setCsrfToken] = useState(null);
   const [accountName, setAccountName] = useState(null);
+  const [accountEmail, setAccountEmail] = useState(null);
   const [draftNotice, setDraftNotice] = useState(false);
   const [draftSaveWarning, setDraftSaveWarning] = useState(false);
   const [environments, setEnvironments] = useState([]);
@@ -58,6 +59,17 @@ export function OnboardingFlow({ steps = [], config = {} }) {
       },
     });
   }
+
+  /**
+   * ETP-4798 — true when this account still owes an email confirmation, i.e. a token was issued for
+   * it and never consumed.
+   *
+   * Deliberately NOT `!emailVerified`: an account that predates this feature — or one whose
+   * confirmation mail could not be sent, which is the fail-open case the backend leaves ungated —
+   * is neither verified nor pending. Walling those off would lock out a user over a link that does
+   * not exist and never will.
+   */
+  const owesEmailConfirmation = (account) => Boolean(account?.emailVerificationPending);
 
   // Helper to jump to a specific step by id
   const goToStep = useCallback((stepId) => {
@@ -125,7 +137,31 @@ export function OnboardingFlow({ steps = [], config = {} }) {
   // Route by environments list: 0 -> profile (restore draft), 1+ -> auto-login and
   // redirect. Accounts with several environments return to the last one used;
   // a stale preference falls back to the first environment.
-  const routeByEnvironments = useCallback(async (csrfToken) => {
+  const routeByEnvironments = useCallback(async (csrfToken, knownAccount) => {
+    // ETP-4798 — the wall lives here because this is the one funnel every authenticated entry
+    // passes through: the mount bootstrap, a fresh login (LoginStep calls this directly) and the
+    // post-provisioning re-entry. Guarding only the mount path would let a plain login walk past
+    // the wall and straight into onboarding.
+    //
+    // `knownAccount` lets a caller that already holds the /me payload hand it over instead of
+    // asking twice; callers that do not have it pass nothing and it is fetched here. Under the
+    // cookie session (ETP-4576) the mount reads /session — for the CSRF proof — rather than /me,
+    // so it has nothing to hand over and this is the only /me read per load. A failed read
+    // proceeds rather than walling — the backend's 403 is the real gate.
+    let account = knownAccount;
+    if (account === undefined) {
+      try {
+        account = await fetchAccount(fetch, apiBase);
+        setAccountEmail(account?.email || null);
+      } catch (err) {
+        console.warn('Could not read the email verification state before entering', err);
+        account = null;
+      }
+    }
+    if (owesEmailConfirmation(account)) {
+      goToStep('verify-email');
+      return;
+    }
     setLoadingEnvs(true);
     try {
       const envs = await fetchEnvironments(fetch, apiBase);
@@ -194,10 +230,23 @@ export function OnboardingFlow({ steps = [], config = {} }) {
 
   // Initial token verification on mount
   useEffect(() => {
-    const resetToken = new URLSearchParams(window.location.search).get('resetToken');
+    const search = new URLSearchParams(window.location.search);
+    const resetToken = search.get('resetToken');
     if (resetToken) {
       goToStep('login');
       return;
+    }
+
+    // ETP-4798 — the confirmation link lands here with ?verifyToken=. Confirm it, strip the token
+    // from the address bar so it is not left in history or a shared URL, then fall through to the
+    // ordinary bootstrap: the link is usually opened while already signed in mid-onboarding, and it
+    // must not restart the flow. The URL is rewritten before the request is issued, so a reload
+    // mid-flight does not replay the token.
+    const verifyToken = search.get('verifyToken');
+    if (verifyToken) {
+      search.delete('verifyToken');
+      const query = search.toString();
+      window.history.replaceState({}, '', `${window.location.pathname}${query ? `?${query}` : ''}`);
     }
 
     const initialView = localStorage.getItem('sf_onboarding_initial_view');
@@ -205,22 +254,46 @@ export function OnboardingFlow({ steps = [], config = {} }) {
       localStorage.removeItem('sf_onboarding_initial_view');
     }
 
+    // ETP-4798: the confirmation MUST settle before the session is read. Both requests used to be
+    // fired concurrently, and whenever the session read answered first it reported the still-pending
+    // state and overwrote the just-confirmed one — leaving the banner up and the Start button gated
+    // on a freshly confirmed address.
+    const confirmEmailFirst = verifyToken
+      ? verifyEmail(fetch, apiBase, verifyToken).catch((err) => {
+          // An expired or already-superseded link is not a dead end: the banner stays up and
+          // offers a re-send, so there is nothing to interrupt the flow with here.
+          console.warn('Email confirmation link could not be used', err);
+        })
+      : null;
+
     // ETP-4576: the session lives in the __Host- cookie now, so there is no
     // client-visible token to check for presence — ask the server instead.
     // A 401 covers both "never had a session" and "had one, now expired or
     // invalid" alike (the cookie is httpOnly, so JS can't tell them apart),
     // so both now share the same initialView-respecting fallback below.
-    fetchSession(fetch, apiBase)
-      .then(data => {
-        setCsrfToken(data.csrfToken ?? null);
-        setAccountName(data.account?.name || data.account?.email || null);
-        routeByEnvironments(data.csrfToken);
-      })
-      .catch(() => {
-        purgeLegacyAuthStorage();
-        // Login is the default entry view; register is only shown when explicitly requested.
-        goToStep(initialView === 'register' ? 'register' : 'login');
-      });
+    //
+    // ETP-4798: every mount re-asks the server, which is what makes a plain browser refresh the
+    // way out of the wall — including when the mail was opened on another device. The decision
+    // itself lives in routeByEnvironments, which reads /me for it.
+    const bootstrap = () => {
+      fetchSession(fetch, apiBase)
+        .then(data => {
+          setCsrfToken(data.csrfToken ?? null);
+          setAccountName(data.account?.name || data.account?.email || null);
+          routeByEnvironments(data.csrfToken);
+        })
+        .catch(() => {
+          purgeLegacyAuthStorage();
+          // Login is the default entry view; register is only shown when explicitly requested.
+          goToStep(initialView === 'register' ? 'register' : 'login');
+        });
+    };
+
+    if (confirmEmailFirst) {
+      confirmEmailFirst.then(bootstrap);
+    } else {
+      bootstrap();
+    }
   }, []);
 
   // Every persistable step follows the same debounce policy; no field names
@@ -231,10 +304,12 @@ export function OnboardingFlow({ steps = [], config = {} }) {
     return () => draftPersistenceRef.current.cancel();
   }, [stepData, currentStep, csrfToken, steps]);
 
-  // Handle register success: setup new state, redirect to profile
-  const handleRegisterSuccess = (csrfToken, account) => {
+  // Handle register success: set up new state, then either wall on the email confirmation or
+  // start onboarding.
+  const handleRegisterSuccess = async (csrfToken, account) => {
     setCsrfToken(csrfToken);
     setAccountName(account?.name || account?.email || null);
+    setAccountEmail(account?.email || null);
     setStepData({
       ...config.defaultForm,
       fullName: account?.name || account?.email || '',
@@ -242,7 +317,20 @@ export function OnboardingFlow({ steps = [], config = {} }) {
     setDraftNotice(false);
     draftPersistenceRef.current.restoreLastSaved(null);
     draftReadyRef.current = true;
-    goToStep('profile');
+
+    // ETP-4798: ask the server before choosing the destination. Registration only leaves a
+    // confirmation pending when the mail was actually accepted for delivery — when it was not
+    // (no configured app base URL, provider down) the backend deliberately leaves the account
+    // ungated, and walling the user off would strand them waiting for a mail that never went out.
+    // A failed read falls through to onboarding for the same reason; the backend's 403 still holds
+    // the line if a confirmation really is owed.
+    let freshAccount = null;
+    try {
+      freshAccount = await fetchAccount(fetch, apiBase);
+    } catch (err) {
+      console.warn('Could not read the email verification state after registering', err);
+    }
+    goToStep(owesEmailConfirmation(freshAccount) ? 'verify-email' : 'profile');
   };
 
   const handleStepDataChange = useCallback((newData) => {
@@ -292,6 +380,7 @@ export function OnboardingFlow({ steps = [], config = {} }) {
       setToken={setCsrfToken}
       accountName={accountName}
       setAccountName={setAccountName}
+      accountEmail={accountEmail}
       draftNotice={draftNotice}
       setDraftNotice={setDraftNotice}
       draftSaveWarning={draftSaveWarning}
