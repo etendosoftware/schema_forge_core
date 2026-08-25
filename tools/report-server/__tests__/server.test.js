@@ -40,9 +40,6 @@ function applyLimitToSql(limit, sql) {
   return sql;
 }
 
-function formatIdForSql() {
-  return id => `'${id.trim()}'`;
-}
 
 function getRowCount(rows) {
   return Array.isArray(rows) ? rows.length : undefined;
@@ -219,18 +216,6 @@ describe('report-server helpers', () => {
     it('strips trailing semicolon before LIMIT', () => {
       assert.ok(applyLimitToSql(5, 'SELECT 1;').endsWith('LIMIT 5'));
       assert.ok(!applyLimitToSql(5, 'SELECT 1;').includes(';'));
-    });
-  });
-
-  describe('formatIdForSql', () => {
-    it('wraps id in single quotes', () => {
-      const fn = formatIdForSql();
-      assert.equal(fn('ABC'), "'ABC'");
-    });
-
-    it('trims whitespace', () => {
-      const fn = formatIdForSql();
-      assert.equal(fn('  XYZ  '), "'XYZ'");
     });
   });
 

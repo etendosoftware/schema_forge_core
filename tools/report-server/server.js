@@ -28,6 +28,7 @@ import { registerReportHelpers, computeDocumentQrDataUrl, buildJsreportHelpersSt
 import { listReportDescriptors } from '../../cli/src/report-descriptor.js';
 import { pickLabel, pickUiStrings, buildContractLabels } from '../../cli/src/report-i18n.js';
 import { resolveGrouping, buildNestedGroups, buildAccountReportTree } from '../../cli/src/report-grouping.js';
+import { applyPlaceholders } from '../../cli/src/report-sql.js';
 
 const _require = createRequire(import.meta.url);
 const __dirname = dirname(fileURLToPath(import.meta.url));
@@ -177,6 +178,11 @@ async function fetchReportData(reportId, { limit, authToken, params = {} } = {})
 
   sql = applyLimitToSql(limit, sql);
 
+  // Same client the main query was scoped to — the secondary queries below must
+  // not resolve it independently, or they could annotate one client's rows with
+  // another's data.
+  const clientId = getClientIdFromToken(`Bearer ${authToken}`) || '0';
+
   const pg = await import('pg');
   const pool = new pg.default.Pool(getDbConfig());
   try {
@@ -192,12 +198,12 @@ async function fetchReportData(reportId, { limit, authToken, params = {} } = {})
     let openingRows = null;
     if (contract.sql?.openingQuery) {
       openingRows = (await pool.query(
-        applyPlaceholders(contract.sql.openingQuery, contract, authToken, params))).rows;
+        applyPlaceholders(contract.sql.openingQuery, { clientId, params, contract }))).rows;
     }
     let operandRows = null;
     if (contract.sql?.operandsQuery) {
       operandRows = (await pool.query(
-        applyPlaceholders(contract.sql.operandsQuery, contract, authToken, params))).rows;
+        applyPlaceholders(contract.sql.operandsQuery, { clientId, params, contract }))).rows;
     }
 
     return { rows, contract, openingRows, operandRows };
@@ -256,41 +262,11 @@ async function buildReportSql(contract, reportId, authToken, params) {
 
   if (!sql) throw new Error(`No data source configured for report '${reportId}'`);
 
-  return applyPlaceholders(sql, contract, authToken, params);
-}
-
-/**
- * Placeholder/scoping rewrites shared by a report's main query and its optional
- * secondary queries (`openingQuery`, `operandsQuery`). Extracted so those run
- * under IDENTICAL rules — a secondary query scoped to a different client or
- * language than the rows it annotates is the kind of bug nobody spots in a
- * rendered report.
- */
-function applyPlaceholders(sql, contract, authToken, params) {
   const clientId = getClientIdFromToken(`Bearer ${authToken}`) || '0';
-  sql = sql.replaceAll('__CLIENT_ID__', clientId);
-  for (const [k, v] of Object.entries(params)) {
-    if (k.startsWith('_display_')) continue;
-    if (v !== undefined && v !== null && v !== '') {
-      sql = sql.replace(new RegExp(`__${k.toUpperCase()}__`, 'g'), String(v).replaceAll('\'', "''"));
-    }
-  }
-  for (const p of (contract.parameters || [])) {
-    if (p.default !== undefined && p.default !== null && p.default !== '') {
-      sql = sql.replace(new RegExp(`__${p.name.toUpperCase()}__`, 'g'), String(p.default));
-    }
-  }
-  sql = sql.replace(/=\s*'([^',]+(?:,[^',]+)+)'/g, (_, ids) => `IN (${ids.split(',').map(formatIdForSql()).join(',')})`);
-  sql = sql.replace(/AND\s*\('__\w+__'\s*=\s*''\s*OR\s*[\s\S]*?'__\w+__'[^)]*\)/gi, '');
-  sql = sql.replace(/AD_CLIENT_ID\s+IN\s*\(\s*'[^']+'\s*\)/gi, `AD_CLIENT_ID IN ('${clientId}')`);
-  sql = sql.replace(/AD_ORG_ID\s+IN\s*\(\s*'[^']+'\s*\)/gi, `AD_ORG_ID IN (SELECT AD_ORG_ID FROM AD_ORG WHERE AD_CLIENT_ID = '${clientId}' AND ISACTIVE = 'Y')`);
-  sql = sql.replace(/AD_LANGUAGE\s*=\s*'[^']+'/gi, `AD_LANGUAGE = 'en_US'`);
-  return sql;
+  return applyPlaceholders(sql, { clientId, params, contract });
 }
 
-function formatIdForSql() {
-  return id => `'${id.trim()}'`;
-}
+
 
 function extractNeoMeta(contract, data) {
   let neoMeta = {};
