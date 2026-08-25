@@ -9,6 +9,7 @@ export const ONBOARDING_ERROR_CODES = {
   ssoFailed: 'onboardingSsoFailed',
   streamUnavailable: 'onboardingStreamUnavailable',
   missingResult: 'onboardingMissingResult',
+  emailVerifyFailed: 'onboardingEmailVerifyFailed',
 };
 
 // ETP-4664 — maps the stable, SCREAMING_SNAKE `error.code` returned by the
@@ -28,6 +29,9 @@ export const AUTH_ERROR_UI_KEYS = {
   INVALID_CREDENTIALS: 'onboardingInvalidCredentials',
   LOGIN_SERVER_ERROR: 'onboardingLoginServerError',
   INTERNAL_ERROR: 'onboardingConnectionError',
+  // ETP-4798 — email ownership confirmation.
+  EMAIL_NOT_VERIFIED: 'onboardingEmailNotVerified',
+  EMAIL_VERIFY_INVALID: 'onboardingEmailVerifyInvalid',
 };
 
 const SSO_PAYLOAD_BUILDERS = {
@@ -44,10 +48,14 @@ export function buildAuthHeaders(token) {
 }
 
 function buildApiError(data, fallbackCode, status) {
+  // Two error envelopes exist. Most endpoints send the structured
+  // `{ error: { code, message, userMessage } }` (ETP-4664); the paywall sends the older flat
+  // `{ error: "PAYMENT_REQUIRED", message }`, where `error` is the code itself as a string.
+  const flatCode = typeof data?.error === 'string' ? data.error : null;
   const error = new Error(data?.error?.message || data?.message || fallbackCode);
   // Prefer the backend's stable error code (e.g. "WEAK_PASSWORD") when present,
   // falling back to the generic per-call code.
-  error.code = data?.error?.code || fallbackCode;
+  error.code = data?.error?.code || flatCode || fallbackCode;
   error.userMessage = data?.error?.userMessage || data?.error?.message || data?.message || null;
   error.status = status;
   // Length-violation details (ETP-4665): the backend reports which field
@@ -118,6 +126,35 @@ export async function confirmPasswordReset(fetchImpl, baseUrl, form) {
     }),
   });
   return readJsonResponse(response, ONBOARDING_ERROR_CODES.credentialResetFailed);
+}
+
+/**
+ * ETP-4798 — confirms the account holder controls the email address.
+ *
+ * Unauthenticated on purpose: the token from the mailed link IS the credential, and the link is
+ * usually opened in a browser with no session. Idempotent server-side, so re-following the same
+ * link (or a mail client prefetching it) resolves rather than erroring.
+ */
+export async function verifyEmail(fetchImpl, baseUrl, token) {
+  const response = await fetchImpl(`${baseUrl}/sws/go/verify-email`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ token }),
+  });
+  return readJsonResponse(response, ONBOARDING_ERROR_CODES.emailVerifyFailed);
+}
+
+/**
+ * ETP-4798 — asks for the confirmation link again. Always resolves with the same neutral payload
+ * whether a mail went out or nothing was pending, so the caller must not try to infer state from it.
+ */
+export async function resendVerifyEmail(fetchImpl, baseUrl, token, language) {
+  const query = language ? `?language=${encodeURIComponent(language)}` : '';
+  const response = await fetchImpl(`${baseUrl}/sws/go/verify-email/resend${query}`, {
+    method: 'POST',
+    headers: buildAuthHeaders(token),
+  });
+  return readJsonResponse(response, ONBOARDING_ERROR_CODES.emailVerifyFailed);
 }
 
 export async function changePassword(fetchImpl, baseUrl, token, form) {
@@ -221,6 +258,23 @@ export async function runOnboardingStream(fetchImpl, baseUrl, token, form, onMes
       ...(form.fiscalIdValue ? { fiscalIdValue: form.fiscalIdValue } : {}),
     }),
   });
+
+  // A refused request never becomes a stream: the backend answers plain JSON before opening the
+  // NDJSON response (the ETP-4798 email gate and the ETP-4686 paywall both do). Without this check
+  // that JSON would be fed to processLines as if it were a progress line, produce no `result`
+  // message, and surface as the generic "missing result" error instead of the real reason.
+  // `ok === false` rather than `!ok`: a real Response always carries the flag, but fetch shims and
+  // test doubles routinely model only `body.getReader`, and treating a missing flag as a failure
+  // would reject a perfectly good stream.
+  if (response.ok === false) {
+    let data = null;
+    try {
+      data = await response.json();
+    } catch {
+      data = null;
+    }
+    throw buildApiError(data, ONBOARDING_ERROR_CODES.streamUnavailable, response.status);
+  }
 
   if (!response.body?.getReader) {
     const error = new Error(ONBOARDING_ERROR_CODES.streamUnavailable);
