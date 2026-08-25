@@ -1305,3 +1305,44 @@ describe('AuthContext — isAuthenticated legacy fallback (ETP-4576 cycle 14 reg
     expect(result.current.isAuthenticated).toBe(true);
   });
 });
+
+/**
+ * ETP-4576 — `auto` resolves the scheme from what the backend issued, so the
+ * restore is not optional under it: the restore's response is WHERE the answer
+ * comes from. `restoreSession` used to default on only for `cookie`, and adding
+ * `auto` without widening that would have left a host passing `auto` unable to
+ * authenticate at all — silently, since a null restore just resolves `status`
+ * from `session.token`.
+ */
+describe('AuthContext — credentialMode auto (ETP-4576)', () => {
+  function mount(credentialMode) {
+    return renderHook(() => useAuth(), {
+      wrapper: ({ children }) => (
+        <AuthProvider storage={createMemoryAuthStorage()} credentialMode={credentialMode}>
+          {children}
+        </AuthProvider>
+      ),
+    });
+  }
+
+  it('restores the session on mount under auto, exactly as under cookie', async () => {
+    mount(CREDENTIAL_MODES.auto);
+    await waitFor(() => expect(fetchStub).toHaveBeenCalled());
+    const [url, init] = fetchStub.mock.calls[0];
+    expect(String(url)).toContain('/sws/go/session');
+    expect(init.credentials).toBe('include');
+  });
+
+  it('still does not restore under bearer, keeping the pre-cookie path verbatim', async () => {
+    const { result } = mount(CREDENTIAL_MODES.bearer);
+    await waitFor(() => expect(result.current.status).not.toBe('booting'));
+    expect(fetchStub).not.toHaveBeenCalled();
+  });
+
+  it('falls back to anonymous when the backend has no cookie session (the 401)', async () => {
+    const { result } = mount(CREDENTIAL_MODES.auto);
+    await waitFor(() => expect(result.current.status).toBe('anonymous'));
+    expect(result.current.isAuthenticated).toBe(false);
+  });
+});
+

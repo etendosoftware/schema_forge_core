@@ -10,11 +10,12 @@
  *                credential; unsafe methods instead prove intent with
  *                `X-Go-CSRF`.
  *
- * `bearer` is the default, deliberately. The backend preference that turns the
- * cookie session on (see com.etendoerp.go) is what flips this, so an instance
- * that has not opted in — or a control plane that cannot answer — keeps working
- * exactly as it does today. Flipping it back is a database change, not a
- * redeploy: that is the whole point of routing both schemes through here.
+ * A host normally asks for neither by name and passes `auto`, which resolves to
+ * whichever scheme the backend actually issued (see AUTO below). `bearer` remains
+ * the fallback for anything unrecognised, so an instance that has not opted in —
+ * or a control plane that answers with garbage — keeps working exactly as it does
+ * today. The explicit modes stay available for pinning one in a test or rolling
+ * back without a redeploy: that is the whole point of routing both through here.
  *
  * WHY MODULE STATE rather than parameters: every caller would otherwise have to
  * thread both credentials AND the mode through to the fetch, which is ~170 call
@@ -38,13 +39,48 @@
 
 const BEARER = 'bearer';
 const COOKIE = 'cookie';
+/**
+ * "Whichever one the backend actually issued." Not a third scheme: it is resolved
+ * to `bearer` or `cookie` before it ever reaches a header builder.
+ *
+ * It exists because declaring the scheme by hand is a claim about the BACKEND
+ * that the frontend cannot verify, and getting it wrong fails silently in the
+ * worst direction. Declaring `cookie` against a backend whose login still
+ * answers with a bearer token means the client holds no CSRF proof, so
+ * `writeHeaders()` sends none and every unsafe request comes back 403 — while
+ * reads keep working, because the browser attaches whatever session cookie
+ * exists on its own. That combination (reads fine, writes 403) is exactly what
+ * took down the integration suite once the hard-coded `cookie` met a backend
+ * that had not been redeployed yet.
+ *
+ * The backend already tells us which scheme it runs: a cookie session issues a
+ * CSRF token (in the login response and in GET /sws/go/session), a bearer
+ * backend issues a token and no CSRF. So the presence of a CSRF proof IS the
+ * answer, and `auto` reads it instead of being told.
+ */
+const AUTO = 'auto';
 
 const DEFAULTS = Object.freeze({ mode: BEARER, token: null, csrfToken: null });
 
 let current = { ...DEFAULTS };
 
 /** Credential schemes, for callers that need to branch on more than headers. */
-export const CREDENTIAL_MODES = Object.freeze({ bearer: BEARER, cookie: COOKIE });
+export const CREDENTIAL_MODES = Object.freeze({ bearer: BEARER, cookie: COOKIE, auto: AUTO });
+
+/**
+ * Resolves `auto` against the credentials actually held; passes the explicit
+ * modes through untouched so a host can still pin one for a test or a rollback.
+ *
+ * A held CSRF token means the backend issued one, which only a cookie session
+ * does. No CSRF token means bearer — including the boot window before the
+ * session is restored, where sending nothing is correct anyway because there is
+ * no session yet.
+ */
+function resolveMode(mode, csrfToken) {
+  if (mode === COOKIE || mode === BEARER) return mode;
+  if (mode === AUTO) return csrfToken ? COOKIE : BEARER;
+  return BEARER;
+}
 
 /**
  * Publishes the credentials every request builder below will use.
@@ -57,7 +93,7 @@ export const CREDENTIAL_MODES = Object.freeze({ bearer: BEARER, cookie: COOKIE }
  */
 export function setSessionCredentials(next = {}) {
   current = {
-    mode: next.mode === COOKIE ? COOKIE : BEARER,
+    mode: resolveMode(next.mode, next.csrfToken ?? null),
     token: next.token ?? null,
     csrfToken: next.csrfToken ?? null,
   };

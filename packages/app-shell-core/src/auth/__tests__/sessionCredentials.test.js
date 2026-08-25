@@ -119,6 +119,65 @@ describe('sessionCredentials', () => {
     });
   });
 
+  /**
+   * ETP-4576 — `auto` exists because declaring the scheme by hand is a claim
+   * about the BACKEND that the frontend cannot check, and the wrong claim fails
+   * silently in one direction only: reads keep working off the browser's own
+   * cookie while every unsafe request answers 403 for a missing CSRF proof.
+   * The backend already reveals the answer — only a cookie session issues a CSRF
+   * token — so these assert that the presence of that token IS the decision.
+   */
+  describe('auto mode', () => {
+    it('resolves to cookie when a CSRF token is held', () => {
+      setSessionCredentials({ mode: CREDENTIAL_MODES.auto, token: 'tk', csrfToken: 'csrf' });
+      assert.equal(getCredentialMode(), CREDENTIAL_MODES.cookie);
+    });
+
+    it('resolves to bearer when no CSRF token is held, even with a token present', () => {
+      setSessionCredentials({ mode: CREDENTIAL_MODES.auto, token: 'tk', csrfToken: null });
+      assert.equal(getCredentialMode(), CREDENTIAL_MODES.bearer);
+    });
+
+    it('sends the CSRF proof and no Authorization once resolved to cookie', () => {
+      setSessionCredentials({ mode: CREDENTIAL_MODES.auto, token: 'tk', csrfToken: 'csrf' });
+      const headers = writeHeaders();
+      assert.equal(headers['X-Go-CSRF'], 'csrf');
+      assert.equal(headers.Authorization, undefined);
+    });
+
+    /**
+     * The case that took down the integration suite: a hard-coded `cookie`
+     * against a backend that never issued a CSRF token sent NEITHER credential.
+     * Under `auto` the same state degrades to the scheme that still works.
+     */
+    it('sends the bearer credential when the backend issued no CSRF token', () => {
+      setSessionCredentials({ mode: CREDENTIAL_MODES.auto, token: 'tk', csrfToken: null });
+      const headers = writeHeaders();
+      assert.equal(headers.Authorization, 'Bearer tk');
+      assert.equal(headers['X-Go-CSRF'], undefined);
+    });
+
+    it('resolves to bearer before any session exists, so boot carries nothing it lacks', () => {
+      setSessionCredentials({ mode: CREDENTIAL_MODES.auto });
+      assert.equal(getCredentialMode(), CREDENTIAL_MODES.bearer);
+      assert.equal(writeHeaders().Authorization, undefined);
+    });
+
+    it('re-resolves when the CSRF token arrives later, with no reload', () => {
+      setSessionCredentials({ mode: CREDENTIAL_MODES.auto, token: 'tk' });
+      assert.equal(getCredentialMode(), CREDENTIAL_MODES.bearer);
+      setSessionCredentials({ mode: CREDENTIAL_MODES.auto, token: 'tk', csrfToken: 'csrf' });
+      assert.equal(getCredentialMode(), CREDENTIAL_MODES.cookie);
+    });
+
+    it('leaves an explicitly pinned mode alone, so a rollback still overrides', () => {
+      setSessionCredentials({ mode: CREDENTIAL_MODES.bearer, token: 'tk', csrfToken: 'csrf' });
+      assert.equal(getCredentialMode(), CREDENTIAL_MODES.bearer);
+      setSessionCredentials({ mode: CREDENTIAL_MODES.cookie, token: 'tk', csrfToken: null });
+      assert.equal(getCredentialMode(), CREDENTIAL_MODES.cookie);
+    });
+  });
+
   describe('robustness', () => {
     /**
      * A control plane that answers with garbage must degrade to the scheme that

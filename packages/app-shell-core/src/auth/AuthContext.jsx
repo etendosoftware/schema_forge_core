@@ -17,16 +17,24 @@ export function AuthProvider({
   onSessionChange,
   fetchWindowAccess,
   // ETP-4576 — which credential scheme requests use: 'bearer' (today's shipped
-  // behaviour, the default) or 'cookie'. The host resolves this from the backend
-  // preference that gates the cookie session and passes it down, so turning the
-  // migration on or off is a database change rather than a redeploy. Sourcing it
-  // is deliberately the host's job: the core stays unaware of how the instance
-  // is configured.
+  // behaviour), 'cookie', or 'auto'. `auto` is what a host should normally pass:
+  // it resolves to whichever scheme the backend actually issued, by reading
+  // whether a CSRF token came back with the session. Declaring `cookie` by hand
+  // is a claim about the BACKEND that the frontend cannot verify, and getting it
+  // wrong fails in the worst direction — reads keep working off the browser's own
+  // cookie while every unsafe request answers 403 for a missing CSRF proof. The
+  // explicit modes remain for pinning one in a test or rolling back.
   credentialMode = CREDENTIAL_MODES.bearer,
   // ETP-4576 — DERIVED from `credentialMode`, so one switch governs the whole
   // scheme. Under `cookie` it defaults to the platform fetcher (the server-side
   // session is the credential, so the restore is mandatory); under `bearer` it
   // defaults to off, and the host keeps the pre-cookie synchronous path verbatim.
+  //
+  // Under `auto` it must ALSO default on: the restore is how the scheme gets
+  // decided at all. Its response either carries a CSRF token (a cookie session
+  // exists) or fails, and a failed restore leaves no CSRF token, which resolves
+  // to bearer — so a bearer backend costs one 401 on boot and then behaves
+  // exactly as it did before.
   //
   // It used to default to fetchCookieSession unconditionally. The reasoning was
   // sound at the time — #101 removed the localStorage handoff, so an opt-in prop
@@ -40,7 +48,8 @@ export function AuthProvider({
   // under the cookie mode (e.g. a test whose subject is not the restore): any
   // non-function makes the effect below return early and `status` resolve
   // synchronously from `session.token`.
-  restoreSession = credentialMode === CREDENTIAL_MODES.cookie ? fetchCookieSession : null,
+  restoreSession = credentialMode === CREDENTIAL_MODES.cookie
+    || credentialMode === CREDENTIAL_MODES.auto ? fetchCookieSession : null,
 }) {
   // ETP-4576 — memory, not localStorage. This was the last writer of the
   // sf_auth_* keys: persistSession() wrote them on every login/role/org change.
