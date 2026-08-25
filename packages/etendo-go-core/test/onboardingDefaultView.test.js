@@ -19,8 +19,12 @@ describe('Onboarding default view (ETP-4443)', () => {
   });
 
   it('routes to login (not register) when the stored token is invalid', () => {
-    // The fetchAccount().catch branch clears the token and must land on login.
-    const catchBlock = flow.slice(flow.indexOf('.catch('), flow.indexOf('.catch(') + 260);
+    // The fetchAccount().catch branch clears the token and must land on login. Anchored on the
+    // fetchAccount call rather than "the first .catch in the file": the mount effect grew other
+    // awaited calls with their own catch blocks (ETP-4798's confirmation link), and slicing from
+    // the first one silently started asserting against the wrong branch.
+    const bootstrap = flow.slice(flow.indexOf('fetchAccount(fetch, apiBase, currentToken)'));
+    const catchBlock = bootstrap.slice(bootstrap.indexOf('.catch('), bootstrap.indexOf('.catch(') + 260);
     assert.match(catchBlock, /goToStep\('login'\)/);
     assert.doesNotMatch(catchBlock, /goToStep\('register'\)/);
   });

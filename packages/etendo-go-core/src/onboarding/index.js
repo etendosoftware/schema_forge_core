@@ -20,6 +20,8 @@ export {
   fetchOnboardingDraft,
   saveOnboardingDraft,
   runOnboardingStream,
+  verifyEmail,
+  resendVerifyEmail,
 } from './api.js';
 
 export {
