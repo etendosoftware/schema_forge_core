@@ -123,3 +123,133 @@ describe('computeDocumentQrDataUrl', () => {
     assert.equal(a, b);
   });
 });
+
+// ---------------------------------------------------------------------------
+// Verifactu mode (ETP-4912)
+//
+// Invoice printables mark their header with `qr_mode: 'verifactu'` and carry the
+// AEAT validation URL precomputed by classic in `verifactu_qr_url`. The QR must
+// encode that URL verbatim, and must not be rendered at all when it is absent.
+// ---------------------------------------------------------------------------
+
+const AEAT_URL =
+  'https://prewww2.aeat.es/wlpl/TIKE-CONT/ValidarQR' +
+  '?nif=A39200019&numserie=10000014&fecha=16-04-2026&importe=1355.20';
+
+describe('buildDocumentQrText — Verifactu mode', () => {
+  it('returns the AEAT URL verbatim, with query params untouched', () => {
+    const text = buildDocumentQrText({ qr_mode: 'verifactu', verifactu_qr_url: AEAT_URL });
+    assert.equal(text, AEAT_URL);
+    // The URL must survive character for character: unescaped '&', all four params,
+    // no truncation. A mangled URL yields a QR the AEAT validator rejects.
+    assert.equal(text.split('&').length, 4);
+    assert.ok(text.includes('nif=A39200019'));
+    assert.ok(text.includes('numserie=10000014'));
+    assert.ok(text.includes('fecha=16-04-2026'));
+    assert.ok(text.includes('importe=1355.20'));
+  });
+
+  it('ignores the document fields entirely when the AEAT URL is present', () => {
+    // A real invoice header carries both; the internal fields must not leak in.
+    const text = buildDocumentQrText({
+      qr_mode: 'verifactu',
+      verifactu_qr_url: AEAT_URL,
+      documentno: 'INV-1001',
+      grandtotal: '1210.00',
+      status: 'CO',
+    });
+    assert.equal(text, AEAT_URL);
+  });
+
+  it('returns empty (no QR) when the AEAT URL has not been issued yet', () => {
+    // Classic writes the URL when the Registro de Facturacion is generated, so a
+    // completed-but-unregistered invoice has none. It must print NO QR rather than
+    // fall back to the internal string — a non-AEAT QR on a Verifactu invoice is wrong.
+    for (const value of [null, undefined, '', '   ', '\t\n']) {
+      assert.equal(buildDocumentQrText({ qr_mode: 'verifactu', verifactu_qr_url: value }), '');
+    }
+    assert.equal(buildDocumentQrText({ qr_mode: 'verifactu' }), '');
+  });
+
+  it('trims surrounding whitespace from the stored URL', () => {
+    assert.equal(
+      buildDocumentQrText({ qr_mode: 'verifactu', verifactu_qr_url: `  ${AEAT_URL}\n` }),
+      AEAT_URL
+    );
+  });
+
+  it('leaves every other printable on the internal pipe-string (regression guard)', () => {
+    // The other seven print-* reports share this helper. Without qr_mode they must
+    // behave exactly as before, whatever else the header happens to carry.
+    assert.equal(
+      buildDocumentQrText({ documentno: 'SO-5', currency: 'EUR', verifactu_qr_url: AEAT_URL }),
+      'N:SO-5|C:EUR'
+    );
+    assert.equal(buildDocumentQrText({ qr_mode: 'internal', documentno: 'SO-6' }), 'N:SO-6');
+  });
+});
+
+describe('computeDocumentQrDataUrl — Verifactu mode', () => {
+  it('encodes the AEAT URL at AEAT-compliant options (40mm, level M)', async () => {
+    const calls = [];
+    const fakeQrcode = {
+      toDataURL: async (text, options) => {
+        calls.push({ text, options });
+        return 'data:image/png;base64,FAKE';
+      },
+    };
+    await computeDocumentQrDataUrl(
+      { qr_mode: 'verifactu', verifactu_qr_url: AEAT_URL },
+      { qrcode: fakeQrcode }
+    );
+    assert.equal(calls[0].text, AEAT_URL);
+    assert.equal(calls[0].options.errorCorrectionLevel, 'M', 'AEAT spec art. 21.1 mandates level M');
+    assert.equal(calls[0].options.width, 400);
+  });
+
+  it('keeps enough pixels per module to scan when printed at 40mm', async () => {
+    // AEAT spec section 3: the QR is printed at 30-40mm. The URL is a version-7
+    // symbol at level M (45x45 modules), so the inherited width of 120 would leave
+    // 2.55px per module — too coarse for raster print. Guard the real ratio.
+    const QRCode = (await import('qrcode')).default;
+    const symbol = QRCode.create(AEAT_URL, { errorCorrectionLevel: 'M' });
+    const modules = symbol.modules.size;
+    const pxPerModule = 400 / (modules + 2); // +2 for the 1-module quiet zone each side
+    assert.ok(
+      pxPerModule >= 8,
+      `expected >=8px per module for print, got ${pxPerModule.toFixed(2)} (${modules} modules)`
+    );
+  });
+
+  it('returns no data URL at all when there is nothing to encode', async () => {
+    // Never `<img src="">`: the templates guard on a falsy qrDataUrl.
+    assert.equal(await computeDocumentQrDataUrl({ qr_mode: 'verifactu' }), '');
+    assert.equal(
+      await computeDocumentQrDataUrl({ qr_mode: 'verifactu', verifactu_qr_url: '  ' }),
+      ''
+    );
+  });
+
+  it('does not call the qrcode module when there is nothing to encode', async () => {
+    let called = false;
+    const fakeQrcode = { toDataURL: async () => { called = true; return 'x'; } };
+    await computeDocumentQrDataUrl({ qr_mode: 'verifactu' }, { qrcode: fakeQrcode });
+    assert.equal(called, false);
+  });
+
+  it('leaves non-Verifactu options untouched across repeated calls', async () => {
+    // QRCode.toDataURL mutates the options object it receives, so a shared constant
+    // would leak `color: {}` (and friends) into every later render.
+    const calls = [];
+    const fakeQrcode = {
+      toDataURL: async (text, options) => {
+        calls.push({ ...options }); // snapshot BEFORE mutating, or we assert on our own mutation
+        options.color = { dark: '#000' }; // simulate the real module's mutation
+        return 'data:image/png;base64,FAKE';
+      },
+    };
+    await computeDocumentQrDataUrl({ documentno: 'A' }, { qrcode: fakeQrcode });
+    await computeDocumentQrDataUrl({ documentno: 'B' }, { qrcode: fakeQrcode });
+    assert.deepEqual(calls[1], { width: 120, margin: 1 });
+  });
+});
