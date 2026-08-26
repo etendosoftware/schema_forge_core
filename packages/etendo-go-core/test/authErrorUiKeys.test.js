@@ -33,6 +33,9 @@ describe('AUTH_ERROR_UI_KEYS (ETP-4664)', () => {
       INVALID_CREDENTIALS: 'onboardingInvalidCredentials',
       LOGIN_SERVER_ERROR: 'onboardingLoginServerError',
       INTERNAL_ERROR: 'onboardingConnectionError',
+      // ETP-4798 — email ownership confirmation.
+      EMAIL_NOT_VERIFIED: 'onboardingEmailNotVerified',
+      EMAIL_VERIFY_INVALID: 'onboardingEmailVerifyInvalid',
     };
     assert.deepEqual(AUTH_ERROR_UI_KEYS, expected);
   });

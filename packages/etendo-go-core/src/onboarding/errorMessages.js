@@ -21,6 +21,9 @@ export const ONBOARDING_ERROR_CODE_LABELS = {
   CLIENT_CREATION_FAILED: 'onboardingCreateClientFailed',
   ORG_CREATION_FAILED: 'onboardingCreateOrgFailed',
   WEAK_PASSWORD: 'onboardingWeakPassword',
+  // ETP-4798 — the onboarding stream is refused before it opens when the account still owes an
+  // email confirmation.
+  EMAIL_NOT_VERIFIED: 'onboardingEmailNotVerified',
 };
 
 /**
