@@ -103,6 +103,9 @@ export function resolveApiUrl(base, path) {
  *   (e.g. `lib/upgrade/api.js` maps it to its own `sessionExpired` error code), and for
  *   probes that treat "unauthorized" as "feature unavailable".
  * - `credentials` — overrides the default `'include'`.
+ * - `baseUrl: ''` — for a URL that is already complete, or that points outside the base
+ *   (a helper such as `buildCreateUrl` returns a sibling path from the app root, which
+ *   the base-prefix guard cannot recognise as already-resolved).
  *
  * @param {string|null|undefined} baseUrl prefix for relative paths; `null`/`undefined`
  *   falls back to the base detected from the page location
@@ -111,11 +114,12 @@ export function resolveApiUrl(base, path) {
  */
 export function createApiFetch(baseUrl, getToken, onUnauthorized) {
   return async function apiFetch(path, options = {}) {
-    const { on401, credentials, headers: extraHeaders, ...rest } = options;
+    const { on401, credentials, baseUrl: baseUrlOverride, headers: extraHeaders, ...rest } = options;
     const token = getToken();
     const headers = { ...buildHeaders(token), ...extraHeaders };
     if (rest.body instanceof FormData) delete headers['Content-Type'];
-    const base = baseUrl != null ? baseUrl : defaultBaseUrl();
+    const configured = baseUrlOverride !== undefined ? baseUrlOverride : baseUrl;
+    const base = configured != null ? configured : defaultBaseUrl();
     const res = await fetch(resolveApiUrl(base, path), {
       ...rest,
       credentials: credentials || 'include',
@@ -151,6 +155,20 @@ export function registerApiSession({ getToken, onUnauthorized, baseUrl } = {}) {
   return function unregister() {
     if (ambientSession && ambientSession.getToken === getToken) ambientSession = null;
   };
+}
+
+/**
+ * Reads the ambient bearer token, or null when no session is registered. Lets
+ * {@link useApiFetch} keep working in a tree with no `AuthProvider` above it instead of
+ * throwing — see its own doc comment for why that matters.
+ */
+export function getAmbientToken() {
+  return ambientSession ? ambientSession.getToken() : null;
+}
+
+/** Fires the ambient logout handler, if one is registered. */
+export function notifyAmbientUnauthorized() {
+  ambientSession?.onUnauthorized();
 }
 
 /** Test seam: drops the ambient session so suites do not leak one into the next. */

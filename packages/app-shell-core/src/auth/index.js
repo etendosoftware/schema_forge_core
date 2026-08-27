@@ -1,7 +1,8 @@
-export { AuthProvider, useAuth } from './AuthContext.jsx';
+export { AuthProvider, useAuth, useAuthOptional } from './AuthContext.jsx';
 export {
   createApiFetch, apiFetch, authHeaders, buildHeaders, detectBaseUrl, isTokenExpired,
   registerApiSession, resetApiSessionForTests, resolveApiUrl,
+  getAmbientToken, notifyAmbientUnauthorized,
 } from './api.js';
 export { createLocalAuthStorage, createMemoryAuthStorage, normalizeAuthSession } from './session.js';
 export { LogoutRoute } from './LogoutRoute.jsx';

@@ -167,6 +167,15 @@ export function AuthProvider({ children, storage, initialSession, onSessionChang
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 }
 
+/**
+ * Same as {@link useAuth}, but returns `null` instead of throwing when there is no
+ * `AuthProvider` above. For infrastructure that must not force every consumer's test to
+ * mount a provider — `useApiFetch` is the one caller today.
+ */
+export function useAuthOptional() {
+  return useContext(AuthContext);
+}
+
 export function useAuth() {
   const ctx = useContext(AuthContext);
   if (!ctx) throw new Error('useAuth must be used within AuthProvider');

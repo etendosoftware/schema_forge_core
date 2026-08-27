@@ -189,11 +189,22 @@ describe('createApiFetch', () => {
     } finally { f.restore(); }
   });
 
+  it('lets one call opt out of the base URL for an already-complete URL', async () => {
+    const f = stubFetch();
+    try {
+      await createApiFetch('/api/product', () => null, () => {})(
+        '/api/price-list/priceList', { baseUrl: '' },
+      );
+      assert.equal(f.calls[0].url, '/api/price-list/priceList');
+    } finally { f.restore(); }
+  });
+
   it('does not leak its own options through to fetch', async () => {
     const f = stubFetch();
     try {
-      await createApiFetch('', () => null, () => {})('/x', { on401: 'ignore' });
+      await createApiFetch('', () => null, () => {})('/x', { on401: 'ignore', baseUrl: '' });
       assert.equal('on401' in f.calls[0].options, false);
+      assert.equal('baseUrl' in f.calls[0].options, false);
     } finally { f.restore(); }
   });
 
