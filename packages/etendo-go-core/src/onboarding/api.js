@@ -32,6 +32,12 @@ export const AUTH_ERROR_UI_KEYS = {
   // ETP-4798 — email ownership confirmation.
   EMAIL_NOT_VERIFIED: 'onboardingEmailNotVerified',
   EMAIL_VERIFY_INVALID: 'onboardingEmailVerifyInvalid',
+  // AUTH-07 / ETP-5022 — change-password failures. These used to reach the user as the
+  // backend's raw English text because ChangePasswordDialog preferred error.userMessage
+  // over this table.
+  CHANGE_PASSWORD_MISSING_CREDENTIALS: 'onboardingChangePasswordMissingCredentials',
+  NO_LOCAL_PASSWORD: 'onboardingNoLocalPassword',
+  INVALID_CURRENT_PASSWORD: 'onboardingInvalidCurrentPassword',
 };
 
 const SSO_PAYLOAD_BUILDERS = {
