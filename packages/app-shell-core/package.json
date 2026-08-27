@@ -33,7 +33,8 @@
     "./components/import/*": "./src/components/import/*",
     "./lib/*": "./src/lib/*",
     "./pages/*": "./src/pages/*",
-    "./components/contract-ui/*": "./src/components/contract-ui/*"
+    "./components/contract-ui/*": "./src/components/contract-ui/*",
+    "./webmcp": "./src/webmcp/index.js"
   },
   "files": [
     "src",
