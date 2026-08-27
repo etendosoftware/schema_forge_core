@@ -143,6 +143,17 @@ describe('createApiFetch', () => {
     } finally { f.restore(); }
   });
 
+  it('omits Content-Type on a bodyless request and sets it when there is a body', async () => {
+    const f = stubFetch();
+    try {
+      const request = createApiFetch('', () => 'tok', () => {});
+      await request('/x');
+      assert.equal(f.calls[0].options.headers['Content-Type'], undefined);
+      await request('/x', { method: 'POST', body: '{}' });
+      assert.equal(f.calls[1].options.headers['Content-Type'], 'application/json');
+    } finally { f.restore(); }
+  });
+
   it('lets the caller add headers without losing the canonical ones', async () => {
     const f = stubFetch();
     try {
@@ -199,12 +210,21 @@ describe('createApiFetch', () => {
     } finally { f.restore(); }
   });
 
+  it('lets a plain module pass its own token instead of the session one', async () => {
+    const f = stubFetch();
+    try {
+      await createApiFetch('', () => 'session-tok', () => {})('/x', { token: 'explicit' });
+      assert.equal(f.calls[0].options.headers['Authorization'], 'Bearer explicit');
+    } finally { f.restore(); }
+  });
+
   it('does not leak its own options through to fetch', async () => {
     const f = stubFetch();
     try {
-      await createApiFetch('', () => null, () => {})('/x', { on401: 'ignore', baseUrl: '' });
+      await createApiFetch('', () => null, () => {})('/x', { on401: 'ignore', baseUrl: '', token: 't' });
       assert.equal('on401' in f.calls[0].options, false);
       assert.equal('baseUrl' in f.calls[0].options, false);
+      assert.equal('token' in f.calls[0].options, false);
     } finally { f.restore(); }
   });
 

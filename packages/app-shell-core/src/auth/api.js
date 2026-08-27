@@ -103,6 +103,10 @@ export function resolveApiUrl(base, path) {
  *   (e.g. `lib/upgrade/api.js` maps it to its own `sessionExpired` error code), and for
  *   probes that treat "unauthorized" as "feature unavailable".
  * - `credentials` — overrides the default `'include'`.
+ * - `token` — use this bearer token instead of the session's. For a plain module that is
+ *   handed a token by its caller (importers, descriptors, report builders): the request
+ *   stays explicit about whose token it uses, and the module keeps working with no session
+ *   registered at all.
  * - `baseUrl: ''` — for a URL that is already complete, or that points outside the base
  *   (a helper such as `buildCreateUrl` returns a sibling path from the app root, which
  *   the base-prefix guard cannot recognise as already-resolved).
@@ -114,9 +118,17 @@ export function resolveApiUrl(base, path) {
  */
 export function createApiFetch(baseUrl, getToken, onUnauthorized) {
   return async function apiFetch(path, options = {}) {
-    const { on401, credentials, baseUrl: baseUrlOverride, headers: extraHeaders, ...rest } = options;
-    const token = getToken();
-    const headers = { ...buildHeaders(token), ...extraHeaders };
+    const {
+      on401, credentials, baseUrl: baseUrlOverride, token: tokenOverride,
+      headers: extraHeaders, ...rest
+    } = options;
+    const token = tokenOverride !== undefined ? tokenOverride : getToken();
+    // A bodyless request (GET, DELETE) gets authHeaders, which deliberately omits
+    // Content-Type — declaring a body type on a request that has no body is wrong, and
+    // it also keeps a migrated call site byte-identical on the wire to the raw `fetch`
+    // it replaced.
+    const canonical = rest.body === undefined ? authHeaders(token) : buildHeaders(token);
+    const headers = { ...canonical, ...extraHeaders };
     if (rest.body instanceof FormData) delete headers['Content-Type'];
     const configured = baseUrlOverride !== undefined ? baseUrlOverride : baseUrl;
     const base = configured != null ? configured : defaultBaseUrl();
