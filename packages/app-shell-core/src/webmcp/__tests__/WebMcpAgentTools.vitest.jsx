@@ -39,7 +39,8 @@ describe('WebMcpAgentTools', () => {
   it('opens the consumer chat through the registered tool', async () => {
     render(<WebMcpAgentTools enabled getContext={() => ({})} navigate={navigate} openChat={openChat} />);
     const tool = registerTool.mock.calls.find(([item]) => item.name === 'open_application_chat')[0];
-    await expect(tool.execute({})).resolves.toEqual({ ok: true });
+    await expect(tool.execute({ message: 'Open sales orders' })).resolves.toEqual({ ok: true });
     expect(openChat).toHaveBeenCalledTimes(1);
+    expect(openChat).toHaveBeenCalledWith({ message: 'Open sales orders' });
   });
 });

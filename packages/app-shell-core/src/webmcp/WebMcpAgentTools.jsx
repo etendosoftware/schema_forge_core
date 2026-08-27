@@ -7,6 +7,12 @@ const NAVIGATE_SCHEMA = {
   required: ['route'],
   properties: { route: { type: 'string', description: 'An internal route beginning with /.' } },
 };
+const CHAT_SCHEMA = {
+  type: 'object',
+  properties: {
+    message: { type: 'string', description: 'Optional message to send to the application chat.' },
+  },
+};
 const READ_ONLY = { readOnlyHint: true };
 const READ_ONLY_UNTRUSTED = { readOnlyHint: true, untrustedContentHint: true };
 
@@ -36,14 +42,14 @@ export function WebMcpAgentTools({ enabled = false, getContext, navigate, openCh
     inputSchema: NAVIGATE_SCHEMA, annotations: READ_ONLY, execute: navigateTo,
   });
 
-  const showChat = useCallback(async () => {
-    if (typeof openChat === 'function') await openChat();
+  const showChat = useCallback(async (input = {}) => {
+    if (typeof openChat === 'function') await openChat(input);
     return { ok: true };
   }, [openChat]);
   useWebMcpTool({
     enabled, name: 'open_application_chat', title: 'Open application chat',
     description: 'Opens the host application chat for the user to continue the interaction.',
-    inputSchema: OBJECT_SCHEMA, annotations: READ_ONLY, execute: showChat,
+    inputSchema: CHAT_SCHEMA, annotations: READ_ONLY, execute: showChat,
   });
 
   return null;
