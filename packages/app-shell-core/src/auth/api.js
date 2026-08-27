@@ -1,14 +1,27 @@
 import { getStoredLocale } from '../i18n/useLocaleState.js';
 
 export function detectBaseUrl() {
+  // Guarded so this module can be imported outside a browser. `plain node --test` runs
+  // (the root `npm test` glob) import modules that transitively reach this file, and an
+  // unguarded window access made the whole module unloadable there (ETP-5022).
+  if (typeof window === 'undefined') return '';
   const path = window.location.pathname;
   const webIdx = path.indexOf('/web/');
   if (webIdx !== -1) return path.substring(0, webIdx);
   return import.meta.env?.VITE_API_BASE || '';
 }
 
-const DEFAULT_BASE_URL = detectBaseUrl();
-console.log('[api.js] DEFAULT_BASE_URL:', JSON.stringify(DEFAULT_BASE_URL), 'pathname:', window.location.pathname, 'VITE_API_BASE:', import.meta.env?.VITE_API_BASE);
+/**
+ * Resolved on first use rather than at import time, for the same reason: evaluating it
+ * while the module loads would run browser-only code in every consumer, test runner
+ * included. Cached afterwards, so the browser behaviour is unchanged - one resolution
+ * per session.
+ */
+let cachedBaseUrl;
+function defaultBaseUrl() {
+  if (cachedBaseUrl === undefined) cachedBaseUrl = detectBaseUrl();
+  return cachedBaseUrl;
+}
 
 /**
  * Headers for a READ request (GET): auth + the UI locale, and deliberately no
@@ -58,7 +71,7 @@ export function createApiFetch(baseUrl, getToken, onUnauthorized) {
     const headers = { ...buildHeaders(token), ...options.headers };
     // FormData requires the browser to set Content-Type with the multipart boundary
     if (options.body instanceof FormData) delete headers['Content-Type'];
-    const res = await fetch(`${baseUrl != null ? baseUrl : DEFAULT_BASE_URL}${path}`, {
+    const res = await fetch(`${baseUrl != null ? baseUrl : defaultBaseUrl()}${path}`, {
       ...options,
       credentials: 'include',
       headers,
