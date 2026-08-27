@@ -46,9 +46,26 @@ const SSO_PAYLOAD_BUILDERS = {
   }),
 };
 
+// ETP-5022: mirrors app-shell-core's useLocaleState STORAGE_KEY. Duplicated on purpose —
+// this package has no dependency on app-shell-core, and adding one to read a single
+// localStorage key would couple the onboarding flow to the whole app shell.
+const LOCALE_STORAGE_KEY = 'schema-forge-locale';
+const DEFAULT_LOCALE = 'es_ES';
+
+function storedLocale() {
+  try {
+    return localStorage.getItem(LOCALE_STORAGE_KEY) || DEFAULT_LOCALE;
+  } catch {
+    return DEFAULT_LOCALE;
+  }
+}
+
 export function buildAuthHeaders(token) {
   return {
     'Content-Type': 'application/json',
+    // ETP-5022: without this the backend resolves AD_Message text in the account's AD
+    // language, so auth errors came back in English while the UI was in Spanish.
+    'Accept-Language': storedLocale(),
     ...(token ? { Authorization: `Bearer ${token}` } : {}),
   };
 }
@@ -177,14 +194,14 @@ export async function changePassword(fetchImpl, baseUrl, token, form) {
 
 export async function fetchAccount(fetchImpl, baseUrl, token) {
   const response = await fetchImpl(`${baseUrl}/sws/go/me`, {
-    headers: token ? { Authorization: `Bearer ${token}` } : {},
+    headers: buildAuthHeaders(token),
   });
   return readJsonResponse(response, ONBOARDING_ERROR_CODES.invalidSession);
 }
 
 export async function fetchEnvironments(fetchImpl, baseUrl, token) {
   const response = await fetchImpl(`${baseUrl}/sws/go/environments`, {
-    headers: token ? { Authorization: `Bearer ${token}` } : {},
+    headers: buildAuthHeaders(token),
   });
   const data = await readJsonResponse(response, ONBOARDING_ERROR_CODES.loadEnvironmentsFailed);
   return data.environments || [];
@@ -193,14 +210,14 @@ export async function fetchEnvironments(fetchImpl, baseUrl, token) {
 export async function loginEnvironment(fetchImpl, baseUrl, token, env) {
   const userId = encodeURIComponent(env.adminUserId);
   const response = await fetchImpl(`${baseUrl}/sws/go/login?userId=${userId}`, {
-    headers: token ? { Authorization: `Bearer ${token}` } : {},
+    headers: buildAuthHeaders(token),
   });
   return readJsonResponse(response, ONBOARDING_ERROR_CODES.environmentLoginFailed);
 }
 
 export async function fetchOnboardingDraft(fetchImpl, baseUrl, token) {
   const response = await fetchImpl(`${baseUrl}/sws/go/onboarding/draft`, {
-    headers: token ? { Authorization: `Bearer ${token}` } : {},
+    headers: buildAuthHeaders(token),
   });
   const data = await readJsonResponse(response, ONBOARDING_ERROR_CODES.invalidSession);
   return data.draft || null;

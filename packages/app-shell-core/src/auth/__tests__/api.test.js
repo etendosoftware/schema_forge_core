@@ -9,6 +9,35 @@ import { fileURLToPath } from 'node:url';
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const src = readFileSync(join(__dirname, '..', 'api.js'), 'utf8');
 
+describe('authHeaders', () => {
+  // ETP-5022: the canonical READ-request header builder. Selectors that hand-rolled
+  // `{ Authorization: Bearer <token> }` omitted Accept-Language, so the backend
+  // silently fell back to the user's AD language and returned reference data
+  // (countries, UoMs) in English while the UI was in Spanish.
+  it('is exported as a named function', () => {
+    assert.match(src, /export function authHeaders/);
+  });
+
+  it('sets Accept-Language from getStoredLocale so the backend honors the UI locale', () => {
+    const body = src.slice(src.indexOf('export function authHeaders'));
+    const fn = body.slice(0, body.indexOf('\n}'));
+    assert.match(fn, /'Accept-Language': getStoredLocale\(\)/);
+  });
+
+  it('omits Content-Type — a GET has no body, so declaring one is wrong', () => {
+    const body = src.slice(src.indexOf('export function authHeaders'));
+    const fn = body.slice(0, body.indexOf('\n}'));
+    assert.doesNotMatch(fn, /Content-Type/);
+  });
+
+  it('sets Authorization with a Bearer prefix only when a token is given', () => {
+    const body = src.slice(src.indexOf('export function authHeaders'));
+    const fn = body.slice(0, body.indexOf('\n}'));
+    assert.match(fn, /if \(token\)/);
+    assert.match(fn, /Authorization.*Bearer/s);
+  });
+});
+
 describe('buildHeaders', () => {
   it('is exported as a named function', () => {
     assert.match(src, /export function buildHeaders/);
