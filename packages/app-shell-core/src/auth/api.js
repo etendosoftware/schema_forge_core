@@ -1,4 +1,5 @@
 import { getStoredLocale } from '../i18n/useLocaleState.js';
+import { getRecordVersion, rememberRecordVersion } from '../lib/recordVersions.js';
 
 export function detectBaseUrl() {
   // Guarded so this module can be imported outside a browser. `plain node --test` runs
@@ -88,6 +89,116 @@ export function resolveApiUrl(base, path) {
 }
 
 /**
+ * The verbs that update an existing record, and therefore need the optimistic-locking token
+ * (ETP-5073 / DOC-04). POST is absent on purpose: a create has no prior version to conflict with.
+ */
+const VERSIONED_WRITE_METHODS = new Set(['PUT', 'PATCH']);
+
+/**
+ * Best-effort record id from a request path: the last non-empty segment, query string removed.
+ *
+ * Covers the NEO record shape (`/spec/entity/<id>`) for a body that does not repeat its own id.
+ * A path whose tail is not an id (a collection, an `/action/<name>` sub-route) simply produces a
+ * key nothing was ever remembered under, so the lookup misses and no token is injected — the
+ * guard against injecting into a non-record write is the cache miss itself, not this parse.
+ */
+function recordIdFromPath(path) {
+  if (typeof path !== 'string') return null;
+  const withoutQuery = path.split('?')[0].split('#')[0];
+  const segments = withoutQuery.split('/').filter(Boolean);
+  return segments.length ? segments[segments.length - 1] : null;
+}
+
+/**
+ * Adds the remembered `updated` to an update's body so the server's concurrency check can run.
+ *
+ * Every guard here fails OPEN (returns the request untouched) rather than guessing, because this
+ * runs on every request in the app and most of them are not record updates:
+ *
+ * - not PUT/PATCH — nothing to guard;
+ * - a non-string body (`FormData`, a blob) — an upload, not a JSON record write;
+ * - a body that is not a JSON object — not a record;
+ * - the caller already set `updated` — an explicit value always wins over a remembered one;
+ * - no remembered version for this id — either the record was never read through this client, or
+ *   the endpoint is not a NEO record at all (an OAuth2 PUT, a fiscal-config PUT). This is the
+ *   guard that keeps the injection from corrupting an unrelated write: an id we never saw has no
+ *   entry, so nothing is added.
+ *
+ * When the token is genuinely missing the request goes out without it and the server answers 400
+ * `missing_updated`. That is deliberate: it is a loud, actionable failure naming the remedy, and
+ * the alternative — writing without a concurrency check — is the defect this ticket exists to fix.
+ */
+function withRecordVersion(path, rest) {
+  const method = String(rest.method || 'GET').toUpperCase();
+  if (!VERSIONED_WRITE_METHODS.has(method)) return rest;
+  if (typeof rest.body !== 'string') return rest;
+  let parsed;
+  try {
+    parsed = JSON.parse(rest.body);
+  } catch {
+    return rest;
+  }
+  if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed)) return rest;
+  if (parsed.updated) return rest;
+  const version = getRecordVersion(parsed.id ?? recordIdFromPath(path));
+  if (version === undefined) {
+    warnUnversionedUpdate(method, path);
+    return rest;
+  }
+  return { ...rest, body: JSON.stringify({ ...parsed, updated: version }) };
+}
+
+/**
+ * Development-only notice that an update is going out with no concurrency token.
+ *
+ * Two very different situations reach here and only one is a defect, which is why this warns
+ * instead of throwing: the endpoint may legitimately not be a NEO record (an OAuth2 PUT, a
+ * fiscal-config PUT), or it may be a record the panel never read — the case ETP-5073 has to
+ * find. The server answers 400 `missing_updated` for the second, so the failure is already
+ * loud in QA; this makes it identifiable at the exact call site while a developer is looking,
+ * rather than only as a network error after the fact.
+ *
+ * Gated on `DEV` being explicitly true rather than on `PROD` being false: outside Vite (a plain
+ * `node --test` run) `import.meta.env` is undefined, and a `!PROD` check would treat that as
+ * "development" and print this on every suite that exercises an update.
+ *
+ * Silent in production: it says nothing a user can act on, and the legitimate non-record writes
+ * would make it noise.
+ */
+function warnUnversionedUpdate(method, path) {
+  if (import.meta.env?.DEV !== true) return;
+  // eslint-disable-next-line no-console
+  console.warn(
+    `[ETP-5073] ${method} ${path} is going out without an \`updated\` token. If this is a NEO `
+    + 'record, the server will refuse it with 400 missing_updated: the panel needs to read the '
+    + 'record (so its version is remembered) before writing it. If it is not a NEO record, '
+    + 'ignore this.',
+  );
+}
+
+/**
+ * Remembers the version of the record a successful write returned, so a second edit of the same
+ * record in one sitting does not replay the token the first edit consumed (which the server would
+ * correctly reject as a conflict, against a change the user themself just made).
+ *
+ * Reads a CLONE of the response: the caller still owns the original body and must be able to
+ * `json()` it. Entirely best-effort — a 204, a non-JSON body or an unexpected envelope leaves the
+ * cache as it was, and the next write falls back to the loud 400/409 path.
+ */
+function harvestWrittenVersion(res) {
+  // `clone` is guarded, not assumed: a real `Response` always has it, but a test that stubs
+  // `fetch` with a plain `{ ok, json }` object legitimately does not, and harvesting is an
+  // optimisation — it must never be the reason a caller's request throws.
+  if (!res?.ok || typeof res.clone !== 'function') return;
+  res.clone().json().then((data) => {
+    const record = data?.response?.data?.[0] ?? data;
+    rememberRecordVersion(record);
+  }).catch(() => {
+    // No body, not JSON, or a shape we do not recognise. Nothing to remember.
+  });
+}
+
+/**
  * The canonical way to make an authenticated request.
  *
  * On top of `fetch` it guarantees the four things every hand-rolled call site had to
@@ -132,11 +243,17 @@ export function createApiFetch(baseUrl, getToken, onUnauthorized) {
     if (rest.body instanceof FormData) delete headers['Content-Type'];
     const configured = baseUrlOverride !== undefined ? baseUrlOverride : baseUrl;
     const base = configured != null ? configured : defaultBaseUrl();
+    // ETP-5073 / DOC-04: the optimistic-locking token is attached here, not at the ~41 call sites
+    // that issue an update. See `withRecordVersion` for why every guard fails open.
+    const withVersion = withRecordVersion(path, rest);
     const res = await fetch(resolveApiUrl(base, path), {
-      ...rest,
+      ...withVersion,
       credentials: credentials || 'include',
       headers,
     });
+    if (VERSIONED_WRITE_METHODS.has(String(rest.method || '').toUpperCase())) {
+      harvestWrittenVersion(res);
+    }
     if (res.status === 401 && on401 !== 'ignore') {
       onUnauthorized?.();
       throw new Error('Unauthorized');
