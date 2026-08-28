@@ -7,6 +7,13 @@
  */
 import { describe, it } from 'node:test';
 import { strict as assert } from 'node:assert';
+import { readFileSync } from 'node:fs';
+import { fileURLToPath } from 'node:url';
+
+const REPORT_RENDER_SRC = readFileSync(
+  fileURLToPath(new URL('../src/report-render.js', import.meta.url)),
+  'utf8',
+);
 
 // Replicate parameterizeQuery (not exported from report-render.js)
 function parameterizeQuery(sql, { clientId, orgId }) {
@@ -143,6 +150,59 @@ describe('report-render', () => {
     it('ignores unknown flags', () => {
       const opts = parseArgs(['--unknown', 'value', '--artifact', 'r']);
       assert.equal(opts.artifact, 'r');
+    });
+  });
+
+  describe('PDF payload — page-number footer (ETP-5013)', () => {
+    // This standalone debug CLI is hand-kept in sync with the two real
+    // serving engines (report-api.js / server.js), which both have full
+    // behavioral coverage for the same chrome-pdf payload — see
+    // `report-api-pdf-chrome-payload.test.js` (schema_forge) and
+    // `server-pdf-chrome-payload.test.js` (this repo). report-render.js is
+    // not require()-able without triggering a live DB connection at import
+    // time, so this suite asserts against the real source text instead.
+    function extractChromeBlock(src) {
+      const match = src.match(/if \(recipe === 'chrome-pdf'\) \{\s*const isLandscape[\s\S]*?\};\s*\}/);
+      return match?.[0];
+    }
+
+    it('locates the chrome-pdf payload block', () => {
+      assert.ok(extractChromeBlock(REPORT_RENDER_SRC), 'could not find the chrome-pdf payload block');
+    });
+
+    it('bumps marginBottom to 14mm', () => {
+      const block = extractChromeBlock(REPORT_RENDER_SRC);
+      assert.match(block, /marginBottom: '14mm'/);
+    });
+
+    it('leaves the other Chrome margins and format untouched', () => {
+      const block = extractChromeBlock(REPORT_RENDER_SRC);
+      assert.match(block, /format: 'A4'/);
+      assert.match(block, /marginTop: '10mm'/);
+      assert.match(block, /marginLeft: '10mm'/);
+      assert.match(block, /marginRight: '10mm'/);
+    });
+
+    it('enables displayHeaderFooter with an empty header template', () => {
+      const block = extractChromeBlock(REPORT_RENDER_SRC);
+      assert.match(block, /displayHeaderFooter: true/);
+      assert.match(block, /headerTemplate: '<span><\/span>'/);
+    });
+
+    it('builds the footer with hardcoded English "Printed on"/"Page" labels + a formatted date', () => {
+      const block = extractChromeBlock(REPORT_RENDER_SRC);
+      assert.match(block, /footerTemplate:[\s\S]*Printed on \$\{printedOnStr\}/);
+      assert.match(block, /footerTemplate:[\s\S]*Page <span class="pageNumber">/);
+    });
+
+    it('never shows a page total — Classic\'s own footer only shows "Page N" (ETP-5013)', () => {
+      const block = extractChromeBlock(REPORT_RENDER_SRC);
+      assert.doesNotMatch(block, /totalPages/);
+    });
+
+    it('formats the printed-on date as DD/MM/YYYY via Intl.DateTimeFormat en-GB', () => {
+      const block = extractChromeBlock(REPORT_RENDER_SRC);
+      assert.match(block, /new Intl\.DateTimeFormat\('en-GB', \{ day: '2-digit', month: '2-digit', year: 'numeric' \}\)/);
     });
   });
 });

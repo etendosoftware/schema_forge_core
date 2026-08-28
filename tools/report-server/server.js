@@ -29,6 +29,8 @@ import { listReportDescriptors } from '../../cli/src/report-descriptor.js';
 import { pickLabel, pickUiStrings, buildContractLabels } from '../../cli/src/report-i18n.js';
 import { resolveGrouping, buildNestedGroups, buildAccountReportTree } from '../../cli/src/report-grouping.js';
 import { applyPlaceholders } from '../../cli/src/report-sql.js';
+import { filterAndTransformParams } from '../../cli/src/report-filters.js';
+import { hydrateDocumentBranding, resolveCompanyLogoDataUrl } from '../../cli/src/report-branding.js';
 
 const _require = createRequire(import.meta.url);
 const __dirname = dirname(fileURLToPath(import.meta.url));
@@ -43,6 +45,21 @@ const ETENDO_URL = process.env.ETENDO_URL || 'http://localhost:8080/etendo';
 
 const ARTIFACTS_DIR = resolve(__dirname, '../../artifacts');
 const ROOT = resolve(ARTIFACTS_DIR, '..');
+const REPORT_PARTIALS_DIR = resolve(ROOT, 'templates', 'reports');
+
+// `{{> document-branding}}` string-replace expansion (ETP-4998 / ETP-5013
+// follow-up) — ported from the Vite dev plugin (report-api.js), which was the
+// ONLY engine that ever had this. Without it, a print-* template's raw
+// `{{> document-branding}}` text reaches Handlebars.compile() unexpanded —
+// and Handlebars throws "The partial document-branding could not be found"
+// for an unregistered `{{> }}` reference (verified), it does not render
+// blank. Not a native Handlebars partial on purpose (see report-api.js's own
+// comment): this keeps the jsreport payload a single self-contained string,
+// no partial registration needed on jsreport's side either.
+function expandReportPartials(templateContent) {
+  const brandingPartial = readFileSync(join(REPORT_PARTIALS_DIR, 'document-branding.hbs'), 'utf8');
+  return templateContent.replace(/\{\{>\s*document-branding\s*\}\}/g, brandingPartial);
+}
 
 function getDbConfig() {
   const cfg = {
@@ -120,7 +137,7 @@ function listReports() {
 // Data fetching
 // ---------------------------------------------------------------------------
 
-async function fetchReportData(reportId, { limit, authToken, params = {} } = {}) {
+async function fetchReportData(reportId, { limit, authToken, params = {}, locale } = {}) {
   const contractPath = join(ARTIFACTS_DIR, reportId, 'report-contract.json');
   const contract = JSON.parse(readFileSync(contractPath, 'utf8'));
 
@@ -131,7 +148,15 @@ async function fetchReportData(reportId, { limit, authToken, params = {} } = {})
     const neoBody = { ...contract.neo.body, ...params };
     const neoRes = await fetch(neoUrl, {
       method: contract.neo.method || 'POST',
-      headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${authToken}` },
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${authToken}`,
+        // Same as the dev plugin's copy (report-api.js) — see its comment for the
+        // full rationale (ETP-5013). Kept byte-identical in behaviour on purpose:
+        // a header sent only by the dev engine would translate reports locally and
+        // silently leave every server rendering the wrong language.
+        ...(locale ? { 'Accept-Language': locale } : {}),
+      },
       body: JSON.stringify(neoBody),
     });
     if (!neoRes.ok) {
@@ -141,7 +166,27 @@ async function fetchReportData(reportId, { limit, authToken, params = {} } = {})
     const data = await neoRes.json();
     let rows = extractRowsFromData(data, contract, limit);
     let neoMeta = extractNeoMeta(contract, data);
-    return { rows, contract, neoMeta };
+
+    // Company logo (ETP-5013) — missed in the first pass: this branch has no
+    // DB access at all (NEO does the data fetch remotely), so the SQL/Jasper
+    // branch's orgId-based lookup below never ran for the 4 NEO-sourced
+    // listing reports (Aging of Payables/Receivables, Tax Report, Inventory
+    // Stock Report) — the logo silently never resolved for any of them. Opens
+    // a short-lived pool just for this lookup, same per-request-Pool pattern
+    // every other branch already uses.
+    const pg = await import('pg');
+    const logoPool = new pg.default.Pool(getDbConfig());
+    let companyLogoDataUrl;
+    try {
+      const clientId = getClientIdFromToken(`Bearer ${authToken}`) || '0';
+      companyLogoDataUrl = await resolveCompanyLogoDataUrl(logoPool, {
+        clientId, orgId: params.orgId, authToken, etendoBase: ETENDO_URL,
+      });
+    } finally {
+      await logoPool.end();
+    }
+
+    return { rows, contract, neoMeta, companyLogoDataUrl };
   }
 
   // Document type (header + lines + taxes)
@@ -156,8 +201,26 @@ async function fetchReportData(reportId, { limit, authToken, params = {} } = {})
         }
         return q;
       };
-      const headerResult = await pool.query(replace(contract.sql.header));
-      const header = headerResult.rows[0] || {};
+      // Company logo (ETP-4998 / ETP-5013 follow-up) — this branch used to
+      // read the header SQL as-is, with no org_logo_id and no branding call
+      // at all. Ported from the Vite dev plugin (report-api.js), which was
+      // the ONLY engine that ever had this: every print-* document rendered
+      // through THIS server threw "The partial document-branding could not
+      // be found" (verified: Handlebars throws on an unregistered `{{> }}`,
+      // it doesn't render blank) because expandReportPartials() below never
+      // ran either. Same fallback as report-api.js: only auto-inject the
+      // subquery when the contract's own header SQL doesn't already expose
+      // org_logo_id itself.
+      const headerSql = replace(contract.sql.header);
+      const brandedHeaderSql = headerSql.includes('org_logo_id')
+        ? headerSql
+        : headerSql.replace(/^SELECT\s+/i,
+          'SELECT (SELECT oi.your_company_document_image FROM ad_orginfo oi WHERE oi.ad_org_id = org.ad_org_id) AS org_logo_id, ');
+      const headerResult = await pool.query(brandedHeaderSql);
+      const header = await hydrateDocumentBranding(headerResult.rows[0] || {}, {
+        authToken,
+        etendoBase: process.env.ETENDO_URL || 'http://localhost:8080/etendo',
+      });
       const linesResult = await pool.query(replace(contract.sql.lines));
       const lines = linesResult.rows;
       let taxes = [];
@@ -172,7 +235,7 @@ async function fetchReportData(reportId, { limit, authToken, params = {} } = {})
   }
 
   // SQL / Jasper path
-  let sql = await buildReportSql(contract, reportId, authToken, params);
+  let sql = await buildReportSql(contract, reportId, authToken, params, locale);
 
   sql = injectDateFilters(contract, params, sql);
 
@@ -198,15 +261,24 @@ async function fetchReportData(reportId, { limit, authToken, params = {} } = {})
     let openingRows = null;
     if (contract.sql?.openingQuery) {
       openingRows = (await pool.query(
-        applyPlaceholders(contract.sql.openingQuery, { clientId, params, contract }))).rows;
+        applyPlaceholders(contract.sql.openingQuery, { clientId, params, contract, locale }))).rows;
     }
     let operandRows = null;
     if (contract.sql?.operandsQuery) {
       operandRows = (await pool.query(
-        applyPlaceholders(contract.sql.operandsQuery, { clientId, params, contract }))).rows;
+        applyPlaceholders(contract.sql.operandsQuery, { clientId, params, contract, locale }))).rows;
     }
 
-    return { rows, contract, openingRows, operandRows };
+    // Company logo for listing reports (ETP-5013) — same shared orgId/clientId
+    // lookup as report-api.js: no `header` object exists for listing reports,
+    // so this falls back to the client's own logo when the report has no
+    // `orgId` filter (e.g. Inventory Stock Report, Order Not Shipped).
+    const companyLogoDataUrl = await resolveCompanyLogoDataUrl(pool, {
+      clientId, orgId: params.orgId, authToken,
+      etendoBase: process.env.ETENDO_URL || 'http://localhost:8080/etendo',
+    });
+
+    return { rows, contract, openingRows, operandRows, companyLogoDataUrl };
   } finally {
     await pool.end();
   }
@@ -248,7 +320,7 @@ function applyDateFilters(dateParams, params, contract, sql, extraClauses) {
   }
 }
 
-async function buildReportSql(contract, reportId, authToken, params) {
+async function buildReportSql(contract, reportId, authToken, params, locale) {
   let sql = contract.sql?.query || null;
 
   if (!sql && contract.jasper?.originalFile) {
@@ -263,7 +335,7 @@ async function buildReportSql(contract, reportId, authToken, params) {
   if (!sql) throw new Error(`No data source configured for report '${reportId}'`);
 
   const clientId = getClientIdFromToken(`Bearer ${authToken}`) || '0';
-  return applyPlaceholders(sql, { clientId, params, contract });
+  return applyPlaceholders(sql, { clientId, params, contract, locale });
 }
 
 
@@ -338,8 +410,8 @@ async function renderReport(renderMatch, req, res) {
 
   try {
     const authToken = (req.headers.authorization || '').replace(/^Bearer\s+/i, '');
-    const result = await fetchReportData(reportId, { limit, authToken, params });
-    const { contract, documentData, neoMeta = {} } = result;
+    const result = await fetchReportData(reportId, { limit, authToken, params, locale });
+    const { contract, documentData, neoMeta = {}, companyLogoDataUrl } = result;
     const {
       rows, groupLabel, descriptionLabel, dimensionLabel, dimensionField, tbGroups, openingRows,
     } = resolveReportData(result, params, locale);
@@ -347,7 +419,7 @@ async function renderReport(renderMatch, req, res) {
     const activeFilters = filterAndTransformParams(params, contract, locale);
 
     const artifactDir = join(ARTIFACTS_DIR, reportId);
-    const templateContent = readFileSync(join(artifactDir, 'template.hbs'), 'utf8');
+    const templateContent = expandReportPartials(readFileSync(join(artifactDir, 'template.hbs'), 'utf8'));
     const helpersPath = join(artifactDir, 'helpers.js');
     const helpersCode = loadHelpersFromFile(helpersPath);
     const cssPath = join(ROOT, 'templates', 'reports', 'base.css');
@@ -369,7 +441,14 @@ async function renderReport(renderMatch, req, res) {
     const groups = (!documentData && Array.isArray(rows))
       ? buildNestedGroups(rows, dimensionField, openingRows)
       : null;
-    const templateData = buildTemplateData(documentData, css, { title, activeFilters, params, recordCount, totals, groupLabel, descriptionLabel, neoMeta, rows, locale, ui, labels, dimensionLabel, dimensionField, groups, tbGroups });
+    // isInteractive (ETP-5013) — true only for the on-screen preview (the
+    // app's own iframe, where a drill-down span's onclick postMessage reaches
+    // a listening parent window). PDF/Excel/CSV are static exports where the
+    // same onclick does nothing, so link-styled (blue/underlined) drill-down
+    // controls only render that way when this is true — see report-*'s own
+    // `{{#if meta.isInteractive}}` guard around each `.xxx-link` CSS rule.
+    const isInteractive = format === 'html' || format === 'preview';
+    const templateData = buildTemplateData(documentData, css, { title, activeFilters, params, recordCount, totals, groupLabel, descriptionLabel, neoMeta, rows, locale, ui, labels, dimensionLabel, dimensionField, groups, tbGroups, companyLogoDataUrl, isInteractive });
     await injectDocumentQr(documentData, templateData);
     // HTML: render with Handlebars locally
     if (format === 'html') {
@@ -389,9 +468,28 @@ async function renderReport(renderMatch, req, res) {
       data: templateData,
     };
     if (recipe === 'chrome-pdf') {
+      // "Printed on <date>" + "Page N" footer (ETP-5013), matching Classic's own
+      // JasperReports footer layout exactly (verified against a real Classic PDF
+      // export). headerTemplate/footerTemplate are plain Puppeteer HTML, NOT
+      // Handlebars — jsreport's chrome-pdf recipe forwards them straight to
+      // Chrome's page.pdf(), so the label/date text below is interpolated with
+      // plain JS before the request is built; only `pageNumber` is a live
+      // per-page value Chrome itself replaces (Classic doesn't show a page total
+      // either, so neither do we). headerTemplate is an empty span on purpose:
+      // displayHeaderFooter alone would otherwise show Chrome's default header
+      // (page URL + system date). Same shape as the Vite dev plugin (report-api.js).
+      const printedOnDate = new Date(templateData.meta.generatedAt);
+      const printedOnStr = isNaN(printedOnDate.getTime()) ? '' :
+        new Intl.DateTimeFormat('en-GB', { day: '2-digit', month: '2-digit', year: 'numeric' }).format(printedOnDate);
       payload.template.chrome = {
         landscape: contract.orientation === 'landscape' || params.showLandscape === 'true',
-        format: 'A4', marginTop: '10mm', marginBottom: '10mm', marginLeft: '10mm', marginRight: '10mm',
+        // marginBottom bumped from 10mm to 14mm (ETP-5013) to leave room for
+        // the footer below — otherwise Chrome's native footer can overlap the
+        // last table row on a full page.
+        format: 'A4', marginTop: '10mm', marginBottom: '14mm', marginLeft: '10mm', marginRight: '10mm',
+        displayHeaderFooter: true,
+        headerTemplate: '<span></span>',
+        footerTemplate: `<div style="width:100%;font-size:8px;color:#94a3b8;font-family:Arial,sans-serif;padding:0 10mm;display:flex;justify-content:space-between;box-sizing:border-box;"><span>${ui.printedOn} ${printedOnStr}</span><span>${ui.page} <span class="pageNumber"></span></span></div>`,
       };
     }
 
@@ -485,36 +583,19 @@ server.listen(PORT, () => {
   console.log(`[report-server] ETENDO_URL=${ETENDO_URL}`);
   console.log(`[report-server] ARTIFACTS_DIR=${ARTIFACTS_DIR}`);
 });
-function buildTemplateData(documentData, css, { title, activeFilters, params, recordCount, totals, groupLabel, descriptionLabel, neoMeta, rows, locale, ui, labels, dimensionLabel, dimensionField, groups, tbGroups }) {
+function buildTemplateData(documentData, css, { title, activeFilters, params, recordCount, totals, groupLabel, descriptionLabel, neoMeta, rows, locale, ui, labels, dimensionLabel, dimensionField, groups, tbGroups, companyLogoDataUrl, isInteractive }) {
   // `locale`/`ui`/`labels` go into BOTH branches on purpose: print-* document
   // reports render their own headings from meta.labels just like listings do,
   // and that branch is the easy one to forget.
   if (documentData) {
-    return { css, meta: { title, generatedAt: new Date().toISOString(), filters: activeFilters, params, locale, ui, labels }, header: documentData.header, lines: documentData.lines, taxes: documentData.taxes };
+    return { css, meta: { title, generatedAt: new Date().toISOString(), filters: activeFilters, params, locale, ui, labels, isInteractive }, header: documentData.header, lines: documentData.lines, taxes: documentData.taxes };
   }
-  return { css, meta: { title, generatedAt: new Date().toISOString(), recordCount, filters: activeFilters, params, locale, ui, labels, totals, groupLabel, descriptionLabel, dimensionLabel, dimensionField, groups, tbGroups, ...neoMeta }, rows };
+  // companyLogoDataUrl (ETP-5013) only applies to this branch — document
+  // reports carry their own logo on `header.companyLogoDataUrl` instead, set
+  // above by hydrateDocumentBranding() before documentData was built.
+  return { css, meta: { title, generatedAt: new Date().toISOString(), recordCount, filters: activeFilters, params, locale, ui, labels, totals, groupLabel, descriptionLabel, dimensionLabel, dimensionField, groups, tbGroups, companyLogoDataUrl, isInteractive, ...neoMeta }, rows };
 }
 
-
-function filterAndTransformParams(params, contract, locale = 'en_US') {
-  return Object.entries(params)
-    .filter(([k, v]) => v && v !== '' && !k.startsWith('_display_'))
-    .map(([k, v]) => {
-      const paramDef = contract.parameters?.find(p => p.name === k);
-      let displayValue = params['_display_' + k] || v;
-      if (k === 'groupBy') {
-        const dimParam = (contract.parameters || []).find(p => p.groupByValue === v);
-        displayValue = pickLabel(dimParam?.label, locale, v);
-      }
-      if (typeof displayValue === 'string' && displayValue.includes(' | '))
-        displayValue = displayValue.split(' | ').filter(Boolean).join(', ');
-      if (paramDef?.type === 'date' && /^\d{4}-\d{2}-\d{2}$/.test(displayValue)) {
-        const [y, m, d] = displayValue.split('-');
-        displayValue = `${d}/${m}/${y}`;
-      }
-      return { label: pickLabel(paramDef?.label, locale, k), value: displayValue };
-    });
-}
 
 function readCssFile(cssPath) {
   return existsSync(cssPath) ? readFileSync(cssPath, 'utf8') : '';
@@ -554,6 +635,7 @@ async function fetchReportSelectors(selectorMatch, url, req, res) {
       product: { select: `SELECT m_product_id AS id, value AS "searchKey", name, value || ' - ' || name AS label`, fromWhere: `FROM m_product WHERE isactive='Y' ${byClient('ad_client_id')} AND (name ILIKE $1 OR value ILIKE $1)`, orderBy: 'ORDER BY value, name' },
       warehouse: { select: `SELECT m_warehouse_id AS id, name, name AS label`, fromWhere: `FROM m_warehouse WHERE isactive='Y' ${byClient('ad_client_id')} AND name ILIKE $1`, orderBy: 'ORDER BY name' },
       project: { select: `SELECT c_project_id AS id, name, name AS label`, fromWhere: `FROM c_project WHERE isactive='Y' ${byClient('ad_client_id')} AND name ILIKE $1`, orderBy: 'ORDER BY name' },
+      costcenter: { select: `SELECT c_costcenter_id AS id, name, name AS label`, fromWhere: `FROM c_costcenter WHERE isactive='Y' ${byClient('ad_client_id')} AND name ILIKE $1`, orderBy: 'ORDER BY name' },
       org: { select: `SELECT ad_org_id AS id, name, name AS label`, fromWhere: `FROM ad_org WHERE isactive='Y' AND ad_org_id != '0' ${byClient('ad_client_id')} AND name ILIKE $1`, orderBy: 'ORDER BY name' },
       account: { select: `SELECT ev.value AS id, ev.value || ' - ' || ev.name AS name, ev.value || ' - ' || ev.name AS label`, fromWhere: `FROM c_elementvalue ev WHERE ev.isactive='Y' AND ev.issummary='N' ${byClient('ev.ad_client_id')} AND (ev.value ILIKE $1 OR ev.name ILIKE $1)`, orderBy: 'ORDER BY ev.value' },
       acctschema: { select: `SELECT c_acctschema_id AS id, name, name AS label`, fromWhere: `FROM c_acctschema WHERE isactive='Y' ${byClient('ad_client_id')} AND name ILIKE $1`, orderBy: 'ORDER BY name' },
