@@ -218,7 +218,7 @@ export async function changePassword(fetchImpl, baseUrl, csrfToken, form) {
 export async function fetchAccount(fetchImpl, baseUrl) {
   const response = await fetchImpl(`${baseUrl}/sws/go/me`, {
     credentials: 'include',
-    headers: buildAuthHeaders(csrfToken),
+    headers: buildAuthHeaders(),
   });
   return readJsonResponse(response, ONBOARDING_ERROR_CODES.invalidSession);
 }
@@ -226,7 +226,7 @@ export async function fetchAccount(fetchImpl, baseUrl) {
 export async function fetchEnvironments(fetchImpl, baseUrl) {
   const response = await fetchImpl(`${baseUrl}/sws/go/environments`, {
     credentials: 'include',
-    headers: buildAuthHeaders(csrfToken),
+    headers: buildAuthHeaders(),
   });
   const data = await readJsonResponse(response, ONBOARDING_ERROR_CODES.loadEnvironmentsFailed);
   return data.environments || [];
@@ -253,7 +253,7 @@ export async function loginEnvironment(fetchImpl, baseUrl, csrfToken, env) {
 export async function fetchOnboardingDraft(fetchImpl, baseUrl) {
   const response = await fetchImpl(`${baseUrl}/sws/go/onboarding/draft`, {
     credentials: 'include',
-    headers: buildAuthHeaders(csrfToken),
+    headers: buildAuthHeaders(),
   });
   const data = await readJsonResponse(response, ONBOARDING_ERROR_CODES.invalidSession);
   return data.draft || null;

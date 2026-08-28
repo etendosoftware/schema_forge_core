@@ -241,18 +241,24 @@ describe('onboarding session API — identity cluster (ETP-4576)', () => {
 // This is RED against the current api.js implementation (still Bearer-only, no credentials).
 describe('onboarding session API — resource-access cluster (ETP-4576)', () => {
   describe('buildAuthHeaders', () => {
-    it('returns only Content-Type when no csrfToken is provided', () => {
-      assert.deepEqual(buildAuthHeaders(), { 'Content-Type': 'application/json' });
-      assert.deepEqual(buildAuthHeaders(null), { 'Content-Type': 'application/json' });
-      assert.deepEqual(buildAuthHeaders(undefined), { 'Content-Type': 'application/json' });
+    // ETP-5022 added Accept-Language here: without it the backend resolves AD_Message
+    // text in the account's language, so auth errors arrived in English under a Spanish
+    // UI. It rides along with every call; what matters to ETP-4576 is unchanged — no
+    // Authorization, and X-Go-CSRF only when a proof is held.
+    it('carries no credential header when no csrfToken is provided', () => {
+      for (const headers of [buildAuthHeaders(), buildAuthHeaders(null), buildAuthHeaders(undefined)]) {
+        assert.equal(headers['Content-Type'], 'application/json');
+        assert.ok(headers['Accept-Language']);
+        assert.equal('Authorization' in headers, false);
+        assert.equal('X-Go-CSRF' in headers, false);
+      }
     });
 
     it('adds X-Go-CSRF (never Authorization) when a csrfToken is provided', () => {
       const headers = buildAuthHeaders('csrf-abc');
-      assert.deepEqual(headers, {
-        'Content-Type': 'application/json',
-        'X-Go-CSRF': 'csrf-abc',
-      });
+      assert.equal(headers['Content-Type'], 'application/json');
+      assert.equal(headers['X-Go-CSRF'], 'csrf-abc');
+      assert.ok(headers['Accept-Language']);
       assert.equal('Authorization' in headers, false);
     });
   });
