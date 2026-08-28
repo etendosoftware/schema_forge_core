@@ -183,8 +183,10 @@ describe('fetchCookieSession — the platform session fetcher (ETP-4576)', () =>
     assert.match(src, /export async function fetchCookieSession\s*\(\s*baseUrl\s*=/);
   });
 
-  it('defaults its baseUrl to the module-level DEFAULT_BASE_URL', () => {
-    assert.match(src, /export async function fetchCookieSession\s*\(\s*baseUrl\s*=\s*DEFAULT_BASE_URL\s*\)/);
+  // ETP-5022 replaced the module-level constant with a lazy resolver: reading
+  // `window` at import time made this module unloadable under plain `node --test`.
+  it('defaults its baseUrl to the lazily resolved base', () => {
+    assert.match(src, /export async function fetchCookieSession\s*\(\s*baseUrl\s*=\s*defaultBaseUrl\(\)\s*\)/);
   });
 
   it('requests the /sws/go/session endpoint', () => {

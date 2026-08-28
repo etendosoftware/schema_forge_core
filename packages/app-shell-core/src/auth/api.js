@@ -1,5 +1,5 @@
 import { getStoredLocale } from '../i18n/useLocaleState.js';
-import { readCredentialHeaders, writeHeaders } from './sessionCredentials.js';
+import { jsonHeaders, readCredentialHeaders, writeHeaders } from './sessionCredentials.js';
 
 export function detectBaseUrl() {
   // Guarded so this module can be imported outside a browser. `plain node --test` runs
@@ -34,11 +34,12 @@ function defaultBaseUrl() {
  * SILENT no-op and the backend falls back to the user's AD language — so
  * selectors come back in English with no error anywhere (ETP-4685, ETP-5022).
  *
- * Always use this (or {@link buildHeaders} for writes) instead of hand-rolling
- * `{ Authorization: `Bearer ${token}` }` — that omission is exactly the defect
- * this helper exists to prevent, and a repo guardrail test enforces it.
+ * Always use this (or {@link buildWriteHeaders} for writes) instead of hand-building
+ * a credential header. Which one the request carries is not this function's call:
+ * sessionCredentials owns that decision, so a call site never learns whether the
+ * active scheme is the bearer token or the `__Host-` cookie. A guardrail test keeps
+ * this module free of any credential literal for the same reason.
  *
- * @param {string} [token] bearer token; omitted when absent
  * @returns {Record<string,string>} headers for a read request
  */
 export function authHeaders() {
@@ -55,16 +56,17 @@ export function authHeaders() {
  * {@link authHeaders} sends, plus `Content-Type: application/json`.
  */
 export function buildHeaders() {
-  // Unsafe methods carry the scheme's proof: under `cookie` that is `X-Go-CSRF`, and
-  // without it the backend answers 403. jsonHeaders/writeHeaders already own the
-  // Content-Type, so it is not re-added here.
+  return { ...jsonHeaders(), 'Accept-Language': getStoredLocale() };
+}
+
+// The write-path pair of buildHeaders: same locale, plus whatever proof the active
+// scheme requires on unsafe methods. Never use buildHeaders for a POST/PUT/PATCH/DELETE
+// — under the cookie scheme that omits the CSRF proof and the backend answers 403.
+export function buildWriteHeaders() {
   return { ...writeHeaders(), 'Accept-Language': getStoredLocale() };
 }
 
-/** Explicit write-headers name, kept for hosts that ask for it by intent. */
-export function buildWriteHeaders() {
-  return buildHeaders();
-}
+const UNSAFE_METHODS = new Set(['POST', 'PUT', 'PATCH', 'DELETE']);
 
 /**
  * Resolves a request URL against the client's base URL.
@@ -117,29 +119,30 @@ export function resolveApiUrl(base, path) {
  * @param {() => (string|null)} getToken reads the current bearer token
  * @param {() => void} onUnauthorized invoked once when a 401 is not ignored
  */
-export function createApiFetch(baseUrl, getToken, onUnauthorized) {
+export function createApiFetch(baseUrl, getCsrfToken, onUnauthorized) {
   return async function apiFetch(path, options = {}) {
     const {
-      on401, credentials, baseUrl: baseUrlOverride, token: tokenOverride,
+      on401, credentials, baseUrl: baseUrlOverride, token: _tokenOverride,
       headers: extraHeaders, ...rest
     } = options;
-    const token = tokenOverride !== undefined ? tokenOverride : getToken();
-    // A bodyless request (GET, DELETE) gets authHeaders, which deliberately omits
-    // Content-Type — declaring a body type on a request that has no body is wrong, and
-    // it also keeps a migrated call site byte-identical on the wire to the raw `fetch`
-    // it replaced.
-    // Chosen by METHOD, not by whether there is a body: a bodyless DELETE is still an
-    // unsafe request and needs the write proof, which authHeaders does not carry. It
-    // must not declare a Content-Type either, hence the third shape.
-    const unsafe = /^(POST|PUT|PATCH|DELETE)$/i.test(rest.method || 'GET');
+    const method = (options.method || 'GET').toUpperCase();
+    const unsafe = UNSAFE_METHODS.has(method);
+    // ETP-5022 — a bodyless request declares no Content-Type. ETP-4576 — an unsafe one
+    // still carries the scheme's proof. Independent: a bodyless DELETE needs both.
     let canonical;
-    if (rest.body !== undefined) canonical = buildHeaders();
-    else if (unsafe) {
-      const { 'Content-Type': _contentType, ...proof } = writeHeaders();
-      canonical = { ...proof, 'Accept-Language': getStoredLocale() };
+    if (rest.body === undefined) {
+      canonical = unsafe
+        ? { ...writeHeaders(), 'Accept-Language': getStoredLocale() }
+        : authHeaders();
+      delete canonical['Content-Type'];
+    } else {
+      canonical = unsafe ? buildWriteHeaders() : buildHeaders();
     }
-    else canonical = authHeaders();
     const headers = { ...canonical, ...extraHeaders };
+    if (unsafe) {
+      const csrfToken = getCsrfToken();
+      if (csrfToken) headers['X-Go-CSRF'] = csrfToken;
+    }
     if (rest.body instanceof FormData) delete headers['Content-Type'];
     const configured = baseUrlOverride !== undefined ? baseUrlOverride : baseUrl;
     const base = configured != null ? configured : defaultBaseUrl();
@@ -149,7 +152,7 @@ export function createApiFetch(baseUrl, getToken, onUnauthorized) {
       headers,
     });
     if (res.status === 401 && on401 !== 'ignore') {
-      onUnauthorized?.();
+      onUnauthorized();
       throw new Error('Unauthorized');
     }
     return res;
@@ -219,7 +222,7 @@ export function apiFetch(path, options = {}) {
 // no Authorization header, since the browser never holds a bearer token.
 // Fails closed with null on the 401 for "no session", a network error, or an
 // unparsable body — every one of those means "not authenticated".
-export async function fetchCookieSession(baseUrl = DEFAULT_BASE_URL) {
+export async function fetchCookieSession(baseUrl = defaultBaseUrl()) {
   try {
     const res = await fetch(`${baseUrl}/sws/go/session`, {
       method: 'GET',
@@ -241,7 +244,7 @@ export async function fetchCookieSession(baseUrl = DEFAULT_BASE_URL) {
 // the local logout has to proceed even if the network call fails, or a user who
 // asked to log out would stay stuck in the session. Returns whether the server
 // confirmed the revoke.
-export async function deleteCookieSession(csrfToken, baseUrl = DEFAULT_BASE_URL) {
+export async function deleteCookieSession(csrfToken, baseUrl = defaultBaseUrl()) {
   try {
     const headers = {};
     if (csrfToken) headers['X-Go-CSRF'] = csrfToken;

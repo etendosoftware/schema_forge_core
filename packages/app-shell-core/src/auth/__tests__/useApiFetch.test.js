@@ -38,13 +38,15 @@ describe('useApiFetch', () => {
 // slot from the in-memory csrfToken (AuthContext), not the legacy bearer
 // token. The bearer token is gone from this hook's job entirely.
 describe('useApiFetch — csrfToken wiring (ETP-4576)', () => {
-  it('reads csrfToken (not token) from useAuth()', () => {
-    assert.match(src, /const\s*\{[^}]*\bcsrfToken\b[^}]*\}\s*=\s*useAuth\(\)/);
+  // ETP-5022 moved this hook onto the optional context so a module used outside a
+  // provider still gets an authenticated request. What ETP-4576 asserts is unchanged:
+  // the value handed to createApiFetch is the csrfToken, never a client-held credential.
+  it('reads csrfToken (not token) off the auth context', () => {
+    assert.match(src, /csrfToken\s*=\s*auth\?\.csrfToken/);
   });
 
-  it('defines getCsrfToken returning csrfToken and passes it as createApiFetch\'s second argument', () => {
-    assert.match(src, /function\s+getCsrfToken\s*\(\s*\)\s*\{\s*return\s+csrfToken;?\s*\}/);
-    assert.match(src, /createApiFetch\(\s*baseUrl\s*,\s*getCsrfToken\s*,\s*logout\s*\)/);
+  it("passes csrfToken as createApiFetch's second argument", () => {
+    assert.match(src, /createApiFetch\(\s*\n?\s*baseUrl,\s*\n?\s*hasSession \? \(\) => csrfToken/);
   });
 
   it('never references a bare "token" as the value read from useAuth() for CSRF purposes', () => {
