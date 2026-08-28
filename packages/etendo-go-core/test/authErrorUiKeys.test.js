@@ -36,6 +36,11 @@ describe('AUTH_ERROR_UI_KEYS (ETP-4664)', () => {
       // ETP-4798 — email ownership confirmation.
       EMAIL_NOT_VERIFIED: 'onboardingEmailNotVerified',
       EMAIL_VERIFY_INVALID: 'onboardingEmailVerifyInvalid',
+      // ETP-5022 (AUTH-07) — change-password failures, previously surfaced as raw
+      // English server text.
+      CHANGE_PASSWORD_MISSING_CREDENTIALS: 'onboardingChangePasswordMissingCredentials',
+      NO_LOCAL_PASSWORD: 'onboardingNoLocalPassword',
+      INVALID_CURRENT_PASSWORD: 'onboardingInvalidCurrentPassword',
     };
     assert.deepEqual(AUTH_ERROR_UI_KEYS, expected);
   });

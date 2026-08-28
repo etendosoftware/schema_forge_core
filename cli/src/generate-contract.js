@@ -534,6 +534,11 @@ export function generateFrontendContract(schema, rules = []) {
       return {
         ...f,
         label: f.label ?? match.label,
+        // The underlying AD column, carried so the import dialog can resolve the field's
+        // label in the SESSION language (`useLabel(column)`). Without it the only labels
+        // available are the baked-English `label` and the always-Spanish first alias, so
+        // the downloaded CSV template came out in Spanish for every session.
+        column: f.column ?? match.column,
         // Importability is a window-level decision. A field may be mandatory in
         // the entity contract while still being legitimately omitted from a
         // partial import (for example, a company import with only legal name).

@@ -1,5 +1,6 @@
 import { createContext, useContext, useState, useCallback, useMemo, useRef, useEffect } from 'react';
 import { createLocalAuthStorage, normalizeAuthSession } from './session.js';
+import { registerApiSession } from './api.js';
 
 const AuthContext = createContext(null);
 
@@ -148,7 +149,31 @@ export function AuthProvider({ children, storage, initialSession, onSessionChang
     logout,
   }), [session, windowAccess, capabilities, setSession, selectRole, selectOrg, logout]);
 
+  // ETP-5022 — publishes the live session to the ambient `apiFetch` accessor, so a plain
+  // (non-React) module can make an authenticated request without its callers threading
+  // `token` and `apiBaseUrl` through every signature. Registered ONCE and reading through
+  // refs, deliberately: re-registering on every token change would churn the accessor for
+  // no gain, and a stale closure over `session` would hand out a logged-out token after a
+  // re-login.
+  const sessionRef = useRef(session);
+  sessionRef.current = session;
+  const logoutRef = useRef(logout);
+  logoutRef.current = logout;
+  useEffect(() => registerApiSession({
+    getToken: () => sessionRef.current.token,
+    onUnauthorized: () => logoutRef.current(),
+  }), []);
+
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
+}
+
+/**
+ * Same as {@link useAuth}, but returns `null` instead of throwing when there is no
+ * `AuthProvider` above. For infrastructure that must not force every consumer's test to
+ * mount a provider — `useApiFetch` is the one caller today.
+ */
+export function useAuthOptional() {
+  return useContext(AuthContext);
 }
 
 export function useAuth() {
