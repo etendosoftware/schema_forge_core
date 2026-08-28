@@ -16,6 +16,8 @@
  * matching logic itself.
  */
 
+import { getStoredLocale } from '../i18n/useLocaleState.js';
+
 /**
  * Resolve the base URL for webhook calls. We mirror the copilot detector —
  * strip off `/web/...` suffixes so the request targets Etendo's servlet root.
@@ -112,7 +114,14 @@ export async function simSearch({ token, entityName, items, minSimPercent = 30, 
     const res = await fetch(url, {
       method: 'GET',
       credentials: 'include',
-      headers: { Authorization: `Bearer ${token}` },
+      // The endpoint translates the search term out of the session language before
+      // matching (a Spanish 'España' scores 0.083 against the base-row 'Spain'), and the
+      // session language is whatever `NeoAuthenticator` reads off this header. Without it
+      // the backend falls back to the AD user's default language, so a Spanish UI run by a
+      // user whose AD default is en_US would silently get no translation at all. Every
+      // other NEO call already sends this via `buildHeaders`; this client built its own
+      // headers and was the one that did not.
+      headers: { Authorization: `Bearer ${token}`, 'Accept-Language': getStoredLocale() },
     });
     if (!res.ok) return Array(items.length).fill(null);
     const envelope = await res.json().catch(() => null);
