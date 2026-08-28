@@ -444,6 +444,30 @@ describe('apiFetch optimistic-locking token (ETP-5073)', () => {
     restore();
   });
 
+  it('never consumes the caller\'s body when clone() is not independent', async () => {
+    // A real Response.clone() gives an independent body, but a hand-rolled double may return
+    // `this`. Reading it here would consume the single-use json() the CALLER was about to read,
+    // starving the very request being decorated. Harvesting is worth nothing next to that.
+    const original = globalThis.fetch;
+    let jsonReads = 0;
+    const res = {
+      ok: true,
+      status: 200,
+      json: async () => { jsonReads += 1; return { response: { data: [{ id: 'REC1', updated: 'v2' }] } }; },
+    };
+    res.clone = () => res;   // the hazard: not a copy
+    globalThis.fetch = async () => res;
+    const answer = await createApiFetch('', () => 't', () => {})(
+      '/x/REC1', { method: 'PATCH', body: JSON.stringify({ a: 1 }) },
+    );
+    await new Promise(resolve => setTimeout(resolve, 0));
+    // The caller's read is the FIRST and only one.
+    await answer.json();
+    assert.equal(jsonReads, 1);
+    assert.equal(getRecordVersion('REC1'), undefined, 'nothing was harvested, deliberately');
+    globalThis.fetch = original;
+  });
+
   it('does not blow up when the response has no clone(), as a stubbed fetch may not', async () => {
     // Harvesting is an optimisation; it must never be the reason a caller's request throws.
     const original = globalThis.fetch;

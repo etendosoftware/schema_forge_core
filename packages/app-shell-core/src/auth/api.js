@@ -162,11 +162,16 @@ function withRecordVersion(path, rest) {
  * `node --test` run) `import.meta.env` is undefined, and a `!PROD` check would treat that as
  * "development" and print this on every suite that exercises an update.
  *
+ * `MODE` is checked too because Vitest sets `DEV: true, MODE: 'test'` — so the DEV gate alone
+ * still fired throughout the vitest suite, printing this into CI logs and adding a `console.warn`
+ * call that any test spying on `console.warn` has to tolerate.
+ *
  * Silent in production: it says nothing a user can act on, and the legitimate non-record writes
  * would make it noise.
  */
 function warnUnversionedUpdate(method, path) {
-  if (import.meta.env?.DEV !== true) return;
+  const env = import.meta.env;
+  if (env?.DEV !== true || env?.MODE === 'test') return;
   // eslint-disable-next-line no-console
   console.warn(
     `[ETP-5073] ${method} ${path} is going out without an \`updated\` token. If this is a NEO `
@@ -190,7 +195,13 @@ function harvestWrittenVersion(res) {
   // `fetch` with a plain `{ ok, json }` object legitimately does not, and harvesting is an
   // optimisation — it must never be the reason a caller's request throws.
   if (!res?.ok || typeof res.clone !== 'function') return;
-  res.clone().json().then((data) => {
+  const copy = res.clone();
+  // And the clone must be a genuinely INDEPENDENT body. A real `Response.clone()` always is, but
+  // a hand-rolled double may return `this` — and then reading it here consumes the single-use
+  // `json()` the caller was going to read, starving the very request we are decorating. Harvesting
+  // is worth nothing next to that, so an inseparable clone is simply skipped.
+  if (!copy || copy === res || typeof copy.json !== 'function') return;
+  copy.json().then((data) => {
     const record = data?.response?.data?.[0] ?? data;
     rememberRecordVersion(record);
   }).catch(() => {
