@@ -204,6 +204,9 @@ describe('simSearch credential handling', () => {
     assert.deepEqual(await simSearch({ entityName: '', items: ['Spain'] }), [null]);
     assert.deepEqual(await simSearch({ entityName: 'Country', items: [] }), []);
     assert.equal(calls.length, 0, 'neither case should reach the network');
+  });
+});
+
 describe('simSearch request', () => {
   /** Run `body` with `fetch`, `window` and `localStorage` stubbed, restoring them afterwards. */
   async function withBrowserStubs({ locale, respondWith }, body) {
@@ -242,7 +245,9 @@ describe('simSearch request', () => {
       assert.equal(result.id, 'C-1');
       assert.equal(calls.length, 1);
       assert.equal(calls[0].options.headers['Accept-Language'], 'es_ES');
-      assert.equal(calls[0].options.headers.Authorization, 'Bearer tok');
+      // ETP-4576 — the credential is the active scheme's, not the caller's token: under
+      // `cookie` there is none to send and the `__Host-` session carries the request.
+      assert.equal(calls[0].options.headers.Authorization, undefined);
     });
   });
 
@@ -262,11 +267,15 @@ describe('simSearch request', () => {
     });
   });
 
-  it('makes no request at all when token, entity or items are missing', async () => {
+  // ETP-4576 dropped the `!token` arm of this guard on purpose: under a cookie session
+  // no caller holds a token, so it cancelled every similarity search and returned the
+  // same all-nulls array a genuine no-match produces — silently, with no request on the
+  // wire. What still short-circuits is a missing entity or an empty item list, which
+  // are real "nothing to ask" cases. The sibling suite above covers the token case.
+  it('makes no request at all when entity or items are missing', async () => {
     await withBrowserStubs({ locale: 'es_ES', respondWith: oneSpain }, async (calls) => {
-      assert.deepEqual(await simSearch({ token: '', entityName: 'Country', items: ['x'] }), [null]);
-      assert.deepEqual(await simSearch({ token: 't', entityName: '', items: ['x'] }), [null]);
-      assert.deepEqual(await simSearch({ token: 't', entityName: 'Country', items: [] }), []);
+      assert.deepEqual(await simSearch({ entityName: '', items: ['x'] }), [null]);
+      assert.deepEqual(await simSearch({ entityName: 'Country', items: [] }), []);
       assert.equal(calls.length, 0);
     });
   });

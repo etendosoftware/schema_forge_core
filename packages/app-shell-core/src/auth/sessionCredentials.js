@@ -89,7 +89,12 @@ function resolveMode(mode, csrfToken) {
  * answers with garbage must degrade to the working scheme, not break every
  * request in the app.
  *
- * @param {{mode?: string, token?: string|null, csrfToken?: string|null}} next
+ * `token` accepts a function as well as a value. ETP-5022's registerApiSession reads
+ * the token on EVERY request so a re-login is picked up without re-registering, and
+ * storing a snapshot here would have quietly frozen it at whatever was held when the
+ * session was declared.
+ *
+ * @param {{mode?: string, token?: string|(() => string|null)|null, csrfToken?: string|null}} next
  */
 export function setSessionCredentials(next = {}) {
   current = {
@@ -111,6 +116,29 @@ export function getCredentialMode() {
   return current.mode;
 }
 
+/** The held CSRF proof, so a caller republishing credentials does not drop it. */
+export function getSessionCsrfToken() {
+  return current.csrfToken;
+}
+
+/**
+ * The credential a caller-supplied token would produce, for the one case where the
+ * token does not come from the session: a plain module handed a token by its caller
+ * (importers, descriptors, report builders — ETP-5022's `token` request option).
+ *
+ * Lives here rather than at the call site for the same reason as everything else in
+ * this module: the literal belongs to the scheme, so under `cookie` this is empty and
+ * the request authenticates with the cookie, exactly like every other one.
+ */
+export function credentialHeadersForToken(token) {
+  return current.mode === BEARER && token ? { Authorization: `Bearer ${token}` } : {};
+}
+
+/** Resolves `token`, which may have been published as a value or as a provider. */
+function currentToken() {
+  return typeof current.token === 'function' ? current.token() : current.token;
+}
+
 /**
  * Headers for safe methods (GET/HEAD).
  *
@@ -122,8 +150,9 @@ export function getCredentialMode() {
  */
 export function jsonHeaders() {
   const headers = { 'Content-Type': 'application/json' };
-  if (current.mode === BEARER && current.token) {
-    headers.Authorization = `Bearer ${current.token}`;
+  const token = currentToken();
+  if (current.mode === BEARER && token) {
+    headers.Authorization = `Bearer ${token}`;
   }
   return headers;
 }

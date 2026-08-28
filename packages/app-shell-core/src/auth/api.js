@@ -1,5 +1,13 @@
 import { getStoredLocale } from '../i18n/useLocaleState.js';
-import { jsonHeaders, readCredentialHeaders, writeHeaders } from './sessionCredentials.js';
+import {
+  credentialHeadersForToken,
+  getCredentialMode,
+  getSessionCsrfToken,
+  jsonHeaders,
+  readCredentialHeaders,
+  setSessionCredentials,
+  writeHeaders,
+} from './sessionCredentials.js';
 
 export function detectBaseUrl() {
   // Guarded so this module can be imported outside a browser. `plain node --test` runs
@@ -122,7 +130,7 @@ export function resolveApiUrl(base, path) {
 export function createApiFetch(baseUrl, getCsrfToken, onUnauthorized) {
   return async function apiFetch(path, options = {}) {
     const {
-      on401, credentials, baseUrl: baseUrlOverride, token: _tokenOverride,
+      on401, credentials, baseUrl: baseUrlOverride, token: tokenOverride,
       headers: extraHeaders, ...rest
     } = options;
     const method = (options.method || 'GET').toUpperCase();
@@ -138,7 +146,11 @@ export function createApiFetch(baseUrl, getCsrfToken, onUnauthorized) {
     } else {
       canonical = unsafe ? buildWriteHeaders() : buildHeaders();
     }
-    const headers = { ...canonical, ...extraHeaders };
+    const headers = {
+      ...canonical,
+      ...(tokenOverride ? credentialHeadersForToken(tokenOverride) : {}),
+      ...extraHeaders,
+    };
     if (unsafe) {
       const csrfToken = getCsrfToken();
       if (csrfToken) headers['X-Go-CSRF'] = csrfToken;
@@ -173,13 +185,31 @@ export function createApiFetch(baseUrl, getCsrfToken, onUnauthorized) {
 let ambientSession = null;
 
 export function registerApiSession({ getToken, onUnauthorized, baseUrl } = {}) {
+  const readToken = typeof getToken === 'function' ? getToken : () => null;
   ambientSession = {
-    getToken: typeof getToken === 'function' ? getToken : () => null,
+    getToken: readToken,
     onUnauthorized: typeof onUnauthorized === 'function' ? onUnauthorized : () => {},
     baseUrl,
   };
+  // ETP-4576 — declaring the session also publishes its credential to the one place
+  // that decides. The reader is handed over rather than its current value, so the
+  // token is still read on every request (ETP-5022) and a re-login is picked up
+  // without re-registering. The mode is left alone: under `cookie` this token is
+  // simply never consulted, which is what makes the preference switchable.
+  setSessionCredentials({
+    mode: getCredentialMode(),
+    token: readToken,
+    csrfToken: getSessionCsrfToken(),
+  });
   return function unregister() {
-    if (ambientSession && ambientSession.getToken === getToken) ambientSession = null;
+    if (ambientSession && ambientSession.getToken === getToken) {
+      ambientSession = null;
+      setSessionCredentials({
+        mode: getCredentialMode(),
+        token: null,
+        csrfToken: getSessionCsrfToken(),
+      });
+    }
   };
 }
 
@@ -200,6 +230,9 @@ export function notifyAmbientUnauthorized() {
 /** Test seam: drops the ambient session so suites do not leak one into the next. */
 export function resetApiSessionForTests() {
   ambientSession = null;
+  // Also drops the credential the session published: leaving it behind let one test's
+  // token authenticate the next one's supposedly anonymous request.
+  setSessionCredentials({ mode: getCredentialMode(), token: null, csrfToken: getSessionCsrfToken() });
 }
 
 /**

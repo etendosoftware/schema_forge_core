@@ -15,9 +15,11 @@ describe('useApiFetch', () => {
   it('centralizes token access through the session instead of props', () => {
     // `useAuthOptional` rather than `useAuth` since ETP-5022: the hook must not throw in a
     // tree with no AuthProvider, because it replaced a raw `fetch` in ~105 components whose
-    // tests render them bare. It still reads the token from the session, never from a prop.
+    // tests render them bare. It still reads the credential from the session, never from
+    // a prop — and since ETP-4576 what it reads is the csrfToken, the only thing the
+    // client holds once the session itself lives in the `__Host-` cookie.
     assert.match(src, /useAuthOptional\(\)/);
-    assert.match(src, /auth\?\.token/);
+    assert.match(src, /auth\?\.csrfToken/);
     assert.match(src, /createApiFetch/);
   });
 

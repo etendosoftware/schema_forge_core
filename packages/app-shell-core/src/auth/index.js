@@ -21,6 +21,7 @@ export {
   CREDENTIAL_MODES,
   credentialOptions,
   getCredentialMode,
+  getSessionCsrfToken,
   jsonHeaders,
   readCredentialHeaders,
   resetSessionCredentials,

@@ -3,6 +3,7 @@ import { strict as assert } from 'node:assert';
 import {
   createApiFetch, apiFetch, resolveApiUrl, registerApiSession, resetApiSessionForTests,
 } from '../api.js';
+import { CREDENTIAL_MODES, setSessionCredentials } from '../sessionCredentials.js';
 import { readFileSync } from 'node:fs';
 import { join, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -265,7 +266,8 @@ describe('createApiFetch', () => {
   it('sends the canonical headers, so Accept-Language is never missing', async () => {
     const f = stubFetch();
     try {
-      await createApiFetch('', () => 'tok', () => {})('/x');
+      setSessionCredentials({ mode: CREDENTIAL_MODES.bearer, token: 'tok' });
+      await createApiFetch('', () => null, () => {})('/x');
       assert.equal(f.calls[0].options.headers['Authorization'], 'Bearer tok');
       assert.ok(f.calls[0].options.headers['Accept-Language']);
     } finally { f.restore(); }
@@ -285,7 +287,8 @@ describe('createApiFetch', () => {
   it('lets the caller add headers without losing the canonical ones', async () => {
     const f = stubFetch();
     try {
-      await createApiFetch('', () => 'tok', () => {})('/x', { headers: { 'X-Extra': '1' } });
+      setSessionCredentials({ mode: CREDENTIAL_MODES.bearer, token: 'tok' });
+      await createApiFetch('', () => null, () => {})('/x', { headers: { 'X-Extra': '1' } });
       assert.equal(f.calls[0].options.headers['X-Extra'], '1');
       assert.equal(f.calls[0].options.headers['Authorization'], 'Bearer tok');
     } finally { f.restore(); }
