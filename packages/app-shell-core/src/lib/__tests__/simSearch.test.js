@@ -204,5 +204,70 @@ describe('simSearch credential handling', () => {
     assert.deepEqual(await simSearch({ entityName: '', items: ['Spain'] }), [null]);
     assert.deepEqual(await simSearch({ entityName: 'Country', items: [] }), []);
     assert.equal(calls.length, 0, 'neither case should reach the network');
+describe('simSearch request', () => {
+  /** Run `body` with `fetch`, `window` and `localStorage` stubbed, restoring them afterwards. */
+  async function withBrowserStubs({ locale, respondWith }, body) {
+    const saved = {
+      fetch: globalThis.fetch,
+      window: globalThis.window,
+      localStorage: globalThis.localStorage,
+    };
+    const calls = [];
+    globalThis.window = { location: { pathname: '/etendo/web/app/' } };
+    globalThis.localStorage = { getItem: () => locale };
+    globalThis.fetch = async (url, options) => {
+      calls.push({ url, options });
+      return { ok: true, json: async () => respondWith };
+    };
+    try {
+      return await body(calls);
+    } finally {
+      globalThis.fetch = saved.fetch;
+      globalThis.window = saved.window;
+      globalThis.localStorage = saved.localStorage;
+    }
+  }
+
+  const oneSpain = { item_0: { data: [{ id: 'C-1', name: 'Spain', similarity_percent: '100' }] } };
+
+  it('sends the UI locale as Accept-Language so the backend can translate the term', async () => {
+    // The endpoint rewrites a session-language term into its base-language name before
+    // matching, and reads the session language off this header (NeoAuthenticator applies it
+    // to the OBContext). Without the header the backend falls back to the AD user's default
+    // language, so a Spanish UI driven by an en_US user resolves nothing — which is the exact
+    // failure this header prevents. Every other NEO call sends it via `buildHeaders`; this
+    // client builds its own headers, so it needs its own guard.
+    await withBrowserStubs({ locale: 'es_ES', respondWith: oneSpain }, async (calls) => {
+      const [result] = await simSearch({ token: 'tok', entityName: 'Country', items: ['España'] });
+      assert.equal(result.id, 'C-1');
+      assert.equal(calls.length, 1);
+      assert.equal(calls[0].options.headers['Accept-Language'], 'es_ES');
+      assert.equal(calls[0].options.headers.Authorization, 'Bearer tok');
+    });
+  });
+
+  it('sends the term verbatim — translation is the backend\'s job, not this client\'s', async () => {
+    await withBrowserStubs({ locale: 'es_ES', respondWith: oneSpain }, async (calls) => {
+      await simSearch({ token: 'tok', entityName: 'Country', items: ['España'] });
+      const params = new URLSearchParams(calls[0].url.split('?')[1]);
+      assert.deepEqual(JSON.parse(params.get('items')), ['España']);
+      assert.equal(params.get('entityName'), 'Country');
+    });
+  });
+
+  it('follows the locale when the user switches language', async () => {
+    await withBrowserStubs({ locale: 'en_US', respondWith: oneSpain }, async (calls) => {
+      await simSearch({ token: 'tok', entityName: 'Country', items: ['Spain'] });
+      assert.equal(calls[0].options.headers['Accept-Language'], 'en_US');
+    });
+  });
+
+  it('makes no request at all when token, entity or items are missing', async () => {
+    await withBrowserStubs({ locale: 'es_ES', respondWith: oneSpain }, async (calls) => {
+      assert.deepEqual(await simSearch({ token: '', entityName: 'Country', items: ['x'] }), [null]);
+      assert.deepEqual(await simSearch({ token: 't', entityName: '', items: ['x'] }), [null]);
+      assert.deepEqual(await simSearch({ token: 't', entityName: 'Country', items: [] }), []);
+      assert.equal(calls.length, 0);
+    });
   });
 });

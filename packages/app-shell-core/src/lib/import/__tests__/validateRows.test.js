@@ -80,3 +80,53 @@ describe('validateRows', () => {
     assert.equal(results[1].row, rows[1]);
   });
 });
+
+describe('validateRow — ETP-4996: numeric format, descriptor errors, i18n', () => {
+  it('fails a row whose numeric cell is not a number', () => {
+    // IP-06: before this, "abc" in a price column sat in the Correctas tab until the
+    // user confirmed the import, and only then failed inside buildOperations.
+    const { valid, errors } = validateRow({ salesPrice: 'abc' }, { numericTargets: ['salesPrice'] });
+    assert.equal(valid, false);
+    assert.deepEqual(errors.map((e) => e.target), ['salesPrice']);
+  });
+
+  it('accepts a blank numeric cell — an optional price is not an error', () => {
+    assert.deepEqual(validateRow({ salesPrice: '' }, { numericTargets: ['salesPrice'] }).errors, []);
+  });
+
+  it('accepts the es-ES decimal comma and thousands separator', () => {
+    assert.deepEqual(validateRow({ salesPrice: '1.234,56' }, { numericTargets: ['salesPrice'] }).errors, []);
+  });
+
+  it('appends descriptor-supplied errors after the generic ones', () => {
+    const { valid, errors } = validateRow(
+      { name: '', productType: 'Nope' },
+      {
+        requiredTargets: ['name'],
+        extraErrors: [{ target: 'productType', message: 'not a valid type' }],
+      },
+    );
+    assert.equal(valid, false);
+    assert.deepEqual(errors.map((e) => e.target), ['name', 'productType']);
+  });
+
+  it('localizes every message through an injected translate', () => {
+    const translate = (key) => ({
+      importErrorRequiredGeneric: 'Falta un campo obligatorio.',
+      importErrorInvalidEmail: 'Correo no válido.',
+      importErrorNotANumber: 'No es un número.',
+    }[key] ?? key);
+    const { errors } = validateRow(
+      { name: '', email: 'nope', price: 'abc' },
+      { requiredTargets: ['name'], emailTargets: ['email'], numericTargets: ['price'], translate },
+    );
+    assert.deepEqual(errors.map((e) => e.message), [
+      'Falta un campo obligatorio.', 'Correo no válido.', 'No es un número.',
+    ]);
+  });
+
+  it('falls back to English when translate does not know the key', () => {
+    const { errors } = validateRow({ name: '' }, { requiredTargets: ['name'], translate: (k) => k });
+    assert.equal(errors[0].message, 'Required field is missing.');
+  });
+});

@@ -32,6 +32,12 @@ export const AUTH_ERROR_UI_KEYS = {
   // ETP-4798 — email ownership confirmation.
   EMAIL_NOT_VERIFIED: 'onboardingEmailNotVerified',
   EMAIL_VERIFY_INVALID: 'onboardingEmailVerifyInvalid',
+  // AUTH-07 / ETP-5022 — change-password failures. These used to reach the user as the
+  // backend's raw English text because ChangePasswordDialog preferred error.userMessage
+  // over this table.
+  CHANGE_PASSWORD_MISSING_CREDENTIALS: 'onboardingChangePasswordMissingCredentials',
+  NO_LOCAL_PASSWORD: 'onboardingNoLocalPassword',
+  INVALID_CURRENT_PASSWORD: 'onboardingInvalidCurrentPassword',
 };
 
 const SSO_PAYLOAD_BUILDERS = {
@@ -40,9 +46,28 @@ const SSO_PAYLOAD_BUILDERS = {
   }),
 };
 
+// ETP-5022: mirrors app-shell-core's useLocaleState STORAGE_KEY. Duplicated on purpose —
+// this package has no dependency on app-shell-core, and adding one to read a single
+// localStorage key would couple the onboarding flow to the whole app shell.
+const LOCALE_STORAGE_KEY = 'schema-forge-locale';
+const DEFAULT_LOCALE = 'es_ES';
+
+function storedLocale() {
+  try {
+    return localStorage.getItem(LOCALE_STORAGE_KEY) || DEFAULT_LOCALE;
+  } catch {
+    return DEFAULT_LOCALE;
+  }
+}
+
 export function buildAuthHeaders(csrfToken) {
   return {
     'Content-Type': 'application/json',
+    // ETP-5022: without this the backend resolves AD_Message text in the account's AD
+    // language, so auth errors came back in English while the UI was in Spanish.
+    'Accept-Language': storedLocale(),
+    // ETP-4576: the session is the `__Host-` cookie the browser sends on its own, so
+    // what travels here is the proof of intent, never a credential.
     ...(csrfToken ? { 'X-Go-CSRF': csrfToken } : {}),
   };
 }
@@ -193,6 +218,7 @@ export async function changePassword(fetchImpl, baseUrl, csrfToken, form) {
 export async function fetchAccount(fetchImpl, baseUrl) {
   const response = await fetchImpl(`${baseUrl}/sws/go/me`, {
     credentials: 'include',
+    headers: buildAuthHeaders(csrfToken),
   });
   return readJsonResponse(response, ONBOARDING_ERROR_CODES.invalidSession);
 }
@@ -200,18 +226,21 @@ export async function fetchAccount(fetchImpl, baseUrl) {
 export async function fetchEnvironments(fetchImpl, baseUrl) {
   const response = await fetchImpl(`${baseUrl}/sws/go/environments`, {
     credentials: 'include',
+    headers: buildAuthHeaders(csrfToken),
   });
   const data = await readJsonResponse(response, ONBOARDING_ERROR_CODES.loadEnvironmentsFailed);
   return data.environments || [];
 }
 
 export async function loginEnvironment(fetchImpl, baseUrl, csrfToken, env) {
-  const headers = { 'Content-Type': 'application/json' };
-  if (csrfToken) headers['X-Go-CSRF'] = csrfToken;
+  // ETP-4576 — POSTs to the session endpoint instead of GET /sws/go/login?userId=:
+  // picking an environment now updates the backend-managed session rather than minting
+  // a token for the client to hold. Headers come from buildAuthHeaders so this call
+  // keeps ETP-5022's Accept-Language like every other one.
   const response = await fetchImpl(`${baseUrl}/sws/go/session/environment`, {
     method: 'POST',
     credentials: 'include',
-    headers,
+    headers: buildAuthHeaders(csrfToken),
     body: JSON.stringify({
       userId: env.adminUserId,
       ...(env.roleId ? { roleId: env.roleId } : {}),
@@ -224,6 +253,7 @@ export async function loginEnvironment(fetchImpl, baseUrl, csrfToken, env) {
 export async function fetchOnboardingDraft(fetchImpl, baseUrl) {
   const response = await fetchImpl(`${baseUrl}/sws/go/onboarding/draft`, {
     credentials: 'include',
+    headers: buildAuthHeaders(csrfToken),
   });
   const data = await readJsonResponse(response, ONBOARDING_ERROR_CODES.invalidSession);
   return data.draft || null;

@@ -1,0 +1,22 @@
+{{! Own copy of schema_forge's templates/reports/document-branding.hbs (ETP-5013)
+    — same duplication pattern as base.css / helpers/report-html-helpers.js in
+    this directory: code that lives only in the functional repo never reaches
+    this repo's report-server (tools/report-server/server.js), so this file
+    must be kept in manual sync with the functional repo's copy. }}
+{{#if header.companyLogoDataUrl}}
+<img
+  src="{{header.companyLogoDataUrl}}"
+  alt="{{header.org_name}}"
+  class="document-brand-logo"
+  style="max-width: 42mm; max-height: 18mm; object-fit: contain; object-position: left center; display: block; margin-bottom: 2mm;"
+>
+{{else}}
+{{#if meta.companyLogoDataUrl}}
+<img
+  src="{{meta.companyLogoDataUrl}}"
+  alt="{{meta.title}}"
+  class="document-brand-logo"
+  style="max-width: 42mm; max-height: 18mm; object-fit: contain; object-position: left center; display: block; margin-bottom: 2mm;"
+>
+{{/if}}
+{{/if}}

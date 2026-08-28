@@ -152,38 +152,64 @@ export function foldAggregateRows(rows, dimensionField) {
     // column totals (they stopped summing to 0).
     .filter(a => Math.abs(a.opening_balance) > 1e-9
       || Math.abs(a.activity_debit) > 1e-9 || Math.abs(a.activity_credit) > 1e-9)
+    // Account FIRST, dimension second — matches Classic's real Trial Balance
+    // layout (ReportTrialBalanceAdvancedView.jrxml): one block PER ACCOUNT,
+    // with that account's dimension breakdown nested inside and the account
+    // itself as the block's closing total row (ETP-5013 — corrects the
+    // initial ETP-4898 implementation, which nested accounts inside a
+    // dimension card instead; that inversion made every dimension's "total"
+    // net to 0, since summing an unrelated set of accounts for one contact
+    // has no accounting meaning — only summing one account's activity across
+    // its dimension breakdown does).
     .sort((a, b) => {
+      const av = (a.account_no || '').toLowerCase();
+      const bv = (b.account_no || '').toLowerCase();
+      if (av !== bv) return av < bv ? -1 : 1;
       if (dimensionField) {
         const dv = (a.dimensionValue || '').toLowerCase();
         const dw = (b.dimensionValue || '').toLowerCase();
         if (dv !== dw) return dv < dw ? -1 : 1;
       }
-      const av = (a.account_no || '').toLowerCase();
-      const bv = (b.account_no || '').toLowerCase();
-      if (av < bv) return -1;
-      return av > bv ? 1 : 0;
+      return 0;
     });
 }
 
 /**
- * Nests already-folded, already-sorted `foldAggregateRows` output into
- * `{dimensionValue, accounts}` containers (ETP-4898) — the bordered "dim-group"
- * visual container Libro Mayor uses when grouping by a dimension. Unlike
- * `buildNestedGroups`, each "account" here is just the row itself: Sumas y
- * Saldos rows are already fully aggregated per account (no per-movement list
- * to nest inside), so no further folding is needed, just bucketing by the
- * dimension value each consecutive run of rows already shares.
+ * Nests already-folded, already-account-sorted `foldAggregateRows` output
+ * into `{account_no, account_id, account_name, dimensionRows, ...totals}`
+ * containers (ETP-5013) — ONE BLOCK PER ACCOUNT, its dimension breakdown
+ * nested inside, closing with that account's own totals. This is the
+ * account-outer / dimension-inner shape Classic's real Trial Balance report
+ * renders (verified against a real Classic PDF export) — the exact inverse
+ * of the dimension-outer / account-inner shape this function replaced
+ * (formerly `groupAggregateRowsByDimension`), which is what made every
+ * dimension's own "total" row net to 0 (summing unrelated accounts has no
+ * accounting meaning).
+ *
+ * Each account's totals are the sum of its `dimensionRows` — the same
+ * `TRIAL_BALANCE_AMOUNT_FIELDS` `foldAggregateRows` already folds by, summed
+ * one level up. A `dimensionValue` of `''` (rows with no dimension value set,
+ * e.g. movements never assigned a contact) is its own row, not merged into
+ * another — Classic renders it as a blank-name row, never dropped.
  */
-export function groupAggregateRowsByDimension(rows) {
+export function groupAggregateRowsByAccount(rows) {
   const groups = [];
   let current = null;
   for (const r of rows) {
-    const dimValue = r.dimensionValue ?? '';
-    if (!current || current.dimensionValue !== dimValue) {
-      current = { dimensionValue: dimValue, accounts: [] };
+    if (!current || current.account_no !== r.account_no) {
+      current = {
+        account_no: r.account_no, account_id: r.account_id, account_name: r.account_name,
+        dimensionRows: [],
+        opening_balance: 0, activity_debit: 0, activity_credit: 0, closing_balance: 0,
+      };
       groups.push(current);
     }
-    current.accounts.push(r);
+    current.dimensionRows.push({
+      dimensionValue: r.dimensionValue ?? '',
+      opening_balance: r.opening_balance, activity_debit: r.activity_debit,
+      activity_credit: r.activity_credit, closing_balance: r.closing_balance,
+    });
+    for (const f of TRIAL_BALANCE_AMOUNT_FIELDS) current[f] += r[f];
   }
   return groups;
 }
@@ -432,7 +458,9 @@ export function resolveGrouping(contract, params, rows, locale = 'en_US') {
   if (contract.type !== 'grouped-listing' && rows
       && (contract.parameters || []).some((p) => p.name === 'groupBy')) {
     rows = foldAggregateRows(rows, dimensionField);
-    if (dimensionField) tbGroups = groupAggregateRowsByDimension(rows);
+    // account-outer / dimension-inner — see groupAggregateRowsByAccount's
+    // docstring (ETP-5013).
+    if (dimensionField) tbGroups = groupAggregateRowsByAccount(rows);
   }
 
   return { groupLabel, descriptionLabel, dimensionLabel, dimensionField, tbGroups, rows };

@@ -1,14 +1,15 @@
-name: Promote epic → develop → main
+name: Promote develop → main
 
-# Manual release train. Run it once the day's features have landed on the epic.
+# Manual release train. Run it once the day's merge blocks have landed on develop.
 #
-#   epic/ETP-XXXX ──merge──▶ develop ──merge──▶ main
+#   develop ──merge──▶ main
 #
-# Everything happens in the runner's local clone first: both merges and the full
-# test suite. NOTHING is pushed until every step has passed, and the final push
-# is atomic (`git push --atomic origin develop main`), so develop and main move
-# together or not at all. A merge conflict, a failing test, or a rejected push
-# leaves both remote branches exactly as they were.
+# Feature branches and merge blocks target `develop` directly (ETP-5028), so the
+# epic is no longer part of the train — this workflow only promotes develop.
+#
+# The merge and the full test suite happen in the runner's local clone first.
+# NOTHING is pushed until every step has passed, so a merge conflict, a failing
+# test, or a rejected push leaves main exactly as it was.
 #
 # Pushing main triggers release.yml (auto patch bump + publish).
 #
@@ -17,23 +18,19 @@ name: Promote epic → develop → main
 on:
   workflow_dispatch:
     inputs:
-      epic_branch:
-        description: 'Epic branch to promote'
-        required: true
-        default: 'epic/ETP-3504'
       dry_run:
-        description: 'Run merges + tests but skip the push'
+        description: 'Run the merge + tests but skip the push'
         type: boolean
         required: false
         default: false
 
-# Never let two promotions run at once — they would race on develop/main.
+# Never let two promotions run at once — they would race on main.
 concurrency:
-  group: promote-epic-to-main
+  group: promote-develop-to-main
   cancel-in-progress: false
 
 permissions:
-  contents: write   # push develop and main
+  contents: write   # push main
   actions: write    # dispatch release.yml after the push
 
 jobs:
@@ -54,48 +51,33 @@ jobs:
           scope: '@etendosoftware'
 
       - name: Verify branches exist
-        env:
-          EPIC: ${{ inputs.epic_branch }}
         run: |
           set -euo pipefail
-          for ref in "$EPIC" develop main; do
+          for ref in develop main; do
             if ! git rev-parse -q --verify "refs/remotes/origin/$ref" >/dev/null; then
               echo "::error::Branch '$ref' does not exist on origin."
               exit 1
             fi
           done
-          echo "epic:    $(git rev-parse --short "origin/$EPIC")  $EPIC"
           echo "develop: $(git rev-parse --short origin/develop)"
           echo "main:    $(git rev-parse --short origin/main)"
 
-      - name: Merge epic into develop (local only)
-        env:
-          EPIC: ${{ inputs.epic_branch }}
+      - name: Merge develop into main (local only)
         run: |
           set -euo pipefail
           git config user.name  "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
 
-          git checkout -B develop origin/develop
-          if ! git merge --no-ff --no-edit "origin/$EPIC"; then
-            git merge --abort || true
-            echo "::error::Conflict merging '$EPIC' into develop. Resolve it in a PR — nothing was pushed."
-            exit 1
-          fi
-
-      - name: Merge develop into main (local only)
-        run: |
-          set -euo pipefail
           git checkout -B main origin/main
-          if ! git merge --no-ff --no-edit develop; then
+          if ! git merge --no-ff --no-edit origin/develop; then
             git merge --abort || true
             echo "::error::Conflict merging develop into main. Resolve it in a PR — nothing was pushed."
             exit 1
           fi
 
       # --- Gates: run the full suite against the merge result on main --------
-      # main is the branch that gets published, and after both merges its tree is
-      # the union of everything being promoted — so testing it covers develop too.
+      # main is the branch that gets published, and after the merge its tree is
+      # the union of everything being promoted.
       - run: npm install
         env:
           NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -122,31 +104,25 @@ jobs:
         run: npm test --workspace=packages/schema-forge-stack
 
       # --- Point of no return: everything above passed -----------------------
-      - name: Push develop and main (atomic)
+      - name: Push main
         id: push
         if: ${{ inputs.dry_run == false }}
-        env:
-          EPIC: ${{ inputs.epic_branch }}
         run: |
           set -euo pipefail
 
-          if git diff --quiet origin/develop develop && git diff --quiet origin/main main \
-             && [ "$(git rev-parse develop)" = "$(git rev-parse origin/develop)" ] \
-             && [ "$(git rev-parse main)" = "$(git rev-parse origin/main)" ]; then
-            echo "develop and main are already up to date with '$EPIC' — nothing to promote."
+          if [ "$(git rev-parse main)" = "$(git rev-parse origin/main)" ]; then
+            echo "main is already up to date with develop — nothing to promote."
             echo "pushed=false" >> "$GITHUB_OUTPUT"
             exit 0
           fi
 
-          # --atomic: the server accepts both refs or neither, so develop and main
-          # can never end up half-promoted.
           # --no-verify: `npm install` ran the root `prepare` script, which points
           # core.hooksPath at .githooks; the local pre-push dev hook is for
           # workstations, not CI (which just ran its own gates above).
-          git push --atomic --no-verify origin develop main
+          git push --no-verify origin main
           echo "pushed=true" >> "$GITHUB_OUTPUT"
 
-          echo "Promoted '$EPIC' → develop → main."
+          echo "Promoted develop → main."
           echo "release.yml will now bump the patch version and publish."
 
       # --- Chain the release explicitly --------------------------------------
@@ -166,5 +142,5 @@ jobs:
       - name: Dry run — push skipped
         if: ${{ inputs.dry_run == true }}
         run: |
-          echo "Dry run: merges and tests passed, but nothing was pushed."
+          echo "Dry run: the merge and tests passed, but nothing was pushed."
           git --no-pager log --oneline origin/main..main

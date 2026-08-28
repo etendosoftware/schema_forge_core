@@ -16,12 +16,24 @@ import { resolveForeignKeys, resolveForeignKeyColumn } from '../../lib/import/re
 import { validateRow } from '../../lib/import/validateRows.js';
 import { buildOperations } from '../../lib/import/buildOperations.js';
 import { runImport, sendRow, SEND_STATUS } from '../../lib/import/importEngine.js';
-import { buildTemplateCsv } from '../../lib/import/buildTemplateCsv.js';
+import { buildTemplateCsv, resolveTemplateHeaders } from '../../lib/import/buildTemplateCsv.js';
+import { runImportRowValidator } from '../../lib/import/rowValidators.js';
+import { findExistingKeys, buildLookupKey } from '../../lib/import/existingRecordLookup.js';
 
 // Root-level labels for ImportDialog's own chrome. `importButton` is a function of the
 // valid-row count, mirroring the (n) => string labels the confirm step already uses, so the
 // whole flow's button text is translatable rather than the hardcoded `Import ${n}` it was.
 const DEFAULT_LABELS = { title: 'Import', revalidating: 'Revalidating rows…', downloadTemplate: 'Download CSV template', importButton: (n) => `Import ${n}` };
+
+/**
+ * Why a row was skipped. Skipping is not an error — nothing is wrong with the file and
+ * there is nothing for the user to fix — so these carry their own wording, separate from
+ * the validation messages in `validateRows.js`.
+ */
+const SKIP_MESSAGES = {
+  duplicateInFile: { key: 'importSkipDuplicateInFile', fallback: 'Duplicate row (already in file).' },
+  alreadyExists: { key: 'importSkipAlreadyExists', fallback: 'This record already exists and will not be imported again.' },
+};
 
 /**
  * Shape of the optional `labels` prop — a NESTED object: root-level keys for this dialog's
@@ -71,7 +83,17 @@ function renameRowKeys(row, mapping) {
   return renamed;
 }
 
-export function ImportDialog({ open, onOpenChange, config, token, postBatch, simSearchFn, onImported, labels, translate }) {
+/**
+ * @param {(field: object) => string} [fieldLabelFn] Resolves a field's session-language
+ *   header for the downloaded template. Without it the template falls back to the field's
+ *   first alias, which in every window is the Spanish term — the template then came out in
+ *   Spanish no matter what language the session was in.
+ * @param {(criteria: object, keyTargets: string[]) => Promise<Array<object>>} [existingKeyFetchFn]
+ *   Queries the entity for records matching the dedupe key, so rows that already exist are
+ *   marked Saltada in the review queue instead of being discovered as duplicates after the
+ *   send. Only used when `config.dedupe.scope` is `"database"`.
+ */
+export function ImportDialog({ open, onOpenChange, config, token, postBatch, simSearchFn, onImported, labels, translate, fieldLabelFn, existingKeyFetchFn }) {
   const text = { ...DEFAULT_LABELS, ...labels };
   const [step, setStep] = useState(STEP.DROPZONE);
   const [fileErrorMessage, setFileErrorMessage] = useState(null);
@@ -98,6 +120,29 @@ export function ImportDialog({ open, onOpenChange, config, token, postBatch, sim
 
   const requiredTargets = useMemo(() => config.fields.filter((f) => f.required).map((f) => f.target), [config.fields]);
   const emailTargets = useMemo(() => config.fields.filter((f) => f.isEmail).map((f) => f.target), [config.fields]);
+  // Declared in decisions.json as `isNumeric: true`. Drives the review-queue check that a
+  // malformed amount ("abc" in a price column) fails its row BEFORE the send rather than
+  // inside buildOperations, where the user only saw it after confirming the import.
+  const numericTargets = useMemo(() => config.fields.filter((f) => f.isNumeric).map((f) => f.target), [config.fields]);
+
+  // The template is written in the session language, so the header a user gets back in
+  // their filled-in file is NOT necessarily the field's first (Spanish) alias. Adding that
+  // header to the field's aliases is what keeps the round-trip working in any language:
+  // one list feeds both the template writer and the matcher, so they cannot drift.
+  const localizedFields = useMemo(() => {
+    // Resolved WITHOUT the required marker, since `mapColumns` strips it before matching —
+    // the alias must be the bare header. Uses the same collision-safe resolution the
+    // template writer uses, so the alias always matches the header actually written.
+    const headers = resolveTemplateHeaders(
+      config.fields.map((f) => ({ ...f, required: false })),
+      { headerFor: fieldLabelFn },
+    );
+    return config.fields.map((field, i) => (
+      headers[i] && !(field.aliases ?? []).includes(headers[i])
+        ? { ...field, aliases: [...(field.aliases ?? []), headers[i]] }
+        : field
+    ));
+  }, [config.fields, fieldLabelFn]);
   // `matchEntity` presence is the real signal a column needs FK resolution — there is no
   // separate `isForeignKey` flag anywhere in the actual pipeline: generate-contract.js
   // never emits one (it only backfills `type`/`reference` from the contract), and
@@ -151,6 +196,30 @@ export function ImportDialog({ open, onOpenChange, config, token, postBatch, sim
   // missing config: dedupe only runs when there's an actual non-empty key list.
   const dedupeKeyTargets = config.dedupe?.key ?? [];
 
+  // The two reasons a row is skipped rather than failed. Both are shown verbatim in the
+  // review queue, so both go through `translate` — they were hardcoded English strings
+  // sitting in the middle of an app used primarily in Spanish.
+  const labelFor = useCallback((which) => {
+    const { key, fallback } = SKIP_MESSAGES[which];
+    if (typeof translate !== 'function') return fallback;
+    const translated = translate(key);
+    return translated && translated !== key ? translated : fallback;
+  }, [translate]);
+
+  // Single definition of "what makes a row valid", shared by the initial pass and by both
+  // re-validate-after-edit paths. Kept as one function on purpose: when the edit paths
+  // carried their own shorter argument list, fixing an unrelated cell silently cleared a
+  // numeric or coded-value error that was still true, and the row went back to Correcta.
+  const revalidate = useCallback((row, resolutions) => validateRow(row, {
+    requiredTargets,
+    emailTargets,
+    numericTargets,
+    fkTargets,
+    fkResolutions: resolutions,
+    extraErrors: runImportRowValidator(config.descriptor, row, { translate, config }),
+    translate,
+  }), [requiredTargets, emailTargets, numericTargets, fkTargets, config, translate]);
+
   const runValidation = useCallback(async (mappedRows) => {
     const { uniqueRows, duplicates } = dedupeKeyTargets.length > 0
       ? dedupeRows(mappedRows, dedupeKeyTargets)
@@ -159,14 +228,31 @@ export function ImportDialog({ open, onOpenChange, config, token, postBatch, sim
       ? await resolveForeignKeys({ rows: uniqueRows, columns: fkColumns, simSearchFn, token })
       : new Map();
     setFkResolutions(resolutions);
-    const validated = uniqueRows.map((row) => ({
-      row,
-      ...validateRow(row, { requiredTargets, emailTargets, fkTargets, fkResolutions: resolutions }),
-      status: 'pending',
-    }));
-    const skippedDuplicates = duplicates.map((d) => ({ row: d.row, errors: [{ target: '', message: 'Duplicate row (already in file).' }], status: 'skipped' }));
-    setEntries([...validated.map((v) => ({ row: v.row, errors: v.errors, status: 'pending' })), ...skippedDuplicates]);
-  }, [dedupeKeyTargets, fkColumns, fkTargets, requiredTargets, emailTargets, simSearchFn, token]);
+
+    // Rows already present server-side. Checked only when the window opts in with
+    // `dedupe.scope: "database"`; on any lookup failure this comes back empty and the
+    // send-time duplicate handling stays the backstop, so a pre-flight check that cannot
+    // reach the server never blocks an import the server would have accepted.
+    const existingKeys = config.dedupe?.scope === 'database'
+      ? await findExistingKeys({ rows: uniqueRows, keyTargets: dedupeKeyTargets, fetchFn: existingKeyFetchFn })
+      : new Set();
+
+    const validated = uniqueRows.map((row) => {
+      const key = buildLookupKey(row, dedupeKeyTargets);
+      if (key !== null && existingKeys.has(key)) {
+        return {
+          row,
+          errors: [{ target: dedupeKeyTargets[0] ?? '', message: labelFor('alreadyExists') }],
+          status: 'skipped',
+        };
+      }
+      const { errors } = revalidate(row, resolutions);
+      return { row, errors, status: 'pending' };
+    });
+
+    const skippedDuplicates = duplicates.map((d) => ({ row: d.row, errors: [{ target: '', message: labelFor('duplicateInFile') }], status: 'skipped' }));
+    setEntries([...validated, ...skippedDuplicates]);
+  }, [dedupeKeyTargets, fkColumns, revalidate, simSearchFn, token, config, existingKeyFetchFn, labelFor]);
 
   const handleFileSelected = useCallback(async (file) => {
     try {
@@ -176,7 +262,7 @@ export function ImportDialog({ open, onOpenChange, config, token, postBatch, sim
       const buffer = await file.arrayBuffer();
       const text2 = decodeCsvBuffer(buffer);
       const { headers: parsedHeaders, rows } = parseDelimited(text2);
-      const { mapping: autoMapping } = mapColumns(parsedHeaders, config.fields);
+      const { mapping: autoMapping } = mapColumns(parsedHeaders, localizedFields);
       setHeaders(parsedHeaders);
       setRawRows(rows);
       setMapping(autoMapping);
@@ -186,7 +272,7 @@ export function ImportDialog({ open, onOpenChange, config, token, postBatch, sim
       setFileErrorMessage(error.message);
       setStep(STEP.FILE_ERROR);
     }
-  }, [config.fields, runValidation]);
+  }, [localizedFields, runValidation]);
 
   const handleApplyMapping = useCallback(async (newMapping) => {
     setMapping(newMapping);
@@ -208,11 +294,11 @@ export function ImportDialog({ open, onOpenChange, config, token, postBatch, sim
     setEntries((prev) => {
       const next = [...prev];
       const row = { ...next[index].row, [targetField]: value };
-      const { valid, errors } = validateRow(row, { requiredTargets, emailTargets, fkTargets, fkResolutions });
+      const { valid, errors } = revalidate(row, fkResolutions);
       next[index] = { ...next[index], row, errors: valid ? [] : errors };
       return next;
     });
-  }, [requiredTargets, emailTargets, fkTargets, fkResolutions]);
+  }, [revalidate, fkResolutions]);
 
   // A candidate picked (or freeform text accepted) from the FK-mismatch popover — applies
   // it to one or more rows in one shot: merges the resolution into fkResolutions and
@@ -243,10 +329,10 @@ export function ImportDialog({ open, onOpenChange, config, token, postBatch, sim
     setEntries((prev) => prev.map((entry, i) => {
       if (!indexSet.has(i)) return entry;
       const row = { ...entry.row, [field.target]: value };
-      const { valid, errors } = validateRow(row, { requiredTargets, emailTargets, fkTargets, fkResolutions: nextResolutions });
+      const { valid, errors } = revalidate(row, nextResolutions);
       return { ...entry, row, errors: valid ? [] : errors };
     }));
-  }, [fkResolutions, requiredTargets, emailTargets, fkTargets, simSearchFn, token]);
+  }, [fkResolutions, revalidate, simSearchFn, token]);
 
   const handleSkipEntry = useCallback((index) => {
     setEntries((prev) => prev.map((e, i) => (i === index ? { ...e, status: 'skipped' } : e)));
@@ -376,7 +462,7 @@ export function ImportDialog({ open, onOpenChange, config, token, postBatch, sim
               <button
                 type="button"
                 className="self-center text-xs text-muted-foreground underline underline-offset-2 hover:text-foreground"
-                onClick={() => downloadCsv(buildTemplateCsv(config.fields), `${config.spec}-import-template.csv`)}
+                onClick={() => downloadCsv(buildTemplateCsv(localizedFields, { headerFor: fieldLabelFn }), `${config.spec}-import-template.csv`)}
                 data-testid="ImportDialog__downloadTemplate"
               >
                 {text.downloadTemplate}

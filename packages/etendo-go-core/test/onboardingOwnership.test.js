@@ -73,7 +73,13 @@ describe('Core-owned onboarding API contract', () => {
     assert.equal(calls[1].options.headers['X-Go-CSRF'], 'csrf-abc');
     assert.equal('Authorization' in calls[1].options.headers, false);
     assert.equal(calls[1].options.body, JSON.stringify({ currentPassword: 'old', newPassword: 'new' }));
-    assert.deepEqual(buildAuthHeaders(null), { 'Content-Type': 'application/json' });
+    // ETP-5022 added Accept-Language, so the shape is asserted by key set rather than by a
+    // literal object. Still strict: an unexpected extra header fails. The guarantee this
+    // line exists for is the explicit assert below — a null token must NOT be sent as
+    // "Bearer null".
+    const anonHeaders = buildAuthHeaders(null);
+    assert.deepEqual(Object.keys(anonHeaders).sort(), ['Accept-Language', 'Content-Type']);
+    assert.equal(anonHeaders.Authorization, undefined);
   });
 
   it('persists, restores, and streams onboarding data through the Core implementation', async () => {
