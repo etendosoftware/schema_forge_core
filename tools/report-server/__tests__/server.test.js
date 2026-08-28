@@ -15,6 +15,7 @@ import { pickLabel } from '../../../cli/src/report-i18n.js';
 // resolveGrouping replaced server.js's own getGroupedData: it is shared
 // production code now, so it is imported, never replicated.
 import { resolveGrouping } from '../../../cli/src/report-grouping.js';
+import { filterAndTransformParams } from '../../../cli/src/report-filters.js';
 
 const SERVER_SRC = readFileSync(fileURLToPath(new URL('../server.js', import.meta.url)), 'utf8');
 
@@ -43,26 +44,6 @@ function applyLimitToSql(limit, sql) {
 
 function getRowCount(rows) {
   return Array.isArray(rows) ? rows.length : undefined;
-}
-
-function filterAndTransformParams(params, contract, locale = 'en_US') {
-  return Object.entries(params)
-    .filter(([k, v]) => v && v !== '' && !k.startsWith('_display_'))
-    .map(([k, v]) => {
-      const paramDef = contract.parameters?.find(p => p.name === k);
-      let displayValue = params['_display_' + k] || v;
-      if (k === 'groupBy') {
-        const dimParam = (contract.parameters || []).find(p => p.groupByValue === v);
-        displayValue = pickLabel(dimParam?.label, locale, v);
-      }
-      if (typeof displayValue === 'string' && displayValue.includes(' | '))
-        displayValue = displayValue.split(' | ').filter(Boolean).join(', ');
-      if (paramDef?.type === 'date' && /^\d{4}-\d{2}-\d{2}$/.test(displayValue)) {
-        const [y, m, d] = displayValue.split('-');
-        displayValue = `${d}/${m}/${y}`;
-      }
-      return { label: pickLabel(paramDef?.label, locale, k), value: displayValue };
-    });
 }
 
 function calculateTotals(documentData, amountCols, rows, totals) {
@@ -542,6 +523,12 @@ describe('report i18n', () => {
       assert.match(SERVER_SRC, /from '\.\.\/\.\.\/cli\/src\/report-i18n\.js'/);
     });
 
+    it('imports the shared filters module instead of rebuilding it', () => {
+      assert.match(SERVER_SRC, /from '\.\.\/\.\.\/cli\/src\/report-filters\.js'/);
+      assert.doesNotMatch(SERVER_SRC, /^function filterAndTransformParams/m,
+        'a local copy would drift from the shared one again — see the options-label bug it once had');
+    });
+
     it('reads the locale the frontend already sends on render', () => {
       assert.match(SERVER_SRC, /locale = 'en_US' \} = JSON\.parse\(body/);
     });
@@ -586,6 +573,21 @@ describe('report i18n', () => {
       for (const key of ['dimensionLabel', 'dimensionField', 'groups', 'tbGroups']) {
         assert.ok(meta[0].includes(key), `listing meta is missing ${key}`);
       }
+    });
+
+    it('passes tbGroups straight through from resolveGrouping, never re-nesting it here', () => {
+      // ETP-5013 flipped tbGroups from dimension-outer/account-inner to
+      // account-outer/dimension-inner. That shape is decided in ONE place
+      // (report-grouping.js) and the template reads it directly; any local
+      // re-shaping here would silently desync the PDF/XLSX server from the
+      // dev-plugin preview, which is exactly the class of drift this whole
+      // shared-module split exists to prevent.
+      assert.doesNotMatch(SERVER_SRC, /groupAggregateRowsByDimension/,
+        'the removed dimension-outer grouper must not be resurrected here');
+      assert.doesNotMatch(SERVER_SRC, /tbGroups\s*=/,
+        'tbGroups must only ever be destructured from resolveGrouping, never reassigned');
+      assert.match(SERVER_SRC, /tbGroups,\s*openingRows,?\s*\}\s*=\s*resolveReportData/,
+        'tbGroups must come out of resolveReportData (which just forwards resolveGrouping)');
     });
   });
 });

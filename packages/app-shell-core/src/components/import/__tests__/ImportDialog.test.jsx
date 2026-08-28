@@ -2,6 +2,7 @@ import { describe, it, expect, vi, afterEach } from 'vitest';
 import { render, screen, fireEvent, waitFor, cleanup } from '@testing-library/react';
 import { ImportDialog } from '../ImportDialog.jsx';
 import { registerImportDescriptor } from '../../../lib/import/buildOperations.js';
+import { registerImportRowValidator } from '../../../lib/import/rowValidators.js';
 
 // ScrollPane (rendered inside ImportReviewQueue, which this dialog mounts)
 // observes its own size via ResizeObserver — jsdom doesn't implement it.
@@ -395,5 +396,124 @@ describe('ImportDialog', () => {
     fireEvent.click(screen.getByTestId('ImportColumnMapping__saveButton'));
     expect(screen.getByTestId('ImportDialog__revalidatingOverlay')).toBeDefined();
     await waitFor(() => expect(screen.queryByTestId('ImportDialog__revalidatingOverlay')).toBeNull());
+  });
+});
+
+describe('ImportDialog — ETP-4996', () => {
+  const productConfig = {
+    spec: 'product',
+    entity: 'product',
+    descriptor: 'etp4996-demo',
+    fields: [
+      { target: 'searchKey', label: 'Search Key', aliases: ['codigo'], required: true, example: 'SKU-1001' },
+      { target: 'name', label: 'Name', aliases: ['nombre'], required: true, example: 'Tornillo M8' },
+      { target: 'salesPrice', label: 'Sales Price', aliases: ['precio'], isNumeric: true, example: '12,50' },
+    ],
+    dedupe: { scope: 'database', key: ['searchKey'] },
+  };
+
+  // The mapping chips are keyed by the file's HEADER text, which differs per test here,
+  // so wait on the review queue instead — it only renders once validation has run.
+  async function uploadTo(content, filename = 'products.csv') {
+    const input = screen.getByTestId('ImportDropzone__fileInput');
+    fireEvent.change(input, { target: { files: [makeFile(content, filename)] } });
+    await waitFor(() => screen.getByTestId('ImportReviewQueue__statusFilter-ok'));
+  }
+
+  it('marks a row that already exists in the database as Skipped, before the send', async () => {
+    // IP-19 / IC-18. Previously every row showed as Correcta and the duplicate was only
+    // discovered after the user confirmed, as a post-send INFO.
+    const existingKeyFetchFn = vi.fn(async () => [{ searchKey: 'SKU-1001' }]);
+    render(<ImportDialog open config={productConfig} token="t" postBatch={vi.fn()}
+      simSearchFn={vi.fn()} existingKeyFetchFn={existingKeyFetchFn} onImported={() => {}} />);
+    await uploadTo('codigo,nombre,precio\nSKU-1001,Tornillo,3.50\nSKU-9999,Nuevo,4.00');
+
+    expect(existingKeyFetchFn).toHaveBeenCalled();
+    expect(screen.getByTestId('ImportReviewQueue__statusFilterCount-ok').textContent).toContain('1');
+    fireEvent.click(screen.getByTestId('ImportReviewQueue__statusFilter-error'));
+    await waitFor(() => screen.getByTestId('ImportReviewQueue__skippedLabel-0'));
+  });
+
+  it('does not query the database when the window did not opt in', async () => {
+    const existingKeyFetchFn = vi.fn(async () => []);
+    render(<ImportDialog open config={{ ...productConfig, dedupe: { scope: 'file', key: ['searchKey'] } }}
+      token="t" postBatch={vi.fn()} simSearchFn={vi.fn()} existingKeyFetchFn={existingKeyFetchFn} onImported={() => {}} />);
+    await uploadTo('codigo,nombre,precio\nSKU-1001,Tornillo,3.50');
+    expect(existingKeyFetchFn).not.toHaveBeenCalled();
+  });
+
+  it('still imports when the existence lookup fails', async () => {
+    // A pre-flight check that cannot reach the server must not block an import the
+    // server would have accepted.
+    const existingKeyFetchFn = vi.fn(async () => { throw new Error('network down'); });
+    render(<ImportDialog open config={productConfig} token="t" postBatch={vi.fn()}
+      simSearchFn={vi.fn()} existingKeyFetchFn={existingKeyFetchFn} onImported={() => {}} />);
+    await uploadTo('codigo,nombre,precio\nSKU-1001,Tornillo,3.50');
+    expect(screen.getByTestId('ImportReviewQueue__statusFilterCount-ok').textContent).toContain('1');
+  });
+
+  it('fails a row with a non-numeric price during review, not at send time', async () => {
+    render(<ImportDialog open config={{ ...productConfig, dedupe: { scope: 'file', key: ['searchKey'] } }}
+      token="t" postBatch={vi.fn()} simSearchFn={vi.fn()} onImported={() => {}} />);
+    await uploadTo('codigo,nombre,precio\nSKU-1,Bueno,3.50\nSKU-2,Malo,abc');
+
+    expect(screen.getByTestId('ImportReviewQueue__statusFilterCount-ok').textContent).toContain('1');
+    fireEvent.click(screen.getByTestId('ImportReviewQueue__statusFilter-error'));
+    await waitFor(() => screen.getByTestId('ImportReviewQueue__fieldError-1-salesPrice'));
+  });
+
+  it('runs the descriptor\'s own row validator in the same pass', async () => {
+    registerImportRowValidator('etp4996-demo', (row) => (
+      row.name === 'Prohibido' ? [{ target: 'name', message: 'valor no permitido' }] : []
+    ));
+    render(<ImportDialog open config={{ ...productConfig, dedupe: { scope: 'file', key: ['searchKey'] } }}
+      token="t" postBatch={vi.fn()} simSearchFn={vi.fn()} onImported={() => {}} />);
+    await uploadTo('codigo,nombre,precio\nSKU-1,Prohibido,3.50');
+
+    fireEvent.click(screen.getByTestId('ImportReviewQueue__statusFilter-error'));
+    const error = await screen.findByTestId('ImportReviewQueue__fieldError-0-name');
+    expect(error.textContent).toContain('valor no permitido');
+  });
+
+  it('downloads a template with the required marker and a sample row', async () => {
+    const createObjectURLSpy = vi.fn().mockReturnValue('blob:mock-url');
+    const originalCreate = URL.createObjectURL;
+    const originalRevoke = URL.revokeObjectURL;
+    URL.createObjectURL = createObjectURLSpy;
+    URL.revokeObjectURL = vi.fn();
+    try {
+      render(<ImportDialog open config={productConfig} token="t" postBatch={vi.fn()}
+        simSearchFn={vi.fn()} onImported={() => {}} />);
+      fireEvent.click(screen.getByTestId('ImportDialog__downloadTemplate'));
+      const csv = await createObjectURLSpy.mock.calls[0][0].text();
+      expect(csv).toBe('codigo *,nombre *,precio\nSKU-1001,Tornillo M8,"12,50"');
+    } finally {
+      URL.createObjectURL = originalCreate;
+      URL.revokeObjectURL = originalRevoke;
+    }
+  });
+
+  it('writes the template in the session language and still maps it back', async () => {
+    const createObjectURLSpy = vi.fn().mockReturnValue('blob:mock-url');
+    const originalCreate = URL.createObjectURL;
+    const originalRevoke = URL.revokeObjectURL;
+    URL.createObjectURL = createObjectURLSpy;
+    URL.revokeObjectURL = vi.fn();
+    try {
+      render(<ImportDialog open config={{ ...productConfig, dedupe: { scope: 'file', key: ['searchKey'] } }}
+        token="t" postBatch={vi.fn()} simSearchFn={vi.fn()} onImported={() => {}}
+        fieldLabelFn={(f) => f.label} />);
+      fireEvent.click(screen.getByTestId('ImportDialog__downloadTemplate'));
+      const csv = await createObjectURLSpy.mock.calls[0][0].text();
+      expect(csv.split('\n')[0]).toBe('Search Key *,Name *,Sales Price');
+
+      // Round-trip: the localized header must map back onto its own field, or the very
+      // template the dialog handed out would be un-importable in that language.
+      await uploadTo('Search Key *,Name *,Sales Price\nSKU-1,Widget,3.50', 'en.csv');
+      expect(screen.getByTestId('ImportReviewQueue__statusFilterCount-ok').textContent).toContain('1');
+    } finally {
+      URL.createObjectURL = originalCreate;
+      URL.revokeObjectURL = originalRevoke;
+    }
   });
 });
