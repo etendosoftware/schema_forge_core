@@ -112,13 +112,23 @@ async function renderReport(templateContent, helpersCode, cssContent, rows, cont
 
   if (recipe === 'chrome-pdf') {
     const isLandscape = contract.orientation === 'landscape';
+    // "Printed on <date>" + "Page N" footer (ETP-5013), same shape as the real
+    // serving engines (report-api.js / server.js) — kept in sync manually here
+    // since this is a standalone debug CLI, not part of the request-serving
+    // pipeline. Hardcoded English on purpose: this tool has no locale/ui
+    // concept at all (title above always falls back to contract.title.en_US).
+    const printedOnStr = new Intl.DateTimeFormat('en-GB', { day: '2-digit', month: '2-digit', year: 'numeric' }).format(new Date(payload.data.meta.generatedAt));
     payload.template.chrome = {
       landscape: isLandscape,
       format: 'A4',
       marginTop: '10mm',
-      marginBottom: '10mm',
+      // Bumped from 10mm (ETP-5013) to leave room for the footer below.
+      marginBottom: '14mm',
       marginLeft: '10mm',
       marginRight: '10mm',
+      displayHeaderFooter: true,
+      headerTemplate: '<span></span>',
+      footerTemplate: `<div style="width:100%;font-size:8px;color:#94a3b8;font-family:Arial,sans-serif;padding:0 10mm;display:flex;justify-content:space-between;box-sizing:border-box;"><span>Printed on ${printedOnStr}</span><span>Page <span class="pageNumber"></span></span></div>`,
     };
   }
 

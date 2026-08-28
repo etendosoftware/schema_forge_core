@@ -55,3 +55,28 @@ describe('mapColumns', () => {
     assert.deepEqual(unmappedTargets, []);
   });
 });
+
+describe('mapColumns — ETP-4996: the template\'s required marker must round-trip', () => {
+  const fields = [
+    { target: 'taxID', label: 'Tax ID', aliases: ['cif/nif'], required: true },
+    { target: 'name', label: 'Name', aliases: ['nombre comercial'], required: true },
+  ];
+
+  it('maps a header carrying the required marker back onto its own field', () => {
+    // The exact file the dialog hands out: buildTemplateCsv writes "cif/nif *". If the
+    // marker survived into matching, the downloaded template would fail to map its own
+    // required columns — ETP-4995's un-importable template, reintroduced.
+    const { mapping, unmappedTargets } = mapColumns(['cif/nif *', 'nombre comercial *'], fields);
+    assert.deepEqual(mapping, { 'cif/nif *': 'taxID', 'nombre comercial *': 'name' });
+    assert.deepEqual(unmappedTargets, []);
+  });
+
+  it('tolerates the marker with no space, or with extra spaces', () => {
+    assert.equal(mapColumns(['cif/nif*'], fields).mapping['cif/nif*'], 'taxID');
+    assert.equal(mapColumns(['cif/nif   *  '], fields).mapping['cif/nif   *  '], 'taxID');
+  });
+
+  it('still maps a header with no marker', () => {
+    assert.equal(mapColumns(['cif/nif'], fields).mapping['cif/nif'], 'taxID');
+  });
+});
