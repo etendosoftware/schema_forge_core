@@ -68,6 +68,50 @@ const STICKY_CELL_CLASS = 'sticky left-0 z-10 bg-background border-r border-bord
 // `!important` whichever rule happens to compile later would silently win).
 const STICKY_HEADER_CLASS = 'sticky top-0 !z-20 bg-background';
 
+/**
+ * One entry's data cells, in `dataColumns` order (or a single joined summary cell when the
+ * caller declared no columns).
+ *
+ * Shared by the OK and the SKIPPED branches rather than written twice. A skipped row used to
+ * render one cell spanning the whole grid whose content was the word "Skipped" — already shown
+ * in the status column beside it — so the user saw the label twice and the row's actual data
+ * NOT AT ALL. For the commonest skip reason, "this record already exists", that hid exactly the
+ * information needed to tell WHICH record it was, in both Contacts and Products (ETP-4997).
+ * Sharing one renderer is what stops the two branches from disagreeing about it again.
+ *
+ * `muted` de-emphasizes the values without hiding them: a skipped row will not be sent, so it
+ * should read as inactive, never as empty.
+ */
+function RowDataCells({ entry, index, dataColumns, dataColumnCount, muted = false }) {
+  const row = entry.row ?? {};
+  const valueClass = muted ? `${TRUNCATE_CLASS} text-muted-foreground` : TRUNCATE_CLASS;
+  if (!dataColumns) {
+    const summary = Object.values(row).join(' · ');
+    return (
+      <TableCell colSpan={dataColumnCount} data-testid="TableCell__a73779">
+        <span
+          className={valueClass}
+          title={summary}
+          data-testid={`ImportReviewQueue__summary-${index}`}
+        >
+          {summary}
+        </span>
+      </TableCell>
+    );
+  }
+  return dataColumns.map((field) => (
+    <TableCell key={field.target} data-testid={"TableCell__" + field.id}>
+      <span
+        className={valueClass}
+        title={row[field.target] ?? ''}
+        data-testid={`ImportReviewQueue__value-${index}-${field.target}`}
+      >
+        {row[field.target] ?? ''}
+      </span>
+    </TableCell>
+  ));
+}
+
 // Same success/destructive/neutral tokens as the app's own status-tag--* CSS
 // (styles.css, ETP-3835), inlined as Tailwind utilities rather than referencing
 // that class: this package's styles.css is consumed via a cross-package @import
@@ -433,30 +477,51 @@ export function ImportReviewQueue({
             const isSkipped = entry.status === 'skipped';
 
             if (isSkipped) {
+              // Why it was skipped, when the dialog attached a reason: a blank-target error is
+              // the row-level message ("already exists", "duplicate in file"), the same shape
+              // the error branch below reads. A row the user skipped by hand carries none, and
+              // then there is nothing to explain.
+              const skipReason = entry.errors?.find((e) => !e.target)?.message;
               return (
                 <TableRow key={index} data-testid="TableRow__a73779">
-                  <TableCell className={STICKY_CELL_CLASS} data-testid="TableCell__a73779">
-                    <div className="flex items-center gap-2">
-                      <StatusLineTag index={index} tag="neutral" data-testid="StatusLineTag__a73779">{text.skipped}</StatusLineTag>
-                      {onUnskipEntry && (
-                        <Button
-                          type="button"
-                          variant="ghost"
-                          size="icon"
-                          className="h-6 w-6"
-                          onClick={() => onUnskipEntry(index)}
-                          data-testid={`ImportReviewQueue__unskip-${index}`}
-                          title={text.unskip}
+                  <TableCell className={`${STICKY_CELL_CLASS} align-top`} data-testid="TableCell__a73779">
+                    <div className="flex min-w-[160px] flex-col gap-1 py-1">
+                      <div className="flex items-center gap-2">
+                        <StatusLineTag index={index} tag="neutral" data-testid="StatusLineTag__a73779">
+                          <span data-testid={`ImportReviewQueue__skippedLabel-${index}`}>{text.skipped}</span>
+                        </StatusLineTag>
+                        {onUnskipEntry && (
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="icon"
+                            className="h-6 w-6"
+                            onClick={() => onUnskipEntry(index)}
+                            data-testid={`ImportReviewQueue__unskip-${index}`}
+                            title={text.unskip}
+                          >
+                            <Check className="h-3 w-3" aria-hidden="true" data-testid="Check__a73779" />
+                            <span className="sr-only">{text.unskip}</span>
+                          </Button>
+                        )}
+                      </div>
+                      {skipReason && (
+                        <span
+                          className="text-xs text-muted-foreground"
+                          data-testid={`ImportReviewQueue__skipReason-${index}`}
                         >
-                          <Check className="h-3 w-3" aria-hidden="true" data-testid="Check__a73779" />
-                          <span className="sr-only">{text.unskip}</span>
-                        </Button>
+                          {skipReason}
+                        </span>
                       )}
                     </div>
                   </TableCell>
-                  <TableCell colSpan={dataColumnCount} data-testid="TableCell__a73779">
-                    <span className="text-xs text-muted-foreground" data-testid={`ImportReviewQueue__skippedLabel-${index}`}>{text.skipped}</span>
-                  </TableCell>
+                  <RowDataCells
+                    entry={entry}
+                    index={index}
+                    dataColumns={dataColumns}
+                    dataColumnCount={dataColumnCount}
+                    muted
+                    data-testid="RowDataCells__a73779" />
                 </TableRow>
               );
             }
@@ -496,29 +561,12 @@ export function ImportReviewQueue({
                       </div>
                     </div>
                   </TableCell>
-                  {dataColumns ? (
-                    dataColumns.map((field) => (
-                      <TableCell key={field.target} data-testid={"TableCell__" + field.id}>
-                        <span
-                          className={TRUNCATE_CLASS}
-                          title={entry.row[field.target] ?? ''}
-                          data-testid={`ImportReviewQueue__value-${index}-${field.target}`}
-                        >
-                          {entry.row[field.target] ?? ''}
-                        </span>
-                      </TableCell>
-                    ))
-                  ) : (
-                    <TableCell colSpan={dataColumnCount} data-testid="TableCell__a73779">
-                      <span
-                        className={TRUNCATE_CLASS}
-                        title={Object.values(entry.row).join(' · ')}
-                        data-testid={`ImportReviewQueue__summary-${index}`}
-                      >
-                        {Object.values(entry.row).join(' · ')}
-                      </span>
-                    </TableCell>
-                  )}
+                  <RowDataCells
+                    entry={entry}
+                    index={index}
+                    dataColumns={dataColumns}
+                    dataColumnCount={dataColumnCount}
+                    data-testid="RowDataCells__a73779" />
                 </TableRow>
               );
             }
