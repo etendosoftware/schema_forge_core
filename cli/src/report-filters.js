@@ -52,8 +52,18 @@ export function filterAndTransformParams(params, contract, locale = 'en_US') {
       // name (ReportViewerPage.jsx) — without it this would show the raw
       // UUID, exactly the "Organization: <uuid>" problem that got orgId
       // hidden here in the first place.
+      //
+      // A param this report's OWN contract doesn't declare at all (paramDef
+      // undefined) must be excluded too, not just a declared-and-hidden one
+      // (ETP-5013 follow-up) — a cross-report drill-down (e.g. Trial
+      // Balance's "account" link opening a General Ledger detail modal)
+      // spreads the SOURCE report's entire params object into the request
+      // for the TARGET report; `accountLevel`/`openingEntryAmount` (Trial
+      // Balance-only) otherwise leaked into General Ledger's filter summary,
+      // since `!undefined?.hidden` is `true` — an unrecognized param
+      // defaulted to "shown" instead of "not applicable here".
       const paramDef = contract.parameters?.find((p) => p.name === k);
-      return !paramDef?.hidden || k === 'orgId';
+      return (paramDef && !paramDef.hidden) || k === 'orgId';
     })
     .map(([k, v]) => {
       const paramDef = contract.parameters?.find((p) => p.name === k);
