@@ -1,9 +1,12 @@
-import { describe, it } from 'node:test';
+import { describe, it, beforeEach } from 'node:test';
 import { strict as assert } from 'node:assert';
 import {
   createApiFetch, apiFetch, resolveApiUrl, registerApiSession, resetApiSessionForTests,
 } from '../api.js';
 import { CREDENTIAL_MODES, setSessionCredentials } from '../sessionCredentials.js';
+import {
+  rememberRecordVersion, getRecordVersion, resetRecordVersionsForTests,
+} from '../../lib/recordVersions.js';
 import { readFileSync } from 'node:fs';
 import { join, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -427,5 +430,182 @@ describe('ambient apiFetch', () => {
       await apiFetch('/x');
       assert.equal(f.calls[0].options.headers['Authorization'], 'Bearer b');
     } finally { f.restore(); resetApiSessionForTests(); }
+  });
+});
+
+// ── ETP-5073 / DOC-04 ───────────────────────────────────────────────────────
+//
+// The backend now REFUSES an update that does not carry the `updated` value of the record as
+// it was read — that is what makes core's optimistic-locking check actually evaluate, instead
+// of being silently skipped so the last writer overwrites the first. Attaching the token here
+// rather than at the ~41 update call sites is what stops the next new panel from forgetting it.
+
+/**
+ * Stubs `fetch` and returns a recorder of what was sent, plus a restore.
+ *
+ * `clone()` is provided because `harvestWrittenVersion` uses it — deliberately as a real
+ * `Response` would, so these cases exercise the harvest path rather than its guard.
+ */
+function stubVersionedFetch(responseBody = {}) {
+  const original = globalThis.fetch;
+  const calls = [];
+  globalThis.fetch = async (url, opts) => {
+    calls.push({ url, opts });
+    return {
+      ok: true,
+      status: 200,
+      clone: () => ({ json: async () => responseBody }),
+      json: async () => responseBody,
+    };
+  };
+  return { calls, restore: () => { globalThis.fetch = original; } };
+}
+
+function sentBody(calls, index = 0) {
+  return JSON.parse(calls[index].opts.body);
+}
+
+describe('apiFetch optimistic-locking token (ETP-5073)', () => {
+  beforeEach(() => resetRecordVersionsForTests());
+
+  it('attaches the remembered updated to a PATCH of a record it has read', () => {
+    const { calls, restore } = stubVersionedFetch();
+    rememberRecordVersion({ id: 'REC1', updated: '2026-08-28T09:00:00' });
+    return createApiFetch('', () => 't', () => {})(
+      '/sales-invoice/header/REC1', { method: 'PATCH', body: JSON.stringify({ description: 'x' }) },
+    ).then(() => {
+      assert.deepEqual(sentBody(calls), {
+        description: 'x', updated: '2026-08-28T09:00:00',
+      });
+      restore();
+    });
+  });
+
+  it('attaches it on PUT too', () => {
+    const { calls, restore } = stubVersionedFetch();
+    rememberRecordVersion({ id: 'REC1', updated: 'v1' });
+    return createApiFetch('', () => 't', () => {})(
+      '/x/REC1', { method: 'PUT', body: JSON.stringify({ a: 1 }) },
+    ).then(() => {
+      assert.equal(sentBody(calls).updated, 'v1');
+      restore();
+    });
+  });
+
+  it('reads the id from the body when present, not only from the URL tail', () => {
+    // A write whose URL is a collection but whose body names the record.
+    const { calls, restore } = stubVersionedFetch();
+    rememberRecordVersion({ id: 'FROM-BODY', updated: 'v9' });
+    return createApiFetch('', () => 't', () => {})(
+      '/some/collection', { method: 'PATCH', body: JSON.stringify({ id: 'FROM-BODY' }) },
+    ).then(() => {
+      assert.equal(sentBody(calls).updated, 'v9');
+      restore();
+    });
+  });
+
+  it('leaves a POST alone — a create has no prior version to conflict with', () => {
+    const { calls, restore } = stubVersionedFetch();
+    rememberRecordVersion({ id: 'REC1', updated: 'v1' });
+    return createApiFetch('', () => 't', () => {})(
+      '/x/REC1', { method: 'POST', body: JSON.stringify({ a: 1 }) },
+    ).then(() => {
+      assert.deepEqual(sentBody(calls), { a: 1 });
+      restore();
+    });
+  });
+
+  it('leaves a write to an id it never read alone, so a non-NEO PUT is never corrupted', () => {
+    // The cache miss IS the guard: an OAuth2 or fiscal-config PUT has no entry, so nothing
+    // is added to its body.
+    const { calls, restore } = stubVersionedFetch();
+    return createApiFetch('', () => 't', () => {})(
+      '/oauth2/config/UNKNOWN', { method: 'PUT', body: JSON.stringify({ a: 1 }) },
+    ).then(() => {
+      assert.deepEqual(sentBody(calls), { a: 1 });
+      restore();
+    });
+  });
+
+  it('never overrides an updated the caller set explicitly', () => {
+    const { calls, restore } = stubVersionedFetch();
+    rememberRecordVersion({ id: 'REC1', updated: 'remembered' });
+    return createApiFetch('', () => 't', () => {})(
+      '/x/REC1', { method: 'PATCH', body: JSON.stringify({ updated: 'explicit' }) },
+    ).then(() => {
+      assert.equal(sentBody(calls).updated, 'explicit');
+      restore();
+    });
+  });
+
+  it('leaves a FormData body alone — an upload is not a JSON record write', () => {
+    const { calls, restore } = stubVersionedFetch();
+    rememberRecordVersion({ id: 'REC1', updated: 'v1' });
+    const form = new FormData();
+    return createApiFetch('', () => 't', () => {})(
+      '/x/REC1', { method: 'PATCH', body: form },
+    ).then(() => {
+      assert.equal(calls[0].opts.body, form);
+      restore();
+    });
+  });
+
+  it('leaves a non-JSON string body alone instead of throwing', () => {
+    const { calls, restore } = stubVersionedFetch();
+    rememberRecordVersion({ id: 'REC1', updated: 'v1' });
+    return createApiFetch('', () => 't', () => {})(
+      '/x/REC1', { method: 'PATCH', body: 'not json' },
+    ).then(() => {
+      assert.equal(calls[0].opts.body, 'not json');
+      restore();
+    });
+  });
+
+  it('remembers the version a successful write returned, so a second edit is not a conflict', async () => {
+    // Without this the second save in one sitting would replay the token the first save
+    // consumed, and the server would correctly reject it — against the user's own change.
+    const { restore } = stubVersionedFetch({ response: { data: [{ id: 'REC1', updated: 'v2' }] } });
+    rememberRecordVersion({ id: 'REC1', updated: 'v1' });
+    await createApiFetch('', () => 't', () => {})(
+      '/x/REC1', { method: 'PATCH', body: JSON.stringify({ a: 1 }) },
+    );
+    // The harvest is deliberately not awaited by the request, so let its microtasks drain.
+    await new Promise(resolve => setTimeout(resolve, 0));
+    assert.equal(getRecordVersion('REC1'), 'v2');
+    restore();
+  });
+
+  it('never consumes the caller\'s body when clone() is not independent', async () => {
+    // A real Response.clone() gives an independent body, but a hand-rolled double may return
+    // `this`. Reading it here would consume the single-use json() the CALLER was about to read,
+    // starving the very request being decorated. Harvesting is worth nothing next to that.
+    const original = globalThis.fetch;
+    let jsonReads = 0;
+    const res = {
+      ok: true,
+      status: 200,
+      json: async () => { jsonReads += 1; return { response: { data: [{ id: 'REC1', updated: 'v2' }] } }; },
+    };
+    res.clone = () => res;   // the hazard: not a copy
+    globalThis.fetch = async () => res;
+    const answer = await createApiFetch('', () => 't', () => {})(
+      '/x/REC1', { method: 'PATCH', body: JSON.stringify({ a: 1 }) },
+    );
+    await new Promise(resolve => setTimeout(resolve, 0));
+    // The caller's read is the FIRST and only one.
+    await answer.json();
+    assert.equal(jsonReads, 1);
+    assert.equal(getRecordVersion('REC1'), undefined, 'nothing was harvested, deliberately');
+    globalThis.fetch = original;
+  });
+
+  it('does not blow up when the response has no clone(), as a stubbed fetch may not', async () => {
+    // Harvesting is an optimisation; it must never be the reason a caller's request throws.
+    const original = globalThis.fetch;
+    globalThis.fetch = async () => ({ ok: true, status: 200, json: async () => ({}) });
+    await assert.doesNotReject(createApiFetch('', () => 't', () => {})(
+      '/x/REC1', { method: 'PATCH', body: JSON.stringify({ a: 1 }) },
+    ));
+    globalThis.fetch = original;
   });
 });

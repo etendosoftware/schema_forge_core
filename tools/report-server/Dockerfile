@@ -13,11 +13,13 @@ WORKDIR /app
 COPY tools/report-server/server.js ./tools/report-server/server.js
 COPY artifacts/ ./artifacts/
 COPY templates/ ./templates/
-COPY cli/src/extract-from-jasper.js ./cli/src/extract-from-jasper.js
-# server.js imports this at module load time (added by ETP-4899 to keep the
-# deploy-time report list in sync with the dev one). Without it the container
-# dies on startup with ERR_MODULE_NOT_FOUND, never reaching a single request.
-COPY cli/src/report-descriptor.js ./cli/src/report-descriptor.js
+# The whole directory, not a per-file list. server.js imports 6 modules from
+# cli/src at load time (report-descriptor, report-i18n, report-grouping,
+# report-sql, report-filters, report-branding) and the list went stale twice in
+# one week: whatever is missing makes the container die on startup with
+# ERR_MODULE_NOT_FOUND, never reaching a single request. It is invisible while
+# developing, because a dev machine has the whole repository on disk.
+COPY cli/src/ ./cli/src/
 
 EXPOSE 3001
 
