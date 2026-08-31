@@ -609,3 +609,23 @@ describe('apiFetch optimistic-locking token (ETP-5073)', () => {
     globalThis.fetch = original;
   });
 });
+
+// ETP-4576 — the bearer must never travel as the CSRF proof.
+//
+// createApiFetch puts whatever its second argument returns into `X-Go-CSRF` on unsafe
+// methods. Both callers used to hand it a TOKEN there — `session.getToken` in apiFetch and
+// `getAmbientToken` in useApiFetch — which shipped the credential in the proof's header
+// under the bearer scheme, and under the cookie one put a value that is not the proof where
+// the backend expects it, so every unsafe request from outside a provider came back 403.
+// Source-reading rather than behavioural: the wiring is what regressed, and it regressed
+// silently because nothing on the wire complained under bearer.
+describe('the CSRF slot never receives a credential (ETP-4576)', () => {
+  const src = readFileSync(new URL('../api.js', import.meta.url), 'utf8');
+  const codeOnly = src.replace(/\/\*[\s\S]*?\*\//g, '').replace(/^\s*\/\/.*$/gm, '');
+
+  it('apiFetch reads the proof off the active scheme, not off the session token', () => {
+    const call = codeOnly.slice(codeOnly.indexOf('return createApiFetch('));
+    assert.match(call, /getSessionCsrfToken/);
+    assert.doesNotMatch(call.slice(0, call.indexOf(')(path')), /getToken/);
+  });
+});

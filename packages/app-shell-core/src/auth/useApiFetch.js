@@ -1,5 +1,6 @@
 import { useMemo } from 'react';
-import { createApiFetch, getAmbientToken, notifyAmbientUnauthorized } from './api.js';
+import { createApiFetch, notifyAmbientUnauthorized } from './api.js';
+import { getSessionCsrfToken } from './sessionCredentials.js';
 import { useAuthOptional } from './AuthContext.jsx';
 
 // What this hook hands createApiFetch is `csrfToken`, never a client-held credential
@@ -18,9 +19,14 @@ export function useApiFetch(baseUrl) {
   const logout = auth?.logout;
   const hasSession = auth != null;
 
+  // The fallback reads the CSRF proof off the active scheme, NOT `getAmbientToken`. That
+  // slot is the proof, and the ambient token is the bearer: handing it over sent the
+  // credential out as `X-Go-CSRF` under the bearer scheme, and under the cookie one it put
+  // a value that is not the proof where the proof belongs — so every unsafe request from a
+  // component rendered outside a provider came back 403.
   return useMemo(() => createApiFetch(
     baseUrl,
-    hasSession ? () => csrfToken : getAmbientToken,
+    hasSession ? () => csrfToken : getSessionCsrfToken,
     logout || notifyAmbientUnauthorized,
   ), [baseUrl, hasSession, csrfToken, logout]);
 }

@@ -369,9 +369,12 @@ export function resetApiSessionForTests() {
  */
 export function apiFetch(path, options = {}) {
   const session = ambientSession;
+  // Second argument is the CSRF proof, not the credential: `session.getToken` returns the
+  // bearer, and passing it here shipped it as `X-Go-CSRF`. The proof lives on the active
+  // scheme, which registerApiSession keeps up to date.
   return createApiFetch(
     session ? session.baseUrl : undefined,
-    session ? session.getToken : () => null,
+    getSessionCsrfToken,
     session ? session.onUnauthorized : () => {},
   )(path, options);
 }

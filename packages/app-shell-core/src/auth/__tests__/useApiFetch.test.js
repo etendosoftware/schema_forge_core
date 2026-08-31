@@ -24,7 +24,10 @@ describe('useApiFetch', () => {
   });
 
   it('falls back to the ambient session when there is no provider', () => {
-    assert.match(src, /getAmbientToken/);
+    // ETP-4576 — the fallback for the CSRF slot is the active scheme's proof, not the
+    // ambient bearer: that slot ends up in `X-Go-CSRF`, so handing it a credential both
+    // leaked the bearer and put a non-proof where the proof belongs.
+    assert.match(src, /getSessionCsrfToken/);
     assert.match(src, /notifyAmbientUnauthorized/);
   });
 
@@ -56,6 +59,9 @@ describe('useApiFetch — csrfToken wiring (ETP-4576)', () => {
     // `getCsrfToken` — camelCase boundaries are plain word characters, so
     // there is no \b between "csrf"/"get" and "Token". Any surviving match
     // means the old bearer-token wiring (`token`, `getToken`) is still here.
-    assert.doesNotMatch(src, /\btoken\b/i);
+    // Comments are stripped first: prose explaining WHY the bearer must not be wired here
+    // necessarily names it, and a comment must never be what makes a test fail.
+    const codeOnly = src.replace(/\/\*[\s\S]*?\*\//g, '').replace(/^\s*\/\/.*$/gm, '');
+    assert.doesNotMatch(codeOnly, /\btoken\b/i);
   });
 });
