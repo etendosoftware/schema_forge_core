@@ -1074,7 +1074,7 @@ function DistinctEnumPicker({ col, entity, apiBaseUrl, rows, value, onChange, ui
     // enumLabels keys directly so the picker is not empty.
     fillFallbackCodes(out, labelMap, seen);
     return out;
-  }, [distinct.values, distinct.search, inMemoryCodes, value, labelMap, col]);
+  }, [distinct.values, distinct.search, inMemoryCodes, value, labelMap, dictionary]);
 
   // Status columns get the fixed business-flow order; every other enum column
   // keeps the merge order untouched. See orderCodesForColumn (ETP-4913).
