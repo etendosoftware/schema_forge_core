@@ -441,7 +441,23 @@ function buildCuratedField(rawField, fieldDecision, discardPatterns) {
   }
 
   if (isVisible) applyVisibleFieldProps(field, rawField, fieldDecision);
+  // An empty array is truthy, so it reaches `field` through
+  // copyTruthyDecisionProps — but it carries no options and must NOT suppress a
+  // working AD reference, hence the length check.
+  const decidedEnumValues = field.enumValues?.length ? field.enumValues : null;
   copyRawProps(field, rawField, FIELD_RAW_COPY_PROPS);
+
+  // ETP-4913 — restore a decisions-declared `enumValues`, which the raw copy
+  // above overwrites unconditionally. `enumValues` sits in BOTH copy lists:
+  // decisions first (FIELD_DECISION_COPY_PROPS), then raw
+  // (FIELD_RAW_COPY_PROPS), so an AD List reference always won and the
+  // documented "decisions.json enumValues overrides the raw ones" behavior
+  // (docs/decisions-reference.md) never applied to a field that HAS a raw
+  // reference. It only appeared to work for fields with no raw enumValues at
+  // all (e.g. the synthetic YesNo `processed` status of goods-movements).
+  if (decidedEnumValues) {
+    field.enumValues = decidedEnumValues;
+  }
 
   // Allow decisions to explicitly suppress a raw derivation by setting derivation: null.
   // This is needed when a field transitions from system/readOnly (auto-derived) to editable
