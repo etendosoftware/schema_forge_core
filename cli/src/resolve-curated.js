@@ -843,6 +843,7 @@ const WINDOW_TRUTHY_PROPS = [
   'listBaseFilter',
   'quickFilters',
   'subsetFilters',
+  'searchSuggestions',
   'dateFilterKey',
   'statusEnumLabels',
   'statusFieldLabel',
@@ -856,6 +857,9 @@ const WINDOW_TRUTHY_PROPS = [
   'extraTabs',
   'customPanelTabs',
   'selectorPriceCurrency',
+  // Optional global semantic-search participation. Omitted by default, so existing
+  // windows do not need an explicit opt-out declaration.
+  'vectorSearch',
 ];
 
 const WINDOW_BOOLEAN_TRUE_PROPS = [
@@ -908,10 +912,12 @@ export const WINDOW_KEY_ORDER = [
   'labelOverrides', 'primaryTabs', 'othersLabel',
   'disableProcessedLock', 'titleField',
   'listViewOptions', 'listBaseFilter', 'quickFilters', 'subsetFilters',
+  'searchSuggestions',
   'dateFilterKey', 'statusEnumLabels', 'statusFieldLabel', 'lockedAlert', 'noHeaderBorder', 'toolbarBorderBottom', 'compactSidebarPadding', 'whiteFormBackground', 'hideFormCard', 'sidebarAboveTabsOnly', 'tabsSeparator', 'sidebarClassName', 'formCardPadding', 'formScrollPaddingX', 'tabsBarPaddingX', 'primaryTabsVariant', 'toolbarPaddingX', 'toolbarButtonSize', 'listbarPaddingX', 'tablePaddingX', 'lineEntityConfig',
   'extraTabs', 'attachments', 'customPanelTabs', 'rowQuickActions',
   'sendDocument',
   'layoutType', 'linesLayout', 'balanceFooter', 'selectorPriceCurrency',
+  'vectorSearch',
   'import',
 ];
 

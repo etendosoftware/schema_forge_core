@@ -71,6 +71,38 @@ describe('generateFrontendContract', () => {
     assert.ok(!fc.entities.order.searchableFields.includes('grandTotal'));
   });
 
+  it('omits global vector search by default', () => {
+    const fc = generateFrontendContract(minimalSchema);
+    assert.equal(fc.window.vectorSearch, undefined);
+  });
+
+  it('carries an opted-in vector target through the frontend contract', () => {
+    const schema = {
+      ...minimalSchema,
+      window: { ...minimalSchema.window, vectorSearch: { target: 'products' } },
+    };
+    const fc = generateFrontendContract(schema);
+    assert.deepEqual(fc.window.vectorSearch, { target: 'products' });
+  });
+
+  it('carries contract-declared search suggestions through the frontend contract', () => {
+    const schema = {
+      ...minimalSchema,
+      window: {
+        ...minimalSchema.window,
+        searchSuggestions: [{
+          label: 'overdueSalesInvoices',
+          path: '/sales-invoice?filter=overdue',
+        }],
+      },
+    };
+    const fc = generateFrontendContract(schema);
+    assert.deepEqual(fc.window.searchSuggestions, [{
+      label: 'overdueSalesInvoices',
+      path: '/sales-invoice?filter=overdue',
+    }]);
+  });
+
   it('maps types to TypeScript types', () => {
     const fc = generateFrontendContract(minimalSchema);
     const docNo = fc.entities.order.fields.find(f => f.name === 'documentNo');
