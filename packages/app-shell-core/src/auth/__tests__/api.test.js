@@ -619,6 +619,31 @@ describe('apiFetch optimistic-locking token (ETP-5073)', () => {
 // the backend expects it, so every unsafe request from outside a provider came back 403.
 // Source-reading rather than behavioural: the wiring is what regressed, and it regressed
 // silently because nothing on the wire complained under bearer.
+describe('the CSRF proof does not depend on the scheme the client believes it is in (ETP-4576)', () => {
+  // Regression guard. Gating the header on `mode !== bearer` reads tidier and shipped
+  // once: it took down every confirm flow in the integration suite with a 403, because
+  // the browser attaches the same-origin session cookie regardless of what the client
+  // thinks, and the backend validates CSRF as soon as it sees that cookie on an unsafe
+  // method. Reads kept working, which is what made it look like anything but this.
+  it('sends X-Go-CSRF on an unsafe request even while the active scheme is bearer', async () => {
+    const f = stubFetch();
+    try {
+      setSessionCredentials({ mode: CREDENTIAL_MODES.bearer, token: 'tok' });
+      await createApiFetch('', () => 'csrf-abc', () => {})('/x', { method: 'POST', body: '{}' });
+      assert.equal(f.calls[0].options.headers['X-Go-CSRF'], 'csrf-abc');
+    } finally { f.restore(); }
+  });
+
+  it('still sends nothing on a safe request, whatever the scheme', async () => {
+    const f = stubFetch();
+    try {
+      setSessionCredentials({ mode: CREDENTIAL_MODES.bearer, token: 'tok' });
+      await createApiFetch('', () => 'csrf-abc', () => {})('/x');
+      assert.equal(f.calls[0].options.headers['X-Go-CSRF'], undefined);
+    } finally { f.restore(); }
+  });
+});
+
 describe('the CSRF slot never receives a credential (ETP-4576)', () => {
   const src = readFileSync(new URL('../api.js', import.meta.url), 'utf8');
   const codeOnly = src.replace(/\/\*[\s\S]*?\*\//g, '').replace(/^\s*\/\/.*$/gm, '');

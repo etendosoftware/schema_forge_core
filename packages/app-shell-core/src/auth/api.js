@@ -1,6 +1,5 @@
 import { getStoredLocale } from '../i18n/useLocaleState.js';
 import {
-  CREDENTIAL_MODES,
   credentialHeadersForToken,
   getCredentialMode,
   getSessionCsrfToken,
@@ -274,12 +273,20 @@ export function createApiFetch(baseUrl, getCsrfToken, onUnauthorized) {
       ...(tokenOverride ? credentialHeadersForToken(tokenOverride) : {}),
       ...extraHeaders,
     };
-    // ETP-4576 — the proof rides only under the scheme that asks for one. `writeHeaders()`
-    // above already adds it when the active scheme is the cookie session; this block exists
-    // for the fresher value a provider holds, and used to attach it regardless of scheme —
-    // so a bearer request went out carrying an `X-Go-CSRF` the backend never asked for, and
-    // which contradicts the contract each scheme is supposed to keep.
-    if (unsafe && getCredentialMode() !== CREDENTIAL_MODES.bearer) {
+    // ETP-4576 — every unsafe request carries the proof whenever one is held, WITHOUT
+    // consulting the active scheme.
+    //
+    // Gating this on `mode !== bearer` reads tidier and was tried: it sent a bearer
+    // request out without an `X-Go-CSRF` the backend supposedly never asked for. But the
+    // browser attaches a same-origin session cookie on its own, whatever the client
+    // believes it is doing, and the backend validates CSRF the moment it sees that cookie
+    // on an unsafe method (`GoSessionAuthenticator`). So a client that decides it is in
+    // bearer mode - which `credentialHeadersForToken` reveals it can, mid-session - loses
+    // that bet as a 403 on the write, while every read still succeeds: exactly the shape
+    // that took three confirm flows down in the integration suite (sales order, sales
+    // quotation, cash close). Sending the header under a scheme that ignores it costs
+    // nothing; omitting it when the cookie rides along costs the write.
+    if (unsafe) {
       const csrfToken = getCsrfToken();
       if (csrfToken) headers['X-Go-CSRF'] = csrfToken;
     }
