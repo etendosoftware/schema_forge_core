@@ -126,7 +126,7 @@ export const TRIAL_BALANCE_AMOUNT_FIELDS = ['opening_balance', 'activity_debit',
  * grain, is what makes the "has activity" check correct at every grain a
  * user can request — not just the finest one.
  */
-export function foldAggregateRows(rows, dimensionField) {
+export function foldAggregateRows(rows, dimensionField, dimensionIdField) {
   const folded = new Map();
   for (const r of rows) {
     const dimValue = dimensionField ? (r[dimensionField] || '') : null;
@@ -136,6 +136,13 @@ export function foldAggregateRows(rows, dimensionField) {
       acc = {
         account_no: r.account_no, account_id: r.account_id, account_name: r.account_name,
         dimensionValue: dimValue,
+        // Only set when the dimension declares a `groupByIdField` (ETP-5013
+        // follow-up — currently just bPartnerId/bpartner_id) — the id that
+        // lets a group's own value ("Blanquiceleste S.A.") become a
+        // drill-down link, same as Classic's Trial Balance. A dimension
+        // without one (Product/Project/Cost Center for now) keeps its value
+        // as plain, non-navigable text.
+        dimensionId: dimensionIdField ? (r[dimensionIdField] || '') : null,
         opening_balance: 0, activity_debit: 0, activity_credit: 0, closing_balance: 0,
       };
       folded.set(key, acc);
@@ -206,6 +213,7 @@ export function groupAggregateRowsByAccount(rows) {
     }
     current.dimensionRows.push({
       dimensionValue: r.dimensionValue ?? '',
+      dimensionId: r.dimensionId ?? '',
       opening_balance: r.opening_balance, activity_debit: r.activity_debit,
       activity_credit: r.activity_credit, closing_balance: r.closing_balance,
     });
@@ -427,6 +435,7 @@ export function resolveGrouping(contract, params, rows, locale = 'en_US') {
     (contract.columns || []).find((c) => c.field === 'groupbyname')?.label, locale, 'Description');
   let dimensionLabel = null;
   let dimensionField = null;
+  let dimensionIdField = null;
 
   if (params.groupBy && rows) {
     const dimensionParam = (contract.parameters || []).find(
@@ -436,6 +445,8 @@ export function resolveGrouping(contract, params, rows, locale = 'en_US') {
       const sourceField = dimensionParam.groupByField;
       dimensionLabel = pickLabel(dimensionParam.label, locale, params.groupBy);
       dimensionField = sourceField;
+      // Optional (ETP-5013 follow-up) — only bPartnerId declares one so far.
+      dimensionIdField = dimensionParam.groupByIdField || null;
       // Sort is stable (guaranteed since ES2019), so rows tied on the dimension value
       // keep the relative order the SQL query already gave them (account, then date) —
       // nesting Account inside the dimension comes for free, no secondary key needed.
@@ -457,7 +468,7 @@ export function resolveGrouping(contract, params, rows, locale = 'en_US') {
   let tbGroups = null;
   if (contract.type !== 'grouped-listing' && rows
       && (contract.parameters || []).some((p) => p.name === 'groupBy')) {
-    rows = foldAggregateRows(rows, dimensionField);
+    rows = foldAggregateRows(rows, dimensionField, dimensionIdField);
     // account-outer / dimension-inner — see groupAggregateRowsByAccount's
     // docstring (ETP-5013).
     if (dimensionField) tbGroups = groupAggregateRowsByAccount(rows);
