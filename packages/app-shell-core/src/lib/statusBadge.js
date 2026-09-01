@@ -1,4 +1,59 @@
 /**
+ * Canonical business-flow ordering for document/payment status codes,
+ * independent of data-source arrival order (in-memory rows vs. backend
+ * distinct-values fetch). Buckets follow: Temporary -> Draft -> In process ->
+ * Awaiting -> Completed -> Re-opened -> Closed -> Voided -> Unknown.
+ * Codes not listed here are unknown to this catalog and are sorted
+ * alphabetically after all known codes (see compareStatusCodes).
+ *
+ * Kept byte-identical to the functional repo's copy
+ * (schema_forge/tools/app-shell/src/lib/statusBadge.js); a parity test there
+ * fails the build if the two drift apart.
+ */
+export const STATUS_ORDER = [
+  // Temporary / pre-draft
+  'TMP', 'TEMP',
+  // Draft / not started
+  'DR', 'DRAFT', 'FALSE', 'N', 'NC',
+  // In process / under evaluation
+  'IP', 'M', 'UE', 'AE', 'ME', 'RPAE',
+  // Awaiting
+  'RPAP', 'WP',
+  // Completed
+  'CO', 'CA', 'ETGO_CI', 'TRUE', 'Y', 'YES', 'PROCESSED',
+  'RPR', 'RPPC', 'PPM', 'PWNC', 'RDNC',
+  // Re-opened after completion (back in the flow, before terminal Closed)
+  'RE',
+  // Closed
+  'CL', 'PA',
+  // Rejected / voided
+  'NA', 'CJ', 'VO', 'RPVOID', 'ETGOERR', 'P',
+  // Unknown sentinel — always last among the known codes
+  '??',
+];
+
+/**
+ * Deterministic comparator for status codes, used to keep status dropdowns in a
+ * fixed order across re-renders — regardless of whether codes came first from
+ * in-memory rows or from the (uncached) backend distinct-values fetch resolving
+ * later. Known codes follow STATUS_ORDER; unknown codes are pushed to the end,
+ * sorted alphabetically so they are still stable relative to each other.
+ */
+export function compareStatusCodes(a, b) {
+  const normalize = (c) => String(c ?? '').toUpperCase();
+  const na = normalize(a);
+  const nb = normalize(b);
+  const ia = STATUS_ORDER.indexOf(na);
+  const ib = STATUS_ORDER.indexOf(nb);
+  if (ia !== -1 && ib !== -1) return ia - ib;
+  if (ia !== -1) return -1;
+  if (ib !== -1) return 1;
+  if (na < nb) return -1;
+  if (na > nb) return 1;
+  return 0;
+}
+
+/**
  * Map a status code to one of the 4 Figma semantic tones.
  * Used by StatusTag (grid). Does NOT affect DetailView.
  */

@@ -708,6 +708,12 @@ export function generateFormComponent(entityName, contract) {
     const slotLines = [];
     const optionsPart = getOptionsPart(type, f);
     const formLabelPart = f.label ? `, label: '${f.label.replace(/'/g, "\\'")}'` : '';
+    // ETP-4917 — mirror generateTableComponent's per-column `labels` dict
+    // (line ~447) so a window-scoped `decisions.json` label override on a
+    // header field reaches the actual edit form, not just the grid column.
+    // EntityForm.jsx already resolves `f.labels?.[locale] ?? ... ?? f.label`
+    // with zero consumer-side changes needed.
+    const labelsPart = jsonWrapIf(', labels: ', f.labels);
     const valueTypePart = (type === 'select' && f.tsType === 'boolean') ? `, valueType: 'boolean'` : '';
     const spanPart = (f.span && f.span > 1) ? `, span: ${f.span}` : '';
     const rowsPart = f.rows != null ? `, rows: ${f.rows}` : '';
@@ -717,7 +723,7 @@ export function generateFormComponent(entityName, contract) {
     // ETP-4749: fixed chip rendered before the input (e.g. "https://"); see EntityForm's
     // renderInputField and recipientEdits.js's format validators.
     const inputPrefixPart = wrapIf(", inputPrefix: '", f.inputPrefix, "'");
-    const fieldLine = `  { key: '${f.name}', column: '${f.column}', type: '${type}'${formLabelPart}${requiredPart}${lookupPart}${popupPart}${readOnlyPart}${inlinePart}${sectionPart}${referencePart}${inputModePart}${searchSelectPart}${allowCreatePart}${createPart}${dependsOnPart}${optionsPart}${valueTypePart}${defaultValuePart}${helpPart}${placeholderPart}${emptyOptionPart}${fieldGroupPart}${precisionPart}${minPart}${integerPart}${displayLogicPart}${readOnlyLogicPart}${spanPart}${rowsPart}${clearablePart}${customRendererPart}${editModalPart}${inputPrefixPart} },`;
+    const fieldLine = `  { key: '${f.name}', column: '${f.column}', type: '${type}'${labelsPart}${formLabelPart}${requiredPart}${lookupPart}${popupPart}${readOnlyPart}${inlinePart}${sectionPart}${referencePart}${inputModePart}${searchSelectPart}${allowCreatePart}${createPart}${dependsOnPart}${optionsPart}${valueTypePart}${defaultValuePart}${helpPart}${placeholderPart}${emptyOptionPart}${fieldGroupPart}${precisionPart}${minPart}${integerPart}${displayLogicPart}${readOnlyLogicPart}${spanPart}${rowsPart}${clearablePart}${customRendererPart}${editModalPart}${inputPrefixPart} },`;
     return [...slotLines, fieldLine].join('\n');
   }).join('\n');
 
