@@ -768,3 +768,76 @@ describe('apiFetch harvests record versions on read (ETP-5112)', () => {
       });
   });
 });
+
+describe('withRecordVersion non-regression (ETP-5073 behaviour under the ETP-5112 key)', () => {
+  beforeEach(() => resetRecordVersionsForTests());
+
+  it('leaves a GET and a DELETE untouched — neither is a versioned update', async () => {
+    const { calls, restore } = stubVersionedFetch();
+    rememberRecordVersion({ id: 'REC1', updated: 'v1' });
+    const fetcher = createApiFetch('', () => 't', () => {});
+    await fetcher('/x/REC1');
+    await fetcher('/x/REC1', { method: 'DELETE' });
+    assert.equal(calls[0].opts.body, undefined);
+    assert.equal(calls[1].opts.body, undefined);
+    restore();
+  });
+
+  it('leaves a JSON array or a JSON null body alone — neither is a record', async () => {
+    const { calls, restore } = stubVersionedFetch();
+    rememberRecordVersion({ id: 'REC1', updated: 'v1' });
+    const fetcher = createApiFetch('', () => 't', () => {});
+    await fetcher('/x/REC1', { method: 'PATCH', body: '[{"a":1}]' });
+    await fetcher('/x/REC1', { method: 'PATCH', body: 'null' });
+    assert.equal(calls[0].opts.body, '[{"a":1}]');
+    assert.equal(calls[1].opts.body, 'null');
+    restore();
+  });
+
+  it('accepts a lowercase method, so a call site writing `patch` is still versioned', async () => {
+    const { calls, restore } = stubVersionedFetch();
+    rememberRecordVersion({ id: 'REC1', updated: 'v1' });
+    await createApiFetch('', () => 't', () => {})(
+      '/x/REC1', { method: 'patch', body: JSON.stringify({ a: 1 }) },
+    );
+    assert.equal(sentBody(calls).updated, 'v1');
+    restore();
+  });
+
+  it('injects nothing when the id is known under other entities but not this one', async () => {
+    // The deliberate choice of ETP-5112: a loud 400 `missing_updated` beats guessing another
+    // row's token and producing a 409 `stale_record` the user cannot explain.
+    const { calls, restore } = stubVersionedFetch();
+    rememberRecordVersion({ id: 'O1', updated: 'ORG' }, 'organization');
+    rememberRecordVersion({ id: 'O1', updated: 'INFO' }, 'information');
+    await createApiFetch('', () => 't', () => {})(
+      '/accounting/O1', { method: 'PATCH', body: JSON.stringify({ a: 1 }) },
+    );
+    assert.deepEqual(sentBody(calls), { a: 1 });
+    restore();
+  });
+
+  it('still resolves a token remembered with no entity, as useEntity records it', async () => {
+    // ContactsTable / ContactsFinancialPanel never read: they get `data` through props from
+    // `useEntity` (which has no path context) and then PATCH `/businessPartner/{id}`.
+    const { calls, restore } = stubVersionedFetch();
+    rememberRecordVersion({ id: 'BP1', updated: 'from-useEntity' });
+    await createApiFetch('', () => 't', () => {})(
+      '/businessPartner/BP1', { method: 'PATCH', body: JSON.stringify({ name: 'x' }) },
+    );
+    assert.equal(sentBody(calls).updated, 'from-useEntity');
+    restore();
+  });
+
+  it('keys a write by an encoded id in the URL under the entity, not the encoding', async () => {
+    // `ListModalWindow.jsx` writes to `/${entity}/${encodeURIComponent(row.id)}`.
+    const { calls, restore } = stubVersionedFetch();
+    rememberRecordVersion({ id: 'a/b', updated: 'v1' }, 'entity');
+    await createApiFetch('', () => 't', () => {})(
+      `/entity/${encodeURIComponent('a/b')}`,
+      { method: 'PATCH', body: JSON.stringify({ id: 'a/b', a: 1 }) },
+    );
+    assert.equal(sentBody(calls).updated, 'v1');
+    restore();
+  });
+});
