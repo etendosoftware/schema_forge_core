@@ -66,9 +66,9 @@ describe('filterAndTransformParams', () => {
     ]);
   });
 
-  it('still shows a param with no matching definition at all (not hidden by omission)', () => {
+  it('excludes a param with no matching definition at all (ETP-5013 follow-up — see the sibling "does not declare at all" test below for the real-world scenario this guards)', () => {
     const out = filterAndTransformParams({ someAdHocParam: 'X' }, baseContract, 'es_ES');
-    assert.deepEqual(out, [{ label: 'someAdHocParam', value: 'X' }]);
+    assert.deepEqual(out, []);
   });
 
   it('resolves a boolean toggle to a localized Yes/No, not the raw JS value', () => {
@@ -142,9 +142,49 @@ describe('filterAndTransformParams', () => {
     assert.equal(out[0].value, '25/08/2026');
   });
 
-  it('falls back to the param name when it has no label', () => {
+  it('excludes a param this report\'s contract does not declare at all (ETP-5013 follow-up)', () => {
+    // Used to fall back to showing the raw param name as its own label — but
+    // that's exactly what leaked a cross-report drill-down's SOURCE params
+    // (Trial Balance's accountLevel/openingEntryAmount) into the TARGET
+    // report's filter summary (General Ledger, whose contract never declared
+    // them): DrillDownViewer spreads the whole source `params` object into
+    // the request, and an unrecognized param used to default to "shown"
+    // instead of "not applicable to this report".
     const out = filterAndTransformParams({ unknownParam: 'X' }, baseContract, 'es_ES');
-    assert.deepEqual(out, [{ label: 'unknownParam', value: 'X' }]);
+    assert.deepEqual(out, []);
+  });
+
+  it('excludes params from a cross-report drill-down that the TARGET report never declared (ETP-5013 real-world case)', () => {
+    // Trial Balance's "account" drill-down opens a General Ledger detail
+    // modal via DrillDownViewer, which spreads Trial Balance's ENTIRE params
+    // object (baseParams) into the render request for report-general-ledger —
+    // including accountLevel/openingEntryAmount, which only Trial Balance's
+    // own contract declares. General Ledger's contract (simulated here,
+    // deliberately WITHOUT those two) must not surface them in its own
+    // filter summary just because they arrived on the request.
+    const generalLedgerContract = {
+      parameters: [
+        { name: 'dateFrom', type: 'date', label: { en_US: 'From Date', es_ES: 'Desde Fecha' } },
+        { name: 'fromAccountId', label: { en_US: 'From Account', es_ES: 'Desde Cuenta' } },
+        { name: 'orgId', hidden: true, autoDefault: true, label: { en_US: 'Organization', es_ES: 'Organización' } },
+      ],
+    };
+    const out = filterAndTransformParams(
+      {
+        dateFrom: '2026-08-05',
+        fromAccountId: '35000000',
+        orgId: 'org-1', _display_orgId: 'GOOrg',
+        // Trial Balance-only params, leaked through by the drill-down:
+        accountLevel: 'S',
+        openingEntryAmount: true,
+      },
+      generalLedgerContract, 'es_ES'
+    );
+    assert.deepEqual(out, [
+      { label: 'Desde Fecha', value: '05/08/2026' },
+      { label: 'Desde Cuenta', value: '35000000' },
+      { label: 'Organización', value: 'GOOrg' },
+    ]);
   });
 
   it('defaults to en_US when no locale is given', () => {
