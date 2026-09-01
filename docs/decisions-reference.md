@@ -811,13 +811,42 @@ Two field-level props control how the grid column renders raw values as labeled 
 2. `DistinctEnumPicker` (in `AdvancedFilterBuilder.jsx`) reads `enumLabels` to populate the advanced/conditional filter value dropdown — so the filter shows translated labels instead of raw values.
 3. `ListFilterBar.jsx` uses the same `enumLabels` to drive the status quick-filter pills above the list.
 
+**Option order in the two status dropdowns (ETP-4913):** both the `ListFilterBar` pill and
+`DistinctEnumPicker` merge two sources that arrive at different times — the uncached backend
+`_distinct` fetch (fired when the popover opens) and the codes present in the currently loaded
+grid rows. Neither source is wrong on its own, but merging them unsorted meant the list painted
+in grid order and then reshuffled once the fetch resolved, giving a different order on every
+open. Both now sort with `compareStatusCodes` / `STATUS_ORDER` from `lib/statusBadge.js`, the
+single fixed business-flow catalog (Temporary → Draft → In process → Awaiting → Completed →
+Re-opened → Closed → Voided → Unknown).
+
+`DistinctEnumPicker` applies that sort **only** to `type: 'status'` columns — exactly the set
+`ListFilterBar` discovers via `columns.find(c => c.type === 'status')`, so the two can never
+disagree for the same column. Every other `enumLabel` column keeps its merge order, because it
+is already deterministic AND intentional: the backend's `order by <code> asc` for business enums
+(`accountType` `A,E,L,M,O,R` would become `M,A,E,L,O,R`, since `M` sits in the In-process
+bucket), or the `enumLabels` insertion order for virtual columns filled by `fillFallbackCodes`
+(a severity list `vencida, proxima, aldia` would be alphabetized into reverse severity). **Do
+not widen that gate** — two guard tests in
+`src/components/contract-ui/__tests__/AdvancedFilterBuilder.test.jsx` fail if you do.
+
+Note also that `DistinctEnumPicker.labelFor` deliberately does NOT delegate to `statusLabel()`
+the way `ListFilterBar.labelForStatus` does. `statusLabel()` only honours an `enumLabels` entry
+that is an i18n **key**; a literal label falls through to its hardcoded code→key `MAP` and
+yields the **raw code** for anything outside it. `ListFilterBar` is safe because docstatus
+`enumLabels` are always keys, but this picker also serves columns whose `enumLabels` are
+literals (`docBaseType`'s 44 AD names, `'GENERIC' → 'Use Generic Account No.'`,
+`sales-quotation`'s `ui('quotationStatus.CO')`), which would all regress to raw codes.
+
 **Key rules:**
 
 - This is a **Schema Forge display mapping only** — the Etendo AD column reference is never modified.
 - The mapping is **per-window**: the same raw value (e.g. `false`) can map to `statusDraft` in one window and a different key (e.g. `statusIncomplete`) in another. The shared `statusLabel` function stays generic.
 - `name` should be an existing key in `genericLabels` (in `packages/app-shell-core/src/locales/{es_ES,en_US}.json`) so both locales resolve correctly. If you use a literal string it renders as-is in all locales.
 - If you introduce a **new** key, add it to **both** `en_US.json` and `es_ES.json` (per `docs/i18n-guide.md`).
-- If the raw schema already supplies `enumValues` (from an AD list reference), `decisions.json` `enumValues` **overrides** them.
+- If the raw schema already supplies `enumValues` (from an AD list reference), `decisions.json` `enumValues` **overrides** them. An empty array (`[]`) is ignored, so it cannot accidentally leave a field with no options — declare the codes you want or omit the key.
+  - **Fixed in ETP-4913.** Until then this only held for fields with NO raw `enumValues` (e.g. the synthetic `YesNo` `processed` status of `goods-movements`). `buildField` in `cli/src/resolve-curated.js` copies `enumValues` from decisions first and from the raw schema second, and the raw copy overwrote unconditionally — so a field backed by a real AD List reference silently kept the AD values. That is why the two return-shipment windows could not redirect `DocStatus`/`CO` away from the poisoned `docStatusCo` key.
+  - The poisoning itself is a separate, still-open generator issue: `extract-labels.js` keys enum labels by `(column name, value code)` rather than by AD reference, so `M_InOut.DocStatus/CO` ("Completed") and `C_Order.DocStatus/CO` ("Booked") collide on one global `docStatusCo` key, and the `ORDER BY rl.name COLLATE "C"` tie-break makes "Booked"/"Registrado" win for every window. Overriding `enumValues` per window is the supported workaround; a reference-scoped key would be the root fix.
 
 **Example — `goods-movements` `processed` field** (an Etendo `YesNo` boolean the API serializes as `true`/`false`):
 
