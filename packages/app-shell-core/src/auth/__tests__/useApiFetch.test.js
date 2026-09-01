@@ -54,6 +54,15 @@ describe('useApiFetch — csrfToken wiring (ETP-4576)', () => {
     assert.match(src, /createApiFetch\(\s*\n?\s*baseUrl,\s*\n?\s*hasSession \? \(\) => csrfToken/);
   });
 
+  // Regression guard. `() => csrfToken` alone shipped once: a provider populates that value
+  // from the session restore, so a host that renders before the restore settles (or never
+  // populates it) handed back null and the unsafe request went out with no proof at all.
+  // The write came back 403 while every read still succeeded, which is what made it read as
+  // anything but a credential bug — it took down three confirm flows in the integration suite.
+  it('falls back to the published store when the context holds no csrfToken', () => {
+    assert.match(src, /hasSession \? \(\) => csrfToken \?\? getSessionCsrfToken\(\)/);
+  });
+
   it('never references a bare "token" as the value read from useAuth() for CSRF purposes', () => {
     // \btoken\b (case-insensitive) does NOT match inside `csrfToken` or
     // `getCsrfToken` — camelCase boundaries are plain word characters, so

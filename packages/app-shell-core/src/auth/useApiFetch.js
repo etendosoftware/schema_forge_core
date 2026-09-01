@@ -24,9 +24,16 @@ export function useApiFetch(baseUrl) {
   // credential out as `X-Go-CSRF` under the bearer scheme, and under the cookie one it put
   // a value that is not the proof where the proof belongs — so every unsafe request from a
   // component rendered outside a provider came back 403.
+  //
+  // The provider branch falls back to the same store rather than trusting the context
+  // alone. `csrfToken` there is populated by the session restore, and a host can render a
+  // provider before that settles (or never populate it at all), so `() => csrfToken` on its
+  // own hands back null and the unsafe request goes out with no proof — a 403 on the write
+  // while every read still succeeds, which is what made it read as anything but this. The
+  // context value still wins whenever it has one.
   return useMemo(() => createApiFetch(
     baseUrl,
-    hasSession ? () => csrfToken : getSessionCsrfToken,
+    hasSession ? () => csrfToken ?? getSessionCsrfToken() : getSessionCsrfToken,
     logout || notifyAmbientUnauthorized,
   ), [baseUrl, hasSession, csrfToken, logout]);
 }
