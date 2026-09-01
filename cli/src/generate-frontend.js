@@ -1954,7 +1954,7 @@ export function resolveSecondaryTabDefs(secondaryTabsDecl, contract, headerEntit
       const readOnlyLogicJs = cfg.readOnlyLogic
         ? convertLogicToJs(cfg.readOnlyLogic, headerColumnMap, headerBooleanFields)
         : null;
-      return { key, label: cfg.label ?? toLabel(key), isFormTab, isPanelTab, isCustomForm: !!cfg.customForm, isCustomTable: !!cfg.customTable, PanelName, FormName, TableName, addLineEntries, requireSavedRecord, maxDetailLines, isCustomAddModal: !!customAddModalName, CustomAddModalName: customAddModalName, readOnlyLogicJs, tabOrder: cfg.tabOrder };
+      return { key, label: cfg.label ?? toLabel(key), isFormTab, isPanelTab, isCustomForm: !!cfg.customForm, isCustomTable: !!cfg.customTable, PanelName, FormName, TableName, addLineEntries, requireSavedRecord, maxDetailLines, isCustomAddModal: !!customAddModalName, CustomAddModalName: customAddModalName, readOnlyLogicJs, tabOrder: cfg.tabOrder, labelKey: cfg.labelKey ?? null, addLineLabelKey: cfg.addLineLabelKey ?? null };
     });
 }
 
@@ -2004,18 +2004,24 @@ export function buildSecondaryTabPropEntry(t) {
   // ETP-4415 — cross-group tab ordering; omitted when undeclared so the runtime
   // sort's own default (99) applies, matching today's behavior exactly.
   const tabOrderPart = t.tabOrder != null ? `, tabOrder: ${t.tabOrder}` : '';
+  // ETP-5021 — labelKey substitutes the tab's translated label wherever DetailView
+  // composes it into a generic template (entityDetail, addEntity); addLineLabelKey
+  // fully overrides the generic "add" button text with a literal i18n key. See
+  // resolveAddLineLabel() in the functional repo's detailViewHelpers.jsx.
+  const labelKeyPart = t.labelKey ? `, labelKey: '${t.labelKey}'` : '';
+  const addLineLabelKeyPart = t.addLineLabelKey ? `, addLineLabelKey: '${t.addLineLabelKey}'` : '';
   if (t.isFormTab) {
-    return `          { key: '${t.key}', label: '${t.label}', isFormTab: true, Form: ${t.FormName}${requireSavedPart}${readOnlyLogicPart}${tabOrderPart} },`;
+    return `          { key: '${t.key}', label: '${t.label}', isFormTab: true, Form: ${t.FormName}${requireSavedPart}${readOnlyLogicPart}${tabOrderPart}${labelKeyPart} },`;
   }
   if (t.isPanelTab) {
-    return `          { key: '${t.key}', label: '${t.label}', Panel: ${t.PanelName}${requireSavedPart}${readOnlyLogicPart}${tabOrderPart} },`;
+    return `          { key: '${t.key}', label: '${t.label}', Panel: ${t.PanelName}${requireSavedPart}${readOnlyLogicPart}${tabOrderPart}${labelKeyPart} },`;
   }
   const addLinePart = t.addLineEntries.length > 0
     ? `, addLineFields: { entry: [\n${t.addLineEntries.join(',\n')},\n          ], derived: [], hidden: [] }`
     : '';
   const customAddModalPart = wrapIf(', customAddModal: ', t.CustomAddModalName);
   const formProp = (t.isCustomAddModal && !t.isCustomForm) ? '' : `, Form: ${t.FormName}`;
-  return `          { key: '${t.key}', label: '${t.label}', Table: ${t.TableName}${formProp}${addLinePart}${customAddModalPart}${requireSavedPart}${readOnlyLogicPart}${maxDetailLinesPart}${tabOrderPart} },`;
+  return `          { key: '${t.key}', label: '${t.label}', Table: ${t.TableName}${formProp}${addLinePart}${customAddModalPart}${requireSavedPart}${readOnlyLogicPart}${maxDetailLinesPart}${tabOrderPart}${labelKeyPart}${addLineLabelKeyPart} },`;
 }
 
 function buildDetailProcessesForPage(detailEntity, contract, processOverrides) {
