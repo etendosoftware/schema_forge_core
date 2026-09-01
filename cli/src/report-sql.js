@@ -67,8 +67,20 @@ export function stripBlankOptionalClauses(q) {
  * queries (`sql.openingQuery`, `sql.operandsQuery`) — a secondary query scoped
  * to a different client or language than the rows it annotates is the kind of
  * bug nobody spots in a rendered report.
+ *
+ * `__REPORT_LOCALE__` (ETP-5013) is a SEPARATE, engine-controlled placeholder
+ * for report SQL that intentionally joins an Etendo `_trl` table (e.g. Journal
+ * Entries → `ad_ref_list_trl`, mirroring the `c_country_trl` join Tax Report
+ * does in Java) — it is substituted with the render's locale, but only AFTER
+ * the AD_LANGUAGE forced-rewrite below, so it can never be confused with (or
+ * weaken) that guard: a literal `AD_LANGUAGE = 'xx_XX'` typed by mistake into
+ * a contract's own SQL is still forced back to `'en_US'` exactly as before.
+ * `locale` never comes from request `params` — only the engine (`report-api.js`
+ * / `server.js`) supplies it — and is validated against a strict `xx_YY`
+ * shape before being spliced into SQL text, since this module does raw string
+ * substitution, not parameterized binding.
  */
-export function applyPlaceholders(rawSql, { clientId, params = {}, contract = {} }) {
+export function applyPlaceholders(rawSql, { clientId, params = {}, contract = {}, locale } = {}) {
   let q = rawSql.replace(/__CLIENT_ID__/g, clientId);
 
   for (const [key, value] of Object.entries(params)) {
@@ -101,6 +113,17 @@ export function applyPlaceholders(rawSql, { clientId, params = {}, contract = {}
   q = q.replace(/AD_CLIENT_ID\s+IN\s*\(\s*'[^']+'\s*\)/gi, `AD_CLIENT_ID IN ('${clientId}')`);
   q = q.replace(/AD_ORG_ID\s+IN\s*\(\s*'[^']+'\s*\)/gi,
     `AD_ORG_ID IN (SELECT AD_ORG_ID FROM AD_ORG WHERE AD_CLIENT_ID = '${clientId}' AND ISACTIVE = 'Y')`);
+  // Move '__REPORT_LOCALE__' out of `= '...'` shape BEFORE the AD_LANGUAGE
+  // guard below runs — that guard's regex matches ANY quoted content after
+  // `ad_language =`, including our OWN unresolved placeholder text. Without
+  // this step the guard would clobber `rlt.ad_language = '__REPORT_LOCALE__'`
+  // to `'en_US'` first, leaving nothing left for the real substitution to do.
+  q = q.replace(/'__REPORT_LOCALE__'/g, '__REPORT_LOCALE_SENTINEL__');
+
   q = q.replace(/AD_LANGUAGE\s*=\s*'[^']+'/gi, "AD_LANGUAGE = 'en_US'");
+
+  const safeLocale = /^[a-z]{2}_[A-Z]{2}$/.test(locale || '') ? locale : 'en_US';
+  q = q.replace(/__REPORT_LOCALE_SENTINEL__/g, `'${safeLocale}'`);
+
   return q;
 }

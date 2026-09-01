@@ -125,4 +125,80 @@ describe('applyPlaceholders', () => {
     assert.ok(out.includes("t.org = 'O1'"), 'a supplied filter must survive');
     assert.ok(balanced(out));
   });
+
+  // ── ETP-5013: __REPORT_LOCALE__ placeholder ─────────────────────────────
+  // A separate, engine-controlled placeholder for reports that deliberately
+  // join an Etendo `_trl` table (Journal Entries -> ad_ref_list_trl,
+  // mirroring Tax Report's c_country_trl join in Java). `locale` never comes
+  // from request params — only the engine supplies it.
+  describe('__REPORT_LOCALE__ placeholder', () => {
+    it('substitutes __REPORT_LOCALE__ with a valid, engine-supplied locale', () => {
+      const out = applyPlaceholders(
+        "WHERE rlt.ad_language = '__REPORT_LOCALE__'",
+        { ...base, locale: 'es_ES' },
+      );
+      assert.equal(out, "WHERE rlt.ad_language = 'es_ES'");
+    });
+
+    it('falls back to en_US when no locale is supplied', () => {
+      const out = applyPlaceholders("WHERE rlt.ad_language = '__REPORT_LOCALE__'", base);
+      assert.equal(out, "WHERE rlt.ad_language = 'en_US'");
+    });
+
+    it('falls back to en_US when the supplied locale does not match the strict xx_YY shape', () => {
+      for (const badLocale of ['ES', 'es-ES', 'es_es', 'spanish', '', null, undefined]) {
+        const out = applyPlaceholders(
+          "WHERE rlt.ad_language = '__REPORT_LOCALE__'",
+          { ...base, locale: badLocale },
+        );
+        assert.equal(out, "WHERE rlt.ad_language = 'en_US'", `locale=${JSON.stringify(badLocale)} must fall back to en_US`);
+      }
+    });
+
+    it('substitutes every repeated occurrence of the placeholder in the same query', () => {
+      const sql = "WHERE rlt.ad_language = '__REPORT_LOCALE__' OR rlt2.ad_language = '__REPORT_LOCALE__'";
+      const out = applyPlaceholders(sql, { ...base, locale: 'es_ES' });
+      assert.equal(out, "WHERE rlt.ad_language = 'es_ES' OR rlt2.ad_language = 'es_ES'");
+    });
+
+    // Regression: the sentinel swap. Without moving '__REPORT_LOCALE__' out of
+    // `= '...'` shape BEFORE the AD_LANGUAGE guard runs, that guard's regex
+    // (`AD_LANGUAGE = '[^']+'`, applied below) would match the UNRESOLVED
+    // placeholder text itself — since `'__REPORT_LOCALE__'` is exactly a
+    // quoted, non-empty string right after `ad_language =` — and clobber it to
+    // 'en_US' before the real locale substitution ever got a chance to run.
+    // This is the exact bug found and fixed during this change.
+    it('regression: a real locale actually reaches the query — the AD_LANGUAGE guard does not eat the placeholder before substitution runs', () => {
+      const out = applyPlaceholders(
+        "WHERE rlt.ad_language = '__REPORT_LOCALE__'",
+        { ...base, locale: 'es_ES' },
+      );
+      assert.notEqual(out, "WHERE rlt.ad_language = 'en_US'", 'the sentinel-swap bug is back: __REPORT_LOCALE__ was clobbered by the AD_LANGUAGE guard before it could be substituted with the real locale');
+      assert.equal(out, "WHERE rlt.ad_language = 'es_ES'");
+    });
+
+    // Regression (inverse direction): the AD_LANGUAGE forced-rewrite guard
+    // must NOT be weakened by the new placeholder's existence. A literal
+    // `AD_LANGUAGE = 'xx_XX'` hand-typed into a contract's own SQL — completely
+    // unrelated to __REPORT_LOCALE__ — must still be forced back to 'en_US',
+    // even when a different `locale` is supplied to this same call.
+    it('regression: a hand-typed AD_LANGUAGE literal is still forced to en_US, even when a different locale is supplied', () => {
+      const out = applyPlaceholders(
+        "WHERE AD_LANGUAGE = 'fr_FR'",
+        { ...base, locale: 'es_ES' },
+      );
+      assert.equal(out, "WHERE AD_LANGUAGE = 'en_US'", 'the AD_LANGUAGE safety guard must not be weakened by the locale param');
+    });
+
+    it('handles a query that mixes a hand-typed AD_LANGUAGE literal AND a __REPORT_LOCALE__ join placeholder — each resolves independently', () => {
+      const sql = "WHERE AD_LANGUAGE = 'fr_FR' AND rlt.ad_language = '__REPORT_LOCALE__'";
+      const out = applyPlaceholders(sql, { ...base, locale: 'es_ES' });
+      assert.equal(out, "WHERE AD_LANGUAGE = 'en_US' AND rlt.ad_language = 'es_ES'");
+    });
+
+    it('does not require locale for queries that never reference __REPORT_LOCALE__ (backward compatible with every non-Journal-Entries report)', () => {
+      const out = applyPlaceholders("WHERE c = '__CLIENT_ID__'", base);
+      assert.equal(out, "WHERE c = 'C1'");
+    });
+  });
 });
