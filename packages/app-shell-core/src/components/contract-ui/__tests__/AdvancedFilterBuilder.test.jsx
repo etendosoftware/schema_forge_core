@@ -25,7 +25,9 @@ vi.mock('../../../lib/gridQuery.js', () => ({
   resolveFilterMode: (col) => {
     if (col.type === 'date') return 'date';
     if (col.type === 'number' || col.type === 'amount') return 'numeric';
-    if (col.type === 'status') return 'enumLabel';
+    // 'enum' maps to enumLabel exactly like 'status' does in the real
+    // inferFilterMode (lib/gridQuery.js) — both reach DistinctEnumPicker.
+    if (col.type === 'status' || col.type === 'enum') return 'enumLabel';
     if (col.type === 'boolean') return 'booleanLabel';
     if (col.type === 'selector') return 'identifier';
     return 'text';
@@ -635,6 +637,154 @@ describe('AdvancedFilterBuilder', () => {
       expect(labels.filter((l) => l === 'statusProcessed')).toHaveLength(1);
       expect(labels.filter((l) => l === 'statusDraft')).toHaveLength(1);
       expect(options).toHaveLength(2);
+    });
+  });
+
+  // ================================================================
+  // ETP-4913 — DistinctEnumPicker option ORDER.
+  //
+  // mergedCodes fuses two sources that arrive at different times: the uncached
+  // backend `_distinct` fetch (fired when the popover opens) and the codes
+  // present in the currently loaded grid rows. Without a final sort the list
+  // paints in grid order, then reshuffles once the fetch resolves — and on the
+  // next open the component remounts and does it again, so the user sees a
+  // different order every time. Status columns must instead follow the fixed
+  // business-flow order (the same one ListFilterBar's pill uses).
+  // ================================================================
+
+  describe('DistinctEnumPicker option order (ETP-4913)', () => {
+    // No enumLabels and a mocked `useLocale` returning `{ statuses: {} }` means
+    // labelFor(code) falls all the way through to the raw code, so each
+    // rendered option's text IS its code. That keeps the order assertions
+    // readable and independent of any translation catalog.
+    const DOC_STATUS_COL = {
+      key: 'documentStatus',
+      label: 'Doc Status',
+      type: 'status',
+      column: 'DocStatus',
+    };
+
+    // Business enum (chart-of-accounts `accountType`): NOT a status column, so
+    // it must keep whatever order the merge produced.
+    const ACCOUNT_TYPE_COL = {
+      key: 'accountType',
+      label: 'Account Type',
+      type: 'enum',
+      column: 'AccountType',
+    };
+
+    // Virtual column with no backend: its options come from the enumLabels keys
+    // via fillFallbackCodes, in a deliberate (severity) order.
+    const SEVERITY_COL = {
+      key: 'dueState',
+      label: 'Due State',
+      type: 'enum',
+      column: 'DueState',
+      enumLabels: { vencida: 'vencida', proxima: 'proxima', aldia: 'aldia' },
+    };
+
+    afterEach(() => {
+      distinctState.values = [];
+    });
+
+    /**
+     * Renders the builder with one column and an empty-valued condition (which
+     * is what activates DistinctEnumPicker), opens the picker and returns the
+     * option texts in render order. Shared by every case below so the
+     * render/open/read sequence is written once.
+     */
+    async function openPickerOptions(col, { distinctCodes = [], rows = [], value = '' } = {}) {
+      const user = userEvent.setup();
+      distinctState.values = distinctCodes.map((c) => ({ id: c, _identifier: String(c) }));
+
+      render(
+        <AdvancedFilterBuilder
+          columns={[col]}
+          value={{
+            rowOperator: 'and',
+            conditions: [{ field: col.key, operator: 'equals', value }],
+          }}
+          rows={rows}
+          entity="test-entity"
+          apiBaseUrl="/api"
+        />,
+      );
+
+      // With no selected value the trigger shows the placeholder; with one it
+      // shows that value's resolved label — which, with no enumLabels and an
+      // empty statuses dictionary, is the raw code itself.
+      const triggerText = value === '' ? 'advancedFilterSelectValue' : String(value);
+      await user.click(screen.getByText(triggerText));
+
+      const options = await screen.findAllByTestId('distinct-option');
+      return options.map((o) => o.textContent);
+    }
+
+    it('renders status codes in business-flow order, not in the order they arrived', async () => {
+      // Shuffled arrival order, as the backend/grid mix would deliver it.
+      const labels = await openPickerOptions(DOC_STATUS_COL, {
+        distinctCodes: ['VO', 'DR', 'CO', 'NA', 'TEMP'],
+      });
+      expect(labels).toEqual(['TEMP', 'DR', 'CO', 'NA', 'VO']);
+    });
+
+    it('renders the same order whichever source arrived first (the reported symptom)', async () => {
+      // Same five codes, but split across the two sources in opposite ways.
+      const backendFirst = await openPickerOptions(DOC_STATUS_COL, {
+        distinctCodes: ['CL', 'CO', 'DR'],
+        rows: [{ documentStatus: 'VO' }, { documentStatus: 'IP' }],
+      });
+      cleanup();
+      const rowsFirst = await openPickerOptions(DOC_STATUS_COL, {
+        distinctCodes: ['VO', 'IP'],
+        rows: [{ documentStatus: 'DR' }, { documentStatus: 'CO' }, { documentStatus: 'CL' }],
+      });
+
+      expect(backendFirst).toEqual(['DR', 'IP', 'CO', 'CL', 'VO']);
+      expect(rowsFirst).toEqual(backendFirst);
+    });
+
+    it('sorts the Unknown sentinel last instead of first', async () => {
+      // The backend orders distinct values by raw code and '?' sorts before
+      // 'A', so '??' used to lead the list.
+      const labels = await openPickerOptions(DOC_STATUS_COL, {
+        distinctCodes: ['??', 'CL', 'CO', 'DR'],
+      });
+      expect(labels).toEqual(['DR', 'CO', 'CL', '??']);
+    });
+
+    it('places an active code absent from both sources in its flow position, not at the end', async () => {
+      const labels = await openPickerOptions(DOC_STATUS_COL, {
+        distinctCodes: ['DR', 'VO'],
+        value: 'CO',
+      });
+      expect(labels).toEqual(['DR', 'CO', 'VO']);
+    });
+
+    it('leaves a non-status enum column in its arrival order (guard: do not widen the gate)', async () => {
+      // accountType's codes collide with the status catalog ('M' sits in the
+      // In-process bucket), so sorting them would reorder a correct list.
+      const labels = await openPickerOptions(ACCOUNT_TYPE_COL, {
+        distinctCodes: ['A', 'E', 'L', 'M', 'O', 'R'],
+      });
+      expect(labels).toEqual(['A', 'E', 'L', 'M', 'O', 'R']);
+    });
+
+    it('preserves the deliberate enumLabels order of a virtual enum column', async () => {
+      // No entity data reaches this column, so fillFallbackCodes supplies the
+      // enumLabels keys — a severity order that alphabetizing would invert.
+      const labels = await openPickerOptions(SEVERITY_COL);
+      expect(labels).toEqual(['vencida', 'proxima', 'aldia']);
+    });
+
+    it('still collapses boolean/string twins to one option on a status column', async () => {
+      // Guard that ordering did not disturb the canon() dedup: 'false' (Draft
+      // bucket) must precede 'true' (Completed bucket), once each.
+      const labels = await openPickerOptions(DOC_STATUS_COL, {
+        distinctCodes: ['true', 'false'],
+        rows: [{ documentStatus: true }, { documentStatus: false }, { documentStatus: true }],
+      });
+      expect(labels).toEqual(['false', 'true']);
     });
   });
 

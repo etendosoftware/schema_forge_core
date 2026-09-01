@@ -28,6 +28,7 @@ import { Trash2, Plus, Save, SlidersHorizontal, ChevronDown, Check, Bookmark, Lo
 import { useUI, useLabel, useLocale, useLocaleSwitch } from '../../i18n/index.js';
 import { resolveFilterMode, getDisplayText } from '../../lib/gridQuery.js';
 import { useDistinctValues } from '../../hooks/useDistinctValues.js';
+import { compareStatusCodes } from '../../lib/statusBadge.js';
 import { DistinctValuesList } from './DistinctValuesList.jsx';
 
 /**
@@ -957,24 +958,28 @@ function IdentifierMultiPicker({ col, entity, apiBaseUrl, rows, value, onChange,
   );
 }
 
-function resolveEnumOptions(col, dictionary) {
-  const rawMap = col.enumLabels && Object.keys(col.enumLabels).length > 0
-    ? col.enumLabels
-    : Object.fromEntries(
-        Object.entries(dictionary?.statuses || {})
-          .filter(([code]) => /^[A-Z][A-Z0-9_]*$/.test(code))
-          .map(([code, entry]) => [code, entry?.label || code]),
-      );
-  return Object.keys(rawMap)
-    .map((code) => ({
-      code,
-      // The column's own enumLabels (rawMap) take precedence over the global
-      // status dictionary, so a code that collides with an unrelated global
-      // status (e.g. account type "CA" vs an order status "CA") keeps the
-      // column's intended label.
-      label: rawMap[code] || dictionary?.statuses?.[code]?.label || code,
-    }))
-    .sort((a, b) => a.label.localeCompare(b.label));
+const STATUS_COLUMN_TYPE = 'status';
+
+/**
+ * ETP-4913 — document-status pickers must always render in the fixed
+ * business-flow order (Draft -> Confirmed -> Completed), independent of which
+ * of the two merge sources (the uncached backend distinct fetch vs. the
+ * in-memory grid rows) happened to arrive first. Mirrors ListFilterBar's
+ * `mergedStatusCodes`, which sorts the exact same way, so the "All statuses"
+ * pill and this picker never disagree for the same column.
+ *
+ * Deliberately scoped to `type: 'status'` columns — the same set ListFilterBar
+ * discovers via `columns.find(c => c.type === 'status')`. Every OTHER enumLabel
+ * column already has a deterministic and INTENTIONAL order that
+ * compareStatusCodes would scramble: the backend's `order by <code> asc` for
+ * business enums (accountType A,E,L,M,O,R would become M,A,E,L,O,R because 'M'
+ * sits in the In-process bucket), or the enumLabels insertion order for virtual
+ * columns filled by fillFallbackCodes (a severity list vencida/proxima/aldia
+ * would be alphabetized into reverse severity). Do not widen this gate.
+ */
+function orderCodesForColumn(codes, col) {
+  if (col?.type !== STATUS_COLUMN_TYPE) return codes;
+  return codes.slice().sort(compareStatusCodes);
 }
 
 function fillFallbackCodes(out, labelMap, seen) {
@@ -1010,6 +1015,16 @@ function DistinctEnumPicker({ col, entity, apiBaseUrl, rows, value, onChange, ui
   // so a code colliding with an unrelated global status keeps the column's label.
   // enumLabels values may be i18n keys, so run them through ui() (literal labels
   // pass through unchanged), mirroring ListFilterBar's labelForStatus.
+  //
+  // NOTE: this deliberately does NOT delegate to statusLabel() the way
+  // ListFilterBar's labelForStatus does (ETP-4696). statusLabel() only honours
+  // an enumLabels entry that is an i18n KEY; a literal label returns null there
+  // and falls through to a hardcoded code->key MAP, yielding the RAW CODE for
+  // anything outside it. ListFilterBar gets away with it because docstatus
+  // enumLabels are always keys ('docStatusCl'...), but this picker also serves
+  // columns whose enumLabels are literals — docBaseType (44 AD names),
+  // 'GENERIC' -> 'Use Generic Account No.', 'E' -> 'Error', sales-quotation's
+  // ui('quotationStatus.CO') — which would all regress to raw codes (ETP-4913).
   const labelFor = (code) => {
     const declared = labelMap[code];
     if (declared != null) return (ui && ui(declared)) || declared;
@@ -1061,6 +1076,13 @@ function DistinctEnumPicker({ col, entity, apiBaseUrl, rows, value, onChange, ui
     return out;
   }, [distinct.values, distinct.search, inMemoryCodes, value, labelMap, dictionary]);
 
+  // Status columns get the fixed business-flow order; every other enum column
+  // keeps the merge order untouched. See orderCodesForColumn (ETP-4913).
+  const orderedCodes = useMemo(
+    () => orderCodesForColumn(mergedCodes, col),
+    [mergedCodes, col],
+  );
+
   const activeLabel = value ? labelFor(value) : null;
 
   return (
@@ -1089,7 +1111,7 @@ function DistinctEnumPicker({ col, entity, apiBaseUrl, rows, value, onChange, ui
         <DistinctValuesList
           activeCode={value || null}
           allLabel={null}
-          codes={mergedCodes}
+          codes={orderedCodes}
           labelFor={labelFor}
           distinct={distinct}
           onSelect={(code) => {
