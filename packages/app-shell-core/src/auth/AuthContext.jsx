@@ -25,7 +25,16 @@ export function AuthProvider({
   // wrong fails in the worst direction — reads keep working off the browser's own
   // cookie while every unsafe request answers 403 for a missing CSRF proof. The
   // explicit modes remain for pinning one in a test or rolling back.
-  credentialMode = CREDENTIAL_MODES.bearer,
+  //
+  // The default is `auto`, and it has to be: it used to be `bearer`, which reads as the
+  // conservative choice but is not one. `restoreSession` derives from this value (see below),
+  // so `bearer` also turned the restore OFF — and the session no longer lives in localStorage,
+  // it lives in memory. With nothing to restore from and no restore running, EVERY cold load
+  // came up anonymous: a plain browser refresh signed the user out, and a host that follows
+  // the documented advice of not declaring the scheme by hand got exactly that. `auto` costs a
+  // bearer backend one 401 on boot and then behaves as before, which is the trade this whole
+  // mechanism was designed around.
+  credentialMode = CREDENTIAL_MODES.auto,
   // ETP-4576 — DERIVED from `credentialMode`, so one switch governs the whole
   // scheme. Under `cookie` it defaults to the platform fetcher (the server-side
   // session is the credential, so the restore is mandatory); under `bearer` it
