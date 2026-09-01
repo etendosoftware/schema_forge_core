@@ -496,6 +496,30 @@ describe('generateFormComponent', () => {
     assert.ok(!code.includes("label: 'Business Partner'"));
   });
 
+  // ETP-4917 — a field's `labels: { en_US, es_ES }` override was already emitted
+  // by generateTableComponent's grid columns but silently dropped by
+  // generateFormComponent, so a header-form field kept falling back to the
+  // shared AD label. Mirrors the grid-column assertion style.
+  it('emits the labels dict for a header field that declares labels', () => {
+    const contract = structuredClone(masterDetailContract);
+    const field = contract.frontendContract.entities.order.fields.find(f => f.name === 'businessPartner');
+    field.labels = { en_US: 'Customer', es_ES: 'Cliente' };
+    const code = generateFormComponent('order', contract);
+    const fieldLine = code.split('\n').find(line => line.includes("key: 'businessPartner'"));
+    assert.ok(fieldLine, 'expected a field line for businessPartner');
+    assert.ok(
+      fieldLine.includes('labels: {"en_US":"Customer","es_ES":"Cliente"}'),
+      `expected labels dict in businessPartner form field literal, got: ${fieldLine}`
+    );
+  });
+
+  it('omits the labels prop entirely when a field has no labels override', () => {
+    const code = generateFormComponent('order', masterDetailContract);
+    const fieldLine = code.split('\n').find(line => line.includes("key: 'businessPartner'"));
+    assert.ok(fieldLine, 'expected a field line for businessPartner');
+    assert.ok(!fieldLine.includes('labels:'), `did not expect a labels prop, got: ${fieldLine}`);
+  });
+
   it('maps foreignKey with search inputMode to search type', () => {
     const code = generateFormComponent('order', masterDetailContract);
     assert.ok(code.includes("type: 'search'"));
