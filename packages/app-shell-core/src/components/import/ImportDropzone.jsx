@@ -1,14 +1,26 @@
 import { useCallback, useRef, useState } from 'react';
-import { Upload } from 'lucide-react';
+import { Download } from 'lucide-react';
 import { cn } from '../../lib/utils.js';
+import { acceptAttribute, formatNames } from '../../lib/import/importFormats.js';
 
 const DEFAULT_LABELS = {
   dropHere: 'Drop your file here',
-  dropHint: 'or select a file. Supported formats: CSV or TXT',
+  // {formats} is filled with the window's own declared list, so the hint can no longer claim
+  // CSV/TXT while the input quietly accepts something else. Kept as a placeholder rather than a
+  // baked sentence because the locale files own the wording, including the conjunction.
+  dropHint: 'or select a file. Supported formats: {formats}',
 };
 
-export function ImportDropzone({ accept = '.csv,.txt', onFileSelected, labels }) {
+/**
+ * `formats` is `window.import.formats` — the window's own declaration of what its import eats.
+ * It governs BOTH the `accept` attribute and the hint text, so the two cannot disagree; before
+ * this, both were hardcoded to CSV/TXT and the declaration was dead config. An explicit
+ * `accept` still wins, for a caller that is not import-driven.
+ */
+export function ImportDropzone({ accept, formats, onFileSelected, labels }) {
   const text = { ...DEFAULT_LABELS, ...labels };
+  const acceptAttr = accept ?? acceptAttribute(formats);
+  const hint = text.dropHint.replace('{formats}', formatNames(formats).join(', '));
   const [dragOver, setDragOver] = useState(false);
   const inputRef = useRef(null);
 
@@ -52,13 +64,20 @@ export function ImportDropzone({ accept = '.csv,.txt', onFileSelected, labels })
         dragOver ? 'border-primary bg-primary/5' : 'border-border hover:bg-muted/40',
       )}
     >
-      <Upload className="h-6 w-6 text-muted-foreground" data-testid="Upload__607f9c" />
+      {/*
+        SHELL-02 — the arrow follows the DATA, not the file: an import pulls records INTO
+        Etendo, so it is a Download, and that is the icon the toolbar button that opens this
+        dialog already carries (`Download__ListViewImport`). The dropzone shipped with `Upload`
+        — reading as "send a file out" — so the popup contradicted the button the user had just
+        clicked. Same rule, one icon: do not flip this back to the file's direction.
+      */}
+      <Download className="h-6 w-6 text-muted-foreground" data-testid="Download__ImportDropzone" />
       <p className="text-sm font-medium text-foreground" data-testid="ImportDropzone__title">{text.dropHere}</p>
-      <p className="text-xs text-muted-foreground" data-testid="ImportDropzone__hint">{text.dropHint}</p>
+      <p className="text-xs text-muted-foreground" data-testid="ImportDropzone__hint">{hint}</p>
       <input
         ref={inputRef}
         type="file"
-        accept={accept}
+        accept={acceptAttr}
         onChange={handleInputChange}
         data-testid="ImportDropzone__fileInput"
         className="hidden"

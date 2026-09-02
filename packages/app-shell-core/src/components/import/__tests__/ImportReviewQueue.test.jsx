@@ -240,6 +240,64 @@ describe('ImportReviewQueue', () => {
     expect(screen.queryByTestId('Pencil__a73779')).toBeNull();
   });
 
+  // ETP-4997 regression. A skipped row rendered one cell spanning the whole grid whose text was
+  // the word "Skipped" — already shown in the status column next to it — so the user saw the
+  // label twice and none of the row's data. Reported against both Contacts and Products, where
+  // the commonest skip reason is "this record already exists": precisely the case where the user
+  // needs to see WHICH record, and precisely the data that was blanked.
+  describe('a skipped row keeps showing its data', () => {
+    const fields = [
+      { id: 'name', target: 'name', label: 'Nombre' },
+      { id: 'email', target: 'email', label: 'Correo' },
+    ];
+    const skippedDuplicate = {
+      row: { name: 'Lucia', email: 'lucia@x.com' },
+      errors: [{ target: '', message: 'Ya existe' }],
+      status: 'skipped',
+    };
+
+    const renderSkipped = (entry = skippedDuplicate) => render(
+      <ImportReviewQueue
+        entries={[entry]}
+        fields={fields}
+        statusFilter="all"
+        onStatusFilterChange={() => {}}
+        onEditField={() => {}}
+        onRetryEntry={() => {}}
+        onSkipEntry={() => {}}
+        onUnskipEntry={() => {}}
+        onDownloadErrors={() => {}}
+      />,
+    );
+
+    it('renders one cell per declared field, carrying the row values', () => {
+      renderSkipped();
+      expect(screen.getByTestId('ImportReviewQueue__value-0-name').textContent).toBe('Lucia');
+      expect(screen.getByTestId('ImportReviewQueue__value-0-email').textContent).toBe('lucia@x.com');
+    });
+
+    it('states WHY the row was skipped instead of repeating the status label', () => {
+      renderSkipped();
+      expect(screen.getByTestId('ImportReviewQueue__skipReason-0').textContent).toBe('Ya existe');
+      // The label belongs in the status column, once.
+      expect(screen.getAllByTestId('ImportReviewQueue__skippedLabel-0')).toHaveLength(1);
+    });
+
+    it('omits the reason line for a row the user skipped by hand, which has none', () => {
+      renderSkipped({ row: { name: 'Lucia', email: 'lucia@x.com' }, errors: [], status: 'skipped' });
+      expect(screen.queryByTestId('ImportReviewQueue__skipReason-0')).toBeNull();
+      // …but the data is still there: that is the whole point of the fix.
+      expect(screen.getByTestId('ImportReviewQueue__value-0-name').textContent).toBe('Lucia');
+    });
+
+    it('does not let a field-level error masquerade as the skip reason', () => {
+      // Only a blank-target error is the row-level message. A field error belongs to a cell and
+      // reading it here would print "Not a valid email address." as if it were why we skipped.
+      renderSkipped({ ...errorEntry, status: 'skipped' });
+      expect(screen.queryByTestId('ImportReviewQueue__skipReason-0')).toBeNull();
+    });
+  });
+
   it('marks a skipped entry distinctly and does not offer edit/retry for it', () => {
     const skipped = { ...errorEntry, status: 'skipped' };
     render(<ImportReviewQueue entries={[skipped]} statusFilter="error" onStatusFilterChange={() => {}} onEditField={() => {}} onRetryEntry={() => {}} onSkipEntry={() => {}} onDownloadErrors={() => {}} />);
