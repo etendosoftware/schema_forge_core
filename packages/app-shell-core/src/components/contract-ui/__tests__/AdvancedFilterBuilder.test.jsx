@@ -9,16 +9,23 @@ afterEach(cleanup);
 beforeEach(() => {
   distinctCalls.length = 0;
   distinctState.loading = false;
+  localeState.statuses = {};
 });
 
-// Mock i18n hooks
+// Mock i18n hooks. `useLocale().statuses` is read through a mutable holder so a
+// test can populate the GLOBAL status dictionary — the source of enum labels for
+// a column that does NOT declare its own `enumLabels`, which follows a different
+// merge policy (see the ETP-4956 fillFallbackCodes block below). It defaults to
+// an empty object, preserving every pre-existing test's behavior.
 vi.mock('../../../i18n/index.js', () => ({
   useLabel: () => (key) => key,
   useMenuLabel: () => (key) => key,
   useUI: () => (key) => key,
-  useLocale: () => ({ statuses: {} }),
+  useLocale: () => ({ statuses: localeState.statuses }),
   useLocaleSwitch: () => ({ locale: 'en_US', setLocale: vi.fn() }),
 }));
+
+const localeState = { statuses: {} };
 
 // Mock dependencies
 vi.mock('../../../lib/gridQuery.js', () => ({
@@ -81,7 +88,7 @@ vi.mock('../DistinctValuesList.jsx', () => ({
   ),
 }));
 
-import { AdvancedFilterBuilder } from '../AdvancedFilterBuilder.jsx';
+import { AdvancedFilterBuilder, normalizeDecimalInput } from '../AdvancedFilterBuilder.jsx';
 
 // Radix Select needs a few pointer/scroll DOM APIs jsdom does not implement so
 // the operator dropdown can open and options can be selected.
@@ -542,10 +549,16 @@ describe('AdvancedFilterBuilder', () => {
       expect(screen.getByText('Borrador')).toBeInTheDocument();
     });
 
-    it('shows enumLabels keys as the picker options (fallback from enumLabels keys when no rows/distinct)', () => {
+    it('shows enumLabels keys as the picker options (fallback from enumLabels keys when no rows/distinct)', async () => {
       // When no rows or distinct values are available, DistinctEnumPicker populates
       // the option list from the enumLabels keys directly (fillFallbackCodes).
-      // The active label for the selected value must match the resolved labelFor().
+      //
+      // This test used to assert ONLY the closed trigger's label, which is why
+      // the ETP-4956 regression (a re-opened picker offering just the
+      // already-selected option) shipped unnoticed: the option list was never
+      // read. Radix keeps PopoverContent unmounted while closed, so the list
+      // only exists after the trigger is clicked — do that, then COUNT.
+      const user = userEvent.setup();
       const filterValue = {
         rowOperator: 'and',
         conditions: [{ field: 'processed', operator: 'equals', value: 'true' }],
@@ -559,6 +572,11 @@ describe('AdvancedFilterBuilder', () => {
       // The active value 'true' maps to enumLabels['true'] = 'statusProcessed',
       // then ui('statusProcessed') === 'statusProcessed' (mock returns key).
       expect(screen.getByText('statusProcessed')).toBeInTheDocument();
+
+      await user.click(screen.getByText('statusProcessed'));
+      const labels = (await screen.findAllByTestId('distinct-option')).map((o) => o.textContent);
+      // BOTH enumLabels keys are offered — not only the selected one.
+      expect(labels.sort()).toEqual(['statusDraft', 'statusProcessed']);
     });
 
     it('falls back to dictionary.statuses label when code is not in enumLabels', () => {
@@ -1251,5 +1269,652 @@ describe('AdvancedFilterBuilder — content-based sizing (ETP-4705)', () => {
       expect(screen.getByText('Acme Corp')).toBeInTheDocument();
       expect(screen.queryByText('BP1')).not.toBeInTheDocument();
     });
+  });
+});
+
+// ================================================================
+// ETP-4956 — advanced filter usability fixes.
+//
+// Five independent bugs, all observable only once the component is mounted:
+//
+//   1. Re-opening an enum filter that already had a value offered a dropdown
+//      containing ONLY the already-selected option. The cause was the ORDER of
+//      the `mergedCodes` merge: the current selection was folded in BEFORE the
+//      declared-enumLabels fallback, so the fallback's "only when no data
+//      produced anything" gate saw a non-empty list and skipped. The gate
+//      itself is correct and stays — the selection is now folded in LAST.
+//   2. Enum values are now picked with a multi-select popover; the retired
+//      "Is any of" (`inSet`) free-text operator is gone from the enum list but
+//      remains RENDERABLE so pre-existing saved presets stay editable.
+//   3. Numeric editors accept a locale decimal comma (type="text" +
+//      inputMode="decimal") and are normalized to dot-decimal on apply.
+//   4. Text values are trimmed on apply — and NOT on change, so the user can
+//      keep typing spaces between words.
+//
+// Radix keeps `PopoverContent` UNMOUNTED while closed, so every assertion on
+// the enum picker's OPTION LIST must click the trigger first. Asserting only
+// the closed trigger's label — what the pre-existing option test did — cannot
+// see bug 1 at all.
+// ================================================================
+
+/**
+ * Renders one enum condition, opens its picker, and returns the option labels
+ * in render order plus the handles the caller needs to keep interacting.
+ *
+ * `triggerText` is what the CLOSED trigger shows: the placeholder when nothing
+ * is selected, otherwise the first selected code's resolved label (+N suffix).
+ */
+async function openEnumPicker({ col, value = '', rows = [], distinctCodes = [], onApply, entity, apiBaseUrl }) {
+  const user = userEvent.setup();
+  distinctState.values = distinctCodes.map((c) => ({ id: c, _identifier: String(c) }));
+  render(
+    <AdvancedFilterBuilder
+      columns={[col]}
+      value={{ rowOperator: 'and', conditions: [{ field: col.key, operator: 'equals', value }] }}
+      rows={rows}
+      entity={entity}
+      apiBaseUrl={apiBaseUrl}
+      onApply={onApply}
+    />,
+  );
+  // The picker's ChevronDown is unique here: the identifier picker and the
+  // presets dropdown (which share the testid) are not rendered for an enum
+  // column with no `presets` prop.
+  const trigger = screen.getByTestId('ChevronDown__4eedf1').closest('button');
+  await user.click(trigger);
+  await screen.findByTestId('distinct-values-list');
+  return { user, trigger };
+}
+
+const optionLabels = () =>
+  screen.getAllByTestId('distinct-option').map((o) => o.textContent);
+
+const clickOption = (user, label) =>
+  user.click(screen.getAllByTestId('distinct-option').find((o) => o.textContent === label));
+
+describe('ETP-4956 — enum picker option list when re-editing', () => {
+  // A non-`status` enum column: orderCodesForColumn only reorders
+  // `type: 'status'` columns (ETP-4913), so this one keeps the merge order and
+  // the assertions can read as a plain set without fighting the business-flow
+  // sort. Labels are literals, which ui() passes through unchanged.
+  const RECONCILIATION_COL = {
+    key: 'reconciliation',
+    label: 'Reconciliation',
+    type: 'enum',
+    column: 'ReconciliationState',
+    enumLabels: {
+      DRAFT: 'Borrador',
+      UNRECONCILED: 'Sin conciliar',
+      RECONCILED: 'Conciliado',
+    },
+  };
+
+  const FULL_CATALOGUE = ['Borrador', 'Conciliado', 'Sin conciliar'];
+
+  afterEach(() => {
+    distinctState.values = [];
+  });
+
+  // ----------------------------------------------------------------
+  // No dynamic source produced anything -> the declared catalogue seeds the
+  // list, so a virtual column with static enumLabels is never an empty picker.
+  // ----------------------------------------------------------------
+
+  it('seeds the list from the declared catalogue when there is no data at all', async () => {
+    await openEnumPicker({ col: RECONCILIATION_COL, value: '' });
+    expect(optionLabels().sort()).toEqual(FULL_CATALOGUE);
+  });
+
+  it('STILL seeds the whole declared catalogue when a value is already selected', async () => {
+    // THE ETP-4956 REGRESSION, and the single most important case here: with no
+    // rows and no distinct values the only thing in the list used to be the
+    // already-picked code, because `selected` was folded in BEFORE the
+    // fallback and tripped its "no data" gate. The user could not switch
+    // values without clearing the filter first. The selection is now folded in
+    // LAST, so the gate sees the (empty) DATA only.
+    await openEnumPicker({
+      col: RECONCILIATION_COL,
+      value: 'DRAFT',
+      rows: [],
+      distinctCodes: [],
+      entity: 'bank-statement',
+      apiBaseUrl: '/api',
+    });
+    expect(optionLabels().sort()).toEqual(FULL_CATALOGUE);
+  });
+
+  it('STILL seeds the whole declared catalogue when several values are already selected', async () => {
+    await openEnumPicker({
+      col: RECONCILIATION_COL,
+      value: ['DRAFT', 'RECONCILED'],
+      rows: [],
+      distinctCodes: [],
+      entity: 'bank-statement',
+      apiBaseUrl: '/api',
+    });
+    expect(optionLabels().sort()).toEqual(FULL_CATALOGUE);
+  });
+
+  it('does not duplicate an already-selected code that the catalogue also seeded', async () => {
+    await openEnumPicker({ col: RECONCILIATION_COL, value: 'RECONCILED' });
+    const labels = optionLabels();
+    expect(labels.sort()).toEqual(FULL_CATALOGUE);
+    expect(labels.filter((l) => l === 'Conciliado')).toHaveLength(1);
+  });
+
+  // ----------------------------------------------------------------
+  // Some dynamic source DID produce codes -> the declared catalogue must NOT
+  // be unioned in. A declared code no row carries can only ever return zero
+  // rows, so offering it is a dead end for the user.
+  // ----------------------------------------------------------------
+
+  it('does NOT offer a declared code that no loaded row and no distinct value carries', async () => {
+    // The reported bug from the opposite direction: unioning the catalogue
+    // whenever the column declares one put an unmatchable option in the list.
+    await openEnumPicker({
+      col: RECONCILIATION_COL,
+      value: 'DRAFT',
+      distinctCodes: ['DRAFT'],
+      rows: [{ reconciliation: 'DRAFT' }],
+      entity: 'bank-statement',
+      apiBaseUrl: '/api',
+    });
+    expect(optionLabels()).toEqual(['Borrador']);
+  });
+
+  it('does not duplicate a declared code that is both selected and present in the data', async () => {
+    await openEnumPicker({
+      col: RECONCILIATION_COL,
+      value: 'RECONCILED',
+      distinctCodes: ['RECONCILED', 'DRAFT'],
+      rows: [{ reconciliation: 'RECONCILED' }],
+      entity: 'bank-statement',
+      apiBaseUrl: '/api',
+    });
+    const labels = optionLabels();
+    // Exactly the two codes the data carries — 'Sin conciliar' is declared but
+    // absent from the data, and 'Conciliado' is both selected and in the data
+    // yet must appear once.
+    expect(labels.slice().sort()).toEqual(['Borrador', 'Conciliado']);
+    expect(labels.filter((l) => l === 'Conciliado')).toHaveLength(1);
+  });
+
+  // ----------------------------------------------------------------
+  // The reported user case: Movements declares labels for BPD/BPW/BF so a
+  // bank-fee row renders its name instead of a raw code, but an account with
+  // no bank-fee movement must not be offered "Comisión bancaria" — filtering
+  // by it could only ever return zero rows.
+  // ----------------------------------------------------------------
+
+  describe('a declared code absent from the data stays out of the list (Movements "Tipo")', () => {
+    const MOVEMENT_TYPE_COL = {
+      key: 'movementType',
+      label: 'Type',
+      type: 'enum',
+      column: 'MovementType',
+      enumLabels: {
+        BPD: 'Depósito',
+        BPW: 'Retirada',
+        BF: 'Comisión bancaria',
+      },
+    };
+
+    const openMovements = (value) => openEnumPicker({
+      col: MOVEMENT_TYPE_COL,
+      value,
+      distinctCodes: ['BPD', 'BPW'],
+      rows: [{ movementType: 'BPD' }, { movementType: 'BPW' }],
+      entity: 'goods-movements',
+      apiBaseUrl: '/api',
+    });
+
+    it('offers only the two codes the account actually has', async () => {
+      await openMovements('');
+      expect(optionLabels().slice().sort()).toEqual(['Depósito', 'Retirada']);
+    });
+
+    it('still offers only those two when one of them is already selected (re-edit)', async () => {
+      // Re-opening the filter must neither collapse the list to the picked
+      // code (the ETP-4956 bug) nor grow it with the unmatchable BF option.
+      await openMovements('BPD');
+      expect(optionLabels().slice().sort()).toEqual(['Depósito', 'Retirada']);
+    });
+
+    it('offers the third code as soon as a row carries it', async () => {
+      await openEnumPicker({
+        col: MOVEMENT_TYPE_COL,
+        value: 'BPD',
+        distinctCodes: ['BPD', 'BPW'],
+        rows: [{ movementType: 'BPD' }, { movementType: 'BPW' }, { movementType: 'BF' }],
+        entity: 'goods-movements',
+        apiBaseUrl: '/api',
+      });
+      expect(optionLabels().slice().sort()).toEqual(['Comisión bancaria', 'Depósito', 'Retirada']);
+    });
+  });
+
+  // ----------------------------------------------------------------
+  // The fallback gate is UNIFORM: it governs the global status dictionary the
+  // same way it governs a column's own enumLabels. (An earlier attempt at the
+  // fix made the two differ; that split no longer exists.)
+  // ----------------------------------------------------------------
+
+  describe('the same gate applies to the global status dictionary', () => {
+    const UNDECLARED_COL = {
+      key: 'documentStatus',
+      label: 'Doc Status',
+      type: 'enum',
+      column: 'DocStatus',
+    };
+
+    it('falls back to the global dictionary only when nothing else was merged', async () => {
+      localeState.statuses = { DR: { label: 'Draft' }, CO: { label: 'Complete' } };
+      await openEnumPicker({ col: UNDECLARED_COL, value: '' });
+      expect(optionLabels().sort()).toEqual(['Complete', 'Draft']);
+    });
+
+    it('still falls back for an undeclared column when only a value is selected', async () => {
+      // Same ordering guarantee as for a declared catalogue: the selection is
+      // not data, so it must not suppress the fallback.
+      localeState.statuses = { DR: { label: 'Draft' }, CO: { label: 'Complete' } };
+      await openEnumPicker({ col: UNDECLARED_COL, value: 'DR' });
+      expect(optionLabels().sort()).toEqual(['Complete', 'Draft']);
+    });
+
+    it('does NOT union the global dictionary once real data has been merged', async () => {
+      localeState.statuses = { DR: { label: 'Draft' }, CO: { label: 'Complete' } };
+      await openEnumPicker({
+        col: UNDECLARED_COL,
+        value: 'DR',
+        distinctCodes: ['DR'],
+        entity: 'orders',
+        apiBaseUrl: '/api',
+      });
+      // Only the code the data actually produced — 'Complete' would be an
+      // unrelated global status leaking into this column's picker.
+      expect(optionLabels()).toEqual(['Draft']);
+    });
+  });
+});
+
+describe('ETP-4956 — enum picker is multi-select', () => {
+  const RECONCILIATION_COL = {
+    key: 'reconciliation',
+    label: 'Reconciliation',
+    type: 'enum',
+    column: 'ReconciliationState',
+    enumLabels: {
+      DRAFT: 'Borrador',
+      UNRECONCILED: 'Sin conciliar',
+      RECONCILED: 'Conciliado',
+    },
+  };
+
+  afterEach(() => {
+    distinctState.values = [];
+  });
+
+  it('accumulates toggled codes into an array and emits it on apply', async () => {
+    const onApply = vi.fn();
+    const { user } = await openEnumPicker({ col: RECONCILIATION_COL, value: 'DRAFT', onApply });
+    await clickOption(user, 'Conciliado');
+    await user.click(screen.getByText('advancedFilterApply'));
+    expect(onApply).toHaveBeenCalledTimes(1);
+    expect(onApply.mock.calls[0][0].conditions[0].value).toEqual(['DRAFT', 'RECONCILED']);
+  });
+
+  it('accepts a scalar value on the way in (pre-ETP-4956 saved preset)', async () => {
+    const onApply = vi.fn();
+    // The stored condition is the SCALAR 'DRAFT', not an array.
+    const { user } = await openEnumPicker({ col: RECONCILIATION_COL, value: 'DRAFT', onApply });
+    // It is treated as a one-element selection, so applying untouched still
+    // works and toggling promotes it to an array.
+    await user.click(screen.getByText('advancedFilterApply'));
+    expect(onApply.mock.calls[0][0].conditions[0].value).toBe('DRAFT');
+  });
+
+  it('un-toggles an already-selected code', async () => {
+    const onApply = vi.fn();
+    const { user } = await openEnumPicker({
+      col: RECONCILIATION_COL,
+      value: ['DRAFT', 'RECONCILED'],
+      onApply,
+    });
+    await clickOption(user, 'Borrador');
+    await user.click(screen.getByText('advancedFilterApply'));
+    expect(onApply.mock.calls[0][0].conditions[0].value).toEqual(['RECONCILED']);
+  });
+
+  it('keeps the popover open while several codes are toggled in one pass', async () => {
+    const { user } = await openEnumPicker({ col: RECONCILIATION_COL, value: '' });
+    await clickOption(user, 'Borrador');
+    // Single-select used to close here, forcing a re-open per value.
+    expect(screen.getByTestId('distinct-values-list')).toBeInTheDocument();
+    await clickOption(user, 'Conciliado');
+    expect(screen.getByTestId('distinct-values-list')).toBeInTheDocument();
+    await clickOption(user, 'Sin conciliar');
+    expect(screen.getByTestId('distinct-values-list')).toBeInTheDocument();
+  });
+
+  it('labels the trigger "<first> +N" for a multi-code selection', async () => {
+    const { user, trigger } = await openEnumPicker({ col: RECONCILIATION_COL, value: 'DRAFT' });
+    expect(trigger).toHaveTextContent('Borrador');
+    expect(trigger).not.toHaveTextContent('+');
+
+    await clickOption(user, 'Conciliado');
+    expect(trigger).toHaveTextContent('Borrador +1');
+
+    await clickOption(user, 'Sin conciliar');
+    expect(trigger).toHaveTextContent('Borrador +2');
+  });
+
+  it('falls back to the placeholder once every code is un-toggled', async () => {
+    const { user, trigger } = await openEnumPicker({ col: RECONCILIATION_COL, value: 'DRAFT' });
+    await clickOption(user, 'Borrador');
+    expect(trigger).toHaveTextContent('advancedFilterSelectValue');
+  });
+
+  it('disables apply while the enum row has no selected code', async () => {
+    const onApply = vi.fn();
+    const { user } = await openEnumPicker({ col: RECONCILIATION_COL, value: '', onApply });
+    await user.click(screen.getByText('advancedFilterApply'));
+    expect(onApply).not.toHaveBeenCalled();
+  });
+});
+
+describe('ETP-4956 — "Is any of" (inSet) retired from enum operators', () => {
+  const seededEnumRow = (col) => ({
+    rowOperator: 'and',
+    conditions: [{ field: col.key, operator: '', value: '' }],
+  });
+
+  const ENUM_COL = {
+    key: 'reconciliation',
+    label: 'Reconciliation',
+    type: 'enum',
+    column: 'ReconciliationState',
+    enumLabels: { DRAFT: 'Borrador', RECONCILED: 'Conciliado' },
+  };
+
+  it('does not offer the "is any of" operator for an enum column', async () => {
+    const user = userEvent.setup();
+    render(<AdvancedFilterBuilder columns={[ENUM_COL]} value={seededEnumRow(ENUM_COL)} />);
+    await user.click(screen.getByText('advancedFilterSelectOp').closest('button'));
+    // ui() returns the key, so the retired option would read 'opInSet'.
+    expect(screen.queryByRole('option', { name: 'opInSet' })).not.toBeInTheDocument();
+  });
+
+  it('still offers the four surviving enum operators', async () => {
+    const user = userEvent.setup();
+    render(<AdvancedFilterBuilder columns={[ENUM_COL]} value={seededEnumRow(ENUM_COL)} />);
+    await user.click(screen.getByText('advancedFilterSelectOp').closest('button'));
+    const names = screen.getAllByRole('option').map((o) => o.textContent);
+    // 'opIs' / 'opIsNot' are the labels of equals / notEqual.
+    expect(names).toEqual(['opIs', 'opIsNot', 'opIsEmpty', 'opIsNotEmpty']);
+  });
+
+  it('keeps a pre-existing inSet preset editable as a comma-separated text field', async () => {
+    // The operator can no longer be CHOSEN, but a preset saved before the
+    // change must not render an empty value cell.
+    const user = userEvent.setup();
+    const onApply = vi.fn();
+    render(
+      <AdvancedFilterBuilder
+        columns={[ENUM_COL]}
+        value={{
+          rowOperator: 'and',
+          conditions: [{ field: 'reconciliation', operator: 'inSet', value: ['DRAFT', 'RECONCILED'] }],
+        }}
+        onApply={onApply}
+      />,
+    );
+    const input = screen.getByPlaceholderText('advancedFilterInSetPlaceholder');
+    expect(input).toHaveValue('DRAFT,RECONCILED');
+    await user.clear(input);
+    await user.type(input, 'DRAFT');
+    await user.click(screen.getByText('advancedFilterApply'));
+    expect(onApply.mock.calls[0][0].conditions[0]).toMatchObject({
+      operator: 'inSet',
+      value: 'DRAFT',
+    });
+  });
+});
+
+describe('ETP-4956 — normalizeDecimalInput', () => {
+  it('leaves a plain integer untouched', () => {
+    expect(normalizeDecimalInput('1646')).toBe('1646');
+  });
+
+  it('leaves canonical dot-decimal untouched', () => {
+    expect(normalizeDecimalInput('1646.49')).toBe('1646.49');
+  });
+
+  it('reads a lone comma as the decimal separator (es-ES typing)', () => {
+    expect(normalizeDecimalInput('1646,49')).toBe('1646.49');
+  });
+
+  it('reads the LAST separator as the decimal when both are present', () => {
+    expect(normalizeDecimalInput('1.646,49')).toBe('1646.49');
+    expect(normalizeDecimalInput('1,646.49')).toBe('1646.49');
+  });
+
+  it('strips multiple thousands groups', () => {
+    expect(normalizeDecimalInput('1.234.567,89')).toBe('1234567.89');
+    expect(normalizeDecimalInput('1,234,567.89')).toBe('1234567.89');
+  });
+
+  it('treats a lone separator followed by exactly three digits as a thousands group', () => {
+    // "1.646" is 1646 in es-ES, never 1.646 — the ambiguity is resolved in
+    // favour of the grouping reading.
+    expect(normalizeDecimalInput('1.646')).toBe('1646');
+    expect(normalizeDecimalInput('1,646')).toBe('1646');
+  });
+
+  it('keeps a lone separator followed by a non-three-digit group as the decimal', () => {
+    expect(normalizeDecimalInput('1,6')).toBe('1.6');
+    expect(normalizeDecimalInput('1,6499')).toBe('1.6499');
+  });
+
+  it('preserves the sign', () => {
+    expect(normalizeDecimalInput('-1.646,49')).toBe('-1646.49');
+    expect(normalizeDecimalInput('+1646,49')).toBe('+1646.49');
+  });
+
+  it('drops surrounding and inner whitespace', () => {
+    expect(normalizeDecimalInput('  1 646,49 ')).toBe('1646.49');
+  });
+
+  it('returns the trimmed original for anything that is not a number', () => {
+    expect(normalizeDecimalInput('  1.646,49 EUR ')).toBe('1.646,49 EUR');
+    expect(normalizeDecimalInput('  abc  ')).toBe('abc');
+  });
+
+  it('returns an empty string for blank input', () => {
+    expect(normalizeDecimalInput('')).toBe('');
+    expect(normalizeDecimalInput('   ')).toBe('');
+  });
+
+  it('passes non-string values straight through', () => {
+    expect(normalizeDecimalInput(1646.49)).toBe(1646.49);
+    expect(normalizeDecimalInput(null)).toBeNull();
+    expect(normalizeDecimalInput(undefined)).toBeUndefined();
+  });
+});
+
+describe('ETP-4956 — numeric editors accept a locale decimal comma', () => {
+  const NUMERIC_COLS = [
+    { key: 'balance', label: 'Balance', type: 'number', column: 'Balance' },
+    { key: 'amount', label: 'Amount', type: 'amount', column: 'Amount' },
+  ];
+
+  const numericRow = (operator, value) => ({
+    rowOperator: 'and',
+    conditions: [{ field: 'balance', operator, value }],
+  });
+
+  it('renders the single-value numeric editor as a decimal text field', () => {
+    render(<AdvancedFilterBuilder columns={NUMERIC_COLS} value={numericRow('equals', '')} />);
+    const input = screen.getByRole('textbox');
+    // NOT type="number": that input refuses the comma the grid displays.
+    expect(input).toHaveAttribute('type', 'text');
+    expect(input).toHaveAttribute('inputmode', 'decimal');
+  });
+
+  it('renders both "between" numeric editors as decimal text fields', () => {
+    render(<AdvancedFilterBuilder columns={NUMERIC_COLS} value={numericRow('between', ['', ''])} />);
+    const inputs = screen.getAllByRole('textbox');
+    expect(inputs).toHaveLength(2);
+    for (const input of inputs) {
+      expect(input).toHaveAttribute('type', 'text');
+      expect(input).toHaveAttribute('inputmode', 'decimal');
+    }
+  });
+
+  it('does not put inputMode=decimal on a text column editor', () => {
+    const cols = [{ key: 'name', label: 'Name', type: 'text', column: 'Name' }];
+    render(
+      <AdvancedFilterBuilder
+        columns={cols}
+        value={{ rowOperator: 'and', conditions: [{ field: 'name', operator: 'iContains', value: '' }] }}
+      />,
+    );
+    const input = screen.getByRole('textbox');
+    expect(input).toHaveAttribute('type', 'text');
+    expect(input).not.toHaveAttribute('inputmode');
+  });
+
+  it('lets the user type a decimal comma and normalizes it on apply', async () => {
+    const user = userEvent.setup();
+    const onApply = vi.fn();
+    render(
+      <AdvancedFilterBuilder columns={NUMERIC_COLS} value={numericRow('equals', '')} onApply={onApply} />,
+    );
+    const input = screen.getByRole('textbox');
+    await user.type(input, '1.646,49');
+    // The comma survives in the editor — the user sees what they typed.
+    expect(input).toHaveValue('1.646,49');
+    await user.click(screen.getByText('advancedFilterApply'));
+    expect(onApply.mock.calls[0][0].conditions[0].value).toBe('1646.49');
+  });
+
+  it('normalizes both ends of a "between" numeric range on apply', async () => {
+    const user = userEvent.setup();
+    const onApply = vi.fn();
+    render(
+      <AdvancedFilterBuilder columns={NUMERIC_COLS} value={numericRow('between', ['', ''])} onApply={onApply} />,
+    );
+    const [from, to] = screen.getAllByRole('textbox');
+    await user.type(from, '1.000,50');
+    await user.type(to, '2.000,75');
+    await user.click(screen.getByText('advancedFilterApply'));
+    expect(onApply.mock.calls[0][0].conditions[0].value).toEqual(['1000.50', '2000.75']);
+  });
+});
+
+describe('ETP-4956 — values are sanitized at apply time, not on change', () => {
+  const COLS = [
+    { key: 'contact', label: 'Contact', type: 'text', column: 'Contact' },
+    { key: 'balance', label: 'Balance', type: 'number', column: 'Balance' },
+  ];
+
+  it('trims a text value on apply', async () => {
+    const user = userEvent.setup();
+    const onApply = vi.fn();
+    render(
+      <AdvancedFilterBuilder
+        columns={COLS}
+        value={{ rowOperator: 'and', conditions: [{ field: 'contact', operator: 'iContains', value: '  Ivan  ' }] }}
+        onApply={onApply}
+      />,
+    );
+    await user.click(screen.getByText('advancedFilterApply'));
+    // Untrimmed, the backend matched the spaces literally and returned nothing.
+    expect(onApply.mock.calls[0][0].conditions[0].value).toBe('Ivan');
+  });
+
+  it('does NOT trim while the user is typing, so inner spaces survive', async () => {
+    const user = userEvent.setup();
+    const onApply = vi.fn();
+    render(
+      <AdvancedFilterBuilder
+        columns={COLS}
+        value={{ rowOperator: 'and', conditions: [{ field: 'contact', operator: 'iContains', value: '' }] }}
+        onApply={onApply}
+      />,
+    );
+    const input = screen.getByRole('textbox');
+    // Trimming on change would eat the space and make "Banco Santander"
+    // untypeable — the editor must keep the trailing space mid-word.
+    await user.type(input, 'Banco ');
+    expect(input).toHaveValue('Banco ');
+    await user.type(input, 'Santander');
+    expect(input).toHaveValue('Banco Santander');
+    await user.click(screen.getByText('advancedFilterApply'));
+    expect(onApply.mock.calls[0][0].conditions[0].value).toBe('Banco Santander');
+  });
+
+  it('sanitizes every condition of a multi-row filter, each by its own mode', async () => {
+    const user = userEvent.setup();
+    const onApply = vi.fn();
+    render(
+      <AdvancedFilterBuilder
+        columns={COLS}
+        value={{
+          rowOperator: 'and',
+          conditions: [
+            { field: 'contact', operator: 'iContains', value: '  Ivan  ' },
+            { field: 'balance', operator: 'equals', value: '1.646,49' },
+          ],
+        }}
+        onApply={onApply}
+      />,
+    );
+    await user.click(screen.getByText('advancedFilterApply'));
+    expect(onApply.mock.calls[0][0].conditions.map((c) => c.value)).toEqual(['Ivan', '1646.49']);
+  });
+
+  it('leaves a nullish-operator condition (value === null) alone', async () => {
+    const user = userEvent.setup();
+    const onApply = vi.fn();
+    render(
+      <AdvancedFilterBuilder
+        columns={COLS}
+        value={{ rowOperator: 'and', conditions: [{ field: 'contact', operator: 'isNull', value: null }] }}
+        onApply={onApply}
+      />,
+    );
+    await user.click(screen.getByText('advancedFilterApply'));
+    expect(onApply.mock.calls[0][0].conditions[0].value).toBeNull();
+  });
+
+  it('trims every element of an array value', async () => {
+    const user = userEvent.setup();
+    const onApply = vi.fn();
+    const cols = [{ key: 'bp', label: 'Partner', type: 'selector', column: 'C_BPartner_ID' }];
+    render(
+      <AdvancedFilterBuilder
+        columns={cols}
+        value={{ rowOperator: 'and', conditions: [{ field: 'bp', operator: 'equals', value: [' BP1 ', 'BP2 '] }] }}
+        onApply={onApply}
+      />,
+    );
+    await user.click(screen.getByText('advancedFilterApply'));
+    expect(onApply.mock.calls[0][0].conditions[0].value).toEqual(['BP1', 'BP2']);
+  });
+
+  it('does not mutate the applied condition objects passed in as `value`', async () => {
+    const user = userEvent.setup();
+    const onApply = vi.fn();
+    const incoming = { field: 'contact', operator: 'iContains', value: '  Ivan  ' };
+    render(
+      <AdvancedFilterBuilder
+        columns={COLS}
+        value={{ rowOperator: 'and', conditions: [incoming] }}
+        onApply={onApply}
+      />,
+    );
+    await user.click(screen.getByText('advancedFilterApply'));
+    expect(incoming.value).toBe('  Ivan  ');
+    expect(onApply.mock.calls[0][0].conditions[0]).not.toBe(incoming);
   });
 });
