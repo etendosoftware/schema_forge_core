@@ -78,5 +78,9 @@
     "react-router-dom": "^7.0.0",
     "sonner": "^2.0.7",
     "tailwind-merge": "^2.2.0"
+  },
+  "dependencies": {
+    "read-excel-file": "^9.3.10",
+    "write-excel-file": "^4.1.1"
   }
 }

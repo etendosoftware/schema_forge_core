@@ -97,10 +97,21 @@ describe('Checkbox — hidden input element (ETP-3660)', () => {
   });
 });
 
-describe('Checkbox — click handler wiring (ETP-3660)', () => {
-  it('forwards click and change handlers to the native input', () => {
-    assert.match(src, /onClick=\{onClick\}/);
+describe('Checkbox — click handler wiring (ETP-3660, updated ETP-5067)', () => {
+  it('wires onClick on the label, not the input', () => {
+    // See checkbox.nestedRow.vitest.jsx for the behavioral regression this
+    // placement fixes (ETP-5067): a native label click forwards a second,
+    // synthetic click straight to the input, which an onClick placed only on
+    // the input never sees.
+    assert.match(src, /<label[\s\S]*?onClick=\{onClick\}[\s\S]*?<input/);
+  });
+
+  it('forwards the change handler to the native input', () => {
     assert.match(src, /onChange=\{onChange\}/);
+  });
+
+  it('does not put onClick on the native input anymore', () => {
+    assert.doesNotMatch(src, /<input[\s\S]*?onClick=\{onClick\}/);
   });
 });
 
