@@ -13,12 +13,27 @@ const Checkbox = forwardRef(function Checkbox(
   }, [indeterminate]);
 
   return (
+    // onClick lives on the label, not the input (see below), so it intercepts
+    // BOTH click events a real browser fires when a labeled checkbox is
+    // clicked on its visible box rather than the (visually hidden) input
+    // itself: the original click (target = a label descendant, bubbles
+    // straight through the label without ever touching the input) and the
+    // native label-activation click the browser then synthesizes at the
+    // input (which bubbles input -> label too). An onClick placed only on
+    // the input — the previous implementation — only ever sees the second
+    // one, so the first always escapes to whatever ancestor row wraps this
+    // component. A caller nesting Checkbox in a clickable row and passing
+    // the same handler to both the row's onClick and this onClick (to stop
+    // that escape) would still have the row's handler fire once from the
+    // escaped first event, on top of onChange firing once natively from the
+    // input — a double toggle that cancels itself out. Fixes ETP-5067.
     <label
       className={cn(
         'group relative flex items-center justify-center outline-none cursor-pointer focus-visible:ring-2 focus-visible:ring-focus-ring focus-visible:ring-offset-2',
         disabled && 'cursor-not-allowed',
         className
       )}
+      onClick={onClick}
       {...props}
     >
       <input
@@ -27,7 +42,6 @@ const Checkbox = forwardRef(function Checkbox(
         checked={!!checked}
         disabled={disabled}
         aria-checked={indeterminate ? 'mixed' : !!checked}
-        onClick={onClick}
         onChange={onChange}
         className="sr-only"
       />

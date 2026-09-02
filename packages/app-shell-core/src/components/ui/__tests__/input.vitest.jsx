@@ -45,4 +45,18 @@ describe('Input', () => {
     expect(ref.current).toBeInstanceOf(HTMLInputElement);
     expect(ref.current).toBe(screen.getByPlaceholderText('ref-test'));
   });
+
+  it('suppresses native spinner arrows for type="number" (ETP-4887)', () => {
+    render(<Input type="number" placeholder="qty" />);
+    const input = screen.getByPlaceholderText('qty');
+    expect(input.className).toContain('[appearance:textfield]');
+    expect(input.className).toContain('[&::-webkit-outer-spin-button]:appearance-none');
+    expect(input.className).toContain('[&::-webkit-inner-spin-button]:appearance-none');
+  });
+
+  it('does NOT add spinner-suppression classes for non-number types', () => {
+    render(<Input type="text" placeholder="txt" />);
+    const input = screen.getByPlaceholderText('txt');
+    expect(input.className).not.toContain('[appearance:textfield]');
+  });
 });
