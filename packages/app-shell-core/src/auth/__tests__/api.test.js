@@ -2,6 +2,7 @@ import { describe, it, beforeEach } from 'node:test';
 import { strict as assert } from 'node:assert';
 import {
   createApiFetch, apiFetch, resolveApiUrl, registerApiSession, resetApiSessionForTests,
+  entityFromPath,
 } from '../api.js';
 import {
   rememberRecordVersion, getRecordVersion, resetRecordVersionsForTests,
@@ -440,7 +441,13 @@ describe('apiFetch optimistic-locking token (ETP-5073)', () => {
     );
     // The harvest is deliberately not awaited by the request, so let its microtasks drain.
     await new Promise(resolve => setTimeout(resolve, 0));
-    assert.equal(getRecordVersion('REC1'), 'v2');
+    // ETP-5112: the harvest keys the returned record by the entity derived from the path, so the
+    // fresh token lands in the `x` bucket — which is the one the next PATCH to `/x/REC1` reads.
+    assert.equal(getRecordVersion('REC1', 'x'), 'v2');
+    // The `null` bucket still holds the token this test seeded by hand. That is correct and not
+    // a regression: a write harvested under a real entity must not refresh a bucket that may
+    // name a different row sharing the id (see the ad_org / ad_orginfo case).
+    assert.equal(getRecordVersion('REC1', null), 'v1');
     restore();
   });
 
@@ -476,5 +483,361 @@ describe('apiFetch optimistic-locking token (ETP-5073)', () => {
       '/x/REC1', { method: 'PATCH', body: JSON.stringify({ a: 1 }) },
     ));
     globalThis.fetch = original;
+  });
+});
+
+// ── ETP-5112 ────────────────────────────────────────────────────────────────
+//
+// ETP-5073 made the backend REQUIRE the `updated` token, but only `useEntity` remembered one, so
+// the ~15 panels that read with `apiFetch` directly patched without it and got a hard 400
+// `missing_updated`. Harvesting on every read closes that, and keying by (id, entity) is what
+// keeps two rows that legitimately share an id from stealing each other's token.
+
+describe('entityFromPath (ETP-5112)', () => {
+  it('takes the segment BEFORE the id when the tail is the record id', () => {
+    assert.equal(entityFromPath('/organization/O1', 'O1'), 'organization');
+  });
+
+  it('takes the tail itself for a collection read, where the tail is not the id', () => {
+    // `/price?parentId=X` — the row ids come from the payload, never from the path.
+    assert.equal(entityFromPath('/price?parentId=X', 'R9'), 'price');
+    assert.equal(entityFromPath('/price#frag', 'R9'), 'price');
+  });
+
+  it('resolves the three-segment NEO record shape to the entity, not the spec', () => {
+    assert.equal(entityFromPath('/verifactu-config/VerifactuConfig/R1', 'R1'), 'VerifactuConfig');
+  });
+
+  it('decodes the tail before comparing it to the id', () => {
+    // NOT cosmetic: `ListModalWindow.jsx` writes to `/${entity}/${encodeURIComponent(row.id)}`.
+    // Without decoding, the encoded tail never equals the raw id, so we would return the ENCODED
+    // ID as the entity and key the write under a bucket no read ever wrote.
+    const id = 'a/b';
+    assert.equal(entityFromPath(`/entity/${encodeURIComponent(id)}`, id), 'entity');
+    assert.equal(entityFromPath(`/entity/${encodeURIComponent('x y')}`, 'x y'), 'entity');
+  });
+
+  it('degrades to the raw segment on a malformed escape instead of throwing', () => {
+    // `decodeURIComponent` throws on a stray `%`, and this runs on every request in the app.
+    assert.doesNotThrow(() => entityFromPath('/entity/100%', '100%'));
+    assert.equal(entityFromPath('/entity/100%', '100%'), 'entity',
+      'the raw segment still compares equal to the raw id');
+    assert.equal(entityFromPath('/entity/100%', 'OTHER'), '100%');
+  });
+
+  it('returns null for a path with no usable segment', () => {
+    assert.equal(entityFromPath('', 'X'), null);
+    assert.equal(entityFromPath('/', 'X'), null);
+    assert.equal(entityFromPath('///', 'X'), null);
+    assert.equal(entityFromPath('?a=b', 'X'), null);
+  });
+
+  it('returns null for a non-string path rather than throwing', () => {
+    for (const bad of [null, undefined, 42, {}, ['/x/1']]) {
+      assert.doesNotThrow(() => entityFromPath(bad, 'X'));
+      assert.equal(entityFromPath(bad, 'X'), null);
+    }
+  });
+
+  it('returns null when the only segment IS the id, as there is no entity to name', () => {
+    assert.equal(entityFromPath('/O1', 'O1'), null);
+  });
+
+  it('returns the tail when no record id is known', () => {
+    assert.equal(entityFromPath('/organization/O1', null), 'O1');
+    assert.equal(entityFromPath('/organization/O1', undefined), 'O1');
+    assert.equal(entityFromPath('/price', undefined), 'price');
+  });
+});
+
+/**
+ * Stubs `fetch` with a JSON response that a real `Response` would produce: a `content-type`
+ * header (the gate `harvestReadVersions` checks first) and an INDEPENDENT `clone()`.
+ */
+function stubReadFetch(bodyForPath, { contentType = 'application/json', ok = true } = {}) {
+  const original = globalThis.fetch;
+  const calls = [];
+  globalThis.fetch = async (url, opts) => {
+    calls.push({ url, opts });
+    const body = typeof bodyForPath === 'function' ? bodyForPath(url, opts) : bodyForPath;
+    return {
+      ok,
+      status: ok ? 200 : 500,
+      headers: { get: (name) => (name.toLowerCase() === 'content-type' ? contentType : null) },
+      clone: () => ({ json: async () => body }),
+      json: async () => body,
+    };
+  };
+  return { calls, restore: () => { globalThis.fetch = original; } };
+}
+
+/** The harvest is deliberately not awaited by the request, so let its microtasks drain. */
+const drain = () => new Promise((resolve) => { setTimeout(resolve, 0); });
+
+describe('apiFetch harvests record versions on read (ETP-5112)', () => {
+  beforeEach(() => resetRecordVersionsForTests());
+
+  it('harvests EVERY row of a list GET, not just the first', () => {
+    // The main case: inline edit in a grid (Contacts, ProductPriceBar, actividadesDelIae). The
+    // row the user edits is rarely row 0, so a first-row-only harvest fixed nothing.
+    const { restore } = stubReadFetch({
+      response: {
+        data: [
+          { id: 'R1', updated: 'v1' },
+          { id: 'R2', updated: 'v2' },
+          { id: 'R3', updated: 'v3' },
+        ],
+      },
+    });
+    return createApiFetch('', () => 't', () => {})('/price?parentId=P1')
+      .then(drain)
+      .then(() => {
+        assert.equal(getRecordVersion('R1', 'price'), 'v1');
+        assert.equal(getRecordVersion('R2', 'price'), 'v2');
+        assert.equal(getRecordVersion('R3', 'price'), 'v3');
+        restore();
+      });
+  });
+
+  it('harvests a bare array and a single-object payload too', () => {
+    const { restore } = stubReadFetch((url) => (url.includes('array')
+      ? [{ id: 'A1', updated: 'va' }]
+      : { id: 'S1', updated: 'vs' }));
+    const fetcher = createApiFetch('', () => 't', () => {});
+    return fetcher('/array-entity')
+      .then(() => fetcher('/single/S1'))
+      .then(drain)
+      .then(() => {
+        assert.equal(getRecordVersion('A1', 'array-entity'), 'va');
+        assert.equal(getRecordVersion('S1', 'single'), 'vs');
+        restore();
+      });
+  });
+
+  it('harvests a GET by id under the entity segment before the id', () => {
+    const { restore } = stubReadFetch({ response: { data: [{ id: 'O1', updated: 'ORG' }] } });
+    return createApiFetch('', () => 't', () => {})('/organization/O1')
+      .then(drain)
+      .then(() => {
+        assert.equal(getRecordVersion('O1', 'organization'), 'ORG');
+        // Only that bucket was written: a second read of the same id under another entity gets
+        // its own slot rather than overwriting this one (see the satellite-table case below).
+        restore();
+      });
+  });
+
+  it('sends each satellite row its OWN token when two share an id (ad_org / ad_orginfo)', async () => {
+    // THE end-to-end regression test of ETP-5112. `OrganizationPage.jsx` reads both rows and
+    // patches both with a PARTIAL body carrying neither `id` nor `updated`; under an id-only
+    // cache the second GET clobbered the first token and one PATCH went out with the other
+    // row's version, which the server correctly refuses as a 409 the user cannot resolve.
+    const { calls, restore } = stubReadFetch((url) => ({
+      response: {
+        data: [{ id: 'O1', updated: url.includes('/information/') ? 'INFO' : 'ORG' }],
+      },
+    }));
+    const fetcher = createApiFetch('', () => 't', () => {});
+    await fetcher('/organization/O1');
+    await fetcher('/information/O1');
+    await drain();
+
+    await fetcher('/organization/O1', { method: 'PATCH', body: JSON.stringify({ name: 'Acme' }) });
+    await fetcher('/information/O1', { method: 'PATCH', body: JSON.stringify({ phone: '123' }) });
+
+    const patches = calls.filter((c) => c.opts?.method === 'PATCH');
+    assert.deepEqual(JSON.parse(patches[0].opts.body), { name: 'Acme', updated: 'ORG' });
+    assert.deepEqual(JSON.parse(patches[1].opts.body), { phone: '123', updated: 'INFO' });
+    restore();
+  });
+
+  it('ignores a response whose content-type is not JSON', () => {
+    // A download or an HTML error page must not be cloned and parsed on every request.
+    const { restore } = stubReadFetch({ response: { data: [{ id: 'R1', updated: 'v1' }] } },
+      { contentType: 'text/html; charset=utf-8' });
+    return createApiFetch('', () => 't', () => {})('/price')
+      .then(drain)
+      .then(() => {
+        assert.equal(getRecordVersion('R1', 'price'), undefined);
+        restore();
+      });
+  });
+
+  it('ignores a response with no content-type at all', () => {
+    const { restore } = stubReadFetch({ response: { data: [{ id: 'R1', updated: 'v1' }] } },
+      { contentType: null });
+    return createApiFetch('', () => 't', () => {})('/price')
+      .then(drain)
+      .then(() => {
+        assert.equal(getRecordVersion('R1', 'price'), undefined);
+        restore();
+      });
+  });
+
+  it('ignores a failed response — an error body is not a record read', () => {
+    const { restore } = stubReadFetch({ response: { data: [{ id: 'R1', updated: 'v1' }] } },
+      { ok: false });
+    return createApiFetch('', () => 't', () => {})('/price')
+      .then(drain)
+      .then(() => {
+        assert.equal(getRecordVersion('R1', 'price'), undefined);
+        restore();
+      });
+  });
+
+  it('does not blow up on a GET whose stubbed response has no clone()', async () => {
+    const original = globalThis.fetch;
+    globalThis.fetch = async () => ({
+      ok: true,
+      status: 200,
+      headers: { get: () => 'application/json' },
+      json: async () => ({ response: { data: [{ id: 'R1', updated: 'v1' }] } }),
+    });
+    await assert.doesNotReject(createApiFetch('', () => 't', () => {})('/price'));
+    await drain();
+    assert.equal(getRecordVersion('R1', 'price'), undefined, 'nothing harvested, deliberately');
+    globalThis.fetch = original;
+  });
+
+  it('never consumes the caller\'s body on a GET when clone() is not independent', async () => {
+    // A hand-rolled double may return `this` from clone(). Reading it here would consume the
+    // single-use json() the CALLER was about to read, starving the very read being decorated.
+    const original = globalThis.fetch;
+    let jsonReads = 0;
+    const res = {
+      ok: true,
+      status: 200,
+      headers: { get: () => 'application/json' },
+      json: async () => {
+        jsonReads += 1;
+        return { response: { data: [{ id: 'R1', updated: 'v1' }] } };
+      },
+    };
+    res.clone = () => res;   // the hazard: not a copy
+    globalThis.fetch = async () => res;
+    const answer = await createApiFetch('', () => 't', () => {})('/price');
+    await drain();
+    const payload = await answer.json();
+    assert.equal(jsonReads, 1, 'the caller\'s read is the first and only one');
+    assert.equal(payload.response.data[0].id, 'R1', 'the caller still gets its body');
+    assert.equal(getRecordVersion('R1', 'price'), undefined, 'nothing harvested, deliberately');
+    globalThis.fetch = original;
+  });
+
+  it('skips a record served without updated (a projection or aggregate row)', () => {
+    const { restore } = stubReadFetch({
+      response: { data: [{ id: 'AGG1', total: 42 }, { id: 'R2', updated: 'v2' }] },
+    });
+    return createApiFetch('', () => 't', () => {})('/price')
+      .then(drain)
+      .then(() => {
+        assert.equal(getRecordVersion('AGG1', 'price'), undefined);
+        assert.equal(getRecordVersion('R2', 'price'), 'v2', 'the sibling row still lands');
+        restore();
+      });
+  });
+
+  it('survives an unexpected envelope without throwing', () => {
+    const { restore } = stubReadFetch(null);
+    const fetcher = createApiFetch('', () => 't', () => {});
+    return assert.doesNotReject(fetcher('/price').then(drain)).then(() => restore());
+  });
+
+  it('does not harvest on a POST — a create is not a read', () => {
+    const { restore } = stubReadFetch({ response: { data: [{ id: 'NEW1', updated: 'v1' }] } });
+    return createApiFetch('', () => 't', () => {})(
+      '/price', { method: 'POST', body: JSON.stringify({ a: 1 }) },
+    ).then(drain).then(() => {
+      assert.equal(getRecordVersion('NEW1', 'price'), undefined);
+      assert.equal(getRecordVersion('NEW1'), undefined);
+      restore();
+    });
+  });
+
+  it('arms an inline grid edit: list read, then PATCH of a row that is not the first', () => {
+    const { calls, restore } = stubReadFetch({
+      response: { data: [{ id: 'R1', updated: 'v1' }, { id: 'R2', updated: 'v2' }] },
+    });
+    const fetcher = createApiFetch('', () => 't', () => {});
+    return fetcher('/price?parentId=P1')
+      .then(drain)
+      .then(() => fetcher('/price/R2', { method: 'PATCH', body: JSON.stringify({ qty: 3 }) }))
+      .then(() => {
+        const patch = calls.find((c) => c.opts?.method === 'PATCH');
+        assert.deepEqual(JSON.parse(patch.opts.body), { qty: 3, updated: 'v2' });
+        restore();
+      });
+  });
+});
+
+describe('withRecordVersion non-regression (ETP-5073 behaviour under the ETP-5112 key)', () => {
+  beforeEach(() => resetRecordVersionsForTests());
+
+  it('leaves a GET and a DELETE untouched — neither is a versioned update', async () => {
+    const { calls, restore } = stubVersionedFetch();
+    rememberRecordVersion({ id: 'REC1', updated: 'v1' });
+    const fetcher = createApiFetch('', () => 't', () => {});
+    await fetcher('/x/REC1');
+    await fetcher('/x/REC1', { method: 'DELETE' });
+    assert.equal(calls[0].opts.body, undefined);
+    assert.equal(calls[1].opts.body, undefined);
+    restore();
+  });
+
+  it('leaves a JSON array or a JSON null body alone — neither is a record', async () => {
+    const { calls, restore } = stubVersionedFetch();
+    rememberRecordVersion({ id: 'REC1', updated: 'v1' });
+    const fetcher = createApiFetch('', () => 't', () => {});
+    await fetcher('/x/REC1', { method: 'PATCH', body: '[{"a":1}]' });
+    await fetcher('/x/REC1', { method: 'PATCH', body: 'null' });
+    assert.equal(calls[0].opts.body, '[{"a":1}]');
+    assert.equal(calls[1].opts.body, 'null');
+    restore();
+  });
+
+  it('accepts a lowercase method, so a call site writing `patch` is still versioned', async () => {
+    const { calls, restore } = stubVersionedFetch();
+    rememberRecordVersion({ id: 'REC1', updated: 'v1' });
+    await createApiFetch('', () => 't', () => {})(
+      '/x/REC1', { method: 'patch', body: JSON.stringify({ a: 1 }) },
+    );
+    assert.equal(sentBody(calls).updated, 'v1');
+    restore();
+  });
+
+  it('injects nothing when the id is known under other entities but not this one', async () => {
+    // The deliberate choice of ETP-5112: a loud 400 `missing_updated` beats guessing another
+    // row's token and producing a 409 `stale_record` the user cannot explain.
+    const { calls, restore } = stubVersionedFetch();
+    rememberRecordVersion({ id: 'O1', updated: 'ORG' }, 'organization');
+    rememberRecordVersion({ id: 'O1', updated: 'INFO' }, 'information');
+    await createApiFetch('', () => 't', () => {})(
+      '/accounting/O1', { method: 'PATCH', body: JSON.stringify({ a: 1 }) },
+    );
+    assert.deepEqual(sentBody(calls), { a: 1 });
+    restore();
+  });
+
+  it('still resolves a token remembered with no entity, as useEntity records it', async () => {
+    // ContactsTable / ContactsFinancialPanel never read: they get `data` through props from
+    // `useEntity` (which has no path context) and then PATCH `/businessPartner/{id}`.
+    const { calls, restore } = stubVersionedFetch();
+    rememberRecordVersion({ id: 'BP1', updated: 'from-useEntity' });
+    await createApiFetch('', () => 't', () => {})(
+      '/businessPartner/BP1', { method: 'PATCH', body: JSON.stringify({ name: 'x' }) },
+    );
+    assert.equal(sentBody(calls).updated, 'from-useEntity');
+    restore();
+  });
+
+  it('keys a write by an encoded id in the URL under the entity, not the encoding', async () => {
+    // `ListModalWindow.jsx` writes to `/${entity}/${encodeURIComponent(row.id)}`.
+    const { calls, restore } = stubVersionedFetch();
+    rememberRecordVersion({ id: 'a/b', updated: 'v1' }, 'entity');
+    await createApiFetch('', () => 't', () => {})(
+      `/entity/${encodeURIComponent('a/b')}`,
+      { method: 'PATCH', body: JSON.stringify({ id: 'a/b', a: 1 }) },
+    );
+    assert.equal(sentBody(calls).updated, 'v1');
+    restore();
   });
 });
