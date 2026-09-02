@@ -20,6 +20,21 @@ vi.mock('../../../i18n/index.js', () => ({
   useLocaleSwitch: () => ({ locale: 'en_US', setLocale: vi.fn() }),
 }));
 
+// Tooltip mock (ETP-5008): render TooltipContent unconditionally so its full
+// text can be asserted directly, mirroring the established pattern in
+// sidebar.vitest.jsx. Radix's real Tooltip only mounts TooltipContent after a
+// hover/focus delay via a portal, which is unnecessary complexity for a
+// placeholder-text regression test — the goal here is verifying the builder
+// wires the full untruncated text into the tooltip, not exercising Radix.
+vi.mock('../../ui/tooltip.jsx', () => ({
+  TooltipProvider: ({ children }) => <>{children}</>,
+  Tooltip: ({ children }) => <>{children}</>,
+  TooltipTrigger: ({ children }) => <>{children}</>,
+  TooltipContent: ({ children, ...props }) => (
+    <div data-testid="TooltipContent__4eedf1" {...props}>{children}</div>
+  ),
+}));
+
 // Mock dependencies
 vi.mock('../../../lib/gridQuery.js', () => ({
   resolveFilterMode: (col) => {
@@ -966,6 +981,139 @@ describe('AdvancedFilterBuilder', () => {
       render(<AdvancedFilterBuilder columns={cols} />);
       await user.click(screen.getByText('advancedFilterSelectField').closest('button'));
       expect(await screen.findByRole('option', { name: 'Virtual' })).toBeInTheDocument();
+    });
+  });
+
+  // ================================================================
+  // ETP-5008 — "Es cualquiera de" (inSet): truncated placeholder with no
+  // tooltip, and a typed value surviving an operator change.
+  // ================================================================
+
+  describe('inSet placeholder tooltip (ETP-5008)', () => {
+    const statusCol = { key: 'status', label: 'Status', type: 'status', column: 'Status' };
+
+    it('wires the full placeholder text into a Tooltip so it is readable even when the input truncates it', () => {
+      const value = {
+        rowOperator: 'and',
+        conditions: [{ field: 'status', operator: 'inSet', value: '' }],
+      };
+      render(<AdvancedFilterBuilder columns={[statusCol]} value={value} />);
+      // The input itself always carries the full (untruncated in the DOM/a11y
+      // tree) placeholder text — truncation is a purely visual CSS effect.
+      const input = screen.getByPlaceholderText('advancedFilterInSetPlaceholder');
+      expect(input).toBeInTheDocument();
+      // The tooltip primitive wraps it and carries the same full text, so
+      // hovering (or focusing) discloses it even when the input is too
+      // narrow to show it all.
+      expect(screen.getByTestId('TooltipContent__4eedf1')).toHaveTextContent(
+        'advancedFilterInSetPlaceholder',
+      );
+    });
+
+    it('does not render a tooltip for the non-inSet enumLabel value input (DistinctEnumPicker)', () => {
+      const value = {
+        rowOperator: 'and',
+        conditions: [{ field: 'status', operator: 'equals', value: '' }],
+      };
+      render(<AdvancedFilterBuilder columns={[statusCol]} value={value} />);
+      // Regression guard: the tooltip wiring must be scoped to the inSet
+      // free-text input, not leak onto every enumLabel value widget.
+      expect(screen.queryByTestId('TooltipContent__4eedf1')).not.toBeInTheDocument();
+    });
+  });
+
+  describe('operator switch clears an incompatible value (ETP-5008)', () => {
+    const statusCol = { key: 'status', label: 'Status', type: 'status', column: 'Status' };
+
+    it('clears a typed inSet value when the operator switches to "Es" (equals)', async () => {
+      const user = userEvent.setup();
+      const value = {
+        rowOperator: 'and',
+        conditions: [{ field: 'status', operator: 'inSet', value: '' }],
+      };
+      render(<AdvancedFilterBuilder columns={[statusCol]} value={value} />);
+
+      const input = screen.getByPlaceholderText('advancedFilterInSetPlaceholder');
+      await user.type(input, 'Item,Servicio');
+      expect(input).toHaveValue('Item,Servicio');
+
+      // Switch the operator away from "Es cualquiera de" (inSet) to "Es"
+      // (equals) — its trigger currently shows the inSet operator's label.
+      await user.click(screen.getByText('opInSet').closest('button'));
+      await user.click(await screen.findByRole('option', { name: 'opIs' }));
+
+      // equals renders DistinctEnumPicker with no selection — the stale
+      // comma-joined text must not survive into it.
+      expect(screen.getByText('advancedFilterSelectValue')).toBeInTheDocument();
+      expect(screen.queryByText('Item,Servicio')).not.toBeInTheDocument();
+      expect(screen.queryByDisplayValue('Item,Servicio')).not.toBeInTheDocument();
+    });
+
+    it('clears a selected equals value when the operator switches to inSet', async () => {
+      const user = userEvent.setup();
+      const value = {
+        rowOperator: 'and',
+        conditions: [{ field: 'status', operator: 'equals', value: 'DR' }],
+      };
+      render(<AdvancedFilterBuilder columns={[statusCol]} value={value} />);
+
+      // Switch the operator to "Es cualquiera de" (inSet).
+      await user.click(screen.getByText('opIs').closest('button'));
+      await user.click(await screen.findByRole('option', { name: 'opInSet' }));
+
+      // The free-text input must start empty, not pre-filled with 'DR'.
+      const input = screen.getByPlaceholderText('advancedFilterInSetPlaceholder');
+      expect(input).toHaveValue('');
+    });
+
+    it('still clears the pair when switching away from "between" (regression guard)', async () => {
+      const user = userEvent.setup();
+      const cols = [{ key: 'amount', label: 'Amount', type: 'amount', column: 'Amount' }];
+      const value = {
+        rowOperator: 'and',
+        conditions: [{ field: 'amount', operator: 'between', value: ['10', '50'] }],
+      };
+      render(<AdvancedFilterBuilder columns={cols} value={value} />);
+
+      await user.click(screen.getByText('opBetween').closest('button'));
+      await user.click(await screen.findByRole('option', { name: 'opIs' }));
+
+      const input = screen.getByRole('spinbutton');
+      expect(input).toHaveValue(null);
+    });
+
+    it('still clears the value when switching to a nullish operator (regression guard)', async () => {
+      const user = userEvent.setup();
+      const cols = [{ key: 'name', label: 'Name', type: 'text', column: 'Name' }];
+      const value = {
+        rowOperator: 'and',
+        conditions: [{ field: 'name', operator: 'iContains', value: 'test' }],
+      };
+      render(<AdvancedFilterBuilder columns={cols} value={value} />);
+
+      await user.click(screen.getByText('opContains').closest('button'));
+      await user.click(await screen.findByRole('option', { name: 'opIsEmpty' }));
+
+      // isNull needs no value input, and the row is already complete.
+      expect(screen.getByText('advancedFilterApply')).not.toBeDisabled();
+      expect(screen.queryByDisplayValue('test')).not.toBeInTheDocument();
+    });
+
+    it('keeps a typed value when switching between two compatible text operators (regression guard)', async () => {
+      const user = userEvent.setup();
+      const cols = [{ key: 'name', label: 'Name', type: 'text', column: 'Name' }];
+      const value = {
+        rowOperator: 'and',
+        conditions: [{ field: 'name', operator: 'iContains', value: 'test' }],
+      };
+      render(<AdvancedFilterBuilder columns={cols} value={value} />);
+
+      await user.click(screen.getByText('opContains').closest('button'));
+      await user.click(await screen.findByRole('option', { name: 'opStartsWith' }));
+
+      // Both operators drive the same free-text Input — the typed value is
+      // meaningfully reusable, so it must survive the switch.
+      expect(screen.getByDisplayValue('test')).toBeInTheDocument();
     });
   });
 });
