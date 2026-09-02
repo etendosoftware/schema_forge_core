@@ -10,6 +10,7 @@ import { ImportProgressStep } from './ImportProgressStep.jsx';
 import { ImportFileErrorDialog } from './ImportFileErrorDialog.jsx';
 import { ImportSystemErrorDialog } from './ImportSystemErrorDialog.jsx';
 import { decodeCsvBuffer, parseDelimited } from '../../lib/import/parseDelimited.js';
+import { parseXlsx } from '../../lib/import/parseXlsx.js';
 import { mapColumns } from '../../lib/import/mapColumns.js';
 import { dedupeRows } from '../../lib/import/dedupeRows.js';
 import { resolveForeignKeys, resolveForeignKeyColumn } from '../../lib/import/resolveForeignKeys.js';
@@ -17,13 +18,15 @@ import { validateRow } from '../../lib/import/validateRows.js';
 import { buildOperations } from '../../lib/import/buildOperations.js';
 import { runImport, sendRow, SEND_STATUS } from '../../lib/import/importEngine.js';
 import { buildTemplateCsv, resolveTemplateHeaders } from '../../lib/import/buildTemplateCsv.js';
+import { buildTemplateXlsx } from '../../lib/import/buildTemplateXlsx.js';
+import { isXlsxFileName, outputFormats } from '../../lib/import/importFormats.js';
 import { runImportRowValidator } from '../../lib/import/rowValidators.js';
 import { findExistingKeys, buildLookupKey } from '../../lib/import/existingRecordLookup.js';
 
 // Root-level labels for ImportDialog's own chrome. `importButton` is a function of the
 // valid-row count, mirroring the (n) => string labels the confirm step already uses, so the
 // whole flow's button text is translatable rather than the hardcoded `Import ${n}` it was.
-const DEFAULT_LABELS = { title: 'Import', revalidating: 'Revalidating rows…', downloadTemplate: 'Download CSV template', importButton: (n) => `Import ${n}` };
+const DEFAULT_LABELS = { title: 'Import', revalidating: 'Revalidating rows…', downloadTemplate: 'Download CSV template', downloadTemplateCsv: 'Download CSV template', downloadTemplateXlsx: 'Download Excel template', importButton: (n) => `Import ${n}` };
 
 /**
  * Why a row was skipped. Skipping is not an error — nothing is wrong with the file and
@@ -65,14 +68,17 @@ const SKIP_MESSAGES = {
 
 const STEP = { DROPZONE: 'dropzone', MAPPING: 'mapping', CONFIRM: 'confirm', SENDING: 'sending', FILE_ERROR: 'fileError', RESULT: 'result' };
 
-function downloadCsv(csv, filename) {
-  const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+function downloadBlob(blob, filename) {
   const url = URL.createObjectURL(blob);
   const a = document.createElement('a');
   a.href = url;
   a.download = filename;
   a.click();
   URL.revokeObjectURL(url);
+}
+
+function downloadCsv(csv, filename) {
+  downloadBlob(new Blob([csv], { type: 'text/csv;charset=utf-8;' }), filename);
 }
 
 function renameRowKeys(row, mapping) {
@@ -259,9 +265,12 @@ export function ImportDialog({ open, onOpenChange, config, token, postBatch, sim
       // A new file starts a fresh review session. Do not carry a previous
       // Errors/All selection into the next upload.
       setStatusFilterPreSend('ok');
-      const buffer = await file.arrayBuffer();
-      const text2 = decodeCsvBuffer(buffer);
-      const { headers: parsedHeaders, rows } = parseDelimited(text2);
+      // One boundary, two parsers. `parseXlsx` is contracted to return exactly what
+      // `parseDelimited` returns, so everything from here down — mapColumns, runValidation,
+      // the FK resolvers, the dedupe, the review queue — is format-blind and unchanged.
+      const { headers: parsedHeaders, rows } = isXlsxFileName(file.name)
+        ? await parseXlsx(file)
+        : parseDelimited(decodeCsvBuffer(await file.arrayBuffer()));
       const { mapping: autoMapping } = mapColumns(parsedHeaders, localizedFields);
       setHeaders(parsedHeaders);
       setRawRows(rows);
@@ -443,6 +452,40 @@ export function ImportDialog({ open, onOpenChange, config, token, postBatch, sim
     }
   }, [entries, operationsConfig, postBatch, translate]);
 
+  // Which template formats to offer. Derived from the window's `formats` declaration, never
+  // declared separately, so the dialog can only hand out a file the same dialog can read back.
+  // `txt` is filtered out by `outputFormats`: it is an input convenience (Excel's tab-delimited
+  // save), and a `.txt` template would be absurd.
+  const templateFormats = useMemo(() => outputFormats(config.formats), [config.formats]);
+
+  /**
+   * Caption for one template control.
+   *
+   * Precedence matters for back-compatibility: a caller that predates xlsx passes only
+   * `downloadTemplate` (already localized). Reading `text.downloadTemplateCsv` instead would
+   * silently fall through to the English DEFAULT_LABELS entry and render an English caption in
+   * a Spanish session — the ETP-4669 failure mode, which is why this consults `labels` directly
+   * rather than the merged `text`.
+   */
+  const templateCaption = useCallback((format) => {
+    if (format === 'csv') {
+      return labels?.downloadTemplateCsv ?? labels?.downloadTemplate ?? DEFAULT_LABELS.downloadTemplateCsv;
+    }
+    return labels?.[`downloadTemplate${format.charAt(0).toUpperCase()}${format.slice(1)}`]
+      ?? DEFAULT_LABELS[`downloadTemplate${format.charAt(0).toUpperCase()}${format.slice(1)}`]
+      ?? format.toUpperCase();
+  }, [labels]);
+
+  const downloadTemplate = useCallback(async (format) => {
+    const base = `${config.spec}-import-template`;
+    if (format === 'xlsx') {
+      // Async because the writer zips the workbook; the CSV branch stays synchronous.
+      downloadBlob(await buildTemplateXlsx(localizedFields, { headerFor: fieldLabelFn }), `${base}.xlsx`);
+      return;
+    }
+    downloadCsv(buildTemplateCsv(localizedFields, { headerFor: fieldLabelFn }), `${base}.csv`);
+  }, [config.spec, localizedFields, fieldLabelFn]);
+
   const handleRetryFile = useCallback(() => {
     setFileErrorMessage(null);
     setStep(STEP.DROPZONE);
@@ -458,15 +501,24 @@ export function ImportDialog({ open, onOpenChange, config, token, postBatch, sim
 
           {step === STEP.DROPZONE && (
             <div className="flex flex-col gap-2">
-              <ImportDropzone onFileSelected={handleFileSelected} labels={labels?.dropzone} data-testid="ImportDropzone__38a6c3" />
-              <button
-                type="button"
-                className="self-center text-xs text-muted-foreground underline underline-offset-2 hover:text-foreground"
-                onClick={() => downloadCsv(buildTemplateCsv(localizedFields, { headerFor: fieldLabelFn }), `${config.spec}-import-template.csv`)}
-                data-testid="ImportDialog__downloadTemplate"
-              >
-                {text.downloadTemplate}
-              </button>
+              <ImportDropzone
+                onFileSelected={handleFileSelected}
+                formats={config.formats}
+                labels={labels?.dropzone}
+                data-testid="ImportDropzone__38a6c3" />
+              <div className="flex flex-wrap items-center justify-center gap-3">
+                {templateFormats.map((format) => (
+                  <button
+                    key={format}
+                    type="button"
+                    className="text-xs text-muted-foreground underline underline-offset-2 hover:text-foreground"
+                    onClick={() => downloadTemplate(format)}
+                    data-testid={format === 'csv' ? 'ImportDialog__downloadTemplate' : `ImportDialog__downloadTemplate_${format}`}
+                  >
+                    {templateCaption(format)}
+                  </button>
+                ))}
+              </div>
             </div>
           )}
 
