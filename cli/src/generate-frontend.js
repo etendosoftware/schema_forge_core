@@ -2233,6 +2233,7 @@ export function generatePageComponent(headerEntity, detailEntity, contract) {
   const contentBg = windowConfig.contentBg ?? null;
   const formCardPadding = windowConfig.formCardPadding ?? null;
   const hideListFilters = windowConfig.hideListFilters ?? false;
+  const hideRecordCount = windowConfig.hideRecordCount ?? false;
   const hideStatusFilter = windowConfig.hideStatusFilter ?? false;
   const hideLink = windowConfig.hideLink ?? false;
   const hideEyeCount = windowConfig.hideEyeCount ?? false;
@@ -2391,6 +2392,7 @@ export function generatePageComponent(headerEntity, detailEntity, contract) {
   const listSortByProp = listSortBy ? `\n      listSortBy="${listSortBy}"` : '';
   const importConfigProp = getImportProp(windowConfig.import);
   const hideListFiltersProp = fragmentIf(hideListFilters, '\n      hideListFilters');
+  const hideRecordCountProp = fragmentIf(hideRecordCount, '\n      hideRecordCount');
   const hideStatusFilterProp = fragmentIf(hideStatusFilter, '\n      hideStatusFilter');
   const hideLinkProp = fragmentIf(hideLink, '\n      hideLink');
   const hideEyeCountProp = fragmentIf(hideEyeCount, '\n      hideEyeCount');
@@ -2699,7 +2701,7 @@ ${menuActionModals}${confirmModalName ? `
       entityLabel="${windowConfig.name || entityLabel}"
       windowName={windowName}
       breadcrumb={breadcrumb}${apiProp}${isGallery ? `
-      galleryRenderer={(gProps) => <${headerName}Gallery {...gProps} />}` : ''}${listKpiCardsProp}${listViewOptionsProp}${listBaseFilterProp}${quickFiltersProp}${subsetFiltersProp}${dateFilterKeyProp}${initialHiddenColumnsProp}${bulkActionsProp}${listbarPaddingXProp}${tablePaddingXProp}${hidePrintListProp}${hideCreateProp}${hideMoreMenuListProp}${hideListFiltersProp}${hideStatusFilterProp}${hideLinkProp}${hideEyeCountProp}${customListIconsProp}${labelOverridesListProp}${rowQuickActionsProp}${sendDocumentProp}${listSortByProp}${importConfigProp}
+      galleryRenderer={(gProps) => <${headerName}Gallery {...gProps} />}` : ''}${listKpiCardsProp}${listViewOptionsProp}${listBaseFilterProp}${quickFiltersProp}${subsetFiltersProp}${dateFilterKeyProp}${initialHiddenColumnsProp}${bulkActionsProp}${listbarPaddingXProp}${tablePaddingXProp}${hidePrintListProp}${hideCreateProp}${hideMoreMenuListProp}${hideListFiltersProp}${hideRecordCountProp}${hideStatusFilterProp}${hideLinkProp}${hideEyeCountProp}${customListIconsProp}${labelOverridesListProp}${rowQuickActionsProp}${sendDocumentProp}${listSortByProp}${importConfigProp}
       {...props}${effectiveWindowProp}${customComponents.newRecordComponent ? `
       onNew={() => setShowNewModal(true)}` : ''}${newActionsPropValue}
     />${customComponents.newRecordComponent ? `

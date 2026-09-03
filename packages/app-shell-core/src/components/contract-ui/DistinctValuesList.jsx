@@ -9,7 +9,9 @@ import { Check, Loader2 } from 'lucide-react';
  *   - A search input wired to `distinct.search` / `distinct.setSearch`.
  *   - An optional "all / any" row (when `allLabel` is non-null) that calls
  *     `onSelect(null)` — callers treat null as "clear this filter".
- *   - One row per merged code; active row gets a check mark.
+ *   - One row per merged code; active row gets a check mark. Pass `activeCodes`
+ *     (an array) instead of `activeCode` for multi-select: every listed code is
+ *     ticked and `onSelect` is expected to toggle rather than replace.
  *   - An IntersectionObserver sentinel that invokes `distinct.loadMore()` as
  *     the user scrolls near the bottom, so the dropdown behaves like an
  *     infinite list instead of a single large page.
@@ -19,6 +21,7 @@ import { Check, Loader2 } from 'lucide-react';
  */
 export function DistinctValuesList({
   activeCode,
+  activeCodes = null,
   allLabel,
   codes,
   labelFor,
@@ -27,6 +30,11 @@ export function DistinctValuesList({
   searchPlaceholder,
 }) {
   const sentinelRef = useRef(null);
+  // Multi-select mode is opt-in via `activeCodes`; single-select consumers keep
+  // passing `activeCode` and behave exactly as before.
+  const selected = activeCodes ? new Set(activeCodes.map(String)) : null;
+  const isActive = (code) => (selected ? selected.has(String(code)) : activeCode === code);
+  const hasSelection = selected ? selected.size > 0 : !!activeCode;
 
   useEffect(() => {
     const node = sentinelRef.current;
@@ -57,7 +65,7 @@ export function DistinctValuesList({
             className="w-full flex items-center gap-2 px-3 py-1.5 text-sm text-left hover:bg-muted/50 transition-colors"
           >
             <span className="w-4 shrink-0">
-              {!activeCode && <Check className="h-3.5 w-3.5" data-testid="Check__55c679" />}
+              {!hasSelection && <Check className="h-3.5 w-3.5" data-testid="Check__55c679" />}
             </span>
             <span className="flex-1 truncate">{allLabel}</span>
           </button>
@@ -70,7 +78,7 @@ export function DistinctValuesList({
             className="w-full flex items-center gap-2 px-3 py-1.5 text-sm text-left hover:bg-muted/50 transition-colors"
           >
             <span className="w-4 shrink-0">
-              {activeCode === code && <Check className="h-3.5 w-3.5" data-testid="Check__55c679" />}
+              {isActive(code) && <Check className="h-3.5 w-3.5" data-testid="Check__55c679" />}
             </span>
             <span className="flex-1 truncate">{labelFor(code)}</span>
           </button>
