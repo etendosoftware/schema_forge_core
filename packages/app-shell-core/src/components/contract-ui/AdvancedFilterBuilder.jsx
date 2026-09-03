@@ -10,6 +10,7 @@ import {
   SelectValue,
 } from '../ui/select.jsx';
 import { Popover, PopoverContent, PopoverTrigger } from '../ui/popover.jsx';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '../ui/tooltip.jsx';
 import {
   Dialog,
   DialogContent,
@@ -43,7 +44,14 @@ import { DistinctValuesList } from './DistinctValuesList.jsx';
 const OPERATORS_BY_MODE = {
   text:         ['iContains', 'iNotContains', 'iStartsWith', 'iEquals', 'iNotEqual', 'isNull', 'isNotNull'],
   identifier:   ['iContains', 'iNotContains', 'iStartsWith', 'equals', 'notEqual', 'isNull', 'isNotNull'],
-  enumLabel:    ['equals', 'notEqual', 'inSet', 'isNull', 'isNotNull'],
+  // `inSet` ("Is any of") is deliberately absent: enum values are now picked
+  // through a multi-select checkbox popover, so "Is" with several values IS
+  // "is any of". The old operator asked the user to hand-type internal CODES
+  // (never the visible labels) into a free-text field with an unexplained
+  // comma separator — unusable for a column whose codes are i18n keys
+  // (ETP-4956). The evaluators still understand `inSet`, so filter presets
+  // saved before this change keep working.
+  enumLabel:    ['equals', 'notEqual', 'isNull', 'isNotNull'],
   booleanLabel: ['equals'],
   numeric:      ['equals', 'notEqual', 'greaterThan', 'greaterOrEqual', 'lessThan', 'lessOrEqual', 'between', 'isNull', 'isNotNull'],
   date:         ['equals', 'lessThan', 'greaterThan', 'between', 'isNull', 'isNotNull'],
@@ -80,6 +88,42 @@ const OP_LABEL_KEY_DATE = {
 const NULLISH_OPS = new Set(['isNull', 'isNotNull']);
 
 /**
+ * Classifies the value "shape" a given operator/mode pair expects, so an
+ * operator change (ETP-5008) can tell whether the previous value can be
+ * meaningfully reused by the new operator's widget, or must be cleared.
+ *
+ * - 'nullish': isNull/isNotNull — no value at all.
+ * - 'pair':    between — a two-element [from, to] array.
+ * - 'inSet':   the enumLabel `inSet` operator's free-text, comma-joined
+ *              string (ValueInput's plain <Input>, distinct from the
+ *              single-code picker the other enumLabel operators use).
+ * - 'array':   identifier mode's discrete ops (equals/notEqual) — rendered
+ *              by IdentifierMultiPicker, whose value is an array of ids.
+ * - 'scalar':  everything else — a single string/number/boolean/date value
+ *              bound to one Input/Select/DateField/DistinctEnumPicker.
+ *
+ * Two operators only share a value when `getValueShape` returns the same
+ * shape for both — e.g. switching identifier 'equals' <-> 'notEqual' keeps
+ * the picked ids (both 'array'), but switching enumLabel 'inSet' -> 'equals'
+ * clears ('inSet' vs 'scalar'): the DistinctEnumPicker expects one real code,
+ * not the raw comma-joined text the inSet input left behind.
+ */
+function getValueShape(operator, mode) {
+  if (NULLISH_OPS.has(operator)) return 'nullish';
+  if (operator === 'between') return 'pair';
+  if (operator === 'inSet') return 'inSet';
+  if (mode === 'identifier' && !TEXTUAL_IDENT_OPS.has(operator)) return 'array';
+  return 'scalar';
+}
+
+function emptyValueForShape(shape) {
+  if (shape === 'pair') return ['', ''];
+  if (shape === 'nullish') return null;
+  if (shape === 'array') return [];
+  return '';
+}
+
+/**
  * Resolves the operator list offered for a given column.
  *
  * `isNull` / `isNotNull` ("Es vacío" / "No es vacío") are dropped for any
@@ -87,11 +131,25 @@ const NULLISH_OPS = new Set(['isNull', 'isNotNull']);
  * offering those operators only sets the user up for a filter that can never
  * match a row. This applies to every column, in every window — required-ness
  * is a property of the field, not of a particular filter mode.
+ *
+ * `currentOperator` (ETP-4956 + ETP-5008): the row's own operator is always
+ * kept in the list even when it is not one of the operators normally offered
+ * for this column/mode — e.g. `inSet` was retired from `enumLabel` (ETP-4956,
+ * "is any of" is now done via the multi-select picker instead), but a filter
+ * PRESET saved before that change still carries `operator: 'inSet'`. Without
+ * this, Radix's Select can't find a matching item for the current value and
+ * renders the trigger blank instead of the operator's real label, even though
+ * `ValueInput` still renders a perfectly editable widget for it. This never
+ * re-exposes the retired operator as a fresh choice: as soon as the row's
+ * operator changes away from it, the next render's list no longer includes it.
  */
-function getOperatorsForColumn(col, mode) {
+function getOperatorsForColumn(col, mode, currentOperator) {
   const base = mode ? (OPERATORS_BY_MODE[mode] ?? OPERATORS_BY_MODE.text) : [];
-  if (!col?.required) return base;
-  return base.filter((op) => !NULLISH_OPS.has(op));
+  const filtered = col?.required ? base.filter((op) => !NULLISH_OPS.has(op)) : base;
+  if (currentOperator && !filtered.includes(currentOperator)) {
+    return [...filtered, currentOperator];
+  }
+  return filtered;
 }
 
 function makeEmptyRow() {
@@ -152,6 +210,67 @@ function cloneConditions(conditions) {
   }));
 }
 
+/**
+ * Collapses a human-typed number to canonical dot-decimal.
+ *
+ * The numeric editors accept a locale decimal comma (an es-ES user reads
+ * "1.646,49 €" in the grid and types it back verbatim), but every downstream
+ * consumer expects a dot: `coerceNumeric` in gridQuery.js strips commas as
+ * THOUSANDS separators, so emitting "1646,49" raw would silently query 164649.
+ * Normalizing here, once, at the point the draft is promoted, keeps both the
+ * backend criteria path and the client-side evaluators on canonical input.
+ *
+ * With both separators present the LAST one is the decimal ("1.646,49",
+ * "1,646.49"); with a single separator it is the decimal unless the trailing
+ * group is exactly three digits, which reads as a thousands group.
+ */
+export function normalizeDecimalInput(raw) {
+  if (typeof raw !== 'string') return raw;
+  const s = raw.trim().replace(/\s/g, '');
+  if (s === '' || !/[.,]/.test(s)) return s;
+  if (!/^[+-]?[\d.,]+$/.test(s)) return raw.trim();
+
+  const sign = /^[+-]/.test(s) ? s[0] : '';
+  const body = sign ? s.slice(1) : s;
+  const lastDot = body.lastIndexOf('.');
+  const lastComma = body.lastIndexOf(',');
+
+  let decimalAt;
+  if (lastDot !== -1 && lastComma !== -1) {
+    decimalAt = Math.max(lastDot, lastComma);
+  } else {
+    const only = lastDot !== -1 ? lastDot : lastComma;
+    decimalAt = /^\d{3}$/.test(body.slice(only + 1)) ? -1 : only;
+  }
+
+  const intPart = (decimalAt === -1 ? body : body.slice(0, decimalAt)).replace(/[.,]/g, '');
+  const fracPart = decimalAt === -1 ? '' : body.slice(decimalAt + 1).replace(/[.,]/g, '');
+  return `${sign}${intPart}${fracPart ? `.${fracPart}` : ''}`;
+}
+
+/**
+ * Sanitizes one condition's value at apply time.
+ *
+ * - Text values are trimmed: a stray leading/trailing space silently returned
+ *   zero rows, because no operator trimmed and the backend `iContains` matched
+ *   the space literally (ETP-4956). Trimming happens HERE and not in the
+ *   input's onChange, which would stop the user typing spaces between words.
+ * - Numeric values are normalized to dot-decimal (see normalizeDecimalInput).
+ */
+function sanitizeValue(value, mode) {
+  if (Array.isArray(value)) return value.map((v) => sanitizeValue(v, mode));
+  if (typeof value !== 'string') return value;
+  return mode === 'numeric' ? normalizeDecimalInput(value) : value.trim();
+}
+
+function sanitizeConditions(conditions, columnByKey) {
+  return conditions.map((c) => {
+    const col = columnByKey[c.field];
+    const mode = col ? resolveFilterMode(col) : null;
+    return { ...c, value: sanitizeValue(c.value, mode) };
+  });
+}
+
 export function AdvancedFilterBuilder({
   entity = null,
   apiBaseUrl = null,
@@ -208,14 +327,22 @@ export function AdvancedFilterBuilder({
           next.operator = '';
           next.value = '';
         } else if (Object.prototype.hasOwnProperty.call(patch, 'operator') && patch.operator !== r.operator) {
-          if (patch.operator === 'between') next.value = ['', ''];
-          else if (NULLISH_OPS.has(patch.operator)) next.value = null;
-          else if (Array.isArray(r.value)) next.value = '';
+          // ETP-5008: clear the value whenever the new operator's widget can't
+          // meaningfully reuse the old value's shape (e.g. inSet's joined
+          // free-text string surviving into a single-code picker). Same-shape
+          // switches (e.g. identifier 'equals' <-> 'notEqual') keep the value.
+          const col = columnByKey[r.field] || null;
+          const mode = col ? resolveFilterMode(col) : null;
+          const oldShape = getValueShape(r.operator, mode);
+          const newShape = getValueShape(patch.operator, mode);
+          if (oldShape !== newShape) {
+            next.value = emptyValueForShape(newShape);
+          }
         }
         return next;
       }),
     }));
-  }, []);
+  }, [columnByKey]);
 
   const removeRow = useCallback((idx) => {
     setDraft((prev) => {
@@ -238,7 +365,7 @@ export function AdvancedFilterBuilder({
     if (!allComplete) return;
     onApply?.({
       rowOperator: draft.rowOperator,
-      conditions: cloneConditions(draft.conditions),
+      conditions: sanitizeConditions(cloneConditions(draft.conditions), columnByKey),
     });
     onClose?.();
   };
@@ -318,7 +445,7 @@ export function AdvancedFilterBuilder({
         {draft.conditions.map((row, idx) => {
           const col = columnByKey[row.field] || null;
           const mode = col ? resolveFilterMode(col) : null;
-          const ops = getOperatorsForColumn(col, mode);
+          const ops = getOperatorsForColumn(col, mode, row.operator);
           const opLabels = mode === 'date' ? OP_LABEL_KEY_DATE : OP_LABEL_KEY;
           const showValue = !!row.operator && !NULLISH_OPS.has(row.operator);
           const isBetween = row.operator === 'between';
@@ -618,17 +745,27 @@ function betweenOperator(value, mode, onChange) {
       </div>
     );
   }
-  const inputType = mode === 'numeric' ? 'number' : 'text';
+  // `type="text"` + inputMode="decimal", NOT type="number": the grid renders
+  // amounts with a locale decimal comma ("1.646,49 €") and a number input
+  // refuses that character in most browsers, so the user could only ever type
+  // the value back in a format they never see (ETP-4956). handleApply
+  // normalizes to dot-decimal before the value leaves the builder.
+  // Passed as a plain attribute rather than a spread: React omits an
+  // `undefined` attribute, and keeping `data-testid` last matches every other
+  // element in this file (a spread placed after it could also override it).
+  const numericInputMode = mode === 'numeric' ? 'decimal' : undefined;
   return (
     <div className="flex gap-1">
       <Input
-        type={inputType}
+        type="text"
+        inputMode={numericInputMode}
         value={pair[0] ?? ''}
         onChange={(e) => onChange([e.target.value, pair[1] ?? ''])}
         className="h-9 text-xs"
         data-testid="Input__4eedf1" />
       <Input
-        type={inputType}
+        type="text"
+        inputMode={numericInputMode}
         value={pair[1] ?? ''}
         onChange={(e) => onChange([pair[0] ?? '', e.target.value])}
         className="h-9 text-xs"
@@ -671,15 +808,34 @@ function ValueInput({ col, mode, operator, value, onChange, ui, dictionary, rows
   }
 
   if (mode === 'enumLabel') {
+    // `inSet` was retired from the enum operator list (see OPERATORS_BY_MODE),
+    // so this branch is only reached by a filter PRESET saved before that
+    // change. Kept so such a preset stays editable instead of rendering an
+    // empty value cell.
     if (operator === 'inSet') {
+      // ETP-5008: the placeholder ("Comma-separated values") is longer than
+      // the field, so it truncates visually with no way to read the full
+      // text. Wrap it in the shared Tooltip primitive (see sidebar.jsx for
+      // the same Provider/Trigger/Content pattern) so hovering (or
+      // focusing, via Radix's built-in focus handling) reveals it in full.
+      const placeholder = ui('advancedFilterInSetPlaceholder');
       return (
-        <Input
-          type="text"
-          value={getJoinedValue(value)}
-          onChange={(e) => onChange(e.target.value)}
-          placeholder={ui('advancedFilterInSetPlaceholder')}
-          className="h-9 text-xs"
-          data-testid="Input__4eedf1" />
+        <TooltipProvider data-testid="TooltipProvider__4eedf1">
+          <Tooltip data-testid="Tooltip__4eedf1">
+            <TooltipTrigger asChild data-testid="TooltipTrigger__4eedf1">
+              <Input
+                type="text"
+                value={getJoinedValue(value)}
+                onChange={(e) => onChange(e.target.value)}
+                placeholder={placeholder}
+                className="h-9 text-xs"
+                data-testid="Input__4eedf1" />
+            </TooltipTrigger>
+            <TooltipContent data-testid="TooltipContent__4eedf1">
+              {placeholder}
+            </TooltipContent>
+          </Tooltip>
+        </TooltipProvider>
       );
     }
     return (
@@ -728,10 +884,11 @@ function ValueInput({ col, mode, operator, value, onChange, ui, dictionary, rows
     );
   }
 
-  const inputType = mode === 'numeric' ? 'number' : 'text';
+  // See betweenOperator for why numeric uses text + inputMode="decimal".
   return (
     <Input
-      type={inputType}
+      type="text"
+      inputMode={mode === 'numeric' ? 'decimal' : undefined}
       value={value ?? ''}
       onChange={(e) => onChange(e.target.value)}
       className="h-9 text-xs"
@@ -982,10 +1139,23 @@ function orderCodesForColumn(codes, col) {
   return codes.slice().sort(compareStatusCodes);
 }
 
+/**
+ * Seeds the option list from the column's declared enum codes when no dynamic
+ * source produced anything — a virtual column with static `enumLabels` and no
+ * backend distinct endpoint would otherwise render an empty picker.
+ *
+ * The gate stays "only when there is no data": injecting every declared code
+ * unconditionally surfaces options that cannot match a single row (see the
+ * caller's note on the BF movement type). What made the dropdown collapse to a
+ * single option was not this gate but the ORDER of the caller's merge — the
+ * already-selected value was folded in first and counted as data. Fixed there.
+ */
 function fillFallbackCodes(out, labelMap, seen) {
-  if (out.length === 0) {
-    for (const c of Object.keys(labelMap)) {
-      if (!seen.has(c)) out.push(c);
+  if (out.length > 0) return;
+  for (const c of Object.keys(labelMap)) {
+    if (!seen.has(c)) {
+      seen.add(c);
+      out.push(c);
     }
   }
 }
@@ -1002,14 +1172,26 @@ function fillFallbackCodes(out, labelMap, seen) {
 function DistinctEnumPicker({ col, entity, apiBaseUrl, rows, value, onChange, ui, dictionary }) {
   const [open, setOpen] = useState(false);
 
+  // Multi-select: the value is an array of codes. Scalars are still accepted on
+  // the way in so a filter preset saved before ETP-4956 (or a caller that only
+  // ever sets one code) keeps working.
+  const selected = useMemo(() => {
+    if (Array.isArray(value)) return value.map(String);
+    return value == null || value === '' ? [] : [String(value)];
+  }, [value]);
+
+  // True when the column ships its own closed catalogue of codes — see
+  // fillFallbackCodes for why that distinction decides the merge policy.
+  const hasDeclaredLabels = !!(col.enumLabels && Object.keys(col.enumLabels).length > 0);
+
   const labelMap = useMemo(() => {
-    if (col.enumLabels && Object.keys(col.enumLabels).length > 0) return { ...col.enumLabels };
+    if (hasDeclaredLabels) return { ...col.enumLabels };
     return Object.fromEntries(
       Object.entries(dictionary?.statuses || {})
         .filter(([code]) => /^[A-Z][A-Z0-9_]*$/.test(code))
         .map(([code, entry]) => [code, entry?.label || code]),
     );
-  }, [col, dictionary]);
+  }, [col, dictionary, hasDeclaredLabels]);
 
   // The column's own enumLabels (labelMap) win over the global status dictionary
   // so a code colliding with an unrelated global status keeps the column's label.
@@ -1069,12 +1251,23 @@ function DistinctEnumPicker({ col, entity, apiBaseUrl, rows, value, onChange, ui
       if (q && !labelFor(cc).toLowerCase().includes(q) && !String(cc).toLowerCase().includes(q)) continue;
       add(c);
     }
-    if (value != null && value !== '') add(value);
-    // Fallback: for virtual columns with static enumLabels and no dynamic data, use the
-    // enumLabels keys directly so the picker is not empty.
+    // Decide the enumLabels fallback from the DATA ONLY — before folding in the
+    // current selection. That ordering is the ETP-4956 fix: `selected` used to
+    // be added first, so re-opening a filter that already had a value found a
+    // non-empty list, skipped the fallback, and offered the user nothing but
+    // the option they had already picked.
+    //
+    // Deliberately still gated on "no data produced anything": a declared code
+    // that no loaded row uses must NOT be injected. Movements declare labels
+    // for BPD/BPW/BF so a bank-fee row renders its name instead of a raw code,
+    // but the quick TypeFilter only offers BPD/BPW — unioning the catalogue
+    // unconditionally put a "Comisión bancaria" option in front of users whose
+    // account has no such movement, and filtering by it could only ever
+    // return zero rows.
     fillFallbackCodes(out, labelMap, seen);
+    for (const code of selected) add(code);
     return out;
-  }, [distinct.values, distinct.search, inMemoryCodes, value, labelMap, dictionary]);
+  }, [distinct.values, distinct.search, inMemoryCodes, selected, labelMap, dictionary]);
 
   // Status columns get the fixed business-flow order; every other enum column
   // keeps the merge order untouched. See orderCodesForColumn (ETP-4913).
@@ -1083,7 +1276,22 @@ function DistinctEnumPicker({ col, entity, apiBaseUrl, rows, value, onChange, ui
     [mergedCodes, col],
   );
 
-  const activeLabel = value ? labelFor(value) : null;
+  // "Borrador +2" — same trigger shape IdentifierMultiPicker already uses, so
+  // the enum and identifier multi-pickers read identically.
+  const activeLabel = selected.length === 0
+    ? null
+    : `${labelFor(selected[0])}${selected.length > 1 ? ` +${selected.length - 1}` : ''}`;
+
+  const toggle = (code) => {
+    if (code == null) {
+      onChange([]);
+      return;
+    }
+    const key = String(code);
+    onChange(selected.includes(key)
+      ? selected.filter((v) => v !== key)
+      : [...selected, key]);
+  };
 
   return (
     <Popover open={open} onOpenChange={setOpen} data-testid="Popover__4eedf1">
@@ -1093,7 +1301,7 @@ function DistinctEnumPicker({ col, entity, apiBaseUrl, rows, value, onChange, ui
           size="sm"
           className={[
             'w-full justify-between gap-1.5 h-9 text-xs font-normal rounded-md bg-card',
-            value ? 'text-foreground' : 'text-muted-foreground',
+            selected.length > 0 ? 'text-foreground' : 'text-muted-foreground',
           ].join(' ')}
           data-testid="Button__4eedf1">
           <span className="truncate">
@@ -1108,16 +1316,15 @@ function DistinctEnumPicker({ col, entity, apiBaseUrl, rows, value, onChange, ui
         </Button>
       </PopoverTrigger>
       <PopoverContent align="start" className="w-64 p-0" data-testid="PopoverContent__4eedf1">
+        {/* Multi-select: the popover stays OPEN so several codes can be ticked
+            in one pass, mirroring IdentifierMultiPicker. */}
         <DistinctValuesList
-          activeCode={value || null}
+          activeCodes={selected}
           allLabel={null}
           codes={orderedCodes}
           labelFor={labelFor}
           distinct={distinct}
-          onSelect={(code) => {
-            onChange(code ?? '');
-            setOpen(false);
-          }}
+          onSelect={toggle}
           searchPlaceholder={ui('searchValues')}
           data-testid="DistinctValuesList__4eedf1" />
       </PopoverContent>

@@ -859,6 +859,7 @@ const WINDOW_TRUTHY_PROPS = [
   'listBaseFilter',
   'quickFilters',
   'subsetFilters',
+  'searchSuggestions',
   'dateFilterKey',
   'statusEnumLabels',
   'statusFieldLabel',
@@ -872,6 +873,9 @@ const WINDOW_TRUTHY_PROPS = [
   'extraTabs',
   'customPanelTabs',
   'selectorPriceCurrency',
+  // Optional global semantic-search participation. Omitted by default, so existing
+  // windows do not need an explicit opt-out declaration.
+  'vectorSearch',
 ];
 
 const WINDOW_BOOLEAN_TRUE_PROPS = [
@@ -882,6 +886,7 @@ const WINDOW_BOOLEAN_TRUE_PROPS = [
   'hideMoreMenu',
   'hideMoreDetails',
   'hideListFilters',
+  'hideRecordCount',
   'hideStatusFilter',
   'hideLink',
   'hideEyeCount',
@@ -916,7 +921,7 @@ export const WINDOW_KEY_ORDER = [
   'documentPreview', 'notesField', 'relatedDocuments',
   'hideDeleteWhenComplete', 'customTabsAfterBottom', 'hidePrint', 'hidePrintWhen', 'hideCreate', 'readOnly', 'hideSaveStatuses',
   'hideMoreMenu', 'hideMoreDetails', 'hideDetailForm', 'hideDelete', 'hideDeleteButton', 'contentBg',
-  'hideListFilters', 'hideStatusFilter', 'hideLink', 'hideEyeCount', 'customListIcons', 'breadcrumb',
+  'hideListFilters', 'hideRecordCount', 'hideStatusFilter', 'hideLink', 'hideEyeCount', 'customListIcons', 'breadcrumb',
   'customComponents', 'menuActions', 'processOverrides',
   'entityLabel', 'detailLabel', 'detailTabIndex', 'detailTabOrder', 'secondaryTabs',
   'detailEntity', 'statusBar', 'statusField', 'summaryFields',
@@ -924,10 +929,12 @@ export const WINDOW_KEY_ORDER = [
   'labelOverrides', 'primaryTabs', 'othersLabel',
   'disableProcessedLock', 'titleField',
   'listViewOptions', 'listBaseFilter', 'quickFilters', 'subsetFilters',
+  'searchSuggestions',
   'dateFilterKey', 'statusEnumLabels', 'statusFieldLabel', 'lockedAlert', 'noHeaderBorder', 'toolbarBorderBottom', 'compactSidebarPadding', 'whiteFormBackground', 'hideFormCard', 'sidebarAboveTabsOnly', 'tabsSeparator', 'sidebarClassName', 'formCardPadding', 'formScrollPaddingX', 'tabsBarPaddingX', 'primaryTabsVariant', 'toolbarPaddingX', 'toolbarButtonSize', 'listbarPaddingX', 'tablePaddingX', 'lineEntityConfig',
   'extraTabs', 'attachments', 'customPanelTabs', 'rowQuickActions',
   'sendDocument',
   'layoutType', 'linesLayout', 'balanceFooter', 'selectorPriceCurrency',
+  'vectorSearch',
   'import',
 ];
 
