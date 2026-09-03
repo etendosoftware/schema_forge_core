@@ -10,6 +10,7 @@ import {
   SelectValue,
 } from '../ui/select.jsx';
 import { Popover, PopoverContent, PopoverTrigger } from '../ui/popover.jsx';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '../ui/tooltip.jsx';
 import {
   Dialog,
   DialogContent,
@@ -78,6 +79,42 @@ const OP_LABEL_KEY_DATE = {
 };
 
 const NULLISH_OPS = new Set(['isNull', 'isNotNull']);
+
+/**
+ * Classifies the value "shape" a given operator/mode pair expects, so an
+ * operator change (ETP-5008) can tell whether the previous value can be
+ * meaningfully reused by the new operator's widget, or must be cleared.
+ *
+ * - 'nullish': isNull/isNotNull — no value at all.
+ * - 'pair':    between — a two-element [from, to] array.
+ * - 'inSet':   the enumLabel `inSet` operator's free-text, comma-joined
+ *              string (ValueInput's plain <Input>, distinct from the
+ *              single-code picker the other enumLabel operators use).
+ * - 'array':   identifier mode's discrete ops (equals/notEqual) — rendered
+ *              by IdentifierMultiPicker, whose value is an array of ids.
+ * - 'scalar':  everything else — a single string/number/boolean/date value
+ *              bound to one Input/Select/DateField/DistinctEnumPicker.
+ *
+ * Two operators only share a value when `getValueShape` returns the same
+ * shape for both — e.g. switching identifier 'equals' <-> 'notEqual' keeps
+ * the picked ids (both 'array'), but switching enumLabel 'inSet' -> 'equals'
+ * clears ('inSet' vs 'scalar'): the DistinctEnumPicker expects one real code,
+ * not the raw comma-joined text the inSet input left behind.
+ */
+function getValueShape(operator, mode) {
+  if (NULLISH_OPS.has(operator)) return 'nullish';
+  if (operator === 'between') return 'pair';
+  if (operator === 'inSet') return 'inSet';
+  if (mode === 'identifier' && !TEXTUAL_IDENT_OPS.has(operator)) return 'array';
+  return 'scalar';
+}
+
+function emptyValueForShape(shape) {
+  if (shape === 'pair') return ['', ''];
+  if (shape === 'nullish') return null;
+  if (shape === 'array') return [];
+  return '';
+}
 
 /**
  * Resolves the operator list offered for a given column.
@@ -208,14 +245,22 @@ export function AdvancedFilterBuilder({
           next.operator = '';
           next.value = '';
         } else if (Object.prototype.hasOwnProperty.call(patch, 'operator') && patch.operator !== r.operator) {
-          if (patch.operator === 'between') next.value = ['', ''];
-          else if (NULLISH_OPS.has(patch.operator)) next.value = null;
-          else if (Array.isArray(r.value)) next.value = '';
+          // ETP-5008: clear the value whenever the new operator's widget can't
+          // meaningfully reuse the old value's shape (e.g. inSet's joined
+          // free-text string surviving into a single-code picker). Same-shape
+          // switches (e.g. identifier 'equals' <-> 'notEqual') keep the value.
+          const col = columnByKey[r.field] || null;
+          const mode = col ? resolveFilterMode(col) : null;
+          const oldShape = getValueShape(r.operator, mode);
+          const newShape = getValueShape(patch.operator, mode);
+          if (oldShape !== newShape) {
+            next.value = emptyValueForShape(newShape);
+          }
         }
         return next;
       }),
     }));
-  }, []);
+  }, [columnByKey]);
 
   const removeRow = useCallback((idx) => {
     setDraft((prev) => {
@@ -672,14 +717,29 @@ function ValueInput({ col, mode, operator, value, onChange, ui, dictionary, rows
 
   if (mode === 'enumLabel') {
     if (operator === 'inSet') {
+      // ETP-5008: the placeholder ("Comma-separated values") is longer than
+      // the field, so it truncates visually with no way to read the full
+      // text. Wrap it in the shared Tooltip primitive (see sidebar.jsx for
+      // the same Provider/Trigger/Content pattern) so hovering (or
+      // focusing, via Radix's built-in focus handling) reveals it in full.
+      const placeholder = ui('advancedFilterInSetPlaceholder');
       return (
-        <Input
-          type="text"
-          value={getJoinedValue(value)}
-          onChange={(e) => onChange(e.target.value)}
-          placeholder={ui('advancedFilterInSetPlaceholder')}
-          className="h-9 text-xs"
-          data-testid="Input__4eedf1" />
+        <TooltipProvider data-testid="TooltipProvider__4eedf1">
+          <Tooltip data-testid="Tooltip__4eedf1">
+            <TooltipTrigger asChild data-testid="TooltipTrigger__4eedf1">
+              <Input
+                type="text"
+                value={getJoinedValue(value)}
+                onChange={(e) => onChange(e.target.value)}
+                placeholder={placeholder}
+                className="h-9 text-xs"
+                data-testid="Input__4eedf1" />
+            </TooltipTrigger>
+            <TooltipContent data-testid="TooltipContent__4eedf1">
+              {placeholder}
+            </TooltipContent>
+          </Tooltip>
+        </TooltipProvider>
       );
     }
     return (
