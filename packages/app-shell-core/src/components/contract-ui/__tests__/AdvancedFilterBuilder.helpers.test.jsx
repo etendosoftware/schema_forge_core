@@ -47,10 +47,16 @@ afterEach(cleanup);
 // Constants verification (kept from original — no exports needed)
 // ---------------------------------------------------------------------------
 
+// NOTE: this is a LOCAL MIRROR of the component's private constant, kept in
+// sync by hand. Assertions against it prove nothing about the component on
+// their own — the authoritative checks are the rendered operator-dropdown tests
+// in AdvancedFilterBuilder.test.jsx, which read the options the user is
+// actually offered. `inSet` was dropped from `enumLabel` in ETP-4956 (enum
+// values are now picked with a multi-select popover).
 const OPERATORS_BY_MODE = {
   text:         ['iContains', 'iNotContains', 'iStartsWith', 'iEquals', 'iNotEqual', 'isNull', 'isNotNull'],
   identifier:   ['iContains', 'iNotContains', 'iStartsWith', 'equals', 'notEqual', 'isNull', 'isNotNull'],
-  enumLabel:    ['equals', 'notEqual', 'inSet', 'isNull', 'isNotNull'],
+  enumLabel:    ['equals', 'notEqual', 'isNull', 'isNotNull'],
   booleanLabel: ['equals'],
   numeric:      ['equals', 'notEqual', 'greaterThan', 'greaterOrEqual', 'lessThan', 'lessOrEqual', 'between', 'isNull', 'isNotNull'],
   date:         ['equals', 'lessThan', 'greaterThan', 'between', 'isNull', 'isNotNull'],
@@ -83,8 +89,12 @@ describe('AdvancedFilterBuilder logic', () => {
       expect(OPERATORS_BY_MODE.identifier).toContain('iStartsWith');
     });
 
-    it('enumLabel has inSet for multi-select', () => {
-      expect(OPERATORS_BY_MODE.enumLabel).toContain('inSet');
+    it('enumLabel no longer offers the free-text inSet operator (ETP-4956)', () => {
+      // Multi-code enum filtering moved to the value picker; "Is" with several
+      // ticked codes IS "is any of". Verified for real against the rendered
+      // dropdown in AdvancedFilterBuilder.test.jsx.
+      expect(OPERATORS_BY_MODE.enumLabel).not.toContain('inSet');
+      expect(OPERATORS_BY_MODE.enumLabel).toEqual(['equals', 'notEqual', 'isNull', 'isNotNull']);
     });
 
     it('booleanLabel only has equals', () => {

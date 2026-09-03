@@ -56,3 +56,58 @@ describe('generatePageComponent — hideStatusFilter + customListIcons', () => {
     assert.doesNotMatch(src, /from '@\/components\/ui\/custom-icons'/);
   });
 });
+
+// ETP-5101 — window.hideRecordCount code path (record-count badge next to the
+// window title, meaningless for tree-view windows like chart-of-accounts).
+describe('generatePageComponent — hideRecordCount', () => {
+  function buildContract(windowExtras = {}) {
+    return {
+      frontendContract: {
+        window: {
+          name: 'Chart of Accounts',
+          category: 'accounting',
+          layoutType: 'document',
+          ...windowExtras,
+        },
+        entities: {
+          header: {
+            tableName: 'C_ElementValue',
+            fields: [
+              {
+                name: 'name',
+                column: 'Name',
+                label: 'Name',
+                type: 'string',
+                visibility: 'editable',
+                form: true,
+                grid: true,
+              },
+            ],
+          },
+        },
+      },
+    };
+  }
+
+  it('emits hideRecordCount on the ListView call when window.hideRecordCount is true', () => {
+    const src = generatePageComponent('header', undefined, buildContract({
+      hideRecordCount: true,
+    }));
+
+    assert.match(src, /hideRecordCount/);
+  });
+
+  it('omits hideRecordCount when the flag is false (default)', () => {
+    const src = generatePageComponent('header', undefined, buildContract());
+
+    assert.doesNotMatch(src, /hideRecordCount/);
+  });
+
+  it('omits hideRecordCount when the flag is explicitly false', () => {
+    const src = generatePageComponent('header', undefined, buildContract({
+      hideRecordCount: false,
+    }));
+
+    assert.doesNotMatch(src, /hideRecordCount/);
+  });
+});
