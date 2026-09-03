@@ -108,6 +108,15 @@ describe('WINDOW_KEY_ORDER', () => {
   it('includes documentDateField (ETP-4029)', () => {
     assert.ok(WINDOW_KEY_ORDER.includes('documentDateField'));
   });
+
+  it('includes hideRecordCount, ordered between hideListFilters and hideStatusFilter (ETP-5101)', () => {
+    const hideListFiltersIdx = WINDOW_KEY_ORDER.indexOf('hideListFilters');
+    const hideRecordCountIdx = WINDOW_KEY_ORDER.indexOf('hideRecordCount');
+    const hideStatusFilterIdx = WINDOW_KEY_ORDER.indexOf('hideStatusFilter');
+    assert.notEqual(hideRecordCountIdx, -1);
+    assert.ok(hideListFiltersIdx < hideRecordCountIdx);
+    assert.ok(hideRecordCountIdx < hideStatusFilterIdx);
+  });
 });
 
 // ---------------------------------------------------------------------------
@@ -430,6 +439,49 @@ describe('resolveCurated', () => {
     };
     const result = await resolveCurated(schema, minimalRules, minimalDecisions);
     assert.equal(result.schema.entities[0].name, 'orderLine');
+  });
+
+  it('resolves hideRecordCount:true from window decisions through to the curated contract (ETP-5101)', async () => {
+    const decisions = {
+      _version: 3,
+      entities: {},
+      rules: {},
+      window: { hideRecordCount: true },
+    };
+    const result = await resolveCurated(minimalSchema, minimalRules, decisions);
+    assert.equal(result.schema.window.hideRecordCount, true);
+  });
+
+  it('does not set hideRecordCount on the curated window when not declared in decisions', async () => {
+    const result = await resolveCurated(minimalSchema, minimalRules, minimalDecisions);
+    assert.equal(result.schema.window.hideRecordCount, undefined);
+  });
+
+  it('does not set hideRecordCount on the curated window when explicitly false in decisions', async () => {
+    const decisions = {
+      _version: 3,
+      entities: {},
+      rules: {},
+      window: { hideRecordCount: false },
+    };
+    const result = await resolveCurated(minimalSchema, minimalRules, decisions);
+    assert.equal(result.schema.window.hideRecordCount, undefined);
+  });
+
+  it('orders hideRecordCount between hideListFilters and hideStatusFilter in the resolved window object', async () => {
+    const decisions = {
+      _version: 3,
+      entities: {},
+      rules: {},
+      window: { hideListFilters: true, hideRecordCount: true, hideStatusFilter: true },
+    };
+    const result = await resolveCurated(minimalSchema, minimalRules, decisions);
+    const keys = Object.keys(result.schema.window);
+    const hideListFiltersIdx = keys.indexOf('hideListFilters');
+    const hideRecordCountIdx = keys.indexOf('hideRecordCount');
+    const hideStatusFilterIdx = keys.indexOf('hideStatusFilter');
+    assert.ok(hideListFiltersIdx < hideRecordCountIdx);
+    assert.ok(hideRecordCountIdx < hideStatusFilterIdx);
   });
 
   it('appends virtual fields from decisions', async () => {
