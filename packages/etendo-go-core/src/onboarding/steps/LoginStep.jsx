@@ -4,7 +4,11 @@ import { Button } from '@etendosoftware/app-shell-core/components/ui/button';
 import { useUI, useLocaleSwitch } from '@etendosoftware/app-shell-core/i18n';
 import { loginAccount, loginWithSsoProvider, requestPasswordReset, confirmPasswordReset, fetchAccount, fetchEnvironments, AUTH_ERROR_UI_KEYS } from '../api.js';
 import { getConfiguredSsoProviders, renderSsoProviderButton } from '../sso.js';
-import { completeAuthentication, persistAuthMethod } from '../postAuth.js';
+import {
+  completeAuthentication,
+  credentialSchemeFromLoginResponse,
+  persistAuthMethod,
+} from '../postAuth.js';
 import { trackOnboarding } from '../tracking.js';
 import { AuthShell } from '../components/AuthShell.jsx';
 import { AuthField } from '../components/AuthField.jsx';
@@ -105,6 +109,7 @@ export function LoginStep({ config, stepData, onNext, onBack, goToStep, setToken
           token: credential,
           account: data.account,
           authMethod: 'sso',
+          scheme: credentialSchemeFromLoginResponse(data),
           persistAuth: handleAuthSuccess,
           onAuthenticated,
         });
@@ -206,6 +211,7 @@ export function LoginStep({ config, stepData, onNext, onBack, goToStep, setToken
           token: credential,
           account: data.account,
           authMethod: 'password',
+          scheme: credentialSchemeFromLoginResponse(data),
           persistAuth: handleAuthSuccess,
           onAuthenticated,
         });
