@@ -9,6 +9,7 @@ afterEach(cleanup);
 beforeEach(() => {
   distinctCalls.length = 0;
   distinctState.loading = false;
+  distinctState.search = '';
   localeState.statuses = {};
 });
 
@@ -61,7 +62,10 @@ vi.mock('../../../lib/gridQuery.js', () => ({
 // Defaults to an empty set (the original behavior the existing tests rely on).
 // `loading` defaults to false to preserve every pre-existing test's behavior;
 // only the ETP-4770 pending-label tests below set it to true.
-const distinctState = { values: [], loading: false };
+// `search` is mutable so a test can put the picker in the "user typed a term"
+// state: the fallback catalogue must honour it (ETP-5119). The real hook owns
+// this string; here the test drives it directly.
+const distinctState = { values: [], loading: false, search: '' };
 
 // Records every call's (entity, field, options) so tests can assert on the
 // `enabled` flag the component computed — the mocked hook always returns
@@ -77,7 +81,7 @@ vi.mock('../../../hooks/useDistinctValues.js', () => ({
       loading: distinctState.loading,
       loadingMore: false,
       hasMore: false,
-      search: '',
+      search: distinctState.search,
       setSearch: vi.fn(),
       loadMore: vi.fn(),
     };
@@ -1457,9 +1461,16 @@ describe('AdvancedFilterBuilder — content-based sizing (ETP-4705)', () => {
  * `triggerText` is what the CLOSED trigger shows: the placeholder when nothing
  * is selected, otherwise the first selected code's resolved label (+N suffix).
  */
-async function openEnumPicker({ col, value = '', rows = [], distinctCodes = [], onApply, entity, apiBaseUrl }) {
+async function openEnumPicker({
+  col, value = '', rows = [], distinctCodes = [], onApply, entity, apiBaseUrl, search = '',
+}) {
   const user = userEvent.setup();
   distinctState.values = distinctCodes.map((c) => ({ id: c, _identifier: String(c) }));
+  // `search` models a term already typed into the popover's box. The backend
+  // filters `distinctCodes` itself, so callers pass the already-filtered set;
+  // what this drives is the CLIENT-side gating of in-memory rows and of the
+  // declared-enumLabels fallback (ETP-5119).
+  distinctState.search = search;
   render(
     <AdvancedFilterBuilder
       columns={[col]}
@@ -1647,12 +1658,71 @@ describe('ETP-4956 — enum picker option list when re-editing', () => {
   });
 
   // ----------------------------------------------------------------
-  // The fallback gate is UNIFORM: it governs the global status dictionary the
-  // same way it governs a column's own enumLabels. (An earlier attempt at the
-  // fix made the two differ; that split no longer exists.)
+  // ETP-5119 — the global status dictionary is a LABEL source, never an OPTION
+  // source. ETP-4956 introduced `hasDeclaredLabels` and announced this split in
+  // a comment but never wired it into the fallback, so a column declaring no
+  // enumLabels (every generated window's documentStatus) seeded its picker from
+  // every docstatus in the system: Sales Quotation offered Temporal, No
+  // confirmado, En curso, Reservado — statuses it can never hold.
   // ----------------------------------------------------------------
 
-  describe('the same gate applies to the global status dictionary', () => {
+  // ----------------------------------------------------------------
+  // ETP-5119 — the declared-enumLabels fallback must honour the search box.
+  // It used to fire on "the merged list is empty" alone, so a term matching
+  // nothing first emptied the data-derived list and then had the entire
+  // catalogue poured straight back in. Typing "4" or "rrr" in Sales Quotation
+  // returned the full status list, making the search box look inert.
+  // ----------------------------------------------------------------
+
+  describe('the enumLabels fallback honours the active search', () => {
+    // Declared labels, non-`status` type so orderCodesForColumn leaves the
+    // merge order alone (ETP-4913) and the assertions read as a plain list.
+    const DECLARED_COL = {
+      key: 'quotationStatus',
+      label: 'Doc Status',
+      type: 'enum',
+      column: 'DocStatus',
+      enumLabels: { DR: 'Borrador', CO: 'Completado', CL: 'Cerrado' },
+    };
+
+    it('seeds the whole catalogue when the search box is empty', async () => {
+      // The pre-existing fallback behaviour, unchanged: no data, no search.
+      await openEnumPicker({ col: DECLARED_COL, value: '' });
+      expect(optionLabels()).toEqual(['Borrador', 'Completado', 'Cerrado']);
+    });
+
+    it('offers nothing when the term matches no declared label', async () => {
+      // The exact reported case: a stray digit.
+      await openEnumPicker({ col: DECLARED_COL, value: '', search: '4' });
+      expect(screen.queryAllByTestId('distinct-option')).toHaveLength(0);
+    });
+
+    it('narrows the catalogue to the labels that match the term', async () => {
+      await openEnumPicker({ col: DECLARED_COL, value: '', search: 'ce' });
+      expect(optionLabels()).toEqual(['Cerrado']);
+    });
+
+    it('matches on the raw code too, not only the label', async () => {
+      // A user who knows the AD code should be able to type it.
+      await openEnumPicker({ col: DECLARED_COL, value: '', search: 'co' });
+      expect(optionLabels()).toEqual(['Completado']);
+    });
+
+    it('is case-insensitive', async () => {
+      await openEnumPicker({ col: DECLARED_COL, value: '', search: 'BORRA' });
+      expect(optionLabels()).toEqual(['Borrador']);
+    });
+
+    it('keeps the selected value visible even when it does not match', async () => {
+      // The selection is folded in after the fallback (ETP-4956) and is not
+      // subject to the search — hiding an active filter's own value would make
+      // it impossible to untick.
+      await openEnumPicker({ col: DECLARED_COL, value: 'DR', search: '4' });
+      expect(optionLabels()).toEqual(['Borrador']);
+    });
+  });
+
+  describe('the global status dictionary is never an option source', () => {
     const UNDECLARED_COL = {
       key: 'documentStatus',
       label: 'Doc Status',
@@ -1660,18 +1730,35 @@ describe('ETP-4956 — enum picker option list when re-editing', () => {
       column: 'DocStatus',
     };
 
-    it('falls back to the global dictionary only when nothing else was merged', async () => {
+    it('renders no options for an undeclared column with no data', async () => {
+      // The pre-ETP-5119 behaviour dumped the whole dictionary here. A column
+      // that declares no codes has no trustworthy static catalogue, so an empty
+      // list is the correct answer.
       localeState.statuses = { DR: { label: 'Draft' }, CO: { label: 'Complete' } };
       await openEnumPicker({ col: UNDECLARED_COL, value: '' });
-      expect(optionLabels().sort()).toEqual(['Complete', 'Draft']);
+      expect(screen.queryAllByTestId('distinct-option')).toHaveLength(0);
     });
 
-    it('still falls back for an undeclared column when only a value is selected', async () => {
-      // Same ordering guarantee as for a declared catalogue: the selection is
-      // not data, so it must not suppress the fallback.
+    it('offers only the selected value for an undeclared column with no data', async () => {
+      // The selection is still folded in last so the active filter stays
+      // visible and untickable-by-accident — but it brings no dictionary with it.
       localeState.statuses = { DR: { label: 'Draft' }, CO: { label: 'Complete' } };
       await openEnumPicker({ col: UNDECLARED_COL, value: 'DR' });
-      expect(optionLabels().sort()).toEqual(['Complete', 'Draft']);
+      expect(optionLabels()).toEqual(['Draft']);
+    });
+
+    it('still labels a data-derived code from the global dictionary', async () => {
+      // The split is about ENUMERATING, not about TRANSLATING: a code the
+      // backend actually returned must keep resolving its dictionary label.
+      localeState.statuses = { DR: { label: 'Draft' }, CO: { label: 'Complete' } };
+      await openEnumPicker({
+        col: UNDECLARED_COL,
+        value: '',
+        distinctCodes: ['CO'],
+        entity: 'orders',
+        apiBaseUrl: '/api',
+      });
+      expect(optionLabels()).toEqual(['Complete']);
     });
 
     it('does NOT union the global dictionary once real data has been merged', async () => {

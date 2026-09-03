@@ -28,6 +28,7 @@ export function DistinctValuesList({
   distinct,
   onSelect,
   searchPlaceholder,
+  emptyLabel = null,
 }) {
   const sentinelRef = useRef(null);
   // Multi-select mode is opt-in via `activeCodes`; single-select consumers keep
@@ -88,9 +89,14 @@ export function DistinctValuesList({
             <Loader2 className="h-4 w-4 animate-spin" data-testid="Loader2__55c679" />
           </div>
         )}
+        {/* An empty list must SAY it is empty (ETP-5119). The picker used to
+            paper over "no match" by dumping every declared code back in; now
+            that it correctly renders nothing, a bare "—" reads as a broken
+            dropdown. `emptyLabel` is the translated "No results" from the
+            caller — the fallback keeps older callers rendering as before. */}
         {!distinct.loading && codes.length === 0 && (
           <div className="px-3 py-3 text-sm text-muted-foreground text-center">
-            {distinct.search ? '—' : ''}
+            {distinct.search ? (emptyLabel || '—') : ''}
           </div>
         )}
         {distinct.hasMore && (
