@@ -9,6 +9,15 @@ primitives, styles, and a report viewer frame.
 It intentionally does not include generated contracts, generated windows,
 `@generated` imports, app-specific registries, or custom business windows.
 
+The `./webmcp` export provides an opt-in `WebMcpAgentTools` facade. It registers
+context, internal navigation, and chat-opening tools only when the consumer
+enables it and the browser exposes `document.modelContext`.
+
+`WebMcpMcpTools` mirrors the authenticated Etendo Go MCP catalog by calling
+`tools/list` and delegating each invocation to `tools/call`. This keeps the
+WebMCP catalog aligned with server-side RBAC, OAuth scopes, schemas, processes,
+reports, and CRUD tools without duplicating those rules in the browser.
+
 ```json
 {
   "dependencies": {

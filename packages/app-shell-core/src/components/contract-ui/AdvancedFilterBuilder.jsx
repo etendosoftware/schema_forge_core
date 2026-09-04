@@ -1149,14 +1149,33 @@ function orderCodesForColumn(codes, col) {
  * caller's note on the BF movement type). What made the dropdown collapse to a
  * single option was not this gate but the ORDER of the caller's merge — the
  * already-selected value was folded in first and counted as data. Fixed there.
+ *
+ * Two further constraints, both from ETP-5119:
+ *
+ *   1. `ownEnumLabels` is the column's OWN `enumLabels`, never the global status
+ *      dictionary the caller falls back to for LABELLING. Translating a code the
+ *      backend sent is one thing; ENUMERATING every docstatus in the system as
+ *      pickable options is another. Sales Quotation declares no enumLabels, so
+ *      seeding from the global map offered Temporal / No confirmado / En curso /
+ *      Reservado — statuses that window can never hold. When a column declares
+ *      no codes there is no trustworthy static set, and an empty list is the
+ *      correct answer.
+ *   2. It honours the active search. The gate used to be `out.length === 0`
+ *      alone, so a term matching nothing ("4", "rrr") emptied the data-derived
+ *      list and then had the whole catalogue poured back in — making the search
+ *      box look inert and, again, surfacing foreign statuses.
+ *
+ * `query` is the lowercased, trimmed search term ('' when the box is empty).
  */
-function fillFallbackCodes(out, labelMap, seen) {
-  if (out.length > 0) return;
-  for (const c of Object.keys(labelMap)) {
-    if (!seen.has(c)) {
-      seen.add(c);
-      out.push(c);
-    }
+function fillFallbackCodes(out, ownEnumLabels, seen, query, labelFor) {
+  if (out.length > 0 || !ownEnumLabels) return;
+  for (const c of Object.keys(ownEnumLabels)) {
+    if (seen.has(c)) continue;
+    if (query
+      && !String(labelFor(c)).toLowerCase().includes(query)
+      && !String(c).toLowerCase().includes(query)) continue;
+    seen.add(c);
+    out.push(c);
   }
 }
 
@@ -1264,10 +1283,10 @@ function DistinctEnumPicker({ col, entity, apiBaseUrl, rows, value, onChange, ui
     // unconditionally put a "Comisión bancaria" option in front of users whose
     // account has no such movement, and filtering by it could only ever
     // return zero rows.
-    fillFallbackCodes(out, labelMap, seen);
+    fillFallbackCodes(out, hasDeclaredLabels ? labelMap : null, seen, q, labelFor);
     for (const code of selected) add(code);
     return out;
-  }, [distinct.values, distinct.search, inMemoryCodes, selected, labelMap, dictionary]);
+  }, [distinct.values, distinct.search, inMemoryCodes, selected, labelMap, hasDeclaredLabels, dictionary]);
 
   // Status columns get the fixed business-flow order; every other enum column
   // keeps the merge order untouched. See orderCodesForColumn (ETP-4913).
@@ -1326,6 +1345,7 @@ function DistinctEnumPicker({ col, entity, apiBaseUrl, rows, value, onChange, ui
           distinct={distinct}
           onSelect={toggle}
           searchPlaceholder={ui('searchValues')}
+          emptyLabel={ui('noResults')}
           data-testid="DistinctValuesList__4eedf1" />
       </PopoverContent>
     </Popover>
