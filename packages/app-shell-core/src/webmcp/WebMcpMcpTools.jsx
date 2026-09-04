@@ -1,3 +1,9 @@
+// @data-testid-ignore
+// Nothing in this file renders DOM: RegisteredMcpTool returns null (it only
+// registers a WebMCP tool through useWebMcpTool), and WebMcpMcpTools just maps
+// over those. The data-testid codemod flags the <RegisteredMcpTool> element
+// anyway, but the attribute would land on a component that ignores props and
+// paints nothing - an inert prop added only to silence the check.
 import { useCallback, useEffect, useState } from 'react';
 import { callMcpTool, listMcpTools } from './mcpClient.js';
 import { useWebMcpTool } from './useWebMcpTool.js';
