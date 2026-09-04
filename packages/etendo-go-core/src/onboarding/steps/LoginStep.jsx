@@ -4,7 +4,11 @@ import { Button } from '@etendosoftware/app-shell-core/components/ui/button';
 import { useUI, useLocaleSwitch } from '@etendosoftware/app-shell-core/i18n';
 import { loginAccount, loginWithSsoProvider, requestPasswordReset, confirmPasswordReset, fetchAccount, fetchEnvironments, AUTH_ERROR_UI_KEYS } from '../api.js';
 import { getConfiguredSsoProviders, renderSsoProviderButton } from '../sso.js';
-import { completeAuthentication } from '../postAuth.js';
+import {
+  completeAuthentication,
+  credentialSchemeFromLoginResponse,
+  persistAuthMethod,
+} from '../postAuth.js';
 import { trackOnboarding } from '../tracking.js';
 import { AuthShell } from '../components/AuthShell.jsx';
 import { AuthField } from '../components/AuthField.jsx';
@@ -66,16 +70,15 @@ export function LoginStep({ config, stepData, onNext, onBack, goToStep, setToken
     }
   }, []);
 
-  const handleAuthSuccess = useCallback(async (token, account, { route = true, authMethod = 'password' } = {}) => {
-    localStorage.setItem('sf_platform_token', token);
-    localStorage.setItem('sf_platform_auth_method', authMethod);
-    if (setToken) setToken(token);
+  const handleAuthSuccess = useCallback((csrfToken, account, { route = true, authMethod = 'password' } = {}) => {
+    persistAuthMethod(authMethod);
+    if (setToken) setToken(csrfToken);
     if (setAccountName) setAccountName(account?.name || account?.email || null);
     setShowLoginPassword(false);
     setSsoError(null);
     setSsoLoadingProvider(null);
     if (route && routeByEnvironments) {
-      await routeByEnvironments(token);
+      return routeByEnvironments(csrfToken);
     }
   }, [setToken, setAccountName, routeByEnvironments]);
 
@@ -90,16 +93,23 @@ export function LoginStep({ config, stepData, onNext, onBack, goToStep, setToken
     setSsoLoadingProvider(provider);
     try {
       const data = await loginWithSsoProvider(fetch, apiBase, provider, payload);
-      if (data.token) {
+      // Either credential counts as authenticated. See the note on the password
+      // branch below for why this is not "just in case".
+      const credential = data.csrfToken ?? data.token;
+      if (credential) {
         trackOnboarding(config, 'onboarding_auth_succeeded', {
           action: 'sso',
           provider,
           status: 'success',
         });
+        // The epic's `completeAuthentication` centralises the persist +
+        // hand-off pair; its `token` parameter is the generic credential slot,
+        // and what travels in it is whichever credential the response carried.
         await completeAuthentication({
-          token: data.token,
+          token: credential,
           account: data.account,
           authMethod: 'sso',
+          scheme: credentialSchemeFromLoginResponse(data),
           persistAuth: handleAuthSuccess,
           onAuthenticated,
         });
@@ -176,7 +186,8 @@ export function LoginStep({ config, stepData, onNext, onBack, goToStep, setToken
     setLoginLoading(true);
     try {
       const data = await loginAccount(fetch, apiBase, loginForm);
-      if (data.token) {
+      const credential = data.csrfToken ?? data.token;
+      if (credential) {
         trackOnboarding(config, 'onboarding_auth_succeeded', {
           action: 'login',
           status: 'success',
@@ -185,10 +196,22 @@ export function LoginStep({ config, stepData, onNext, onBack, goToStep, setToken
         // navigating away (window.location.href) or switching to another
         // onboarding step, so LoginStep unmounts. Resetting it here would flash
         // the button back to its normal state during that hand-off window.
+        //
+        // ETP-4576 — `csrfToken ?? token`, both here and on the SSO branch.
+        // Under the cookie scheme the session is the `__Host-` cookie the browser
+        // cannot read and the response carries only the CSRF proof; under bearer
+        // it carries a token. Gating on `csrfToken` alone made a bearer login
+        // fall through to "invalid credentials" — a login that fails with the
+        // right password, which is how the ETP-4958 continuation tests caught it.
+        //
+        // This is deliberate, not defensive: the scheme is chosen by a backend
+        // preference, so both shapes are reachable at runtime by design, and the
+        // frontend can ship before the preference is switched on.
         await completeAuthentication({
-          token: data.token,
+          token: credential,
           account: data.account,
           authMethod: 'password',
+          scheme: credentialSchemeFromLoginResponse(data),
           persistAuth: handleAuthSuccess,
           onAuthenticated,
         });
@@ -237,8 +260,6 @@ export function LoginStep({ config, stepData, onNext, onBack, goToStep, setToken
     setResetLoading(true);
     try {
       await confirmPasswordReset(fetch, apiBase, resetForm);
-      localStorage.removeItem('sf_platform_token');
-      localStorage.removeItem('sf_platform_auth_method');
       if (setToken) setToken(null);
       if (setAccountName) setAccountName(null);
       setResetSuccess(true);

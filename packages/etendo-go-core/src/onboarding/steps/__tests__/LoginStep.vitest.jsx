@@ -18,6 +18,7 @@ import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
  */
 
 const TOKEN = 'session-token';
+const CSRF_TOKEN = 'csrf-proof';
 const ACCOUNT = { name: 'Ada Lovelace', email: 'ada@example.com' };
 
 // Captures the credential callback the component hands to the provider SDK, so
@@ -99,21 +100,27 @@ describe('LoginStep authentication continuation (ETP-4958)', () => {
       await completeSsoCredential();
 
       await waitFor(() => expect(onAuthenticated).toHaveBeenCalledTimes(1));
-      expect(onAuthenticated).toHaveBeenCalledWith(TOKEN, ACCOUNT);
+      expect(onAuthenticated).toHaveBeenCalledWith(TOKEN, ACCOUNT, { scheme: 'bearer' });
       expect(routeByEnvironments).not.toHaveBeenCalled();
     });
 
+    // ETP-4576 changed WHERE the credential lands, not the ordering this test
+    // exists to pin. It is never written to localStorage now — it is handed to
+    // `setToken`, so that is what the callback observes. The auth-method key is
+    // still asserted: it is metadata, not a credential, and UserAvatarButton
+    // reads it to hide change-password from SSO users.
     it('persists the session before handing over', async () => {
       const seen = [];
+      let setToken;
       const onAuthenticated = vi.fn(async () => {
-        seen.push(globalThis.localStorage.getItem('sf_platform_token'));
+        seen.push(setToken.mock.calls.map(([credential]) => credential));
       });
-      renderLoginStep({ onAuthenticated });
+      ({ setToken } = renderLoginStep({ onAuthenticated }));
 
       await completeSsoCredential();
 
       await waitFor(() => expect(onAuthenticated).toHaveBeenCalled());
-      expect(seen).toEqual([TOKEN]);
+      expect(seen).toEqual([[TOKEN]]);
       expect(globalThis.localStorage.getItem('sf_platform_auth_method')).toBe('sso');
     });
 
@@ -135,8 +142,25 @@ describe('LoginStep authentication continuation (ETP-4958)', () => {
       await submitPasswordLogin(container);
 
       await waitFor(() => expect(onAuthenticated).toHaveBeenCalledTimes(1));
-      expect(onAuthenticated).toHaveBeenCalledWith(TOKEN, ACCOUNT);
+      expect(onAuthenticated).toHaveBeenCalledWith(TOKEN, ACCOUNT, { scheme: 'bearer' });
       expect(routeByEnvironments).not.toHaveBeenCalled();
+    });
+
+    // ETP-4576 — the caller cannot tell a CSRF proof from a bearer token by looking
+    // at it, and putting one in the other's slot fails silently-ish: a proof sent as
+    // `Authorization` earns a 401, a bearer sent as `X-Go-CSRF` earns a 403. So the
+    // scheme travels with the credential, decided by the only signal that separates
+    // them — a `csrfToken` is issued only alongside a `__Host-` session cookie.
+    it('reports the cookie scheme, and hands back the CSRF proof as the credential', async () => {
+      const { loginAccount } = await import('../../api.js');
+      loginAccount.mockResolvedValueOnce({ csrfToken: CSRF_TOKEN, account: ACCOUNT });
+      const onAuthenticated = vi.fn(async () => {});
+      const { container } = renderLoginStep({ onAuthenticated });
+
+      await submitPasswordLogin(container);
+
+      await waitFor(() => expect(onAuthenticated).toHaveBeenCalledTimes(1));
+      expect(onAuthenticated).toHaveBeenCalledWith(CSRF_TOKEN, ACCOUNT, { scheme: 'cookie' });
     });
 
     it('keeps the default environment routing when no caller takes over', async () => {

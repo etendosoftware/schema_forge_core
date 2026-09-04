@@ -60,13 +60,15 @@ function storedLocale() {
   }
 }
 
-export function buildAuthHeaders(token) {
+export function buildAuthHeaders(csrfToken) {
   return {
     'Content-Type': 'application/json',
     // ETP-5022: without this the backend resolves AD_Message text in the account's AD
     // language, so auth errors came back in English while the UI was in Spanish.
     'Accept-Language': storedLocale(),
-    ...(token ? { Authorization: `Bearer ${token}` } : {}),
+    // ETP-4576: the session is the `__Host-` cookie the browser sends on its own, so
+    // what travels here is the proof of intent, never a credential.
+    ...(csrfToken ? { 'X-Go-CSRF': csrfToken } : {}),
   };
 }
 
@@ -96,9 +98,17 @@ async function readJsonResponse(response, fallbackCode) {
   return data;
 }
 
+export async function fetchSession(fetchImpl, baseUrl) {
+  const response = await fetchImpl(`${baseUrl}/sws/go/session`, {
+    credentials: 'include',
+  });
+  return readJsonResponse(response, ONBOARDING_ERROR_CODES.invalidSession);
+}
+
 export async function registerAccount(fetchImpl, baseUrl, form) {
-  const response = await fetchImpl(`${baseUrl}/sws/go/register`, {
+  const response = await fetchImpl(`${baseUrl}/sws/go/session/register`, {
     method: 'POST',
+    credentials: 'include',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(form),
   });
@@ -106,8 +116,9 @@ export async function registerAccount(fetchImpl, baseUrl, form) {
 }
 
 export async function loginAccount(fetchImpl, baseUrl, form) {
-  const response = await fetchImpl(`${baseUrl}/sws/go/login`, {
+  const response = await fetchImpl(`${baseUrl}/sws/go/session`, {
     method: 'POST',
+    credentials: 'include',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(form),
   });
@@ -122,8 +133,9 @@ export async function loginWithSsoProvider(fetchImpl, baseUrl, provider, payload
     error.code = ONBOARDING_ERROR_CODES.ssoFailed;
     throw error;
   }
-  const response = await fetchImpl(`${baseUrl}/sws/go/sso/${encodeURIComponent(normalizedProvider)}`, {
+  const response = await fetchImpl(`${baseUrl}/sws/go/session/sso/${encodeURIComponent(normalizedProvider)}`, {
     method: 'POST',
+    credentials: 'include',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(buildPayload(payload)),
   });
@@ -157,6 +169,10 @@ export async function confirmPasswordReset(fetchImpl, baseUrl, form) {
  * Unauthenticated on purpose: the token from the mailed link IS the credential, and the link is
  * usually opened in a browser with no session. Idempotent server-side, so re-following the same
  * link (or a mail client prefetching it) resolves rather than erroring.
+ *
+ * ETP-4576 — no `credentials: 'include'` for the same reason it takes no CSRF proof: there is no
+ * session to send. It sits with requestPasswordReset/confirmPasswordReset, the other two calls a
+ * logged-out visitor makes.
  */
 export async function verifyEmail(fetchImpl, baseUrl, token) {
   const response = await fetchImpl(`${baseUrl}/sws/go/verify-email`, {
@@ -170,20 +186,27 @@ export async function verifyEmail(fetchImpl, baseUrl, token) {
 /**
  * ETP-4798 — asks for the confirmation link again. Always resolves with the same neutral payload
  * whether a mail went out or nothing was pending, so the caller must not try to infer state from it.
+ *
+ * ETP-4576 — unlike verifyEmail this one IS authenticated (the visitor is signed in, just not
+ * confirmed), so it takes the session cookie plus the CSRF proof. It arrived from the epic passing
+ * the bearer token to buildAuthHeaders, which under this scheme would have shipped the bearer as
+ * `X-Go-CSRF` — a header the backend rejects — while sending no session at all.
  */
-export async function resendVerifyEmail(fetchImpl, baseUrl, token, language) {
+export async function resendVerifyEmail(fetchImpl, baseUrl, csrfToken, language) {
   const query = language ? `?language=${encodeURIComponent(language)}` : '';
   const response = await fetchImpl(`${baseUrl}/sws/go/verify-email/resend${query}`, {
     method: 'POST',
-    headers: buildAuthHeaders(token),
+    credentials: 'include',
+    headers: buildAuthHeaders(csrfToken),
   });
   return readJsonResponse(response, ONBOARDING_ERROR_CODES.emailVerifyFailed);
 }
 
-export async function changePassword(fetchImpl, baseUrl, token, form) {
+export async function changePassword(fetchImpl, baseUrl, csrfToken, form) {
   const response = await fetchImpl(`${baseUrl}/sws/go/change-password`, {
     method: 'POST',
-    headers: buildAuthHeaders(token),
+    credentials: 'include',
+    headers: buildAuthHeaders(csrfToken),
     body: JSON.stringify({
       currentPassword: form.currentPassword,
       newPassword: form.newPassword,
@@ -192,41 +215,55 @@ export async function changePassword(fetchImpl, baseUrl, token, form) {
   return readJsonResponse(response, ONBOARDING_ERROR_CODES.credentialChangeFailed);
 }
 
-export async function fetchAccount(fetchImpl, baseUrl, token) {
+export async function fetchAccount(fetchImpl, baseUrl) {
   const response = await fetchImpl(`${baseUrl}/sws/go/me`, {
-    headers: buildAuthHeaders(token),
+    credentials: 'include',
+    headers: buildAuthHeaders(),
   });
   return readJsonResponse(response, ONBOARDING_ERROR_CODES.invalidSession);
 }
 
-export async function fetchEnvironments(fetchImpl, baseUrl, token) {
+export async function fetchEnvironments(fetchImpl, baseUrl) {
   const response = await fetchImpl(`${baseUrl}/sws/go/environments`, {
-    headers: buildAuthHeaders(token),
+    credentials: 'include',
+    headers: buildAuthHeaders(),
   });
   const data = await readJsonResponse(response, ONBOARDING_ERROR_CODES.loadEnvironmentsFailed);
   return data.environments || [];
 }
 
-export async function loginEnvironment(fetchImpl, baseUrl, token, env) {
-  const userId = encodeURIComponent(env.adminUserId);
-  const response = await fetchImpl(`${baseUrl}/sws/go/login?userId=${userId}`, {
-    headers: buildAuthHeaders(token),
+export async function loginEnvironment(fetchImpl, baseUrl, csrfToken, env) {
+  // ETP-4576 — POSTs to the session endpoint instead of GET /sws/go/login?userId=:
+  // picking an environment now updates the backend-managed session rather than minting
+  // a token for the client to hold. Headers come from buildAuthHeaders so this call
+  // keeps ETP-5022's Accept-Language like every other one.
+  const response = await fetchImpl(`${baseUrl}/sws/go/session/environment`, {
+    method: 'POST',
+    credentials: 'include',
+    headers: buildAuthHeaders(csrfToken),
+    body: JSON.stringify({
+      userId: env.adminUserId,
+      ...(env.roleId ? { roleId: env.roleId } : {}),
+      ...(env.orgId ? { orgId: env.orgId } : {}),
+    }),
   });
   return readJsonResponse(response, ONBOARDING_ERROR_CODES.environmentLoginFailed);
 }
 
-export async function fetchOnboardingDraft(fetchImpl, baseUrl, token) {
+export async function fetchOnboardingDraft(fetchImpl, baseUrl) {
   const response = await fetchImpl(`${baseUrl}/sws/go/onboarding/draft`, {
-    headers: buildAuthHeaders(token),
+    credentials: 'include',
+    headers: buildAuthHeaders(),
   });
   const data = await readJsonResponse(response, ONBOARDING_ERROR_CODES.invalidSession);
   return data.draft || null;
 }
 
-export async function saveOnboardingDraft(fetchImpl, baseUrl, token, draft) {
+export async function saveOnboardingDraft(fetchImpl, baseUrl, csrfToken, draft) {
   const response = await fetchImpl(`${baseUrl}/sws/go/onboarding/draft`, {
     method: 'POST',
-    headers: buildAuthHeaders(token),
+    credentials: 'include',
+    headers: buildAuthHeaders(csrfToken),
     body: JSON.stringify({ draft }),
   });
   return readJsonResponse(response, ONBOARDING_ERROR_CODES.invalidSession);
@@ -264,10 +301,11 @@ async function readStreamResult(reader, onMessage) {
   return finalResult;
 }
 
-export async function runOnboardingStream(fetchImpl, baseUrl, token, form, onMessage) {
+export async function runOnboardingStream(fetchImpl, baseUrl, csrfToken, form, onMessage) {
   const response = await fetchImpl(`${baseUrl}/sws/go/onboarding`, {
     method: 'POST',
-    headers: buildAuthHeaders(token),
+    credentials: 'include',
+    headers: buildAuthHeaders(csrfToken),
     body: JSON.stringify({
       clientName: form.clientName,
       currency: form.currency,

@@ -1,4 +1,13 @@
 import { getStoredLocale } from '../i18n/useLocaleState.js';
+import {
+  credentialHeadersForToken,
+  getCredentialMode,
+  getSessionCsrfToken,
+  jsonHeaders,
+  readCredentialHeaders,
+  setSessionCredentials,
+  writeHeaders,
+} from './sessionCredentials.js';
 import { getRecordVersion, rememberRecordVersion } from '../lib/recordVersions.js';
 
 export function detectBaseUrl() {
@@ -34,37 +43,39 @@ function defaultBaseUrl() {
  * SILENT no-op and the backend falls back to the user's AD language — so
  * selectors come back in English with no error anywhere (ETP-4685, ETP-5022).
  *
- * Always use this (or {@link buildHeaders} for writes) instead of hand-rolling
- * `{ Authorization: `Bearer ${token}` }` — that omission is exactly the defect
- * this helper exists to prevent, and a repo guardrail test enforces it.
+ * Always use this (or {@link buildWriteHeaders} for writes) instead of hand-building
+ * a credential header. Which one the request carries is not this function's call:
+ * sessionCredentials owns that decision, so a call site never learns whether the
+ * active scheme is the bearer token or the `__Host-` cookie. A guardrail test keeps
+ * this module free of any credential literal for the same reason.
  *
- * @param {string} [token] bearer token; omitted when absent
  * @returns {Record<string,string>} headers for a read request
  */
-export function authHeaders(token) {
-  const headers = {
-    'Accept-Language': getStoredLocale(),
-  };
-  if (token) {
-    headers['Authorization'] = `Bearer ${token}`;
-  }
-  return headers;
+export function authHeaders() {
+  // ETP-4576 — the credential comes from the active scheme, not from a parameter:
+  // `bearer` puts back the Authorization header, `cookie` sends nothing and lets the
+  // `__Host-` session travel on its own. Callers still passing a token are harmless,
+  // the argument is ignored. `Accept-Language` stays exactly as ETP-4685/ETP-5022
+  // left it — without it the backend silently falls back to the user's AD language.
+  return { ...readCredentialHeaders(), 'Accept-Language': getStoredLocale() };
 }
 
 /**
  * Headers for a WRITE request (POST/PUT/DELETE with a JSON body): everything
  * {@link authHeaders} sends, plus `Content-Type: application/json`.
  */
-export function buildHeaders(token) {
-  return {
-    ...authHeaders(token),
-    'Content-Type': 'application/json',
-  };
+export function buildHeaders() {
+  return { ...jsonHeaders(), 'Accept-Language': getStoredLocale() };
 }
 
-export function isTokenExpired(token) {
-  return !token;
+// The write-path pair of buildHeaders: same locale, plus whatever proof the active
+// scheme requires on unsafe methods. Never use buildHeaders for a POST/PUT/PATCH/DELETE
+// — under the cookie scheme that omits the CSRF proof and the backend answers 403.
+export function buildWriteHeaders() {
+  return { ...writeHeaders(), 'Accept-Language': getStoredLocale() };
 }
+
+const UNSAFE_METHODS = new Set(['POST', 'PUT', 'PATCH', 'DELETE']);
 
 /**
  * Resolves a request URL against the client's base URL.
@@ -344,19 +355,47 @@ function harvestReadVersions(res, path) {
  * @param {() => (string|null)} getToken reads the current bearer token
  * @param {() => void} onUnauthorized invoked once when a 401 is not ignored
  */
-export function createApiFetch(baseUrl, getToken, onUnauthorized) {
+export function createApiFetch(baseUrl, getCsrfToken, onUnauthorized) {
   return async function apiFetch(path, options = {}) {
     const {
       on401, credentials, baseUrl: baseUrlOverride, token: tokenOverride,
       headers: extraHeaders, ...rest
     } = options;
-    const token = tokenOverride !== undefined ? tokenOverride : getToken();
-    // A bodyless request (GET, DELETE) gets authHeaders, which deliberately omits
-    // Content-Type — declaring a body type on a request that has no body is wrong, and
-    // it also keeps a migrated call site byte-identical on the wire to the raw `fetch`
-    // it replaced.
-    const canonical = rest.body === undefined ? authHeaders(token) : buildHeaders(token);
-    const headers = { ...canonical, ...extraHeaders };
+    const method = (options.method || 'GET').toUpperCase();
+    const unsafe = UNSAFE_METHODS.has(method);
+    // ETP-5022 — a bodyless request declares no Content-Type. ETP-4576 — an unsafe one
+    // still carries the scheme's proof. Independent: a bodyless DELETE needs both.
+    let canonical;
+    if (rest.body === undefined) {
+      canonical = unsafe
+        ? { ...writeHeaders(), 'Accept-Language': getStoredLocale() }
+        : authHeaders();
+      delete canonical['Content-Type'];
+    } else {
+      canonical = unsafe ? buildWriteHeaders() : buildHeaders();
+    }
+    const headers = {
+      ...canonical,
+      ...(tokenOverride ? credentialHeadersForToken(tokenOverride) : {}),
+      ...extraHeaders,
+    };
+    // ETP-4576 — every unsafe request carries the proof whenever one is held, WITHOUT
+    // consulting the active scheme.
+    //
+    // Gating this on `mode !== bearer` reads tidier and was tried: it sent a bearer
+    // request out without an `X-Go-CSRF` the backend supposedly never asked for. But the
+    // browser attaches a same-origin session cookie on its own, whatever the client
+    // believes it is doing, and the backend validates CSRF the moment it sees that cookie
+    // on an unsafe method (`GoSessionAuthenticator`). So a client that decides it is in
+    // bearer mode - which `credentialHeadersForToken` reveals it can, mid-session - loses
+    // that bet as a 403 on the write, while every read still succeeds: exactly the shape
+    // that took three confirm flows down in the integration suite (sales order, sales
+    // quotation, cash close). Sending the header under a scheme that ignores it costs
+    // nothing; omitting it when the cookie rides along costs the write.
+    if (unsafe) {
+      const csrfToken = getCsrfToken();
+      if (csrfToken) headers['X-Go-CSRF'] = csrfToken;
+    }
     if (rest.body instanceof FormData) delete headers['Content-Type'];
     const configured = baseUrlOverride !== undefined ? baseUrlOverride : baseUrl;
     const base = configured != null ? configured : defaultBaseUrl();
@@ -376,7 +415,7 @@ export function createApiFetch(baseUrl, getToken, onUnauthorized) {
       harvestReadVersions(res, path);
     }
     if (res.status === 401 && on401 !== 'ignore') {
-      onUnauthorized?.();
+      onUnauthorized();
       throw new Error('Unauthorized');
     }
     return res;
@@ -397,13 +436,31 @@ export function createApiFetch(baseUrl, getToken, onUnauthorized) {
 let ambientSession = null;
 
 export function registerApiSession({ getToken, onUnauthorized, baseUrl } = {}) {
+  const readToken = typeof getToken === 'function' ? getToken : () => null;
   ambientSession = {
-    getToken: typeof getToken === 'function' ? getToken : () => null,
+    getToken: readToken,
     onUnauthorized: typeof onUnauthorized === 'function' ? onUnauthorized : () => {},
     baseUrl,
   };
+  // ETP-4576 — declaring the session also publishes its credential to the one place
+  // that decides. The reader is handed over rather than its current value, so the
+  // token is still read on every request (ETP-5022) and a re-login is picked up
+  // without re-registering. The mode is left alone: under `cookie` this token is
+  // simply never consulted, which is what makes the preference switchable.
+  setSessionCredentials({
+    mode: getCredentialMode(),
+    token: readToken,
+    csrfToken: getSessionCsrfToken(),
+  });
   return function unregister() {
-    if (ambientSession && ambientSession.getToken === getToken) ambientSession = null;
+    if (ambientSession && ambientSession.getToken === getToken) {
+      ambientSession = null;
+      setSessionCredentials({
+        mode: getCredentialMode(),
+        token: null,
+        csrfToken: getSessionCsrfToken(),
+      });
+    }
   };
 }
 
@@ -424,6 +481,9 @@ export function notifyAmbientUnauthorized() {
 /** Test seam: drops the ambient session so suites do not leak one into the next. */
 export function resetApiSessionForTests() {
   ambientSession = null;
+  // Also drops the credential the session published: leaving it behind let one test's
+  // token authenticate the next one's supposedly anonymous request.
+  setSessionCredentials({ mode: getCredentialMode(), token: null, csrfToken: getSessionCsrfToken() });
 }
 
 /**
@@ -432,9 +492,56 @@ export function resetApiSessionForTests() {
  */
 export function apiFetch(path, options = {}) {
   const session = ambientSession;
+  // Second argument is the CSRF proof, not the credential: `session.getToken` returns the
+  // bearer, and passing it here shipped it as `X-Go-CSRF`. The proof lives on the active
+  // scheme, which registerApiSession keeps up to date.
   return createApiFetch(
     session ? session.baseUrl : undefined,
-    session ? session.getToken : () => null,
+    getSessionCsrfToken,
     session ? session.onUnauthorized : () => {},
   )(path, options);
+}
+
+// ETP-4576 — restores the backend-managed session (ADR-0001). This is the
+// platform default for AuthProvider's `restoreSession`, so a host gets the
+// cookie session without wiring anything; passing the prop overrides it.
+// Authenticates purely with the `__Host-` cookie: `credentials: 'include'` and
+// no Authorization header, since the browser never holds a bearer token.
+// Fails closed with null on the 401 for "no session", a network error, or an
+// unparsable body — every one of those means "not authenticated".
+export async function fetchCookieSession(baseUrl = defaultBaseUrl()) {
+  try {
+    const res = await fetch(`${baseUrl}/sws/go/session`, {
+      method: 'GET',
+      credentials: 'include',
+    });
+    if (!res.ok) return null;
+    return await res.json();
+  } catch {
+    return null;
+  }
+}
+
+// ETP-4576 — revokes the session server-side (ADR-0001). Without this the
+// cookie outlives a "logout" and the session stays valid on the server, so
+// clearing client state alone is not a logout at all.
+//
+// DELETE is an unsafe method, so the backend requires the CSRF proof; callers
+// must pass the token the session held BEFORE they cleared it. Never throws:
+// the local logout has to proceed even if the network call fails, or a user who
+// asked to log out would stay stuck in the session. Returns whether the server
+// confirmed the revoke.
+export async function deleteCookieSession(csrfToken, baseUrl = defaultBaseUrl()) {
+  try {
+    const headers = {};
+    if (csrfToken) headers['X-Go-CSRF'] = csrfToken;
+    const res = await fetch(`${baseUrl}/sws/go/session`, {
+      method: 'DELETE',
+      credentials: 'include',
+      headers,
+    });
+    return res.ok;
+  } catch {
+    return false;
+  }
 }

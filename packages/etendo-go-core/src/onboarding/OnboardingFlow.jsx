@@ -1,9 +1,9 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { Loader2 } from 'lucide-react';
 import { useUI } from '@etendosoftware/app-shell-core/i18n';
-import { createLocalAuthStorage } from '@etendosoftware/app-shell-core/auth';
-import { fetchAccount, fetchEnvironments, loginEnvironment, fetchOnboardingDraft, saveOnboardingDraft, verifyEmail } from './api.js';
-import { buildEnvironmentSessionStorage, clearEnvironmentSession } from './state.js';
+import { purgeLegacyAuthStorage } from '@etendosoftware/app-shell-core/auth';
+import { fetchSession, fetchAccount, fetchEnvironments, loginEnvironment, fetchOnboardingDraft, saveOnboardingDraft, verifyEmail } from './api.js';
+import { rememberEnvironment } from './state.js';
 import { buildAppReturnToHref, getSafeReturnTo } from './oauthReturnTo.js';
 import { trackOnboarding } from './tracking.js';
 import { createOnboardingLogout } from './logout.js';
@@ -14,7 +14,9 @@ export function OnboardingFlow({ steps = [], config = {} }) {
   const ui = useUI();
   const [stepIndex, setStepIndex] = useState(-1); // -1 means verifying/loading initial state
   const [stepData, setStepData] = useState(() => config.defaultForm || {});
-  const [token, setToken] = useState(() => localStorage.getItem('sf_platform_token'));
+  // ETP-4576: the session lives in the __Host- cookie now; there is no more
+  // client-readable token, only the CSRF proof issued alongside it.
+  const [csrfToken, setCsrfToken] = useState(null);
   const [accountName, setAccountName] = useState(null);
   const [accountEmail, setAccountEmail] = useState(null);
   const [draftNotice, setDraftNotice] = useState(false);
@@ -23,22 +25,17 @@ export function OnboardingFlow({ steps = [], config = {} }) {
   const [loadingEnvs, setLoadingEnvs] = useState(false);
 
   const draftReadyRef = useRef(false);
-  const authStorageRef = useRef(null);
   const logoutContextRef = useRef(null);
   const onLogoutRef = useRef(null);
   const draftPersistenceRef = useRef(null);
   const draftContextRef = useRef(null);
   const apiBase = config.apiBase || '';
 
-  if (!authStorageRef.current) {
-    authStorageRef.current = createLocalAuthStorage();
-  }
-
   const currentStep = steps[stepIndex];
 
   draftContextRef.current = {
     apiBase,
-    token,
+    csrfToken,
     steps,
     stepId: currentStep?.id,
     form: stepData,
@@ -49,7 +46,7 @@ export function OnboardingFlow({ steps = [], config = {} }) {
       defaultForm: config.defaultForm || {},
       saveDraft: (draft) => {
         const context = draftContextRef.current;
-        return saveOnboardingDraft(fetch, context.apiBase, context.token, draft);
+        return saveOnboardingDraft(fetch, context.apiBase, context.csrfToken, draft);
       },
       onSaveFailure: (error) => {
         console.warn('Failed to save onboarding draft', error);
@@ -84,7 +81,7 @@ export function OnboardingFlow({ steps = [], config = {} }) {
 
   logoutContextRef.current = {
     resetState: () => {
-      setToken(null);
+      setCsrfToken(null);
       setAccountName(null);
       setEnvironments([]);
       setLoadingEnvs(false);
@@ -97,8 +94,11 @@ export function OnboardingFlow({ steps = [], config = {} }) {
     onLogoutRef.current = createOnboardingLogout({
       flushDraft: () => draftPersistenceRef.current.flush(draftContextRef.current),
       cleanupSession: () => {
-        authStorageRef.current.clear();
-        clearEnvironmentSession();
+        // ETP-4576 — the environment session is the __Host- cookie now (the
+        // server drops it on logout), so there is no client-written channel left
+        // to clear. What remains is purging keys a pre-cookie session may have
+        // left behind; app-shell-core owns that canonical list.
+        purgeLegacyAuthStorage();
       },
       resetState: () => logoutContextRef.current.resetState(),
       navigateToLogin: () => logoutContextRef.current.navigateToLogin(),
@@ -109,9 +109,9 @@ export function OnboardingFlow({ steps = [], config = {} }) {
   const onLogout = onLogoutRef.current;
 
   // Restore draft and set appropriate step index
-  const restoreOnboardingDraft = useCallback(async (authToken) => {
+  const restoreOnboardingDraft = useCallback(async () => {
     try {
-      const draft = await fetchOnboardingDraft(fetch, apiBase, authToken);
+      const draft = await fetchOnboardingDraft(fetch, apiBase);
       const restored = restorePersistedOnboardingDraft({
         draft,
         defaultForm: config.defaultForm,
@@ -135,24 +135,23 @@ export function OnboardingFlow({ steps = [], config = {} }) {
   }, [apiBase, goToStep, config.defaultForm, steps]);
 
   // Route by environments list: 0 -> profile (restore draft), 1+ -> auto-login and
-  // redirect. Signing in never stops on a chooser: an account that owns several
-  // environments returns to the one it last used, and changes environment from
-  // inside the app instead. `sf_last_environment` is deliberately outside
-  // ENVIRONMENT_SESSION_KEYS so logging out does not forget the choice; when it
-  // names an environment the account no longer owns, the first one stands in.
-  const routeByEnvironments = useCallback(async (authToken, knownAccount) => {
+  // redirect. Accounts with several environments return to the last one used;
+  // a stale preference falls back to the first environment.
+  const routeByEnvironments = useCallback(async (csrfToken, knownAccount) => {
     // ETP-4798 — the wall lives here because this is the one funnel every authenticated entry
     // passes through: the mount bootstrap, a fresh login (LoginStep calls this directly) and the
     // post-provisioning re-entry. Guarding only the mount path would let a plain login walk past
     // the wall and straight into onboarding.
     //
-    // `knownAccount` lets the mount path hand over the /me payload it already fetched instead of
-    // asking twice; callers that do not have it (login) pass nothing and it is fetched here. A
-    // failed read proceeds rather than walling — the backend's 403 is the real gate.
+    // `knownAccount` lets a caller that already holds the /me payload hand it over instead of
+    // asking twice; callers that do not have it pass nothing and it is fetched here. Under the
+    // cookie session (ETP-4576) the mount reads /session — for the CSRF proof — rather than /me,
+    // so it has nothing to hand over and this is the only /me read per load. A failed read
+    // proceeds rather than walling — the backend's 403 is the real gate.
     let account = knownAccount;
     if (account === undefined) {
       try {
-        account = await fetchAccount(fetch, apiBase, authToken);
+        account = await fetchAccount(fetch, apiBase);
         setAccountEmail(account?.email || null);
       } catch (err) {
         console.warn('Could not read the email verification state before entering', err);
@@ -163,13 +162,12 @@ export function OnboardingFlow({ steps = [], config = {} }) {
       goToStep('verify-email');
       return;
     }
-
     setLoadingEnvs(true);
     try {
-      const envs = await fetchEnvironments(fetch, apiBase, authToken);
+      const envs = await fetchEnvironments(fetch, apiBase);
       setEnvironments(envs);
       if (envs.length === 0) {
-        await restoreOnboardingDraft(authToken);
+        await restoreOnboardingDraft();
       } else {
         try {
           const lastUsedId = localStorage.getItem('sf_last_environment');
@@ -178,11 +176,9 @@ export function OnboardingFlow({ steps = [], config = {} }) {
             action: 'enter_environment',
             status: 'started',
           });
-          const data = await loginEnvironment(fetch, apiBase, authToken, env);
-          if (data.token) {
-            const storageValues = buildEnvironmentSessionStorage(env, data);
-            Object.entries(storageValues).forEach(([key, value]) => localStorage.setItem(key, value));
-
+          const data = await loginEnvironment(fetch, apiBase, csrfToken, env);
+          if (data.status === 'success') {
+            rememberEnvironment(env.clientId);
             // Clear all SW caches on login to guarantee fresh resources
             if ('caches' in window) {
               try {
@@ -258,17 +254,10 @@ export function OnboardingFlow({ steps = [], config = {} }) {
       localStorage.removeItem('sf_onboarding_initial_view');
     }
 
-    const currentToken = localStorage.getItem('sf_platform_token');
-    if (!currentToken) {
-      // Login is the default entry view; register is only shown when explicitly requested.
-      goToStep(initialView === 'register' ? 'register' : 'login');
-      return;
-    }
-
-    // ETP-4798: the confirmation MUST settle before /me is read. Both requests used to be fired
-    // concurrently, and whenever /me answered first it reported the still-pending state and
-    // overwrote the just-confirmed one — leaving the banner up and the Start button gated on a
-    // freshly confirmed address.
+    // ETP-4798: the confirmation MUST settle before the session is read. Both requests used to be
+    // fired concurrently, and whenever the session read answered first it reported the still-pending
+    // state and overwrote the just-confirmed one — leaving the banner up and the Start button gated
+    // on a freshly confirmed address.
     const confirmEmailFirst = verifyToken
       ? verifyEmail(fetch, apiBase, verifyToken).catch((err) => {
           // An expired or already-superseded link is not a dead end: the banner stays up and
@@ -277,28 +266,27 @@ export function OnboardingFlow({ steps = [], config = {} }) {
         })
       : null;
 
+    // ETP-4576: the session lives in the __Host- cookie now, so there is no
+    // client-visible token to check for presence — ask the server instead.
+    // A 401 covers both "never had a session" and "had one, now expired or
+    // invalid" alike (the cookie is httpOnly, so JS can't tell them apart),
+    // so both now share the same initialView-respecting fallback below.
+    //
+    // ETP-4798: every mount re-asks the server, which is what makes a plain browser refresh the
+    // way out of the wall — including when the mail was opened on another device. The decision
+    // itself lives in routeByEnvironments, which reads /me for it.
     const bootstrap = () => {
-      const promise = fetchAccount(fetch, apiBase, currentToken);
-      if (promise && typeof promise.then === 'function') {
-        promise
-          .then(data => {
-            setAccountName(data.name || data.email || null);
-            setAccountEmail(data.email || null);
-            // ETP-4798: every mount re-asks the server, which is what makes a plain browser refresh
-            // the way out of the wall — including when the mail was opened on another device. The
-            // decision itself lives in routeByEnvironments; the payload is handed over so /me is
-            // not read twice per load.
-            routeByEnvironments(currentToken, data);
-          })
-          .catch(() => {
-            authStorageRef.current.clear();
-            setToken(null);
-            goToStep('login');
-          });
-      } else {
-        // If mocked fetchAccount doesn't return a promise, default to the login view
-        goToStep('login');
-      }
+      fetchSession(fetch, apiBase)
+        .then(data => {
+          setCsrfToken(data.csrfToken ?? null);
+          setAccountName(data.account?.name || data.account?.email || null);
+          routeByEnvironments(data.csrfToken);
+        })
+        .catch(() => {
+          purgeLegacyAuthStorage();
+          // Login is the default entry view; register is only shown when explicitly requested.
+          goToStep(initialView === 'register' ? 'register' : 'login');
+        });
     };
 
     if (confirmEmailFirst) {
@@ -311,15 +299,15 @@ export function OnboardingFlow({ steps = [], config = {} }) {
   // Every persistable step follows the same debounce policy; no field names
   // are special-cased, so future steps opt in through their definition.
   useEffect(() => {
-    if (!token || !draftReadyRef.current) return undefined;
+    if (!csrfToken || !draftReadyRef.current) return undefined;
     draftPersistenceRef.current.schedule({ steps, stepId: currentStep?.id, form: stepData });
     return () => draftPersistenceRef.current.cancel();
-  }, [stepData, currentStep, token, steps]);
+  }, [stepData, currentStep, csrfToken, steps]);
 
   // Handle register success: set up new state, then either wall on the email confirmation or
   // start onboarding.
-  const handleRegisterSuccess = async (authToken, account) => {
-    setToken(authToken);
+  const handleRegisterSuccess = async (csrfToken, account) => {
+    setCsrfToken(csrfToken);
     setAccountName(account?.name || account?.email || null);
     setAccountEmail(account?.email || null);
     setStepData({
@@ -338,7 +326,7 @@ export function OnboardingFlow({ steps = [], config = {} }) {
     // the line if a confirmation really is owed.
     let freshAccount = null;
     try {
-      freshAccount = await fetchAccount(fetch, apiBase, authToken);
+      freshAccount = await fetchAccount(fetch, apiBase);
     } catch (err) {
       console.warn('Could not read the email verification state after registering', err);
     }
@@ -383,8 +371,13 @@ export function OnboardingFlow({ steps = [], config = {} }) {
       onBack={handleBack}
       onChange={handleStepDataChange}
       goToStep={goToStep}
-      token={token}
-      setToken={setToken}
+      // ETP-4576: `token`/`setToken` are kept as the prop names for step
+      // components (LoginStep/RegisterStep/EnvSelectStep/SetupProgressStep)
+      // so this cycle doesn't have to migrate all of them at once — they now
+      // carry the csrfToken value, not a bearer token. Renamed properly as
+      // each step component gets migrated in its own cycle.
+      token={csrfToken}
+      setToken={setCsrfToken}
       accountName={accountName}
       setAccountName={setAccountName}
       accountEmail={accountEmail}

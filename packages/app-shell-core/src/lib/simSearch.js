@@ -16,6 +16,7 @@
  * matching logic itself.
  */
 
+import { readCredentialHeaders } from '../auth/sessionCredentials.js';
 import { getStoredLocale } from '../i18n/useLocaleState.js';
 
 /**
@@ -89,8 +90,15 @@ export function parseSimSearchEnvelope(envelope, itemCount) {
 /**
  * Run a similarity search for the given items against a single Etendo entity.
  *
+ * ETP-4576 — the credential comes from the active session scheme rather than a
+ * `token` argument, and the old `!token` early return is gone. That guard read
+ * as defensive but was a silent cancel: under a cookie session no caller holds
+ * a token, so every similarity search returned all-nulls and the callers that
+ * classify those results reported "no match found" for input that resolves
+ * perfectly well. Callers may still pass `token` — it is ignored.
+ *
  * @param {{
- *   token: string,
+ *   token?: string,
  *   entityName: 'BusinessPartner' | 'Product' | 'Organization' | 'Currency' | 'UOM' | 'ProductCategory' | string,
  *   items: string[],
  *   minSimPercent?: number,
@@ -98,8 +106,8 @@ export function parseSimSearchEnvelope(envelope, itemCount) {
  * }} params
  * @returns {Promise<ReturnType<typeof parseSimSearchEnvelope>>}
  */
-export async function simSearch({ token, entityName, items, minSimPercent = 30, qtyResults = 1 }) {
-  if (!token || !entityName || !Array.isArray(items) || items.length === 0) {
+export async function simSearch({ entityName, items, minSimPercent = 30, qtyResults = 1 }) {
+  if (!entityName || !Array.isArray(items) || items.length === 0) {
     return Array(items?.length || 0).fill(null);
   }
   const base = detectEtendoBase();
@@ -121,7 +129,7 @@ export async function simSearch({ token, entityName, items, minSimPercent = 30, 
       // user whose AD default is en_US would silently get no translation at all. Every
       // other NEO call already sends this via `buildHeaders`; this client built its own
       // headers and was the one that did not.
-      headers: { Authorization: `Bearer ${token}`, 'Accept-Language': getStoredLocale() },
+      headers: { ...readCredentialHeaders(), 'Accept-Language': getStoredLocale() },
     });
     if (!res.ok) return Array(items.length).fill(null);
     const envelope = await res.json().catch(() => null);

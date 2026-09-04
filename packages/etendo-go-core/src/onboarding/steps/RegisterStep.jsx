@@ -12,6 +12,7 @@ import { AuthShell } from '../components/AuthShell.jsx';
 import { AuthField } from '../components/AuthField.jsx';
 import { AuthSsoOptions } from '../components/AuthSsoOptions.jsx';
 import { OnboardingLanguageSelect } from '../components/OnboardingLanguageSelect.jsx';
+import { persistAuthMethod } from '../postAuth.js';
 
 const AUTH_FEATURE_KEYS = ['onboardingAuthFeatureNoCard', 'onboardingAuthFeatureTrial', 'onboardingAuthFeatureInstantAccess'];
 
@@ -43,16 +44,15 @@ export function RegisterStep({ config, stepData, onNext, onBack, goToStep, setTo
     special: 'onboardingPasswordReqSpecial',
   };
 
-  const handleAuthSuccess = useCallback((token, account, { route = true, authMethod = 'password' } = {}) => {
-    localStorage.setItem('sf_platform_token', token);
-    localStorage.setItem('sf_platform_auth_method', authMethod);
-    if (setToken) setToken(token);
+  const handleAuthSuccess = useCallback((csrfToken, account, { route = true, authMethod = 'password' } = {}) => {
+    persistAuthMethod(authMethod);
+    if (setToken) setToken(csrfToken);
     if (setAccountName) setAccountName(account?.name || account?.email || null);
     setShowRegisterPassword(false);
     setSsoError(null);
     setSsoLoadingProvider(null);
     if (route && handleRegisterSuccess) {
-      handleRegisterSuccess(token, account);
+      handleRegisterSuccess(csrfToken, account);
     }
   }, [setToken, setAccountName, handleRegisterSuccess]);
 
@@ -67,13 +67,16 @@ export function RegisterStep({ config, stepData, onNext, onBack, goToStep, setTo
     setSsoLoadingProvider(provider);
     try {
       const data = await loginWithSsoProvider(fetch, apiBase, provider, payload);
-      if (data.token) {
+      // Either credential counts, same as the password-registration path below:
+      // gating on csrfToken alone made a bearer SSO registration report failure.
+      const ssoCredential = data.csrfToken ?? data.token;
+      if (ssoCredential) {
         trackOnboarding(config, 'onboarding_auth_succeeded', {
           action: 'sso',
           provider,
           status: 'success',
         });
-        handleAuthSuccess(data.token, data.account, { authMethod: 'sso' });
+        handleAuthSuccess(ssoCredential, data.account, { authMethod: 'sso' });
       } else {
         trackOnboarding(config, 'onboarding_auth_failed', {
           action: 'sso',
@@ -142,13 +145,30 @@ export function RegisterStep({ config, stepData, onNext, onBack, goToStep, setTo
           ...registerForm,
           language: locale || config.defaultForm?.language || '',
         });
-      if (data.token) {
+      // ETP-4576 — a credential of EITHER kind marks an authenticated response.
+      //
+      // `/sws/go/session/register` sets the `__Host-` cookie and answers with
+      // `csrfToken`, which is the scheme this task moves the product to. But a
+      // host-supplied `registerHandler` may front an endpoint that never joined
+      // the session family and still answers with a bearer `token` — Etendo GO's
+      // `/company-invitations/register-and-accept` (ETP-4894) is exactly that,
+      // and gating on `csrfToken` alone made its success path unreachable: the
+      // account WAS created and the invitation accepted server-side, while the
+      // UI reported a registration failure.
+      //
+      // Accepting either is the dual-scheme promise applied here. The credential
+      // is passed through unchanged and the caller owns its interpretation — the
+      // two kinds are NOT interchangeable downstream (a bearer token belongs in
+      // `Authorization`, a proof in `X-Go-CSRF`), so nothing here relabels one
+      // as the other.
+      const credential = data.csrfToken ?? data.token;
+      if (credential) {
         trackOnboarding(config, 'onboarding_auth_succeeded', {
           action: 'register',
           status: 'success',
         });
-        handleAuthSuccess(data.token, data.account, { route: !onRegistered });
-        if (onRegistered) await onRegistered(data.token, data.account);
+        handleAuthSuccess(credential, data.account, { route: !onRegistered });
+        if (onRegistered) await onRegistered(credential, data.account);
       } else {
         trackOnboarding(config, 'onboarding_auth_failed', {
           action: 'register',

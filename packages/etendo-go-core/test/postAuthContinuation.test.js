@@ -1,6 +1,10 @@
 import { describe, it } from 'node:test';
 import assert from 'node:assert/strict';
-import { completeAuthentication } from '../src/onboarding/postAuth.js';
+import {
+  completeAuthentication,
+  persistAuthMethod,
+  AUTH_METHOD_STORAGE_KEY,
+} from '../src/onboarding/postAuth.js';
 
 const TOKEN = 'session-token';
 const ACCOUNT = { name: 'Ada Lovelace', email: 'ada@example.com' };
@@ -134,5 +138,48 @@ describe('Post-authentication continuation (ETP-4958)', () => {
         assert.equal(withCaller.calls[0].options.route, false);
       });
     }
+  });
+});
+
+/**
+ * The auth method is the ONE thing authentication still puts in localStorage.
+ * The credential does not go there; this key is metadata the host reads to hide
+ * change-password from SSO users, so losing the write is a silent UI bug rather
+ * than an error. Asserted behaviourally, since the write moved out of the steps
+ * and a source-reading check on them can no longer see it.
+ */
+describe('persistAuthMethod (ETP-4576)', () => {
+  const realLocalStorage = globalThis.localStorage;
+
+  function withStubbedStorage(run) {
+    const store = new Map();
+    globalThis.localStorage = {
+      setItem: (k, v) => store.set(k, String(v)),
+      getItem: (k) => (store.has(k) ? store.get(k) : null),
+    };
+    try {
+      return run(store);
+    } finally {
+      if (realLocalStorage === undefined) delete globalThis.localStorage;
+      else globalThis.localStorage = realLocalStorage;
+    }
+  }
+
+  it('writes the method under the key the host reads', () => {
+    withStubbedStorage((store) => {
+      persistAuthMethod('sso');
+      assert.equal(store.get(AUTH_METHOD_STORAGE_KEY), 'sso');
+    });
+  });
+
+  it('records a password login as such, so change-password stays offered', () => {
+    withStubbedStorage((store) => {
+      persistAuthMethod('password');
+      assert.notEqual(store.get(AUTH_METHOD_STORAGE_KEY), 'sso');
+    });
+  });
+
+  it('exposes the exact key UserAvatarButton reads', () => {
+    assert.equal(AUTH_METHOD_STORAGE_KEY, 'sf_platform_auth_method');
   });
 });

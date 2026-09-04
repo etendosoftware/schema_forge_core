@@ -4,6 +4,7 @@ import {
   createApiFetch, apiFetch, resolveApiUrl, registerApiSession, resetApiSessionForTests,
   entityFromPath,
 } from '../api.js';
+import { CREDENTIAL_MODES, setSessionCredentials } from '../sessionCredentials.js';
 import {
   rememberRecordVersion, getRecordVersion, resetRecordVersionsForTests,
 } from '../../lib/recordVersions.js';
@@ -17,6 +18,11 @@ import { fileURLToPath } from 'node:url';
 // added since is covered by real assertions further down instead of by regex.
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const src = readFileSync(join(__dirname, '..', 'api.js'), 'utf8');
+
+// Negative assertions run against a comment-stripped copy: api.js documents its own
+// guarantee ("no Authorization header", ADR-0001) in prose, and a raw source read
+// cannot tell code from comment, so that sentence alone would trip them.
+const codeOnly = src.replace(/^\s*\/\/.*$/gm, '');
 
 describe('authHeaders', () => {
   // ETP-5022: the canonical READ-request header builder. Selectors that hand-rolled
@@ -39,11 +45,20 @@ describe('authHeaders', () => {
     assert.doesNotMatch(fn, /Content-Type/);
   });
 
-  it('sets Authorization with a Bearer prefix only when a token is given', () => {
+  // ETP-4576 — this used to assert `if (token)` and a Bearer literal. The credential
+  // now comes from the active scheme, so the function takes no token at all: under
+  // `bearer` readCredentialHeaders puts the Authorization header back, under `cookie`
+  // it sends none and the `__Host-` session travels on its own.
+  it('takes its credential from the active scheme, never a Bearer literal', () => {
     const body = src.slice(src.indexOf('export function authHeaders'));
     const fn = body.slice(0, body.indexOf('\n}'));
-    assert.match(fn, /if \(token\)/);
-    assert.match(fn, /Authorization.*Bearer/s);
+    assert.match(fn, /readCredentialHeaders\(\)/);
+    const fnCode = fn.replace(/^\s*\/\/.*$/gm, '');
+    assert.doesNotMatch(fnCode, /Bearer/);
+  });
+
+  it('is exported as a zero-argument function (no token parameter)', () => {
+    assert.match(src, /export function authHeaders\s*\(\s*\)/);
   });
 });
 
@@ -52,33 +67,147 @@ describe('buildHeaders', () => {
     assert.match(src, /export function buildHeaders/);
   });
 
-  it('sets Authorization header with Bearer prefix when token is provided', () => {
-    assert.match(src, /Authorization.*Bearer.*token/s);
-  });
-
-  it('sets Content-Type to application/json', () => {
-    assert.match(src, /Content-Type.*application\/json/);
+  // Content-Type is no longer asserted here: it comes from jsonHeaders, which
+  // owns that contract and is covered by sessionCredentials.test.js. Asserting
+  // the delegation instead is what keeps the scheme switchable — a buildHeaders
+  // that hardcodes its own headers silently ignores the active scheme, which is
+  // how the bearer fallback broke before the preference existed.
+  it('delegates the credential decision to jsonHeaders rather than building one', () => {
+    assert.match(src, /import \{[^}]*jsonHeaders[^}]*\} from '\.\/sessionCredentials\.js'/);
+    assert.match(src, /export function buildHeaders\s*\(\s*\)\s*\{\s*return \{\s*\.\.\.jsonHeaders\(\)/);
   });
 
   it('sets Accept-Language header using getStoredLocale for backend i18n', () => {
     assert.match(src, /Accept-Language/);
     assert.match(src, /getStoredLocale/);
   });
-});
 
-describe('isTokenExpired', () => {
-  it('is exported as a named function', () => {
-    assert.match(src, /export function isTokenExpired/);
+  it('never references an Authorization header anywhere in the module', () => {
+    assert.doesNotMatch(codeOnly, /Authorization/);
   });
 
-  it('returns truthy for falsy token values', () => {
-    assert.match(src, /!token/);
+  it('never references a Bearer-token scheme anywhere in the module', () => {
+    assert.doesNotMatch(src, /Bearer/);
   });
 });
 
-describe('createApiFetch — FormData handling', () => {
-  it('deletes Content-Type when body is FormData so the browser sets the multipart boundary', () => {
+// The write-path pair of buildHeaders. It exists so no caller has to remember to
+// append the proof by hand: every site that did (13 of them across the host)
+// silently omitted it the moment the variable it read went out of scope.
+describe('buildWriteHeaders — the write-path pair of buildHeaders', () => {
+  it('is exported as a zero-argument function', () => {
+    assert.match(src, /export function buildWriteHeaders\s*\(\s*\)/);
+  });
+
+  it('delegates to writeHeaders so unsafe methods carry the active scheme proof', () => {
+    assert.match(src, /import \{[^}]*writeHeaders[^}]*\} from '\.\/sessionCredentials\.js'/);
+    assert.match(src, /export function buildWriteHeaders\s*\(\s*\)\s*\{\s*return \{\s*\.\.\.writeHeaders\(\)/);
+  });
+
+  it('carries the locale too, so write responses are translated like reads', () => {
+    assert.match(
+      src,
+      /export function buildWriteHeaders\s*\(\s*\)\s*\{\s*return \{[^}]*'Accept-Language': getStoredLocale\(\)/,
+    );
+  });
+});
+
+describe('isTokenExpired — removed entirely', () => {
+  it('is no longer defined or exported anywhere in the module', () => {
+    assert.doesNotMatch(src, /isTokenExpired/);
+  });
+});
+
+describe('createApiFetch — CSRF header on unsafe methods, session lives in an httpOnly cookie', () => {
+  it('is exported with the (baseUrl, getCsrfToken, onUnauthorized) signature', () => {
+    assert.match(
+      src,
+      /export function createApiFetch\s*\(\s*baseUrl\s*,\s*getCsrfToken\s*,\s*onUnauthorized\s*\)/
+    );
+  });
+
+  it('normalizes options.method case-insensitively before deciding safe vs unsafe', () => {
+    assert.match(src, /options\.method[\s\S]{0,40}\.toUpperCase\(\)|\.toUpperCase\(\)[\s\S]{0,40}options\.method/);
+  });
+
+  it('defines an unsafe-method list covering POST, PUT, PATCH and DELETE', () => {
+    assert.match(
+      src,
+      /(['"]POST['"])[\s\S]{0,120}(['"]PUT['"])[\s\S]{0,120}(['"]PATCH['"])[\s\S]{0,120}(['"]DELETE['"])/
+    );
+  });
+
+  it('sets the X-Go-CSRF header (exact casing) somewhere in apiFetch', () => {
+    assert.match(src, /X-Go-CSRF/);
+  });
+
+  it('guards the X-Go-CSRF assignment behind a truthy check on getCsrfToken()', () => {
+    // The header assignment (bracket or object-literal form) must be reachable
+    // only through a conditional that both calls getCsrfToken() and checks
+    // truthiness — i.e. it must NOT be an unconditional assignment.
+    assert.match(
+      src,
+      /if\s*\([^)]*\)[\s\S]{0,300}getCsrfToken\(\)[\s\S]{0,200}X-Go-CSRF|getCsrfToken\(\)[\s\S]{0,200}if\s*\([^)]*\)[\s\S]{0,200}X-Go-CSRF/
+    );
+  });
+
+  it('never calls getCsrfToken() unconditionally at the top of apiFetch (only inside the unsafe-method branch)', () => {
+    // A naive "always call it" implementation would put `getCsrfToken()` right
+    // next to `const headers = ...buildHeaders()`, unconditioned by method.
+    // Guard against that regression pattern.
+    assert.doesNotMatch(
+      src,
+      /const\s+headers\s*=\s*\{\s*\.\.\.buildHeaders\(\)[^}]*\}\s*;\s*[\s\S]{0,80}headers\[.X-Go-CSRF.\]\s*=\s*getCsrfToken\(\)\s*;/
+    );
+  });
+
+  it('keeps credentials: "include" so the __Host- session cookie still travels with every request', () => {
+    assert.match(src, /credentials:\s*['"]include['"]/);
+  });
+
+  it('keeps deleting Content-Type when body is FormData so the browser sets the multipart boundary', () => {
     assert.match(src, /instanceof FormData[\s\S]*?delete headers\[.Content-Type.\]/);
+  });
+
+  it('keeps calling onUnauthorized() and throwing on a 401 response (no auto-refresh here)', () => {
+    assert.match(src, /res\.status\s*===\s*401/);
+    assert.match(src, /onUnauthorized\(\)/);
+    assert.match(src, /throw new Error\(['"]Unauthorized['"]\)/);
+  });
+});
+
+// ETP-4576 cycle 4a — the GET /sws/go/session fetcher moves INTO the platform.
+// Three consumers already needed it (the onboarding api, the schema_forge host,
+// and tools/etendo-go-ar which passed nothing at all and was therefore broken),
+// so api.js owns it and AuthProvider defaults `restoreSession` to it.
+// Behavioral coverage — request shape, fail-closed paths — lives in the sibling
+// api.vitest.js, which can actually import this module; these are the structural
+// invariants, asserted in the suite `npm test` runs.
+describe('fetchCookieSession — the platform session fetcher (ETP-4576)', () => {
+  it('is exported as an async function taking an optional baseUrl', () => {
+    assert.match(src, /export async function fetchCookieSession\s*\(\s*baseUrl\s*=/);
+  });
+
+  // ETP-5022 replaced the module-level constant with a lazy resolver: reading
+  // `window` at import time made this module unloadable under plain `node --test`.
+  it('defaults its baseUrl to the lazily resolved base', () => {
+    assert.match(src, /export async function fetchCookieSession\s*\(\s*baseUrl\s*=\s*defaultBaseUrl\(\)\s*\)/);
+  });
+
+  it('requests the /sws/go/session endpoint', () => {
+    assert.match(src, /\/sws\/go\/session/);
+  });
+
+  it('sends credentials so the __Host- session cookie travels (already asserted module-wide, pinned here for the fetcher)', () => {
+    assert.match(src, /credentials:\s*['"]include['"]/);
+  });
+
+  it('fails closed by returning null on a non-ok response instead of throwing', () => {
+    assert.match(src, /if\s*\(\s*!res\.ok\s*\)\s*return null;/);
+  });
+
+  it('swallows fetch/parse failures with a catch that also yields null', () => {
+    assert.match(src, /catch[\s\S]{0,40}return null;/);
   });
 });
 
@@ -141,7 +270,8 @@ describe('createApiFetch', () => {
   it('sends the canonical headers, so Accept-Language is never missing', async () => {
     const f = stubFetch();
     try {
-      await createApiFetch('', () => 'tok', () => {})('/x');
+      setSessionCredentials({ mode: CREDENTIAL_MODES.bearer, token: 'tok' });
+      await createApiFetch('', () => null, () => {})('/x');
       assert.equal(f.calls[0].options.headers['Authorization'], 'Bearer tok');
       assert.ok(f.calls[0].options.headers['Accept-Language']);
     } finally { f.restore(); }
@@ -161,7 +291,8 @@ describe('createApiFetch', () => {
   it('lets the caller add headers without losing the canonical ones', async () => {
     const f = stubFetch();
     try {
-      await createApiFetch('', () => 'tok', () => {})('/x', { headers: { 'X-Extra': '1' } });
+      setSessionCredentials({ mode: CREDENTIAL_MODES.bearer, token: 'tok' });
+      await createApiFetch('', () => null, () => {})('/x', { headers: { 'X-Extra': '1' } });
       assert.equal(f.calls[0].options.headers['X-Extra'], '1');
       assert.equal(f.calls[0].options.headers['Authorization'], 'Bearer tok');
     } finally { f.restore(); }
@@ -485,6 +616,51 @@ describe('apiFetch optimistic-locking token (ETP-5073)', () => {
     globalThis.fetch = original;
   });
 });
+
+// ETP-4576 — the bearer must never travel as the CSRF proof.
+//
+// createApiFetch puts whatever its second argument returns into `X-Go-CSRF` on unsafe
+// methods. Both callers used to hand it a TOKEN there — `session.getToken` in apiFetch and
+// `getAmbientToken` in useApiFetch — which shipped the credential in the proof's header
+// under the bearer scheme, and under the cookie one put a value that is not the proof where
+// the backend expects it, so every unsafe request from outside a provider came back 403.
+// Source-reading rather than behavioural: the wiring is what regressed, and it regressed
+// silently because nothing on the wire complained under bearer.
+describe('the CSRF proof does not depend on the scheme the client believes it is in (ETP-4576)', () => {
+  // Regression guard. Gating the header on `mode !== bearer` reads tidier and shipped
+  // once: it took down every confirm flow in the integration suite with a 403, because
+  // the browser attaches the same-origin session cookie regardless of what the client
+  // thinks, and the backend validates CSRF as soon as it sees that cookie on an unsafe
+  // method. Reads kept working, which is what made it look like anything but this.
+  it('sends X-Go-CSRF on an unsafe request even while the active scheme is bearer', async () => {
+    const f = stubFetch();
+    try {
+      setSessionCredentials({ mode: CREDENTIAL_MODES.bearer, token: 'tok' });
+      await createApiFetch('', () => 'csrf-abc', () => {})('/x', { method: 'POST', body: '{}' });
+      assert.equal(f.calls[0].options.headers['X-Go-CSRF'], 'csrf-abc');
+    } finally { f.restore(); }
+  });
+
+  it('still sends nothing on a safe request, whatever the scheme', async () => {
+    const f = stubFetch();
+    try {
+      setSessionCredentials({ mode: CREDENTIAL_MODES.bearer, token: 'tok' });
+      await createApiFetch('', () => 'csrf-abc', () => {})('/x');
+      assert.equal(f.calls[0].options.headers['X-Go-CSRF'], undefined);
+    } finally { f.restore(); }
+  });
+});
+
+describe('the CSRF slot never receives a credential (ETP-4576)', () => {
+  const src = readFileSync(new URL('../api.js', import.meta.url), 'utf8');
+  const codeOnly = src.replace(/\/\*[\s\S]*?\*\//g, '').replace(/^\s*\/\/.*$/gm, '');
+
+  it('apiFetch reads the proof off the active scheme, not off the session token', () => {
+    const call = codeOnly.slice(codeOnly.indexOf('return createApiFetch('));
+    assert.match(call, /getSessionCsrfToken/);
+    assert.doesNotMatch(call.slice(0, call.indexOf(')(path')), /getToken/);
+      });
+    });
 
 // ── ETP-5112 ────────────────────────────────────────────────────────────────
 //

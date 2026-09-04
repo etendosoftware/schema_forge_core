@@ -73,17 +73,22 @@ describe('verifyEmail (ETP-4798)', () => {
 });
 
 describe('resendVerifyEmail (ETP-4798)', () => {
-  it('authenticates with the session token and passes the language', async () => {
+  it('authenticates with the session cookie and its CSRF proof, and passes the language', async () => {
     let seen = null;
     const fetchImpl = async (url, init) => {
       seen = { url, init };
       return jsonResponse({ status: 'success' });
     };
 
-    await resendVerifyEmail(fetchImpl, BASE, 'session-token', 'es_ES');
+    await resendVerifyEmail(fetchImpl, BASE, 'csrf-proof', 'es_ES');
 
     assert.equal(seen.url, `${BASE}/sws/go/verify-email/resend?language=es_ES`);
-    assert.equal(seen.init.headers.Authorization, 'Bearer session-token');
+    // ETP-4576: this asserted `Authorization: Bearer …` when it arrived from the epic. The
+    // credential is the __Host- session cookie now, so the only thing an unsafe request carries
+    // by hand is the CSRF proof — and the cookie only rides along with credentials: 'include'.
+    assert.equal(seen.init.credentials, 'include');
+    assert.equal(seen.init.headers['X-Go-CSRF'], 'csrf-proof');
+    assert.equal(seen.init.headers.Authorization, undefined);
   });
 
   it('omits the language query when none is selected', async () => {
@@ -93,7 +98,7 @@ describe('resendVerifyEmail (ETP-4798)', () => {
       return jsonResponse({ status: 'success' });
     };
 
-    await resendVerifyEmail(fetchImpl, BASE, 'session-token', '');
+    await resendVerifyEmail(fetchImpl, BASE, 'csrf-proof', '');
 
     assert.equal(seen.url, `${BASE}/sws/go/verify-email/resend`);
   });
@@ -182,10 +187,17 @@ describe('OnboardingFlow consumes the confirmation link (ETP-4798)', () => {
       onboardingFlow.indexOf('// Every persistable step'),
     );
     assert.match(block, /confirmEmailFirst\.then\(bootstrap\)/);
-    const fetchAt = block.indexOf('fetchAccount(fetch, apiBase, currentToken)');
+    // ETP-4576: the mount reads the session (for the CSRF proof) rather than /me directly, and
+    // the account state is read downstream of it in routeByEnvironments. Both must still sit
+    // inside bootstrap(), which is what the confirmation gates.
     const bootstrapAt = block.indexOf('const bootstrap = ()');
-    assert.ok(bootstrapAt > -1 && fetchAt > bootstrapAt,
-      '/me must be read inside bootstrap(), after the confirmation settles');
+    const sessionAt = block.indexOf('fetchSession(fetch, apiBase)');
+    const routeAt = block.indexOf('routeByEnvironments(data.csrfToken)');
+    assert.ok(bootstrapAt > -1, 'the bootstrap must be a named function the confirmation can gate');
+    assert.ok(sessionAt > bootstrapAt,
+      'the session must be read inside bootstrap(), after the confirmation settles');
+    assert.ok(routeAt > sessionAt,
+      'the account state must be read downstream of the session read, still inside bootstrap()');
   });
 });
 
@@ -285,8 +297,18 @@ describe('the confirm-your-email wall (ETP-4798)', () => {
     assert.ok(guardAt < envsAt, 'the wall check must precede loading environments');
   });
 
-  it('reuses the /me payload the mount path already fetched', () => {
-    assert.match(onboardingFlow, /routeByEnvironments\(currentToken, data\)/);
+  it('reads /me once per entry', () => {
+    // The epic's mount fetched /me itself and handed the payload to routeByEnvironments so it
+    // would not be read twice. ETP-4576 satisfies the same invariant from the other side: the
+    // mount reads /session — that is where the CSRF proof comes from — and leaves /me to the
+    // funnel, so there is nothing to hand over and nothing read twice. The handover parameter
+    // stays for callers that do already hold the payload.
+    const mount = onboardingFlow.slice(
+      onboardingFlow.indexOf("const verifyToken = search.get('verifyToken')"),
+      onboardingFlow.indexOf('// Every persistable step'),
+    );
+    assert.equal(mount.indexOf('fetchAccount('), -1, 'the mount path must not read /me itself');
+    assert.match(onboardingFlow, /const routeByEnvironments = useCallback\(async \(csrfToken, knownAccount\)/);
   });
 
   it('decides the post-registration destination on server state, not optimistically', () => {
@@ -294,7 +316,7 @@ describe('the confirm-your-email wall (ETP-4798)', () => {
       onboardingFlow.indexOf('const handleRegisterSuccess = async'),
       onboardingFlow.indexOf('const handleStepDataChange'),
     );
-    assert.match(block, /await fetchAccount\(fetch, apiBase, authToken\)/);
+    assert.match(block, /await fetchAccount\(fetch, apiBase\)/);
     assert.match(block, /owesEmailConfirmation\(freshAccount\) \? 'verify-email' : 'profile'/);
   });
 

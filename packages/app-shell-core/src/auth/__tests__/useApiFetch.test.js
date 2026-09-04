@@ -15,14 +15,19 @@ describe('useApiFetch', () => {
   it('centralizes token access through the session instead of props', () => {
     // `useAuthOptional` rather than `useAuth` since ETP-5022: the hook must not throw in a
     // tree with no AuthProvider, because it replaced a raw `fetch` in ~105 components whose
-    // tests render them bare. It still reads the token from the session, never from a prop.
+    // tests render them bare. It still reads the credential from the session, never from
+    // a prop — and since ETP-4576 what it reads is the csrfToken, the only thing the
+    // client holds once the session itself lives in the `__Host-` cookie.
     assert.match(src, /useAuthOptional\(\)/);
-    assert.match(src, /auth\?\.token/);
+    assert.match(src, /auth\?\.csrfToken/);
     assert.match(src, /createApiFetch/);
   });
 
   it('falls back to the ambient session when there is no provider', () => {
-    assert.match(src, /getAmbientToken/);
+    // ETP-4576 — the fallback for the CSRF slot is the active scheme's proof, not the
+    // ambient bearer: that slot ends up in `X-Go-CSRF`, so handing it a credential both
+    // leaked the bearer and put a non-proof where the proof belongs.
+    assert.match(src, /getSessionCsrfToken/);
     assert.match(src, /notifyAmbientUnauthorized/);
   });
 
@@ -31,5 +36,41 @@ describe('useApiFetch', () => {
     // and contains arrow functions — so this cannot be a `[^)]*` scan.
     const call = src.slice(src.indexOf('createApiFetch('));
     assert.match(call, /logout \|\| notifyAmbientUnauthorized/);
+  });
+});
+
+// ETP-4576 cycle 3 — useApiFetch must feed createApiFetch's `getCsrfToken`
+// slot from the in-memory csrfToken (AuthContext), not the legacy bearer
+// token. The bearer token is gone from this hook's job entirely.
+describe('useApiFetch — csrfToken wiring (ETP-4576)', () => {
+  // ETP-5022 moved this hook onto the optional context so a module used outside a
+  // provider still gets an authenticated request. What ETP-4576 asserts is unchanged:
+  // the value handed to createApiFetch is the csrfToken, never a client-held credential.
+  it('reads csrfToken (not token) off the auth context', () => {
+    assert.match(src, /csrfToken\s*=\s*auth\?\.csrfToken/);
+  });
+
+  it("passes csrfToken as createApiFetch's second argument", () => {
+    assert.match(src, /createApiFetch\(\s*\n?\s*baseUrl,\s*\n?\s*hasSession \? \(\) => csrfToken/);
+  });
+
+  // Regression guard. `() => csrfToken` alone shipped once: a provider populates that value
+  // from the session restore, so a host that renders before the restore settles (or never
+  // populates it) handed back null and the unsafe request went out with no proof at all.
+  // The write came back 403 while every read still succeeded, which is what made it read as
+  // anything but a credential bug — it took down three confirm flows in the integration suite.
+  it('falls back to the published store when the context holds no csrfToken', () => {
+    assert.match(src, /hasSession \? \(\) => csrfToken \?\? getSessionCsrfToken\(\)/);
+  });
+
+  it('never references a bare "token" as the value read from useAuth() for CSRF purposes', () => {
+    // \btoken\b (case-insensitive) does NOT match inside `csrfToken` or
+    // `getCsrfToken` — camelCase boundaries are plain word characters, so
+    // there is no \b between "csrf"/"get" and "Token". Any surviving match
+    // means the old bearer-token wiring (`token`, `getToken`) is still here.
+    // Comments are stripped first: prose explaining WHY the bearer must not be wired here
+    // necessarily names it, and a comment must never be what makes a test fail.
+    const codeOnly = src.replace(/\/\*[\s\S]*?\*\//g, '').replace(/^\s*\/\/.*$/gm, '');
+    assert.doesNotMatch(codeOnly, /\btoken\b/i);
   });
 });
