@@ -49,6 +49,7 @@ export function WebMcpMcpTools({ enabled = false, endpoint, accessToken, fetcher
       definition={definition}
       endpoint={endpoint}
       accessToken={accessToken}
-      fetcher={fetcher} />
+      fetcher={fetcher}
+      data-testid="RegisteredMcpTool__1bbbe5" />
   ));
 }
