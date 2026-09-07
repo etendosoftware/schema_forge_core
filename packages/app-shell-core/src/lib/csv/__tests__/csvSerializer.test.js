@@ -1,7 +1,7 @@
 import { describe, it } from 'node:test';
 import assert from 'node:assert/strict';
 import { csvField, neutralizeSpreadsheetCell } from '../csvSerializer.js';
-import { CSV_NEUTRALIZATION_FIXTURES, SPREADSHEET_FORMULA_TRIGGERS } from '../csvNeutralizationFixtures.js';
+import { CSV_NEUTRALIZATION_FIXTURES } from '../csvNeutralizationFixtures.js';
 
 /** Applies RFC 4180 quoting the way csvField does, so a fixture's expected cell can be
  * turned into the expected FIELD without restating the quoting rule per case. */
@@ -16,15 +16,9 @@ describe('neutralizeSpreadsheetCell — the canonical fixture contract (ADR-0004
     });
   }
 
-  it('covers every declared trigger with at least one fixture', () => {
-    const uncovered = SPREADSHEET_FORMULA_TRIGGERS.filter(
-      (trigger) => !CSV_NEUTRALIZATION_FIXTURES.some(
-        ({ input, expected }) => typeof input === 'string' && input.includes(trigger) && expected.startsWith("'"),
-      ),
-    );
-    assert.deepEqual(uncovered, [], 'a trigger was added without a fixture proving it is neutralized');
-  });
-
+  // The table's own invariants — that every trigger has a fixture, that no row encodes an
+  // impossible outcome — are asserted in csvNeutralizationFixtures.test.js. This file only
+  // checks the IMPLEMENTATION against the table.
   it('is idempotent — neutralizing twice adds only one apostrophe', () => {
     assert.equal(neutralizeSpreadsheetCell(neutralizeSpreadsheetCell('=1+1')), "'=1+1");
   });
