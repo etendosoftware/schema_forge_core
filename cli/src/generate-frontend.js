@@ -2016,8 +2016,17 @@ export function buildSecondaryTabPropEntry(t) {
   // resolveAddLineLabel() in the functional repo's detailViewHelpers.jsx.
   const labelKeyPart = t.labelKey ? `, labelKey: '${t.labelKey}'` : '';
   const addLineLabelKeyPart = t.addLineLabelKey ? `, addLineLabelKey: '${t.addLineLabelKey}'` : '';
-  // ETP-5116 — mirrors the field-level visibleWhenCapability gate (ETP-4520) so a
-  // secondaryTab can be hidden per-role (e.g. Accounting tabs behind showAccountingFields).
+  // ETP-5116 — mirrors the field-level visibleWhenCapability gate (ETP-4520, see the
+  // "Capability-gated field visibility" section above in this repo's own
+  // docs/decisions-reference.md) so a WHOLE secondaryTab can be hidden per-role (e.g. an
+  // Accounting tab behind showAccountingFields) instead of just one field. Same opt-in,
+  // fail-closed capability-resolution mechanism, applied at tab granularity rather than
+  // field granularity — no separate runtime plumbing. `window.secondaryTabs` itself isn't
+  // documented in this repo's decisions-reference.md (a pre-existing gap, not introduced
+  // by this ticket); the full reference for this property — value shape, composition with
+  // the field-level gate, real examples — lives in the functional repo's
+  // (etendo_schema_forge) `docs/decisions-reference.md`, "Secondary Tabs
+  // (window.secondaryTabs)" section.
   const visibleWhenCapabilityPart = t.visibleWhenCapability
     ? `, visibleWhenCapability: '${String(t.visibleWhenCapability).replace(/'/g, "\\'")}'`
     : '';
