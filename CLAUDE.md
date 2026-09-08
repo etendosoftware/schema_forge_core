@@ -234,6 +234,15 @@ See `docs/window-templates.md` for layout types (kanban, calendar, custom), conf
 
 **Every user-visible string MUST be translated.** The app is primarily used in Spanish by real clients. Hardcoded English strings are treated as bugs. See `docs/i18n-guide.md` for the full reference (hooks, locale JSON structure, rules for adding keys). Key hooks: `useUI()` for generic labels, `useLabel()` for AD fields, `useMenuLabel()` for menus/tabs. All new keys must be added to BOTH `en_US.json` and `es_ES.json`.
 
+## CSV / Spreadsheet Output (MANDATORY)
+
+**Every CSV cell MUST go through the canonical neutralization policy — never a hand-rolled escape.** A value starting with `=`, `+`, `-`, `@`, TAB, CR, LF or a full-width variant is executed as a **formula** when the file is opened in Excel, Calc or Sheets (CWE-1236). The victim is whoever opens the file, not the user who exports, so quoting alone does not fix it.
+
+- `csvField(value)` (neutralize + RFC 4180 quoting) and `neutralizeSpreadsheetCell(value)` (policy only, for a builder that keeps its own quoting style) both live in `packages/app-shell-core/src/lib/csv/csvSerializer.js`. This package is the source of the policy for every JS consumer.
+- The trigger set and the expected output for every input are normative and shared across three runtimes (this module, `NeoCsvExportService.java`, and the jsreport source text in `templates/reports/helpers/report-html-helpers.js`): `{etendo_root}/modules/com.etendoerp.go/docs/security/csv-neutralization-fixtures.md`, whose executable twin is `src/lib/csv/csvNeutralizationFixtures.js`. **Add a trigger to the markdown table first, then to the exported table, then to all three implementations.**
+- xlsx exports are deliberately exempt: a workbook string cell is inert, so an apostrophe there is visible garbage rather than a defence (`buildTemplateXlsx.js`, `NeoXlsxExportWriter.java`).
+- Rationale and scope: `docs/adr/0004-csv-formula-neutralization.md` in `com.etendoerp.go` (implemented by ETP-5032).
+
 ## Testing
 
 Contract tests (Node.js), Unit tests (JUnit in Etendo Go), Integration tests (OBBaseTest), E2E (Playwright).
