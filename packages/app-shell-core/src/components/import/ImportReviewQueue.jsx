@@ -27,6 +27,36 @@ const DEFAULT_LABELS = {
   bulkApplyAll: 'Apply to all',
 };
 
+/**
+ * What a READ-ONLY cell shows: the caller's rendering of the value when it supplies one, and the
+ * raw cell text otherwise.
+ *
+ * The point is that a review queue showing raw text cannot reveal a MISREAD value. A bank
+ * statement cell of `1.234` is 1234 under one decimal convention and 1.234 under the other; the
+ * queue that shows `1.234` looks identical either way, and the user only discovers which one the
+ * importer chose after the rows are committed. Handing the caller the field and the raw value
+ * lets it show the parsed amount instead, so the interpretation is visible while it can still be
+ * corrected.
+ *
+ * Deliberately NOT applied to the editable input: a user typing into a cell must see and edit
+ * the characters the file actually holds, not a rendering of them. Formatting the display and
+ * editing the source is the normal split, and it works here because a formatted cell is by
+ * definition one that is not being edited.
+ *
+ * A formatter that returns `null`/`undefined` falls back to the raw value, so a caller can
+ * format some fields and leave the rest alone without branching per field.
+ *
+ * Not reached by the no-`dataColumns` branch above, and that is structural rather than an
+ * omission: that branch exists precisely because the caller supplied no `fields`, so it joins
+ * every raw value into one summary cell and there is no field to hand a formatter.
+ */
+function displayValue(formatValue, field, raw) {
+  const value = raw ?? '';
+  if (typeof formatValue !== 'function') return value;
+  const formatted = formatValue(field, value);
+  return formatted == null ? value : formatted;
+}
+
 /** Fills `{key}` placeholders in a label template — e.g. bulkApplyDescription's {count}/{raw}/{value}. */
 function formatTemplate(template, vars) {
   return template.replace(/\{(\w+)\}/g, (_, key) => vars[key] ?? '');
@@ -55,6 +85,23 @@ const DATA_COLUMN_WIDTH_CLASS = 'w-[160px]';
 // instead of wrapping — combined with a `title` attribute for the full text.
 const TRUNCATE_CLASS = 'block truncate';
 
+/**
+ * Extra classes for a column the window declared `isNumeric: true` in
+ * `window.import.fields` — right-aligned and tabular.
+ *
+ * An amount column read left-aligned here while every other grid in the app right-aligns its
+ * figures, and the header floated away from the numbers it named. `isNumeric` is not a new
+ * knob invented for this: `validateRow` already uses it to decide which cells must parse as a
+ * number, so the same declaration that says "this column holds figures" now also says how to
+ * render them, and no window has to configure alignment separately.
+ *
+ * `tabular-nums` matters as much as the alignment: proportional digits make a column of amounts
+ * ragged even when right-aligned, because '1' is narrower than '8'.
+ */
+function numericCellClass(field) {
+  return field?.isNumeric ? ' text-right tabular-nums' : '';
+}
+
 // Sticky/frozen so the line number and status stay visible while the wide,
 // per-field data grid scrolls horizontally underneath — an opaque background
 // is required or the scrolled-under columns would show through. z-10 must
@@ -82,7 +129,7 @@ const STICKY_HEADER_CLASS = 'sticky top-0 !z-20 bg-background';
  * `muted` de-emphasizes the values without hiding them: a skipped row will not be sent, so it
  * should read as inactive, never as empty.
  */
-function RowDataCells({ entry, index, dataColumns, dataColumnCount, muted = false }) {
+function RowDataCells({ entry, index, dataColumns, dataColumnCount, muted = false, formatValue }) {
   const row = entry.row ?? {};
   const valueClass = muted ? `${TRUNCATE_CLASS} text-muted-foreground` : TRUNCATE_CLASS;
   if (!dataColumns) {
@@ -102,11 +149,13 @@ function RowDataCells({ entry, index, dataColumns, dataColumnCount, muted = fals
   return dataColumns.map((field) => (
     <TableCell key={field.target} data-testid={"TableCell__" + field.id}>
       <span
-        className={valueClass}
+        className={valueClass + numericCellClass(field)}
+        // The tooltip keeps the RAW cell, so the file's own text is always one hover away
+        // from whatever the display formatting turned it into.
         title={row[field.target] ?? ''}
         data-testid={`ImportReviewQueue__value-${index}-${field.target}`}
       >
-        {row[field.target] ?? ''}
+        {displayValue(formatValue, field, row[field.target])}
       </span>
     </TableCell>
   ));
@@ -319,6 +368,7 @@ export function buildErrorsCsv(entries, headers, mapping) {
 export function ImportReviewQueue({
   entries,
   fields = [],
+  formatValue,
   statusFilter = 'all',
   onStatusFilterChange,
   onEditField,
@@ -465,7 +515,7 @@ export function ImportReviewQueue({
               data-testid="TableHead__a73779">{text.status}</TableHead>
             {dataColumns
               ? dataColumns.map((field) => (
-                <TableHead key={field.target} className={DATA_COLUMN_WIDTH_CLASS} data-testid={"TableHead__" + field.id}>
+                <TableHead key={field.target} className={DATA_COLUMN_WIDTH_CLASS + numericCellClass(field)} data-testid={"TableHead__" + field.id}>
                   <span className={TRUNCATE_CLASS} title={field.label ?? field.target}>{field.label ?? field.target}</span>
                 </TableHead>
               ))
@@ -519,6 +569,7 @@ export function ImportReviewQueue({
                     entry={entry}
                     index={index}
                     dataColumns={dataColumns}
+                    formatValue={formatValue}
                     dataColumnCount={dataColumnCount}
                     muted
                     data-testid="RowDataCells__a73779" />
@@ -565,6 +616,7 @@ export function ImportReviewQueue({
                     entry={entry}
                     index={index}
                     dataColumns={dataColumns}
+                    formatValue={formatValue}
                     dataColumnCount={dataColumnCount}
                     data-testid="RowDataCells__a73779" />
                 </TableRow>
@@ -689,17 +741,17 @@ export function ImportReviewQueue({
                             onBlur={() => setFocusedCell((prev) => (
                               prev?.index === index && prev?.target === field.target ? null : prev
                             ))}
-                            className="h-8"
+                            className={`h-8${numericCellClass(field)}`}
                             data-testid={`ImportReviewQueue__input-${index}-${field.target}`}
                           />
                         </div>
                       ) : (
                         <span
-                          className={TRUNCATE_CLASS}
+                          className={TRUNCATE_CLASS + numericCellClass(field)}
                           title={entry.row[field.target] ?? ''}
                           data-testid={`ImportReviewQueue__value-${index}-${field.target}`}
                         >
-                          {entry.row[field.target] ?? ''}
+                          {displayValue(formatValue, field, entry.row[field.target])}
                         </span>
                       )}
                     </TableCell>
