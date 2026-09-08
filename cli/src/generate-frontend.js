@@ -1960,7 +1960,7 @@ export function resolveSecondaryTabDefs(secondaryTabsDecl, contract, headerEntit
       const readOnlyLogicJs = cfg.readOnlyLogic
         ? convertLogicToJs(cfg.readOnlyLogic, headerColumnMap, headerBooleanFields)
         : null;
-      return { key, label: cfg.label ?? toLabel(key), isFormTab, isPanelTab, isCustomForm: !!cfg.customForm, isCustomTable: !!cfg.customTable, PanelName, FormName, TableName, addLineEntries, requireSavedRecord, maxDetailLines, isCustomAddModal: !!customAddModalName, CustomAddModalName: customAddModalName, readOnlyLogicJs, tabOrder: cfg.tabOrder, labelKey: cfg.labelKey ?? null, addLineLabelKey: cfg.addLineLabelKey ?? null };
+      return { key, label: cfg.label ?? toLabel(key), isFormTab, isPanelTab, isCustomForm: !!cfg.customForm, isCustomTable: !!cfg.customTable, PanelName, FormName, TableName, addLineEntries, requireSavedRecord, maxDetailLines, isCustomAddModal: !!customAddModalName, CustomAddModalName: customAddModalName, readOnlyLogicJs, tabOrder: cfg.tabOrder, labelKey: cfg.labelKey ?? null, addLineLabelKey: cfg.addLineLabelKey ?? null, visibleWhenCapability: cfg.visibleWhenCapability ?? null };
     });
 }
 
@@ -2016,18 +2016,32 @@ export function buildSecondaryTabPropEntry(t) {
   // resolveAddLineLabel() in the functional repo's detailViewHelpers.jsx.
   const labelKeyPart = t.labelKey ? `, labelKey: '${t.labelKey}'` : '';
   const addLineLabelKeyPart = t.addLineLabelKey ? `, addLineLabelKey: '${t.addLineLabelKey}'` : '';
+  // ETP-5116 — mirrors the field-level visibleWhenCapability gate (ETP-4520, see the
+  // "Capability-gated field visibility" section above in this repo's own
+  // docs/decisions-reference.md) so a WHOLE secondaryTab can be hidden per-role (e.g. an
+  // Accounting tab behind showAccountingFields) instead of just one field. Same opt-in,
+  // fail-closed capability-resolution mechanism, applied at tab granularity rather than
+  // field granularity — no separate runtime plumbing. `window.secondaryTabs` itself isn't
+  // documented in this repo's decisions-reference.md (a pre-existing gap, not introduced
+  // by this ticket); the full reference for this property — value shape, composition with
+  // the field-level gate, real examples — lives in the functional repo's
+  // (etendo_schema_forge) `docs/decisions-reference.md`, "Secondary Tabs
+  // (window.secondaryTabs)" section.
+  const visibleWhenCapabilityPart = t.visibleWhenCapability
+    ? `, visibleWhenCapability: '${String(t.visibleWhenCapability).replace(/'/g, "\\'")}'`
+    : '';
   if (t.isFormTab) {
-    return `          { key: '${t.key}', label: '${t.label}', isFormTab: true, Form: ${t.FormName}${requireSavedPart}${readOnlyLogicPart}${tabOrderPart}${labelKeyPart} },`;
+    return `          { key: '${t.key}', label: '${t.label}', isFormTab: true, Form: ${t.FormName}${requireSavedPart}${readOnlyLogicPart}${tabOrderPart}${labelKeyPart}${visibleWhenCapabilityPart} },`;
   }
   if (t.isPanelTab) {
-    return `          { key: '${t.key}', label: '${t.label}', Panel: ${t.PanelName}${requireSavedPart}${readOnlyLogicPart}${tabOrderPart}${labelKeyPart} },`;
+    return `          { key: '${t.key}', label: '${t.label}', Panel: ${t.PanelName}${requireSavedPart}${readOnlyLogicPart}${tabOrderPart}${labelKeyPart}${visibleWhenCapabilityPart} },`;
   }
   const addLinePart = t.addLineEntries.length > 0
     ? `, addLineFields: { entry: [\n${t.addLineEntries.join(',\n')},\n          ], derived: [], hidden: [] }`
     : '';
   const customAddModalPart = wrapIf(', customAddModal: ', t.CustomAddModalName);
   const formProp = (t.isCustomAddModal && !t.isCustomForm) ? '' : `, Form: ${t.FormName}`;
-  return `          { key: '${t.key}', label: '${t.label}', Table: ${t.TableName}${formProp}${addLinePart}${customAddModalPart}${requireSavedPart}${readOnlyLogicPart}${maxDetailLinesPart}${tabOrderPart}${labelKeyPart}${addLineLabelKeyPart} },`;
+  return `          { key: '${t.key}', label: '${t.label}', Table: ${t.TableName}${formProp}${addLinePart}${customAddModalPart}${requireSavedPart}${readOnlyLogicPart}${maxDetailLinesPart}${tabOrderPart}${labelKeyPart}${addLineLabelKeyPart}${visibleWhenCapabilityPart} },`;
 }
 
 function buildDetailProcessesForPage(detailEntity, contract, processOverrides) {
