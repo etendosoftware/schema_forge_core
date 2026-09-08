@@ -69,6 +69,27 @@ export const RETURN_LABELS = {
   es_ES: { MMR_RETURN: 'Devolución a proveedor', MMS_RETURN: 'Devolución de cliente' },
 };
 
+/**
+ * Report-local relabeling of a `DocBaseType` that Etendo's own `ad_ref_list`
+ * (reference 183) wording doesn't fit for a report row (ETP-5128) — a
+ * DIFFERENT problem from `RETURN_LABELS` above, which only handles the
+ * MMR/MMS return split: this one unconditionally overrides a value's label,
+ * independent of `IsReturn`.
+ *
+ * `MXI` ("Match Invoice" / "Factura comprobada") is the AD-wide label for the
+ * `M_MatchInv` doctype, shared by every one of the 209 doctypes in this
+ * environment that carry it — editing `ad_ref_list` itself would rename it
+ * EVERYWHERE in Etendo (Classic's own doctype pickers included), not just in
+ * Journal Entries' own row. The report's link to this row already opens
+ * `/matched-purchase-invoices` (ETP-5128), so this override renames just the
+ * PRINTED LABEL to match what that window actually represents — a receipt
+ * matched against its invoice — without touching the shared AD data at all.
+ */
+export const DOC_TYPE_LABEL_OVERRIDES = {
+  en_US: { MXI: 'Receipt-Invoice Link' },
+  es_ES: { MXI: 'Relación albarán-factura' },
+};
+
 /** Resolve a {en_US, es_ES} label object for the requested locale. */
 export function pickLabel(labelObj, locale, fallback = '') {
   return labelObj?.[locale] || labelObj?.en_US || fallback;
