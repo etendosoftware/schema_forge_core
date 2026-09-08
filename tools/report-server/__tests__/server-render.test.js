@@ -143,6 +143,11 @@ describe('registerReportHelpers whitelist stability contract', () => {
     'isGroupBreak',
     'resetGroupTracking',
     'sumField',
+    // `sumFields` (ETP-4900) was never added here, so this guard has been red since
+    // that helper shipped; `csvField` (ETP-5032) is the new entry. Both are listed now,
+    // which is the whole point of a whitelist whose job is to be truthful.
+    'sumFields',
+    'csvField',
     'sumRowsByCategory',
     'translateDocType',
   ].sort();

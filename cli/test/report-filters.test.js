@@ -192,3 +192,52 @@ describe('filterAndTransformParams', () => {
     assert.deepEqual(out, [{ label: 'Account Level', value: 'Account' }]);
   });
 });
+
+describe('filterAndTransformParams — section-level excludeFromSummary (ETP-5128)', () => {
+  // Distinct from `paramDef.hidden` above: a section-excluded param stays a
+  // fully visible/interactive control in the sidebar — only the printed
+  // summary omits it. report-journal-entries' "Options" section (5-6
+  // showXEntries/showEntryDescription toggles) is the real-world case: these
+  // are operational rendering config, not something the user "filtered by".
+  const sectionedContract = {
+    sections: [
+      { id: 'opciones', label: { en_US: 'Options', es_ES: 'Opciones' }, excludeFromSummary: true },
+      { id: 'alcance', label: { en_US: 'Scope', es_ES: 'Alcance' } },
+    ],
+    parameters: [
+      { name: 'showTotals', type: 'toggle', section: 'opciones', label: { en_US: 'Show Totals', es_ES: 'Mostrar Totales' } },
+      { name: 'orgId', section: 'alcance', hidden: true, autoDefault: true, label: { en_US: 'Organization', es_ES: 'Organización' } },
+      { name: 'bPartnerId', section: 'alcance', label: { en_US: 'Contact', es_ES: 'Contacto' } },
+      { name: 'noSection', label: { en_US: 'No Section', es_ES: 'Sin Sección' } },
+    ],
+  };
+
+  it('excludes a param whose section carries excludeFromSummary, even with a real non-empty value', () => {
+    const out = filterAndTransformParams({ showTotals: true }, sectionedContract, 'es_ES');
+    assert.deepEqual(out, []);
+  });
+
+  it('a param whose section has no excludeFromSummary flag is unaffected', () => {
+    const out = filterAndTransformParams({ bPartnerId: 'x', _display_bPartnerId: 'Juan Perez' }, sectionedContract, 'es_ES');
+    assert.deepEqual(out, [{ label: 'Contacto', value: 'Juan Perez' }]);
+  });
+
+  it('excludeFromSummary on one section does not leak into params from a different section (orgId still shown)', () => {
+    const out = filterAndTransformParams(
+      { orgId: 'org-1', _display_orgId: 'GOOrg', showTotals: true }, sectionedContract, 'es_ES');
+    assert.deepEqual(out, [{ label: 'Organización', value: 'GOOrg' }]);
+  });
+
+  it('a param with no section at all does not crash the sections lookup and is kept', () => {
+    const out = filterAndTransformParams({ noSection: 'value' }, sectionedContract, 'es_ES');
+    assert.deepEqual(out, [{ label: 'Sin Sección', value: 'value' }]);
+  });
+
+  it('a contract with no sections array at all does not crash and keeps normal params', () => {
+    const noSectionsContract = {
+      parameters: [{ name: 'bPartnerId', label: { en_US: 'Contact', es_ES: 'Contacto' } }],
+    };
+    const out = filterAndTransformParams({ bPartnerId: 'x' }, noSectionsContract, 'es_ES');
+    assert.deepEqual(out, [{ label: 'Contacto', value: 'x' }]);
+  });
+});
