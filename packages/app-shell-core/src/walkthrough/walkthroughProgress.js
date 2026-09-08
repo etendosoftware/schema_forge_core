@@ -45,6 +45,16 @@ const DEFAULT_FLOW_RECORD = Object.freeze({
   completedRevision: 0,
   /** Step the last abandoned run was sitting on, for the drop-off report. */
   lastAbandonedStep: null,
+  /**
+   * Revision the user explicitly marked "I already know this" at, or null.
+   *
+   * A revision rather than a boolean on purpose: a revised tutorial teaches
+   * something the dismissal never covered, so `dismissedRevision < revision`
+   * revives it (see `isFlowDismissed`).
+   */
+  dismissedRevision: null,
+  /** When the dismissal was recorded, for support ("why is my dot out?"). */
+  dismissedAt: null,
 });
 
 function getStorage() {
@@ -145,9 +155,80 @@ export function getFlowStatus(flowId, revision = 1, username = currentUsername()
 /**
  * True for a tutorial the user has not finished at its current revision --
  * `unseen`, `in-progress` and `updated` alike. Only `completed` is done.
+ *
+ * This asks about CONTENT progress only. Whether the user wants to be reminded
+ * is a separate axis (`isFlowDismissed`); `isFlowPending` combines the two and
+ * is what a launcher should ask.
  */
 export function isPendingStatus(status) {
   return status !== FLOW_STATUS.COMPLETED;
+}
+
+/**
+ * WHY DISMISSAL IS A FIELD AND NOT A `FLOW_STATUS` VALUE (ETP walkthrough dismiss)
+ *
+ * "How far through the content am I" and "do I want to be reminded about it"
+ * are orthogonal: a user can silence a tutorial they never opened AND one they
+ * abandoned at step 6, and in both cases the underlying progress is still the
+ * interesting datum. Folding dismissal into `getFlowStatus` would have to
+ * DESTROY one of the two answers to return the other.
+ *
+ * It would also mislead the UI. `STATUS_BADGES` in `WalkthroughLauncher.jsx`
+ * falls through to a muted check for any status it does not know, so a new
+ * `dismissed` status would have rendered a never-taken tutorial as if it were
+ * finished -- exactly the lie `markFlowCompleted` was kept out of this feature
+ * to avoid. Keeping it a field lets the launcher say "available, and quiet"
+ * while `getFlowStatus` keeps saying `unseen`, so the row stays startable and
+ * honest, and every existing caller of `getFlowStatus`/`isPendingStatus`
+ * (including hosts outside this repo) keeps its old meaning.
+ *
+ * Note dismissal is NOT touched by `markFlowStarted`/`markFlowCompleted`.
+ * Every transition here is an explicit user act, mirroring the rule that
+ * merely opening the launcher must not clear the dot: a dismissal is undone by
+ * `markFlowUndismissed`, not as a side effect of engaging with the tour.
+ *
+ * @param {string} flowId
+ * @param {number} revision the flow's CURRENT revision (from the flow data)
+ */
+export function isFlowDismissed(flowId, revision = 1, username = currentUsername()) {
+  const { dismissedRevision } = readFlowRecord(flowId, username);
+  return Number.isFinite(dismissedRevision) && dismissedRevision >= revision;
+}
+
+/**
+ * Whether one flow should keep the dot lit: unfinished AND not silenced.
+ *
+ * The single predicate a launcher (or a host) should ask, so the two axes above
+ * can never be combined inconsistently in two places.
+ *
+ * @param {{id: string, revision?: number}} flow
+ */
+export function isFlowPending(flow, username = currentUsername()) {
+  const revision = flow?.revision ?? 1;
+  return isPendingStatus(getFlowStatus(flow?.id, revision, username))
+    && !isFlowDismissed(flow?.id, revision, username);
+}
+
+/**
+ * Records "I already know this one" for a flow, at the revision it was
+ * dismissed at. Deliberately NOT `markFlowCompleted`: calling a never-taken
+ * tutorial completed would corrupt every adoption metric derived from
+ * `completions`.
+ *
+ * @param {number} revision the flow's revision at the moment of dismissal
+ */
+export function markFlowDismissed(flowId, revision = 1, now = Date.now(), username = currentUsername()) {
+  return updateFlow(flowId, (record) => ({
+    // `max` for the same reason as `markFlowCompleted`: dismissing while an
+    // older revision is on screen must not demote a newer dismissal.
+    dismissedRevision: Math.max(record.dismissedRevision ?? 0, revision),
+    dismissedAt: new Date(now).toISOString(),
+  }), username);
+}
+
+/** Undoes a dismissal, so the flow counts towards the dot again. */
+export function markFlowUndismissed(flowId, username = currentUsername()) {
+  return updateFlow(flowId, () => ({ dismissedRevision: null, dismissedAt: null }), username);
 }
 
 /**
@@ -160,12 +241,14 @@ export function isPendingStatus(status) {
  * and a dot that vanishes on the first open is a reminder that reminds once.
  * A tour left half-way therefore keeps the dot lit, same as one never started.
  *
+ * What DOES take a tutorial out of this count without finishing it is an
+ * explicit per-flow dismissal (`markFlowDismissed`) -- a deliberate act, not a
+ * side effect of viewing, which is the distinction the paragraph above draws.
+ *
  * @param {{id: string, revision?: number}[]} flows
  */
 export function countPendingFlows(flows, username = currentUsername()) {
-  return (flows ?? []).filter(
-    (flow) => isPendingStatus(getFlowStatus(flow?.id, flow?.revision ?? 1, username)),
-  ).length;
+  return (flows ?? []).filter((flow) => isFlowPending(flow, username)).length;
 }
 
 /** Records a run starting. Returns the updated record. */

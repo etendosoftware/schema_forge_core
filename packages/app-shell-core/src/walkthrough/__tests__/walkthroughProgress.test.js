@@ -83,6 +83,10 @@ describe('walkthrough-progress — fresh state', () => {
       completedAt: null,
       completedRevision: 0,
       lastAbandonedStep: null,
+      // A never-touched flow carries no dismissal: `null` (not 0) so it can
+      // never read as "dismissed at revision 0".
+      dismissedRevision: null,
+      dismissedAt: null,
     });
   });
 

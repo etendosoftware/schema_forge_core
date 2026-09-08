@@ -12,6 +12,10 @@ const defaultValue = {
   trackWalkthroughMenuOpened: noop,
   trackWalkthroughStarted: noop,
   trackWalkthroughFinished: noop,
+  // Which tutorials users silence without taking them is a product signal, and
+  // progress lives in `localStorage` -- so without this event "nobody cares
+  // about tour X" is unobservable from outside the browser.
+  trackWalkthroughDismissed: noop,
 };
 
 const ObservabilityContext = createContext(defaultValue);
