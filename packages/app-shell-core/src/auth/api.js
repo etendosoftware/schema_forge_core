@@ -89,8 +89,16 @@ export function resolveApiUrl(base, path) {
 }
 
 /**
- * The verbs that update an existing record, and therefore need the optimistic-locking token
- * (ETP-5073 / DOC-04). POST is absent on purpose: a create has no prior version to conflict with.
+ * The verbs that update an EXISTING record, and therefore both REQUIRE and INJECT the
+ * optimistic-locking token on the way out (ETP-5073 / DOC-04). POST is absent on purpose here: a
+ * create has no prior version to conflict with, so `withRecordVersion` must never attach one to a
+ * POST body — see {@link withRecordVersion}.
+ *
+ * This set is scoped to injection only. Whether a verb's RESPONSE is harvested afterwards is a
+ * separate question — see the harvest dispatch in `createApiFetch`, which also harvests POST
+ * (ETP-5122): a create's response hands back the record's initial `updated`, and without
+ * remembering it, saving that same record again later in the session (with no intervening read)
+ * fails with 400 `missing_updated`.
  */
 const VERSIONED_WRITE_METHODS = new Set(['PUT', 'PATCH']);
 
@@ -369,7 +377,13 @@ export function createApiFetch(baseUrl, getToken, onUnauthorized) {
       headers,
     });
     const verb = String(rest.method || 'GET').toUpperCase();
-    if (VERSIONED_WRITE_METHODS.has(verb)) {
+    if (VERSIONED_WRITE_METHODS.has(verb) || verb === 'POST') {
+      // ETP-5122: a POST (create) is harvested exactly like PUT/PATCH — its response echoes the
+      // new record with its initial `updated` — but it is NOT added to VERSIONED_WRITE_METHODS,
+      // because that set also gates injection in `withRecordVersion`, and a create must never send
+      // an `updated` token on its own request. This branch only arms the version cache for
+      // whatever PATCH/PUT saves this same record next, without a re-read in between (e.g.
+      // "Add SII" then "Save" on the record it just created).
       harvestWrittenVersion(res, path);
     } else if (verb === 'GET') {
       // ETP-5112: a read is what arms the write that follows it. See `harvestReadVersions`.
