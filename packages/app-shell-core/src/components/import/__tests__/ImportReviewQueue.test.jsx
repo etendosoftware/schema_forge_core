@@ -647,3 +647,305 @@ describe('showRetry prop', () => {
     expect(screen.getByTestId('ImportReviewQueue__retry-0')).toBeDefined();
   });
 });
+
+// A column the window declared `isNumeric: true` in `window.import.fields` must render its
+// figures right-aligned and tabular, at every one of the four sites that can draw such a cell —
+// the header, the shared read-only value renderer (OK *and* skipped rows), the editable input on
+// an error row, and the read-only span of a non-failing cell on that same error row. Dropping the
+// helper from any single site silently reintroduces a ragged, left-aligned amount column for a
+// subset of rows, which is exactly how the bug shipped: the header floated away from the numbers
+// it named. `tabular-nums` is load-bearing, not decoration — proportional digits leave a column
+// of amounts ragged even when it is right-aligned, because '1' is narrower than '8'.
+describe('numeric column alignment (isNumeric)', () => {
+  const fields = [
+    { id: 'name', target: 'name', label: 'Nombre' },
+    { id: 'amount', target: 'amount', label: 'Importe', isNumeric: true },
+    { id: 'quantity', target: 'quantity', label: 'Cantidad', isNumeric: true },
+  ];
+  const row = { name: 'Lucia', amount: '1234.50', quantity: '7' };
+
+  const renderQueue = (entries) => render(
+    <ImportReviewQueue
+      entries={entries}
+      fields={fields}
+      statusFilter="all"
+      onStatusFilterChange={() => {}}
+      onEditField={() => {}}
+      onRetryEntry={() => {}}
+      onSkipEntry={() => {}}
+      onUnskipEntry={() => {}}
+      onDownloadErrors={() => {}}
+    />,
+  );
+
+  const expectRightAligned = (el) => {
+    expect(el.className).toMatch(/\btext-right\b/);
+    expect(el.className).toMatch(/\btabular-nums\b/);
+  };
+  const expectNotRightAligned = (el) => {
+    expect(el.className).not.toMatch(/\btext-right\b/);
+    expect(el.className).not.toMatch(/\btabular-nums\b/);
+  };
+
+  const okEntryNumeric = { row, errors: [], status: 'pending' };
+  const skippedEntryNumeric = { row, errors: [{ target: '', message: 'Ya existe' }], status: 'skipped' };
+  // Only `amount` fails, so `quantity` stays a read-only span on an otherwise-erroring row —
+  // the fourth site, and the one easiest to forget.
+  const errorEntryNumeric = {
+    row,
+    errors: [{ target: 'amount', message: 'Must be a number.' }],
+    status: 'pending',
+  };
+
+  describe('column header', () => {
+    it('right-aligns and tabularizes the header of a numeric column', () => {
+      renderQueue([okEntryNumeric]);
+      expectRightAligned(screen.getByTestId('TableHead__amount'));
+    });
+
+    it('overrides the header cell default text-left rather than leaving both alignments set', () => {
+      renderQueue([okEntryNumeric]);
+      expect(screen.getByTestId('TableHead__amount').className).not.toMatch(/\btext-left\b/);
+    });
+
+    it('leaves a text column header untouched', () => {
+      renderQueue([okEntryNumeric]);
+      expectNotRightAligned(screen.getByTestId('TableHead__name'));
+      expect(screen.getByTestId('TableHead__name').className).toMatch(/\btext-left\b/);
+    });
+  });
+
+  describe('value cell of an OK row', () => {
+    it('right-aligns and tabularizes a numeric value', () => {
+      renderQueue([okEntryNumeric]);
+      expectRightAligned(screen.getByTestId('ImportReviewQueue__value-0-amount'));
+    });
+
+    it('leaves a text value untouched', () => {
+      renderQueue([okEntryNumeric]);
+      expectNotRightAligned(screen.getByTestId('ImportReviewQueue__value-0-name'));
+    });
+  });
+
+  // A skipped row goes through the same RowDataCells renderer as an OK row (shared on purpose,
+  // see ETP-4997), so this pins that the shared renderer keeps the alignment for both branches.
+  describe('value cell of a skipped row', () => {
+    it('right-aligns and tabularizes a numeric value', () => {
+      renderQueue([skippedEntryNumeric]);
+      expectRightAligned(screen.getByTestId('ImportReviewQueue__value-0-amount'));
+    });
+
+    it('leaves a text value untouched', () => {
+      renderQueue([skippedEntryNumeric]);
+      expectNotRightAligned(screen.getByTestId('ImportReviewQueue__value-0-name'));
+    });
+  });
+
+  describe('cells of an error row', () => {
+    it('right-aligns and tabularizes the editable input of the failing numeric cell', () => {
+      renderQueue([errorEntryNumeric]);
+      expectRightAligned(screen.getByTestId('ImportReviewQueue__input-0-amount'));
+    });
+
+    it('right-aligns and tabularizes a non-failing numeric cell on the same row', () => {
+      renderQueue([errorEntryNumeric]);
+      expectRightAligned(screen.getByTestId('ImportReviewQueue__value-0-quantity'));
+    });
+
+    it('leaves a text cell on the same row untouched', () => {
+      renderQueue([errorEntryNumeric]);
+      expectNotRightAligned(screen.getByTestId('ImportReviewQueue__value-0-name'));
+    });
+
+    it('right-aligns every editable numeric input when a row-level error makes the whole row editable', () => {
+      renderQueue([{ row, errors: [{ target: '', message: 'Rejected by server' }], status: 'pending' }]);
+      expectRightAligned(screen.getByTestId('ImportReviewQueue__input-0-amount'));
+      expectRightAligned(screen.getByTestId('ImportReviewQueue__input-0-quantity'));
+      expectNotRightAligned(screen.getByTestId('ImportReviewQueue__input-0-name'));
+    });
+  });
+});
+
+/**
+ * `formatValue(field, rawValue)` — the optional hook that lets the caller render a cell as the
+ * value the importer will actually use, instead of the characters the file happens to hold.
+ *
+ * A review queue showing only raw text cannot reveal a MISREAD value: a bank statement cell of
+ * `1.234` is 1234 under one reading and 1.234 under the other, and the queue looks identical
+ * either way, so the user discovers which one the importer chose only after the rows are
+ * committed. Handing the caller the field and the raw value lets it show the PARSED amount,
+ * making the interpretation visible while it can still be corrected.
+ *
+ * The hook is deliberately confined to READ-ONLY cells. Formatting the display and editing the
+ * source is the normal split, and it works here precisely because a formatted cell is by
+ * definition one nobody is editing — a user typing into a cell must see and edit the file's own
+ * characters, not a rendering of them.
+ */
+describe('formatValue hook', () => {
+  const fields = [
+    { id: 'name', target: 'name', label: 'Nombre' },
+    { id: 'amount', target: 'amount', label: 'Importe', isNumeric: true },
+  ];
+  // The real case: a raw cell whose meaning is not what it looks like. `1.234` is a grouped
+  // thousand, so the queue must show 1234 — the number that will be imported.
+  const row = { name: 'Lucia', amount: '1.234' };
+
+  // Formats only the amount column, returning undefined for anything else — the partial-adoption
+  // shape the fallback exists for.
+  const formatAmount = (field, raw) => (field.target === 'amount' ? `${Number(String(raw).replace('.', ''))} EUR` : undefined);
+
+  const renderQueue = (entries, props = {}) => render(
+    <ImportReviewQueue
+      entries={entries}
+      fields={fields}
+      statusFilter="all"
+      onStatusFilterChange={() => {}}
+      onEditField={() => {}}
+      onRetryEntry={() => {}}
+      onSkipEntry={() => {}}
+      onUnskipEntry={() => {}}
+      onDownloadErrors={() => {}}
+      {...props}
+    />,
+  );
+
+  const okEntryFmt = { row, errors: [], status: 'pending' };
+  const skippedEntryFmt = { row, errors: [{ target: '', message: 'Ya existe' }], status: 'skipped' };
+  // Only `name` fails, so `amount` stays a read-only span on an otherwise-erroring row — the
+  // third read-only site, and the one easiest to forget.
+  const nameErrorEntryFmt = {
+    row,
+    errors: [{ target: 'name', message: 'Required field is missing.' }],
+    status: 'pending',
+  };
+  // The mirror image: `amount` itself fails, so it becomes the editable input.
+  const amountErrorEntryFmt = {
+    row,
+    errors: [{ target: 'amount', message: 'Must be a number.' }],
+    status: 'pending',
+  };
+
+  describe('applied to read-only value cells', () => {
+    it('formats the value cell of an OK row', () => {
+      renderQueue([okEntryFmt], { formatValue: formatAmount });
+      expect(screen.getByTestId('ImportReviewQueue__value-0-amount').textContent).toBe('1234 EUR');
+    });
+
+    // A skipped row goes through the same RowDataCells renderer as an OK row (shared on purpose,
+    // ETP-4997). Its data is shown precisely so the user can tell WHICH record was skipped, so
+    // it must be shown under the same reading as everywhere else.
+    it('formats the value cell of a skipped row', () => {
+      renderQueue([skippedEntryFmt], { formatValue: formatAmount });
+      expect(screen.getByTestId('ImportReviewQueue__value-0-amount').textContent).toBe('1234 EUR');
+    });
+
+    it('formats a non-failing cell on an error row (the error branch read-only span)', () => {
+      renderQueue([nameErrorEntryFmt], { formatValue: formatAmount });
+      expect(screen.getByTestId('ImportReviewQueue__value-0-amount').textContent).toBe('1234 EUR');
+    });
+
+    it('receives the field descriptor and the raw value', () => {
+      const formatValue = vi.fn(() => 'X');
+      renderQueue([okEntryFmt], { formatValue });
+      expect(formatValue).toHaveBeenCalledWith(expect.objectContaining({ target: 'amount' }), '1.234');
+      expect(formatValue).toHaveBeenCalledWith(expect.objectContaining({ target: 'name' }), 'Lucia');
+    });
+  });
+
+  describe('never applied to the editable input', () => {
+    it('leaves the failing cell input showing the file characters, not the formatting', () => {
+      renderQueue([amountErrorEntryFmt], { formatValue: formatAmount });
+      expect(screen.getByTestId('ImportReviewQueue__input-0-amount').value).toBe('1.234');
+    });
+
+    it('leaves every input showing raw text when a row-level error makes the whole row editable', () => {
+      renderQueue([{ row, errors: [{ target: '', message: 'Rejected by server' }], status: 'pending' }], { formatValue: formatAmount });
+      expect(screen.getByTestId('ImportReviewQueue__input-0-amount').value).toBe('1.234');
+      expect(screen.getByTestId('ImportReviewQueue__input-0-name').value).toBe('Lucia');
+    });
+
+    // Editing must round-trip the raw characters: a formatted value fed back into onEditField
+    // would rewrite the row with the rendering instead of the source.
+    it('reports the raw typed characters through onEditField, unformatted', () => {
+      const onEditField = vi.fn();
+      renderQueue([amountErrorEntryFmt], { formatValue: formatAmount, onEditField });
+      fireEvent.change(screen.getByTestId('ImportReviewQueue__input-0-amount'), { target: { value: '2.500' } });
+      expect(onEditField).toHaveBeenCalledWith(0, 'amount', '2.500');
+    });
+
+    it('is not consulted at all for a cell rendered as an input', () => {
+      const formatValue = vi.fn(() => 'X');
+      renderQueue([amountErrorEntryFmt], { formatValue });
+      const formattedTargets = formatValue.mock.calls.map(([field]) => field.target);
+      expect(formattedTargets).not.toContain('amount');
+    });
+  });
+
+  describe('falling back to the raw value', () => {
+    it('shows the raw value for a field the formatter returns undefined for', () => {
+      renderQueue([okEntryFmt], { formatValue: formatAmount });
+      expect(screen.getByTestId('ImportReviewQueue__value-0-name').textContent).toBe('Lucia');
+    });
+
+    it('shows the raw value when the formatter returns null', () => {
+      renderQueue([okEntryFmt], { formatValue: () => null });
+      expect(screen.getByTestId('ImportReviewQueue__value-0-amount').textContent).toBe('1.234');
+      expect(screen.getByTestId('ImportReviewQueue__value-0-name').textContent).toBe('Lucia');
+    });
+
+    // Falsy-but-meaningful returns are NOT fallbacks — only null/undefined are, so a formatter
+    // that legitimately renders an empty string or a zero is respected.
+    it('respects an empty string or a zero as a real formatting result', () => {
+      renderQueue([okEntryFmt], { formatValue: (field) => (field.target === 'amount' ? '' : '0') });
+      expect(screen.getByTestId('ImportReviewQueue__value-0-amount').textContent).toBe('');
+      expect(screen.getByTestId('ImportReviewQueue__value-0-name').textContent).toBe('0');
+    });
+  });
+
+  describe('the tooltip keeps the raw value', () => {
+    it('keeps the file text one hover away on an OK row', () => {
+      renderQueue([okEntryFmt], { formatValue: formatAmount });
+      const cell = screen.getByTestId('ImportReviewQueue__value-0-amount');
+      expect(cell.textContent).toBe('1234 EUR');
+      expect(cell.getAttribute('title')).toBe('1.234');
+    });
+
+    it('keeps the file text one hover away on a skipped row', () => {
+      renderQueue([skippedEntryFmt], { formatValue: formatAmount });
+      expect(screen.getByTestId('ImportReviewQueue__value-0-amount').getAttribute('title')).toBe('1.234');
+    });
+
+    it('keeps the file text one hover away in the error branch read-only span', () => {
+      renderQueue([nameErrorEntryFmt], { formatValue: formatAmount });
+      const cell = screen.getByTestId('ImportReviewQueue__value-0-amount');
+      expect(cell.textContent).toBe('1234 EUR');
+      expect(cell.getAttribute('title')).toBe('1.234');
+    });
+  });
+
+  // Back-compat: the prop is optional and two windows already render this component without it.
+  // Omitting it must change nothing at any of the three read-only sites.
+  describe('without the prop (back-compat)', () => {
+    it('renders raw values on an OK row', () => {
+      renderQueue([okEntryFmt]);
+      expect(screen.getByTestId('ImportReviewQueue__value-0-amount').textContent).toBe('1.234');
+      expect(screen.getByTestId('ImportReviewQueue__value-0-name').textContent).toBe('Lucia');
+    });
+
+    it('renders raw values on a skipped row', () => {
+      renderQueue([skippedEntryFmt]);
+      expect(screen.getByTestId('ImportReviewQueue__value-0-amount').textContent).toBe('1.234');
+    });
+
+    it('renders raw values in the error branch, span and input alike', () => {
+      renderQueue([nameErrorEntryFmt]);
+      expect(screen.getByTestId('ImportReviewQueue__value-0-amount').textContent).toBe('1.234');
+      expect(screen.getByTestId('ImportReviewQueue__input-0-name').value).toBe('Lucia');
+    });
+
+    it('renders a blank cell as empty rather than as "undefined"', () => {
+      renderQueue([{ row: { name: 'Lucia' }, errors: [], status: 'pending' }]);
+      expect(screen.getByTestId('ImportReviewQueue__value-0-amount').textContent).toBe('');
+    });
+  });
+});
