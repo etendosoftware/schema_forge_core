@@ -282,6 +282,10 @@ export function AdvancedFilterBuilder({
   onClose,
   presets = null,
   onApplyPreset = null,
+  // (name, advancedFilter) — `advancedFilter` is built from the CURRENT DRAFT
+  // (null when it holds no complete condition), never from the applied value:
+  // saving must store what the user just configured even if they never hit
+  // Apply, and must not store a stale filter they have since edited (ETP-5007).
   onSavePreset = null,
   onDeletePreset = null,
   hasActiveFilter = false,
@@ -373,6 +377,16 @@ export function AdvancedFilterBuilder({
   // would be a no-op, and stays disabled.
   const canApply = !hasIncompleteStartedRow && (completeRows.length > 0 || hasAppliedFilter);
 
+  // The draft promoted to the shape the parent stores. Shared by Apply and by
+  // "save as preset" so both commit exactly what the user configured, and
+  // returns null when nothing is complete (i.e. "no advanced filter").
+  const buildFilterFromDraft = () => (completeRows.length
+    ? {
+      rowOperator: draft.rowOperator,
+      conditions: sanitizeConditions(cloneConditions(completeRows), columnByKey),
+    }
+    : null);
+
   const handleApply = () => {
     if (!canApply) return;
     if (completeRows.length === 0) {
@@ -381,10 +395,7 @@ export function AdvancedFilterBuilder({
       onClose?.();
       return;
     }
-    onApply?.({
-      rowOperator: draft.rowOperator,
-      conditions: sanitizeConditions(cloneConditions(completeRows), columnByKey),
-    });
+    onApply?.(buildFilterFromDraft());
     onClose?.();
   };
 
@@ -424,12 +435,12 @@ export function AdvancedFilterBuilder({
       setPresetDialog({ mode: 'overwrite', name });
       return;
     }
-    onSavePreset?.(name);
+    onSavePreset?.(name, buildFilterFromDraft());
     closePresetDialog();
   };
 
   const handleConfirmOverwrite = () => {
-    if (presetDialog.name) onSavePreset?.(presetDialog.name);
+    if (presetDialog.name) onSavePreset?.(presetDialog.name, buildFilterFromDraft());
     closePresetDialog();
   };
 

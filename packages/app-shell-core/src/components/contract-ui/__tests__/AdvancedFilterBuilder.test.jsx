@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeAll, beforeEach, afterEach } from 'vitest';
 import '@testing-library/jest-dom/vitest';
-import { render, screen, cleanup } from '@testing-library/react';
+import { render, screen, cleanup, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 
 // Core vitest runs without `globals: true`, so RTL's automatic afterEach
@@ -2297,5 +2297,152 @@ describe('AdvancedFilterBuilder — Apply enablement (ETP-5007)', () => {
       operator: 'greaterThan',
       value: '100',
     });
+  });
+});
+
+// ================================================================
+// ETP-5007 (part 2) — "save as preset" must persist the DRAFT, not the
+// filter currently applied. Saving without pressing Apply used to store
+// the applied filter (empty, or the stale previous one), so the preset
+// never matched what the user had just configured.
+// ================================================================
+
+describe('AdvancedFilterBuilder — save preset uses the draft (ETP-5007)', () => {
+  const COLUMNS_PRESET = [
+    { key: 'name', label: 'Name', type: 'text', column: 'Name' },
+    { key: 'amount', label: 'Amount', type: 'amount', column: 'Amount' },
+  ];
+
+  // Walks the real preset UI: dropdown -> "save current" -> name -> submit.
+  async function openSaveDialogAndSubmit(user, name) {
+    await user.click(screen.getByText('filterPresetsButton'));
+    await user.click(await screen.findByText('filterPresetSaveCurrent'));
+    const dialog = await screen.findByRole('dialog');
+    await user.type(within(dialog).getByRole('textbox'), name);
+    await user.click(screen.getByText('save'));
+  }
+
+  it('saves a condition configured but never applied', async () => {
+    const user = userEvent.setup();
+    const onSavePreset = vi.fn();
+    render(
+      <AdvancedFilterBuilder
+        columns={COLUMNS_PRESET}
+        presets={{}}
+        onSavePreset={onSavePreset}
+        value={{ rowOperator: 'and', conditions: [{ field: 'name', operator: '', value: '' }] }}
+      />,
+    );
+    // Configure the row fully — no Apply click anywhere in this test.
+    await user.click(screen.getByText('advancedFilterSelectOp').closest('button'));
+    await user.click(await screen.findByRole('option', { name: 'opContains' }));
+    await user.type(screen.getByRole('textbox'), 'draft-only');
+
+    await openSaveDialogAndSubmit(user, 'MyPreset');
+
+    expect(onSavePreset).toHaveBeenCalledTimes(1);
+    const [savedName, savedFilter] = onSavePreset.mock.calls[0];
+    expect(savedName).toBe('MyPreset');
+    expect(savedFilter).toMatchObject({ rowOperator: 'and' });
+    expect(savedFilter.conditions).toHaveLength(1);
+    expect(savedFilter.conditions[0]).toMatchObject({
+      field: 'name',
+      operator: 'iContains',
+      value: 'draft-only',
+    });
+  });
+
+  it('saves the edited draft value, not the applied one', async () => {
+    const user = userEvent.setup();
+    const onSavePreset = vi.fn();
+    render(
+      <AdvancedFilterBuilder
+        columns={COLUMNS_PRESET}
+        presets={{}}
+        onSavePreset={onSavePreset}
+        hasActiveFilter
+        value={{ rowOperator: 'and', conditions: [{ field: 'name', operator: 'iContains', value: 'applied' }] }}
+      />,
+    );
+    const input = screen.getByRole('textbox');
+    await user.clear(input);
+    await user.type(input, 'edited');
+
+    await openSaveDialogAndSubmit(user, 'Edited');
+
+    expect(onSavePreset).toHaveBeenCalledTimes(1);
+    expect(onSavePreset.mock.calls[0][1].conditions[0].value).toBe('edited');
+  });
+
+  it('saves null when the draft has no complete condition', async () => {
+    const user = userEvent.setup();
+    const onSavePreset = vi.fn();
+    render(
+      <AdvancedFilterBuilder
+        columns={COLUMNS_PRESET}
+        presets={{}}
+        onSavePreset={onSavePreset}
+        // Started (field picked) so the menu item is enabled, but not complete.
+        value={{ rowOperator: 'and', conditions: [{ field: 'name', operator: '', value: '' }] }}
+      />,
+    );
+    await openSaveDialogAndSubmit(user, 'Empty');
+
+    expect(onSavePreset).toHaveBeenCalledTimes(1);
+    expect(onSavePreset.mock.calls[0][1]).toBeNull();
+  });
+
+  it('passes the draft through the overwrite-confirmation path too', async () => {
+    const user = userEvent.setup();
+    const onSavePreset = vi.fn();
+    render(
+      <AdvancedFilterBuilder
+        columns={COLUMNS_PRESET}
+        presets={{ Mine: { rowOperator: 'and', conditions: [] } }}
+        onSavePreset={onSavePreset}
+        hasActiveFilter
+        value={{ rowOperator: 'and', conditions: [{ field: 'name', operator: 'iContains', value: 'applied' }] }}
+      />,
+    );
+    const input = screen.getByRole('textbox');
+    await user.clear(input);
+    await user.type(input, 'overwritten');
+
+    await openSaveDialogAndSubmit(user, 'Mine');
+    // Submitting an existing name does not save yet — it asks for confirmation.
+    expect(onSavePreset).not.toHaveBeenCalled();
+    expect(await screen.findByText('filterPresetOverwriteConfirm')).toBeInTheDocument();
+
+    await user.click(screen.getByText('filterPresetOverwriteAction'));
+    expect(onSavePreset).toHaveBeenCalledTimes(1);
+    const [savedName, savedFilter] = onSavePreset.mock.calls[0];
+    expect(savedName).toBe('Mine');
+    expect(savedFilter).not.toBeUndefined();
+    expect(savedFilter.conditions[0].value).toBe('overwritten');
+  });
+
+  it('drops started-but-incomplete rows from the saved preset', async () => {
+    const user = userEvent.setup();
+    const onSavePreset = vi.fn();
+    render(
+      <AdvancedFilterBuilder
+        columns={COLUMNS_PRESET}
+        presets={{}}
+        onSavePreset={onSavePreset}
+        value={{
+          rowOperator: 'and',
+          conditions: [
+            { field: 'name', operator: 'iContains', value: 'keep' },
+            { field: 'amount', operator: 'equals', value: '' },
+          ],
+        }}
+      />,
+    );
+    await openSaveDialogAndSubmit(user, 'Partial');
+
+    expect(onSavePreset).toHaveBeenCalledTimes(1);
+    const savedFilter = onSavePreset.mock.calls[0][1];
+    expect(savedFilter.conditions).toHaveLength(1);
+    expect(savedFilter.conditions[0]).toMatchObject({ field: 'name', value: 'keep' });
   });
 });
