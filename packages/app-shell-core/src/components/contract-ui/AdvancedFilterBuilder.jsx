@@ -499,7 +499,11 @@ export function AdvancedFilterBuilder({
           const isBetween = row.operator === 'between';
 
           return (
-            <div key={row._rowKey} className="flex items-start gap-2">
+            <div
+              key={row._rowKey}
+              className="flex items-start gap-2"
+              data-testid={`advanced-filter-row-${idx}`}
+            >
               {/* Connector */}
               <div className="w-16 shrink-0">
                 {idx === 0 ? (
@@ -528,7 +532,7 @@ export function AdvancedFilterBuilder({
                   value={row.field || undefined}
                   onValueChange={(v) => updateRow(idx, { field: v })}
                   data-testid="Select__4eedf1">
-                  <SelectTrigger className="h-9 text-xs" data-testid="SelectTrigger__4eedf1">
+                  <SelectTrigger className="h-9 text-xs" data-testid="advanced-filter-field">
                     <SelectValue
                       placeholder={ui('advancedFilterSelectField')}
                       data-testid="SelectValue__4eedf1" />
@@ -548,7 +552,7 @@ export function AdvancedFilterBuilder({
                   onValueChange={(v) => updateRow(idx, { operator: v })}
                   disabled={!col}
                   data-testid="Select__4eedf1">
-                  <SelectTrigger className="h-9 text-xs" data-testid="SelectTrigger__4eedf1">
+                  <SelectTrigger className="h-9 text-xs" data-testid="advanced-filter-operator">
                     <SelectValue
                       placeholder={ui('advancedFilterSelectOp')}
                       data-testid="SelectValue__4eedf1" />
@@ -606,6 +610,7 @@ export function AdvancedFilterBuilder({
               <button
                 type="button"
                 className="flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground transition-colors"
+                data-testid="advanced-filter-presets-menu"
               >
                 <Bookmark className="h-3.5 w-3.5" data-testid="Bookmark__4eedf1" />
                 {ui('filterPresetsButton')}
@@ -647,7 +652,7 @@ export function AdvancedFilterBuilder({
                     onClick={handleSavePresetClick}
                     disabled={!canSavePreset}
                     className="flex items-center gap-2"
-                    data-testid="DropdownMenuItem__4eedf1">
+                    data-testid="advanced-filter-save-preset">
                     <Plus className="h-3.5 w-3.5" data-testid="Plus__4eedf1" />
                     <span className="flex-1">{ui('filterPresetSaveCurrent')}</span>
                   </DropdownMenuItem>
@@ -682,7 +687,7 @@ export function AdvancedFilterBuilder({
             className="h-8 text-xs"
             onClick={handleClear}
             disabled={!anyStarted && !hasAppliedFilter}
-            data-testid="Button__4eedf1">
+            data-testid="advanced-filter-clear">
             {ui('advancedFilterClear')}
           </Button>
           <Button
@@ -690,7 +695,7 @@ export function AdvancedFilterBuilder({
             className="h-8 text-xs"
             onClick={handleApply}
             disabled={!canApply}
-            data-testid="Button__4eedf1">
+            data-testid="advanced-filter-apply">
             {ui('advancedFilterApply')}
           </Button>
         </div>
@@ -714,7 +719,7 @@ export function AdvancedFilterBuilder({
                   value={presetNameDraft}
                   onChange={(e) => setPresetNameDraft(e.target.value)}
                   className="mt-2"
-                  data-testid="Input__4eedf1" />
+                  data-testid="preset-name-input" />
               </div>
               <DialogFooter data-testid="DialogFooter__4eedf1">
                 <Button
@@ -727,7 +732,7 @@ export function AdvancedFilterBuilder({
                 <Button
                   type="submit"
                   disabled={!presetNameDraft.trim()}
-                  data-testid="Button__4eedf1">
+                  data-testid="preset-save-confirm">
                   {ui('save')}
                 </Button>
               </DialogFooter>
@@ -748,7 +753,7 @@ export function AdvancedFilterBuilder({
                   data-testid="Button__4eedf1">
                   {ui('cancel')}
                 </Button>
-                <Button onClick={handleConfirmOverwrite} data-testid="Button__4eedf1">
+                <Button onClick={handleConfirmOverwrite} data-testid="preset-overwrite-confirm">
                   {ui('filterPresetOverwriteAction')}
                 </Button>
               </DialogFooter>
