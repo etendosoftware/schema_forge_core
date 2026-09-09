@@ -357,15 +357,33 @@ export function AdvancedFilterBuilder({
 
   const columnLabel = useCallback((col) => labelOf(col.column) ?? col.label ?? col.key, [labelOf]);
 
-  const allComplete = draft.conditions.every((r) => isRowComplete(r, columnByKey[r.field]));
+  // ETP-5007: a row the user never touched is UI noise, not an incomplete
+  // condition. Only a STARTED-but-incomplete row may block Apply. Requiring
+  // EVERY row to be complete made deleting the last condition a dead end:
+  // removeRow always re-seeds an empty row, so Apply stayed disabled forever
+  // and the filter still applied to the grid could not be dropped from here.
+  const completeRows = draft.conditions.filter((r) => isRowComplete(r, columnByKey[r.field]));
+  const hasIncompleteStartedRow = draft.conditions.some(
+    (r) => isRowStarted(r) && !isRowComplete(r, columnByKey[r.field]),
+  );
   const anyStarted = draft.conditions.some(isRowStarted);
   const hasAppliedFilter = !!value?.conditions?.length;
+  // Apply is also how the last condition gets REMOVED, so an empty draft is
+  // actionable whenever a filter is currently applied. With nothing applied it
+  // would be a no-op, and stays disabled.
+  const canApply = !hasIncompleteStartedRow && (completeRows.length > 0 || hasAppliedFilter);
 
   const handleApply = () => {
-    if (!allComplete) return;
+    if (!canApply) return;
+    if (completeRows.length === 0) {
+      // Emptying the draft and applying means "drop the filter".
+      onClear?.();
+      onClose?.();
+      return;
+    }
     onApply?.({
       rowOperator: draft.rowOperator,
-      conditions: sanitizeConditions(cloneConditions(draft.conditions), columnByKey),
+      conditions: sanitizeConditions(cloneConditions(completeRows), columnByKey),
     });
     onClose?.();
   };
@@ -632,7 +650,7 @@ export function AdvancedFilterBuilder({
             size="sm"
             className="h-8 text-xs"
             onClick={handleApply}
-            disabled={!allComplete}
+            disabled={!canApply}
             data-testid="Button__4eedf1">
             {ui('advancedFilterApply')}
           </Button>

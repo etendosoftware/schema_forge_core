@@ -2158,3 +2158,144 @@ describe('ETP-4956 — values are sanitized at apply time, not on change', () =>
     expect(onApply.mock.calls[0][0].conditions[0]).not.toBe(incoming);
   });
 });
+
+// ================================================================
+// ETP-5007 — Apply must stay enabled so the LAST condition can be
+// removed from the builder. `removeRow` re-seeds a pristine empty row
+// when the list would become empty; the old `disabled={!allComplete}`
+// required that pristine row to be complete, so Apply was dead-locked
+// and the filter applied to the grid could never be dropped from here.
+// ================================================================
+
+describe('AdvancedFilterBuilder — Apply enablement (ETP-5007)', () => {
+  const COLUMNS_5007 = [
+    { key: 'name', label: 'Name', type: 'text', column: 'Name' },
+    { key: 'amount', label: 'Amount', type: 'amount', column: 'Amount' },
+  ];
+
+  const seededValue = (conditions) => ({ rowOperator: 'and', conditions });
+
+  const applyButton = () => screen.getByText('advancedFilterApply').closest('button');
+
+  it('keeps Apply enabled after removing the only applied condition', async () => {
+    const user = userEvent.setup();
+    render(
+      <AdvancedFilterBuilder
+        columns={COLUMNS_5007}
+        value={seededValue([{ field: 'name', operator: 'iContains', value: 'test' }])}
+      />,
+    );
+    await user.click(screen.getAllByLabelText('Remove condition')[0]);
+    // The row list is re-seeded with one pristine empty row...
+    expect(screen.getAllByLabelText('Remove condition')).toHaveLength(1);
+    // ...but Apply stays actionable because a filter is currently applied.
+    expect(applyButton()).not.toBeDisabled();
+  });
+
+  it('applies an emptied draft as a clear (onClear + onClose, never onApply)', async () => {
+    const user = userEvent.setup();
+    const onApply = vi.fn();
+    const onClear = vi.fn();
+    const onClose = vi.fn();
+    render(
+      <AdvancedFilterBuilder
+        columns={COLUMNS_5007}
+        value={seededValue([{ field: 'name', operator: 'iContains', value: 'test' }])}
+        onApply={onApply}
+        onClear={onClear}
+        onClose={onClose}
+      />,
+    );
+    await user.click(screen.getAllByLabelText('Remove condition')[0]);
+    await user.click(applyButton());
+    expect(onClear).toHaveBeenCalledTimes(1);
+    expect(onClose).toHaveBeenCalledTimes(1);
+    expect(onApply).not.toHaveBeenCalled();
+  });
+
+  it('disables Apply on a pristine draft with no filter applied (no-op)', () => {
+    render(<AdvancedFilterBuilder columns={COLUMNS_5007} />);
+    expect(applyButton()).toBeDisabled();
+  });
+
+  it('disables Apply while a started-but-incomplete row exists', () => {
+    // Field picked, no operator and no value: started, not complete.
+    render(
+      <AdvancedFilterBuilder
+        columns={COLUMNS_5007}
+        value={seededValue([{ field: 'name', operator: '', value: '' }])}
+      />,
+    );
+    expect(applyButton()).toBeDisabled();
+  });
+
+  it('disables Apply when a complete row is accompanied by a started-but-incomplete one', () => {
+    render(
+      <AdvancedFilterBuilder
+        columns={COLUMNS_5007}
+        value={seededValue([
+          { field: 'name', operator: 'iContains', value: 'test' },
+          { field: 'amount', operator: 'equals', value: '' },
+        ])}
+      />,
+    );
+    expect(applyButton()).toBeDisabled();
+  });
+
+  it('ignores an untouched empty row and applies only the complete conditions', async () => {
+    const user = userEvent.setup();
+    const onApply = vi.fn();
+    const onClear = vi.fn();
+    render(
+      <AdvancedFilterBuilder
+        columns={COLUMNS_5007}
+        value={seededValue([{ field: 'name', operator: 'iContains', value: 'test' }])}
+        onApply={onApply}
+        onClear={onClear}
+      />,
+    );
+    await user.click(screen.getByText('advancedFilterAddCondition'));
+    expect(screen.getAllByLabelText('Remove condition')).toHaveLength(2);
+    expect(applyButton()).not.toBeDisabled();
+    await user.click(applyButton());
+    expect(onClear).not.toHaveBeenCalled();
+    expect(onApply).toHaveBeenCalledTimes(1);
+    const applied = onApply.mock.calls[0][0];
+    expect(applied.conditions).toHaveLength(1);
+    expect(applied.conditions[0]).toMatchObject({
+      field: 'name',
+      operator: 'iContains',
+      value: 'test',
+    });
+  });
+
+  it('applies the remaining condition after removing one of two', async () => {
+    const user = userEvent.setup();
+    const onApply = vi.fn();
+    const onClear = vi.fn();
+    render(
+      <AdvancedFilterBuilder
+        columns={COLUMNS_5007}
+        value={seededValue([
+          { field: 'name', operator: 'iContains', value: 'test' },
+          { field: 'amount', operator: 'greaterThan', value: '100' },
+        ])}
+        onApply={onApply}
+        onClear={onClear}
+      />,
+    );
+    await user.click(screen.getAllByLabelText('Remove condition')[0]);
+    expect(screen.getAllByLabelText('Remove condition')).toHaveLength(1);
+    expect(applyButton()).not.toBeDisabled();
+    await user.click(applyButton());
+    expect(onClear).not.toHaveBeenCalled();
+    expect(onApply).toHaveBeenCalledTimes(1);
+    const applied = onApply.mock.calls[0][0];
+    expect(applied.conditions).toHaveLength(1);
+    expect(applied.conditions[0]).toMatchObject({
+      field: 'amount',
+      operator: 'greaterThan',
+      value: '100',
+    });
+  });
+});
