@@ -288,7 +288,12 @@ export function AdvancedFilterBuilder({
   // Apply, and must not store a stale filter they have since edited (ETP-5007).
   onSavePreset = null,
   onDeletePreset = null,
-  hasActiveFilter = false,
+  // Whether a filter OUTSIDE this builder (a column filter) is active, which is
+  // what lets a preset with no advanced condition still be worth saving. It
+  // must NOT include the applied advanced filter: the builder decides that from
+  // its own draft, and counting the applied value here allowed saving a preset
+  // holding a filter the user had just deleted (ETP-5007).
+  hasActiveColumnFilter = false,
   labelOverrides = null,
 }) {
   const ui = useUI();
@@ -422,7 +427,10 @@ export function AdvancedFilterBuilder({
   }, []);
 
   const handleSavePresetClick = () => {
-    if (!onSavePreset) return;
+    // Guarded here and not only through the menu item's `disabled` flag: a
+    // disabled Radix item still reaches this handler in tests, so the rule
+    // would be enforced by CSS alone and no test could see it break.
+    if (!onSavePreset || !canSavePreset) return;
     setPresetNameDraft('');
     setPresetDialog({ mode: 'save', name: '' });
   };
@@ -430,7 +438,7 @@ export function AdvancedFilterBuilder({
   const handleSaveDialogSubmit = (e) => {
     e?.preventDefault?.();
     const name = presetNameDraft.trim();
-    if (!name) return;
+    if (!name || !canSavePreset) return;
     if (presets && Object.prototype.hasOwnProperty.call(presets, name)) {
       setPresetDialog({ mode: 'overwrite', name });
       return;
@@ -440,7 +448,7 @@ export function AdvancedFilterBuilder({
   };
 
   const handleConfirmOverwrite = () => {
-    if (presetDialog.name) onSavePreset?.(presetDialog.name, buildFilterFromDraft());
+    if (presetDialog.name && canSavePreset) onSavePreset?.(presetDialog.name, buildFilterFromDraft());
     closePresetDialog();
   };
 
@@ -461,7 +469,18 @@ export function AdvancedFilterBuilder({
     onClose?.();
   };
 
-  const canSavePreset = hasActiveFilter || anyStarted;
+  // ETP-5007: loading a saved filter APPLIES it, so a preset must be something
+  // that could have been applied in the first place. Saving is therefore held
+  // to the same bar as Apply — no half-written row — and an empty preset can
+  // never be stored. `hasActiveColumnFilter` is what makes a preset with no
+  // advanced condition still worth saving; the previously used "any filter is
+  // active" flag also counted the APPLIED advanced filter, which is exactly the
+  // stale value this must not be fooled by.
+  const canSavePreset = !hasIncompleteStartedRow
+    && (completeRows.length > 0 || hasActiveColumnFilter);
+  const savePresetBlockedReason = canSavePreset
+    ? null
+    : ui(hasIncompleteStartedRow ? 'filterPresetBlockedIncomplete' : 'filterPresetBlockedEmpty');
   const hasBetween = draft.conditions.some((c) => c.operator === 'between');
 
   return (
@@ -632,6 +651,15 @@ export function AdvancedFilterBuilder({
                     <Plus className="h-3.5 w-3.5" data-testid="Plus__4eedf1" />
                     <span className="flex-1">{ui('filterPresetSaveCurrent')}</span>
                   </DropdownMenuItem>
+                  {/* A disabled item with no explanation is a dead end — say why. */}
+                  {savePresetBlockedReason && (
+                    <div
+                      className="px-2 pb-1.5 text-[11px] leading-snug text-muted-foreground"
+                      data-testid="save-preset-blocked-reason"
+                    >
+                      {savePresetBlockedReason}
+                    </div>
+                  )}
                 </>
               )}
             </DropdownMenuContent>
