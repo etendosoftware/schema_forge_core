@@ -117,6 +117,7 @@ This is not a decisions.json opt-in; it applies automatically to every generated
 | `sendDocument` | object | _absent_ (auto-enabled on documental windows) | See below | Send/Download envelope config forwarded to the generic `SendDocumentModal`. Auto-enabled when the header exposes `documentNo`; declare it only to disable (`enabled: false`), drop the email panel (`allowEmail: false`), or tune the recipient-edit policy (see the Send Document subsection below). |
 | `balanceFooter` | object | `null` | `{ debitField, creditField }` | Renders a debit/credit balance footer (Σ debit, Σ credit, difference, balanced ✓/✗ badge) for double-entry windows (e.g. manual journals). Both fields must be amount-typed fields on the lines entity. When set, the generator emits `BalanceFooterPanel` instead of `DocumentTotalsPanel` and disables the Save button (with a tooltip) only when the entry is unbalanced (Σ debit ≠ Σ credit). An empty/zero entry is treated as balanced and is savable as a draft; the ✓/✗ badge is hidden until the lines carry amounts. Validator F17 enforces field existence. Example: `"balanceFooter": { "debitField": "amtSourceDr", "creditField": "amtSourceCr" }`. |
 | `linesLayout` | string | `"classic"` | `"classic"`, `"inlineEditable"` | Lines tab rendering mode. `"classic"` keeps the side-panel edit flow (current behavior). `"inlineEditable"` switches the table to `InlineLinesPanel`: pencil + trash hover-action icons on the right, single-row inline edit triggered by the pencil, autosave on blur. All column types (string, number, amount, percent, date, selector, search) are inline-editable; selector/search columns use `InlineSearchCombo` (text input with server-side search) so FK fields with many options are filterable by typing. The add-line button, related-documents panel, notes panel and totals panel are unchanged. Validator F12 enforces the enum. |
+| `showDetailFooterTotals` | boolean | _absent_ (auto) | `true` / `false` | **Whole-table** override for the lines-grid footer totals row in the detail view. When absent, `DetailView` decides for itself: totals are shown unless the header already renders an `amount` summary field (so the same number is not printed twice). `false` suppresses the row outright, `true` forces it. This is a TABLE-level switch and cannot exclude one column — for a single `amount` column that must keep its money formatting but not be added up, use the field-level `summable: false` instead (see Grid cell flags). Emitted only when declared. |
 
 ### Send Document (`window.sendDocument`)
 
@@ -751,6 +752,74 @@ Applied to fields with `grid: true` to control how the list cell renders.
 | `cellType` | string | `null` | Selects a cell renderer from the registry (see below). Generic to any grid; the `list-modal` layout ships a styled set. |
 | `dimensionsPanel` | boolean | `false` | Collect this field into the ONE synthetic `type: 'dimensionsPanel'` grid column instead of its own column — see below. Read regardless of the field's own `grid` value (typically `grid: false`, since the field renders inside the expand-row panel, not as a standalone column). |
 | `visibleWhenCapability` | string | `null` | Names a capability key (e.g. `"showAccountingFields"`) from the `capabilities` map returned by the `GET /webhooks/SFWindowAccessMap` webhook. Opt-in — absent means always visible, no behavior change. See below. |
+| `summable` | boolean | _absent_ | **Tri-state, not a flag.** Controls whether an `amount` column feeds the grid's footer TOTAL row. `false` opts the column out while keeping every bit of its money formatting; `true` is the explicit opt-in; **absent means "sums"** — the historical default that ~99 existing amount columns rely on. See below. |
+| `currencyField` | string | _absent_ | Names the sibling field that carries THIS column's currency, for grids whose rows are not all in the same currency. Value is the contract field name (`"cCurrencyID"`), not the AD column (`C_Currency_ID`) — the renderer appends `$_identifier` to it. See below. |
+
+#### Amount columns: formatting vs. totals (`summable`, `currencyField`) — ETP-5245
+
+`columnType: "amount"` means **"this value is money"**: decimals, thousands/decimal
+separators, currency symbol, right alignment, numeric filter. Until ETP-5245 it *also*
+silently meant "add this column up", because the consuming `DataTable` keyed its footer
+total on nothing but `col.type === 'amount'`. Those are two different claims, and for a lot
+of real columns only the first one is true — a unit cost, a list price, a rate, a credit
+limit. Their sum is not a smaller or a larger number, it is a meaningless one.
+
+`summable` splits them:
+
+```json
+"cost": {
+  "visibility": "editable",
+  "grid": true,
+  "columnType": "amount",
+  "summable": false,
+  "currencyField": "cCurrencyID"
+}
+```
+
+**`summable` is tri-state and the three states are not interchangeable:**
+
+| Declared | Contract | Generated column | Footer total |
+|---|---|---|---|
+| `true` | `summable: true` | `summable: true` | shown (explicit opt-in) |
+| `false` | `summable: false` | `summable: false` | **not shown** for this column |
+| absent | key omitted | key omitted | shown (historical default) |
+
+The absent case is load-bearing. Every existing `amount` column in every window carries no
+`summable` key, so "absent ⇒ sums" is what keeps them working; the consuming side tests
+`col.summable !== false`, never `col.summable === true`. Do not "tidy" that into a truthy
+check.
+
+> **History:** `summable` existed end-to-end (resolve → contract → generated column) long
+> before this ticket, but was **dead**: every layer copied it only when truthy, so the only
+> value a window could express was the one that was already the default, and nothing in the
+> app-shell read it at all. ETP-5245 made all three layers pass `false` through and gave the
+> key a consumer.
+
+**Table-level alternatives, and why they are usually not what you want:** `showFooterTotals`
+(a `DataTable` prop) and `window.showDetailFooterTotals` (decisions.json) switch the footer
+row off for the WHOLE table. Eight tables in the app mix summable and non-summable amount
+columns, so those switches would trade a meaningless total for a set of missing meaningful
+ones. Reach for `summable` per column first.
+
+**`currencyField`** fixes an independent bug in the same cell. The amount renderer resolves
+the row's currency through a cascade, and its second step is the property `currency$_identifier`
+— the DAL name of an association literally called `currency`. An entity whose currency column
+is `C_Currency_ID` gets the field name `cCurrencyID`, so NEO emits `cCurrencyID$_identifier`
+and the lookup missed, rendering the amount with no symbol at all. `currencyField` names the
+sibling field explicitly:
+
+1. ``row[`${col.currencyField}$_identifier`]`` — when the column declares it
+2. `row['currency$_identifier']` — the historical lookup
+3. `row['cCurrencyID$_identifier']` — the AD-derived name, covered without any declaration
+4. the session currency (`useCurrency()`), as a last resort
+5. otherwise undefined — the amount renders grouped with 2 decimals and **no symbol**, which
+   is the pre-existing behavior and what symbol-less mock data produces
+
+Step 4 is deliberately last. A grid such as `M_Costing` legitimately mixes currencies row by
+row (real tenant data: 1663 rows in USD next to 1545 in EUR), so stamping the session currency
+over a row that has its own would print a confident lie. The resolver lives in the functional
+repo (`tools/app-shell/src/lib/rowCurrency.js`) and is shared by the cell renderer and the
+footer total, so a total is always labelled with the code its rows actually carry.
 
 #### Accounting dimensions panel (`dimensionsPanel`)
 

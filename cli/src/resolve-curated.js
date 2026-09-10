@@ -210,6 +210,12 @@ const FIELD_DECISION_COPY_PROPS = [
   'inlineToggle',
   'inlineEdit',
   'noTrailing',
+  // ETP-5245 — sibling field name holding this column's currency, for grids whose
+  // rows are not all in the same currency (M_Costing mixes EUR and USD). The
+  // renderer appends `$_identifier` to it, so the value is the contract field name
+  // ("cCurrencyID"), not the AD column ("C_Currency_ID"). Absent ⇒ unchanged
+  // behavior (the row's `currency$_identifier`, then the session currency).
+  'currencyField',
   'inline',
   'addLineFromSibling',
   // Opt-in (ETP-4529): collect this field into the ONE synthetic `dimensionsPanel`
@@ -331,7 +337,10 @@ function applyFieldDecisionProps(field, fieldDecision) {
   if (fieldDecision.filterable === false) field.filterable = false;
   if (fieldDecision.dot === false) field.dot = false;
   if (fieldDecision.badge) field.badge = true;
-  if (fieldDecision.summable) field.summable = true;
+  // ETP-5245 — tri-state (see generate-contract.js's FIELD_HINTS_PRE_GRID): `false`
+  // is meaningful (an `amount` column that must NOT be added up), so copy it
+  // explicitly instead of via the truthy-only decision-copy loop.
+  if (fieldDecision.summable !== undefined) field.summable = fieldDecision.summable === true;
   if (fieldDecision.businessCritical) field.businessCritical = true;
   if (fieldDecision.gridOrder != null) field.gridOrder = fieldDecision.gridOrder;
   // EPL-1807 escape hatch: force-show/force-hide the computed freshness indicator
