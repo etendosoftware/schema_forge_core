@@ -1,6 +1,7 @@
-import { describe, test, expect, beforeEach } from 'vitest';
+import { describe, test, expect, beforeEach, vi } from 'vitest';
 import { createQueryCache } from '../queryCache.js';
 import { createQueryKey } from '../queryKey.js';
+import { deferred } from '../../auth/__tests__/refreshFixtures.js';
 
 // Controllable clock so freshness windows are deterministic.
 function makeClock(start = 1000) {
@@ -162,5 +163,26 @@ describe('createQueryCache', () => {
 
     expect(localStorage.length).toBe(0);
     expect(sessionStorage.length).toBe(0);
+  });
+
+  test('clear rejects a late write without evicting the replacement in-flight request for the same key', async () => {
+    const cache = createQueryCache();
+    const old = deferred();
+    const current = deferred();
+    const key = contact('1');
+    const oldRequest = cache.fetchQuery({ key, fetcher: () => old.promise }).catch((error) => error);
+    await Promise.resolve();
+    cache.clear();
+    const fetcher = vi.fn(() => current.promise);
+    const replacement = cache.fetchQuery({ key, fetcher });
+    old.resolve('obsolete');
+    expect((await oldRequest).name).toBe('AbortError');
+    expect(cache.getData(key)).toBeUndefined();
+    const concurrent = cache.fetchQuery({ key, fetcher });
+    current.resolve('current');
+    expect(await replacement).toBe('current');
+    expect(await concurrent).toBe('current');
+    expect(fetcher).toHaveBeenCalledTimes(1);
+    expect(cache.getData(key)).toBe('current');
   });
 });

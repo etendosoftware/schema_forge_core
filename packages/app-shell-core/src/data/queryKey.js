@@ -24,6 +24,7 @@
 
 const KEY_FIELDS = [
   'auth',
+  'authRevision',
   'client',
   'role',
   'org',
