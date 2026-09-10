@@ -6,6 +6,8 @@ import { reconcileSessionRefresh } from './sessionRefresh.js';
 
 const AuthContext = createContext(null);
 const useBrowserLayoutEffect = typeof window === 'undefined' ? useEffect : useLayoutEffect;
+// [ETP-5195] Fallback cadence for the periodic-poll refresh trigger below.
+const SILENT_REFRESH_POLL_INTERVAL_MS = 5 * 60 * 1000;
 
 export function AuthProvider({ children, storage, initialSession, onSessionChange, fetchWindowAccess, apiBaseUrl }) {
   const authStorage = useMemo(() => storage || createLocalAuthStorage(), [storage]);
@@ -166,6 +168,17 @@ export function AuthProvider({ children, storage, initialSession, onSessionChang
       document.removeEventListener('visibilitychange', schedule);
       window.removeEventListener('focus', schedule);
     };
+  }, [refresh]);
+
+  // [ETP-5195] Interim mitigation, not the full fix: a user demoted/promoted elsewhere
+  // who never blurs/refocuses the tab (and never reloads) hits none of the triggers
+  // above, so a stale role claim can otherwise ride out the full JWT lifetime. Poll
+  // on a fixed interval to bound that window; the real fix is server-side revocation,
+  // tracked separately.
+  useEffect(() => {
+    if (typeof window === 'undefined') return undefined;
+    const interval = setInterval(() => { refresh(); }, SILENT_REFRESH_POLL_INTERVAL_MS);
+    return () => clearInterval(interval);
   }, [refresh]);
 
   const actions = useMemo(() => ({

@@ -606,3 +606,123 @@ describe('AuthContext — silent token refresh (ETP-5195)', () => {
     } finally { globalThis.fetch = original; }
   });
 });
+
+describe('AuthContext — silent refresh polling fallback (ETP-5195)', () => {
+  // Mirrors the module-level SILENT_REFRESH_POLL_INTERVAL_MS constant in AuthContext.jsx —
+  // not exported, so kept in sync here.
+  const POLL_INTERVAL_MS = 5 * 60 * 1000;
+
+  // Fake timers must be installed BEFORE renderHook() so the provider's setInterval() call
+  // itself is captured by the fake clock — installing afterwards would leave a real interval
+  // running in the background, uncontrolled by vi.advanceTimersByTimeAsync(). Restore real
+  // timers afterwards so later tests (e.g. the 50ms visibilitychange debounce, which relies on
+  // real setTimeout + testing-library's waitFor) are unaffected.
+  afterEach(() => {
+    vi.useRealTimers();
+  });
+
+  it('fires a silent refresh after the poll interval elapses', async () => {
+    const token = makeToken({ role: 'R1', user: 'U1' });
+    const f = stubFetch({ ok: true, json: async () => ({ token }) });
+    vi.useFakeTimers();
+    try {
+      renderHook(() => useAuth(), {
+        wrapper: ({ children }) => (
+          <AuthProvider storage={createMemoryAuthStorage()} initialSession={{ token }}>{children}</AuthProvider>
+        ),
+      });
+
+      // Flush the mount-time silent refresh (queued via a Promise microtask, not a timer —
+      // unaffected by the fake clock).
+      await act(async () => { await Promise.resolve(); await Promise.resolve(); });
+      expect(f.calls.length).toBe(1);
+
+      await act(async () => {
+        await vi.advanceTimersByTimeAsync(POLL_INTERVAL_MS);
+      });
+
+      expect(f.calls.length).toBe(2);
+      expect(f.calls[1].url).toBe('/sws/neo/refreshtoken');
+    } finally { f.restore(); }
+  });
+
+  it('keeps firing on every interval tick, not just once (recurring poll, not a one-shot timeout)', async () => {
+    const token = makeToken({ role: 'R1', user: 'U1' });
+    const f = stubFetch({ ok: true, json: async () => ({ token }) });
+    vi.useFakeTimers();
+    try {
+      renderHook(() => useAuth(), {
+        wrapper: ({ children }) => (
+          <AuthProvider storage={createMemoryAuthStorage()} initialSession={{ token }}>{children}</AuthProvider>
+        ),
+      });
+
+      await act(async () => { await Promise.resolve(); await Promise.resolve(); });
+      const callsAfterMount = f.calls.length;
+
+      await act(async () => {
+        await vi.advanceTimersByTimeAsync(2 * POLL_INTERVAL_MS);
+      });
+
+      // Two full interval periods elapsed — two additional poll-triggered refreshes, proving
+      // this is a recurring setInterval, not a setTimeout that fires once and stops.
+      expect(f.calls.length).toBe(callsAfterMount + 2);
+    } finally { f.restore(); }
+  });
+
+  it('clears the interval on unmount, stopping the poll', async () => {
+    const token = makeToken({ role: 'R1', user: 'U1' });
+    const f = stubFetch({ ok: true, json: async () => ({ token }) });
+    vi.useFakeTimers();
+    try {
+      const { unmount } = renderHook(() => useAuth(), {
+        wrapper: ({ children }) => (
+          <AuthProvider storage={createMemoryAuthStorage()} initialSession={{ token }}>{children}</AuthProvider>
+        ),
+      });
+
+      await act(async () => { await Promise.resolve(); await Promise.resolve(); });
+      const callsBeforeUnmount = f.calls.length;
+
+      unmount();
+
+      await act(async () => {
+        await vi.advanceTimersByTimeAsync(POLL_INTERVAL_MS);
+      });
+
+      // No additional call after unmount — the cleanup's clearInterval() actually ran.
+      expect(f.calls.length).toBe(callsBeforeUnmount);
+    } finally { f.restore(); }
+  });
+
+  it('reuses the same-role no-op guard on a poll-triggered refresh (no unnecessary persistSession write)', async () => {
+    const token = makeToken({ role: 'R1', user: 'U1' });
+    // A different token string, but decoding to the same role — polling must not bypass the
+    // "role unchanged" no-op guard that the other refresh triggers already respect.
+    const sameRoleToken = makeToken({ role: 'R1', user: 'U1', extra: 'ignored' });
+    const storage = createMemoryAuthStorage({ token });
+    const writeSpy = vi.spyOn(storage, 'write');
+    const f = stubFetch({ ok: true, json: async () => ({ token: sameRoleToken }) });
+    vi.useFakeTimers();
+    try {
+      renderHook(() => useAuth(), {
+        wrapper: ({ children }) => (
+          <AuthProvider storage={storage} initialSession={{ token }}>{children}</AuthProvider>
+        ),
+      });
+
+      await act(async () => { await Promise.resolve(); await Promise.resolve(); });
+      expect(f.calls.length).toBe(1);
+
+      await act(async () => {
+        await vi.advanceTimersByTimeAsync(POLL_INTERVAL_MS);
+      });
+
+      // The poll-triggered refresh did fire...
+      expect(f.calls.length).toBe(2);
+      expect(f.calls[1].url).toBe('/sws/neo/refreshtoken');
+      // ...but since the role didn't change, it stayed a no-op — same guard as every other trigger.
+      expect(writeSpy).not.toHaveBeenCalled();
+    } finally { f.restore(); }
+  });
+});
