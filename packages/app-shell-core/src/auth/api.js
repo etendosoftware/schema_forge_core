@@ -275,10 +275,11 @@ function recordsFromPayload(data) {
  * The entity is derived PER RECORD (ETP-5112), because a write's response may echo a record whose
  * id is not the one in the path.
  */
-function harvestWrittenVersion(res, path) {
+function harvestWrittenVersion(res, path, isCurrent) {
   const copy = jsonClone(res);
   if (!copy) return;
   copy.json().then((data) => {
+    if (!isCurrent()) return;
     const record = data?.response?.data?.[0] ?? data;
     rememberRecordVersion(record, entityFromPath(path, record?.id));
   }).catch(() => {
@@ -309,12 +310,13 @@ function harvestWrittenVersion(res, path) {
  * change someone else made in between. That is precisely the last-writer-wins behaviour ETP-5073
  * removed, so a missing token must stay a visible failure.
  */
-function harvestReadVersions(res, path) {
+function harvestReadVersions(res, path, isCurrent) {
   const contentType = res?.headers?.get?.('content-type') || '';
   if (!contentType.toLowerCase().includes('json')) return;
   const copy = jsonClone(res);
   if (!copy) return;
   copy.json().then((data) => {
+    if (!isCurrent()) return;
     recordsFromPayload(data).forEach((record) => {
       rememberRecordVersion(record, entityFromPath(path, record?.id));
     });
@@ -352,13 +354,24 @@ function harvestReadVersions(res, path) {
  * @param {() => (string|null)} getToken reads the current bearer token
  * @param {() => void} onUnauthorized invoked once when a 401 is not ignored
  */
-export function createApiFetch(baseUrl, getToken, onUnauthorized) {
+export function createApiFetch(baseUrl, getToken, onUnauthorized, scope) {
   return async function apiFetch(path, options = {}) {
     const {
       on401, credentials, baseUrl: baseUrlOverride, token: tokenOverride,
       headers: extraHeaders, ...rest
     } = options;
     const token = tokenOverride !== undefined ? tokenOverride : getToken();
+    // Legacy three-argument clients inherit the registered scope, including host wrappers
+    // with a captured token. Explicit null opts out (bootstrap refresh owns its guard).
+    const owner = scope === null ? null : ambientSession;
+    const requestScope = scope === undefined ? owner?.scope : scope;
+    const snapshot = requestScope?.capture();
+    // A registered owner's null token means logged out, not "no owner". Never
+    // fall back to a legacy client's captured bearer after that boundary.
+    const currentToken = owner ? owner.getToken() : getToken();
+    if (requestScope && tokenOverride === undefined && token !== currentToken) throw staleSessionError();
+    const isCurrent = () => (scope === null || ambientSession === owner)
+      && (requestScope ? requestScope.isCurrent(snapshot) : scope === null || getToken() === currentToken);
     // A bodyless request (GET, DELETE) gets authHeaders, which deliberately omits
     // Content-Type — declaring a body type on a request that has no body is wrong, and
     // it also keeps a migrated call site byte-identical on the wire to the raw `fetch`
@@ -376,6 +389,7 @@ export function createApiFetch(baseUrl, getToken, onUnauthorized) {
       credentials: credentials || 'include',
       headers,
     });
+    if (!isCurrent()) throw staleSessionError();
     const verb = String(rest.method || 'GET').toUpperCase();
     if (VERSIONED_WRITE_METHODS.has(verb) || verb === 'POST') {
       // ETP-5122: a POST (create) is harvested exactly like PUT/PATCH — its response echoes the
@@ -384,17 +398,40 @@ export function createApiFetch(baseUrl, getToken, onUnauthorized) {
       // an `updated` token on its own request. This branch only arms the version cache for
       // whatever PATCH/PUT saves this same record next, without a re-read in between (e.g.
       // "Add SII" then "Save" on the record it just created).
-      harvestWrittenVersion(res, path);
+      harvestWrittenVersion(res, path, isCurrent);
     } else if (verb === 'GET') {
       // ETP-5112: a read is what arms the write that follows it. See `harvestReadVersions`.
-      harvestReadVersions(res, path);
+      harvestReadVersions(res, path, isCurrent);
     }
     if (res.status === 401 && on401 !== 'ignore') {
-      onUnauthorized?.();
+      if (token === currentToken && (!owner || token === owner.getToken())) onUnauthorized?.();
       throw new Error('Unauthorized');
     }
-    return res;
+    return requestScope ? guardResponse(res, isCurrent) : res;
   };
+}
+
+function staleSessionError() {
+  return new DOMException('The request belongs to a superseded session.', 'AbortError');
+}
+
+// Guard body consumption too: fetch can finish before a logout while json() is pending.
+function guardResponse(response, isCurrent) {
+  return new Proxy(response, {
+    get(target, key) {
+      const value = Reflect.get(target, key, target);
+      if (key === 'clone') return () => guardResponse(target.clone(), isCurrent);
+      if (['json', 'text', 'blob', 'arrayBuffer', 'formData', 'bytes'].includes(key) && typeof value === 'function') {
+        return async (...args) => {
+          if (!isCurrent()) throw staleSessionError();
+          const result = await value.apply(target, args);
+          if (!isCurrent()) throw staleSessionError();
+          return result;
+        };
+      }
+      return typeof value === 'function' ? value.bind(target) : value;
+    },
+  });
 }
 
 /**
@@ -410,14 +447,17 @@ export function createApiFetch(baseUrl, getToken, onUnauthorized) {
  */
 let ambientSession = null;
 
-export function registerApiSession({ getToken, onUnauthorized, baseUrl } = {}) {
-  ambientSession = {
+export function registerApiSession({ getToken, onUnauthorized, baseUrl, scope, replaceSession } = {}) {
+  const registration = {
     getToken: typeof getToken === 'function' ? getToken : () => null,
     onUnauthorized: typeof onUnauthorized === 'function' ? onUnauthorized : () => {},
     baseUrl,
+    scope,
+    replaceSession,
   };
+  ambientSession = registration;
   return function unregister() {
-    if (ambientSession && ambientSession.getToken === getToken) ambientSession = null;
+    if (ambientSession === registration) ambientSession = null;
   };
 }
 
@@ -435,6 +475,11 @@ export function notifyAmbientUnauthorized() {
   ambientSession?.onUnauthorized();
 }
 
+/** Synchronous handoff for core onboarding writers before cache cleanup/navigation. */
+export function replaceAmbientSession(session) {
+  ambientSession?.replaceSession?.(session);
+}
+
 /** Test seam: drops the ambient session so suites do not leak one into the next. */
 export function resetApiSessionForTests() {
   ambientSession = null;
@@ -450,5 +495,6 @@ export function apiFetch(path, options = {}) {
     session ? session.baseUrl : undefined,
     session ? session.getToken : () => null,
     session ? session.onUnauthorized : () => {},
+    session?.scope,
   )(path, options);
 }

@@ -394,7 +394,7 @@ describe('AuthContext — silent token refresh (ETP-5195)', () => {
     } finally { f.restore(); }
   });
 
-  it('swaps the stored token when the refreshed token carries a DIFFERENT role', async () => {
+  it('blocks a token-only changed role without partially replacing the stored session', async () => {
     const oldToken = makeToken({ role: 'R-OLD', user: 'U1' });
     const newToken = makeToken({ role: 'R-NEW', user: 'U1' });
     const storage = createMemoryAuthStorage({ token: oldToken });
@@ -407,8 +407,11 @@ describe('AuthContext — silent token refresh (ETP-5195)', () => {
         ),
       });
 
-      await waitFor(() => expect(result.current.token).toBe(newToken));
-      expect(writeSpy).toHaveBeenCalled();
+      await waitFor(() => expect(result.current.sessionRefreshStatus).toBe('metadata-required'));
+      expect(result.current.token).toBe(oldToken);
+      expect(result.current.isSessionReady).toBe(false);
+      expect(storage.read().token).toBe(oldToken);
+      expect(writeSpy).not.toHaveBeenCalled();
     } finally { f.restore(); }
   });
 
@@ -541,9 +544,9 @@ describe('AuthContext — silent token refresh (ETP-5195)', () => {
         ),
       });
 
-      // Let the mount-time refresh resolve first (it already swaps to newToken, since the role
-      // differs) so the manual call below is the one under test.
-      await waitFor(() => expect(result.current.token).toBe(newToken));
+      // The incomplete changed-role response blocks bootstrap; the imperative API must
+      // still allow another attempt to obtain authoritative metadata.
+      await waitFor(() => expect(result.current.sessionRefreshStatus).toBe('metadata-required'));
       const callsBeforeManualTrigger = f.calls.length;
 
       await act(async () => {
@@ -552,6 +555,8 @@ describe('AuthContext — silent token refresh (ETP-5195)', () => {
 
       expect(f.calls.length).toBeGreaterThan(callsBeforeManualTrigger);
       expect(f.calls[f.calls.length - 1].url).toBe('/sws/neo/refreshtoken');
+      expect(result.current.token).toBe(oldToken);
+      expect(result.current.isSessionReady).toBe(false);
     } finally { f.restore(); }
   });
 
