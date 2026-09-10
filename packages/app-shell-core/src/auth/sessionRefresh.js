@@ -9,6 +9,16 @@ const identityClaims = ['user', 'client', 'role', 'organization'];
  * JWT decoding is a consistency check, never signature verification or authorization.
  */
 export function reconcileSessionRefresh(current, response) {
+  // [ETP-5195 follow-up] `SFRefreshToken` now skips minting a new JWT entirely when the
+  // caller's role hasn't changed (it was previously reissuing one, with a fresh iat/exp,
+  // on EVERY call — the whole reason a no-op refresh needed the `sameFlatMap`/`bump`
+  // machinery elsewhere in this file's caller). `{ unchanged: true }` carries no token/session
+  // at all; route it through the EXISTING 'legacy' no-op path (same as a legacy backend
+  // response with an unchanged role) rather than inventing a new status — the caller already
+  // knows how to handle 'legacy' correctly (revalidate access, never touch the session/token).
+  if (response?.unchanged === true) {
+    return { status: 'legacy' };
+  }
   const token = response?.token;
   const before = decodeJwtPayload(current.token);
   const after = decodeJwtPayload(token);

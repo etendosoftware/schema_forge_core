@@ -66,6 +66,14 @@ describe('authoritative session refresh contract (ETP-5195)', () => {
       { status: 'legacy' });
   });
 
+  it('treats an { unchanged: true } response the same as a legacy no-op', () => {
+    // [ETP-5195 follow-up] SFRefreshToken now skips minting a JWT entirely when the caller's
+    // role has not changed, returning `{ unchanged: true }` with no token/session at all —
+    // this must route through the SAME no-op path a legacy (token-only, same-identity) backend
+    // response does, not be misclassified as a failure just because there is no token to decode.
+    assert.deepEqual(reconcileSessionRefresh(sessionFixture(), { unchanged: true }), { status: 'legacy' });
+  });
+
   for (const change of [{ role: 'admin' }, { org: 'another' }, { tenant: 'Y' }]) {
     it(`blocks token-only identity changes ${JSON.stringify(change)}`, () => {
       assert.deepEqual(reconcileSessionRefresh(sessionFixture(), { token: sessionFixture(change).token }),
