@@ -25,3 +25,12 @@ export function deferred() {
 
 export const jsonResponse = (body, status = 200) => ({ ok: status >= 200 && status < 300,
   status, json: async () => body });
+
+/**
+ * [ETP-5195] `/sws/neo/refreshtoken` goes through the NEO webhook bridge, which wraps every
+ * response in `{"result": "<json-string>"}` — the real `{token, session}` payload is nested and
+ * JSON-encoded, not top-level (see `AuthContext.jsx`'s `unwrapBridgeEnvelope`). Fixtures for
+ * OTHER endpoints (e.g. `/sws/neo/access`, `/session`) still use the plain `jsonResponse` above —
+ * only the refreshtoken response itself needs this envelope.
+ */
+export const refreshResponse = (body, status = 200) => jsonResponse({ result: JSON.stringify(body) }, status);

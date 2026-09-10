@@ -9,7 +9,7 @@ import { WindowAccessGuard } from '../WindowAccessGuard.jsx';
 import { DataProvider, useDataCache } from '../../data/DataProvider.jsx';
 import { useQuery } from '../../data/useQuery.jsx';
 import { CurrencyProvider, useCurrency } from '../../hooks/useCurrency.jsx';
-import { deferred, jsonResponse, metadataResponse, sessionFixture } from './refreshFixtures.js';
+import { deferred, jsonResponse, metadataResponse, refreshResponse, sessionFixture } from './refreshFixtures.js';
 
 vi.mock('../../i18n/useUI.js', () => ({ useUI: () => (key) => key }));
 // Unrelated runtime chrome is not part of this contract. Providers and guards stay real.
@@ -66,7 +66,7 @@ describe('real provider authoritative refresh', () => {
       await waitFor(() => expect(fetch).toHaveBeenCalledTimes(1));
       expect(result.current.isSessionReady).toBe(false);
       expect(access).not.toHaveBeenCalled();
-      await act(async () => pending.resolve(jsonResponse(metadataResponse(next))));
+      await act(async () => pending.resolve(refreshResponse(metadataResponse(next))));
       await settled(result);
       expect(access).toHaveBeenCalledTimes(1);
       expect(observed).toHaveLength(1);
@@ -84,8 +84,8 @@ describe('real provider authoritative refresh', () => {
     const next = sessionFixture({ revision: 1 });
     next.selectedRole.name = 'Updated X role';
     next.selectedRole.orgList.push({ id: 'X-extra', name: 'Extra X organization' });
-    fetch.mockResolvedValueOnce(jsonResponse(metadataResponse(initial)))
-      .mockResolvedValueOnce(jsonResponse(metadataResponse(next)));
+    fetch.mockResolvedValueOnce(refreshResponse(metadataResponse(initial)))
+      .mockResolvedValueOnce(refreshResponse(metadataResponse(next)));
     const access = vi.fn().mockResolvedValueOnce({ capabilities: { manage: true } })
       .mockResolvedValueOnce({ capabilities: { manage: false } });
     const { result, storage } = setup({ fetchWindowAccess: access });
@@ -105,7 +105,7 @@ describe('real provider authoritative refresh', () => {
     const next = sessionFixture({ revision: 1 });
     const permissionRequests = [];
     fetch.mockImplementation((path, options) => {
-      if (path.endsWith('/refreshtoken')) return Promise.resolve(jsonResponse(metadataResponse(next)));
+      if (path.endsWith('/refreshtoken')) return Promise.resolve(refreshResponse(metadataResponse(next)));
       permissionRequests.push(options.headers.Authorization);
       return Promise.resolve(jsonResponse({ windowAccess: { fixtureWindow: 'full' } }));
     });
@@ -124,7 +124,7 @@ describe('real provider authoritative refresh', () => {
       const initial = sessionFixture();
       const response = metadataResponse(sessionFixture({ role: 'admin' }));
       response.session[field] = field === 'version' ? 99 : 'mismatched';
-      fetch.mockResolvedValue(jsonResponse(response));
+      fetch.mockResolvedValue(refreshResponse(response));
       const access = vi.fn();
       const { result, storage } = setup({ fetchWindowAccess: access });
       await waitFor(() => expect(result.current.sessionRefreshStatus).toBe('metadata-required'));
@@ -138,7 +138,7 @@ describe('real provider authoritative refresh', () => {
 
   it('keeps legacy unchanged identity ready and revalidates access without a storage write', async () => {
     const session = sessionFixture();
-    fetch.mockResolvedValue(jsonResponse({ token: sessionFixture({ revision: 1 }).token }));
+    fetch.mockResolvedValue(refreshResponse({ token: sessionFixture({ revision: 1 }).token }));
     const access = vi.fn().mockResolvedValue({ windowAccess: { fixtureWindow: 'read-only' } });
     const { result, storage } = setup({ session, fetchWindowAccess: access });
     const write = vi.spyOn(storage, 'write');
@@ -152,10 +152,10 @@ describe('real provider authoritative refresh', () => {
   it('blocks changed token-only identity, survives failed retries, and recovers only with valid metadata', async () => {
     const initial = sessionFixture();
     const next = sessionFixture({ role: 'admin' });
-    fetch.mockResolvedValueOnce(jsonResponse({ token: next.token }))
+    fetch.mockResolvedValueOnce(refreshResponse({ token: next.token }))
       .mockRejectedValueOnce(new Error('offline'))
-      .mockResolvedValueOnce(jsonResponse({ token: initial.token }))
-      .mockResolvedValueOnce(jsonResponse(metadataResponse(next)));
+      .mockResolvedValueOnce(refreshResponse({ token: initial.token }))
+      .mockResolvedValueOnce(refreshResponse(metadataResponse(next)));
     const access = vi.fn().mockResolvedValue({ capabilities: { manage: true } });
     const { result, storage } = setup({ fetchWindowAccess: access });
     await waitFor(() => expect(result.current.sessionRefreshStatus).toBe('metadata-required'));
@@ -175,7 +175,7 @@ describe('real provider authoritative refresh', () => {
 
   it('rejects foreign Y metadata while account user X is active', async () => {
     const initial = sessionFixture();
-    fetch.mockResolvedValue(jsonResponse(metadataResponse(sessionFixture({ tenant: 'Y', role: 'personal' }))));
+    fetch.mockResolvedValue(refreshResponse(metadataResponse(sessionFixture({ tenant: 'Y', role: 'personal' }))));
     const access = vi.fn();
     const { result, storage } = setup({ fetchWindowAccess: access });
     await waitFor(() => expect(result.current.sessionRefreshStatus).toBe('metadata-required'));
@@ -191,7 +191,7 @@ describe('real provider authoritative refresh', () => {
     await waitFor(() => expect(fetch).toHaveBeenCalledTimes(1));
     await act(async () => {
       result.current.logout();
-      pending.resolve(jsonResponse(metadataResponse(sessionFixture({ role: 'admin' }))));
+      pending.resolve(refreshResponse(metadataResponse(sessionFixture({ role: 'admin' }))));
       await Promise.resolve();
     });
     expect(result.current.token).toBe(null);
@@ -211,10 +211,10 @@ describe('real provider authoritative refresh', () => {
     act(() => result.current.replaceSession(next));
     expect(result.current.isCurrentSession(snapshot)).toBe(false);
     await waitFor(() => expect(fetch).toHaveBeenCalledTimes(2));
-    await act(async () => old.resolve(jsonResponse(metadataResponse(sessionFixture({ tenant: 'Y', role: 'admin' })))));
+    await act(async () => old.resolve(refreshResponse(metadataResponse(sessionFixture({ tenant: 'Y', role: 'admin' })))));
     expect(storage.read()).toEqual(next);
     expect(result.current.token).toBe(next.token);
-    await act(async () => fresh.resolve(jsonResponse(metadataResponse(next))));
+    await act(async () => fresh.resolve(refreshResponse(metadataResponse(next))));
     await settled(result);
     expect(storage.read()).toEqual(next);
   });
@@ -222,7 +222,7 @@ describe('real provider authoritative refresh', () => {
   it('a delayed old 401 cannot log out replacement, while its current 401 does', async () => {
     const session = sessionFixture();
     const old = deferred();
-    fetch.mockResolvedValue(jsonResponse({ token: session.token }));
+    fetch.mockResolvedValue(refreshResponse({ token: session.token }));
     const { result } = setup();
     await settled(result);
     fetch.mockReturnValueOnce(old.promise);
@@ -243,8 +243,8 @@ describe('real provider authoritative refresh', () => {
     const initial = sessionFixture({ tenant: 'Y' });
     const next = sessionFixture();
     const old = deferred();
-    fetch.mockResolvedValueOnce(jsonResponse(metadataResponse(initial)))
-      .mockResolvedValueOnce(jsonResponse(metadataResponse(next)));
+    fetch.mockResolvedValueOnce(refreshResponse(metadataResponse(initial)))
+      .mockResolvedValueOnce(refreshResponse(metadataResponse(next)));
     const access = vi.fn().mockReturnValueOnce(old.promise)
       .mockResolvedValueOnce({ windowAccess: { fixtureWindow: 'full' }, capabilities: { tenantX: true } });
     const { result } = setup({ session: initial, fetchWindowAccess: access });
@@ -262,7 +262,7 @@ describe('real provider authoritative refresh', () => {
 describe('automatic refresh lifecycle and form preservation', () => {
   it('ignores focus and visibility while hidden, then refreshes on visible focus', async () => {
     vi.useFakeTimers();
-    fetch.mockResolvedValue(jsonResponse({ token: sessionFixture().token }));
+    fetch.mockResolvedValue(refreshResponse({ token: sessionFixture().token }));
     const { result } = setup();
     await act(async () => { await Promise.resolve(); });
     expect(result.current.isSessionReady).toBe(true);
@@ -284,7 +284,7 @@ describe('automatic refresh lifecycle and form preservation', () => {
   it('coalesces focus and visibility, deduplicates in flight, and cleans up StrictMode listeners and timers', async () => {
     vi.useFakeTimers();
     const pending = deferred();
-    fetch.mockResolvedValueOnce(jsonResponse({ token: sessionFixture().token })).mockReturnValue(pending.promise);
+    fetch.mockResolvedValueOnce(refreshResponse({ token: sessionFixture().token })).mockReturnValue(pending.promise);
     const { result, unmount } = setup({ strict: true });
     await act(async () => { await Promise.resolve(); });
     expect(fetch).toHaveBeenCalledTimes(1);
@@ -305,7 +305,7 @@ describe('automatic refresh lifecycle and form preservation', () => {
     window.dispatchEvent(new Event('focus'));
     document.dispatchEvent(new Event('visibilitychange'));
     await act(async () => {
-      pending.resolve(jsonResponse({ token: sessionFixture().token }));
+      pending.resolve(refreshResponse({ token: sessionFixture().token }));
       await vi.advanceTimersByTimeAsync(100);
     });
     expect(fetch).toHaveBeenCalledTimes(2);
@@ -325,12 +325,12 @@ describe('automatic refresh lifecycle and form preservation', () => {
       second = result.current.refreshToken();
     });
     expect(first).toBe(second);
-    await act(async () => old.resolve(jsonResponse(metadataResponse(sessionFixture()))));
+    await act(async () => old.resolve(refreshResponse(metadataResponse(sessionFixture()))));
     await waitFor(() => expect(fetch).toHaveBeenCalledTimes(2));
     expect(access).not.toHaveBeenCalled();
     const next = sessionFixture({ role: 'admin' });
     await act(async () => {
-      fresh.resolve(jsonResponse(metadataResponse(next)));
+      fresh.resolve(refreshResponse(metadataResponse(next)));
       await first;
     });
     expect(storage.read()).toEqual(next);
@@ -346,7 +346,7 @@ describe('automatic refresh lifecycle and form preservation', () => {
     const unmounts = vi.fn();
     const access = vi.fn().mockResolvedValueOnce({ windowAccess: { fixtureWindow: 'full' } })
       .mockReturnValueOnce(accessPending.promise);
-    fetch.mockResolvedValue(jsonResponse(response));
+    fetch.mockResolvedValue(refreshResponse(response));
     function Editor() {
       const [value, setValue] = useState('');
       useEffect(() => { mounts(); return unmounts; }, []);
@@ -387,7 +387,7 @@ describe('real data and currency consumers', () => {
     fetch.mockImplementation((path, options) => {
       if (path.endsWith('/refreshtoken')) {
         if (fetch.mock.calls.length === 1) return firstBootstrap.promise;
-        return Promise.resolve(jsonResponse({ token: options.headers.Authorization.slice(7) }));
+        return Promise.resolve(refreshResponse({ token: options.headers.Authorization.slice(7) }));
       }
       if (path.endsWith('/session')) {
         sessionCalls += 1;
@@ -414,7 +414,7 @@ describe('real data and currency consumers', () => {
     await waitFor(() => expect(fetch).toHaveBeenCalledTimes(1));
     expect(fetchQuery).not.toHaveBeenCalled();
     expect(sessionCalls).toBe(0);
-    await act(async () => firstBootstrap.resolve(jsonResponse({ token: initial.token })));
+    await act(async () => firstBootstrap.resolve(refreshResponse({ token: initial.token })));
     await waitFor(() => expect(screen.getByTestId('query')).toHaveTextContent('original-visible'));
     const oldKey = query.key;
     let refreshQuery;

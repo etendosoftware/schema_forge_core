@@ -9,6 +9,19 @@ const useBrowserLayoutEffect = typeof window === 'undefined' ? useEffect : useLa
 // [ETP-5195] Fallback cadence for the periodic-poll refresh trigger below.
 const SILENT_REFRESH_POLL_INTERVAL_MS = 5 * 60 * 1000;
 
+// [ETP-5195] `/sws/neo/refreshtoken` goes through the NEO webhook bridge, which wraps every
+// response in `{"result": "<json-string>"}` (see com.etendoerp.go's docs/neo-headless.md
+// "envelope" section) — the real `{token, session}` payload is nested and JSON-encoded, not
+// top-level. Unwrap it here so `reconcileSessionRefresh` always receives the real payload
+// shape it expects. A body that is already a plain object without a `result` string (e.g. an
+// already-unwrapped shape passed in by a test or another caller) is returned unchanged.
+function unwrapBridgeEnvelope(body) {
+  if (body && typeof body.result === 'string') {
+    try { return JSON.parse(body.result); } catch { return null; }
+  }
+  return body;
+}
+
 export function AuthProvider({ children, storage, initialSession, onSessionChange, fetchWindowAccess, apiBaseUrl }) {
   const authStorage = useMemo(() => storage || createLocalAuthStorage(), [storage]);
   const [controller] = useState(() => createSessionController(normalizeAuthSession({
@@ -64,7 +77,8 @@ export function AuthProvider({ children, storage, initialSession, onSessionChang
           const response = await request('/sws/neo/refreshtoken', { on401: 'ignore' });
           const body = response.ok ? await response.json() : null;
           if (!controller.isCurrent(work.snapshot)) return { status: 'superseded' };
-          outcome = body ? reconcileSessionRefresh(session, body) : { status: 'failed' };
+          const payload = body ? unwrapBridgeEnvelope(body) : null;
+          outcome = payload ? reconcileSessionRefresh(session, payload) : { status: 'failed' };
         } catch {
           console.warn('[ETP-5195] Silent session refresh failed; keeping existing session.');
           outcome = { status: 'failed' };

@@ -369,7 +369,7 @@ describe('AuthContext — windowAccess/capabilities (ETP-4520)', () => {
 describe('AuthContext — silent token refresh (ETP-5195)', () => {
   it('fires a silent refresh on mount, hitting GET /sws/neo/refreshtoken', async () => {
     const token = makeToken({ role: 'R1', user: 'U1' });
-    const f = stubFetch({ ok: true, json: async () => ({ token }) });
+    const f = stubFetch({ ok: true, json: async () => ({ result: JSON.stringify({ token }) }) });
     try {
       renderHook(() => useAuth(), {
         wrapper: ({ children }) => (
@@ -385,7 +385,7 @@ describe('AuthContext — silent token refresh (ETP-5195)', () => {
   });
 
   it('does not fire a refresh on mount when there is no token yet (logged out)', async () => {
-    const f = stubFetch({ ok: true, json: async () => ({ token: 'irrelevant' }) });
+    const f = stubFetch({ ok: true, json: async () => ({ result: JSON.stringify({ token: 'irrelevant' }) }) });
     try {
       renderHook(() => useAuth(), { wrapper: wrapperWith() });
       // Give the mount effect a chance to run before asserting the negative.
@@ -399,7 +399,7 @@ describe('AuthContext — silent token refresh (ETP-5195)', () => {
     const newToken = makeToken({ role: 'R-NEW', user: 'U1' });
     const storage = createMemoryAuthStorage({ token: oldToken });
     const writeSpy = vi.spyOn(storage, 'write');
-    const f = stubFetch({ ok: true, json: async () => ({ token: newToken }) });
+    const f = stubFetch({ ok: true, json: async () => ({ result: JSON.stringify({ token: newToken }) }) });
     try {
       const { result } = renderHook(() => useAuth(), {
         wrapper: ({ children }) => (
@@ -422,7 +422,7 @@ describe('AuthContext — silent token refresh (ETP-5195)', () => {
     const sameRoleToken = makeToken({ role: 'R1', user: 'U1', extra: 'ignored' });
     const storage = createMemoryAuthStorage({ token });
     const writeSpy = vi.spyOn(storage, 'write');
-    const f = stubFetch({ ok: true, json: async () => ({ token: sameRoleToken }) });
+    const f = stubFetch({ ok: true, json: async () => ({ result: JSON.stringify({ token: sameRoleToken }) }) });
     try {
       renderHook(() => useAuth(), {
         wrapper: ({ children }) => (
@@ -458,7 +458,7 @@ describe('AuthContext — silent token refresh (ETP-5195)', () => {
 
   it('swallows a non-OK refresh response without changing the session', async () => {
     const token = makeToken({ role: 'R1', user: 'U1' });
-    const f = stubFetch({ ok: false, status: 401, json: async () => ({}) });
+    const f = stubFetch({ ok: false, status: 401, json: async () => ({ result: JSON.stringify({}) }) });
     try {
       const { result } = renderHook(() => useAuth(), {
         wrapper: ({ children }) => (
@@ -474,7 +474,7 @@ describe('AuthContext — silent token refresh (ETP-5195)', () => {
 
   it('swallows a response with no usable token field without changing the session', async () => {
     const token = makeToken({ role: 'R1', user: 'U1' });
-    const f = stubFetch({ ok: true, json: async () => ({}) });
+    const f = stubFetch({ ok: true, json: async () => ({ result: JSON.stringify({}) }) });
     try {
       const { result } = renderHook(() => useAuth(), {
         wrapper: ({ children }) => (
@@ -490,7 +490,7 @@ describe('AuthContext — silent token refresh (ETP-5195)', () => {
 
   it('re-triggers the silent refresh when the document becomes visible', async () => {
     const token = makeToken({ role: 'R1', user: 'U1' });
-    const f = stubFetch({ ok: true, json: async () => ({ token }) });
+    const f = stubFetch({ ok: true, json: async () => ({ result: JSON.stringify({ token }) }) });
     try {
       renderHook(() => useAuth(), {
         wrapper: ({ children }) => (
@@ -511,7 +511,7 @@ describe('AuthContext — silent token refresh (ETP-5195)', () => {
 
   it('does NOT re-trigger the refresh on a visibilitychange while the document is hidden', async () => {
     const token = makeToken({ role: 'R1', user: 'U1' });
-    const f = stubFetch({ ok: true, json: async () => ({ token }) });
+    const f = stubFetch({ ok: true, json: async () => ({ result: JSON.stringify({ token }) }) });
     const visibilitySpy = vi.spyOn(document, 'visibilityState', 'get').mockReturnValue('hidden');
     try {
       renderHook(() => useAuth(), {
@@ -534,7 +534,7 @@ describe('AuthContext — silent token refresh (ETP-5195)', () => {
   it('exposes refreshToken as an imperative trigger for the same silent-refresh logic', async () => {
     const oldToken = makeToken({ role: 'R-OLD', user: 'U1' });
     const newToken = makeToken({ role: 'R-NEW', user: 'U1' });
-    const f = stubFetch({ ok: true, json: async () => ({ token: newToken }) });
+    const f = stubFetch({ ok: true, json: async () => ({ result: JSON.stringify({ token: newToken }) }) });
     try {
       const { result } = renderHook(() => useAuth(), {
         wrapper: ({ children }) => (
@@ -595,7 +595,7 @@ describe('AuthContext — silent token refresh (ETP-5195)', () => {
 
       // Now let the stale refresh request resolve with a brand-new, perfectly valid token.
       await act(async () => {
-        releaseFetch({ ok: true, json: async () => ({ token: newToken }) });
+        releaseFetch({ ok: true, json: async () => ({ result: JSON.stringify({ token: newToken }) }) });
         await Promise.resolve();
         await Promise.resolve();
       });
@@ -623,7 +623,7 @@ describe('AuthContext — silent refresh polling fallback (ETP-5195)', () => {
 
   it('fires a silent refresh after the poll interval elapses', async () => {
     const token = makeToken({ role: 'R1', user: 'U1' });
-    const f = stubFetch({ ok: true, json: async () => ({ token }) });
+    const f = stubFetch({ ok: true, json: async () => ({ result: JSON.stringify({ token }) }) });
     vi.useFakeTimers();
     try {
       renderHook(() => useAuth(), {
@@ -648,7 +648,7 @@ describe('AuthContext — silent refresh polling fallback (ETP-5195)', () => {
 
   it('keeps firing on every interval tick, not just once (recurring poll, not a one-shot timeout)', async () => {
     const token = makeToken({ role: 'R1', user: 'U1' });
-    const f = stubFetch({ ok: true, json: async () => ({ token }) });
+    const f = stubFetch({ ok: true, json: async () => ({ result: JSON.stringify({ token }) }) });
     vi.useFakeTimers();
     try {
       renderHook(() => useAuth(), {
@@ -672,7 +672,7 @@ describe('AuthContext — silent refresh polling fallback (ETP-5195)', () => {
 
   it('clears the interval on unmount, stopping the poll', async () => {
     const token = makeToken({ role: 'R1', user: 'U1' });
-    const f = stubFetch({ ok: true, json: async () => ({ token }) });
+    const f = stubFetch({ ok: true, json: async () => ({ result: JSON.stringify({ token }) }) });
     vi.useFakeTimers();
     try {
       const { unmount } = renderHook(() => useAuth(), {
@@ -702,7 +702,7 @@ describe('AuthContext — silent refresh polling fallback (ETP-5195)', () => {
     const sameRoleToken = makeToken({ role: 'R1', user: 'U1', extra: 'ignored' });
     const storage = createMemoryAuthStorage({ token });
     const writeSpy = vi.spyOn(storage, 'write');
-    const f = stubFetch({ ok: true, json: async () => ({ token: sameRoleToken }) });
+    const f = stubFetch({ ok: true, json: async () => ({ result: JSON.stringify({ token: sameRoleToken }) }) });
     vi.useFakeTimers();
     try {
       renderHook(() => useAuth(), {
