@@ -1,5 +1,5 @@
 import { createContext, useContext, useState, useCallback, useMemo, useRef, useEffect, useLayoutEffect, useSyncExternalStore } from 'react';
-import { createLocalAuthStorage, normalizeAuthSession, decodeJwtPayload } from './session.js';
+import { createLocalAuthStorage, normalizeAuthSession } from './session.js';
 import { registerApiSession, createApiFetch } from './api.js';
 import { createSessionController } from './sessionController.js';
 import { reconcileSessionRefresh } from './sessionRefresh.js';
@@ -100,27 +100,58 @@ export function AuthProvider({ children, storage, initialSession, onSessionChang
         // An imperative mutation during this request requires a post-mutation request.
         if (work.trailing) continue;
         if (outcome.session) {
-          const before = decodeJwtPayload(session.token);
-          const after = decodeJwtPayload(outcome.session.token);
-          const contextChanged = ['role', 'organization', 'client', 'user'].some((key) => before?.[key] !== after?.[key]);
           const previous = controller.getSnapshot();
+          // Compare the RESOLVED metadata (role/org list content, not just the raw JWT claim
+          // ids the tokens carry) — a role can be renamed or gain/lose an available
+          // organization while `selectedRole`/`selectedOrg` stay the same id, and that content
+          // change must still be treated as real. Only a response whose full metadata is
+          // byte-for-byte identical to what is already in state is a pure token rotation.
+          const metadataUnchanged = JSON.stringify({
+            clientId: session.clientId, roleList: session.roleList,
+            selectedRole: session.selectedRole, selectedOrg: session.selectedOrg,
+          }) === JSON.stringify({
+            clientId: outcome.session.clientId, roleList: outcome.session.roleList,
+            selectedRole: outcome.session.selectedRole, selectedOrg: outcome.session.selectedOrg,
+          });
           // Accept the coherent tuple before invoking host permission transport: both
-          // ambient apiFetch and a session-bound client must see the renewed JWT.
-          // Keep settled same-context grants until replacement, without a temporary
-          // denial/remount. A real context change withdraws those grants immediately.
+          // ambient apiFetch and a session-bound client must see the renewed JWT — this
+          // still happens unconditionally below (see the "same-role authoritative
+          // permission transport" tests: the backend mints a fresh token, new iat/exp, on
+          // EVERY call even with zero role/org content change, and that freshly-issued
+          // token must still be used for this refresh's own access check and every future
+          // request). [ETP-5195 follow-up] `bump: false` when metadata is unchanged, though:
+          // bumping `generation`/`authRevision` for a pure rotation made every
+          // generation/authRevision-gated consumer app-wide (sidebar menu, useViewerRole)
+          // treat a no-op refresh as a real session change and reset — confirmed live via
+          // Network tab (menu, an unrelated open window's record/logo/related lookups all
+          // refetching together on a plain alt-tab with zero role change). Settled
+          // same-content grants are kept as-is (same object reference) until proven
+          // different by the loadAccess() call below, rather than cleared up front.
           const replaced = controller.replace(outcome.session, {
             refresh: false, status: 'refreshing', ready: previous.isSessionReady,
-            access: contextChanged ? {} : {
-              windowAccess: previous.windowAccess, capabilities: previous.capabilities,
-            },
+            bump: !metadataUnchanged,
+            access: metadataUnchanged
+              ? { windowAccess: previous.windowAccess, capabilities: previous.capabilities }
+              : {},
           });
           if (controller.getSnapshot().session !== replaced) return { status: 'superseded' };
           work.snapshot = controller.capture();
           const access = await loadAccess(outcome.session, work.snapshot);
           if (!controller.isCurrent(work.snapshot)) return { status: 'superseded' };
           if (work.trailing) continue;
-          controller.publish({ windowAccess: access.windowAccess ?? {},
-            capabilities: access.capabilities ?? {}, sessionRefreshStatus: 'ready', isSessionReady: true });
+          const latest = controller.getSnapshot();
+          const nextWindowAccess = access.windowAccess ?? {};
+          const nextCapabilities = access.capabilities ?? {};
+          const accessChanged = !sameFlatMap(nextWindowAccess, latest.windowAccess)
+            || !sameFlatMap(nextCapabilities, latest.capabilities);
+          const finalUpdate = {
+            sessionRefreshStatus: 'ready', isSessionReady: true,
+            windowAccess: accessChanged ? nextWindowAccess : latest.windowAccess,
+            capabilities: accessChanged ? nextCapabilities : latest.capabilities,
+          };
+          if (accessChanged) controller.invalidate(finalUpdate);
+          else controller.publish(finalUpdate);
+          work.snapshot = controller.capture();
         } else {
           const blocked = outcome.status === 'metadata-required' || current.metadataRequired;
           // A same-role legacy refresh still revalidates permissions, atomically, so

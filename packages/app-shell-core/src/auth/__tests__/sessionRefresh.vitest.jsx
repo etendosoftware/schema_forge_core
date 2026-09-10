@@ -100,6 +100,33 @@ describe('real provider authoritative refresh', () => {
     for (const [, options] of fetch.mock.calls) expect(options.headers.Authorization).toContain(initial.token);
   });
 
+  it('does not bump authRevision on a pure token rotation with unchanged metadata AND unchanged access', async () => {
+    // ETP-5195 follow-up — regression for the live-reported "alt-tab causes a menu flicker
+    // and an unrelated open window loses its data/scroll, even with zero role change" bug.
+    // The backend mints a brand-new JWT (fresh iat/exp) on every refresh call regardless of
+    // whether anything about the role/org actually changed; adopting that new token is still
+    // required (see "uses the renewed JWT..." below), but bumping `authRevision` for a
+    // rotation this pure — same metadata, same resolved access — is what cascaded a
+    // needless reset through every authRevision-gated consumer app-wide.
+    const initial = sessionFixture();
+    const next = sessionFixture({ revision: 1 });
+    fetch.mockResolvedValueOnce(refreshResponse(metadataResponse(initial)))
+      .mockResolvedValueOnce(refreshResponse(metadataResponse(next)));
+    const access = vi.fn().mockResolvedValue({ capabilities: { manage: true } });
+    const { result, storage } = setup({ fetchWindowAccess: access });
+    await settled(result);
+    const revision = result.current.authRevision;
+    const priorWindowAccess = result.current.windowAccess;
+    const priorCapabilities = result.current.capabilities;
+    await act(async () => { await result.current.refreshToken(); });
+    expect(storage.read().token).toBe(next.token);
+    expect(result.current.authRevision).toBe(revision);
+    // Reference-stable, not just value-equal — a fresh object here would still recreate any
+    // `useAuth()` consumer's own memoized derivations that key off object identity.
+    expect(result.current.windowAccess).toBe(priorWindowAccess);
+    expect(result.current.capabilities).toBe(priorCapabilities);
+  });
+
   it.each(['ambient', 'session-bound'])('uses the renewed JWT for authoritative same-role %s permission transport', async (transport) => {
     const initial = sessionFixture();
     const next = sessionFixture({ revision: 1 });
