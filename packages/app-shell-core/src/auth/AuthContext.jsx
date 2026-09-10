@@ -1,6 +1,6 @@
 import { createContext, useContext, useState, useCallback, useMemo, useRef, useEffect } from 'react';
-import { createLocalAuthStorage, normalizeAuthSession } from './session.js';
-import { registerApiSession } from './api.js';
+import { createLocalAuthStorage, normalizeAuthSession, decodeJwtRole } from './session.js';
+import { registerApiSession, createApiFetch } from './api.js';
 
 const AuthContext = createContext(null);
 
@@ -135,6 +135,71 @@ export function AuthProvider({ children, storage, initialSession, onSessionChang
     persistSession({ ...session, ...nextSession });
   }, [persistSession, session]);
 
+  // ETP-5195 — silent refresh: `GET /sws/neo/refreshtoken` (SFRefreshToken.java) reissues the
+  // caller's own token with their CURRENT AD_User.Default_Ad_Role_ID, closing the gap where a
+  // promote/demote-admin change doesn't take effect until a full logout/login (every NEO
+  // request authenticates off the `role` claim embedded at login time, which never re-derives
+  // from the DB on its own). Reads the token through a ref rather than the `session` closure so
+  // this function's identity stays stable and the effects below never need to re-subscribe.
+  const refreshSessionRef = useRef(session);
+  refreshSessionRef.current = session;
+
+  const silentlyRefreshToken = useCallback(async () => {
+    const currentSession = refreshSessionRef.current;
+    if (!currentSession.token) return;
+    try {
+      // A dedicated fetcher bound to THIS token, independent of the ambient session
+      // registered further below — this must work regardless of effect ordering, and
+      // `on401: 'ignore'` means an expired/invalid token degrades to a no-op refresh
+      // instead of forcing a logout (see the catch block below for the same rule on any
+      // other failure).
+      const fetchRefreshToken = createApiFetch(undefined, () => currentSession.token, () => {});
+      const res = await fetchRefreshToken('/sws/neo/refreshtoken', { on401: 'ignore' });
+      if (!res.ok) return;
+      const data = await res.json();
+      const newToken = data?.token;
+      if (!newToken) return;
+      const currentRole = decodeJwtRole(currentSession.token);
+      const newRole = decodeJwtRole(newToken);
+      // No-op when the role hasn't actually changed, to avoid an unnecessary re-render /
+      // storage write on every mount and every tab-focus.
+      if (!newRole || newRole === currentRole) return;
+      // Stale-response guard: if the session this refresh was started against is no longer
+      // the CURRENT session (a logout cleared it, or another refresh already swapped its
+      // token) by the time this fetch resolves, applying `newToken` now would silently
+      // revive a session that's no longer live — e.g. resurrecting a token the user just
+      // logged out of. Bail out silently; the in-flight request simply loses the race.
+      if (refreshSessionRef.current.token !== currentSession.token) return;
+      persistSession({ ...refreshSessionRef.current, token: newToken });
+    } catch (err) {
+      // Best-effort: a failed background refresh (network error, unexpected 401/500) must
+      // never crash the app or force a logout — the existing session/token is left as-is.
+      // eslint-disable-next-line no-console
+      console.warn('[ETP-5195] Silent token refresh failed; keeping existing session.', err);
+    }
+  }, [persistSession]);
+
+  // Fires unconditionally once on mount (app bootstrap) ...
+  useEffect(() => {
+    silentlyRefreshToken();
+  }, [silentlyRefreshToken]);
+
+  // ... and again every time the tab regains focus, since a promote/demote can happen from
+  // another tab/session while this one is backgrounded. No existing "tab became active again"
+  // pattern was found elsewhere in this package (ETP-5195) — `visibilitychange` was chosen over
+  // a `window` `focus` listener because it only fires on a genuine tab-visibility transition,
+  // not on every window-manager focus event (e.g. a devtools panel gaining focus).
+  useEffect(() => {
+    if (typeof document === 'undefined') return undefined;
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === 'visible') {
+        silentlyRefreshToken();
+      }
+    };
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+    return () => document.removeEventListener('visibilitychange', handleVisibilityChange);
+  }, [silentlyRefreshToken]);
+
   const value = useMemo(() => ({
     ...session,
     isAuthenticated: !!session.token,
@@ -147,7 +212,14 @@ export function AuthProvider({ children, storage, initialSession, onSessionChang
     selectRole,
     selectOrg,
     logout,
-  }), [session, windowAccess, capabilities, setSession, selectRole, selectOrg, logout]);
+    // ETP-5195 — imperative trigger for the same silent-refresh flow the mount/tab-focus
+    // effects above already run automatically. Lets a caller that just performed a
+    // self-service change to ITS OWN role (e.g. a self-promote/demote-admin action) swap
+    // the token immediately, without waiting for the next mount or tab-focus. Safe to call
+    // any number of times — `silentlyRefreshToken` is itself a no-op when the role claim
+    // hasn't actually changed (see its own doc comment above).
+    refreshToken: silentlyRefreshToken,
+  }), [session, windowAccess, capabilities, setSession, selectRole, selectOrg, logout, silentlyRefreshToken]);
 
   // ETP-5022 — publishes the live session to the ambient `apiFetch` accessor, so a plain
   // (non-React) module can make an authenticated request without its callers threading

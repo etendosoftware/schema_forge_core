@@ -4,7 +4,10 @@ export {
   registerApiSession, resetApiSessionForTests, resolveApiUrl,
   getAmbientToken, notifyAmbientUnauthorized,
 } from './api.js';
-export { createLocalAuthStorage, createMemoryAuthStorage, normalizeAuthSession } from './session.js';
+export {
+  createLocalAuthStorage, createMemoryAuthStorage, normalizeAuthSession,
+  decodeJwtPayload, decodeJwtRole, decodeJwtUser,
+} from './session.js';
 export { LogoutRoute } from './LogoutRoute.jsx';
 export { resolveLogoutDestination } from './logoutRoute.js';
 export { useApiFetch } from './useApiFetch.js';
