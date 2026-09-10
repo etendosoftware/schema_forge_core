@@ -1,5 +1,5 @@
 import { getStoredLocale } from '../i18n/useLocaleState.js';
-import { getRecordVersion, rememberRecordVersion } from '../lib/recordVersions.js';
+import { canonicalEntityName, getRecordVersion, rememberRecordVersion } from '../lib/recordVersions.js';
 
 export function detectBaseUrl() {
   // Guarded so this module can be imported outside a browser. `plain node --test` runs
@@ -274,16 +274,27 @@ function recordsFromPayload(data) {
  *
  * The entity is derived PER RECORD (ETP-5112), because a write's response may echo a record whose
  * id is not the one in the path.
+ *
+ * @returns {Promise<boolean>} whether the response actually carried a usable (id, `updated`)
+ *   pair. Only the ACTION path reads it, to decide whether it still has to re-read the
+ *   record; every other caller ignores it.
  */
 function harvestWrittenVersion(res, path) {
   const copy = jsonClone(res);
-  if (!copy) return;
-  copy.json().then((data) => {
+  if (!copy) return Promise.resolve(false);
+  // The promise is RETURNED, not floated (ETP-5255). `createApiFetch` awaits it before releasing
+  // the next write to this record: a queued write reads its token from the cache, so if the
+  // harvest were still in flight the queued write would go out with the token this response just
+  // superseded — a 409 `stale_record` produced by the very serialisation meant to prevent it.
+  return copy.json().then((data) => {
     const record = data?.response?.data?.[0] ?? data;
     rememberRecordVersion(record, entityFromPath(path, record?.id));
-  }).catch(() => {
-    // No body, not JSON, or a shape we do not recognise. Nothing to remember.
-  });
+    // Reported so an ACTION can fall back to a re-read when its response carried no token. The
+    // normal write path ignores this.
+    return record?.id != null
+      && typeof record?.updated === 'string'
+      && record.updated !== '';
+  }).catch(() => false);
 }
 
 /**
@@ -311,10 +322,14 @@ function harvestWrittenVersion(res, path) {
  */
 function harvestReadVersions(res, path) {
   const contentType = res?.headers?.get?.('content-type') || '';
-  if (!contentType.toLowerCase().includes('json')) return;
+  if (!contentType.toLowerCase().includes('json')) return Promise.resolve();
   const copy = jsonClone(res);
-  if (!copy) return;
-  copy.json().then((data) => {
+  if (!copy) return Promise.resolve();
+  // Returned rather than floated, so the action re-read can wait for it (ETP-5255). The GET path
+  // in `createApiFetch` deliberately does NOT await it: that would add the cost of parsing a
+  // clone of the body to every read in the app, and a read arms a LATER write, which a render
+  // almost always separates from it.
+  return copy.json().then((data) => {
     recordsFromPayload(data).forEach((record) => {
       rememberRecordVersion(record, entityFromPath(path, record?.id));
     });
@@ -352,6 +367,111 @@ function harvestReadVersions(res, path) {
  * @param {() => (string|null)} getToken reads the current bearer token
  * @param {() => void} onUnauthorized invoked once when a 401 is not ignored
  */
+/**
+ * record key → the last versioned write dispatched to that record.
+ *
+ * ## Why this has to exist here and nowhere else
+ *
+ * `updated` is a PER-RECORD token, so the record is the only correct unit of write serialisation.
+ * Two writers of one row that never see each other both read the token the last response left in
+ * the cache, both send it, and the server correctly refuses the second as a 409 `stale_record` —
+ * against a change the user themself just made, reported to them as "somebody else edited this
+ * record". Neither writer is wrong on its own; the conflict only exists between them.
+ *
+ * And they only meet HERE. A guard inside a component can only see that component's own writes,
+ * which is why the same defect was found and fixed four separate times at four different layers
+ * (per input, per field, per panel) before landing on the record. The concrete pair that motivated
+ * this: on `/user/{id}` the header's "Activo" `Switch` PATCHes through `runInlineToggleRequest`
+ * while the detail form PUTs through `useEntity` — two modules with no shared state, one row.
+ *
+ * ## What this does and does not promise
+ *
+ * It serialises: at most one versioned write per record is in flight, and the next one reads its
+ * token AFTER the previous response has been harvested. It does NOT coalesce, roll back, debounce
+ * or dedupe — a panel that wants a mid-flight edit folded into one request keeps using
+ * `useRecordWriteQueue`, which layers those on top. Writes to DIFFERENT records stay fully
+ * parallel; nothing here introduces a global lock.
+ *
+ * Entries are deleted as each write settles, so this never grows beyond the number of records
+ * being written to concurrently.
+ *
+ * @type {Map<string, Promise<Response>>}
+ */
+/**
+ * For a POST to `/{spec}/{entity}/{id}/action/<name>`, the path of the RECORD that action acts on.
+ * `null` for anything else.
+ *
+ * ## Why the version cache cannot be kept correct without this
+ *
+ * A process action mutates the row server-side — `docAction: 'CO'` moves a document out of draft
+ * and recalculates its totals — so the row's `updated` advances. Nothing tells the client: the
+ * action's response carries the PROCESS result, not the record (verified in
+ * `NeoButtonActionHelper.executeButtonActionCore`, which returns
+ * `NeoProcessService.executeProcess(...)` directly). So the cached token is superseded the moment
+ * any action succeeds, and the next write of that record is refused 409 `stale_record` — reported
+ * to the user as "somebody else edited this record", when the editor was the process they just
+ * launched themselves. Worse, it is unrecoverable by retrying, which is exactly what a user does.
+ *
+ * Harvesting the action's own response cannot fix this, because there is nothing in it to harvest.
+ * The proper fix is for the action response to echo the record's fresh `updated` (one place,
+ * serving every client including MCP); until that ships, re-reading the record here is what keeps
+ * this module's own cache honest. When the backend does echo it, the re-read below can be deleted
+ * and only this path parsing stays.
+ *
+ * The path is otherwise parsed as if the action suffix were not there, so `entityFromPath` yields
+ * the real entity (`header`) instead of the action's name (`documentAction`) — the bucket the
+ * record's versions actually live in.
+ */
+function actionRecordPath(path) {
+  if (typeof path !== 'string') return null;
+  const withoutQuery = path.split('#')[0].split('?')[0];
+  const segments = withoutQuery.split('/');
+  // Shortest shape that can carry one: /<spec>/<entity>/<id>/action/<name>.
+  if (segments.length < 5) return null;
+  if (segments[segments.length - 2] !== 'action') return null;
+  // The action's own name must be present, and the id must not be empty.
+  if (!segments[segments.length - 1] || !segments[segments.length - 3]) return null;
+  return segments.slice(0, -2).join('/');
+}
+
+const recordWriteChains = new Map();
+
+/**
+ * The serialisation key for a versioned write, or `null` when the request is not a record write
+ * this can identify.
+ *
+ * Keyed on (entity, id) — the same pair `lib/recordVersions.js` buckets versions under, aliases
+ * included, which is why the entity goes through {@link canonicalEntityName}. Keying it any other
+ * way would let two names for one table race exactly as two components did.
+ *
+ * Returns `null` — meaning "dispatch immediately, unserialised" — whenever the record cannot be
+ * identified, matching the fail-open policy of every other guard in this module: a write we cannot
+ * key is a write we must not delay.
+ */
+function recordWriteKey(path, rest) {
+  if (typeof rest.body !== 'string') return null;
+  let parsed;
+  try {
+    parsed = JSON.parse(rest.body);
+  } catch {
+    return null;
+  }
+  if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed)) return null;
+  const id = parsed.id ?? recordIdFromPath(path);
+  if (id == null || id === '') return null;
+  const entity = canonicalEntityName(entityFromPath(path, id));
+  // \u0000 cannot occur in a path segment, so no (entity, id) pair can collide with another.
+  return `${entity ?? ''}\u0000${String(id)}`;
+}
+
+/**
+ * Test seam: drops every pending write chain, so a suite that leaves a write unresolved cannot
+ * make the next suite's write wait on it forever.
+ */
+export function resetRecordWriteChainsForTests() {
+  recordWriteChains.clear();
+}
+
 export function createApiFetch(baseUrl, getToken, onUnauthorized) {
   return async function apiFetch(path, options = {}) {
     const {
@@ -368,32 +488,122 @@ export function createApiFetch(baseUrl, getToken, onUnauthorized) {
     if (rest.body instanceof FormData) delete headers['Content-Type'];
     const configured = baseUrlOverride !== undefined ? baseUrlOverride : baseUrl;
     const base = configured != null ? configured : defaultBaseUrl();
-    // ETP-5073 / DOC-04: the optimistic-locking token is attached here, not at the ~41 call sites
-    // that issue an update. See `withRecordVersion` for why every guard fails open.
-    const withVersion = withRecordVersion(path, rest);
-    const res = await fetch(resolveApiUrl(base, path), {
-      ...withVersion,
-      credentials: credentials || 'include',
-      headers,
-    });
     const verb = String(rest.method || 'GET').toUpperCase();
-    if (VERSIONED_WRITE_METHODS.has(verb) || verb === 'POST') {
-      // ETP-5122: a POST (create) is harvested exactly like PUT/PATCH — its response echoes the
-      // new record with its initial `updated` — but it is NOT added to VERSIONED_WRITE_METHODS,
-      // because that set also gates injection in `withRecordVersion`, and a create must never send
-      // an `updated` token on its own request. This branch only arms the version cache for
-      // whatever PATCH/PUT saves this same record next, without a re-read in between (e.g.
-      // "Add SII" then "Save" on the record it just created).
-      harvestWrittenVersion(res, path);
-    } else if (verb === 'GET') {
-      // ETP-5112: a read is what arms the write that follows it. See `harvestReadVersions`.
-      harvestReadVersions(res, path);
-    }
-    if (res.status === 401 && on401 !== 'ignore') {
-      onUnauthorized?.();
-      throw new Error('Unauthorized');
-    }
-    return res;
+
+    // `awaitHarvest` is true only on the serialised path: the next write to this record reads its
+    // token from the cache, so it must not start until this response has been written INTO the
+    // cache. Unserialised requests keep the previous fire-and-forget behaviour, so their latency
+    // is unchanged.
+    /**
+     * Brings the version cache back in step with a record an action just mutated.
+     *
+     * ## Why a re-read, and not the action's own response
+     *
+     * Having the backend echo the record's new `updated` was considered and rejected: a process
+     * does not only advance the token, it rewrites the row — `docAction: 'CO'` moves the document
+     * out of draft and recalculates its totals. A token alone would leave the client armed to
+     * write while still DISPLAYING the pre-action values, so the record has to be read again in
+     * any case. Echoing the token would buy nothing and cost a backend contract.
+     *
+     * Note what this does and does not repair: it refreshes THIS CACHE, not the caller's state.
+     * Whatever the user is looking at is still the pre-action record until the component refetches
+     * it. That refetch is the component's job (`onRefresh`) and cannot be done from here.
+     *
+     * An action's response cannot be harvested generically either, whatever it carries:
+     * `createGoodsReceipt` returns the goods receipt it CREATED, `createPurchaseInvoice` the
+     * invoice — different records. Reading one of those as if it were the acted-on record files a
+     * sibling document's token under this record and, worse, looks like it worked.
+     *
+     * Gated on ALREADY holding a version for the record: this keeps THIS cache honest, and a
+     * record the client never read has nothing to keep honest — without the gate every action in
+     * the app would pay for a GET no write was ever going to use.
+     *
+     * Failure is silent by design. A refused or unparseable re-read leaves the cache exactly as
+     * the action found it, so the next write falls back to the loud 400/409 path rather than this
+     * best-effort refresh turning a request that already succeeded into an error.
+     */
+    const refreshVersionAfterAction = async (recordPath) => {
+      const id = recordIdFromPath(recordPath);
+      if (id == null || id === '') return;
+      if (getRecordVersion(id, entityFromPath(recordPath, id)) === undefined) return;
+      try {
+        const reread = await fetch(resolveApiUrl(base, recordPath), {
+          credentials: credentials || 'include',
+          headers: authHeaders(token),
+        });
+        if (reread.ok) await harvestReadVersions(reread, recordPath);
+      } catch {
+        // Offline, aborted, CORS — the action itself succeeded and must not be reported as failed.
+      }
+    };
+
+    const dispatch = async (awaitHarvest) => {
+      // ETP-5073 / DOC-04: the optimistic-locking token is attached here, not at the ~41 call
+      // sites that issue an update. See `withRecordVersion` for why every guard fails open.
+      // Read INSIDE the dispatch, never before the queue wait — a write that resolved its token
+      // while waiting its turn would carry the value the write ahead of it already consumed.
+      const withVersion = withRecordVersion(path, rest);
+      const res = await fetch(resolveApiUrl(base, path), {
+        ...withVersion,
+        credentials: credentials || 'include',
+        headers,
+      });
+      // ETP-5255: a process action mutates the row, so the token this client holds for it is
+      // superseded the moment the action succeeds. Two ways to learn the new one, in this order:
+      // harvest it from the action's response if the backend echoes the record (the proper fix,
+      // `NeoButtonActionHelper.executeButtonActionCore`), and only otherwise re-read the record.
+      // Keeping both means the client is correct against a backend that does NOT echo it yet —
+      // which is every deployed one, since the SPA and the backend ship independently — and the
+      // extra round trip disappears on its own once the backend does, with no client change.
+      const actionPath = verb === 'POST' ? actionRecordPath(path) : null;
+      if (actionPath !== null) {
+        if (res.ok) await refreshVersionAfterAction(actionPath);
+        if (res.status === 401 && on401 !== 'ignore') {
+          onUnauthorized?.();
+          throw new Error('Unauthorized');
+        }
+        return res;
+      }
+      if (VERSIONED_WRITE_METHODS.has(verb) || verb === 'POST') {
+        // ETP-5122: a POST (create) is harvested exactly like PUT/PATCH — its response echoes the
+        // new record with its initial `updated` — but it is NOT added to
+        // VERSIONED_WRITE_METHODS, because that set also gates injection in `withRecordVersion`,
+        // and a create must never send an `updated` token on its own request. This branch only
+        // arms the version cache for whatever PATCH/PUT saves this same record next, without a
+        // re-read in between (e.g. "Add SII" then "Save" on the record it just created).
+        const harvested = harvestWrittenVersion(res, path);
+        if (awaitHarvest) await harvested;
+      } else if (verb === 'GET') {
+        // ETP-5112: a read is what arms the write that follows it. See `harvestReadVersions`.
+        harvestReadVersions(res, path);
+      }
+      if (res.status === 401 && on401 !== 'ignore') {
+        onUnauthorized?.();
+        throw new Error('Unauthorized');
+      }
+      return res;
+    };
+
+    // ETP-5255: at most one versioned write per record in flight. See `recordWriteChains`.
+    const writeKey = VERSIONED_WRITE_METHODS.has(verb) ? recordWriteKey(path, rest) : null;
+    if (writeKey === null) return dispatch(false);
+
+    const previous = recordWriteChains.get(writeKey);
+    const mine = (async () => {
+      // A failed predecessor must not strand its successors: this waits for the slot, and takes
+      // no position on whether the write ahead succeeded. Deciding to abandon a queued write
+      // after a failure is policy, and belongs to the caller (`useRecordWriteQueue` does exactly
+      // that); serialisation here stays mechanism only.
+      if (previous) await previous.catch(() => {});
+      return dispatch(true);
+    })();
+    recordWriteChains.set(writeKey, mine);
+    // Only the tail clears the entry, so a slower predecessor settling late cannot delete a
+    // successor's slot and let a third write race it.
+    mine.catch(() => {}).then(() => {
+      if (recordWriteChains.get(writeKey) === mine) recordWriteChains.delete(writeKey);
+    });
+    return mine;
   };
 }
 
