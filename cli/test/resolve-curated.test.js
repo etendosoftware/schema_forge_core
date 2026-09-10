@@ -1107,3 +1107,137 @@ describe('resolveCurated — __explicitOrder marker (ETP-4566)', () => {
       '__explicitOrder must be absent when no explicit order is declared in decisions');
   });
 });
+
+// ETP-4839 — draftMode.keepSaveWhenCompletedFields: keeps the footer "Save" button
+// visible (never "Confirm" — that stays hidden unconditionally, see saveActions.jsx's
+// onlySaveButton) once a document completes, enabled only while every dirty header
+// field is named in this array. Renamed from the earlier boolean `keepSaveWhenCompleted`
+// (never published) once the human asked for a per-field allowlist instead of an
+// all-or-nothing flag. buildDraftMode is the single source of truth for this key and
+// feeds BOTH call sites:
+//   - applyWindowDraftModeToPrimaryEntity (decisions.window.draftMode) — the
+//     real-world shape used by artifacts/purchase-invoice/decisions.json.
+//   - applyEntityDecisions (decisions.entities.<key>.draftMode) — used by
+//     windows that declare draftMode per-entity instead of at window level.
+// Non-invasive by design: the key must be added ONLY when a non-empty array, and
+// NEVER appear at all otherwise — so every other draftMode window's contract.json
+// (goods-receipt, sales-quotation, etc., none of which declare this key) stays
+// byte-identical.
+describe('resolveCurated — draftMode.keepSaveWhenCompletedFields (ETP-4839)', () => {
+  const schemaRaw = {
+    window: { id: '700', name: 'Purchase Invoice' },
+    entities: [{
+      name: 'cInvoice',
+      tableName: 'C_Invoice',
+      tabId: '10',
+      tabName: 'Header',
+      fields: [
+        { name: 'documentNo', columnName: 'DocumentNo', label: 'Document No',
+          type: 'string', visibility: 'readOnly' },
+      ],
+    }],
+  };
+
+  function windowDraftMode(extra = {}) {
+    return {
+      enabled: true,
+      processField: 'documentAction',
+      processValue: 'CO',
+      label: 'Complete',
+      ...extra,
+    };
+  }
+
+  it('window-level draftMode: keepSaveWhenCompletedFields propagates verbatim to the primary entity (real purchase-invoice shape)', async () => {
+    const decisions = {
+      version: 2,
+      window: { name: 'Purchase Invoice', draftMode: windowDraftMode({ keepSaveWhenCompletedFields: ['orderReference'] }) },
+      entities: { cInvoice: { name: 'purchaseInvoice' } },
+      rules: {},
+    };
+    const { schema } = await resolveCurated(schemaRaw, { rules: [] }, decisions);
+    assert.deepEqual(schema.entities[0].draftMode, {
+      enabled: true,
+      processField: 'documentAction',
+      processValue: 'CO',
+      label: 'Complete',
+      keepSaveWhenCompletedFields: ['orderReference'],
+    });
+  });
+
+  it('window-level draftMode: an empty array is NEVER emitted (not even as [])', async () => {
+    const decisions = {
+      version: 2,
+      window: { name: 'Purchase Invoice', draftMode: windowDraftMode({ keepSaveWhenCompletedFields: [] }) },
+      entities: { cInvoice: { name: 'purchaseInvoice' } },
+      rules: {},
+    };
+    const { schema } = await resolveCurated(schemaRaw, { rules: [] }, decisions);
+    assert.deepEqual(schema.entities[0].draftMode, {
+      enabled: true,
+      processField: 'documentAction',
+      processValue: 'CO',
+      label: 'Complete',
+    });
+    assert.ok(!('keepSaveWhenCompletedFields' in schema.entities[0].draftMode));
+  });
+
+  it('window-level draftMode: a non-array value (e.g. the retired boolean shape) is NEVER emitted', async () => {
+    const decisions = {
+      version: 2,
+      window: { name: 'Purchase Invoice', draftMode: windowDraftMode({ keepSaveWhenCompletedFields: true }) },
+      entities: { cInvoice: { name: 'purchaseInvoice' } },
+      rules: {},
+    };
+    const { schema } = await resolveCurated(schemaRaw, { rules: [] }, decisions);
+    assert.ok(!('keepSaveWhenCompletedFields' in schema.entities[0].draftMode));
+  });
+
+  it('window-level draftMode: key absent in decisions.json → key absent in contract (byte-identical regression pin, e.g. goods-receipt / sales-quotation)', async () => {
+    const decisions = {
+      version: 2,
+      window: { name: 'Purchase Invoice', draftMode: windowDraftMode() },
+      entities: { cInvoice: { name: 'purchaseInvoice' } },
+      rules: {},
+    };
+    const { schema } = await resolveCurated(schemaRaw, { rules: [] }, decisions);
+    assert.deepEqual(schema.entities[0].draftMode, {
+      enabled: true,
+      processField: 'documentAction',
+      processValue: 'CO',
+      label: 'Complete',
+    });
+  });
+
+  it('entity-level draftMode (decisions.entities.<key>.draftMode): keepSaveWhenCompletedFields also propagates', async () => {
+    const decisions = {
+      version: 2,
+      window: { name: 'Purchase Invoice' },
+      entities: {
+        cInvoice: {
+          name: 'purchaseInvoice',
+          draftMode: windowDraftMode({ keepSaveWhenCompletedFields: ['orderReference'] }),
+        },
+      },
+      rules: {},
+    };
+    const { schema } = await resolveCurated(schemaRaw, { rules: [] }, decisions);
+    assert.deepEqual(schema.entities[0].draftMode.keepSaveWhenCompletedFields, ['orderReference']);
+  });
+
+  it('entity-level draftMode: key absent in decisions.json → key absent in contract', async () => {
+    const decisions = {
+      version: 2,
+      window: { name: 'Purchase Invoice' },
+      entities: {
+        cInvoice: {
+          name: 'purchaseInvoice',
+          draftMode: windowDraftMode(),
+        },
+      },
+      rules: {},
+    };
+    const { schema } = await resolveCurated(schemaRaw, { rules: [] }, decisions);
+    assert.ok(!('keepSaveWhenCompletedFields' in schema.entities[0].draftMode));
+  });
+});
