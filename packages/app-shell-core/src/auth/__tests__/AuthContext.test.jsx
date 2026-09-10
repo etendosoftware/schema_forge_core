@@ -509,6 +509,76 @@ describe('AuthContext — silent token refresh (ETP-5195)', () => {
     } finally { f.restore(); }
   });
 
+  it('does not bump authRevision on a same-role visibilitychange refresh when window access resolves unchanged', async () => {
+    // ETP-5195 follow-up — regression for the live-reported "alt-tab causes a menu flicker
+    // and the currently-open window resets/loses scroll, even with no role change" bug.
+    // `authRevision` (and the underlying `generation`) must only bump when something about
+    // the resolved access actually changed — every app-wide consumer keyed off it (the
+    // sidebar menu, useViewerRole, any generation-gated in-flight fetch) treats a bump as
+    // "the session changed under me" and resets to a loading state.
+    const token = makeToken({ role: 'R1', user: 'U1' });
+    const fetchWindowAccess = vi.fn().mockResolvedValue({
+      windowAccess: { '147': 'full' },
+      capabilities: { showAccountingFields: true },
+    });
+    const f = stubFetch({ ok: true, json: async () => ({ result: JSON.stringify({ token }) }) });
+    try {
+      const { result } = renderHook(() => useAuth(), {
+        wrapper: ({ children }) => (
+          <AuthProvider
+            storage={createMemoryAuthStorage()}
+            fetchWindowAccess={fetchWindowAccess}
+            initialSession={{ token, selectedRole: { id: 'role-1' } }}>
+            {children}
+          </AuthProvider>
+        ),
+      });
+      await waitFor(() => expect(result.current.windowAccess).toEqual({ '147': 'full' }));
+      const authRevisionAfterMount = result.current.authRevision;
+
+      await act(async () => {
+        document.dispatchEvent(new Event('visibilitychange'));
+        await Promise.resolve();
+      });
+      await waitFor(() => expect(fetchWindowAccess).toHaveBeenCalledTimes(2));
+      // Flush the microtasks the second refresh's own loadAccess()/publish need.
+      await act(async () => { await Promise.resolve(); await Promise.resolve(); });
+
+      expect(result.current.windowAccess).toEqual({ '147': 'full' });
+      expect(result.current.authRevision).toBe(authRevisionAfterMount);
+    } finally { f.restore(); }
+  });
+
+  it('still bumps authRevision when a same-role visibilitychange refresh resolves DIFFERENT window access', async () => {
+    const token = makeToken({ role: 'R1', user: 'U1' });
+    const fetchWindowAccess = vi.fn()
+      .mockResolvedValueOnce({ windowAccess: { '147': 'full' }, capabilities: {} })
+      .mockResolvedValueOnce({ windowAccess: { '147': 'read-only' }, capabilities: {} });
+    const f = stubFetch({ ok: true, json: async () => ({ result: JSON.stringify({ token }) }) });
+    try {
+      const { result } = renderHook(() => useAuth(), {
+        wrapper: ({ children }) => (
+          <AuthProvider
+            storage={createMemoryAuthStorage()}
+            fetchWindowAccess={fetchWindowAccess}
+            initialSession={{ token, selectedRole: { id: 'role-1' } }}>
+            {children}
+          </AuthProvider>
+        ),
+      });
+      await waitFor(() => expect(result.current.windowAccess).toEqual({ '147': 'full' }));
+      const authRevisionAfterMount = result.current.authRevision;
+
+      await act(async () => {
+        document.dispatchEvent(new Event('visibilitychange'));
+        await Promise.resolve();
+      });
+      await waitFor(() => expect(result.current.windowAccess).toEqual({ '147': 'read-only' }));
+
+      expect(result.current.authRevision).toBe(authRevisionAfterMount + 1);
+    } finally { f.restore(); }
+  });
+
   it('does NOT re-trigger the refresh on a visibilitychange while the document is hidden', async () => {
     const token = makeToken({ role: 'R1', user: 'U1' });
     const f = stubFetch({ ok: true, json: async () => ({ result: JSON.stringify({ token }) }) });

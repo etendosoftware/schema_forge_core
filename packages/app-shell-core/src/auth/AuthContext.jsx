@@ -22,6 +22,19 @@ function unwrapBridgeEnvelope(body) {
   return body;
 }
 
+// [ETP-5195 follow-up] `windowAccess`/`capabilities` are flat maps of primitive values
+// (tier strings / booleans) — a plain key-by-key comparison is enough to tell a genuinely
+// changed permission set apart from the SAME set re-fetched as a new object. Used by the
+// tab-focus/visibility/poll-triggered "legacy" (no role change) refresh path below to avoid
+// bumping `generation`/`authRevision` — and therefore every `isCurrentSession()`/`authRevision`
+// consumer app-wide (menu, viewer-role, any in-flight fetch) — when nothing actually changed.
+function sameFlatMap(a, b) {
+  const keysA = Object.keys(a);
+  const keysB = Object.keys(b);
+  if (keysA.length !== keysB.length) return false;
+  return keysA.every((key) => a[key] === b[key]);
+}
+
 export function AuthProvider({ children, storage, initialSession, onSessionChange, fetchWindowAccess, apiBaseUrl }) {
   const authStorage = useMemo(() => storage || createLocalAuthStorage(), [storage]);
   const [controller] = useState(() => createSessionController(normalizeAuthSession({
@@ -115,15 +128,37 @@ export function AuthProvider({ children, storage, initialSession, onSessionChang
           const access = outcome.status === 'legacy' && !blocked ? await loadAccess(session, work.snapshot) : null;
           if (!controller.isCurrent(work.snapshot)) return { status: 'superseded' };
           if (work.trailing) continue;
+          const previous = controller.getSnapshot();
+          const nextWindowAccess = access?.windowAccess ?? {};
+          const nextCapabilities = access?.capabilities ?? {};
+          // [ETP-5195 follow-up] A tab-focus/visibility-regain/poll refresh fires on every
+          // reactivation even when the role never changed (see the visibilitychange/focus
+          // effect and the poll interval below) — most of the time it resolves the SAME
+          // permissions, just as a freshly-fetched object. Bumping `generation`/`authRevision`
+          // unconditionally here made every `isCurrentSession()`/`authRevision` consumer
+          // app-wide (the sidebar menu, `useViewerRole`, any in-flight generation-gated fetch)
+          // treat a no-op refresh as a real session change: the sidebar visibly reset to its
+          // loading state and back, and any record view re-running its own generation-gated
+          // fetch reloaded and lost UI state (e.g. scroll position) — confirmed root cause,
+          // reported live as "alt-tab causes a menu flicker and window refresh with no role
+          // change". Only actually invalidate when the resolved access differs from what is
+          // already in state; otherwise a plain `publish` updates status flags without
+          // touching `generation`/`authRevision`/the `windowAccess`/`capabilities` references.
+          const accessChanged = !!access
+            && (!sameFlatMap(nextWindowAccess, previous.windowAccess) || !sameFlatMap(nextCapabilities, previous.capabilities));
           const update = {
             needsRefresh: false, isSessionReady: !blocked,
             metadataRequired: blocked,
             sessionRefreshStatus: blocked ? 'metadata-required' : outcome.status,
             ...(blocked ? { windowAccess: {}, capabilities: {} } : {}),
-            ...(access ? { windowAccess: access.windowAccess ?? {}, capabilities: access.capabilities ?? {},
-              accessLoaded: true, authRevision: controller.getSnapshot().authRevision + 1 } : {}),
+            ...(access ? {
+              accessLoaded: true,
+              windowAccess: accessChanged ? nextWindowAccess : previous.windowAccess,
+              capabilities: accessChanged ? nextCapabilities : previous.capabilities,
+              ...(accessChanged ? { authRevision: previous.authRevision + 1 } : {}),
+            } : {}),
           };
-          if (blocked || access) controller.invalidate(update);
+          if (blocked || accessChanged) controller.invalidate(update);
           else controller.publish(update);
           work.snapshot = controller.capture();
         }
