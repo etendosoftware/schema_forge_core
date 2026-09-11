@@ -31,6 +31,7 @@ export function createSessionController(initialSession, storage, onSessionChange
     metadataRequired: false,
     windowAccess: {},
     capabilities: {},
+    menuAccess: {},
   };
   let config = { storage, onSessionChange, apiBaseUrl };
   const publish = (patch) => {
@@ -104,6 +105,7 @@ export function createSessionController(initialSession, storage, onSessionChange
       isRefreshingSession: status === 'refreshing', sessionRefreshStatus: status,
       metadataRequired: false,
       windowAccess: access?.windowAccess ?? {}, capabilities: access?.capabilities ?? {},
+      menuAccess: access?.menuAccess ?? {},
       accessLoaded: access !== undefined,
     };
     try {
