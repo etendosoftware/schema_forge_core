@@ -660,6 +660,17 @@ function buildDraftMode(draftModeDecision, enabled) {
   if (draftModeDecision.extraParams && typeof draftModeDecision.extraParams === 'object') {
     draftMode.extraParams = draftModeDecision.extraParams;
   }
+  if (Array.isArray(draftModeDecision.keepSaveWhenCompletedFields) && draftModeDecision.keepSaveWhenCompletedFields.length > 0) {
+    // ETP-4839: once the document reaches a completed state, keep the plain "Save"
+    // button visible (the process/"Confirm" button stays hidden UNCONDITIONALLY —
+    // see saveActions.jsx's onlySaveButton) but only enabled when every dirty header
+    // field is one of these names. Save-only never sends `processField`, so it stays
+    // safe even for windows whose backend process action is not idempotent on an
+    // already-completed document (e.g. purchase-invoice's re-Confirm duplicating
+    // discount lines). Emitted only when the array is non-empty, same additive
+    // criterion as the other optional draftMode keys above.
+    draftMode.keepSaveWhenCompletedFields = draftModeDecision.keepSaveWhenCompletedFields;
+  }
   return draftMode;
 }
 
