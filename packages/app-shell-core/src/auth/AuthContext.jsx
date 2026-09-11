@@ -303,6 +303,13 @@ export function AuthProvider({ children, storage, initialSession, onSessionChang
     isRefreshingSession: state.isRefreshingSession,
     sessionRefreshStatus: state.sessionRefreshStatus,
     authRevision: state.authRevision,
+    // ETP-5189 — was tracked internally (gates the initial-load effect above, and
+    // `sessionController.replace()`'s access reset) but never exposed here. A consumer
+    // that needs to tell "access has been fetched at least once for this session" apart
+    // from "still the initial {} placeholder" (e.g. to capture a correct first-settle
+    // baseline before diffing later changes) had no way to observe it — this always read
+    // as `undefined` via `useAuth()`, silently breaking any such check.
+    accessLoaded: state.accessLoaded,
     windowAccess: state.windowAccess,
     capabilities: state.capabilities,
     menuAccess: state.menuAccess,

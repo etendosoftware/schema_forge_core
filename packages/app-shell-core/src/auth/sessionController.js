@@ -29,6 +29,7 @@ export function createSessionController(initialSession, storage, onSessionChange
     isRefreshingSession: false,
     sessionRefreshStatus: 'idle',
     metadataRequired: false,
+    accessLoaded: false,
     windowAccess: {},
     capabilities: {},
     menuAccess: {},
