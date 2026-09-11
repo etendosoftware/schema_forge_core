@@ -37,6 +37,21 @@
  * has no path context — `useEntity`, which is handed a record, not a URL — records under. See
  * {@link getRecordVersion} for how a lookup resolves across the two.
  *
+ * ## Why the entity part is also, sometimes, TOO fine — and who fixes that
+ *
+ * The same key has the opposite failure in the opposite situation: one window's spec can expose
+ * ONE table under SEVERAL generated entity names (Contacts renders `businessPartner`, `customer`,
+ * `vendorCreditor` and `employee` over one `C_BPartner` row), which makes four buckets for a
+ * single row — and a write through one refreshes only its own, so a stale exact match beats a
+ * sibling holding a fresher token. This module carries the MECHANISM for that: an alias table
+ * collapsing several names onto one canonical bucket, applied on every read, write and forget.
+ *
+ * It does NOT carry the POLICY. Which entity names happen to share a table is window-specific
+ * knowledge; a window declares its own groups by calling {@link registerEntityAliases} at module
+ * load. Nothing is aliased by default, and the satellite case above cannot be broken by aliasing
+ * because `ad_org` and `ad_orginfo` are different TABLES, and only names over one table may be
+ * registered.
+ *
  * ## Why a stale entry is safe
  *
  * If this map holds an `updated` older than the row's current value, the write is refused as a
@@ -69,6 +84,91 @@
  * intermittently and only in long sessions, which is far worse to diagnose than the original bug.
  */
 const MAX_TRACKED_RECORDS = 20000;
+
+/**
+ * alias entity name → the canonical entity name its bucket lives under.
+ *
+ * Empty by default and populated only by {@link registerEntityAliases}: core owns the MECHANISM,
+ * the window owns the POLICY. Which generated entity names happen to address one table is
+ * window-specific knowledge, and hardcoding it here would make this generic cache depend on the
+ * windows that use it.
+ *
+ * @type {Map<string, string>}
+ */
+const entityAliases = new Map();
+
+/**
+ * Collapses an alias onto its canonical entity, so several names for ONE table share one bucket.
+ *
+ * Resolution is a single hop by design — chains are collapsed at registration time, see
+ * {@link registerEntityAliases}. `null` (the no-path-context bucket) passes through untouched.
+ */
+function canonicalEntity(entity) {
+  return entity == null ? entity : entityAliases.get(entity) || entity;
+}
+
+/**
+ * Declares that several generated entity names address the SAME database row, so a read through
+ * one of them arms a write through another.
+ *
+ * ## Why a window has to say this
+ *
+ * The cache key is (record id, entity) for the reason the module docstring gives: an id is only
+ * unique within a table, and `ad_org` / `ad_orginfo` are two different rows under one id. That
+ * key is also, unavoidably, too fine in the opposite direction: a window's spec can expose ONE
+ * table under several entity names (a "Customer" tab and a "Vendor" tab over the same
+ * `C_BPartner` row), and those become independent buckets for a single row. A write through one
+ * alias then refreshes only its own bucket, and because {@link getRecordVersion} prefers an exact
+ * entity match, a STALE exact bucket wins over a sibling holding a fresher token → a 409
+ * `stale_record` the user cannot explain.
+ *
+ * Aliasing by table is safe against the satellite case that motivated the entity part of the key:
+ * `ad_org` and `ad_orginfo` are DIFFERENT tables, so they are never aliases of each other. Only
+ * names over one table may be registered here — accounting satellites, `intrastat` detail tables
+ * and the like stay distinct.
+ *
+ * ## OPTION B, not built: derive this from the data model instead of declaring it
+ *
+ * `artifacts/<window>/contract.json` already carries `tableName` per entity, so the alias groups
+ * are simply `groupBy(tableName)` over the spec — no hand-written list, no way for a new tab to
+ * be forgotten, and the satellite constraint is satisfied by construction (different table ⇒
+ * different bucket). It is not done today because the runtime app is configured from NEO
+ * (`ETGO_SF_*`), not from `contract.json`, and the frontend never receives `tableName` per entity
+ * at runtime. To switch: expose `ETGO_SF_ENTITY.tableName` (or equivalent) in the NEO spec
+ * payload, then have the generic spec loader group entities by it and call this function itself —
+ * at which point every per-window registration below can be deleted.
+ *
+ * ## Semantics
+ *
+ * Registration is ADDITIVE and IDEMPOTENT, never replacing: several windows register
+ * independently at module load, and a replacing API would mean the last window loaded silently
+ * disarms the others. It never throws — this is a concurrency-token optimisation, and failing a
+ * window's module load over it would be wildly out of proportion. On a CONFLICT (an alias already
+ * mapped to a different canonical) the FIRST registration wins and the call is ignored, which
+ * keeps the outcome deterministic under hot reload and repeated test imports. Invalid input
+ * (non-strings, empty strings, an alias equal to its own canonical) is skipped.
+ *
+ * The canonical name is itself resolved through the table on the way in, so registering B→A after
+ * A→X stores B→X rather than a chain this cache would have to walk on every lookup.
+ *
+ * @param {string} canonical entity name whose bucket the aliases should share
+ * @param {string[]} aliases other entity names for the same table
+ * @returns {void}
+ */
+export function registerEntityAliases(canonical, aliases) {
+  if (typeof canonical !== 'string' || canonical === '') return;
+  if (!Array.isArray(aliases)) return;
+  // Collapse a chain now so `canonicalEntity` stays a single map hit.
+  const target = entityAliases.get(canonical) || canonical;
+  for (const alias of aliases) {
+    if (typeof alias !== 'string' || alias === '' || alias === target) continue;
+    const existing = entityAliases.get(alias);
+    if (existing === target) continue;
+    // First registration wins; a later, different claim on the same alias is ignored.
+    if (existing !== undefined) continue;
+    entityAliases.set(alias, target);
+  }
+}
 
 /**
  * record id → (entity | null) → the `updated` value as the server sent it.
@@ -107,8 +207,9 @@ function warnEviction(id) {
  *
  * Resolution order, most specific first:
  *
- * 1. an exact match on `entity` — the normal case, and the only one that distinguishes the
- *    satellite tables described in the module docstring (`organization` vs `information`);
+ * 1. an exact match on `entity` after alias canonicalisation ({@link registerEntityAliases}) —
+ *    the normal case, and the only one that distinguishes the satellite tables described in the
+ *    module docstring (`organization` vs `information`);
  * 2. the `null` bucket — what a reader with no path context left behind. `useEntity` receives a
  *    record and does not know which URL produced it, and panels such as `ContactsTable` and
  *    `ContactsFinancialPanel` never read at all: they get `data` through props from `useEntity`
@@ -133,7 +234,8 @@ export function getRecordVersion(id, entity = null) {
   // Re-insert so an actively-written record is the last thing eviction would consider.
   versions.delete(key);
   versions.set(key, byEntity);
-  if (byEntity.has(entity)) return byEntity.get(entity);
+  const canonical = canonicalEntity(entity);
+  if (byEntity.has(canonical)) return byEntity.get(canonical);
   if (entity !== null && byEntity.has(null)) return byEntity.get(null);
   if (byEntity.size === 1) return byEntity.values().next().value;
   return undefined;
@@ -163,7 +265,7 @@ export function rememberRecordVersion(record, entity = null) {
   if (id == null || typeof updated !== 'string' || updated === '') return record;
   const key = String(id);
   const byEntity = versions.get(key) || new Map();
-  byEntity.set(entity, updated);
+  byEntity.set(canonicalEntity(entity), updated);
   versions.delete(key);
   versions.set(key, byEntity);
   if (versions.size > MAX_TRACKED_RECORDS) {
@@ -210,11 +312,37 @@ export function forgetRecordVersion(id, entity = null) {
   }
   const byEntity = versions.get(key);
   if (!byEntity) return;
-  byEntity.delete(entity);
+  byEntity.delete(canonicalEntity(entity));
   if (byEntity.size === 0) versions.delete(key);
 }
 
 /** Test seam: empties the map so one suite cannot leak versions into the next. */
 export function resetRecordVersionsForTests() {
   versions.clear();
+}
+
+/**
+ * Test seam: drops every registered alias, so a suite that exercises
+ * {@link registerEntityAliases} cannot leak its groups into the next one. Deliberately separate
+ * from {@link resetRecordVersionsForTests}: aliases are configuration registered once at module
+ * load, not per-record state, and the existing `beforeEach` callers must not lose them.
+ */
+export function resetEntityAliasesForTests() {
+  entityAliases.clear();
+}
+
+/**
+ * Resolves an entity name to the bucket its versions actually live under, applying any groups
+ * registered through {@link registerEntityAliases}.
+ *
+ * Exported for `auth/api.js`, which serialises concurrent writes to ONE record and must key that
+ * serialisation exactly the way this cache keys its buckets. If the two disagreed, two aliases of
+ * one row would be treated as two records and left to race — which is the defect the alias table
+ * exists to prevent, reintroduced one layer up.
+ *
+ * @param {string|null} entity entity name as derived from the request path
+ * @returns {string|null} the canonical bucket name, or `null` passed through untouched
+ */
+export function canonicalEntityName(entity) {
+  return canonicalEntity(entity);
 }

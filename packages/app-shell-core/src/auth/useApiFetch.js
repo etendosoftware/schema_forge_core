@@ -28,10 +28,12 @@ export function useApiFetch(baseUrl) {
   // fresh request function each render, and any effect that lists it as a dependency would
   // re-fire forever.
   const hasSession = auth != null;
+  const scope = auth?.apiSessionScope;
 
   return useMemo(() => createApiFetch(
     baseUrl,
-    hasSession ? () => token : getAmbientToken,
+    scope ? () => scope.getSnapshot().session.token : hasSession ? () => token : getAmbientToken,
     logout || notifyAmbientUnauthorized,
-  ), [baseUrl, hasSession, token, logout]);
+    scope,
+  ), [baseUrl, hasSession, token, logout, scope, auth?.authRevision]);
 }

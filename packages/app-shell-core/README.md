@@ -84,3 +84,10 @@ paths:
 The package still expects the host app to provide React, React Router, Radix UI,
 Lucide, Tailwind/PostCSS, and the peer dependencies listed in `package.json`.
 Generated contracts and generated windows remain outside this package by design.
+
+## Session refresh
+
+See [the session refresh contract](../../docs/auth-session-refresh.md) for the
+ETP-5195 readiness/revision APIs, synchronous session ownership, legacy fallback,
+and proposed backend metadata extension. Backend and functional integration are
+separate follow-ups; a core-only change does not establish end-to-end acceptance.
