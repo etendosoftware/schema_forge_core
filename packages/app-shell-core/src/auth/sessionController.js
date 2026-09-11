@@ -93,7 +93,13 @@ export function createSessionController(initialSession, storage, onSessionChange
   // hook), and a pure rotation must not trip it. `isCurrent()` still independently compares the
   // raw `token` value, so a stale in-flight request captured before this call is still
   // correctly treated as superseded once the token differs — generation is not the only guard.
-  function replace(nextSession, { refresh = true, status = 'idle', clear = false, access, ready = true, bump = true } = {}) {
+  // ETP-4576 — `persist: false` publishes a session WITHOUT writing it through to storage,
+  // for the one caller whose session did not come from the client: the cookie restore. The
+  // same effect purges the legacy sf_auth_* keys immediately before it, so writing the
+  // restored session back would rewrite the very keys just purged and defeat the purge. The
+  // server response is authoritative and is re-read on the next boot, so there is nothing to
+  // persist. Everything else keeps writing through, which is why the default is `true`.
+  function replace(nextSession, { refresh = true, status = 'idle', clear = false, access, ready = true, bump = true, persist = true } = {}) {
     const session = normalizeAuthSession(nextSession);
     // Update the authority before storage or host callbacks can re-enter us.
     state = {
@@ -108,7 +114,7 @@ export function createSessionController(initialSession, storage, onSessionChange
     };
     try {
       if (clear) config.storage?.clear();
-      else config.storage?.write(session);
+      else if (persist) config.storage?.write(session);
     } finally {
       listeners.forEach((listener) => listener());
     }

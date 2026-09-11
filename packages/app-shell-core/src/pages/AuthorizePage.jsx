@@ -1,6 +1,6 @@
 import { useState, useMemo } from 'react';
 import { useSearchParams } from 'react-router-dom';
-import { useAuth, createApiFetch } from '../auth/index.js';
+import { useAuth } from '../auth/index.js';
 import { Card, CardContent } from '../components/ui/card.jsx';
 import { Button } from '../components/ui/button.jsx';
 import { Badge } from '../components/ui/badge.jsx';
@@ -10,13 +10,6 @@ import { Shield, CheckCircle2, XCircle, Loader2, Plug, Download, Sparkles } from
 import { useUI } from '../i18n/index.js';
 import { buildMcpClients, deriveServerName } from '../lib/mcpClients.js';
 import { useObservability } from '../observability/index.js';
-
-function detectBaseUrl() {
-  const path = window.location.pathname;
-  const webIdx = path.indexOf('/web/');
-  if (webIdx !== -1) return path.substring(0, webIdx);
-  return import.meta.env.VITE_API_BASE || '';
-}
 
 function detectMcpUrl() {
   return window.location.origin + '/mcp';
@@ -31,7 +24,7 @@ const SCOPE_LABELS = {
 };
 
 export default function AuthorizePage() {
-  const { token, username, logout } = useAuth();
+  const { username, csrfToken } = useAuth();
   const [searchParams] = useSearchParams();
   const [status, setStatus] = useState('idle'); // idle | authorizing | success | error
   const [errorMessage, setErrorMessage] = useState('');
@@ -48,23 +41,20 @@ export default function AuthorizePage() {
   const scopes = scope.split(/\s+/).filter(Boolean);
   const isOAuthFlow = !!(clientId && redirectUri && codeChallenge && responseType === 'code');
 
-  const apiFetch = useMemo(
-    () => createApiFetch(detectBaseUrl(), () => token, logout),
-    [token, logout]
-  );
-
   async function handleAuthorize() {
     setStatus('authorizing');
     setErrorMessage('');
     try {
+      // ETP-4576 — the session lives in the __Host- cookie now; the CSRF
+      // proof (ADR-0001) replaces the legacy Bearer token for this
+      // unsafe-method request.
+      const headers = { 'Content-Type': 'application/json' };
+      if (csrfToken) headers['X-Go-CSRF'] = csrfToken;
       const res = await fetch('/oauth2/authorize', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`,
-        },
+        credentials: 'include',
+        headers,
         body: JSON.stringify({
-          token,
           client_id: clientId,
           redirect_uri: redirectUri,
           code_challenge: codeChallenge,

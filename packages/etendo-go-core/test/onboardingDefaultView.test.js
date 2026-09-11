@@ -18,14 +18,25 @@ describe('Onboarding default view (ETP-4443)', () => {
     assert.doesNotMatch(flow, /goToStep\(initialView === 'login' \? 'login' : 'register'\)/);
   });
 
-  it('routes to login (not register) when the stored token is invalid', () => {
-    // The fetchAccount().catch branch clears the token and must land on login. Anchored on the
-    // fetchAccount call rather than "the first .catch in the file": the mount effect grew other
-    // awaited calls with their own catch blocks (ETP-4798's confirmation link), and slicing from
-    // the first one silently started asserting against the wrong branch.
-    const bootstrap = flow.slice(flow.indexOf('fetchAccount(fetch, apiBase, currentToken)'));
+  // ETP-4576: this test used to assert that "no token" and "invalid token" resolved
+  // to two different views (register-eligible vs. always-login). With the __Host-
+  // session cookie, the frontend can no longer tell those two cases apart — both
+  // "never had a session" and "had one but it expired/is invalid" surface as the
+  // exact same 401 from GET /sws/go/session, handled by the exact same .catch().
+  // The distinction this test verified no longer exists in the code, so the test
+  // is removed rather than updated. The unified behavior (both cases respect
+  // initialView) is covered by 'defaults to login when there is no session token'
+  // above, since it now applies to the single shared catch branch too.
+
+  it('routes to login (not register) when the session probe fails', () => {
+    // Kept from the epic's version of the removed test above, re-anchored: the branch it guards
+    // is now fetchSession's, since that is what the bootstrap reads. The anchoring itself is the
+    // point — the mount effect grew an earlier awaited call with its own catch block (ETP-4798's
+    // confirmation link), so slicing from the first `.catch(` in the file would silently assert
+    // against verifyEmail's instead of the bootstrap's.
+    const bootstrap = flow.slice(flow.indexOf('fetchSession(fetch, apiBase)'));
     const catchBlock = bootstrap.slice(bootstrap.indexOf('.catch('), bootstrap.indexOf('.catch(') + 260);
-    assert.match(catchBlock, /goToStep\('login'\)/);
+    assert.match(catchBlock, /goToStep\(initialView === 'register' \? 'register' : 'login'\)/);
     assert.doesNotMatch(catchBlock, /goToStep\('register'\)/);
   });
 
@@ -39,5 +50,13 @@ describe('Onboarding default view (ETP-4443)', () => {
     assert.match(envSelect, /onLogout=\{onLogout\}/);
     assert.doesNotMatch(envSelect, /const handleLogout/);
     assert.doesNotMatch(envSelect, /localStorage\.removeItem\('sf_platform_token'\)/);
+  });
+
+  // ETP-4576: the mount bootstrap no longer reads a client-visible token to decide
+  // whether a session exists — it always asks the server via fetchSession(), which
+  // rides the __Host- cookie and returns 401 when there is none/it is invalid.
+  it('bootstraps the session via fetchSession instead of reading the old localStorage token', () => {
+    assert.match(flow, /fetchSession\(fetch, apiBase\)/);
+    assert.doesNotMatch(flow, /localStorage\.getItem\('sf_platform_token'\)/);
   });
 });

@@ -29,7 +29,10 @@ describe('canonical onboarding session persistence', () => {
     const request = deferred();
     fetch.mockImplementation((path) => path.endsWith('/refreshtoken') ? refresh.promise : request.promise);
     const { result } = renderHook(() => useAuth(), {
-      wrapper: ({ children }) => <AuthProvider storage={storage}>{children}</AuthProvider>,
+      // ETP-4576 — the session under test is the one `storage` supplies, so the provider
+      // opts out of the cookie restore: its mount-time GET /sws/go/session would otherwise
+      // land in the fetch counts these cases assert on.
+      wrapper: ({ children }) => <AuthProvider storage={storage} restoreSession={null}>{children}</AuthProvider>,
     });
     await waitFor(() => expect(fetch).toHaveBeenCalledTimes(1));
     const snapshot = result.current.captureSession();
@@ -73,7 +76,10 @@ describe('canonical onboarding session persistence', () => {
     storage.write(initial);
     fetch.mockResolvedValue(jsonResponse({ token: initial.token }));
     const { result } = renderHook(() => useAuth(), {
-      wrapper: ({ children }) => <AuthProvider storage={storage}>{children}</AuthProvider>,
+      // ETP-4576 — the session under test is the one `storage` supplies, so the provider
+      // opts out of the cookie restore: its mount-time GET /sws/go/session would otherwise
+      // land in the fetch counts these cases assert on.
+      wrapper: ({ children }) => <AuthProvider storage={storage} restoreSession={null}>{children}</AuthProvider>,
     });
     await waitFor(() => expect(result.current.isSessionReady).toBe(true));
     fetch.mockResolvedValue(jsonResponse({ token: destination.token }));

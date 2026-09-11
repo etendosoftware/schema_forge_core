@@ -1,6 +1,7 @@
 import { createContext, useContext, useState, useEffect } from 'react';
 import { useAuth } from '../auth/index.js';
 import { createApiFetch, authHeaders } from '../auth/api.js';
+import { credentialOptions } from '../auth/sessionCredentials.js';
 
 /* ------------------------------------------------------------------
  * Internal helpers
@@ -22,7 +23,7 @@ const CurrencyContext = createContext(null);
 
 /**
  * Place this provider inside <AuthProvider> at the app root so the
- * currency fetch starts as soon as the token is available — before
+ * currency fetch starts as soon as the session is authenticated — before
  * any dashboard or window component mounts and needs the value.
  *
  * @example
@@ -33,8 +34,10 @@ const CurrencyContext = createContext(null);
  * </AuthProvider>
  */
 export function CurrencyProvider({ children, value, apiBaseUrl, fetcher = globalThis.fetch }) {
-  const { token, selectedOrg, isSessionReady, authRevision, captureSession, isCurrentSession, apiSessionScope } = useAuth();
+  const { isAuthenticated, token, selectedOrg, isSessionReady, authRevision, captureSession, isCurrentSession, apiSessionScope } = useAuth();
   const [resolved, setResolved] = useState(null);
+  // `token` is undefined under the cookie scheme; the identity stays stable and distinct
+  // anyway through org + authRevision + base URL, which is what it is keyed on.
   const identity = `${token}|${selectedOrg?.id}|${authRevision}|${apiBaseUrl}`;
   const setCurrencyCode = (code) => setResolved({ code, identity });
 
@@ -44,7 +47,10 @@ export function CurrencyProvider({ children, value, apiBaseUrl, fetcher = global
       return;
     }
 
-    if (!token || isSessionReady === false) {
+    // ETP-4576 — `isAuthenticated`, not `!token`: under the cookie scheme the client holds
+    // no token, so develop's gate would skip the currency resolution for every user and
+    // leave every amount unformatted.
+    if (!isAuthenticated || isSessionReady === false) {
       setCurrencyCode(null);
       return;
     }
@@ -58,9 +64,14 @@ export function CurrencyProvider({ children, value, apiBaseUrl, fetcher = global
 
     async function resolve() {
       try {
+        // apiFetch carries the active credential itself; the injected-fetcher branch is
+        // the test seam, and authHeaders() resolves the scheme on its own. It still has to
+        // spread credentialOptions(): under the cookie scheme the credential IS the cookie,
+        // and headers alone leave it at home — the request goes out anonymous and the
+        // currency silently falls back to USD.
         const res = fetcher === globalThis.fetch
           ? await request(`${base}/session`, { on401: 'ignore' })
-          : await fetcher(`${base}/session`, { headers: authHeaders(token) });
+          : await fetcher(`${base}/session`, { ...credentialOptions(), headers: authHeaders() });
         if (res.ok) {
           const json = await res.json();
           const code = json?.currencyCode;
@@ -73,7 +84,7 @@ export function CurrencyProvider({ children, value, apiBaseUrl, fetcher = global
 
     resolve();
     return () => { cancelled = true; };
-  }, [apiBaseUrl, fetcher, token, selectedOrg?.id, value, isSessionReady, authRevision, captureSession, isCurrentSession, apiSessionScope]);
+  }, [apiBaseUrl, fetcher, isAuthenticated, token, selectedOrg?.id, value, isSessionReady, authRevision, captureSession, isCurrentSession, apiSessionScope]);
 
   return (
     <CurrencyContext.Provider value={value ?? (isSessionReady !== false && resolved?.identity === identity ? resolved.code : null)}>

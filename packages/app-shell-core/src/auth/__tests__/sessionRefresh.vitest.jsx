@@ -33,7 +33,12 @@ afterEach(() => {
 function setup({ session = sessionFixture(), fetchWindowAccess, strict = false, onSessionChange } = {}) {
   const storage = createMemoryAuthStorage(session);
   const Wrapper = ({ children }) => {
-    const content = <AuthProvider storage={storage} fetchWindowAccess={fetchWindowAccess}
+    // ETP-4576 — these cases exercise the refresh controller on a session the host
+    // supplies through `storage`; opting out of the cookie restore keeps its mount-time
+    // GET /sws/go/session out of the `fetch` stub every case here asserts on. The restore
+    // has its own suite (AuthContext.cookieSession.test.jsx).
+    const content = <AuthProvider storage={storage} restoreSession={null}
+      fetchWindowAccess={fetchWindowAccess}
       onSessionChange={onSessionChange} apiBaseUrl="/server">{children}</AuthProvider>;
     return strict ? <StrictMode>{content}</StrictMode> : content;
   };
@@ -379,7 +384,7 @@ describe('automatic refresh lifecycle and form preservation', () => {
       useEffect(() => { mounts(); return unmounts; }, []);
       return <input aria-label="draft" value={value} onChange={(e) => setValue(e.target.value)} />;
     }
-    render(<AuthProvider storage={createMemoryAuthStorage(session)} fetchWindowAccess={access}>
+    render(<AuthProvider storage={createMemoryAuthStorage(session)} restoreSession={null} fetchWindowAccess={access}>
       <AuthGate pendingFallback={<span data-testid="pending" />} fallback={<span data-testid="login" />}>
         <WindowAccessGuard windowId="fixtureWindow"><Editor /></WindowAccessGuard>
       </AuthGate>
@@ -435,7 +440,7 @@ describe('real data and currency consumers', () => {
       return <><span data-testid="query">{query.data ?? 'empty'}</span>
         <span data-testid="currency">{currency ?? 'empty'}</span></>;
     }
-    render(<AuthProvider storage={createMemoryAuthStorage(initial)}>
+    render(<AuthProvider storage={createMemoryAuthStorage(initial)} restoreSession={null}>
       <DataProvider><CurrencyProvider><Probe /></CurrencyProvider></DataProvider>
     </AuthProvider>);
     await waitFor(() => expect(fetch).toHaveBeenCalledTimes(1));

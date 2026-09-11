@@ -18,8 +18,25 @@ function DefaultLoginRedirect({ loginPath }) {
   );
 }
 
-export function AuthGate({ children, loginPath = '/login', fallback, pendingFallback = null }) {
-  const { isAuthenticated, isSessionReady } = useAuth();
+export function AuthGate({
+  children, loginPath = '/login', fallback, bootingFallback = null, pendingFallback = null,
+}) {
+  const { isAuthenticated, status, isSessionReady } = useAuth();
+  // ETP-4576 — the cookie-session restore goes through a real 'booting' state
+  // first; render this instead of falling through to the unauthenticated
+  // redirect, or every reload would flash a login screen before the restore
+  // resolves.
+  //
+  // Restore is ON BY DEFAULT: AuthContext defaults `restoreSession` to
+  // `fetchCookieSession`, so a host that simply omits it still starts in
+  // 'booting' and this branch is very much not a no-op. Opting out takes an
+  // explicit `restoreSession: null` — passing `undefined` re-arms the default,
+  // because a default parameter only fills in for `undefined`. A host that
+  // omits it and supplies no `bootingFallback` renders nothing until the
+  // restore settles, and if that request cannot succeed (jsdom, no backend)
+  // the status lands on 'anonymous' and guarded routes redirect to login.
+  if (status === 'booting') return bootingFallback;
+  // develop's own gate, kept: an authenticated session whose scope is not ready yet.
   if (isAuthenticated && isSessionReady === false) return pendingFallback;
   if (isAuthenticated) return children;
   return fallback || <DefaultLoginRedirect loginPath={loginPath} data-testid="DefaultLoginRedirect__b517b2" />;
@@ -31,6 +48,7 @@ function renderRoute(route, auth) {
     : <AuthGate
     loginPath={auth.loginPath}
     fallback={auth.unauthenticatedFallback}
+    bootingFallback={auth.bootingFallback}
     data-testid="AuthGate__b517b2">{route.element}</AuthGate>;
 
   return (
@@ -64,6 +82,11 @@ export function AppShellProviders({
         onSessionChange={auth?.onSessionChange}
         fetchWindowAccess={auth?.fetchWindowAccess}
         apiBaseUrl={auth?.apiBaseUrl}
+        // ETP-4576 — the host's single switch. Selects the credential scheme AND, through
+        // AuthProvider's derived default, whether the session is restored from the server
+        // on mount.
+        credentialMode={auth?.credentialMode}
+        restoreSession={auth?.restoreSession}
         data-testid="AuthProvider__b517b2">
         <DataProvider
           cache={data?.cache}
@@ -148,6 +171,7 @@ export function AppShellRuntime({
               <AuthGate
                 loginPath={runtimeAuth.loginPath}
                 fallback={runtimeAuth.unauthenticatedFallback}
+                bootingFallback={runtimeAuth.bootingFallback}
                 data-testid="AuthGate__b517b2">
                 <Layout
                   menuGroups={menuGroups || runtime.menuGroups}

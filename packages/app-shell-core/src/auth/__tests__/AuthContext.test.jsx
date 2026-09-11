@@ -1,4 +1,8 @@
 import { describe, it, expect, vi, afterEach } from 'vitest';
+// ETP-4576 — every <AuthProvider> below passes `restoreSession={null}`. The provider now
+// defaults it to the platform cookie fetcher, which would call fetch on mount in jsdom and,
+// on the 401, log out the session each of these tests seeds by hand. Opting out keeps this
+// suite testing exactly what it was written to test: the ETP-5195 controller and refresh.
 import { renderHook, cleanup, act, waitFor } from '@testing-library/react';
 import { createMemoryAuthStorage } from '../session.js';
 import { AuthProvider, useAuth } from '../AuthContext.jsx';
@@ -8,7 +12,7 @@ afterEach(cleanup);
 function wrapperWith({ fetchWindowAccess } = {}) {
   return function Wrapper({ children }) {
     return (
-      <AuthProvider storage={createMemoryAuthStorage()} fetchWindowAccess={fetchWindowAccess}>
+      <AuthProvider restoreSession={null} storage={createMemoryAuthStorage()} fetchWindowAccess={fetchWindowAccess}>
         {children}
       </AuthProvider>
     );
@@ -308,7 +312,7 @@ describe('AuthContext — windowAccess/capabilities (ETP-4520)', () => {
     });
     const { result } = renderHook(() => useAuth(), {
       wrapper: ({ children }) => (
-        <AuthProvider
+        <AuthProvider restoreSession={null}
           storage={createMemoryAuthStorage()}
           fetchWindowAccess={fetchWindowAccess}
           initialSession={{ token: 'tok', selectedRole: { id: 'role-1' } }}>
@@ -373,7 +377,7 @@ describe('AuthContext — silent token refresh (ETP-5195)', () => {
     try {
       renderHook(() => useAuth(), {
         wrapper: ({ children }) => (
-          <AuthProvider storage={createMemoryAuthStorage()} initialSession={{ token }}>
+          <AuthProvider restoreSession={null} storage={createMemoryAuthStorage()} initialSession={{ token }}>
             {children}
           </AuthProvider>
         ),
@@ -403,7 +407,7 @@ describe('AuthContext — silent token refresh (ETP-5195)', () => {
     try {
       const { result } = renderHook(() => useAuth(), {
         wrapper: ({ children }) => (
-          <AuthProvider storage={storage} initialSession={{ token: oldToken }}>{children}</AuthProvider>
+          <AuthProvider restoreSession={null} storage={storage} initialSession={{ token: oldToken }}>{children}</AuthProvider>
         ),
       });
 
@@ -426,7 +430,7 @@ describe('AuthContext — silent token refresh (ETP-5195)', () => {
     try {
       renderHook(() => useAuth(), {
         wrapper: ({ children }) => (
-          <AuthProvider storage={storage} initialSession={{ token }}>{children}</AuthProvider>
+          <AuthProvider restoreSession={null} storage={storage} initialSession={{ token }}>{children}</AuthProvider>
         ),
       });
 
@@ -445,7 +449,7 @@ describe('AuthContext — silent token refresh (ETP-5195)', () => {
     try {
       const { result } = renderHook(() => useAuth(), {
         wrapper: ({ children }) => (
-          <AuthProvider storage={createMemoryAuthStorage()} initialSession={{ token }}>{children}</AuthProvider>
+          <AuthProvider restoreSession={null} storage={createMemoryAuthStorage()} initialSession={{ token }}>{children}</AuthProvider>
         ),
       });
 
@@ -462,7 +466,7 @@ describe('AuthContext — silent token refresh (ETP-5195)', () => {
     try {
       const { result } = renderHook(() => useAuth(), {
         wrapper: ({ children }) => (
-          <AuthProvider storage={createMemoryAuthStorage()} initialSession={{ token }}>{children}</AuthProvider>
+          <AuthProvider restoreSession={null} storage={createMemoryAuthStorage()} initialSession={{ token }}>{children}</AuthProvider>
         ),
       });
 
@@ -478,7 +482,7 @@ describe('AuthContext — silent token refresh (ETP-5195)', () => {
     try {
       const { result } = renderHook(() => useAuth(), {
         wrapper: ({ children }) => (
-          <AuthProvider storage={createMemoryAuthStorage()} initialSession={{ token }}>{children}</AuthProvider>
+          <AuthProvider restoreSession={null} storage={createMemoryAuthStorage()} initialSession={{ token }}>{children}</AuthProvider>
         ),
       });
 
@@ -494,7 +498,7 @@ describe('AuthContext — silent token refresh (ETP-5195)', () => {
     try {
       renderHook(() => useAuth(), {
         wrapper: ({ children }) => (
-          <AuthProvider storage={createMemoryAuthStorage()} initialSession={{ token }}>{children}</AuthProvider>
+          <AuthProvider restoreSession={null} storage={createMemoryAuthStorage()} initialSession={{ token }}>{children}</AuthProvider>
         ),
       });
       await waitFor(() => expect(f.calls.length).toBe(1));
@@ -525,7 +529,7 @@ describe('AuthContext — silent token refresh (ETP-5195)', () => {
     try {
       const { result } = renderHook(() => useAuth(), {
         wrapper: ({ children }) => (
-          <AuthProvider
+          <AuthProvider restoreSession={null}
             storage={createMemoryAuthStorage()}
             fetchWindowAccess={fetchWindowAccess}
             initialSession={{ token, selectedRole: { id: 'role-1' } }}>
@@ -558,7 +562,7 @@ describe('AuthContext — silent token refresh (ETP-5195)', () => {
     try {
       const { result } = renderHook(() => useAuth(), {
         wrapper: ({ children }) => (
-          <AuthProvider
+          <AuthProvider restoreSession={null}
             storage={createMemoryAuthStorage()}
             fetchWindowAccess={fetchWindowAccess}
             initialSession={{ token, selectedRole: { id: 'role-1' } }}>
@@ -586,7 +590,7 @@ describe('AuthContext — silent token refresh (ETP-5195)', () => {
     try {
       renderHook(() => useAuth(), {
         wrapper: ({ children }) => (
-          <AuthProvider storage={createMemoryAuthStorage()} initialSession={{ token }}>{children}</AuthProvider>
+          <AuthProvider restoreSession={null} storage={createMemoryAuthStorage()} initialSession={{ token }}>{children}</AuthProvider>
         ),
       });
       await waitFor(() => expect(f.calls.length).toBe(1));
@@ -608,7 +612,7 @@ describe('AuthContext — silent token refresh (ETP-5195)', () => {
     try {
       const { result } = renderHook(() => useAuth(), {
         wrapper: ({ children }) => (
-          <AuthProvider storage={createMemoryAuthStorage()} initialSession={{ token: oldToken }}>
+          <AuthProvider restoreSession={null} storage={createMemoryAuthStorage()} initialSession={{ token: oldToken }}>
             {children}
           </AuthProvider>
         ),
@@ -652,7 +656,7 @@ describe('AuthContext — silent token refresh (ETP-5195)', () => {
     try {
       const { result } = renderHook(() => useAuth(), {
         wrapper: ({ children }) => (
-          <AuthProvider storage={storage} initialSession={{ token: oldToken }}>{children}</AuthProvider>
+          <AuthProvider restoreSession={null} storage={storage} initialSession={{ token: oldToken }}>{children}</AuthProvider>
         ),
       });
 
@@ -698,7 +702,7 @@ describe('AuthContext — silent refresh polling fallback (ETP-5195)', () => {
     try {
       renderHook(() => useAuth(), {
         wrapper: ({ children }) => (
-          <AuthProvider storage={createMemoryAuthStorage()} initialSession={{ token }}>{children}</AuthProvider>
+          <AuthProvider restoreSession={null} storage={createMemoryAuthStorage()} initialSession={{ token }}>{children}</AuthProvider>
         ),
       });
 
@@ -723,7 +727,7 @@ describe('AuthContext — silent refresh polling fallback (ETP-5195)', () => {
     try {
       renderHook(() => useAuth(), {
         wrapper: ({ children }) => (
-          <AuthProvider storage={createMemoryAuthStorage()} initialSession={{ token }}>{children}</AuthProvider>
+          <AuthProvider restoreSession={null} storage={createMemoryAuthStorage()} initialSession={{ token }}>{children}</AuthProvider>
         ),
       });
 
@@ -747,7 +751,7 @@ describe('AuthContext — silent refresh polling fallback (ETP-5195)', () => {
     try {
       const { unmount } = renderHook(() => useAuth(), {
         wrapper: ({ children }) => (
-          <AuthProvider storage={createMemoryAuthStorage()} initialSession={{ token }}>{children}</AuthProvider>
+          <AuthProvider restoreSession={null} storage={createMemoryAuthStorage()} initialSession={{ token }}>{children}</AuthProvider>
         ),
       });
 
@@ -777,7 +781,7 @@ describe('AuthContext — silent refresh polling fallback (ETP-5195)', () => {
     try {
       renderHook(() => useAuth(), {
         wrapper: ({ children }) => (
-          <AuthProvider storage={storage} initialSession={{ token }}>{children}</AuthProvider>
+          <AuthProvider restoreSession={null} storage={storage} initialSession={{ token }}>{children}</AuthProvider>
         ),
       });
 

@@ -1,6 +1,12 @@
 import { createContext, useContext, useState, useCallback, useMemo, useRef, useEffect, useLayoutEffect, useSyncExternalStore } from 'react';
-import { createLocalAuthStorage, normalizeAuthSession } from './session.js';
-import { registerApiSession, createApiFetch } from './api.js';
+import {
+  createLocalAuthStorage, createMemoryAuthStorage, mapRestoredSession, normalizeAuthSession,
+  purgeLegacyAuthStorage,
+} from './session.js';
+import {
+  createApiFetch, deleteCookieSession, fetchCookieSession, registerApiSession,
+} from './api.js';
+import { CREDENTIAL_MODES, setSessionCredentials } from './sessionCredentials.js';
 import { createSessionController } from './sessionController.js';
 import { reconcileSessionRefresh } from './sessionRefresh.js';
 
@@ -35,14 +41,53 @@ function sameFlatMap(a, b) {
   return keysA.every((key) => a[key] === b[key]);
 }
 
-export function AuthProvider({ children, storage, initialSession, onSessionChange, fetchWindowAccess, apiBaseUrl }) {
-  const authStorage = useMemo(() => storage || createLocalAuthStorage(), [storage]);
+export function AuthProvider({
+  children, storage, initialSession, onSessionChange, fetchWindowAccess, apiBaseUrl,
+  // ETP-4576 — which credential scheme requests use: 'bearer', 'cookie' or 'auto'.
+  // `auto` resolves to whichever scheme the backend actually issued, by reading whether
+  // a CSRF token came back with the session. Declaring `cookie` by hand is a claim about
+  // the BACKEND the frontend cannot verify, and getting it wrong fails in the worst
+  // direction: reads keep working off the browser's own cookie while every unsafe request
+  // answers 403 for a missing proof.
+  credentialMode = CREDENTIAL_MODES.auto,
+  // ETP-4576 — DERIVED from `credentialMode`, so one switch governs the whole thing.
+  // An explicit `null` opts out; passing `undefined` re-arms this default.
+  restoreSession = credentialMode === CREDENTIAL_MODES.cookie
+    || credentialMode === CREDENTIAL_MODES.auto ? fetchCookieSession : null,
+}) {
+  // ETP-4576 — under the cookie scheme the default storage is MEMORY, not localStorage:
+  // the server response is authoritative and `purgeLegacyAuthStorage` deletes the sf_auth_*
+  // keys on mount, so persisting the session there would rewrite the very keys just purged.
+  // A legacy bearer host (restoreSession opted out) keeps localStorage verbatim, and an
+  // explicit `storage` prop always wins. Keyed on the BOOLEAN so a host passing an inline
+  // arrow as `restoreSession` does not rebuild the adapter on every render.
+  const usesRestore = typeof restoreSession === 'function';
+  const authStorage = useMemo(
+    () => storage || (usesRestore ? createMemoryAuthStorage() : createLocalAuthStorage()),
+    [storage, usesRestore],
+  );
   const [controller] = useState(() => createSessionController(normalizeAuthSession({
     ...authStorage.read(), ...initialSession,
   }), authStorage, onSessionChange, apiBaseUrl));
   const state = useSyncExternalStore(controller.subscribe, controller.getSnapshot, controller.getSnapshot);
   const options = useRef({ fetchWindowAccess, apiBaseUrl });
   const operation = useRef(null);
+  // ETP-4576 — the X-Go-CSRF proof issued by the backend in session responses. In memory
+  // only, never persisted: it is bound to the httpOnly session cookie, not a value the
+  // client should carry across reloads on its own.
+  const [csrfToken, setCsrfToken] = useState(null);
+  // ETP-4576 — tri-state auth status. Hosts that opt out of the restore (`restoreSession:
+  // null`) resolve synchronously from whatever session was read, exactly as before, and
+  // never see 'booting'. Hosts that opt in start 'booting' until GET /sws/go/session settles,
+  // so a reload does not flash the login screen before the restore resolves.
+  const [status, setStatus] = useState(() => (
+    typeof restoreSession === 'function'
+      ? 'booting'
+      : (controller.getSnapshot().session.token ? 'authenticated' : 'anonymous')
+  ));
+  // Guards the mount-only restore against a host passing an inline arrow as `restoreSession`,
+  // which would otherwise change identity every render.
+  const hasRestoredRef = useRef(false);
 
   useBrowserLayoutEffect(() => {
     controller.configure({ storage: authStorage, onSessionChange, apiBaseUrl });
@@ -58,6 +103,41 @@ export function AuthProvider({ children, storage, initialSession, onSessionChang
       controller.replace(previous.storage !== authStorage ? authStorage.read() : controller.getSnapshot().session);
     }
   }, [controller, authStorage, apiBaseUrl]);
+
+  // ETP-4576 — session restore on mount. Purges the legacy sf_auth_*/sf_platform_*
+  // localStorage keys once, then consumes GET /sws/go/session through the host-supplied
+  // fetcher. Success moves the status to 'authenticated' and stores the CSRF proof; any
+  // failure (no active session, network error) clears locally — deliberately NOT the
+  // exposed logout(), which revokes server-side: the server just told us there is no
+  // session, so there is nothing to revoke.
+  useEffect(() => {
+    if (typeof restoreSession !== 'function') return;
+    if (hasRestoredRef.current) return;
+    hasRestoredRef.current = true;
+
+    purgeLegacyAuthStorage();
+
+    Promise.resolve()
+      .then(() => restoreSession())
+      .then((result) => {
+        if (!result) throw new Error('No active session');
+        setCsrfToken(result.csrfToken ?? null);
+        controller.replace(normalizeAuthSession(mapRestoredSession(result)), { refresh: false, persist: false });
+        setStatus('authenticated');
+      })
+      .catch(() => {
+        setCsrfToken(null);
+        controller.logout();
+        setStatus('anonymous');
+      });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  // ETP-4576 — hands the active scheme and both credentials to ./sessionCredentials.js,
+  // which every request builder in the core and the host reads. This is the ONLY writer.
+  useEffect(() => {
+    setSessionCredentials({ mode: credentialMode, token: state.session.token, csrfToken });
+  }, [credentialMode, state.session.token, csrfToken]);
 
   const loadAccess = useCallback(async (session, snapshot) => {
     try {
@@ -207,7 +287,14 @@ export function AuthProvider({ children, storage, initialSession, onSessionChang
     controller.activate();
     const unregister = registerApiSession({
       getToken: () => controller.getSnapshot().session.token,
-      onUnauthorized: controller.logout,
+      // ETP-4576 — a 401 has to move the tri-state status too, or `isAuthenticated` stays
+      // true off a stale 'authenticated' and the app never redirects to login. No server
+      // revocation here: a 401 means the session is already gone on the backend.
+      onUnauthorized: () => {
+        setCsrfToken(null);
+        setStatus('anonymous');
+        controller.logout();
+      },
       baseUrl: apiBaseUrl,
       scope: controller,
       replaceSession: controller.replace,
@@ -269,16 +356,45 @@ export function AuthProvider({ children, storage, initialSession, onSessionChang
     replaceSession: controller.replace,
     selectRole: (role) => controller.replace({ ...controller.getSnapshot().session, selectedRole: role || null }, { refresh: false }),
     selectOrg: (org) => controller.replace({ ...controller.getSnapshot().session, selectedOrg: org || null }, { refresh: false }),
-    logout: controller.logout,
+    // ETP-4576 — controller.logout only clears local state. Under the cookie scheme the
+    // session lives server-side, so it has to be revoked there too.
+    //
+    // The revoke is FIRED, never awaited, and the local clear is synchronous: a user who
+    // asked to leave is out of this tab the moment they ask, whatever the network does.
+    // Awaiting it made logout() return a promise and deferred the clear behind a round
+    // trip, so a request issued in between still carried the session. deleteCookieSession
+    // never throws, so nothing here can trap the user in a session they asked to leave.
+    // The proof is passed explicitly because the next line discards it.
+    logout: () => {
+      if (typeof restoreSession === 'function') deleteCookieSession(csrfToken);
+      // ETP-4576 — purge the legacy sf_auth_*/sf_platform_* keys too, in BOTH schemes.
+      // controller.logout() clears only the storage adapter the host injected, which under
+      // the default (memory) is not where those keys live, so a credential left by an
+      // earlier version or by the onboarding app survived a logout untouched. The mount
+      // purge does not cover it either: it runs inside the restore effect, which the bearer
+      // scheme never schedules. Logout is exactly the moment when nothing may survive.
+      purgeLegacyAuthStorage();
+      setCsrfToken(null);
+      setStatus('anonymous');
+      controller.logout();
+    },
     captureSession: controller.capture,
     isCurrentSession: controller.isCurrent,
     apiSessionScope: controller,
     refreshToken: () => refresh(true),
-  }), [controller, refresh]);
+  }), [controller, refresh, restoreSession, csrfToken]);
 
   const value = useMemo(() => ({
     ...state.session,
-    isAuthenticated: !!state.session.token,
+    // ETP-4576 — a cookie-session host NEVER populates session.token, so `!!token` alone
+    // would report every signed-in user as anonymous and send the whole app to /login.
+    // `status` is their authentication signal; the token check stays for legacy hosts,
+    // whose status is resolved once on mount and would otherwise strand a post-mount
+    // login() at false.
+    isAuthenticated: !!state.session.token || status === 'authenticated',
+    csrfToken,
+    status,
+    setCsrfToken,
     isSessionReady: state.isSessionReady,
     isRefreshingSession: state.isRefreshingSession,
     sessionRefreshStatus: state.sessionRefreshStatus,
@@ -286,7 +402,7 @@ export function AuthProvider({ children, storage, initialSession, onSessionChang
     windowAccess: state.windowAccess,
     capabilities: state.capabilities,
     ...actions,
-  }), [state, actions]);
+  }), [state, actions, csrfToken, status]);
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 }
