@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeAll, beforeEach, afterEach } from 'vitest';
 import '@testing-library/jest-dom/vitest';
-import { render, screen, cleanup } from '@testing-library/react';
+import { render, screen, cleanup, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 
 // Core vitest runs without `globals: true`, so RTL's automatic afterEach
@@ -2156,5 +2156,352 @@ describe('ETP-4956 — values are sanitized at apply time, not on change', () =>
     await user.click(screen.getByText('advancedFilterApply'));
     expect(incoming.value).toBe('  Ivan  ');
     expect(onApply.mock.calls[0][0].conditions[0]).not.toBe(incoming);
+  });
+});
+
+// ================================================================
+// ETP-5007 — Apply must stay enabled so the LAST condition can be
+// removed from the builder. `removeRow` re-seeds a pristine empty row
+// when the list would become empty; the old `disabled={!allComplete}`
+// required that pristine row to be complete, so Apply was dead-locked
+// and the filter applied to the grid could never be dropped from here.
+// ================================================================
+
+describe('AdvancedFilterBuilder — Apply enablement (ETP-5007)', () => {
+  const COLUMNS_5007 = [
+    { key: 'name', label: 'Name', type: 'text', column: 'Name' },
+    { key: 'amount', label: 'Amount', type: 'amount', column: 'Amount' },
+  ];
+
+  const seededValue = (conditions) => ({ rowOperator: 'and', conditions });
+
+  const applyButton = () => screen.getByText('advancedFilterApply').closest('button');
+
+  it('keeps Apply enabled after removing the only applied condition', async () => {
+    const user = userEvent.setup();
+    render(
+      <AdvancedFilterBuilder
+        columns={COLUMNS_5007}
+        value={seededValue([{ field: 'name', operator: 'iContains', value: 'test' }])}
+      />,
+    );
+    await user.click(screen.getAllByLabelText('Remove condition')[0]);
+    // The row list is re-seeded with one pristine empty row...
+    expect(screen.getAllByLabelText('Remove condition')).toHaveLength(1);
+    // ...but Apply stays actionable because a filter is currently applied.
+    expect(applyButton()).not.toBeDisabled();
+  });
+
+  it('applies an emptied draft as a clear (onClear + onClose, never onApply)', async () => {
+    const user = userEvent.setup();
+    const onApply = vi.fn();
+    const onClear = vi.fn();
+    const onClose = vi.fn();
+    render(
+      <AdvancedFilterBuilder
+        columns={COLUMNS_5007}
+        value={seededValue([{ field: 'name', operator: 'iContains', value: 'test' }])}
+        onApply={onApply}
+        onClear={onClear}
+        onClose={onClose}
+      />,
+    );
+    await user.click(screen.getAllByLabelText('Remove condition')[0]);
+    await user.click(applyButton());
+    expect(onClear).toHaveBeenCalledTimes(1);
+    expect(onClose).toHaveBeenCalledTimes(1);
+    expect(onApply).not.toHaveBeenCalled();
+  });
+
+  it('disables Apply on a pristine draft with no filter applied (no-op)', () => {
+    render(<AdvancedFilterBuilder columns={COLUMNS_5007} />);
+    expect(applyButton()).toBeDisabled();
+  });
+
+  it('disables Apply while a started-but-incomplete row exists', () => {
+    // Field picked, no operator and no value: started, not complete.
+    render(
+      <AdvancedFilterBuilder
+        columns={COLUMNS_5007}
+        value={seededValue([{ field: 'name', operator: '', value: '' }])}
+      />,
+    );
+    expect(applyButton()).toBeDisabled();
+  });
+
+  it('disables Apply when a complete row is accompanied by a started-but-incomplete one', () => {
+    render(
+      <AdvancedFilterBuilder
+        columns={COLUMNS_5007}
+        value={seededValue([
+          { field: 'name', operator: 'iContains', value: 'test' },
+          { field: 'amount', operator: 'equals', value: '' },
+        ])}
+      />,
+    );
+    expect(applyButton()).toBeDisabled();
+  });
+
+  it('ignores an untouched empty row and applies only the complete conditions', async () => {
+    const user = userEvent.setup();
+    const onApply = vi.fn();
+    const onClear = vi.fn();
+    render(
+      <AdvancedFilterBuilder
+        columns={COLUMNS_5007}
+        value={seededValue([{ field: 'name', operator: 'iContains', value: 'test' }])}
+        onApply={onApply}
+        onClear={onClear}
+      />,
+    );
+    await user.click(screen.getByText('advancedFilterAddCondition'));
+    expect(screen.getAllByLabelText('Remove condition')).toHaveLength(2);
+    expect(applyButton()).not.toBeDisabled();
+    await user.click(applyButton());
+    expect(onClear).not.toHaveBeenCalled();
+    expect(onApply).toHaveBeenCalledTimes(1);
+    const applied = onApply.mock.calls[0][0];
+    expect(applied.conditions).toHaveLength(1);
+    expect(applied.conditions[0]).toMatchObject({
+      field: 'name',
+      operator: 'iContains',
+      value: 'test',
+    });
+  });
+
+  it('applies the remaining condition after removing one of two', async () => {
+    const user = userEvent.setup();
+    const onApply = vi.fn();
+    const onClear = vi.fn();
+    render(
+      <AdvancedFilterBuilder
+        columns={COLUMNS_5007}
+        value={seededValue([
+          { field: 'name', operator: 'iContains', value: 'test' },
+          { field: 'amount', operator: 'greaterThan', value: '100' },
+        ])}
+        onApply={onApply}
+        onClear={onClear}
+      />,
+    );
+    await user.click(screen.getAllByLabelText('Remove condition')[0]);
+    expect(screen.getAllByLabelText('Remove condition')).toHaveLength(1);
+    expect(applyButton()).not.toBeDisabled();
+    await user.click(applyButton());
+    expect(onClear).not.toHaveBeenCalled();
+    expect(onApply).toHaveBeenCalledTimes(1);
+    const applied = onApply.mock.calls[0][0];
+    expect(applied.conditions).toHaveLength(1);
+    expect(applied.conditions[0]).toMatchObject({
+      field: 'amount',
+      operator: 'greaterThan',
+      value: '100',
+    });
+  });
+});
+
+// ================================================================
+// ETP-5007 (part 2) — "save as preset" must persist the DRAFT, not the
+// filter currently applied. Saving without pressing Apply used to store
+// the applied filter (empty, or the stale previous one), so the preset
+// never matched what the user had just configured.
+// ================================================================
+
+describe('AdvancedFilterBuilder — save preset uses the draft (ETP-5007)', () => {
+  const COLUMNS_PRESET = [
+    { key: 'name', label: 'Name', type: 'text', column: 'Name' },
+    { key: 'amount', label: 'Amount', type: 'amount', column: 'Amount' },
+  ];
+
+  // Walks the real preset UI: dropdown -> "save current" [-> name -> submit].
+  async function clickSaveCurrent(user) {
+    await user.click(screen.getByText('filterPresetsButton'));
+    await user.click(await screen.findByText('filterPresetSaveCurrent'));
+  }
+
+  async function openSaveDialogAndSubmit(user, name) {
+    await clickSaveCurrent(user);
+    const dialog = await screen.findByRole('dialog');
+    await user.type(within(dialog).getByRole('textbox'), name);
+    await user.click(screen.getByText('save'));
+  }
+
+  it('saves a condition configured but never applied', async () => {
+    const user = userEvent.setup();
+    const onSavePreset = vi.fn();
+    render(
+      <AdvancedFilterBuilder
+        columns={COLUMNS_PRESET}
+        presets={{}}
+        onSavePreset={onSavePreset}
+        value={{ rowOperator: 'and', conditions: [{ field: 'name', operator: '', value: '' }] }}
+      />,
+    );
+    // Configure the row fully — no Apply click anywhere in this test.
+    await user.click(screen.getByText('advancedFilterSelectOp').closest('button'));
+    await user.click(await screen.findByRole('option', { name: 'opContains' }));
+    await user.type(screen.getByRole('textbox'), 'draft-only');
+
+    await openSaveDialogAndSubmit(user, 'MyPreset');
+
+    expect(onSavePreset).toHaveBeenCalledTimes(1);
+    const [savedName, savedFilter] = onSavePreset.mock.calls[0];
+    expect(savedName).toBe('MyPreset');
+    expect(savedFilter).toMatchObject({ rowOperator: 'and' });
+    expect(savedFilter.conditions).toHaveLength(1);
+    expect(savedFilter.conditions[0]).toMatchObject({
+      field: 'name',
+      operator: 'iContains',
+      value: 'draft-only',
+    });
+  });
+
+  it('saves the edited draft value, not the applied one', async () => {
+    const user = userEvent.setup();
+    const onSavePreset = vi.fn();
+    render(
+      <AdvancedFilterBuilder
+        columns={COLUMNS_PRESET}
+        presets={{}}
+        onSavePreset={onSavePreset}
+        hasActiveColumnFilter
+        value={{ rowOperator: 'and', conditions: [{ field: 'name', operator: 'iContains', value: 'applied' }] }}
+      />,
+    );
+    const input = screen.getByRole('textbox');
+    await user.clear(input);
+    await user.type(input, 'edited');
+
+    await openSaveDialogAndSubmit(user, 'Edited');
+
+    expect(onSavePreset).toHaveBeenCalledTimes(1);
+    expect(onSavePreset.mock.calls[0][1].conditions[0].value).toBe('edited');
+  });
+
+  // Rule change: loading a preset APPLIES it, so a preset must be something that
+  // could have been applied. A draft with no complete condition is therefore no
+  // longer saved as `null` — it cannot be saved at all.
+  it('blocks saving a draft whose only row is started but incomplete', async () => {
+    const user = userEvent.setup();
+    const onSavePreset = vi.fn();
+    render(
+      <AdvancedFilterBuilder
+        columns={COLUMNS_PRESET}
+        presets={{}}
+        onSavePreset={onSavePreset}
+        // Field picked, no operator and no value: started, not complete.
+        value={{ rowOperator: 'and', conditions: [{ field: 'name', operator: '', value: '' }] }}
+      />,
+    );
+    await clickSaveCurrent(user);
+
+    expect(screen.getByTestId('save-preset-blocked-reason'))
+      .toHaveTextContent('filterPresetBlockedIncomplete');
+    expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
+    expect(onSavePreset).not.toHaveBeenCalled();
+  });
+
+  it('blocks saving an entirely empty draft with no active column filter', async () => {
+    const user = userEvent.setup();
+    const onSavePreset = vi.fn();
+    render(
+      <AdvancedFilterBuilder columns={COLUMNS_PRESET} presets={{}} onSavePreset={onSavePreset} />,
+    );
+    await clickSaveCurrent(user);
+
+    expect(screen.getByTestId('save-preset-blocked-reason'))
+      .toHaveTextContent('filterPresetBlockedEmpty');
+    expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
+    expect(onSavePreset).not.toHaveBeenCalled();
+  });
+
+  it('saves a column-filter-only preset (empty draft) with a null advanced filter', async () => {
+    const user = userEvent.setup();
+    const onSavePreset = vi.fn();
+    render(
+      <AdvancedFilterBuilder
+        columns={COLUMNS_PRESET}
+        presets={{}}
+        onSavePreset={onSavePreset}
+        hasActiveColumnFilter
+      />,
+    );
+    expect(screen.queryByTestId('save-preset-blocked-reason')).not.toBeInTheDocument();
+    await openSaveDialogAndSubmit(user, 'ColumnsOnly');
+
+    expect(onSavePreset).toHaveBeenCalledTimes(1);
+    expect(onSavePreset.mock.calls[0]).toEqual(['ColumnsOnly', null]);
+  });
+
+  it('enforces the block in the handler, not only through the disabled attribute', async () => {
+    const user = userEvent.setup();
+    const onSavePreset = vi.fn();
+    render(
+      <AdvancedFilterBuilder columns={COLUMNS_PRESET} presets={{}} onSavePreset={onSavePreset} />,
+    );
+    await user.click(screen.getByText('filterPresetsButton'));
+    const item = (await screen.findByText('filterPresetSaveCurrent')).closest('[role="menuitem"]');
+    // Radix marks it disabled, but a disabled item still reaches onClick in
+    // jsdom — so the assertion that matters is that nothing happens anyway.
+    expect(item).toHaveAttribute('data-disabled');
+    await user.click(item);
+    expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
+    expect(onSavePreset).not.toHaveBeenCalled();
+  });
+
+  it('passes the draft through the overwrite-confirmation path too', async () => {
+    const user = userEvent.setup();
+    const onSavePreset = vi.fn();
+    render(
+      <AdvancedFilterBuilder
+        columns={COLUMNS_PRESET}
+        presets={{ Mine: { rowOperator: 'and', conditions: [] } }}
+        onSavePreset={onSavePreset}
+        hasActiveColumnFilter
+        value={{ rowOperator: 'and', conditions: [{ field: 'name', operator: 'iContains', value: 'applied' }] }}
+      />,
+    );
+    const input = screen.getByRole('textbox');
+    await user.clear(input);
+    await user.type(input, 'overwritten');
+
+    await openSaveDialogAndSubmit(user, 'Mine');
+    // Submitting an existing name does not save yet — it asks for confirmation.
+    expect(onSavePreset).not.toHaveBeenCalled();
+    expect(await screen.findByText('filterPresetOverwriteConfirm')).toBeInTheDocument();
+
+    await user.click(screen.getByText('filterPresetOverwriteAction'));
+    expect(onSavePreset).toHaveBeenCalledTimes(1);
+    const [savedName, savedFilter] = onSavePreset.mock.calls[0];
+    expect(savedName).toBe('Mine');
+    expect(savedFilter).not.toBeUndefined();
+    expect(savedFilter.conditions[0].value).toBe('overwritten');
+  });
+
+  // Rule inverted: a half-written row used to be silently dropped from the
+  // saved preset. It now blocks the save outright, exactly like Apply.
+  it('blocks saving when a complete row is accompanied by a started-but-incomplete one', async () => {
+    const user = userEvent.setup();
+    const onSavePreset = vi.fn();
+    render(
+      <AdvancedFilterBuilder
+        columns={COLUMNS_PRESET}
+        presets={{}}
+        onSavePreset={onSavePreset}
+        value={{
+          rowOperator: 'and',
+          conditions: [
+            { field: 'name', operator: 'iContains', value: 'keep' },
+            { field: 'amount', operator: 'equals', value: '' },
+          ],
+        }}
+      />,
+    );
+    await clickSaveCurrent(user);
+
+    expect(screen.getByTestId('save-preset-blocked-reason'))
+      .toHaveTextContent('filterPresetBlockedIncomplete');
+    expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
+    expect(onSavePreset).not.toHaveBeenCalled();
   });
 });
