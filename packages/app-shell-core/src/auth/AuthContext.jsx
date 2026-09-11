@@ -22,12 +22,21 @@ function unwrapBridgeEnvelope(body) {
   return body;
 }
 
-// [ETP-5195 follow-up] `windowAccess`/`capabilities` are flat maps of primitive values
-// (tier strings / booleans) — a plain key-by-key comparison is enough to tell a genuinely
-// changed permission set apart from the SAME set re-fetched as a new object. Used by the
-// tab-focus/visibility/poll-triggered "legacy" (no role change) refresh path below to avoid
-// bumping `generation`/`authRevision` — and therefore every `isCurrentSession()`/`authRevision`
-// consumer app-wide (menu, viewer-role, any in-flight fetch) — when nothing actually changed.
+// [ETP-5195 follow-up] `windowAccess`/`capabilities`/`menuAccess` are flat maps of primitive
+// values (tier strings / booleans / presence flags) — a plain key-by-key comparison is enough
+// to tell a genuinely changed permission set apart from the SAME set re-fetched as a new
+// object. Used by the tab-focus/visibility/poll-triggered "legacy" (no role change) refresh
+// path below to avoid bumping `generation`/`authRevision` — and therefore every
+// `isCurrentSession()`/`authRevision` consumer app-wide (menu, viewer-role, any in-flight
+// fetch) — when nothing actually changed.
+//
+// [ETP-5189] `menuAccess` closes the gap `windowAccess`/`capabilities` alone leave open: a
+// menu-item or process-only grant/revocation (no window/capability tier change) would
+// otherwise never flip `accessChanged` below, so `authRevision` never bumps and
+// `useRoleMenu()`-style consumers that gate their own re-fetch on it never refetch. The host's
+// `fetchWindowAccess` callback may now optionally return a third `menuAccess` map (e.g. the
+// role-filtered menu's allowed window/process ids, flattened to `{id: true}`) that is diffed
+// exactly like the other two.
 function sameFlatMap(a, b) {
   const keysA = Object.keys(a);
   const keysB = Object.keys(b);
@@ -131,7 +140,10 @@ export function AuthProvider({ children, storage, initialSession, onSessionChang
             refresh: false, status: 'refreshing', ready: previous.isSessionReady,
             bump: !metadataUnchanged,
             access: metadataUnchanged
-              ? { windowAccess: previous.windowAccess, capabilities: previous.capabilities }
+              ? {
+                windowAccess: previous.windowAccess, capabilities: previous.capabilities,
+                menuAccess: previous.menuAccess,
+              }
               : {},
           });
           if (controller.getSnapshot().session !== replaced) return { status: 'superseded' };
@@ -142,12 +154,15 @@ export function AuthProvider({ children, storage, initialSession, onSessionChang
           const latest = controller.getSnapshot();
           const nextWindowAccess = access.windowAccess ?? {};
           const nextCapabilities = access.capabilities ?? {};
+          const nextMenuAccess = access.menuAccess ?? {};
           const accessChanged = !sameFlatMap(nextWindowAccess, latest.windowAccess)
-            || !sameFlatMap(nextCapabilities, latest.capabilities);
+            || !sameFlatMap(nextCapabilities, latest.capabilities)
+            || !sameFlatMap(nextMenuAccess, latest.menuAccess);
           const finalUpdate = {
             sessionRefreshStatus: 'ready', isSessionReady: true,
             windowAccess: accessChanged ? nextWindowAccess : latest.windowAccess,
             capabilities: accessChanged ? nextCapabilities : latest.capabilities,
+            menuAccess: accessChanged ? nextMenuAccess : latest.menuAccess,
           };
           if (accessChanged) controller.invalidate(finalUpdate);
           else controller.publish(finalUpdate);
@@ -162,6 +177,7 @@ export function AuthProvider({ children, storage, initialSession, onSessionChang
           const previous = controller.getSnapshot();
           const nextWindowAccess = access?.windowAccess ?? {};
           const nextCapabilities = access?.capabilities ?? {};
+          const nextMenuAccess = access?.menuAccess ?? {};
           // [ETP-5195 follow-up] A tab-focus/visibility-regain/poll refresh fires on every
           // reactivation even when the role never changed (see the visibilitychange/focus
           // effect and the poll interval below) — most of the time it resolves the SAME
@@ -176,16 +192,19 @@ export function AuthProvider({ children, storage, initialSession, onSessionChang
           // already in state; otherwise a plain `publish` updates status flags without
           // touching `generation`/`authRevision`/the `windowAccess`/`capabilities` references.
           const accessChanged = !!access
-            && (!sameFlatMap(nextWindowAccess, previous.windowAccess) || !sameFlatMap(nextCapabilities, previous.capabilities));
+            && (!sameFlatMap(nextWindowAccess, previous.windowAccess)
+              || !sameFlatMap(nextCapabilities, previous.capabilities)
+              || !sameFlatMap(nextMenuAccess, previous.menuAccess));
           const update = {
             needsRefresh: false, isSessionReady: !blocked,
             metadataRequired: blocked,
             sessionRefreshStatus: blocked ? 'metadata-required' : outcome.status,
-            ...(blocked ? { windowAccess: {}, capabilities: {} } : {}),
+            ...(blocked ? { windowAccess: {}, capabilities: {}, menuAccess: {} } : {}),
             ...(access ? {
               accessLoaded: true,
               windowAccess: accessChanged ? nextWindowAccess : previous.windowAccess,
               capabilities: accessChanged ? nextCapabilities : previous.capabilities,
+              menuAccess: accessChanged ? nextMenuAccess : previous.menuAccess,
               ...(accessChanged ? { authRevision: previous.authRevision + 1 } : {}),
             } : {}),
           };
@@ -228,7 +247,8 @@ export function AuthProvider({ children, storage, initialSession, onSessionChang
     let cancelled = false;
     loadAccess(state.session, snapshot).then((access) => {
       if (!cancelled && controller.isCurrent(snapshot)) controller.publish({
-        windowAccess: access.windowAccess ?? {}, capabilities: access.capabilities ?? {}, accessLoaded: true,
+        windowAccess: access.windowAccess ?? {}, capabilities: access.capabilities ?? {},
+        menuAccess: access.menuAccess ?? {}, accessLoaded: true,
       });
     });
     return () => { cancelled = true; };
@@ -285,6 +305,7 @@ export function AuthProvider({ children, storage, initialSession, onSessionChang
     authRevision: state.authRevision,
     windowAccess: state.windowAccess,
     capabilities: state.capabilities,
+    menuAccess: state.menuAccess,
     ...actions,
   }), [state, actions]);
 
