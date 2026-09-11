@@ -57,7 +57,18 @@ const TableHead = React.forwardRef(({ className, ...props }, ref) => (
   <th
     ref={ref}
     className={cn(
-      "h-11 px-3 text-left align-middle text-sm font-medium text-muted-foreground [&:has([role=checkbox])]:pr-0 [&>[role=checkbox]]:translate-y-[2px]",
+      // ETP-5281 — symmetric with TableCell below: without this, a header
+      // label had no clipping boundary at the <th> level either, so if the
+      // label's OWN markup didn't truncate itself (many hand-built tables just
+      // render plain text/children with no truncate class of their own), long
+      // header text visually overflowed into the neighboring header cell —
+      // confirmed on Contacts at 390px width (a 28px-wide header cell showing a
+      // 65px-wide label). `cn()` still lets a caller's own `className` win per
+      // conflict group, same override path `whitespace-normal` etc. has on
+      // TableCell. This alone does not make text SHOW an ellipsis unless the
+      // element holding the actual text also constrains its own width — see
+      // DataTable.jsx's `renderColumnHeaderCell` for that half of the fix.
+      "h-11 px-3 text-left align-middle text-sm font-medium text-muted-foreground overflow-hidden text-ellipsis whitespace-nowrap min-w-0 [&:has([role=checkbox])]:pr-0 [&>[role=checkbox]]:translate-y-[2px]",
       className
     )}
     {...props} />
