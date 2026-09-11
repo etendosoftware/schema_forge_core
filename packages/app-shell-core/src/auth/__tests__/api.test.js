@@ -918,17 +918,6 @@ describe('apiFetch harvests record versions on read (ETP-5112)', () => {
     return assert.doesNotReject(fetcher('/price').then(drain)).then(() => restore());
   });
 
-  it('does not harvest on a POST — a create is not a read', () => {
-    const { restore } = stubReadFetch({ response: { data: [{ id: 'NEW1', updated: 'v1' }] } });
-    return createApiFetch('', () => 't', () => {})(
-      '/price', { method: 'POST', body: JSON.stringify({ a: 1 }) },
-    ).then(drain).then(() => {
-      assert.equal(getRecordVersion('NEW1', 'price'), undefined);
-      assert.equal(getRecordVersion('NEW1'), undefined);
-      restore();
-    });
-  });
-
   it('arms an inline grid edit: list read, then PATCH of a row that is not the first', () => {
     const { calls, restore } = stubReadFetch({
       response: { data: [{ id: 'R1', updated: 'v1' }, { id: 'R2', updated: 'v2' }] },
@@ -942,6 +931,75 @@ describe('apiFetch harvests record versions on read (ETP-5112)', () => {
         assert.deepEqual(JSON.parse(patch.opts.body), { qty: 3, updated: 'v2' });
         restore();
       });
+  });
+});
+
+// ── ETP-5122 ────────────────────────────────────────────────────────────────
+//
+// A create (POST) response hands back the new record's initial `updated`, but until now nothing
+// remembered it. Saving that same record again later in the session — with no intervening GET,
+// e.g. "Add SII" then immediately "Save" on the record the create just returned — went out with
+// no token and the server refused it: 400 missing_updated ("the caller did not read the record
+// before writing it"), even though the caller never had a chance to read it — it had just been
+// created. POST is now harvested exactly like PUT/PATCH, via `harvestWrittenVersion`, while
+// staying OUT of `VERSIONED_WRITE_METHODS` so it still injects nothing into its own request.
+
+describe('apiFetch harvests the version a POST create returns (ETP-5122)', () => {
+  beforeEach(() => resetRecordVersionsForTests());
+
+  it('remembers the updated from a successful POST response', () => {
+    const { restore } = stubVersionedFetch({
+      response: { data: [{ id: 'NEW1', updated: 'v1' }] },
+    });
+    return createApiFetch('', () => 't', () => {})(
+      '/sii-config/siiConfiguration', { method: 'POST', body: JSON.stringify({ a: 1 }) },
+    ).then(drain).then(() => {
+      assert.equal(getRecordVersion('NEW1', 'siiConfiguration'), 'v1');
+      restore();
+    });
+  });
+
+  it('arms a same-session save with no intervening read: POST create, then PATCH', () => {
+    const { calls, restore } = stubVersionedFetch({
+      response: { data: [{ id: 'NEW1', updated: 'v1' }] },
+    });
+    const fetcher = createApiFetch('', () => 't', () => {});
+    return fetcher('/sii-config/siiConfiguration', { method: 'POST', body: JSON.stringify({ a: 1 }) })
+      .then(drain)
+      .then(() => fetcher('/sii-config/siiConfiguration/NEW1', {
+        method: 'PATCH', body: JSON.stringify({ a: 2 }),
+      }))
+      .then(() => {
+        const patch = calls.find((c) => c.opts?.method === 'PATCH');
+        assert.deepEqual(JSON.parse(patch.opts.body), { a: 2, updated: 'v1' });
+        restore();
+      });
+  });
+
+  it('still does not inject an updated token into the POST request itself', () => {
+    // Regression guard for the design choice: VERSIONED_WRITE_METHODS (injection) deliberately
+    // stayed PUT/PATCH-only. A create has no prior version to conflict with, so its own request
+    // must go out exactly as the caller built it, token-free, even though the response IS
+    // harvested afterwards.
+    const { calls, restore } = stubVersionedFetch({
+      response: { data: [{ id: 'NEW1', updated: 'v1' }] },
+    });
+    rememberRecordVersion({ id: 'NEW1', updated: 'stale-from-elsewhere' });
+    return createApiFetch('', () => 't', () => {})(
+      '/sii-config/siiConfiguration', { method: 'POST', body: JSON.stringify({ id: 'NEW1', a: 1 }) },
+    ).then(() => {
+      assert.deepEqual(sentBody(calls), { id: 'NEW1', a: 1 });
+      restore();
+    });
+  });
+
+  it('does not blow up when the POST response has no clone(), as a stubbed fetch may not', async () => {
+    const original = globalThis.fetch;
+    globalThis.fetch = async () => ({ ok: true, status: 200, json: async () => ({}) });
+    await assert.doesNotReject(createApiFetch('', () => 't', () => {})(
+      '/sii-config/siiConfiguration', { method: 'POST', body: JSON.stringify({ a: 1 }) },
+    ));
+    globalThis.fetch = original;
   });
 });
 

@@ -7,3 +7,4 @@ export * from './hooks/useNeoImage.js';
 export * from './layout/index.js';
 export * from './reports/index.js';
 export * from './runtime/index.js';
+export * from './webmcp/index.js';

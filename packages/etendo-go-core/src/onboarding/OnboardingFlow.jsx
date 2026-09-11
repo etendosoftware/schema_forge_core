@@ -3,7 +3,7 @@ import { Loader2 } from 'lucide-react';
 import { useUI } from '@etendosoftware/app-shell-core/i18n';
 import { purgeLegacyAuthStorage } from '@etendosoftware/app-shell-core/auth';
 import { fetchSession, fetchAccount, fetchEnvironments, loginEnvironment, fetchOnboardingDraft, saveOnboardingDraft, verifyEmail } from './api.js';
-import { rememberEnvironment } from './state.js';
+import { persistEnvironmentSession, rememberEnvironment } from './state.js';
 import { buildAppReturnToHref, getSafeReturnTo } from './oauthReturnTo.js';
 import { trackOnboarding } from './tracking.js';
 import { createOnboardingLogout } from './logout.js';
@@ -177,8 +177,14 @@ export function OnboardingFlow({ steps = [], config = {} }) {
             status: 'started',
           });
           const data = await loginEnvironment(fetch, apiBase, csrfToken, env);
-          if (data.status === 'success') {
-            rememberEnvironment(env.clientId);
+          // ETP-4576 — a cookie backend rotates the session cookie and answers
+          // { status: 'success' } carrying NO token; a legacy bearer backend answers with
+          // one and still needs its tuple persisted. Gating on `data.token` alone, as
+          // develop does, makes the environment switch a silent no-op under the cookie
+          // scheme — the user clicks and nothing happens.
+          if (data.token || data.status === 'success') {
+            if (data.token) persistEnvironmentSession(env, data);
+            else rememberEnvironment(env.clientId);
             // Clear all SW caches on login to guarantee fresh resources
             if ('caches' in window) {
               try {

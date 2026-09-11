@@ -7,16 +7,21 @@ export {
   apiFetch, authHeaders, buildHeaders, buildWriteHeaders, createApiFetch, detectBaseUrl,
   deleteCookieSession, fetchCookieSession, getAmbientToken, notifyAmbientUnauthorized,
   registerApiSession, resetApiSessionForTests, resolveApiUrl,
+  replaceAmbientSession,
 } from './api.js';
 export {
   createLocalAuthStorage,
   createMemoryAuthStorage,
+  decodeJwtPayload,
+  decodeJwtRole,
+  decodeJwtUser,
+  mapRestoredSession,
   normalizeAuthSession,
   purgeLegacyAuthStorage,
 } from './session.js';
-// ETP-4576 — the one place that decides bearer-vs-cookie. Host call sites import
-// the header builders from here and never branch on the scheme themselves; the
-// provider owns `setSessionCredentials`.
+// ETP-4576 — the one place that decides bearer-vs-cookie. Host call sites import the
+// header builders from here and never branch on the scheme themselves; the provider
+// owns `setSessionCredentials`.
 export {
   CREDENTIAL_MODES,
   credentialOptions,

@@ -117,6 +117,58 @@ export function createMemoryAuthStorage(initialSession = {}) {
   };
 }
 
+/**
+ * Decodes a JWT's payload (middle segment) into a plain object, or `null` when the token is
+ * missing, malformed, or not valid JSON. Signature is NOT verified — this is a client-side
+ * read of a token the server already issued to this caller, purely to compare embedded claims
+ * (e.g. the `role` claim minted by `SecureWebServicesUtils.generateToken`, see
+ * `SFRefreshToken.java` in com.etendoerp.go); it is never used as an authorization decision.
+ *
+ * No existing JWT-decode helper was found anywhere in this package (ETP-5195) — this is new
+ * shared surface, kept intentionally minimal (base64url -> UTF-8 -> JSON, no library).
+ */
+export function decodeJwtPayload(token) {
+  if (typeof token !== 'string') return null;
+  const parts = token.split('.');
+  if (parts.length < 2) return null;
+  try {
+    const base64 = parts[1].replace(/-/g, '+').replace(/_/g, '/');
+    const padded = base64 + '='.repeat((4 - (base64.length % 4)) % 4);
+    const binary = typeof atob === 'function'
+      ? atob(padded)
+      : Buffer.from(padded, 'base64').toString('binary');
+    const utf8Json = decodeURIComponent(
+      Array.from(binary, (c) => `%${c.charCodeAt(0).toString(16).padStart(2, '0')}`).join(''),
+    );
+    return JSON.parse(utf8Json);
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * The `role` claim embedded in a NEO bearer JWT (the AD_Role id the token authenticates as),
+ * or `null` when the token cannot be decoded. See {@link decodeJwtPayload}.
+ */
+export function decodeJwtRole(token) {
+  const payload = decodeJwtPayload(token);
+  return payload && typeof payload === 'object' ? payload.role ?? null : null;
+}
+
+/**
+ * The `user` claim embedded in a NEO bearer JWT (the AD_User_ID the token was issued for), or
+ * `null` when the token cannot be decoded. See {@link decodeJwtPayload}.
+ *
+ * ETP-5195 — added so a component can compare "is the record I'm acting on the CURRENT
+ * LOGGED-IN VIEWER" (e.g. the User window's self-promote/demote-admin case) without a
+ * dedicated endpoint, the same way `decodeJwtRole` already lets `AuthContext` compare roles
+ * across a silent refresh.
+ */
+export function decodeJwtUser(token) {
+  const payload = decodeJwtPayload(token);
+  return payload && typeof payload === 'object' ? payload.user ?? null : null;
+}
+
 export function createLocalAuthStorage({ prefix = DEFAULT_PREFIX, storage = getBrowserStorage() } = {}) {
   return {
     read() {

@@ -1,5 +1,6 @@
 import { createContext, useContext, useState, useEffect } from 'react';
 import { useAuth } from '../auth/index.js';
+import { createApiFetch, authHeaders } from '../auth/api.js';
 
 /* ------------------------------------------------------------------
  * Internal helpers
@@ -32,8 +33,12 @@ const CurrencyContext = createContext(null);
  * </AuthProvider>
  */
 export function CurrencyProvider({ children, value, apiBaseUrl, fetcher = globalThis.fetch }) {
-  const { isAuthenticated, selectedOrg } = useAuth();
-  const [currencyCode, setCurrencyCode] = useState(null);
+  const { isAuthenticated, token, selectedOrg, isSessionReady, authRevision, captureSession, isCurrentSession, apiSessionScope } = useAuth();
+  const [resolved, setResolved] = useState(null);
+  // `token` is undefined under the cookie scheme; the identity stays stable and distinct
+  // anyway through org + authRevision + base URL, which is what it is keyed on.
+  const identity = `${token}|${selectedOrg?.id}|${authRevision}|${apiBaseUrl}`;
+  const setCurrencyCode = (code) => setResolved({ code, identity });
 
   useEffect(() => {
     if (value != null) {
@@ -41,23 +46,32 @@ export function CurrencyProvider({ children, value, apiBaseUrl, fetcher = global
       return;
     }
 
-    if (!isAuthenticated) {
+    // ETP-4576 — `isAuthenticated`, not `!token`: under the cookie scheme the client holds
+    // no token, so develop's gate would skip the currency resolution for every user and
+    // leave every amount unformatted.
+    if (!isAuthenticated || isSessionReady === false) {
       setCurrencyCode(null);
       return;
     }
 
     let cancelled = false;
+    const snapshot = captureSession?.();
+    const current = () => !cancelled && (!isCurrentSession || isCurrentSession(snapshot));
+    setCurrencyCode(null);
     const base = apiBaseUrl || `${getApiBase()}/sws/neo`;
+    const request = createApiFetch('', () => token, null, apiSessionScope);
 
     async function resolve() {
       try {
-        // ETP-4576 — the session lives in the __Host- cookie now; send it via
-        // credentials instead of a client-held Bearer token.
-        const res = await fetcher(`${base}/session`, { credentials: 'include' });
+        // apiFetch carries the active credential itself; the injected-fetcher branch is
+        // the test seam, and authHeaders() now resolves the scheme on its own.
+        const res = fetcher === globalThis.fetch
+          ? await request(`${base}/session`, { on401: 'ignore' })
+          : await fetcher(`${base}/session`, { headers: authHeaders() });
         if (res.ok) {
           const json = await res.json();
           const code = json?.currencyCode;
-          if (code && !cancelled) setCurrencyCode(String(code));
+          if (code && current()) setCurrencyCode(String(code));
         }
       } catch {
         // session endpoint unavailable — keep null (callers fall back to 'USD')
@@ -66,10 +80,10 @@ export function CurrencyProvider({ children, value, apiBaseUrl, fetcher = global
 
     resolve();
     return () => { cancelled = true; };
-  }, [apiBaseUrl, fetcher, isAuthenticated, selectedOrg?.id, value]);
+  }, [apiBaseUrl, fetcher, isAuthenticated, token, selectedOrg?.id, value, isSessionReady, authRevision, captureSession, isCurrentSession, apiSessionScope]);
 
   return (
-    <CurrencyContext.Provider value={currencyCode}>
+    <CurrencyContext.Provider value={value ?? (isSessionReady !== false && resolved?.identity === identity ? resolved.code : null)}>
       {children}
     </CurrencyContext.Provider>
   );

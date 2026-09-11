@@ -1,67 +1,48 @@
-import { readFileSync } from 'node:fs';
-import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
+import { describe, it, expect, vi, afterEach } from 'vitest';
+// ETP-4576 — every <AuthProvider> below passes `restoreSession={null}`. The provider now
+// defaults it to the platform cookie fetcher, which would call fetch on mount in jsdom and,
+// on the 401, log out the session each of these tests seeds by hand. Opting out keeps this
+// suite testing exactly what it was written to test: the ETP-5195 controller and refresh.
 import { renderHook, cleanup, act, waitFor } from '@testing-library/react';
-import { createLocalAuthStorage, createMemoryAuthStorage } from '../session.js';
+import { createMemoryAuthStorage } from '../session.js';
 import { AuthProvider, useAuth } from '../AuthContext.jsx';
-import { CREDENTIAL_MODES } from '../sessionCredentials.js';
 
 afterEach(cleanup);
 
-// ETP-4576 cycle 4a — `restoreSession` stopped being opt-in: AuthProvider now
-// defaults it to the platform fetcher (fetchCookieSession — GET /sws/go/session
-// with credentials: 'include'). That has two file-wide consequences here, and
-// both are handled below rather than inside individual tests:
-//
-// 1. EVERY <AuthProvider> mounted without the prop now calls `fetch` on mount.
-//    jsdom has no server, so an unstubbed call would either hit the network or
-//    blow up with an unhandled rejection. The `beforeEach` stub answers 401 —
-//    the real "no active session" response — which keeps the fail-closed path
-//    (status -> 'anonymous', no session) deterministic and offline, i.e. the
-//    same anonymous outcome the pre-existing tests already assumed. It doubles
-//    as the probe used to assert HOW the default fetcher calls the endpoint.
-//
-// 2. The fail-closed path runs logout(): it clears the session AND bumps the
-//    selectRole stale-response guard. Suites whose subject is NOT the restore
-//    (the ETP-4520 windowAccess/capabilities ones, the csrfToken ones) would
-//    then race against that late logout — e.g. the hydration test seeds
-//    `initialSession: { token, selectedRole }` and asserts the fetched
-//    windowAccess sticks, which a 401-driven logout would wipe. So the shared
-//    `wrapperWith()` helper (and the two inline wrappers of those suites)
-//    neutralise the default with a never-settling `restoreSession` override:
-//    the provider stays in 'booting' forever, no purge/logout ever fires, and
-//    nothing else those tests assert changes. They keep verifying exactly what
-//    they verified before, without being coupled to the new fetcher.
-//
-// Suites that DO exercise the default mount <AuthProvider> directly, with no
-// `restoreSession` prop at all.
-const NEVER_SETTLES = () => new Promise(() => {});
-
-let fetchStub;
-beforeEach(() => {
-  fetchStub = vi.fn(async () => ({
-    ok: false,
-    status: 401,
-    json: async () => {
-      throw new Error('a 401 session response has no JSON body');
-    },
-  }));
-  vi.stubGlobal('fetch', fetchStub);
-});
-afterEach(() => {
-  vi.unstubAllGlobals();
-});
-
-function wrapperWith({ fetchWindowAccess, restoreSession = NEVER_SETTLES } = {}) {
+function wrapperWith({ fetchWindowAccess } = {}) {
   return function Wrapper({ children }) {
     return (
-      <AuthProvider
-        storage={createMemoryAuthStorage()}
-        fetchWindowAccess={fetchWindowAccess}
-        restoreSession={restoreSession}>
+      <AuthProvider restoreSession={null} storage={createMemoryAuthStorage()} fetchWindowAccess={fetchWindowAccess}>
         {children}
       </AuthProvider>
     );
   };
+}
+
+/**
+ * Builds a JWT-shaped string with a real base64url-encoded payload, decodable by
+ * `decodeJwtPayload`/`decodeJwtRole` (jsdom's `btoa` handles the ASCII-only payloads used here;
+ * a real UTF-8-safe encoder is unnecessary for these fixtures).
+ */
+function makeToken(payload) {
+  const encode = (obj) => btoa(JSON.stringify(obj)).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+  return `${encode({ alg: 'HS256' })}.${encode(payload)}.sig`;
+}
+
+/** Stubs `globalThis.fetch` with a single canned response (or response factory) and returns a
+ * recorder of every call, plus a restore. Mirrors `auth/__tests__/api.test.js`'s own `stubFetch`
+ * convention (same file's `node:test` suite can't share this one directly since this file needs
+ * `vi.fn()` wrapping for assertions like `toHaveBeenCalled`). */
+function stubFetch(responseFactory) {
+  const original = globalThis.fetch;
+  const calls = [];
+  globalThis.fetch = vi.fn(async (url, options) => {
+    calls.push({ url, options });
+    const response = typeof responseFactory === 'function' ? responseFactory(url, options) : responseFactory;
+    if (response instanceof Error) throw response;
+    return response;
+  });
+  return { calls, restore: () => { globalThis.fetch = original; } };
 }
 
 describe('AuthContext — windowAccess/capabilities (ETP-4520)', () => {
@@ -334,7 +315,6 @@ describe('AuthContext — windowAccess/capabilities (ETP-4520)', () => {
         <AuthProvider
           storage={createMemoryAuthStorage()}
           fetchWindowAccess={fetchWindowAccess}
-          restoreSession={NEVER_SETTLES}
           initialSession={{ token: 'tok', selectedRole: { id: 'role-1' } }}>
           {children}
         </AuthProvider>
@@ -390,960 +370,433 @@ describe('AuthContext — windowAccess/capabilities (ETP-4520)', () => {
   });
 });
 
-// ETP-4576 cycle 3 — in-memory csrfToken. The CSRF token backing the
-// `X-Go-CSRF` header (ADR-0001) is issued by the backend in session
-// responses and must live ONLY in memory, never in `session`/authStorage —
-// unlike the legacy bearer token it replaces for unsafe-method requests.
-describe('AuthContext — csrfToken (ETP-4576)', () => {
-  it('defaults csrfToken to null before any change', () => {
-    const { result } = renderHook(() => useAuth(), { wrapper: wrapperWith() });
-
-    expect(result.current.csrfToken).toBeNull();
-  });
-
-  it('exposes setCsrfToken in the context value and updates csrfToken when called', () => {
-    const { result } = renderHook(() => useAuth(), { wrapper: wrapperWith() });
-
-    expect(typeof result.current.setCsrfToken).toBe('function');
-
-    act(() => {
-      result.current.setCsrfToken('csrf-abc123');
-    });
-
-    expect(result.current.csrfToken).toBe('csrf-abc123');
-  });
-
-  it('clears csrfToken back to null on logout', () => {
-    const { result } = renderHook(() => useAuth(), { wrapper: wrapperWith() });
-
-    act(() => {
-      result.current.setCsrfToken('csrf-abc123');
-    });
-    expect(result.current.csrfToken).toBe('csrf-abc123');
-
-    act(() => {
-      result.current.logout();
-    });
-
-    expect(result.current.csrfToken).toBeNull();
-  });
-
-  it('never persists csrfToken into authStorage — it is memory-only, not part of session', () => {
-    const storage = createMemoryAuthStorage();
-    const { result } = renderHook(() => useAuth(), {
-      wrapper: ({ children }) => (
-        <AuthProvider storage={storage} restoreSession={NEVER_SETTLES}>{children}</AuthProvider>
-      ),
-    });
-
-    act(() => {
-      result.current.setCsrfToken('csrf-should-not-persist');
-    });
-    expect(result.current.csrfToken).toBe('csrf-should-not-persist');
-
-    // The underlying storage is only ever written to via persistSession()
-    // (session/logout/selectRole/selectOrg) — csrfToken must never travel
-    // through that path, under any session key.
-    const persisted = storage.read();
-    expect(JSON.stringify(persisted)).not.toContain('csrf-should-not-persist');
-  });
-});
-
-// ETP-4576 cycle 4 — session restore on mount. AuthProvider takes a
-// `restoreSession` fetcher and exposes a tri-state `status` field
-// ('booting' | 'authenticated' | 'anonymous') on the context value.
-//
-// Cycle 4a — CONTRACT CHANGE: the prop is no longer opt-in. It now defaults to
-// the platform fetcher (fetchCookieSession, exported by ./api.js), so a host
-// that passes nothing still consults GET /sws/go/session.
-describe('AuthContext — session restore (ETP-4576)', () => {
-  afterEach(() => {
-    // These tests seed real localStorage keys (jsdom) to exercise the legacy
-    // purge; keep them from leaking into other tests in this file/run.
-    window.localStorage.clear();
-  });
-
-  // ETP-4576 — this describe pins the COOKIE scheme's restore contract: with
-  // `credentialMode` set to cookie, the platform fetcher is the default of the
-  // `restoreSession` prop, so opting into the scheme is enough and no host has to
-  // wire the fetcher by hand.
-  //
-  // Two earlier revisions of this block are worth knowing about, because each was
-  // right about something. It first pinned OPT-IN semantics (no prop, no server
-  // call), which left a hole: tools/etendo-go-ar/app-shell mounts <AuthProvider>
-  // with no props at all, and once onboarding stopped writing the sf_auth_*
-  // handoff keys that host had nothing to read — isAuthenticated false forever.
-  // It was then inverted to make the fetcher an UNCONDITIONAL default, which
-  // closed that hole but forced the cookie scheme on every other host, migrated
-  // or not, and is why ETP-4576 had to be reverted (PR #111).
-  //
-  // Deriving the default from `credentialMode` satisfies both: the onboarding host
-  // opts in explicitly (it does so in its own App.jsx now) and everyone else stays
-  // on the bearer token. The tests below therefore all select the cookie scheme —
-  // what they verify is unchanged, only the premise is now stated instead of
-  // assumed.
-  describe('under the cookie scheme, the platform fetcher is the restoreSession default', () => {
-    it('starts in "booting" instead of resolving status synchronously, even when the initial session already carries a token', () => {
-      const { result } = renderHook(() => useAuth(), {
-        wrapper: ({ children }) => (
-          <AuthProvider credentialMode={CREDENTIAL_MODES.cookie} storage={createMemoryAuthStorage()} initialSession={{ token: 'tok-1' }}>
-            {children}
-          </AuthProvider>
-        ),
-      });
-
-      // The server is now the source of truth for a host that passes nothing,
-      // exactly like one that passes its own fetcher: a leftover client-side
-      // token must not be enough to declare the user authenticated.
-      expect(result.current.status).toBe('booting');
-    });
-
-    it('settles to "anonymous" once the default fetcher gets the 401 "no active session" answer', async () => {
-      const { result } = renderHook(() => useAuth(), {
-        wrapper: ({ children }) => (
-          <AuthProvider credentialMode={CREDENTIAL_MODES.cookie} storage={createMemoryAuthStorage()}>{children}</AuthProvider>
-        ),
-      });
-
-      await waitFor(() => {
-        expect(result.current.status).toBe('anonymous');
-      });
-      expect(result.current.isAuthenticated).toBe(false);
-      expect(result.current.csrfToken).toBeNull();
-    });
-
-    it('settles to "authenticated" with the restored csrfToken when the default fetcher gets a session', async () => {
-      fetchStub.mockResolvedValue({
-        ok: true,
-        status: 200,
-        json: async () => ({
-          account: { name: 'Ada' },
-          environment: { clientId: 'client-1', roleId: 'role-1', orgId: 'org-1' },
-          roleList: [{ id: 'role-1', name: 'Admin', orgList: [{ id: 'org-1', name: 'Main Org' }] }],
-          csrfToken: 'csrf-from-default-fetcher',
-        }),
-      });
-
-      const { result } = renderHook(() => useAuth(), {
-        wrapper: ({ children }) => (
-          <AuthProvider credentialMode={CREDENTIAL_MODES.cookie} storage={createMemoryAuthStorage()}>{children}</AuthProvider>
-        ),
-      });
-
-      await waitFor(() => {
-        expect(result.current.status).toBe('authenticated');
-      });
-      expect(result.current.csrfToken).toBe('csrf-from-default-fetcher');
-      expect(result.current.username).toBe('Ada');
-      expect(result.current.isAuthenticated).toBe(true);
-    });
-
-    it('asks GET /sws/go/session with the cookie attached and never sends an Authorization/Bearer header', async () => {
+describe('AuthContext — silent token refresh (ETP-5195)', () => {
+  it('fires a silent refresh on mount, hitting GET /sws/neo/refreshtoken', async () => {
+    const token = makeToken({ role: 'R1', user: 'U1' });
+    const f = stubFetch({ ok: true, json: async () => ({ result: JSON.stringify({ token }) }) });
+    try {
       renderHook(() => useAuth(), {
         wrapper: ({ children }) => (
-          <AuthProvider credentialMode={CREDENTIAL_MODES.cookie} storage={createMemoryAuthStorage()}>{children}</AuthProvider>
-        ),
-      });
-
-      await waitFor(() => {
-        expect(fetchStub).toHaveBeenCalledTimes(1);
-      });
-
-      const [url, init = {}] = fetchStub.mock.calls[0];
-      expect(String(url)).toMatch(/\/sws\/go\/session$/);
-      // The whole point of the migration: the session travels in the httpOnly
-      // __Host- cookie, so the request must opt into sending credentials and
-      // must NOT carry a client-held token in any header.
-      expect(init.credentials).toBe('include');
-      expect((init.method || 'GET').toUpperCase()).toBe('GET');
-      const serializedRequest = JSON.stringify(init);
-      expect(serializedRequest).not.toMatch(/Authorization/i);
-      expect(serializedRequest).not.toMatch(/Bearer/i);
-    });
-
-    it('purges the legacy sf_auth_* localStorage keys on mount (the default fetcher makes the purge unconditional)', async () => {
-      window.localStorage.setItem('sf_auth_token', 'legacy-existing-token');
-
-      const { result } = renderHook(() => useAuth(), {
-        wrapper: ({ children }) => (
-          <AuthProvider credentialMode={CREDENTIAL_MODES.cookie} storage={createMemoryAuthStorage()}>{children}</AuthProvider>
-        ),
-      });
-
-      // Inverted from the old 'does not purge ... (zero side effects for
-      // opted-out hosts)' test: there is no opted-out host any more, and the
-      // stale handoff keys are exactly what must not survive the boot.
-      expect(window.localStorage.getItem('sf_auth_token')).toBeNull();
-
-      await waitFor(() => {
-        expect(result.current.status).toBe('anonymous');
-      });
-    });
-
-    it('lets a host-supplied restoreSession override the default — the platform fetcher is never called', async () => {
-      const restoreSession = vi.fn().mockResolvedValue({
-        account: { name: 'Ada' },
-        environment: null,
-        roleList: [],
-        csrfToken: 'csrf-from-host-fetcher',
-      });
-
-      const { result } = renderHook(() => useAuth(), {
-        wrapper: ({ children }) => (
-          <AuthProvider credentialMode={CREDENTIAL_MODES.cookie} storage={createMemoryAuthStorage()} restoreSession={restoreSession}>
+          <AuthProvider restoreSession={null} storage={createMemoryAuthStorage()} initialSession={{ token }}>
             {children}
           </AuthProvider>
         ),
       });
 
-      await waitFor(() => {
-        expect(result.current.status).toBe('authenticated');
-      });
-      expect(restoreSession).toHaveBeenCalledTimes(1);
-      expect(result.current.csrfToken).toBe('csrf-from-host-fetcher');
-      // No leaked call to the real fetcher: the default must be *replaced*, not
-      // raced alongside the host's own implementation.
-      expect(fetchStub).not.toHaveBeenCalled();
-    });
+      await waitFor(() => expect(f.calls.length).toBeGreaterThanOrEqual(1));
+      expect(f.calls[0].url).toBe('/sws/neo/refreshtoken');
+    } finally { f.restore(); }
   });
 
-  describe('with restoreSession provided', () => {
-    it('starts in "booting" status synchronously on the first render, before the restore promise settles', () => {
-      // Never resolves within this test — we only assert the synchronous,
-      // first-render value.
-      const restoreSession = vi.fn(() => new Promise(() => {}));
+  it('does not fire a refresh on mount when there is no token yet (logged out)', async () => {
+    const f = stubFetch({ ok: true, json: async () => ({ result: JSON.stringify({ token: 'irrelevant' }) }) });
+    try {
+      renderHook(() => useAuth(), { wrapper: wrapperWith() });
+      // Give the mount effect a chance to run before asserting the negative.
+      await act(async () => { await Promise.resolve(); });
+      expect(f.calls.length).toBe(0);
+    } finally { f.restore(); }
+  });
+
+  it('blocks a token-only changed role without partially replacing the stored session', async () => {
+    const oldToken = makeToken({ role: 'R-OLD', user: 'U1' });
+    const newToken = makeToken({ role: 'R-NEW', user: 'U1' });
+    const storage = createMemoryAuthStorage({ token: oldToken });
+    const writeSpy = vi.spyOn(storage, 'write');
+    const f = stubFetch({ ok: true, json: async () => ({ result: JSON.stringify({ token: newToken }) }) });
+    try {
+      const { result } = renderHook(() => useAuth(), {
+        wrapper: ({ children }) => (
+          <AuthProvider restoreSession={null} storage={storage} initialSession={{ token: oldToken }}>{children}</AuthProvider>
+        ),
+      });
+
+      await waitFor(() => expect(result.current.sessionRefreshStatus).toBe('metadata-required'));
+      expect(result.current.token).toBe(oldToken);
+      expect(result.current.isSessionReady).toBe(false);
+      expect(storage.read().token).toBe(oldToken);
+      expect(writeSpy).not.toHaveBeenCalled();
+    } finally { f.restore(); }
+  });
+
+  it('does NOT persist/write when the refreshed token carries the SAME role', async () => {
+    const token = makeToken({ role: 'R1', user: 'U1' });
+    // A different token string, but decoding to the same role — the no-op condition is
+    // "role unchanged", not "token identical".
+    const sameRoleToken = makeToken({ role: 'R1', user: 'U1', extra: 'ignored' });
+    const storage = createMemoryAuthStorage({ token });
+    const writeSpy = vi.spyOn(storage, 'write');
+    const f = stubFetch({ ok: true, json: async () => ({ result: JSON.stringify({ token: sameRoleToken }) }) });
+    try {
+      renderHook(() => useAuth(), {
+        wrapper: ({ children }) => (
+          <AuthProvider restoreSession={null} storage={storage} initialSession={{ token }}>{children}</AuthProvider>
+        ),
+      });
+
+      await waitFor(() => expect(f.calls.length).toBeGreaterThanOrEqual(1));
+      // Flush any microtasks a (wrongly-firing) persistSession would need.
+      await act(async () => { await Promise.resolve(); await Promise.resolve(); });
+      expect(writeSpy).not.toHaveBeenCalled();
+    } finally { f.restore(); }
+  });
+
+  it('swallows a network error from the refresh fetch without throwing or changing the session', async () => {
+    const token = makeToken({ role: 'R1', user: 'U1' });
+    const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
+    const original = globalThis.fetch;
+    globalThis.fetch = vi.fn(async () => { throw new Error('network down'); });
+    try {
+      const { result } = renderHook(() => useAuth(), {
+        wrapper: ({ children }) => (
+          <AuthProvider restoreSession={null} storage={createMemoryAuthStorage()} initialSession={{ token }}>{children}</AuthProvider>
+        ),
+      });
+
+      await waitFor(() => expect(globalThis.fetch).toHaveBeenCalled());
+      await act(async () => { await Promise.resolve(); });
+      expect(result.current.token).toBe(token);
+      expect(warnSpy).toHaveBeenCalled();
+    } finally { globalThis.fetch = original; warnSpy.mockRestore(); }
+  });
+
+  it('swallows a non-OK refresh response without changing the session', async () => {
+    const token = makeToken({ role: 'R1', user: 'U1' });
+    const f = stubFetch({ ok: false, status: 401, json: async () => ({ result: JSON.stringify({}) }) });
+    try {
+      const { result } = renderHook(() => useAuth(), {
+        wrapper: ({ children }) => (
+          <AuthProvider restoreSession={null} storage={createMemoryAuthStorage()} initialSession={{ token }}>{children}</AuthProvider>
+        ),
+      });
+
+      await waitFor(() => expect(f.calls.length).toBeGreaterThanOrEqual(1));
+      await act(async () => { await Promise.resolve(); });
+      expect(result.current.token).toBe(token);
+    } finally { f.restore(); }
+  });
+
+  it('swallows a response with no usable token field without changing the session', async () => {
+    const token = makeToken({ role: 'R1', user: 'U1' });
+    const f = stubFetch({ ok: true, json: async () => ({ result: JSON.stringify({}) }) });
+    try {
+      const { result } = renderHook(() => useAuth(), {
+        wrapper: ({ children }) => (
+          <AuthProvider restoreSession={null} storage={createMemoryAuthStorage()} initialSession={{ token }}>{children}</AuthProvider>
+        ),
+      });
+
+      await waitFor(() => expect(f.calls.length).toBeGreaterThanOrEqual(1));
+      await act(async () => { await Promise.resolve(); });
+      expect(result.current.token).toBe(token);
+    } finally { f.restore(); }
+  });
+
+  it('re-triggers the silent refresh when the document becomes visible', async () => {
+    const token = makeToken({ role: 'R1', user: 'U1' });
+    const f = stubFetch({ ok: true, json: async () => ({ result: JSON.stringify({ token }) }) });
+    try {
+      renderHook(() => useAuth(), {
+        wrapper: ({ children }) => (
+          <AuthProvider restoreSession={null} storage={createMemoryAuthStorage()} initialSession={{ token }}>{children}</AuthProvider>
+        ),
+      });
+      await waitFor(() => expect(f.calls.length).toBe(1));
+
+      await act(async () => {
+        document.dispatchEvent(new Event('visibilitychange'));
+        await Promise.resolve();
+      });
+
+      await waitFor(() => expect(f.calls.length).toBe(2));
+      expect(f.calls[1].url).toBe('/sws/neo/refreshtoken');
+    } finally { f.restore(); }
+  });
+
+  it('does not bump authRevision on a same-role visibilitychange refresh when window access resolves unchanged', async () => {
+    // ETP-5195 follow-up — regression for the live-reported "alt-tab causes a menu flicker
+    // and the currently-open window resets/loses scroll, even with no role change" bug.
+    // `authRevision` (and the underlying `generation`) must only bump when something about
+    // the resolved access actually changed — every app-wide consumer keyed off it (the
+    // sidebar menu, useViewerRole, any generation-gated in-flight fetch) treats a bump as
+    // "the session changed under me" and resets to a loading state.
+    const token = makeToken({ role: 'R1', user: 'U1' });
+    const fetchWindowAccess = vi.fn().mockResolvedValue({
+      windowAccess: { '147': 'full' },
+      capabilities: { showAccountingFields: true },
+    });
+    const f = stubFetch({ ok: true, json: async () => ({ result: JSON.stringify({ token }) }) });
+    try {
       const { result } = renderHook(() => useAuth(), {
         wrapper: ({ children }) => (
           <AuthProvider
             storage={createMemoryAuthStorage()}
-            initialSession={{ token: 'tok-1' }}
-            restoreSession={restoreSession}>
+            fetchWindowAccess={fetchWindowAccess}
+            initialSession={{ token, selectedRole: { id: 'role-1' } }}>
             {children}
           </AuthProvider>
         ),
       });
+      await waitFor(() => expect(result.current.windowAccess).toEqual({ '147': 'full' }));
+      const authRevisionAfterMount = result.current.authRevision;
 
-      // Booting regardless of what the initial/persisted session says — the
-      // restore result is the source of truth once restoreSession is wired.
-      expect(result.current.status).toBe('booting');
-    });
-
-    it('purges legacy auth storage once on mount, before the restore promise resolves (success case)', async () => {
-      window.localStorage.setItem('sf_auth_token', 'legacy-existing-token');
-      const restoreSession = vi.fn().mockResolvedValue({
-        account: { id: 'acc-1' },
-        environment: { id: 'env-1' },
-        roleList: [{ id: 'role-1' }],
-        csrfToken: 'csrf-restored-abc',
+      await act(async () => {
+        document.dispatchEvent(new Event('visibilitychange'));
+        await Promise.resolve();
       });
+      await waitFor(() => expect(fetchWindowAccess).toHaveBeenCalledTimes(2));
+      // Flush the microtasks the second refresh's own loadAccess()/publish need.
+      await act(async () => { await Promise.resolve(); await Promise.resolve(); });
 
+      expect(result.current.windowAccess).toEqual({ '147': 'full' });
+      expect(result.current.authRevision).toBe(authRevisionAfterMount);
+    } finally { f.restore(); }
+  });
+
+  it('still bumps authRevision when a same-role visibilitychange refresh resolves DIFFERENT window access', async () => {
+    const token = makeToken({ role: 'R1', user: 'U1' });
+    const fetchWindowAccess = vi.fn()
+      .mockResolvedValueOnce({ windowAccess: { '147': 'full' }, capabilities: {} })
+      .mockResolvedValueOnce({ windowAccess: { '147': 'read-only' }, capabilities: {} });
+    const f = stubFetch({ ok: true, json: async () => ({ result: JSON.stringify({ token }) }) });
+    try {
       const { result } = renderHook(() => useAuth(), {
         wrapper: ({ children }) => (
-          <AuthProvider storage={createMemoryAuthStorage()} restoreSession={restoreSession}>
+          <AuthProvider
+            storage={createMemoryAuthStorage()}
+            fetchWindowAccess={fetchWindowAccess}
+            initialSession={{ token, selectedRole: { id: 'role-1' } }}>
             {children}
           </AuthProvider>
         ),
       });
+      await waitFor(() => expect(result.current.windowAccess).toEqual({ '147': 'full' }));
+      const authRevisionAfterMount = result.current.authRevision;
 
-      // The purge runs synchronously in the mount effect — it must already
-      // be gone even before the restore promise has had a chance to settle.
-      expect(window.localStorage.getItem('sf_auth_token')).toBeNull();
-
-      await waitFor(() => {
-        expect(result.current.status).toBe('authenticated');
+      await act(async () => {
+        document.dispatchEvent(new Event('visibilitychange'));
+        await Promise.resolve();
       });
-    });
+      await waitFor(() => expect(result.current.windowAccess).toEqual({ '147': 'read-only' }));
 
-    it('purges legacy auth storage once on mount even when the restore promise rejects (failure case)', async () => {
-      window.localStorage.setItem('sf_auth_token', 'legacy-existing-token');
-      const restoreSession = vi.fn().mockRejectedValue(new Error('network error'));
+      expect(result.current.authRevision).toBe(authRevisionAfterMount + 1);
+    } finally { f.restore(); }
+  });
 
+  it('does NOT re-trigger the refresh on a visibilitychange while the document is hidden', async () => {
+    const token = makeToken({ role: 'R1', user: 'U1' });
+    const f = stubFetch({ ok: true, json: async () => ({ result: JSON.stringify({ token }) }) });
+    const visibilitySpy = vi.spyOn(document, 'visibilityState', 'get').mockReturnValue('hidden');
+    try {
+      renderHook(() => useAuth(), {
+        wrapper: ({ children }) => (
+          <AuthProvider restoreSession={null} storage={createMemoryAuthStorage()} initialSession={{ token }}>{children}</AuthProvider>
+        ),
+      });
+      await waitFor(() => expect(f.calls.length).toBe(1));
+
+      await act(async () => {
+        document.dispatchEvent(new Event('visibilitychange'));
+        await Promise.resolve();
+      });
+
+      // Still just the one mount-time call — a transition to "hidden" is not a refresh trigger.
+      expect(f.calls.length).toBe(1);
+    } finally { f.restore(); visibilitySpy.mockRestore(); }
+  });
+
+  it('exposes refreshToken as an imperative trigger for the same silent-refresh logic', async () => {
+    const oldToken = makeToken({ role: 'R-OLD', user: 'U1' });
+    const newToken = makeToken({ role: 'R-NEW', user: 'U1' });
+    const f = stubFetch({ ok: true, json: async () => ({ result: JSON.stringify({ token: newToken }) }) });
+    try {
       const { result } = renderHook(() => useAuth(), {
         wrapper: ({ children }) => (
-          <AuthProvider storage={createMemoryAuthStorage()} restoreSession={restoreSession}>
+          <AuthProvider restoreSession={null} storage={createMemoryAuthStorage()} initialSession={{ token: oldToken }}>
             {children}
           </AuthProvider>
         ),
       });
 
-      expect(window.localStorage.getItem('sf_auth_token')).toBeNull();
+      // The incomplete changed-role response blocks bootstrap; the imperative API must
+      // still allow another attempt to obtain authoritative metadata.
+      await waitFor(() => expect(result.current.sessionRefreshStatus).toBe('metadata-required'));
+      const callsBeforeManualTrigger = f.calls.length;
 
-      await waitFor(() => {
-        expect(result.current.status).toBe('anonymous');
-      });
-    });
-
-    it('resolves to "authenticated" with the restored csrfToken once the restore promise succeeds', async () => {
-      const restoreSession = vi.fn().mockResolvedValue({
-        account: { id: 'acc-1' },
-        environment: { id: 'env-1' },
-        roleList: [{ id: 'role-1' }],
-        csrfToken: 'csrf-restored-abc',
+      await act(async () => {
+        await result.current.refreshToken();
       });
 
+      expect(f.calls.length).toBeGreaterThan(callsBeforeManualTrigger);
+      expect(f.calls[f.calls.length - 1].url).toBe('/sws/neo/refreshtoken');
+      expect(result.current.token).toBe(oldToken);
+      expect(result.current.isSessionReady).toBe(false);
+    } finally { f.restore(); }
+  });
+
+  // ── QA (ETP-5195) — logout-race adversarial case ──────────────────────────
+  //
+  // `silentlyRefreshToken` reads the CURRENT `refreshSessionRef.current` again at the moment it
+  // persists ("...refreshSessionRef.current, token: newToken"), rather than checking whether the
+  // session it captured at the START of the call is still the one in effect. If the user logs
+  // out WHILE the `GET /sws/neo/refreshtoken` request is still in flight, the resolution has no
+  // way of knowing that: it unconditionally spreads the (now-cleared) current session and merges
+  // in the freshly-issued token, silently re-authenticating a session the user explicitly ended.
+  it('does NOT resurrect the session with a fresh token when logout() happens while the refresh request is in flight', async () => {
+    const oldToken = makeToken({ role: 'R-OLD', user: 'U1' });
+    const newToken = makeToken({ role: 'R-NEW', user: 'U1' });
+    const storage = createMemoryAuthStorage({ token: oldToken });
+
+    // A controllable fetch: the promise only resolves once the test explicitly releases it,
+    // giving us a window to call logout() while the silent refresh is still "in flight".
+    let releaseFetch;
+    const original = globalThis.fetch;
+    globalThis.fetch = vi.fn(() => new Promise((resolve) => { releaseFetch = resolve; }));
+
+    try {
       const { result } = renderHook(() => useAuth(), {
         wrapper: ({ children }) => (
-          <AuthProvider storage={createMemoryAuthStorage()} restoreSession={restoreSession}>
-            {children}
-          </AuthProvider>
+          <AuthProvider restoreSession={null} storage={storage} initialSession={{ token: oldToken }}>{children}</AuthProvider>
         ),
       });
 
-      await waitFor(() => {
-        expect(result.current.status).toBe('authenticated');
-      });
-      expect(result.current.csrfToken).toBe('csrf-restored-abc');
-    });
+      // Wait for the mount-time silent refresh to actually issue its fetch (and be suspended on
+      // it) before logging out mid-flight.
+      await waitFor(() => expect(globalThis.fetch).toHaveBeenCalled());
 
-    it('resolves to "anonymous" with csrfToken null and clears any existing session when restoreSession resolves null', async () => {
-      const restoreSession = vi.fn().mockResolvedValue(null);
-      // Seed a session that already looks logged-in, so we can prove it gets
-      // actively cleared rather than just happening to start empty.
-      const storage = createMemoryAuthStorage({ token: 'stale-token', username: 'stale-user' });
-
-      const { result } = renderHook(() => useAuth(), {
-        wrapper: ({ children }) => (
-          <AuthProvider storage={storage} restoreSession={restoreSession}>
-            {children}
-          </AuthProvider>
-        ),
-      });
-
-      await waitFor(() => {
-        expect(result.current.status).toBe('anonymous');
-      });
-      expect(result.current.csrfToken).toBeNull();
-      // Cleared as if logout() had run.
-      expect(result.current.token).toBeNull();
-      expect(result.current.isAuthenticated).toBe(false);
-    });
-
-    it('resolves to "anonymous" fail-closed when the restore promise rejects, without throwing or leaving an unhandled rejection', async () => {
-      const restoreSession = vi.fn().mockRejectedValue(new Error('network error'));
-      const storage = createMemoryAuthStorage({ token: 'stale-token', username: 'stale-user' });
-
-      let result;
-      expect(() => {
-        ({ result } = renderHook(() => useAuth(), {
-          wrapper: ({ children }) => (
-            <AuthProvider storage={storage} restoreSession={restoreSession}>
-              {children}
-            </AuthProvider>
-          ),
-        }));
-      }).not.toThrow();
-
-      await waitFor(() => {
-        expect(result.current.status).toBe('anonymous');
-      });
-      expect(result.current.csrfToken).toBeNull();
-      expect(result.current.token).toBeNull();
-      expect(result.current.isAuthenticated).toBe(false);
-    });
-
-    it('does not call restoreSession more than once even when the component re-renders', async () => {
-      const restoreSession = vi.fn().mockResolvedValue({
-        account: { id: 'acc-1' },
-        environment: { id: 'env-1' },
-        roleList: [{ id: 'role-1' }],
-        csrfToken: 'csrf-restored-abc',
-      });
-
-      const { result } = renderHook(() => useAuth(), {
-        wrapper: ({ children }) => (
-          <AuthProvider storage={createMemoryAuthStorage()} restoreSession={restoreSession}>
-            {children}
-          </AuthProvider>
-        ),
-      });
-
-      await waitFor(() => {
-        expect(result.current.status).toBe('authenticated');
-      });
-      expect(restoreSession).toHaveBeenCalledTimes(1);
-
-      // Force a re-render via an existing, unrelated action — must not
-      // re-trigger the mount-only restore.
-      act(() => {
-        result.current.selectOrg({ id: 'org-1' });
-      });
-
-      expect(restoreSession).toHaveBeenCalledTimes(1);
-    });
-
-    // ETP-4576 cycle 14 — real bug: `isAuthenticated` was computed as
-    // `!!session.token` only, but a `restoreSession` host never populates
-    // `session.token` (it only moves `status` to 'authenticated' and sets
-    // `csrfToken`). So a successfully-restored session still reported
-    // isAuthenticated === false, and AuthGate (AppShellRuntime.jsx) sent an
-    // authenticated user to the "not authenticated" fallback.
-    it('reflects isAuthenticated === true once a restoreSession-backed session reaches "authenticated" status, even though session.token stays unpopulated', async () => {
-      const restoreSession = vi.fn().mockResolvedValue({
-        account: { id: 'acc-1' },
-        environment: { id: 'env-1' },
-        roleList: [{ id: 'role-1' }],
-        csrfToken: 'csrf-abc',
-      });
-
-      const { result } = renderHook(() => useAuth(), {
-        wrapper: ({ children }) => (
-          <AuthProvider storage={createMemoryAuthStorage()} restoreSession={restoreSession}>
-            {children}
-          </AuthProvider>
-        ),
-      });
-
-      await waitFor(() => {
-        expect(result.current.status).toBe('authenticated');
-      });
-
-      // The bug: session.token is never populated by restoreSession, so
-      // isAuthenticated must derive from `status`, not just `session.token`.
+      act(() => { result.current.logout(); });
       expect(result.current.token).toBeFalsy();
-      expect(result.current.isAuthenticated).toBe(true);
-    });
 
-    // ETP-4576 cycle 15 — the restore effect only set csrfToken + status, so
-    // every session-shaped field (username, clientId, roleList, selectedRole,
-    // selectedOrg) stayed empty on cookie-migrated hosts. Consumers that read
-    // them were broken: DataProvider scopes its cache by client/role/org,
-    // useCurrency needs the client, and the host UserAvatarButton renders
-    // selectedRole?.name / selectedOrg?.name. These tests assert the effect
-    // now maps the payload through mapRestoredSession.
-    it('maps the restored payload onto the session state, resolving the role and org objects from the environment IDs', async () => {
-      const restoreSession = vi.fn().mockResolvedValue({
-        account: { name: 'Ada' },
-        environment: { clientId: 'client-1', roleId: 'role-1', orgId: 'org-1' },
-        roleList: [{ id: 'role-1', name: 'Admin', orgList: [{ id: 'org-1', name: 'Main Org' }] }],
-        csrfToken: 'csrf-abc',
+      // Now let the stale refresh request resolve with a brand-new, perfectly valid token.
+      await act(async () => {
+        releaseFetch({ ok: true, json: async () => ({ result: JSON.stringify({ token: newToken }) }) });
+        await Promise.resolve();
+        await Promise.resolve();
       });
 
-      const { result } = renderHook(() => useAuth(), {
-        wrapper: ({ children }) => (
-          <AuthProvider storage={createMemoryAuthStorage()} restoreSession={restoreSession}>
-            {children}
-          </AuthProvider>
-        ),
-      });
-
-      await waitFor(() => {
-        expect(result.current.status).toBe('authenticated');
-      });
-
-      expect(result.current.username).toBe('Ada');
-      expect(result.current.clientId).toBe('client-1');
-      // The full objects, not the IDs the backend sent.
-      expect(result.current.selectedRole).toMatchObject({ id: 'role-1', name: 'Admin' });
-      expect(result.current.selectedOrg).toMatchObject({ id: 'org-1', name: 'Main Org' });
-      expect(result.current.roleList).toEqual([
-        { id: 'role-1', name: 'Admin', orgList: [{ id: 'org-1', name: 'Main Org' }] },
-      ]);
-    });
-
-    it('still reaches "authenticated" with null selectedRole/selectedOrg when the restored session has no environment yet', async () => {
-      // Logged in but no environment entered (no client/role/org chosen) — a
-      // real backend response shape, and it must not block the boot.
-      const restoreSession = vi.fn().mockResolvedValue({
-        account: { name: 'Ada' },
-        environment: null,
-        roleList: [{ id: 'role-1', name: 'Admin', orgList: [{ id: 'org-1', name: 'Main Org' }] }],
-        csrfToken: 'csrf-abc',
-      });
-
-      const { result } = renderHook(() => useAuth(), {
-        wrapper: ({ children }) => (
-          <AuthProvider storage={createMemoryAuthStorage()} restoreSession={restoreSession}>
-            {children}
-          </AuthProvider>
-        ),
-      });
-
-      await waitFor(() => {
-        expect(result.current.status).toBe('authenticated');
-      });
-
-      expect(result.current.username).toBe('Ada');
-      expect(result.current.clientId).toBeNull();
-      expect(result.current.selectedRole).toBeNull();
-      expect(result.current.selectedOrg).toBeNull();
-      // The available roles still reach the role picker.
-      expect(result.current.roleList).toHaveLength(1);
-    });
-
-    it('does not persist the restored session into authStorage — the server response is authoritative, and persisting would undo the legacy purge', async () => {
-      const restoreSession = vi.fn().mockResolvedValue({
-        account: { name: 'Ada' },
-        environment: { clientId: 'client-1', roleId: 'role-1', orgId: 'org-1' },
-        roleList: [{ id: 'role-1', name: 'Admin', orgList: [{ id: 'org-1', name: 'Main Org' }] }],
-        csrfToken: 'csrf-abc',
-      });
-      const storage = createMemoryAuthStorage();
-
-      const { result } = renderHook(() => useAuth(), {
-        wrapper: ({ children }) => (
-          <AuthProvider storage={storage} restoreSession={restoreSession}>
-            {children}
-          </AuthProvider>
-        ),
-      });
-
-      await waitFor(() => {
-        expect(result.current.status).toBe('authenticated');
-      });
-      // The mapping did land in the context...
-      expect(result.current.username).toBe('Ada');
-
-      // ...but nothing was written back to storage: the same effect purges the
-      // legacy sf_auth_* keys right before restoring, so persisting here would
-      // immediately rewrite them and defeat the purge.
-      const persisted = storage.read();
-      expect(persisted.username).toBeNull();
-      expect(persisted.clientId).toBeNull();
-      expect(persisted.selectedRole).toBeNull();
-      expect(persisted.selectedOrg).toBeNull();
-      expect(persisted.roleList).toEqual([]);
-      expect(JSON.stringify(persisted)).not.toContain('Ada');
-    });
+      // A logged-out session must stay logged out — a request that started before logout has no
+      // business reviving it once it finally resolves.
+      expect(result.current.token).toBeFalsy();
+    } finally { globalThis.fetch = original; }
   });
 });
 
-// ETP-4576 cycle 14 — regression guard for the isAuthenticated fix above,
-// readapted in cycle 4a. Its original premise ("legacy hosts compute `status`
-// once, synchronously, and it stays frozen at 'anonymous' forever") is gone
-// with the default fetcher: every host now boots 'booting' and then settles
-// from the server's answer. The assertion it protects is unchanged and still
-// load-bearing, though: `status` only ever reaches 'authenticated' through the
-// restore path, so a host whose server says "no session" (401 -> 'anonymous')
-// and then performs a legacy in-app login() would never flip isAuthenticated if
-// that flag derived from `status` alone. It must keep falling back to
-// `!!session.token`.
-// ETP-4576 — logout must revoke the session SERVER-SIDE. Real gap found in this
-// branch: nothing in the frontend ever called DELETE /sws/go/session. Logout was
-// purely client-side (clear state + authStorage), which was survivable with a
-// localStorage bearer token — deleting the token was the logout — but is a
-// security hole with the `__Host-` cookie: the cookie is httpOnly, JS cannot
-// delete it, so it survives the "logout" and the session stays valid on the
-// server. Only the backend endpoint (ETP-4575) can revoke it.
-//
-// Design constraints the tests below pin down:
-//   1. `logout()` stays SYNCHRONOUS. Every caller (LogoutRoute, the fail-closed
-//      restore path, OnboardingFlow's cleanup) uses it fire-and-forget; making it
-//      async would break them and delay the UI on a network round trip. So the
-//      DELETE is dispatched without await and local state is cleared immediately.
-//   2. The CSRF token must be captured BEFORE it is cleared. `logout()` calls
-//      setCsrfToken(null); reading the token after that (or letting the request
-//      read it late) sends an empty X-Go-CSRF and the backend answers 403 — the
-//      easiest bug to introduce here, and a silent one, since local logout would
-//      still look fine.
-//   3. A failing DELETE must not block or throw. The user asked to leave.
-//
-// All wrappers here pass restoreSession={NEVER_SETTLES}, so the shared `fetchStub`
-// records the logout request and nothing else.
-describe('AuthContext — logout revokes the session server-side (ETP-4576)', () => {
-  function deleteSessionCalls() {
-    return fetchStub.mock.calls.filter(([url, init = {}]) => (
-      (init.method || '').toUpperCase() === 'DELETE' && /\/sws\/go\/session$/.test(String(url))
-    ));
-  }
+describe('AuthContext — silent refresh polling fallback (ETP-5195)', () => {
+  // Mirrors the module-level SILENT_REFRESH_POLL_INTERVAL_MS constant in AuthContext.jsx —
+  // not exported, so kept in sync here.
+  const POLL_INTERVAL_MS = 5 * 60 * 1000;
 
-  it('fires a DELETE /sws/go/session when logout() is called', async () => {
-    const { result } = renderHook(() => useAuth(), { wrapper: wrapperWith() });
-
-    act(() => {
-      result.current.logout();
-    });
-
-    await waitFor(() => {
-      expect(deleteSessionCalls()).toHaveLength(1);
-    });
-    const [, init = {}] = deleteSessionCalls()[0];
-    // The cookie is the credential, so it has to be allowed to travel.
-    expect(init.credentials).toBe('include');
-  });
-
-  it('sends the X-Go-CSRF header with the token the session held BEFORE the logout cleared it', async () => {
-    const { result } = renderHook(() => useAuth(), { wrapper: wrapperWith() });
-
-    act(() => {
-      result.current.setCsrfToken('csrf-abc');
-    });
-    expect(result.current.csrfToken).toBe('csrf-abc');
-
-    act(() => {
-      result.current.logout();
-    });
-
-    await waitFor(() => {
-      expect(deleteSessionCalls()).toHaveLength(1);
-    });
-    const [, init = {}] = deleteSessionCalls()[0];
-    // The bug this guards: reading csrfToken after setCsrfToken(null) sends an
-    // empty proof and the backend 403s, so the session is never revoked.
-    expect(init.headers?.['X-Go-CSRF']).toBe('csrf-abc');
-  });
-
-  it('never sends an Authorization header or a Bearer scheme on the logout request', async () => {
-    const { result } = renderHook(() => useAuth(), { wrapper: wrapperWith() });
-
-    act(() => {
-      result.current.setCsrfToken('csrf-abc');
-    });
-    act(() => {
-      result.current.logout();
-    });
-
-    await waitFor(() => {
-      expect(deleteSessionCalls()).toHaveLength(1);
-    });
-    const [, init = {}] = deleteSessionCalls()[0];
-    const serialized = JSON.stringify(init);
-    expect(serialized).not.toMatch(/Authorization/i);
-    expect(serialized).not.toMatch(/Bearer/i);
-  });
-
-  it('stays synchronous: local state is fully cleared immediately after logout(), with no await or waitFor', () => {
-    const { result } = renderHook(() => useAuth(), { wrapper: wrapperWith() });
-
-    act(() => {
-      result.current.setCsrfToken('csrf-abc');
-      result.current.setWindowAccess({ '147': 'full' });
-      result.current.setCapabilities({ showAccountingFields: true });
-      result.current.login({ token: 'tok-1', username: 'Ada' });
-    });
-    expect(result.current.isAuthenticated).toBe(true);
-
-    // Not awaited, not wrapped in waitFor: the DELETE is fire-and-forget, so the
-    // UI-visible state must already be anonymous when logout() returns.
-    let returned = 'sentinel';
-    act(() => {
-      returned = result.current.logout();
-    });
-
-    expect(returned).toBeUndefined();
-    expect(result.current.csrfToken).toBeNull();
-    expect(result.current.windowAccess).toEqual({});
-    expect(result.current.capabilities).toEqual({});
-    expect(result.current.token).toBeNull();
-    expect(result.current.username).toBeNull();
-    expect(result.current.isAuthenticated).toBe(false);
-  });
-
-  it('still clears local state and does not throw when the DELETE fails (offline / 403 / 500)', async () => {
-    fetchStub.mockRejectedValue(new TypeError('Failed to fetch'));
-    const { result } = renderHook(() => useAuth(), { wrapper: wrapperWith() });
-
-    act(() => {
-      result.current.setCsrfToken('csrf-abc');
-      result.current.setWindowAccess({ '147': 'full' });
-      result.current.login({ token: 'tok-1' });
-    });
-
-    expect(() => {
-      act(() => {
-        result.current.logout();
-      });
-    }).not.toThrow();
-
-    expect(result.current.csrfToken).toBeNull();
-    expect(result.current.windowAccess).toEqual({});
-    expect(result.current.capabilities).toEqual({});
-    expect(result.current.token).toBeNull();
-    expect(result.current.isAuthenticated).toBe(false);
-
-    // The rejection was attempted and swallowed — no unhandled rejection.
-    await waitFor(() => {
-      expect(deleteSessionCalls()).toHaveLength(1);
-    });
-  });
-});
-
-// ETP-4576 cycle 4b — THE LAST WRITER. Everything else in this epic removed a
-// *reader* of the `sf_auth_*` localStorage channel: the handoff between page
-// loads is gone, the session lives in the httpOnly `__Host-` cookie, the
-// provider restores from the server on mount, and logout revokes server-side.
-// One writer survived all of it: `authStorage` defaulted to
-// createLocalAuthStorage(), so persistSession() — reached from login(),
-// setSession(), selectRole() and selectOrg() — kept writing the token, the
-// username, the client id, the role list and the selected role/org straight
-// back into localStorage on every session change, for every host that passes no
-// `storage` prop. The mount purge deleted those keys once and then the very
-// first login re-created them. That is exactly the class of persistence SEC-10
-// is about, so the default flips to createMemoryAuthStorage().
-//
-// What is NOT changing:
-//   * the `storage` prop keeps the same priority — a host that wants its own
-//     storage (including localStorage) still injects it;
-//   * createLocalAuthStorage stays exported. It is published API of a package
-//     with consumers we cannot see, and the PRD keeps it "for migration/tests".
-//     It simply stops being what you get by default.
-//
-// What the flip costs, and why it costs nothing: a per-mount memory storage no
-// longer survives a page load. It does not need to — restoreSession is now the
-// platform default (cycle 4a), so every mount asks GET /sws/go/session who the
-// user is. The storage is reduced to per-mount scratch space.
-describe('AuthContext — the default auth storage is memory, never localStorage (ETP-4576)', () => {
+  // Fake timers must be installed BEFORE renderHook() so the provider's setInterval() call
+  // itself is captured by the fake clock — installing afterwards would leave a real interval
+  // running in the background, uncontrolled by vi.advanceTimersByTimeAsync(). Restore real
+  // timers afterwards so later tests (e.g. the 50ms visibilitychange debounce, which relies on
+  // real setTimeout + testing-library's waitFor) are unaffected.
   afterEach(() => {
-    window.localStorage.clear();
+    vi.useRealTimers();
   });
 
-  // jsdom's Storage is not a plain object; enumerate it through the index API.
-  function localStorageKeys() {
-    const keys = [];
-    for (let i = 0; i < window.localStorage.length; i += 1) {
-      keys.push(window.localStorage.key(i));
-    }
-    return keys;
-  }
+  it('fires a silent refresh after the poll interval elapses', async () => {
+    const token = makeToken({ role: 'R1', user: 'U1' });
+    const f = stubFetch({ ok: true, json: async () => ({ result: JSON.stringify({ token }) }) });
+    vi.useFakeTimers();
+    try {
+      renderHook(() => useAuth(), {
+        wrapper: ({ children }) => (
+          <AuthProvider restoreSession={null} storage={createMemoryAuthStorage()} initialSession={{ token }}>{children}</AuthProvider>
+        ),
+      });
 
-  function legacyAuthKeys() {
-    return localStorageKeys().filter((key) => /^sf_auth_|^sf_platform_/.test(key));
-  }
+      // Flush the mount-time silent refresh (queued via a Promise microtask, not a timer —
+      // unaffected by the fake clock).
+      await act(async () => { await Promise.resolve(); await Promise.resolve(); });
+      expect(f.calls.length).toBe(1);
 
-  function defaultStorageWrapper(props = {}) {
-    // Deliberately NO `storage` prop — the whole subject of this suite.
-    return function Wrapper({ children }) {
-      return <AuthProvider {...props}>{children}</AuthProvider>;
-    };
-  }
+      await act(async () => {
+        await vi.advanceTimersByTimeAsync(POLL_INTERVAL_MS);
+      });
 
-  it('writes nothing to localStorage when login() persists a session (THE last-writer test)', async () => {
-    const { result } = renderHook(() => useAuth(), { wrapper: defaultStorageWrapper() });
-
-    // Let the default fetcher's 401 settle FIRST. This is what makes the
-    // assertion below mean "persistSession never wrote" rather than "it wrote
-    // and the mount purge happened to erase it": the purge runs once, inside
-    // the mount effect, and by the time `status` is 'anonymous' it is long
-    // finished. Anything found in localStorage after this point was written by
-    // the login() below.
-    await waitFor(() => {
-      expect(result.current.status).toBe('anonymous');
-    });
-    expect(legacyAuthKeys()).toEqual([]);
-
-    // Vacuity guard: prove localStorage is live and observable in this
-    // environment, so an empty result is a real "nothing was written" and not a
-    // silently unavailable Storage.
-    window.localStorage.setItem('unrelated_key', 'kept');
-
-    act(() => {
-      result.current.login({ token: 'tok', username: 'Ada', clientId: 'client-1' });
-    });
-
-    // persistSession DID run — the session is in the context...
-    expect(result.current.token).toBe('tok');
-    expect(result.current.username).toBe('Ada');
-    expect(result.current.isAuthenticated).toBe(true);
-
-    // ...and it went to memory only. No credential, no session context, on disk.
-    expect(legacyAuthKeys()).toEqual([]);
-    expect(window.localStorage.getItem('sf_auth_token')).toBeNull();
-    expect(window.localStorage.getItem('sf_auth_user')).toBeNull();
-    expect(window.localStorage.getItem('sf_auth_client_id')).toBeNull();
-    expect(window.localStorage.getItem('unrelated_key')).toBe('kept');
+      expect(f.calls.length).toBe(2);
+      expect(f.calls[1].url).toBe('/sws/neo/refreshtoken');
+    } finally { f.restore(); }
   });
 
-  it('writes nothing to localStorage when selectRole() and selectOrg() persist through the default storage', async () => {
-    const { result } = renderHook(() => useAuth(), { wrapper: defaultStorageWrapper() });
+  it('keeps firing on every interval tick, not just once (recurring poll, not a one-shot timeout)', async () => {
+    const token = makeToken({ role: 'R1', user: 'U1' });
+    const f = stubFetch({ ok: true, json: async () => ({ result: JSON.stringify({ token }) }) });
+    vi.useFakeTimers();
+    try {
+      renderHook(() => useAuth(), {
+        wrapper: ({ children }) => (
+          <AuthProvider restoreSession={null} storage={createMemoryAuthStorage()} initialSession={{ token }}>{children}</AuthProvider>
+        ),
+      });
 
-    await waitFor(() => {
-      expect(result.current.status).toBe('anonymous');
-    });
+      await act(async () => { await Promise.resolve(); await Promise.resolve(); });
+      const callsAfterMount = f.calls.length;
 
-    act(() => {
-      result.current.selectRole({ id: 'role-1', name: 'Admin' });
-    });
-    act(() => {
-      result.current.selectOrg({ id: 'org-1', name: 'Main Org' });
-    });
+      await act(async () => {
+        await vi.advanceTimersByTimeAsync(2 * POLL_INTERVAL_MS);
+      });
 
-    expect(result.current.selectedRole).toMatchObject({ id: 'role-1' });
-    expect(result.current.selectedOrg).toMatchObject({ id: 'org-1' });
-
-    // The two session mutations a logged-in user triggers most often — the role
-    // and org pickers — are also persistSession() call sites, so they were
-    // writers too.
-    expect(window.localStorage.getItem('sf_auth_selected_role')).toBeNull();
-    expect(window.localStorage.getItem('sf_auth_selected_org')).toBeNull();
-    expect(legacyAuthKeys()).toEqual([]);
+      // Two full interval periods elapsed — two additional poll-triggered refreshes, proving
+      // this is a recurring setInterval, not a setTimeout that fires once and stops.
+      expect(f.calls.length).toBe(callsAfterMount + 2);
+    } finally { f.restore(); }
   });
 
-  it('writes nothing to localStorage when a restored cookie session settles on a host that passes no storage', async () => {
-    fetchStub.mockResolvedValue({
-      ok: true,
-      status: 200,
-      json: async () => ({
-        account: { name: 'Ada' },
-        environment: { clientId: 'client-1', roleId: 'role-1', orgId: 'org-1' },
-        roleList: [{ id: 'role-1', name: 'Admin', orgList: [{ id: 'org-1', name: 'Main Org' }] }],
-        csrfToken: 'csrf-abc',
-      }),
-    });
+  it('clears the interval on unmount, stopping the poll', async () => {
+    const token = makeToken({ role: 'R1', user: 'U1' });
+    const f = stubFetch({ ok: true, json: async () => ({ result: JSON.stringify({ token }) }) });
+    vi.useFakeTimers();
+    try {
+      const { unmount } = renderHook(() => useAuth(), {
+        wrapper: ({ children }) => (
+          <AuthProvider restoreSession={null} storage={createMemoryAuthStorage()} initialSession={{ token }}>{children}</AuthProvider>
+        ),
+      });
 
-    // The cookie scheme is declared, not inherited: there IS no restore under the
-    // bearer default, so without this the session never settles and the test would
-    // be asserting "nothing was written" about a request that never happened.
-    // `storage` is still deliberately absent — that is this suite's subject.
-    const { result } = renderHook(() => useAuth(), {
-      wrapper: defaultStorageWrapper({ credentialMode: CREDENTIAL_MODES.cookie }),
-    });
+      await act(async () => { await Promise.resolve(); await Promise.resolve(); });
+      const callsBeforeUnmount = f.calls.length;
 
-    await waitFor(() => {
-      expect(result.current.status).toBe('authenticated');
-    });
-    expect(result.current.username).toBe('Ada');
+      unmount();
 
-    // The restore path already avoided persisting (it would undo its own
-    // purge); with the memory default there is no longer any path back to disk
-    // at all, not even the csrfToken via a later session mutation.
-    expect(legacyAuthKeys()).toEqual([]);
-    expect(JSON.stringify(localStorageKeys())).not.toContain('sf_auth');
-    expect(window.localStorage.getItem('sf_auth_client_name')).toBeNull();
+      await act(async () => {
+        await vi.advanceTimersByTimeAsync(POLL_INTERVAL_MS);
+      });
+
+      // No additional call after unmount — the cleanup's clearInterval() actually ran.
+      expect(f.calls.length).toBe(callsBeforeUnmount);
+    } finally { f.restore(); }
   });
 
-  it('does not hydrate the initial session from leftover sf_auth_* keys left in localStorage', () => {
-    // A machine that ran the pre-cookie build has these on disk. With
-    // createLocalAuthStorage() as the default, the useState initializer read
-    // them back on the very first render — resurrecting a stale token, user,
-    // client and role selection from a previous tenant before the purge in the
-    // mount effect had even run (and the purge only clears storage, it never
-    // resets the state that was already seeded from it).
-    window.localStorage.setItem('sf_auth_token', 'legacy-token');
-    window.localStorage.setItem('sf_auth_user', 'legacy-user');
-    window.localStorage.setItem('sf_auth_client_id', 'legacy-client');
-    window.localStorage.setItem('sf_auth_selected_role', JSON.stringify({ id: 'legacy-role' }));
+  it('reuses the same-role no-op guard on a poll-triggered refresh (no unnecessary persistSession write)', async () => {
+    const token = makeToken({ role: 'R1', user: 'U1' });
+    // A different token string, but decoding to the same role — polling must not bypass the
+    // "role unchanged" no-op guard that the other refresh triggers already respect.
+    const sameRoleToken = makeToken({ role: 'R1', user: 'U1', extra: 'ignored' });
+    const storage = createMemoryAuthStorage({ token });
+    const writeSpy = vi.spyOn(storage, 'write');
+    const f = stubFetch({ ok: true, json: async () => ({ result: JSON.stringify({ token: sameRoleToken }) }) });
+    vi.useFakeTimers();
+    try {
+      renderHook(() => useAuth(), {
+        wrapper: ({ children }) => (
+          <AuthProvider restoreSession={null} storage={storage} initialSession={{ token }}>{children}</AuthProvider>
+        ),
+      });
 
-    // NEVER_SETTLES keeps the provider in 'booting', so nothing after the first
-    // render can clear the session — whatever we observe was seeded (or not) by
-    // the default storage's read() alone.
-    const { result } = renderHook(() => useAuth(), {
-      wrapper: defaultStorageWrapper({ restoreSession: NEVER_SETTLES }),
-    });
+      await act(async () => { await Promise.resolve(); await Promise.resolve(); });
+      expect(f.calls.length).toBe(1);
 
-    expect(result.current.status).toBe('booting');
-    expect(result.current.token).toBeNull();
-    expect(result.current.username).toBeNull();
-    expect(result.current.clientId).toBeNull();
-    expect(result.current.selectedRole).toBeNull();
-    expect(result.current.isAuthenticated).toBe(false);
-  });
+      await act(async () => {
+        await vi.advanceTimersByTimeAsync(POLL_INTERVAL_MS);
+      });
 
-  it('still gives the storage prop priority over the new memory default', async () => {
-    const writes = [];
-    const injectedStorage = {
-      read: () => ({}),
-      write: (session) => writes.push(session),
-      clear: () => writes.push('clear'),
-    };
-
-    const { result } = renderHook(() => useAuth(), {
-      wrapper: ({ children }) => (
-        <AuthProvider storage={injectedStorage} restoreSession={NEVER_SETTLES}>
-          {children}
-        </AuthProvider>
-      ),
-    });
-
-    act(() => {
-      result.current.login({ token: 'tok', username: 'Ada' });
-    });
-
-    // The prop is honoured exactly as before — the default changed, the
-    // precedence did not.
-    expect(writes).toHaveLength(1);
-    expect(writes[0]).toMatchObject({ token: 'tok', username: 'Ada' });
-    expect(legacyAuthKeys()).toEqual([]);
-  });
-
-  it('lets a host opt back into localStorage persistence by injecting createLocalAuthStorage()', async () => {
-    // The escape hatch the PRD keeps: createLocalAuthStorage is no longer the
-    // default, but it is still exported and still works when injected, so any
-    // consumer that genuinely wants the old behavior (or a migration shim) is
-    // not broken by this cycle.
-    const { result } = renderHook(() => useAuth(), {
-      wrapper: ({ children }) => (
-        <AuthProvider storage={createLocalAuthStorage()} restoreSession={NEVER_SETTLES}>
-          {children}
-        </AuthProvider>
-      ),
-    });
-
-    act(() => {
-      result.current.login({ token: 'tok-opted-in' });
-    });
-
-    expect(window.localStorage.getItem('sf_auth_token')).toBe('tok-opted-in');
-  });
-
-  it('keeps createLocalAuthStorage exported from the auth barrel — it stops being the default, it is not deleted', async () => {
-    const barrel = await import('../index.js');
-
-    expect(typeof barrel.createLocalAuthStorage).toBe('function');
-    expect(typeof barrel.createMemoryAuthStorage).toBe('function');
+      // The poll-triggered refresh did fire...
+      expect(f.calls.length).toBe(2);
+      expect(f.calls[1].url).toBe('/sws/neo/refreshtoken');
+      // ...but since the role didn't change, it stayed a no-op — same guard as every other trigger.
+      expect(writeSpy).not.toHaveBeenCalled();
+    } finally { f.restore(); }
   });
 });
-
-describe('AuthContext — isAuthenticated legacy fallback (ETP-4576 cycle 14 regression guard)', () => {
-  it('is false once the default restore settles to "anonymous", then becomes true after a post-mount login() even though status stays "anonymous"', async () => {
-    const { result } = renderHook(() => useAuth(), {
-      wrapper: ({ children }) => (
-        <AuthProvider storage={createMemoryAuthStorage()}>{children}</AuthProvider>
-      ),
-    });
-
-    // Let the default fetcher's 401 settle first, so the post-mount login() is
-    // tested against a fully-booted anonymous provider (and so the fail-closed
-    // logout() cannot land afterwards and wipe the token we are about to set).
-    await waitFor(() => {
-      expect(result.current.status).toBe('anonymous');
-    });
-    expect(result.current.isAuthenticated).toBe(false);
-
-    act(() => {
-      result.current.login({ token: 'tok-1' });
-    });
-
-    expect(result.current.status).toBe('anonymous');
-    expect(result.current.isAuthenticated).toBe(true);
-  });
-});
-
-/**
- * ETP-4576 — `auto` resolves the scheme from what the backend issued, so the
- * restore is not optional under it: the restore's response is WHERE the answer
- * comes from. `restoreSession` used to default on only for `cookie`, and adding
- * `auto` without widening that would have left a host passing `auto` unable to
- * authenticate at all — silently, since a null restore just resolves `status`
- * from `session.token`.
- */
-describe('AuthContext — credentialMode auto (ETP-4576)', () => {
-  function mount(credentialMode) {
-    return renderHook(() => useAuth(), {
-      wrapper: ({ children }) => (
-        <AuthProvider storage={createMemoryAuthStorage()} credentialMode={credentialMode}>
-          {children}
-        </AuthProvider>
-      ),
-    });
-  }
-
-  it('restores the session on mount under auto, exactly as under cookie', async () => {
-    mount(CREDENTIAL_MODES.auto);
-    await waitFor(() => expect(fetchStub).toHaveBeenCalled());
-    const [url, init] = fetchStub.mock.calls[0];
-    expect(String(url)).toContain('/sws/go/session');
-    expect(init.credentials).toBe('include');
-  });
-
-  it('still does not restore under bearer, keeping the pre-cookie path verbatim', async () => {
-    const { result } = mount(CREDENTIAL_MODES.bearer);
-    await waitFor(() => expect(result.current.status).not.toBe('booting'));
-    expect(fetchStub).not.toHaveBeenCalled();
-  });
-
-  it('falls back to anonymous when the backend has no cookie session (the 401)', async () => {
-    const { result } = mount(CREDENTIAL_MODES.auto);
-    await waitFor(() => expect(result.current.status).toBe('anonymous'));
-    expect(result.current.isAuthenticated).toBe(false);
-  });
-});
-

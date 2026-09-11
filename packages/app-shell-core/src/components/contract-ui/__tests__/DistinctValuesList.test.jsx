@@ -203,3 +203,40 @@ describe('DistinctValuesList — search and paging surface', () => {
     expect(screen.queryAllByRole('button')).toHaveLength(0);
   });
 });
+
+// ETP-5119 — once the enum picker stopped papering over "no match" by dumping
+// its whole catalogue back in, an unmatched search legitimately renders zero
+// rows. A bare "—" there reads as a broken dropdown, so the caller passes a
+// translated "No results" through `emptyLabel`.
+describe('DistinctValuesList — empty state', () => {
+  it('shows the empty label when a search matched nothing', () => {
+    renderList({ codes: [], distinct: makeDistinct({ search: '4' }), emptyLabel: 'Sin resultados' });
+    expect(screen.getByText('Sin resultados')).toBeInTheDocument();
+  });
+
+  it('stays silent when the list is empty but nothing was searched', () => {
+    // No query means "still loading / nothing to say", not "no match".
+    renderList({ codes: [], distinct: makeDistinct({ search: '' }), emptyLabel: 'Sin resultados' });
+    expect(screen.queryByText('Sin resultados')).not.toBeInTheDocument();
+  });
+
+  it('does not show the empty label while the first page is loading', () => {
+    renderList({
+      codes: [],
+      distinct: makeDistinct({ search: '4', loading: true }),
+      emptyLabel: 'Sin resultados',
+    });
+    expect(screen.queryByText('Sin resultados')).not.toBeInTheDocument();
+  });
+
+  it('falls back to the dash for a caller that passes no empty label', () => {
+    // Keeps pre-ETP-5119 callers rendering exactly as before.
+    renderList({ codes: [], distinct: makeDistinct({ search: '4' }) });
+    expect(screen.getByText('—')).toBeInTheDocument();
+  });
+
+  it('shows no empty state at all when there are rows to render', () => {
+    renderList({ distinct: makeDistinct({ search: 'conc' }), emptyLabel: 'Sin resultados' });
+    expect(screen.queryByText('Sin resultados')).not.toBeInTheDocument();
+  });
+});

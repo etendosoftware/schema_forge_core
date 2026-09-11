@@ -316,7 +316,13 @@ const FIELD_HINTS_PRE_GRID = [
   ['enumVariants', Boolean],
   ['labels', Boolean],
   ['clearsField', Boolean],
-  ['summable', Boolean, setTrue],
+  // ETP-5245 — TRI-STATE, not a plain flag. `true` opts the column into the grid
+  // footer total; `false` opts a genuine `amount` column OUT of it (values that are
+  // money but not addable — a unit cost, a price, a rate); `undefined` (the common
+  // case) keeps the historical default, which is "an amount column sums". Copied
+  // with `isDefined` so the explicit `false` survives to the frontend contract —
+  // `Boolean/setTrue` used to drop it silently, which is why the key was dead.
+  ['summable', isDefined, Boolean],
   ['businessCritical', Boolean, setTrue],
   ['display', Boolean],
   ['cellType', Boolean],
@@ -332,6 +338,12 @@ const FIELD_HINTS_PRE_GRID = [
 const FIELD_HINTS_POST_GRID = [
   ['noTrailing', Boolean, setTrue],
   ['filterOnly', Boolean, setTrue],
+  // ETP-5245 — names the sibling field that carries THIS column's currency, so the
+  // amount cell (and the footer total) can resolve a per-row ISO code instead of the
+  // hardcoded `currency$_identifier` lookup. Value is the contract field name, e.g.
+  // "cCurrencyID" → the renderer reads `row['cCurrencyID$_identifier']`. Appended at
+  // the tail so every contract that does not declare it stays byte-identical.
+  ['currencyField', Boolean],
 ];
 
 // Entity-level opt-in/opt-out flags carried from the curated entity onto the

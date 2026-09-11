@@ -210,6 +210,12 @@ const FIELD_DECISION_COPY_PROPS = [
   'inlineToggle',
   'inlineEdit',
   'noTrailing',
+  // ETP-5245 — sibling field name holding this column's currency, for grids whose
+  // rows are not all in the same currency (M_Costing mixes EUR and USD). The
+  // renderer appends `$_identifier` to it, so the value is the contract field name
+  // ("cCurrencyID"), not the AD column ("C_Currency_ID"). Absent ⇒ unchanged
+  // behavior (the row's `currency$_identifier`, then the session currency).
+  'currencyField',
   'inline',
   'addLineFromSibling',
   // Opt-in (ETP-4529): collect this field into the ONE synthetic `dimensionsPanel`
@@ -331,7 +337,10 @@ function applyFieldDecisionProps(field, fieldDecision) {
   if (fieldDecision.filterable === false) field.filterable = false;
   if (fieldDecision.dot === false) field.dot = false;
   if (fieldDecision.badge) field.badge = true;
-  if (fieldDecision.summable) field.summable = true;
+  // ETP-5245 — tri-state (see generate-contract.js's FIELD_HINTS_PRE_GRID): `false`
+  // is meaningful (an `amount` column that must NOT be added up), so copy it
+  // explicitly instead of via the truthy-only decision-copy loop.
+  if (fieldDecision.summable !== undefined) field.summable = fieldDecision.summable === true;
   if (fieldDecision.businessCritical) field.businessCritical = true;
   if (fieldDecision.gridOrder != null) field.gridOrder = fieldDecision.gridOrder;
   // EPL-1807 escape hatch: force-show/force-hide the computed freshness indicator
@@ -351,6 +360,34 @@ function applyFieldDecisionProps(field, fieldDecision) {
 function applyFlatBound(field, fieldDecision, key) {
   const v = fieldDecision[key];
   if (v !== undefined && v !== false) field[key] = v;
+}
+
+/**
+ * ETP-5245 — apply a decisions-declared derivation over the raw AD-derived one.
+ *
+ * Shapes accepted in decisions.json:
+ *   "derivation": null                 -> suppress the raw derivation entirely
+ *   "derivation": "fromConfig"         -> shorthand, normalized to { type: 'fromConfig' }
+ *   "derivation": { type, source, ... } -> taken verbatim
+ *
+ * The shorthand MUST be expanded here: every consumer reads `derivation.type`
+ * (quality-gate invariants' hasServerDefault, validate-schema's system-field and
+ * fromParent checks, the contract's computedFields), so a bare string would be
+ * copied through and silently match nothing.
+ *
+ * Any other value (false, 0, "", an array) is not a decision and leaves the raw
+ * derivation untouched.
+ */
+function applyDecisionDerivation(field, fieldDecision) {
+  if (!Object.prototype.hasOwnProperty.call(fieldDecision, 'derivation')) return;
+  const decided = fieldDecision.derivation;
+  if (decided === null) {
+    delete field.derivation;
+  } else if (typeof decided === 'string' && decided !== '') {
+    field.derivation = { type: decided };
+  } else if (decided && typeof decided === 'object' && !Array.isArray(decided)) {
+    field.derivation = decided;
+  }
 }
 
 function applyForeignKeyLookupProps(field, fieldDecision) {
@@ -459,12 +496,13 @@ function buildCuratedField(rawField, fieldDecision, discardPatterns) {
     field.enumValues = decidedEnumValues;
   }
 
-  // Allow decisions to explicitly suppress a raw derivation by setting derivation: null.
-  // This is needed when a field transitions from system/readOnly (auto-derived) to editable
-  // (user-provided), so NEO does not override the user's value on save.
-  if (Object.prototype.hasOwnProperty.call(fieldDecision, 'derivation') && fieldDecision.derivation === null) {
-    delete field.derivation;
-  }
+  // ETP-5245 — decisions own the derivation: they can SUPPRESS a raw one (`derivation: null`,
+  // needed when a field transitions from system/readOnly (auto-derived) to editable so NEO does
+  // not override the user's value on save) and they can DECLARE one the raw AD schema does not
+  // carry — a real server-side default written by a NeoHandler, for instance, which every
+  // consumer must see (quality-gate invariants, validate-schema, generate-contract).
+  // Runs AFTER copyRawProps(FIELD_RAW_COPY_PROPS) so the decision always wins over the raw value.
+  applyDecisionDerivation(field, fieldDecision);
 
   // Decisions can override raw-copied process routing (e.g. swap obuiapp JS handler
   // for a classic stored-procedure process that NEO can actually execute).
@@ -650,6 +688,17 @@ function buildDraftMode(draftModeDecision, enabled) {
   }
   if (draftModeDecision.extraParams && typeof draftModeDecision.extraParams === 'object') {
     draftMode.extraParams = draftModeDecision.extraParams;
+  }
+  if (Array.isArray(draftModeDecision.keepSaveWhenCompletedFields) && draftModeDecision.keepSaveWhenCompletedFields.length > 0) {
+    // ETP-4839: once the document reaches a completed state, keep the plain "Save"
+    // button visible (the process/"Confirm" button stays hidden UNCONDITIONALLY —
+    // see saveActions.jsx's onlySaveButton) but only enabled when every dirty header
+    // field is one of these names. Save-only never sends `processField`, so it stays
+    // safe even for windows whose backend process action is not idempotent on an
+    // already-completed document (e.g. purchase-invoice's re-Confirm duplicating
+    // discount lines). Emitted only when the array is non-empty, same additive
+    // criterion as the other optional draftMode keys above.
+    draftMode.keepSaveWhenCompletedFields = draftModeDecision.keepSaveWhenCompletedFields;
   }
   return draftMode;
 }

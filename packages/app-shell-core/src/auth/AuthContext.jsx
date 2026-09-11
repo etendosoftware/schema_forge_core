@@ -1,185 +1,104 @@
-import { createContext, useContext, useState, useCallback, useMemo, useRef, useEffect } from 'react';
-import { deleteCookieSession, fetchCookieSession, registerApiSession } from './api.js';
-import { CREDENTIAL_MODES, setSessionCredentials } from './sessionCredentials.js';
+import { createContext, useContext, useState, useCallback, useMemo, useRef, useEffect, useLayoutEffect, useSyncExternalStore } from 'react';
 import {
-  createLocalAuthStorage,
-  createMemoryAuthStorage,
-  mapRestoredSession,
-  normalizeAuthSession,
-  purgeLegacyAuthStorage,
+  createLocalAuthStorage, mapRestoredSession, normalizeAuthSession, purgeLegacyAuthStorage,
 } from './session.js';
+import {
+  createApiFetch, deleteCookieSession, fetchCookieSession, registerApiSession,
+} from './api.js';
+import { CREDENTIAL_MODES, setSessionCredentials } from './sessionCredentials.js';
+import { createSessionController } from './sessionController.js';
+import { reconcileSessionRefresh } from './sessionRefresh.js';
 
 const AuthContext = createContext(null);
+const useBrowserLayoutEffect = typeof window === 'undefined' ? useEffect : useLayoutEffect;
+// [ETP-5195] Fallback cadence for the periodic-poll refresh trigger below.
+const SILENT_REFRESH_POLL_INTERVAL_MS = 5 * 60 * 1000;
+
+// [ETP-5195] `/sws/neo/refreshtoken` goes through the NEO webhook bridge, which wraps every
+// response in `{"result": "<json-string>"}` (see com.etendoerp.go's docs/neo-headless.md
+// "envelope" section) — the real `{token, session}` payload is nested and JSON-encoded, not
+// top-level. Unwrap it here so `reconcileSessionRefresh` always receives the real payload
+// shape it expects. A body that is already a plain object without a `result` string (e.g. an
+// already-unwrapped shape passed in by a test or another caller) is returned unchanged.
+function unwrapBridgeEnvelope(body) {
+  if (body && typeof body.result === 'string') {
+    try { return JSON.parse(body.result); } catch { return null; }
+  }
+  return body;
+}
+
+// [ETP-5195 follow-up] `windowAccess`/`capabilities` are flat maps of primitive values
+// (tier strings / booleans) — a plain key-by-key comparison is enough to tell a genuinely
+// changed permission set apart from the SAME set re-fetched as a new object. Used by the
+// tab-focus/visibility/poll-triggered "legacy" (no role change) refresh path below to avoid
+// bumping `generation`/`authRevision` — and therefore every `isCurrentSession()`/`authRevision`
+// consumer app-wide (menu, viewer-role, any in-flight fetch) — when nothing actually changed.
+function sameFlatMap(a, b) {
+  const keysA = Object.keys(a);
+  const keysB = Object.keys(b);
+  if (keysA.length !== keysB.length) return false;
+  return keysA.every((key) => a[key] === b[key]);
+}
 
 export function AuthProvider({
-  children,
-  storage,
-  initialSession,
-  onSessionChange,
-  fetchWindowAccess,
-  // ETP-4576 — which credential scheme requests use: 'bearer' (today's shipped
-  // behaviour), 'cookie', or 'auto'. `auto` is what a host should normally pass:
-  // it resolves to whichever scheme the backend actually issued, by reading
-  // whether a CSRF token came back with the session. Declaring `cookie` by hand
-  // is a claim about the BACKEND that the frontend cannot verify, and getting it
-  // wrong fails in the worst direction — reads keep working off the browser's own
-  // cookie while every unsafe request answers 403 for a missing CSRF proof. The
-  // explicit modes remain for pinning one in a test or rolling back.
-  //
-  // The default is `auto`, and it has to be: it used to be `bearer`, which reads as the
-  // conservative choice but is not one. `restoreSession` derives from this value (see below),
-  // so `bearer` also turned the restore OFF — and the session no longer lives in localStorage,
-  // it lives in memory. With nothing to restore from and no restore running, EVERY cold load
-  // came up anonymous: a plain browser refresh signed the user out, and a host that follows
-  // the documented advice of not declaring the scheme by hand got exactly that. `auto` costs a
-  // bearer backend one 401 on boot and then behaves as before, which is the trade this whole
-  // mechanism was designed around.
+  children, storage, initialSession, onSessionChange, fetchWindowAccess, apiBaseUrl,
+  // ETP-4576 — which credential scheme requests use: 'bearer', 'cookie' or 'auto'.
+  // `auto` resolves to whichever scheme the backend actually issued, by reading whether
+  // a CSRF token came back with the session. Declaring `cookie` by hand is a claim about
+  // the BACKEND the frontend cannot verify, and getting it wrong fails in the worst
+  // direction: reads keep working off the browser's own cookie while every unsafe request
+  // answers 403 for a missing proof.
   credentialMode = CREDENTIAL_MODES.auto,
-  // ETP-4576 — DERIVED from `credentialMode`, so one switch governs the whole
-  // scheme. Under `cookie` it defaults to the platform fetcher (the server-side
-  // session is the credential, so the restore is mandatory); under `bearer` it
-  // defaults to off, and the host keeps the pre-cookie synchronous path verbatim.
-  //
-  // Under `auto` it must ALSO default on: the restore is how the scheme gets
-  // decided at all. Its response either carries a CSRF token (a cookie session
-  // exists) or fails, and a failed restore leaves no CSRF token, which resolves
-  // to bearer — so a bearer backend costs one 401 on boot and then behaves
-  // exactly as it did before.
-  //
-  // It used to default to fetchCookieSession unconditionally. The reasoning was
-  // sound at the time — #101 removed the localStorage handoff, so an opt-in prop
-  // left a host that passes no props unable to authenticate at all — but it made
-  // every host, migrated or not, request a cookie session on mount. That is what
-  // broke the app when #101 landed without its backend (ETP-4575), and is why
-  // #101 was reverted. The bearer scheme is a working path again, so the default
-  // no longer has to force the cookie one on everybody.
-  //
-  // Pass your own function to override, or an explicit `null` to opt out even
-  // under the cookie mode (e.g. a test whose subject is not the restore): any
-  // non-function makes the effect below return early and `status` resolve
-  // synchronously from `session.token`.
+  // ETP-4576 — DERIVED from `credentialMode`, so one switch governs the whole thing.
+  // An explicit `null` opts out; passing `undefined` re-arms this default.
   restoreSession = credentialMode === CREDENTIAL_MODES.cookie
     || credentialMode === CREDENTIAL_MODES.auto ? fetchCookieSession : null,
 }) {
-  // ETP-4576 — memory, not localStorage. This was the last writer of the
-  // sf_auth_* keys: persistSession() wrote them on every login/role/org change.
-  // Persisting is no longer needed either, since restoreSession asks the server
-  // on every mount. It also closes a stale-tenant leak: the useState
-  // initializer below reads storage BEFORE the mount purge runs, so a token
-  // left by a previous tenant used to be hydrated into state and never reset.
-  // A host can still inject its own storage (including createLocalAuthStorage).
-  const authStorage = useMemo(() => storage || createMemoryAuthStorage(), [storage]);
-  const [session, setSessionState] = useState(() => normalizeAuthSession({
-    ...authStorage.read(),
-    ...initialSession,
-  }));
-  // ETP-4520 — per-window access tier ("none" | "read-only" | "full") and named
-  // capability flags, resolved from the SFWindowAccessMap webhook. Transient
-  // (NOT persisted via `storage`): re-fetched every time a role is selected, so
-  // it never goes stale across a role switch and never survives a stale reload
-  // with the wrong tenant's access. Fail-closed defaults ({}) — useWindowAccess
-  // / useHasCapability treat an unloaded map the same as "no access granted".
-  const [windowAccess, setWindowAccess] = useState({});
-  const [capabilities, setCapabilities] = useState({});
-  // ETP-4576 — the X-Go-CSRF proof (ADR-0001, com.etendoerp.go) issued by the
-  // backend in session responses. In-memory only, never persisted through
-  // authStorage: it is bound to the httpOnly session cookie, not a value the
+  const authStorage = useMemo(() => storage || createLocalAuthStorage(), [storage]);
+  const [controller] = useState(() => createSessionController(normalizeAuthSession({
+    ...authStorage.read(), ...initialSession,
+  }), authStorage, onSessionChange, apiBaseUrl));
+  const state = useSyncExternalStore(controller.subscribe, controller.getSnapshot, controller.getSnapshot);
+  const options = useRef({ fetchWindowAccess, apiBaseUrl });
+  const operation = useRef(null);
+  // ETP-4576 — the X-Go-CSRF proof issued by the backend in session responses. In memory
+  // only, never persisted: it is bound to the httpOnly session cookie, not a value the
   // client should carry across reloads on its own.
   const [csrfToken, setCsrfToken] = useState(null);
-  // ETP-4576 — tri-state auth status. Hosts that don't pass `restoreSession`
-  // (not yet migrated to the cookie-session restore flow) keep today's
-  // behavior verbatim: resolved synchronously from whatever session/token
-  // was already read above, never 'booting'. Hosts that opt in start
-  // 'booting' until GET /sws/go/session (via restoreSession) settles.
+  // ETP-4576 — tri-state auth status. Hosts that opt out of the restore (`restoreSession:
+  // null`) resolve synchronously from whatever session was read, exactly as before, and
+  // never see 'booting'. Hosts that opt in start 'booting' until GET /sws/go/session settles,
+  // so a reload does not flash the login screen before the restore resolves.
   const [status, setStatus] = useState(() => (
-    typeof restoreSession === 'function' ? 'booting' : (session.token ? 'authenticated' : 'anonymous')
+    typeof restoreSession === 'function'
+      ? 'booting'
+      : (controller.getSnapshot().session.token ? 'authenticated' : 'anonymous')
   ));
-  // ETP-4576 — guards the mount-only restore effect below against firing
-  // more than once, since a host passing an inline arrow function as
-  // `restoreSession` would otherwise get a new function identity every
-  // render.
+  // Guards the mount-only restore against a host passing an inline arrow as `restoreSession`,
+  // which would otherwise change identity every render.
   const hasRestoredRef = useRef(false);
-  // ETP-4520 — request-sequencing guard against a stale-response race: if
-  // role A is selected then role B before A's fetchWindowAccess resolves, A's
-  // slower response can land AFTER B's and overwrite B's correct maps with
-  // A's stale ones. Every selectRole() call increments this ref immediately;
-  // only the response whose captured id still matches the ref's CURRENT value
-  // at resolution time is allowed to apply state (i.e. no newer selectRole
-  // call has started since). A plain monotonic counter is enough here — no
-  // AbortController, since the host app's fetchWindowAccess isn't guaranteed
-  // to accept a cancellation signal.
-  const selectRoleRequestIdRef = useRef(0);
-  // ETP-4520 — tracks the role we've already fetched (or started fetching)
-  // window access for. Shared between selectRole() and the hydration effect
-  // below so an explicit selectRole() call doesn't get immediately re-fired by
-  // the effect once `session.selectedRole` settles to the same value.
-  const fetchedForRoleRef = useRef(undefined);
 
-  const persistSession = useCallback((nextSession) => {
-    const normalized = normalizeAuthSession(nextSession);
-    setSessionState(normalized);
-    authStorage.write(normalized);
-    onSessionChange?.(normalized);
-    return normalized;
-  }, [authStorage, onSessionChange]);
+  useBrowserLayoutEffect(() => {
+    controller.configure({ storage: authStorage, onSessionChange, apiBaseUrl });
+    options.current = { fetchWindowAccess, apiBaseUrl };
+  }, [controller, authStorage, onSessionChange, fetchWindowAccess, apiBaseUrl]);
 
-  // Resets every piece of client-side session state. Split out of logout()
-  // because the restore-failure path below needs exactly this and NOT the
-  // server-side revoke: there, the server just told us no session exists, so
-  // asking it to revoke one would be both wrong and a wasted round trip on
-  // every anonymous page load.
-  const clearLocalSession = useCallback(() => {
-    const clearedSession = normalizeAuthSession();
-    setSessionState(clearedSession);
-    authStorage.clear();
-    // ETP-4576 — also purge the legacy sf_auth_*/sf_platform_* localStorage keys,
-    // and do it regardless of the credential scheme. `authStorage.clear()` only
-    // clears the storage the host injected, which under the default (memory) is
-    // not where those keys live — so a stale credential left by an earlier version
-    // or by the onboarding app used to survive a logout untouched. The mount purge
-    // does not cover this: it runs inside the session-restore effect, which the
-    // bearer scheme does not schedule at all. Logout is exactly the moment when
-    // nothing may survive, in either scheme.
-    purgeLegacyAuthStorage();
-    onSessionChange?.(clearedSession);
-    setWindowAccess({});
-    setCapabilities({});
-    // ETP-4576 — the CSRF proof is tied to the session cookie being cleared;
-    // never let it survive into the next (anonymous) state.
-    setCsrfToken(null);
-    // ETP-4520 — abandon any in-flight selectRole() fetch too: bumping the
-    // ref makes its stale-response guard (`selectRoleRequestIdRef.current
-    // !== thisRequestId`) discard a late-arriving resolution instead of
-    // repopulating windowAccess/capabilities with the pre-logout role's data.
-    selectRoleRequestIdRef.current += 1;
-    fetchedForRoleRef.current = undefined;
-  }, [authStorage, onSessionChange]);
+  // A changed storage adapter or server is a session boundary, even with the same JWT.
+  const environment = useRef({ storage: authStorage, apiBaseUrl });
+  useBrowserLayoutEffect(() => {
+    const previous = environment.current;
+    environment.current = { storage: authStorage, apiBaseUrl };
+    if (previous.storage !== authStorage || previous.apiBaseUrl !== apiBaseUrl) {
+      controller.replace(previous.storage !== authStorage ? authStorage.read() : controller.getSnapshot().session);
+    }
+  }, [controller, authStorage, apiBaseUrl]);
 
-  const logout = useCallback(() => {
-    // ETP-4576 — revoke the session server-side, otherwise the cookie outlives
-    // this "logout" and the session stays valid. Read the CSRF proof BEFORE
-    // clearing local state below wipes it: DELETE is an unsafe method, so
-    // sending it empty earns a 403 and silently leaves the session alive.
-    //
-    // Fire-and-forget on purpose: local state clears immediately so the UI
-    // responds at once, the revoke travels in parallel, and
-    // deleteCookieSession never throws — a network failure must not trap a
-    // user in a session they asked to leave.
-    deleteCookieSession(csrfToken);
-    clearLocalSession();
-  }, [clearLocalSession, csrfToken]);
-
-  // ETP-4576 — session restore on mount. `restoreSession` defaults to the
-  // platform cookie fetcher (a host can override it, or opt out with an
-  // explicit null), so this runs for every host: purges the legacy
-  // sf_auth_*/sf_platform_* localStorage keys once ("on first read", per the
-  // PRD), then consumes GET /sws/go/session through the host-supplied
-  // fetcher. Success moves the tri-state status to 'authenticated' and
-  // stores the restored CSRF proof; any failure (no active session, network
-  // error) fails closed through the same logout() path already used
-  // elsewhere, so session/windowAccess/capabilities/csrfToken end up
-  // consistently cleared. Deliberately does not touch `session`'s shape —
-  // mapping {account, environment, roleList} into it is a follow-up cycle.
+  // ETP-4576 — session restore on mount. Purges the legacy sf_auth_*/sf_platform_*
+  // localStorage keys once, then consumes GET /sws/go/session through the host-supplied
+  // fetcher. Success moves the status to 'authenticated' and stores the CSRF proof; any
+  // failure (no active session, network error) clears locally — deliberately NOT the
+  // exposed logout(), which revokes server-side: the server just told us there is no
+  // session, so there is nothing to revoke.
   useEffect(() => {
     if (typeof restoreSession !== 'function') return;
     if (hasRestoredRef.current) return;
@@ -192,158 +111,282 @@ export function AuthProvider({
       .then((result) => {
         if (!result) throw new Error('No active session');
         setCsrfToken(result.csrfToken ?? null);
-        // Set state WITHOUT persisting: purgeLegacyAuthStorage() just ran above,
-        // so writing through authStorage here would immediately rewrite the very
-        // legacy keys it deleted. The server response is the authoritative copy.
-        const restoredSession = normalizeAuthSession(mapRestoredSession(result));
-        setSessionState(restoredSession);
-        onSessionChange?.(restoredSession);
+        controller.replace(normalizeAuthSession(mapRestoredSession(result)), { refresh: false });
         setStatus('authenticated');
       })
       .catch(() => {
-        // Local clear only, deliberately not logout(): the server just told us
-        // there is no session, so there is nothing to revoke.
-        clearLocalSession();
+        setCsrfToken(null);
+        controller.logout();
         setStatus('anonymous');
       });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  const selectOrg = useCallback((org) => {
-    persistSession({ ...session, selectedOrg: org || null });
-  }, [persistSession, session]);
+  // ETP-4576 — hands the active scheme and both credentials to ./sessionCredentials.js,
+  // which every request builder in the core and the host reads. This is the ONLY writer.
+  useEffect(() => {
+    setSessionCredentials({ mode: credentialMode, token: state.session.token, csrfToken });
+  }, [credentialMode, state.session.token, csrfToken]);
 
-  // ETP-4520 — fetches the window-access map for the given (already-persisted)
-  // session. Shared by selectRole() and the hydration effect below, so there is
-  // exactly one place that calls the host-supplied `fetchWindowAccess` fetcher
-  // and applies its result with the stale-response guard. Fire-and-forget: the
-  // caller is not blocked on the network round trip. On failure (or when no
-  // fetcher is configured) the fail-closed defaults are left in place.
-  const runFetchWindowAccess = useCallback((nextSession) => {
-    const thisRequestId = ++selectRoleRequestIdRef.current;
-    // Fail closed IMMEDIATELY: clear the previous role's maps before kicking
-    // off the fetch, so the UI never briefly (or permanently, on failure)
-    // keeps showing a prior role's access while this fetch is in flight.
-    setWindowAccess({});
-    setCapabilities({});
-    if (typeof fetchWindowAccess !== 'function') return;
-    // Deferring the call itself into the promise chain (rather than
-    // `Promise.resolve(fetchWindowAccess(nextSession))`) also catches a
-    // SYNCHRONOUS throw from the host app's fetcher, routing it through the
-    // same `.catch()` as a rejected promise instead of propagating out
-    // uncaught.
-    Promise.resolve()
-      .then(() => fetchWindowAccess(nextSession))
-      .then((result) => {
-        // Stale-response guard: if a newer fetch has started since this one
-        // (another selectRole call, or the hydration effect firing again),
-        // its result already owns windowAccess/capabilities — a late-arriving
-        // response for an abandoned request must never overwrite it.
-        if (selectRoleRequestIdRef.current !== thisRequestId) return;
-        setWindowAccess(result?.windowAccess ?? {});
-        setCapabilities(result?.capabilities ?? {});
-      })
-      .catch(() => {
-        // Fail closed: leave the (already cleared, default {}) maps in place.
-      });
-  }, [fetchWindowAccess]);
+  const loadAccess = useCallback(async (session, snapshot) => {
+    try {
+      if (!session.selectedRole || typeof options.current.fetchWindowAccess !== 'function') return {};
+      return (await options.current.fetchWindowAccess(session, {
+        isCurrent: () => controller.isCurrent(snapshot),
+      })) || {};
+    } catch { return {}; }
+  }, [controller]);
 
-  const selectRole = useCallback((role) => {
-    // Bump the request id FIRST, on every path (including the immediate-
-    // return "no role" branch) — this abandons any in-flight fetch from a
-    // previous selectRole call before it can ever apply its result.
-    selectRoleRequestIdRef.current += 1;
-    const nextSession = persistSession({ ...session, selectedRole: role || null });
-    fetchedForRoleRef.current = role || null;
-    if (!role) {
-      setWindowAccess({});
-      setCapabilities({});
-      return;
+  const refresh = useCallback((imperative = false) => {
+    const current = controller.getSnapshot();
+    if (!current.session.token) return Promise.resolve({ status: 'idle' });
+    const pending = operation.current;
+    if (pending && controller.isCurrent(pending.snapshot)) {
+      if (imperative) pending.trailing = true;
+      return pending.promise;
     }
-    runFetchWindowAccess(nextSession);
-  }, [persistSession, session, runFetchWindowAccess]);
+    const work = { snapshot: controller.capture(), trailing: false };
+    operation.current = work;
+    controller.publish({ isRefreshingSession: true, sessionRefreshStatus: 'refreshing' });
+    work.promise = (async () => {
+      let outcome;
+      do {
+        work.trailing = false;
+        const session = controller.getSnapshot().session;
+        try {
+          // Independent scope: refresh is what releases bootstrap, and owns its own guard.
+          const request = createApiFetch(options.current.apiBaseUrl, () => session.token, null, null);
+          const response = await request('/sws/neo/refreshtoken', { on401: 'ignore' });
+          const body = response.ok ? await response.json() : null;
+          if (!controller.isCurrent(work.snapshot)) return { status: 'superseded' };
+          const payload = body ? unwrapBridgeEnvelope(body) : null;
+          outcome = payload ? reconcileSessionRefresh(session, payload) : { status: 'failed' };
+        } catch {
+          console.warn('[ETP-5195] Silent session refresh failed; keeping existing session.');
+          outcome = { status: 'failed' };
+        }
+        if (!controller.isCurrent(work.snapshot)) return { status: 'superseded' };
+        // An imperative mutation during this request requires a post-mutation request.
+        if (work.trailing) continue;
+        if (outcome.session) {
+          const previous = controller.getSnapshot();
+          // Compare the RESOLVED metadata (role/org list content, not just the raw JWT claim
+          // ids the tokens carry) — a role can be renamed or gain/lose an available
+          // organization while `selectedRole`/`selectedOrg` stay the same id, and that content
+          // change must still be treated as real. Only a response whose full metadata is
+          // byte-for-byte identical to what is already in state is a pure token rotation.
+          const metadataUnchanged = JSON.stringify({
+            clientId: session.clientId, roleList: session.roleList,
+            selectedRole: session.selectedRole, selectedOrg: session.selectedOrg,
+          }) === JSON.stringify({
+            clientId: outcome.session.clientId, roleList: outcome.session.roleList,
+            selectedRole: outcome.session.selectedRole, selectedOrg: outcome.session.selectedOrg,
+          });
+          // Accept the coherent tuple before invoking host permission transport: both
+          // ambient apiFetch and a session-bound client must see the renewed JWT — this
+          // still happens unconditionally below (see the "same-role authoritative
+          // permission transport" tests: the backend mints a fresh token, new iat/exp, on
+          // EVERY call even with zero role/org content change, and that freshly-issued
+          // token must still be used for this refresh's own access check and every future
+          // request). [ETP-5195 follow-up] `bump: false` when metadata is unchanged, though:
+          // bumping `generation`/`authRevision` for a pure rotation made every
+          // generation/authRevision-gated consumer app-wide (sidebar menu, useViewerRole)
+          // treat a no-op refresh as a real session change and reset — confirmed live via
+          // Network tab (menu, an unrelated open window's record/logo/related lookups all
+          // refetching together on a plain alt-tab with zero role change). Settled
+          // same-content grants are kept as-is (same object reference) until proven
+          // different by the loadAccess() call below, rather than cleared up front.
+          const replaced = controller.replace(outcome.session, {
+            refresh: false, status: 'refreshing', ready: previous.isSessionReady,
+            bump: !metadataUnchanged,
+            access: metadataUnchanged
+              ? { windowAccess: previous.windowAccess, capabilities: previous.capabilities }
+              : {},
+          });
+          if (controller.getSnapshot().session !== replaced) return { status: 'superseded' };
+          work.snapshot = controller.capture();
+          const access = await loadAccess(outcome.session, work.snapshot);
+          if (!controller.isCurrent(work.snapshot)) return { status: 'superseded' };
+          if (work.trailing) continue;
+          const latest = controller.getSnapshot();
+          const nextWindowAccess = access.windowAccess ?? {};
+          const nextCapabilities = access.capabilities ?? {};
+          const accessChanged = !sameFlatMap(nextWindowAccess, latest.windowAccess)
+            || !sameFlatMap(nextCapabilities, latest.capabilities);
+          const finalUpdate = {
+            sessionRefreshStatus: 'ready', isSessionReady: true,
+            windowAccess: accessChanged ? nextWindowAccess : latest.windowAccess,
+            capabilities: accessChanged ? nextCapabilities : latest.capabilities,
+          };
+          if (accessChanged) controller.invalidate(finalUpdate);
+          else controller.publish(finalUpdate);
+          work.snapshot = controller.capture();
+        } else {
+          const blocked = outcome.status === 'metadata-required' || current.metadataRequired;
+          // A same-role legacy refresh still revalidates permissions, atomically, so
+          // an unchanged focus does not temporarily unmount permission-gated forms.
+          const access = outcome.status === 'legacy' && !blocked ? await loadAccess(session, work.snapshot) : null;
+          if (!controller.isCurrent(work.snapshot)) return { status: 'superseded' };
+          if (work.trailing) continue;
+          const previous = controller.getSnapshot();
+          const nextWindowAccess = access?.windowAccess ?? {};
+          const nextCapabilities = access?.capabilities ?? {};
+          // [ETP-5195 follow-up] A tab-focus/visibility-regain/poll refresh fires on every
+          // reactivation even when the role never changed (see the visibilitychange/focus
+          // effect and the poll interval below) — most of the time it resolves the SAME
+          // permissions, just as a freshly-fetched object. Bumping `generation`/`authRevision`
+          // unconditionally here made every `isCurrentSession()`/`authRevision` consumer
+          // app-wide (the sidebar menu, `useViewerRole`, any in-flight generation-gated fetch)
+          // treat a no-op refresh as a real session change: the sidebar visibly reset to its
+          // loading state and back, and any record view re-running its own generation-gated
+          // fetch reloaded and lost UI state (e.g. scroll position) — confirmed root cause,
+          // reported live as "alt-tab causes a menu flicker and window refresh with no role
+          // change". Only actually invalidate when the resolved access differs from what is
+          // already in state; otherwise a plain `publish` updates status flags without
+          // touching `generation`/`authRevision`/the `windowAccess`/`capabilities` references.
+          const accessChanged = !!access
+            && (!sameFlatMap(nextWindowAccess, previous.windowAccess) || !sameFlatMap(nextCapabilities, previous.capabilities));
+          const update = {
+            needsRefresh: false, isSessionReady: !blocked,
+            metadataRequired: blocked,
+            sessionRefreshStatus: blocked ? 'metadata-required' : outcome.status,
+            ...(blocked ? { windowAccess: {}, capabilities: {} } : {}),
+            ...(access ? {
+              accessLoaded: true,
+              windowAccess: accessChanged ? nextWindowAccess : previous.windowAccess,
+              capabilities: accessChanged ? nextCapabilities : previous.capabilities,
+              ...(accessChanged ? { authRevision: previous.authRevision + 1 } : {}),
+            } : {}),
+          };
+          if (blocked || accessChanged) controller.invalidate(update);
+          else controller.publish(update);
+          work.snapshot = controller.capture();
+        }
+      } while (work.trailing);
+      return { status: controller.getSnapshot().sessionRefreshStatus };
+    })().finally(() => {
+      if (operation.current !== work) return;
+      operation.current = null;
+      if (controller.isCurrent(work.snapshot)) controller.publish({ isRefreshingSession: false });
+    });
+    return work.promise;
+  }, [controller, loadAccess]);
 
-  // ETP-4520 — hydration bootstrap: covers session state that already carries
-  // a `selectedRole` WITHOUT ever going through selectRole() itself — e.g. a
-  // page reload that rehydrates a persisted session from storage, or a host
-  // app whose login flow sets `selectedRole` directly via setSession()/login()
-  // rather than calling selectRole(). Without this, windowAccess/capabilities
-  // would stay at their fail-closed {} defaults for the entire session (this
-  // was a real gap: fetchWindowAccess was previously ONLY reachable from
-  // inside selectRole(), which no host app call site actually invokes today).
+  useBrowserLayoutEffect(() => {
+    controller.activate();
+    const unregister = registerApiSession({
+      getToken: () => controller.getSnapshot().session.token,
+      // ETP-4576 — a 401 has to move the tri-state status too, or `isAuthenticated` stays
+      // true off a stale 'authenticated' and the app never redirects to login. No server
+      // revocation here: a 401 means the session is already gone on the backend.
+      onUnauthorized: () => {
+        setCsrfToken(null);
+        setStatus('anonymous');
+        controller.logout();
+      },
+      baseUrl: apiBaseUrl,
+      scope: controller,
+      replaceSession: controller.replace,
+    });
+    return () => { controller.dispose(); unregister(); };
+  }, [controller, apiBaseUrl]);
+
   useEffect(() => {
-    if (!session.selectedRole) return;
-    if (fetchedForRoleRef.current === session.selectedRole) return;
-    fetchedForRoleRef.current = session.selectedRole;
-    runFetchWindowAccess(session);
-    // Only re-run when the role value itself changes — not on every session
-    // update (e.g. selectOrg) — and intentionally reads the latest `session`/
-    // `runFetchWindowAccess` closures rather than listing them as deps, since
-    // this effect's own identity only needs to track the role value.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [session.selectedRole]);
+    let cancelled = false;
+    // StrictMode replays setup/cleanup before this microtask; only the live setup starts I/O.
+    if (state.needsRefresh) Promise.resolve().then(() => { if (!cancelled) refresh(); });
+    return () => { cancelled = true; };
+  }, [state.generation, state.needsRefresh, refresh]);
 
-  // ETP-4576 — hand the active scheme and both credentials to
-  // ./sessionCredentials.js, which is what every request builder in the core and
-  // the host reads. Runs on each change so a token refresh, an environment
-  // switch or a preference flip all take effect without a reload. This is the
-  // ONLY writer: nothing else may call setSessionCredentials.
   useEffect(() => {
-    setSessionCredentials({ mode: credentialMode, token: session.token, csrfToken });
-  }, [credentialMode, session.token, csrfToken]);
+    if (!state.isSessionReady || state.needsRefresh || state.accessLoaded || !state.session.selectedRole) return;
+    const snapshot = controller.capture();
+    let cancelled = false;
+    loadAccess(state.session, snapshot).then((access) => {
+      if (!cancelled && controller.isCurrent(snapshot)) controller.publish({
+        windowAccess: access.windowAccess ?? {}, capabilities: access.capabilities ?? {}, accessLoaded: true,
+      });
+    });
+    return () => { cancelled = true; };
+  }, [controller, state.generation, state.isSessionReady, state.needsRefresh, state.accessLoaded, state.session, loadAccess]);
 
-  const setSession = useCallback((nextSession) => {
-    persistSession({ ...session, ...nextSession });
-  }, [persistSession, session]);
+  useEffect(() => {
+    if (typeof document === 'undefined' || typeof window === 'undefined') return undefined;
+    let timer;
+    const schedule = () => {
+      if (document.visibilityState !== 'visible' || timer !== undefined) return;
+      timer = setTimeout(() => { timer = undefined; refresh(); }, 50);
+    };
+    document.addEventListener('visibilitychange', schedule);
+    window.addEventListener('focus', schedule);
+    return () => {
+      clearTimeout(timer);
+      document.removeEventListener('visibilitychange', schedule);
+      window.removeEventListener('focus', schedule);
+    };
+  }, [refresh]);
+
+  // [ETP-5195] Interim mitigation, not the full fix: a user demoted/promoted elsewhere
+  // who never blurs/refocuses the tab (and never reloads) hits none of the triggers
+  // above, so a stale role claim can otherwise ride out the full JWT lifetime. Poll
+  // on a fixed interval to bound that window; the real fix is server-side revocation,
+  // tracked separately.
+  useEffect(() => {
+    if (typeof window === 'undefined') return undefined;
+    const interval = setInterval(() => { refresh(); }, SILENT_REFRESH_POLL_INTERVAL_MS);
+    return () => clearInterval(interval);
+  }, [refresh]);
+
+  const actions = useMemo(() => ({
+    setWindowAccess: (value) => controller.publish({ windowAccess: typeof value === 'function' ? value(controller.getSnapshot().windowAccess) : value }),
+    setCapabilities: (value) => controller.publish({ capabilities: typeof value === 'function' ? value(controller.getSnapshot().capabilities) : value }),
+    setSession: controller.patch,
+    login: controller.patch,
+    replaceSession: controller.replace,
+    selectRole: (role) => controller.replace({ ...controller.getSnapshot().session, selectedRole: role || null }, { refresh: false }),
+    selectOrg: (org) => controller.replace({ ...controller.getSnapshot().session, selectedOrg: org || null }, { refresh: false }),
+    // ETP-4576 — controller.logout only clears local state. Under the cookie scheme the
+    // session lives server-side, so it has to be revoked there too; the local clear runs
+    // either way, so a failed revocation still logs the user out of this tab.
+    logout: async () => {
+      try {
+        if (typeof restoreSession === 'function') await deleteCookieSession();
+      } finally {
+        setCsrfToken(null);
+        setStatus('anonymous');
+        controller.logout();
+      }
+    },
+    captureSession: controller.capture,
+    isCurrentSession: controller.isCurrent,
+    apiSessionScope: controller,
+    refreshToken: () => refresh(true),
+  }), [controller, refresh, restoreSession]);
 
   const value = useMemo(() => ({
-    ...session,
-    // ETP-4576 — cookie-session hosts (restoreSession) never populate
-    // session.token, so `status` is their only authentication signal. Legacy
-    // hosts still need the session.token check: their `status` is computed
-    // once on mount and never recomputed, so a post-mount login() would
-    // otherwise leave isAuthenticated stuck at false.
-    isAuthenticated: !!session.token || status === 'authenticated',
-    windowAccess,
-    capabilities,
+    ...state.session,
+    // ETP-4576 — a cookie-session host NEVER populates session.token, so `!!token` alone
+    // would report every signed-in user as anonymous and send the whole app to /login.
+    // `status` is their authentication signal; the token check stays for legacy hosts,
+    // whose status is resolved once on mount and would otherwise strand a post-mount
+    // login() at false.
+    isAuthenticated: !!state.session.token || status === 'authenticated',
     csrfToken,
     status,
-    setWindowAccess,
-    setCapabilities,
     setCsrfToken,
-    setSession,
-    login: setSession,
-    selectRole,
-    selectOrg,
-    logout,
-  }), [session, windowAccess, capabilities, csrfToken, status, setSession, selectRole, selectOrg, logout]);
-
-  // ETP-5022 — publishes the live session to the ambient `apiFetch` accessor, so a plain
-  // (non-React) module can make an authenticated request without its callers threading
-  // `token` and `apiBaseUrl` through every signature. Registered ONCE and reading through
-  // refs, deliberately: re-registering on every token change would churn the accessor for
-  // no gain, and a stale closure over `session` would hand out a logged-out token after a
-  // re-login.
-  const sessionRef = useRef(session);
-  sessionRef.current = session;
-  const logoutRef = useRef(logout);
-  logoutRef.current = logout;
-  useEffect(() => registerApiSession({
-    getToken: () => sessionRef.current.token,
-    onUnauthorized: () => logoutRef.current(),
-  }), []);
+    isSessionReady: state.isSessionReady,
+    isRefreshingSession: state.isRefreshingSession,
+    sessionRefreshStatus: state.sessionRefreshStatus,
+    authRevision: state.authRevision,
+    windowAccess: state.windowAccess,
+    capabilities: state.capabilities,
+    ...actions,
+  }), [state, actions, csrfToken, status]);
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 }
 
-/**
- * Same as {@link useAuth}, but returns `null` instead of throwing when there is no
- * `AuthProvider` above. For infrastructure that must not force every consumer's test to
- * mount a provider — `useApiFetch` is the one caller today.
- */
-export function useAuthOptional() {
-  return useContext(AuthContext);
-}
+export function useAuthOptional() { return useContext(AuthContext); }
 
 export function useAuth() {
   const ctx = useContext(AuthContext);

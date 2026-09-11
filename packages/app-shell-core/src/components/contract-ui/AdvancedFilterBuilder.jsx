@@ -282,9 +282,18 @@ export function AdvancedFilterBuilder({
   onClose,
   presets = null,
   onApplyPreset = null,
+  // (name, advancedFilter) — `advancedFilter` is built from the CURRENT DRAFT
+  // (null when it holds no complete condition), never from the applied value:
+  // saving must store what the user just configured even if they never hit
+  // Apply, and must not store a stale filter they have since edited (ETP-5007).
   onSavePreset = null,
   onDeletePreset = null,
-  hasActiveFilter = false,
+  // Whether a filter OUTSIDE this builder (a column filter) is active, which is
+  // what lets a preset with no advanced condition still be worth saving. It
+  // must NOT include the applied advanced filter: the builder decides that from
+  // its own draft, and counting the applied value here allowed saving a preset
+  // holding a filter the user had just deleted (ETP-5007).
+  hasActiveColumnFilter = false,
   labelOverrides = null,
 }) {
   const ui = useUI();
@@ -357,16 +366,41 @@ export function AdvancedFilterBuilder({
 
   const columnLabel = useCallback((col) => labelOf(col.column) ?? col.label ?? col.key, [labelOf]);
 
-  const allComplete = draft.conditions.every((r) => isRowComplete(r, columnByKey[r.field]));
+  // ETP-5007: a row the user never touched is UI noise, not an incomplete
+  // condition. Only a STARTED-but-incomplete row may block Apply. Requiring
+  // EVERY row to be complete made deleting the last condition a dead end:
+  // removeRow always re-seeds an empty row, so Apply stayed disabled forever
+  // and the filter still applied to the grid could not be dropped from here.
+  const completeRows = draft.conditions.filter((r) => isRowComplete(r, columnByKey[r.field]));
+  const hasIncompleteStartedRow = draft.conditions.some(
+    (r) => isRowStarted(r) && !isRowComplete(r, columnByKey[r.field]),
+  );
   const anyStarted = draft.conditions.some(isRowStarted);
   const hasAppliedFilter = !!value?.conditions?.length;
+  // Apply is also how the last condition gets REMOVED, so an empty draft is
+  // actionable whenever a filter is currently applied. With nothing applied it
+  // would be a no-op, and stays disabled.
+  const canApply = !hasIncompleteStartedRow && (completeRows.length > 0 || hasAppliedFilter);
+
+  // The draft promoted to the shape the parent stores. Shared by Apply and by
+  // "save as preset" so both commit exactly what the user configured, and
+  // returns null when nothing is complete (i.e. "no advanced filter").
+  const buildFilterFromDraft = () => (completeRows.length
+    ? {
+      rowOperator: draft.rowOperator,
+      conditions: sanitizeConditions(cloneConditions(completeRows), columnByKey),
+    }
+    : null);
 
   const handleApply = () => {
-    if (!allComplete) return;
-    onApply?.({
-      rowOperator: draft.rowOperator,
-      conditions: sanitizeConditions(cloneConditions(draft.conditions), columnByKey),
-    });
+    if (!canApply) return;
+    if (completeRows.length === 0) {
+      // Emptying the draft and applying means "drop the filter".
+      onClear?.();
+      onClose?.();
+      return;
+    }
+    onApply?.(buildFilterFromDraft());
     onClose?.();
   };
 
@@ -393,7 +427,10 @@ export function AdvancedFilterBuilder({
   }, []);
 
   const handleSavePresetClick = () => {
-    if (!onSavePreset) return;
+    // Guarded here and not only through the menu item's `disabled` flag: a
+    // disabled Radix item still reaches this handler in tests, so the rule
+    // would be enforced by CSS alone and no test could see it break.
+    if (!onSavePreset || !canSavePreset) return;
     setPresetNameDraft('');
     setPresetDialog({ mode: 'save', name: '' });
   };
@@ -401,17 +438,17 @@ export function AdvancedFilterBuilder({
   const handleSaveDialogSubmit = (e) => {
     e?.preventDefault?.();
     const name = presetNameDraft.trim();
-    if (!name) return;
+    if (!name || !canSavePreset) return;
     if (presets && Object.prototype.hasOwnProperty.call(presets, name)) {
       setPresetDialog({ mode: 'overwrite', name });
       return;
     }
-    onSavePreset?.(name);
+    onSavePreset?.(name, buildFilterFromDraft());
     closePresetDialog();
   };
 
   const handleConfirmOverwrite = () => {
-    if (presetDialog.name) onSavePreset?.(presetDialog.name);
+    if (presetDialog.name && canSavePreset) onSavePreset?.(presetDialog.name, buildFilterFromDraft());
     closePresetDialog();
   };
 
@@ -432,7 +469,18 @@ export function AdvancedFilterBuilder({
     onClose?.();
   };
 
-  const canSavePreset = hasActiveFilter || anyStarted;
+  // ETP-5007: loading a saved filter APPLIES it, so a preset must be something
+  // that could have been applied in the first place. Saving is therefore held
+  // to the same bar as Apply — no half-written row — and an empty preset can
+  // never be stored. `hasActiveColumnFilter` is what makes a preset with no
+  // advanced condition still worth saving; the previously used "any filter is
+  // active" flag also counted the APPLIED advanced filter, which is exactly the
+  // stale value this must not be fooled by.
+  const canSavePreset = !hasIncompleteStartedRow
+    && (completeRows.length > 0 || hasActiveColumnFilter);
+  const savePresetBlockedReason = canSavePreset
+    ? null
+    : ui(hasIncompleteStartedRow ? 'filterPresetBlockedIncomplete' : 'filterPresetBlockedEmpty');
   const hasBetween = draft.conditions.some((c) => c.operator === 'between');
 
   return (
@@ -451,7 +499,11 @@ export function AdvancedFilterBuilder({
           const isBetween = row.operator === 'between';
 
           return (
-            <div key={row._rowKey} className="flex items-start gap-2">
+            <div
+              key={row._rowKey}
+              className="flex items-start gap-2"
+              data-testid={`advanced-filter-row-${idx}`}
+            >
               {/* Connector */}
               <div className="w-16 shrink-0">
                 {idx === 0 ? (
@@ -480,7 +532,7 @@ export function AdvancedFilterBuilder({
                   value={row.field || undefined}
                   onValueChange={(v) => updateRow(idx, { field: v })}
                   data-testid="Select__4eedf1">
-                  <SelectTrigger className="h-9 text-xs" data-testid="SelectTrigger__4eedf1">
+                  <SelectTrigger className="h-9 text-xs" data-testid="advanced-filter-field">
                     <SelectValue
                       placeholder={ui('advancedFilterSelectField')}
                       data-testid="SelectValue__4eedf1" />
@@ -500,7 +552,7 @@ export function AdvancedFilterBuilder({
                   onValueChange={(v) => updateRow(idx, { operator: v })}
                   disabled={!col}
                   data-testid="Select__4eedf1">
-                  <SelectTrigger className="h-9 text-xs" data-testid="SelectTrigger__4eedf1">
+                  <SelectTrigger className="h-9 text-xs" data-testid="advanced-filter-operator">
                     <SelectValue
                       placeholder={ui('advancedFilterSelectOp')}
                       data-testid="SelectValue__4eedf1" />
@@ -558,6 +610,7 @@ export function AdvancedFilterBuilder({
               <button
                 type="button"
                 className="flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground transition-colors"
+                data-testid="advanced-filter-presets-menu"
               >
                 <Bookmark className="h-3.5 w-3.5" data-testid="Bookmark__4eedf1" />
                 {ui('filterPresetsButton')}
@@ -599,10 +652,19 @@ export function AdvancedFilterBuilder({
                     onClick={handleSavePresetClick}
                     disabled={!canSavePreset}
                     className="flex items-center gap-2"
-                    data-testid="DropdownMenuItem__4eedf1">
+                    data-testid="advanced-filter-save-preset">
                     <Plus className="h-3.5 w-3.5" data-testid="Plus__4eedf1" />
                     <span className="flex-1">{ui('filterPresetSaveCurrent')}</span>
                   </DropdownMenuItem>
+                  {/* A disabled item with no explanation is a dead end — say why. */}
+                  {savePresetBlockedReason && (
+                    <div
+                      className="px-2 pb-1.5 text-[11px] leading-snug text-muted-foreground"
+                      data-testid="save-preset-blocked-reason"
+                    >
+                      {savePresetBlockedReason}
+                    </div>
+                  )}
                 </>
               )}
             </DropdownMenuContent>
@@ -625,15 +687,15 @@ export function AdvancedFilterBuilder({
             className="h-8 text-xs"
             onClick={handleClear}
             disabled={!anyStarted && !hasAppliedFilter}
-            data-testid="Button__4eedf1">
+            data-testid="advanced-filter-clear">
             {ui('advancedFilterClear')}
           </Button>
           <Button
             size="sm"
             className="h-8 text-xs"
             onClick={handleApply}
-            disabled={!allComplete}
-            data-testid="Button__4eedf1">
+            disabled={!canApply}
+            data-testid="advanced-filter-apply">
             {ui('advancedFilterApply')}
           </Button>
         </div>
@@ -657,7 +719,7 @@ export function AdvancedFilterBuilder({
                   value={presetNameDraft}
                   onChange={(e) => setPresetNameDraft(e.target.value)}
                   className="mt-2"
-                  data-testid="Input__4eedf1" />
+                  data-testid="preset-name-input" />
               </div>
               <DialogFooter data-testid="DialogFooter__4eedf1">
                 <Button
@@ -670,7 +732,7 @@ export function AdvancedFilterBuilder({
                 <Button
                   type="submit"
                   disabled={!presetNameDraft.trim()}
-                  data-testid="Button__4eedf1">
+                  data-testid="preset-save-confirm">
                   {ui('save')}
                 </Button>
               </DialogFooter>
@@ -691,7 +753,7 @@ export function AdvancedFilterBuilder({
                   data-testid="Button__4eedf1">
                   {ui('cancel')}
                 </Button>
-                <Button onClick={handleConfirmOverwrite} data-testid="Button__4eedf1">
+                <Button onClick={handleConfirmOverwrite} data-testid="preset-overwrite-confirm">
                   {ui('filterPresetOverwriteAction')}
                 </Button>
               </DialogFooter>
@@ -1149,14 +1211,33 @@ function orderCodesForColumn(codes, col) {
  * caller's note on the BF movement type). What made the dropdown collapse to a
  * single option was not this gate but the ORDER of the caller's merge — the
  * already-selected value was folded in first and counted as data. Fixed there.
+ *
+ * Two further constraints, both from ETP-5119:
+ *
+ *   1. `ownEnumLabels` is the column's OWN `enumLabels`, never the global status
+ *      dictionary the caller falls back to for LABELLING. Translating a code the
+ *      backend sent is one thing; ENUMERATING every docstatus in the system as
+ *      pickable options is another. Sales Quotation declares no enumLabels, so
+ *      seeding from the global map offered Temporal / No confirmado / En curso /
+ *      Reservado — statuses that window can never hold. When a column declares
+ *      no codes there is no trustworthy static set, and an empty list is the
+ *      correct answer.
+ *   2. It honours the active search. The gate used to be `out.length === 0`
+ *      alone, so a term matching nothing ("4", "rrr") emptied the data-derived
+ *      list and then had the whole catalogue poured back in — making the search
+ *      box look inert and, again, surfacing foreign statuses.
+ *
+ * `query` is the lowercased, trimmed search term ('' when the box is empty).
  */
-function fillFallbackCodes(out, labelMap, seen) {
-  if (out.length > 0) return;
-  for (const c of Object.keys(labelMap)) {
-    if (!seen.has(c)) {
-      seen.add(c);
-      out.push(c);
-    }
+function fillFallbackCodes(out, ownEnumLabels, seen, query, labelFor) {
+  if (out.length > 0 || !ownEnumLabels) return;
+  for (const c of Object.keys(ownEnumLabels)) {
+    if (seen.has(c)) continue;
+    if (query
+      && !String(labelFor(c)).toLowerCase().includes(query)
+      && !String(c).toLowerCase().includes(query)) continue;
+    seen.add(c);
+    out.push(c);
   }
 }
 
@@ -1264,10 +1345,10 @@ function DistinctEnumPicker({ col, entity, apiBaseUrl, rows, value, onChange, ui
     // unconditionally put a "Comisión bancaria" option in front of users whose
     // account has no such movement, and filtering by it could only ever
     // return zero rows.
-    fillFallbackCodes(out, labelMap, seen);
+    fillFallbackCodes(out, hasDeclaredLabels ? labelMap : null, seen, q, labelFor);
     for (const code of selected) add(code);
     return out;
-  }, [distinct.values, distinct.search, inMemoryCodes, selected, labelMap, dictionary]);
+  }, [distinct.values, distinct.search, inMemoryCodes, selected, labelMap, hasDeclaredLabels, dictionary]);
 
   // Status columns get the fixed business-flow order; every other enum column
   // keeps the merge order untouched. See orderCodesForColumn (ETP-4913).
@@ -1326,6 +1407,7 @@ function DistinctEnumPicker({ col, entity, apiBaseUrl, rows, value, onChange, ui
           distinct={distinct}
           onSelect={toggle}
           searchPlaceholder={ui('searchValues')}
+          emptyLabel={ui('noResults')}
           data-testid="DistinctValuesList__4eedf1" />
       </PopoverContent>
     </Popover>

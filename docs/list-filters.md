@@ -43,7 +43,7 @@ Automatic filters rendered by `ListFilterBar` based on the *types* of the column
 
 | Column type | Control | Options |
 |-------------|---------|---------|
-| `status` | Status dropdown | `All` + every status code declared in `enumLabels` (or the global `statuses` dictionary). Single-select. |
+| `status` | Status dropdown | `All` + every status code declared in `enumLabels` (or the global `statuses` dictionary). Single-select. Note the advanced filter's enum picker follows a *different* option policy — it never enumerates the global dictionary; see "Where the enum value picker's options come from" below (ETP-5119). |
 | `date` (first date column) | Date range dropdown | `Any time`, `Today`, `Last 7 days`, `Last 30 days`, `Last 12 months` (default), `This year`. |
 
 - Source: auto-discovered from the table's columns array (`columns.find(c => c.type === 'status' | 'date')`).
@@ -77,6 +77,25 @@ The funnel button on the far right opens a **conditional-filter builder**. Each 
 - **Changing a row's operator clears its value unless the new operator's widget can meaningfully reuse the old value's shape (ETP-5008).** `updateRow`'s `getValueShape(operator, mode)` classifies each operator into one of `nullish` (isNull/isNotNull, no value) / `pair` (`Entre`, a `[from, to]` array) / `inSet` (the comma-joined free-text string above) / `array` (the identifier picker's list of ids, for selector columns' `Es`/`No es`) / `scalar` (everything else — a single Input/Select/DateField/DistinctEnumPicker value). The value is only kept across an operator switch when both operators map to the same shape (e.g. selector `Es` ↔ `No es` both stay `array`, or `Contiene` ↔ `Empieza por` both stay `scalar` free text); otherwise it resets to that shape's empty value. Before this fix, a value typed under `Es cualquiera de` (a `scalar`-shaped joined string) survived a switch to `Es` on an enum column (whose `DistinctEnumPicker` expects a real code, not that string) because the old reset logic only checked `Array.isArray(value)`, which a joined string never is.
 - **`Antes de` / `Después de` exclude the entered day (ETP-4770).** The backend stores datetimes, so a raw `lessThan`/`greaterThan` on the entered date still matched records at `00:00:00` of that same day — `Antes de 2026-05-10` was silently inclusive of the 10th. `buildRowCriteria`/`buildBackendFilter` (`lib/gridQuery.js`) now shift the boundary one day and use the inclusive operator instead: `Antes de <date>` emits `lessOrEqual <date - 1 day>`, `Después de <date>` emits `greaterOrEqual <date + 1 day>`. `Es <date>` and `Entre` are unaffected — they already resolved to a `greaterOrEqual`/`lessOrEqual` day-level range that includes both boundaries.
 - The funnel button turns primary-tinted whenever **any** filter is active (column header row *or* advanced).
+
+### Where the enum value picker's options come from (`DistinctEnumPicker`)
+
+Three sources, merged in this order, then ordered by `orderCodesForColumn`:
+
+1. **The backend `_distinct` fetch** — the codes that actually occur in the column across the whole filterable universe, not just the loaded page. The search box is forwarded as `_distinctSearch`, so this source arrives already filtered by the term.
+2. **In-memory row codes** — instant feedback before the fetch settles. Filtered client-side by the search term (label *or* raw code, case-insensitive).
+3. **The declared-`enumLabels` fallback** (`fillFallbackCodes`) — a last resort for when neither source produced anything: a virtual column with no backend endpoint, or a window whose list is still empty.
+
+Two rules govern the fallback, both from **ETP-5119**:
+
+- **It seeds only from the column's own `enumLabels`, never from the global `statuses` dictionary.** That dictionary is a *label* source — a column declaring no `enumLabels` uses it so a code the backend returned still renders a name — but it is not an *option* source. It was being used as both, so a column with no declared codes offered every docstatus in the system, including statuses from unrelated domains (bank reconciliation, payments). When a column declares no codes there is no trustworthy static catalogue and the picker correctly renders nothing. ETP-4956 introduced `hasDeclaredLabels` and announced this split in a comment but never wired it into the fallback; it does now.
+- **It honours the active search.** The gate used to be "the merged list is empty" alone, so a term matching nothing first emptied the data-derived list and then had the whole catalogue poured back in — the search box appeared inert, and typing `4` or `rrr` in Sales Quotation returned the full status list. The fallback now filters by the term, matching label or raw AD code, case-insensitively.
+
+The **current selection is folded in last**, after the fallback and exempt from the search, so an active filter's own value stays visible and untickable (the ordering itself is the ETP-4956 fix — folding it in first made the fallback see a non-empty list and skip).
+
+An empty list says so: `DistinctValuesList` takes an optional `emptyLabel` (the picker passes `ui('noResults')`) and renders it whenever a search matched nothing and no fetch is in flight. Callers that pass none keep the previous bare dash.
+
+> **Caveat — the declared catalogue is the AD reference, not the window's reachable states.** The generator emits `enumLabels` from the full `DocStatus` reference (17 codes), and hand-written custom windows copy that list. So in a window with **zero rows**, the fallback legitimately offers codes that window can never reach. With data present the fallback never fires and the list is exactly what the rows contain. Narrowing the declared catalogue per window is a pipeline-level concern (the generator), not a `DistinctEnumPicker` one.
 
 ### Re-editing an identifier filter (`Es` / `No es` / `Es cualquiera de` on selector columns)
 

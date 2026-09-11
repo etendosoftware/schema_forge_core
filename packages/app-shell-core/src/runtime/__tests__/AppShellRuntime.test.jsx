@@ -1,13 +1,14 @@
-import { test, expect, afterEach } from 'vitest';
+import { test, expect, afterEach, vi } from 'vitest';
 import { renderToStaticMarkup } from 'react-dom/server';
 import { render, screen, act, cleanup, waitFor } from '@testing-library/react';
 import { useLocation } from 'react-router-dom';
 import { AppShellRuntime } from '../AppShellRuntime.jsx';
-import { useAuth } from '../../auth/index.js';
+import { useAuth, createMemoryAuthStorage } from '../../auth/index.js';
+import { sessionFixture, jsonResponse } from '../../auth/__tests__/refreshFixtures.js';
 
 // Core vitest runs without `globals: true` (see vitest.config.js) — do
 // explicit cleanup so mounted providers don't bleed between tests.
-afterEach(cleanup);
+afterEach(() => { cleanup(); vi.unstubAllGlobals(); });
 
 // ETP-4576 cycle 4a — `restoreSession` is no longer opt-in: AuthProvider defaults
 // it to the platform cookie fetcher (fetchCookieSession), and AppShellRuntime
@@ -45,36 +46,39 @@ test('AppShellRuntime renders children inside the router so they can use router 
   expect(html).toMatch(/data-testid="probe"/);
 });
 
-test('AppShellRuntime uses a custom layout component when one is provided', () => {
+test('AppShellRuntime uses a custom layout component after session bootstrap', async () => {
   function CustomLayout({ menuGroups }) {
     return <div data-testid="custom-layout">{menuGroups.length} groups</div>;
   }
 
-  const html = renderToStaticMarkup(
+  const session = sessionFixture();
+  vi.stubGlobal('fetch', vi.fn(async () => jsonResponse({ token: session.token })));
+  render(
     <AppShellRuntime
       basename="/"
       menuGroups={[{ id: 'g1', title: 'Group 1', items: [] }]}
       routes={[{ path: 'home', index: true, public: false, element: <div>home</div> }]}
-      auth={{ loginPath: '/login', unauthenticatedFallback: <div>n/a</div>, initialSession: { token: 'test-token' }, restoreSession: NO_RESTORE }}
+      auth={{ loginPath: '/login', unauthenticatedFallback: <div>n/a</div>, storage: createMemoryAuthStorage(session), restoreSession: NO_RESTORE }}
       layout={CustomLayout}
     />
   );
 
-  expect(html).toMatch(/data-testid="custom-layout"/);
-  expect(html).toMatch(/1 groups/);
+  expect(await screen.findByTestId('custom-layout')).toHaveTextContent('1 groups');
 });
 
-test('AppShellRuntime falls back to ShellLayout when no layout override is given', () => {
-  const html = renderToStaticMarkup(
+test('AppShellRuntime falls back to ShellLayout after session bootstrap when no layout override is given', async () => {
+  const session = sessionFixture();
+  vi.stubGlobal('fetch', vi.fn(async () => jsonResponse({ token: session.token })));
+  render(
     <AppShellRuntime
       basename="/"
       menuGroups={[{ id: 'g1', title: 'Group 1', items: [] }]}
       routes={[{ path: 'home', index: true, public: false, element: <div>home</div> }]}
-      auth={{ loginPath: '/login', unauthenticatedFallback: <div>n/a</div>, initialSession: { token: 'test-token' }, restoreSession: NO_RESTORE }}
+      auth={{ loginPath: '/login', unauthenticatedFallback: <div>n/a</div>, storage: createMemoryAuthStorage(session), restoreSession: NO_RESTORE }}
     />
   );
 
-  expect(html).toMatch(/Group 1/);
+  expect(await screen.findByText('Group 1')).toBeInTheDocument();
 });
 
 // ETP-4520 — `auth.fetchWindowAccess` must reach `AuthProvider` through

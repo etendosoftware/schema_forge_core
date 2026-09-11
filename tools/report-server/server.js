@@ -419,7 +419,28 @@ async function renderReport(renderMatch, req, res) {
     const activeFilters = filterAndTransformParams(params, contract, locale);
 
     const artifactDir = join(ARTIFACTS_DIR, reportId);
-    const templateContent = expandReportPartials(readFileSync(join(artifactDir, 'template.hbs'), 'utf8'));
+    // Excel/CSV get their own flat, calculation-friendly template when the report
+    // declares one (ETP-4898). Both recipes render whatever markup/text they're given —
+    // reusing the HTML/PDF template (grouped bands, formatted amounts, full <style>
+    // block) makes a .xlsx that can't be summed/pivoted, and for CSV (recipe 'text',
+    // which streams the compiled template output byte-for-byte) it means the ENTIRE
+    // rendered HTML page — <style>, <div>s and all — gets dumped verbatim into a .csv
+    // file. Falls back to the shared template.hbs otherwise — reports without a
+    // per-format template are unaffected.
+    //
+    // Ported verbatim from the dev plugin (schema_forge's report-api.js, the
+    // `perFormatTemplateFile` block) — ETP-4898 only ever landed there, so every
+    // SERVER-rendered Excel/CSV silently kept coming out of the screen template
+    // while local dev looked correct. Same divergence class the module docstring
+    // of report-sql.js warns about: an engine-level rule implemented in one of the
+    // two render paths is a rule that does not reach production. Keep the two in
+    // sync; better still, hoist into a shared module the next time this is touched.
+    const perFormatTemplateFile = { xlsx: 'template-excel.hbs', csv: 'template-csv.hbs' }[format];
+    const perFormatTemplatePath = perFormatTemplateFile ? join(artifactDir, perFormatTemplateFile) : null;
+    const templatePath = (perFormatTemplatePath && existsSync(perFormatTemplatePath))
+      ? perFormatTemplatePath
+      : join(artifactDir, 'template.hbs');
+    const templateContent = expandReportPartials(readFileSync(templatePath, 'utf8'));
     const helpersPath = join(artifactDir, 'helpers.js');
     const helpersCode = loadHelpersFromFile(helpersPath);
     const cssPath = join(ROOT, 'templates', 'reports', 'base.css');

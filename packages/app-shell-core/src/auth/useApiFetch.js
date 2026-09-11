@@ -1,6 +1,5 @@
 import { useMemo } from 'react';
-import { createApiFetch, notifyAmbientUnauthorized } from './api.js';
-import { getSessionCsrfToken } from './sessionCredentials.js';
+import { createApiFetch, getAmbientToken, notifyAmbientUnauthorized } from './api.js';
 import { useAuthOptional } from './AuthContext.jsx';
 
 // What this hook hands createApiFetch is `csrfToken`, never a client-held credential
@@ -18,6 +17,7 @@ export function useApiFetch(baseUrl) {
   const csrfToken = auth?.csrfToken ?? null;
   const logout = auth?.logout;
   const hasSession = auth != null;
+  const scope = auth?.apiSessionScope;
 
   // The fallback reads the CSRF proof off the active scheme, NOT `getAmbientToken`. That
   // slot is the proof, and the ambient token is the bearer: handing it over sent the
@@ -33,7 +33,11 @@ export function useApiFetch(baseUrl) {
   // context value still wins whenever it has one.
   return useMemo(() => createApiFetch(
     baseUrl,
-    hasSession ? () => csrfToken ?? getSessionCsrfToken() : getSessionCsrfToken,
+    // ETP-4576 — this stays develop's TOKEN getter: the CSRF proof is no longer injected
+    // here, api.js reads it from ./sessionCredentials.js, the single writer of which is
+    // AuthProvider. One less argument to thread, and one less way to pass a stale one.
+    scope ? () => scope.getSnapshot().session.token : hasSession ? () => token : getAmbientToken,
     logout || notifyAmbientUnauthorized,
-  ), [baseUrl, hasSession, csrfToken, logout]);
+    scope,
+  ), [baseUrl, hasSession, token, logout, scope, auth?.authRevision]);
 }

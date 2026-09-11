@@ -63,7 +63,16 @@ export function filterAndTransformParams(params, contract, locale = 'en_US') {
       // since `!undefined?.hidden` is `true` — an unrecognized param
       // defaulted to "shown" instead of "not applicable here".
       const paramDef = contract.parameters?.find((p) => p.name === k);
-      return (paramDef && !paramDef.hidden) || k === 'orgId';
+      if (!((paramDef && !paramDef.hidden) || k === 'orgId')) return false;
+      // A section flagged `excludeFromSummary` (ETP-5128, report-journal-entries'
+      // own "Options" toggles — regular/closing/opening/divide-up/description) is
+      // operational rendering config, not a real business filter the user chose
+      // — showing 5-6 "X: Sí" entries in the printed header read as noise, but
+      // the controls must stay fully interactive in the sidebar. Distinct from
+      // `paramDef.hidden` above, which hides a param from BOTH the sidebar AND
+      // this summary — this only ever affects the summary.
+      const section = (contract.sections || []).find((s) => s.id === paramDef?.section);
+      return !section?.excludeFromSummary;
     })
     .map(([k, v]) => {
       const paramDef = contract.parameters?.find((p) => p.name === k);
