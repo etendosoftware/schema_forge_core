@@ -1,5 +1,6 @@
 import { createContext, useContext, useState, useEffect } from 'react';
 import { useAuth } from '../auth/index.js';
+import { createApiFetch, authHeaders } from '../auth/api.js';
 
 /* ------------------------------------------------------------------
  * Internal helpers
@@ -32,8 +33,10 @@ const CurrencyContext = createContext(null);
  * </AuthProvider>
  */
 export function CurrencyProvider({ children, value, apiBaseUrl, fetcher = globalThis.fetch }) {
-  const { token, selectedOrg } = useAuth();
-  const [currencyCode, setCurrencyCode] = useState(null);
+  const { token, selectedOrg, isSessionReady, authRevision, captureSession, isCurrentSession, apiSessionScope } = useAuth();
+  const [resolved, setResolved] = useState(null);
+  const identity = `${token}|${selectedOrg?.id}|${authRevision}|${apiBaseUrl}`;
+  const setCurrencyCode = (code) => setResolved({ code, identity });
 
   useEffect(() => {
     if (value != null) {
@@ -41,22 +44,27 @@ export function CurrencyProvider({ children, value, apiBaseUrl, fetcher = global
       return;
     }
 
-    if (!token) {
+    if (!token || isSessionReady === false) {
       setCurrencyCode(null);
       return;
     }
 
     let cancelled = false;
+    const snapshot = captureSession?.();
+    const current = () => !cancelled && (!isCurrentSession || isCurrentSession(snapshot));
+    setCurrencyCode(null);
     const base = apiBaseUrl || `${getApiBase()}/sws/neo`;
-    const headers = { Authorization: `Bearer ${token}` };
+    const request = createApiFetch('', () => token, null, apiSessionScope);
 
     async function resolve() {
       try {
-        const res = await fetcher(`${base}/session`, { headers });
+        const res = fetcher === globalThis.fetch
+          ? await request(`${base}/session`, { on401: 'ignore' })
+          : await fetcher(`${base}/session`, { headers: authHeaders(token) });
         if (res.ok) {
           const json = await res.json();
           const code = json?.currencyCode;
-          if (code && !cancelled) setCurrencyCode(String(code));
+          if (code && current()) setCurrencyCode(String(code));
         }
       } catch {
         // session endpoint unavailable — keep null (callers fall back to 'USD')
@@ -65,10 +73,10 @@ export function CurrencyProvider({ children, value, apiBaseUrl, fetcher = global
 
     resolve();
     return () => { cancelled = true; };
-  }, [apiBaseUrl, fetcher, token, selectedOrg?.id, value]);
+  }, [apiBaseUrl, fetcher, token, selectedOrg?.id, value, isSessionReady, authRevision, captureSession, isCurrentSession, apiSessionScope]);
 
   return (
-    <CurrencyContext.Provider value={currencyCode}>
+    <CurrencyContext.Provider value={value ?? (isSessionReady !== false && resolved?.identity === identity ? resolved.code : null)}>
       {children}
     </CurrencyContext.Provider>
   );
