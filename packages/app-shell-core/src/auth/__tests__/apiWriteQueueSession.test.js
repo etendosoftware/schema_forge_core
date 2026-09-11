@@ -14,14 +14,19 @@ import { deferred, sessionFixture } from './refreshFixtures.js';
  * The two features are independent on their own, and each is covered elsewhere
  * (`api.test.js`, `apiOwnership.test.js`). What is only testable once they are combined is the
  * WAIT the queue introduces: a write can now sit between being asked for and going out, so the
- * session it is dispatched under is no longer the session it was requested under. The agreed
- * rule is asymmetric, and both halves live here:
+ * session it is dispatched under is no longer the session it was requested under.
  *
- * - a QUEUED write survives a token rotation and goes out with the FRESH bearer (dropping it
- *   would silently lose a save the user made, in the two-writers-on-one-row flow the queue
- *   exists to protect);
- * - a write already IN FLIGHT still abandons its response on rotation (ETP-5195's rule,
- *   unchanged: the response was earned by a bearer that is gone).
+ * The rule this file fixes is that IDENTITY, not the bearer, decides what survives:
+ *
+ * - a pure token rotation (`bump: false`) discards NOTHING. A queued write goes out with the
+ *   fresh bearer, and a request already in flight completes normally — JWT validation here is
+ *   stateless (signature plus the token's own `exp`, no server-side registry of "the current
+ *   token" and no revocation list until ETP-5270 adds one), so the bearer a request already
+ *   sent stays valid and its response is byte-for-byte what it would have been. Failing it
+ *   produced an `AbortError` that `useQuery` swallows silently — a request thrown away for
+ *   nothing, and, for a queued write, a save the user made lost without a word.
+ * - a real identity change (logout, another user, another client, another base URL) abandons
+ *   the request, whether it is queued or already in flight.
  */
 
 const originalFetch = globalThis.fetch;
@@ -149,12 +154,12 @@ describe('per-record write serialisation (ETP-5255)', () => {
 });
 
 describe('a queued write and the session it is dispatched under (ETP-5255 x ETP-5195)', () => {
-  // The agreed asymmetry, end to end and named: a write that has NOT left yet is re-armed with
-  // the fresh bearer, because abandoning it would silently lose a save the user made; a write
-  // already IN FLIGHT still abandons its response, because that response was earned by a bearer
-  // that no longer exists. Only a real identity change abandons a queued write — see the logout
-  // test below for the other half of the rule.
-  it('dispatches a queued write with the NEW bearer after a pure token rotation, and does not log out', async () => {
+  // The agreed rule, end to end and named: a pure rotation is not a session change, so it
+  // discards nothing. The in-flight write keeps its response (its bearer is still valid) and the
+  // queued one is re-armed with the fresh bearer (abandoning it would silently lose a save the
+  // user made). What DOES abandon a request is a real identity change — see the logout test
+  // below for the queued half and the in-flight suite further down for the other.
+  it('a pure token rotation discards nothing: the in-flight write completes and the queued one goes out with the new bearer', async () => {
     const { client, controller, session, logouts } = setup();
     const rotated = sessionFixture({ revision: 1 });
     assert.notEqual(rotated.token, session.token, 'the fixture must actually rotate the bearer');
@@ -168,7 +173,7 @@ describe('a queued write and the session it is dispatched under (ETP-5255 x ETP-
         : Promise.resolve(recordResponse({ id: 'record-one', updated: 'v' }));
     };
 
-    const a = client('/fixture/records/record-one', { method: 'PUT', body: '{}' }).catch((error) => error);
+    const a = client('/fixture/records/record-one', { method: 'PUT', body: '{}' });
     const b = client('/fixture/records/record-one', { method: 'PUT', body: '{}' });
     await flush();
 
@@ -176,8 +181,9 @@ describe('a queued write and the session it is dispatched under (ETP-5255 x ETP-
     controller.replace(rotated, { bump: false });
     first.resolve(recordResponse({ id: 'record-one', updated: 'v' }));
 
-    // In flight when the bearer moved: its response was earned by a token that is gone.
-    assert.equal((await a).name, 'AbortError');
+    // In flight when the bearer moved: the token it already sent is still valid, so the response
+    // is still ours and throwing it away would buy nothing.
+    assert.equal((await a).status, 200);
     // Queued when the bearer moved: it goes out, and it goes out under the token that is live NOW.
     const response = await b;
     assert.equal(response.status, 200);
@@ -218,7 +224,10 @@ describe('a queued write and the session it is dispatched under (ETP-5255 x ETP-
     assert.equal(logouts(), 0);
   });
 
-  it('does not let one session\'s pending chain gate another session\'s first write', async () => {
+  // Regression guard for the session prefix in the `recordWriteChains` key: (entity, id) carries
+  // no tenant, and the map is module state that outlives a login, so without the prefix two
+  // clients holding the same record id share one queue.
+  it('prefixes the write queue key with the session, so one tenant\'s pending chain cannot gate another tenant\'s write to the same record', async () => {
     const mine = setup({ tenant: 'X' });
     const theirs = setup({ tenant: 'Y' });
     const calls = [];
@@ -240,6 +249,90 @@ describe('a queued write and the session it is dispatched under (ETP-5255 x ETP-
 
     stuck.resolve(recordResponse({ id: 'record-one', updated: 'v' }));
     await abandoned;
+  });
+});
+
+describe('a request already in flight and the session under it', () => {
+  // Two identity changes that reach the verdict by DIFFERENT routes inside `matches()`: a logout
+  // bumps `generation`, so it is rejected by the generation guard before any field is compared;
+  // a `bump: false` handover to another user leaves `generation` alone, so only the field
+  // comparison (userId / clientId / storageIdentity) can catch it. Now that the bearer is no
+  // longer the trigger, these are the two paths that have to keep working.
+  for (const [change, apply] of [
+    ['a logout', (controller) => controller.logout()],
+    ['a different user taking over', (controller) => controller.replace(sessionFixture({ tenant: 'Y' }), { bump: false })],
+  ]) {
+    it(`abandons an in-flight request after ${change}`, async () => {
+      const { client, controller } = setup();
+      const pending = deferred();
+      globalThis.fetch = () => pending.promise;
+
+      const request = client('/fixture/records/record-one').catch((error) => error);
+      await flush();
+      apply(controller);
+      pending.resolve(recordResponse({ id: 'record-one', updated: 'not-ours' }));
+
+      assert.equal((await request).name, 'AbortError');
+      // And nothing it carried leaks into the session that replaced it.
+      assert.equal(getRecordVersion('record-one', 'records'), undefined);
+    });
+  }
+
+  it('abandons an in-flight WRITE after a logout', async () => {
+    const { client, controller } = setup();
+    const pending = deferred();
+    globalThis.fetch = () => pending.promise;
+
+    const request = client('/fixture/records/record-one', { method: 'PUT', body: '{}' })
+      .catch((error) => error);
+    await flush();
+    controller.logout();
+    pending.resolve(recordResponse({ id: 'record-one', updated: 'not-ours' }));
+
+    assert.equal((await request).name, 'AbortError');
+    assert.equal(getRecordVersion('record-one', 'records'), undefined);
+  });
+});
+
+// The positive counterpart of the guards: they exist to reject work belonging to a session that
+// is gone, and a pure rotation does not make a session gone. A late body read and a late harvest
+// under the same identity are valid and must go through — otherwise relaxing the in-flight rule
+// would have moved the silent failure one layer down instead of removing it.
+describe('work that lands after a pure token rotation', () => {
+  it('lets a body read resolved after the rotation through', async () => {
+    const { client, controller } = setup();
+    const body = deferred();
+    globalThis.fetch = async () => ({ ok: true, status: 200, json: () => body.promise });
+
+    const response = await client('/resource');
+    const reading = response.json();
+    controller.replace(sessionFixture({ revision: 1 }), { bump: false });
+    body.resolve({ value: 'still ours' });
+
+    assert.deepEqual(await reading, { value: 'still ours' });
+    // And a read started entirely after the rotation is fine too.
+    globalThis.fetch = async () => new Response(JSON.stringify({ value: 'also ours' }));
+    assert.deepEqual(await (await client('/resource')).json(), { value: 'also ours' });
+  });
+
+  it('remembers a version harvested after the rotation', async () => {
+    const { client, controller } = setup();
+    const body = deferred();
+    globalThis.fetch = async () => ({
+      ok: true,
+      status: 200,
+      headers: new Headers({ 'content-type': 'application/json' }),
+      json: async () => ({}),
+      clone: () => ({ json: () => body.promise }),
+    });
+
+    const pending = client('/fixture/records/record-one', { method: 'PUT', body: '{}' });
+    await flush();
+    controller.replace(sessionFixture({ revision: 1 }), { bump: false });
+    body.resolve({ response: { data: [{ id: 'record-one', updated: 'harvested-after-rotation' }] } });
+    await pending;
+
+    assert.equal(getRecordVersion('record-one', 'records'), 'harvested-after-rotation');
   });
 });
 

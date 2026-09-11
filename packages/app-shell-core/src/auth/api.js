@@ -279,7 +279,7 @@ function recordsFromPayload(data) {
  *   pair. Only the ACTION path reads it, to decide whether it still has to re-read the
  *   record; every other caller ignores it.
  */
-function harvestWrittenVersion(res, path, isCurrent = () => true) {
+function harvestWrittenVersion(res, path, isOurs = () => true) {
   const copy = jsonClone(res);
   if (!copy) return Promise.resolve(false);
   // The promise is RETURNED, not floated (ETP-5255). `createApiFetch` awaits it before releasing
@@ -290,7 +290,7 @@ function harvestWrittenVersion(res, path, isCurrent = () => true) {
     // ETP-5195: the session can be replaced while this body is being parsed. A version harvested
     // under a session that is gone must not be remembered — it would arm the NEXT session's
     // write with a token that belongs to nobody.
-    if (!isCurrent()) return false;
+    if (!isOurs()) return false;
     const record = data?.response?.data?.[0] ?? data;
     rememberRecordVersion(record, entityFromPath(path, record?.id));
     // Reported so an ACTION can fall back to a re-read when its response carried no token. The
@@ -324,7 +324,7 @@ function harvestWrittenVersion(res, path, isCurrent = () => true) {
  * change someone else made in between. That is precisely the last-writer-wins behaviour ETP-5073
  * removed, so a missing token must stay a visible failure.
  */
-function harvestReadVersions(res, path, isCurrent = () => true) {
+function harvestReadVersions(res, path, isOurs = () => true) {
   const contentType = res?.headers?.get?.('content-type') || '';
   if (!contentType.toLowerCase().includes('json')) return Promise.resolve();
   const copy = jsonClone(res);
@@ -335,7 +335,7 @@ function harvestReadVersions(res, path, isCurrent = () => true) {
   // almost always separates from it.
   return copy.json().then((data) => {
     // ETP-5195 — see `harvestWrittenVersion` for why a superseded session harvests nothing.
-    if (!isCurrent()) return;
+    if (!isOurs()) return;
     recordsFromPayload(data).forEach((record) => {
       rememberRecordVersion(record, entityFromPath(path, record?.id));
     });
@@ -534,9 +534,16 @@ export function createApiFetch(baseUrl, getToken, onUnauthorized, scope) {
       const live = owner ? owner.getToken() : getToken();
       if (requestScope && tokenOverride === undefined && token !== live) throw staleSessionError();
       const snapshot = requestScope?.capture();
-      const isCurrent = () => (scope === null || ambientSession === owner)
-        && (requestScope ? requestScope.isCurrent(snapshot) : scope === null || getToken() === live);
-      return { token, snapshot, isCurrent };
+      // Identity, NOT token equality (ETP-5195 follow-up). JWT validation in this stack is
+      // stateless — signature plus the token's own `exp`, with no server-side registry of "the
+      // current token" and no revocation list (which is why ETP-5270 exists). A rotation
+      // therefore leaves the bearer this request already sent perfectly valid, so a response
+      // that straddles a background refresh is still ours and its body is byte-for-byte what it
+      // would have been. Failing it produced an AbortError that `useQuery` swallows silently —
+      // a request thrown away for nothing. Only a real identity change abandons it.
+      const isOurs = () => (scope === null || ambientSession === owner)
+        && (requestScope ? requestScope.isSameIdentity(snapshot) : scope === null || getToken() === live);
+      return { token, snapshot, isOurs };
     };
 
     /**
@@ -573,13 +580,13 @@ export function createApiFetch(baseUrl, getToken, onUnauthorized, scope) {
      * The 401 only logs out when the bearer that earned it is still the live one. A 401 for a
      * token that has since been rotated away says nothing about the session that replaced it.
      */
-    const finish = (res, token, isCurrent) => {
+    const finish = (res, token, isOurs) => {
       if (res.status === 401 && on401 !== 'ignore') {
         const live = owner ? owner.getToken() : getToken();
         if (token === live) onUnauthorized?.();
         throw new Error('Unauthorized');
       }
-      return requestScope ? guardResponse(res, isCurrent) : res;
+      return requestScope ? guardResponse(res, isOurs) : res;
     };
 
     const verb = String(rest.method || 'GET').toUpperCase();
@@ -616,7 +623,7 @@ export function createApiFetch(baseUrl, getToken, onUnauthorized, scope) {
      * the action found it, so the next write falls back to the loud 400/409 path rather than this
      * best-effort refresh turning a request that already succeeded into an error.
      */
-    const refreshVersionAfterAction = async (recordPath, token, isCurrent) => {
+    const refreshVersionAfterAction = async (recordPath, token, isOurs) => {
       const id = recordIdFromPath(recordPath);
       if (id == null || id === '') return;
       if (getRecordVersion(id, entityFromPath(recordPath, id)) === undefined) return;
@@ -625,7 +632,7 @@ export function createApiFetch(baseUrl, getToken, onUnauthorized, scope) {
           credentials: credentials || 'include',
           headers: authHeaders(token),
         });
-        if (reread.ok) await harvestReadVersions(reread, recordPath, isCurrent);
+        if (reread.ok) await harvestReadVersions(reread, recordPath, isOurs);
       } catch {
         // Offline, aborted, CORS — the action itself succeeded and must not be reported as failed.
       }
@@ -639,7 +646,7 @@ export function createApiFetch(baseUrl, getToken, onUnauthorized, scope) {
       // function and not before the queue wait.
       // The session that asked for this write may have ended while it waited its turn.
       if (!stillOurs()) throw staleSessionError();
-      const { token, isCurrent } = resolveSession();
+      const { token, isOurs } = resolveSession();
       // A bodyless request (GET, DELETE) gets authHeaders, which deliberately omits
       // Content-Type — declaring a body type on a request that has no body is wrong, and
       // it also keeps a migrated call site byte-identical on the wire to the raw `fetch`
@@ -658,7 +665,7 @@ export function createApiFetch(baseUrl, getToken, onUnauthorized, scope) {
         headers,
       });
       // ETP-5195: the session went away while this was in flight. The response is not ours.
-      if (!isCurrent()) throw staleSessionError();
+      if (!isOurs()) throw staleSessionError();
       // ETP-5255: a process action mutates the row, so the token this client holds for it is
       // superseded the moment the action succeeds. Two ways to learn the new one, in this order:
       // harvest it from the action's response if the backend echoes the record (the proper fix,
@@ -668,8 +675,8 @@ export function createApiFetch(baseUrl, getToken, onUnauthorized, scope) {
       // extra round trip disappears on its own once the backend does, with no client change.
       const actionPath = verb === 'POST' ? actionRecordPath(path) : null;
       if (actionPath !== null) {
-        if (res.ok) await refreshVersionAfterAction(actionPath, token, isCurrent);
-        return finish(res, token, isCurrent);
+        if (res.ok) await refreshVersionAfterAction(actionPath, token, isOurs);
+        return finish(res, token, isOurs);
       }
       if (VERSIONED_WRITE_METHODS.has(verb) || verb === 'POST') {
         // ETP-5122: a POST (create) is harvested exactly like PUT/PATCH — its response echoes the
@@ -678,13 +685,13 @@ export function createApiFetch(baseUrl, getToken, onUnauthorized, scope) {
         // and a create must never send an `updated` token on its own request. This branch only
         // arms the version cache for whatever PATCH/PUT saves this same record next, without a
         // re-read in between (e.g. "Add SII" then "Save" on the record it just created).
-        const harvested = harvestWrittenVersion(res, path, isCurrent);
+        const harvested = harvestWrittenVersion(res, path, isOurs);
         if (awaitHarvest) await harvested;
       } else if (verb === 'GET') {
         // ETP-5112: a read is what arms the write that follows it. See `harvestReadVersions`.
-        harvestReadVersions(res, path, isCurrent);
+        harvestReadVersions(res, path, isOurs);
       }
-      return finish(res, token, isCurrent);
+      return finish(res, token, isOurs);
     };
 
     // ETP-5255: at most one versioned write per record in flight. See `recordWriteChains`.
@@ -717,16 +724,16 @@ function staleSessionError() {
 }
 
 // Guard body consumption too: fetch can finish before a logout while json() is pending.
-function guardResponse(response, isCurrent) {
+function guardResponse(response, isOurs) {
   return new Proxy(response, {
     get(target, key) {
       const value = Reflect.get(target, key, target);
-      if (key === 'clone') return () => guardResponse(target.clone(), isCurrent);
+      if (key === 'clone') return () => guardResponse(target.clone(), isOurs);
       if (['json', 'text', 'blob', 'arrayBuffer', 'formData', 'bytes'].includes(key) && typeof value === 'function') {
         return async (...args) => {
-          if (!isCurrent()) throw staleSessionError();
+          if (!isOurs()) throw staleSessionError();
           const result = await value.apply(target, args);
-          if (!isCurrent()) throw staleSessionError();
+          if (!isOurs()) throw staleSessionError();
           return result;
         };
       }
