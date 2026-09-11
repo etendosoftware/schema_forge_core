@@ -68,7 +68,15 @@ const TableCell = React.forwardRef(({ className, ...props }, ref) => (
   <td
     ref={ref}
     className={cn(
-      "px-3 py-2.5 align-middle [&:has([role=checkbox])]:pr-0 [&>[role=checkbox]]:translate-y-[2px]",
+      // ETP-5281 — overflow-safe by default: without this, a long cell value had
+      // no clipping behavior at all and could overlap the next column (affects
+      // every list window that doesn't already override it). `cn()` is
+      // tailwind-merge, so a caller's own `className` still wins per conflict
+      // group — e.g. `whitespace-normal` overrides `whitespace-nowrap` here for
+      // a table that genuinely needs multi-line wrapping. `min-w-0` keeps this
+      // safe inside a flex/grid ancestor (without it, a flex/grid item's default
+      // `min-width: auto` can block the cell from ever shrinking enough to clip).
+      "px-3 py-2.5 align-middle overflow-hidden text-ellipsis whitespace-nowrap min-w-0 [&:has([role=checkbox])]:pr-0 [&>[role=checkbox]]:translate-y-[2px]",
       className
     )}
     {...props} />
