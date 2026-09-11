@@ -279,7 +279,7 @@ function recordsFromPayload(data) {
  *   pair. Only the ACTION path reads it, to decide whether it still has to re-read the
  *   record; every other caller ignores it.
  */
-function harvestWrittenVersion(res, path) {
+function harvestWrittenVersion(res, path, isCurrent = () => true) {
   const copy = jsonClone(res);
   if (!copy) return Promise.resolve(false);
   // The promise is RETURNED, not floated (ETP-5255). `createApiFetch` awaits it before releasing
@@ -287,6 +287,10 @@ function harvestWrittenVersion(res, path) {
   // harvest were still in flight the queued write would go out with the token this response just
   // superseded — a 409 `stale_record` produced by the very serialisation meant to prevent it.
   return copy.json().then((data) => {
+    // ETP-5195: the session can be replaced while this body is being parsed. A version harvested
+    // under a session that is gone must not be remembered — it would arm the NEXT session's
+    // write with a token that belongs to nobody.
+    if (!isCurrent()) return false;
     const record = data?.response?.data?.[0] ?? data;
     rememberRecordVersion(record, entityFromPath(path, record?.id));
     // Reported so an ACTION can fall back to a re-read when its response carried no token. The
@@ -320,7 +324,7 @@ function harvestWrittenVersion(res, path) {
  * change someone else made in between. That is precisely the last-writer-wins behaviour ETP-5073
  * removed, so a missing token must stay a visible failure.
  */
-function harvestReadVersions(res, path) {
+function harvestReadVersions(res, path, isCurrent = () => true) {
   const contentType = res?.headers?.get?.('content-type') || '';
   if (!contentType.toLowerCase().includes('json')) return Promise.resolve();
   const copy = jsonClone(res);
@@ -330,6 +334,8 @@ function harvestReadVersions(res, path) {
   // clone of the body to every read in the app, and a read arms a LATER write, which a render
   // almost always separates from it.
   return copy.json().then((data) => {
+    // ETP-5195 — see `harvestWrittenVersion` for why a superseded session harvests nothing.
+    if (!isCurrent()) return;
     recordsFromPayload(data).forEach((record) => {
       rememberRecordVersion(record, entityFromPath(path, record?.id));
     });
@@ -437,6 +443,21 @@ function actionRecordPath(path) {
 const recordWriteChains = new Map();
 
 /**
+ * Identity prefix for a write queue: who is writing, not which token they hold. A silent token
+ * rotation must leave a queued write in its own queue, so the bearer is deliberately absent —
+ * see `sessionController.isSameIdentity` for the same distinction.
+ *
+ * Falls back to a shared bucket when there is no scope (a legacy three-argument client, a test),
+ * which is exactly the pre-ETP-5195 behaviour.
+ */
+function sessionQueueKey(requestScope) {
+  const snapshot = requestScope?.capture?.();
+  if (!snapshot) return '';
+  return [snapshot.userId, snapshot.clientId, snapshot.sessionClientId, snapshot.apiBaseUrl]
+    .map((part) => (part == null ? '' : String(part))).join('\u0001');
+}
+
+/**
  * The serialisation key for a versioned write, or `null` when the request is not a record write
  * this can identify.
  *
@@ -447,8 +468,14 @@ const recordWriteChains = new Map();
  * Returns `null` — meaning "dispatch immediately, unserialised" — whenever the record cannot be
  * identified, matching the fail-open policy of every other guard in this module: a write we cannot
  * key is a write we must not delay.
+ *
+ * Prefixed with the SESSION (ETP-5255 x ETP-5195). `recordWriteChains` is module state that
+ * outlives a login, and (entity, id) carries no tenant: without this, two clients holding the same
+ * record id share one queue, and a write left unsettled by a session that is gone gates the first
+ * write the next session makes to that key. Scoping the key keeps both isolated, and needs no
+ * teardown — entries still delete themselves as each write settles.
  */
-function recordWriteKey(path, rest) {
+function recordWriteKey(path, rest, sessionKey) {
   if (typeof rest.body !== 'string') return null;
   let parsed;
   try {
@@ -460,8 +487,8 @@ function recordWriteKey(path, rest) {
   const id = parsed.id ?? recordIdFromPath(path);
   if (id == null || id === '') return null;
   const entity = canonicalEntityName(entityFromPath(path, id));
-  // \u0000 cannot occur in a path segment, so no (entity, id) pair can collide with another.
-  return `${entity ?? ''}\u0000${String(id)}`;
+  // \u0000 cannot occur in a path segment, so no (session, entity, id) triple can collide.
+  return `${sessionKey}\u0000${entity ?? ''}\u0000${String(id)}`;
 }
 
 /**
@@ -472,22 +499,74 @@ export function resetRecordWriteChainsForTests() {
   recordWriteChains.clear();
 }
 
-export function createApiFetch(baseUrl, getToken, onUnauthorized) {
+export function createApiFetch(baseUrl, getToken, onUnauthorized, scope) {
   return async function apiFetch(path, options = {}) {
     const {
       on401, credentials, baseUrl: baseUrlOverride, token: tokenOverride,
       headers: extraHeaders, ...rest
     } = options;
-    const token = tokenOverride !== undefined ? tokenOverride : getToken();
-    // A bodyless request (GET, DELETE) gets authHeaders, which deliberately omits
-    // Content-Type — declaring a body type on a request that has no body is wrong, and
-    // it also keeps a migrated call site byte-identical on the wire to the raw `fetch`
-    // it replaced.
-    const canonical = rest.body === undefined ? authHeaders(token) : buildHeaders(token);
-    const headers = { ...canonical, ...extraHeaders };
-    if (rest.body instanceof FormData) delete headers['Content-Type'];
+    // Legacy three-argument clients inherit the registered scope, including host wrappers
+    // with a captured token. Explicit null opts out (bootstrap refresh owns its guard).
+    const owner = scope === null ? null : ambientSession;
+    const requestScope = scope === undefined ? owner?.scope : scope;
     const configured = baseUrlOverride !== undefined ? baseUrlOverride : baseUrl;
     const base = configured != null ? configured : defaultBaseUrl();
+
+    /**
+     * The session as it stands RIGHT NOW, captured once per dispatch.
+     *
+     * Everything here was hoisted to call time by ETP-5195, which was correct while a request
+     * left immediately. ETP-5255 put a queue in between, so a write can now sit for an
+     * arbitrary time between being asked for and going out — and a bearer, a snapshot or a set
+     * of headers frozen before that wait describes a session that may no longer exist.
+     *
+     * A registered owner's null token means logged out, not "no owner": never fall back to a
+     * legacy client's captured bearer after that boundary.
+     */
+    const resolveSession = () => {
+      // `getToken` is the CLIENT's own reader. For a scoped client it reads through to the live
+      // session, so re-reading it here is what re-arms a queued write with the rotated bearer.
+      // For a legacy client it is a closure over a token captured at construction — which is
+      // precisely what the comparison below is for.
+      const token = tokenOverride !== undefined ? tokenOverride : getToken();
+      // A registered owner's null token means logged out, not "no owner". Never fall back to a
+      // legacy client's captured bearer after that boundary.
+      const live = owner ? owner.getToken() : getToken();
+      if (requestScope && tokenOverride === undefined && token !== live) throw staleSessionError();
+      const snapshot = requestScope?.capture();
+      const isCurrent = () => (scope === null || ambientSession === owner)
+        && (requestScope ? requestScope.isCurrent(snapshot) : scope === null || getToken() === live);
+      return { token, snapshot, isCurrent };
+    };
+
+    // Fail fast on a session that is ALREADY gone, so a dead request never enters the queue and
+    // never delays a live one behind it. Identity only, token excluded: a rotation between this
+    // check and the dispatch is routine and is absorbed by `resolveSession`, whereas a logout or
+    // a different user/client is not. See `sessionController.isSameIdentity`.
+    if (requestScope && tokenOverride === undefined) {
+      const stillOurs = typeof requestScope.isSameIdentity === 'function'
+        ? requestScope.isSameIdentity(requestScope.capture())
+        : requestScope.isCurrent(requestScope.capture());
+      if (!stillOurs) throw staleSessionError();
+    }
+
+    /**
+     * The single exit for every response, so the ETP-5195 guards cannot be applied on one
+     * branch and forgotten on the other — `dispatch` returns from two places (an action, and
+     * everything else) and ETP-5255 had copied the 401 block into both.
+     *
+     * The 401 only logs out when the bearer that earned it is still the live one. A 401 for a
+     * token that has since been rotated away says nothing about the session that replaced it.
+     */
+    const finish = (res, token, isCurrent) => {
+      if (res.status === 401 && on401 !== 'ignore') {
+        const live = owner ? owner.getToken() : getToken();
+        if (token === live) onUnauthorized?.();
+        throw new Error('Unauthorized');
+      }
+      return requestScope ? guardResponse(res, isCurrent) : res;
+    };
+
     const verb = String(rest.method || 'GET').toUpperCase();
 
     // `awaitHarvest` is true only on the serialised path: the next write to this record reads its
@@ -522,7 +601,7 @@ export function createApiFetch(baseUrl, getToken, onUnauthorized) {
      * the action found it, so the next write falls back to the loud 400/409 path rather than this
      * best-effort refresh turning a request that already succeeded into an error.
      */
-    const refreshVersionAfterAction = async (recordPath) => {
+    const refreshVersionAfterAction = async (recordPath, token, isCurrent) => {
       const id = recordIdFromPath(recordPath);
       if (id == null || id === '') return;
       if (getRecordVersion(id, entityFromPath(recordPath, id)) === undefined) return;
@@ -531,13 +610,26 @@ export function createApiFetch(baseUrl, getToken, onUnauthorized) {
           credentials: credentials || 'include',
           headers: authHeaders(token),
         });
-        if (reread.ok) await harvestReadVersions(reread, recordPath);
+        if (reread.ok) await harvestReadVersions(reread, recordPath, isCurrent);
       } catch {
         // Offline, aborted, CORS — the action itself succeeded and must not be reported as failed.
       }
     };
 
     const dispatch = async (awaitHarvest) => {
+      // ETP-5255 x ETP-5195: the session is resolved HERE, not at call time. A serialised write
+      // waits an arbitrary time behind the write ahead of it, and the bearer can rotate while it
+      // waits; sending the frozen one would earn a 401 and log the user out over a save they
+      // legitimately made. Exactly the reason `withRecordVersion` is also read inside this
+      // function and not before the queue wait.
+      const { token, isCurrent } = resolveSession();
+      // A bodyless request (GET, DELETE) gets authHeaders, which deliberately omits
+      // Content-Type — declaring a body type on a request that has no body is wrong, and
+      // it also keeps a migrated call site byte-identical on the wire to the raw `fetch`
+      // it replaced.
+      const canonical = rest.body === undefined ? authHeaders(token) : buildHeaders(token);
+      const headers = { ...canonical, ...extraHeaders };
+      if (rest.body instanceof FormData) delete headers['Content-Type'];
       // ETP-5073 / DOC-04: the optimistic-locking token is attached here, not at the ~41 call
       // sites that issue an update. See `withRecordVersion` for why every guard fails open.
       // Read INSIDE the dispatch, never before the queue wait — a write that resolved its token
@@ -548,6 +640,8 @@ export function createApiFetch(baseUrl, getToken, onUnauthorized) {
         credentials: credentials || 'include',
         headers,
       });
+      // ETP-5195: the session went away while this was in flight. The response is not ours.
+      if (!isCurrent()) throw staleSessionError();
       // ETP-5255: a process action mutates the row, so the token this client holds for it is
       // superseded the moment the action succeeds. Two ways to learn the new one, in this order:
       // harvest it from the action's response if the backend echoes the record (the proper fix,
@@ -557,12 +651,8 @@ export function createApiFetch(baseUrl, getToken, onUnauthorized) {
       // extra round trip disappears on its own once the backend does, with no client change.
       const actionPath = verb === 'POST' ? actionRecordPath(path) : null;
       if (actionPath !== null) {
-        if (res.ok) await refreshVersionAfterAction(actionPath);
-        if (res.status === 401 && on401 !== 'ignore') {
-          onUnauthorized?.();
-          throw new Error('Unauthorized');
-        }
-        return res;
+        if (res.ok) await refreshVersionAfterAction(actionPath, token, isCurrent);
+        return finish(res, token, isCurrent);
       }
       if (VERSIONED_WRITE_METHODS.has(verb) || verb === 'POST') {
         // ETP-5122: a POST (create) is harvested exactly like PUT/PATCH — its response echoes the
@@ -571,21 +661,19 @@ export function createApiFetch(baseUrl, getToken, onUnauthorized) {
         // and a create must never send an `updated` token on its own request. This branch only
         // arms the version cache for whatever PATCH/PUT saves this same record next, without a
         // re-read in between (e.g. "Add SII" then "Save" on the record it just created).
-        const harvested = harvestWrittenVersion(res, path);
+        const harvested = harvestWrittenVersion(res, path, isCurrent);
         if (awaitHarvest) await harvested;
       } else if (verb === 'GET') {
         // ETP-5112: a read is what arms the write that follows it. See `harvestReadVersions`.
-        harvestReadVersions(res, path);
+        harvestReadVersions(res, path, isCurrent);
       }
-      if (res.status === 401 && on401 !== 'ignore') {
-        onUnauthorized?.();
-        throw new Error('Unauthorized');
-      }
-      return res;
+      return finish(res, token, isCurrent);
     };
 
     // ETP-5255: at most one versioned write per record in flight. See `recordWriteChains`.
-    const writeKey = VERSIONED_WRITE_METHODS.has(verb) ? recordWriteKey(path, rest) : null;
+    const writeKey = VERSIONED_WRITE_METHODS.has(verb)
+      ? recordWriteKey(path, rest, sessionQueueKey(requestScope))
+      : null;
     if (writeKey === null) return dispatch(false);
 
     const previous = recordWriteChains.get(writeKey);
@@ -607,6 +695,29 @@ export function createApiFetch(baseUrl, getToken, onUnauthorized) {
   };
 }
 
+function staleSessionError() {
+  return new DOMException('The request belongs to a superseded session.', 'AbortError');
+}
+
+// Guard body consumption too: fetch can finish before a logout while json() is pending.
+function guardResponse(response, isCurrent) {
+  return new Proxy(response, {
+    get(target, key) {
+      const value = Reflect.get(target, key, target);
+      if (key === 'clone') return () => guardResponse(target.clone(), isCurrent);
+      if (['json', 'text', 'blob', 'arrayBuffer', 'formData', 'bytes'].includes(key) && typeof value === 'function') {
+        return async (...args) => {
+          if (!isCurrent()) throw staleSessionError();
+          const result = await value.apply(target, args);
+          if (!isCurrent()) throw staleSessionError();
+          return result;
+        };
+      }
+      return typeof value === 'function' ? value.bind(target) : value;
+    },
+  });
+}
+
 /**
  * Ambient session accessor, so a NON-React module can make an authenticated request
  * without every one of its callers threading `token` and `apiBaseUrl` through the
@@ -620,14 +731,17 @@ export function createApiFetch(baseUrl, getToken, onUnauthorized) {
  */
 let ambientSession = null;
 
-export function registerApiSession({ getToken, onUnauthorized, baseUrl } = {}) {
-  ambientSession = {
+export function registerApiSession({ getToken, onUnauthorized, baseUrl, scope, replaceSession } = {}) {
+  const registration = {
     getToken: typeof getToken === 'function' ? getToken : () => null,
     onUnauthorized: typeof onUnauthorized === 'function' ? onUnauthorized : () => {},
     baseUrl,
+    scope,
+    replaceSession,
   };
+  ambientSession = registration;
   return function unregister() {
-    if (ambientSession && ambientSession.getToken === getToken) ambientSession = null;
+    if (ambientSession === registration) ambientSession = null;
   };
 }
 
@@ -645,6 +759,11 @@ export function notifyAmbientUnauthorized() {
   ambientSession?.onUnauthorized();
 }
 
+/** Synchronous handoff for core onboarding writers before cache cleanup/navigation. */
+export function replaceAmbientSession(session) {
+  ambientSession?.replaceSession?.(session);
+}
+
 /** Test seam: drops the ambient session so suites do not leak one into the next. */
 export function resetApiSessionForTests() {
   ambientSession = null;
@@ -660,5 +779,6 @@ export function apiFetch(path, options = {}) {
     session ? session.baseUrl : undefined,
     session ? session.getToken : () => null,
     session ? session.onUnauthorized : () => {},
+    session?.scope,
   )(path, options);
 }

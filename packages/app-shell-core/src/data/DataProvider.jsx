@@ -1,4 +1,4 @@
-import { createContext, useContext, useEffect, useMemo, useRef } from 'react';
+import { createContext, useContext, useLayoutEffect, useMemo, useRef } from 'react';
 import { useAuth } from '../auth/index.js';
 import { createQueryCache } from './queryCache.js';
 
@@ -40,7 +40,7 @@ export function DataProvider({
   recordStaleTime = DEFAULT_RECORD_STALE_TIME,
   catalogStaleTime = DEFAULT_CATALOG_STALE_TIME,
 }) {
-  const { token, clientId, selectedRole, selectedOrg } = useAuth();
+  const { token, clientId, selectedRole, selectedOrg, authRevision, isSessionReady, captureSession, isCurrentSession } = useAuth();
 
   // The cache lives for the lifetime of the provider (survives re-renders).
   const cacheRef = useRef(null);
@@ -53,15 +53,16 @@ export function DataProvider({
       client: clientId ?? null,
       role: idOf(selectedRole),
       org: idOf(selectedOrg),
+      authRevision: authRevision ?? null,
     }),
-    [token, clientId, selectedRole, selectedOrg],
+    [token, clientId, selectedRole, selectedOrg, authRevision],
   );
 
   // Clear the cache when the identity changes (but not on first mount, so
   // a warm cache passed in via props is preserved).
-  const identity = `${scope.auth}|${scope.client}|${scope.role}|${scope.org}`;
+  const identity = `${scope.auth}|${scope.client}|${scope.role}|${scope.org}|${scope.authRevision}|${apiBase}`;
   const prevIdentity = useRef(identity);
-  useEffect(() => {
+  useLayoutEffect(() => {
     if (prevIdentity.current !== identity) {
       cache.clear();
       prevIdentity.current = identity;
@@ -69,8 +70,9 @@ export function DataProvider({
   }, [identity, cache]);
 
   const value = useMemo(
-    () => ({ cache, scope, apiBase, recordStaleTime, catalogStaleTime }),
-    [cache, scope, apiBase, recordStaleTime, catalogStaleTime],
+    () => ({ cache, scope, apiBase, recordStaleTime, catalogStaleTime,
+      isSessionReady, captureSession, isCurrentSession }),
+    [cache, scope, apiBase, recordStaleTime, catalogStaleTime, isSessionReady, captureSession, isCurrentSession],
   );
 
   return <DataContext.Provider value={value}>{children}</DataContext.Provider>;

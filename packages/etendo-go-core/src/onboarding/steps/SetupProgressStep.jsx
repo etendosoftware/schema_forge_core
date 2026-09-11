@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { Loader2, Check, Sparkles, Building2, Settings } from 'lucide-react';
 import { useUI } from '@etendosoftware/app-shell-core/i18n';
 import { runOnboardingStream, fetchEnvironments, loginEnvironment } from '../api.js';
-import { initialSetupSteps, applyProgressMessage, buildEnvironmentSessionStorage } from '../state.js';
+import { initialSetupSteps, applyProgressMessage, persistEnvironmentSession } from '../state.js';
 import { buildAppReturnToHref, getSafeReturnTo } from '../oauthReturnTo.js';
 import { resolveOnboardingErrorMessage } from '../errorMessages.js';
 import { trackOnboarding } from '../tracking.js';
@@ -72,8 +72,7 @@ export function SetupProgressStep({ config, stepData, onNext, onBack, goToStep, 
       const data = await loginEnvironment(fetch, apiBase, token, env);
       if (!isMountedRef.current) return;
       if (data.token) {
-        const storageValues = buildEnvironmentSessionStorage(env, data);
-        Object.entries(storageValues).forEach(([key, value]) => localStorage.setItem(key, value));
+        persistEnvironmentSession(env, data);
 
         // Clear all SW caches on login to guarantee fresh resources
         if ('caches' in window) {

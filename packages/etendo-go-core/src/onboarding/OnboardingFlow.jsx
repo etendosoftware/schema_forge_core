@@ -3,7 +3,7 @@ import { Loader2 } from 'lucide-react';
 import { useUI } from '@etendosoftware/app-shell-core/i18n';
 import { createLocalAuthStorage } from '@etendosoftware/app-shell-core/auth';
 import { fetchAccount, fetchEnvironments, loginEnvironment, fetchOnboardingDraft, saveOnboardingDraft, verifyEmail } from './api.js';
-import { buildEnvironmentSessionStorage, clearEnvironmentSession } from './state.js';
+import { persistEnvironmentSession, clearEnvironmentSession } from './state.js';
 import { buildAppReturnToHref, getSafeReturnTo } from './oauthReturnTo.js';
 import { trackOnboarding } from './tracking.js';
 import { createOnboardingLogout } from './logout.js';
@@ -180,8 +180,7 @@ export function OnboardingFlow({ steps = [], config = {} }) {
           });
           const data = await loginEnvironment(fetch, apiBase, authToken, env);
           if (data.token) {
-            const storageValues = buildEnvironmentSessionStorage(env, data);
-            Object.entries(storageValues).forEach(([key, value]) => localStorage.setItem(key, value));
+            persistEnvironmentSession(env, data);
 
             // Clear all SW caches on login to guarantee fresh resources
             if ('caches' in window) {

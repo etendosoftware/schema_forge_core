@@ -18,8 +18,9 @@ function DefaultLoginRedirect({ loginPath }) {
   );
 }
 
-export function AuthGate({ children, loginPath = '/login', fallback }) {
-  const { isAuthenticated } = useAuth();
+export function AuthGate({ children, loginPath = '/login', fallback, pendingFallback = null }) {
+  const { isAuthenticated, isSessionReady } = useAuth();
+  if (isAuthenticated && isSessionReady === false) return pendingFallback;
   if (isAuthenticated) return children;
   return fallback || <DefaultLoginRedirect loginPath={loginPath} data-testid="DefaultLoginRedirect__b517b2" />;
 }
@@ -62,6 +63,7 @@ export function AppShellProviders({
         initialSession={auth?.initialSession}
         onSessionChange={auth?.onSessionChange}
         fetchWindowAccess={auth?.fetchWindowAccess}
+        apiBaseUrl={auth?.apiBaseUrl}
         data-testid="AuthProvider__b517b2">
         <DataProvider
           cache={data?.cache}
