@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { Loader2, Check, Sparkles, Building2, Settings } from 'lucide-react';
 import { useUI } from '@etendosoftware/app-shell-core/i18n';
 import { runOnboardingStream, fetchEnvironments, loginEnvironment } from '../api.js';
-import { initialSetupSteps, applyProgressMessage, persistEnvironmentSession, rememberEnvironment } from '../state.js';
+import { initialSetupSteps, applyProgressMessage, rememberEnvironment } from '../state.js';
 import { buildAppReturnToHref, getSafeReturnTo } from '../oauthReturnTo.js';
 import { resolveOnboardingErrorMessage } from '../errorMessages.js';
 import { trackOnboarding } from '../tracking.js';
@@ -71,11 +71,13 @@ export function SetupProgressStep({ config, stepData, onNext, onBack, goToStep, 
     try {
       const data = await loginEnvironment(fetch, apiBase, token, env);
       if (!isMountedRef.current) return;
-      // ETP-4576 — see OnboardingFlow: cookie answers { status: 'success' } with no
-      // token, bearer answers with one and still needs persisting.
-      if (data.token || data.status === 'success') {
-        if (data.token) persistEnvironmentSession(env, data);
-        else rememberEnvironment(env.clientId);
+      // ETP-4576 — POST /sws/go/session/environment rotates the session cookie and answers
+      // { status, environment, roleList, csrfToken }, carrying NO token (verified in
+      // EtendoGoJwtServlet.handleSessionEnvironment). Gating on `data.token`, as develop
+      // does, therefore makes the environment switch a silent no-op: the user clicks and
+      // nothing happens. The response status is the only signal there is.
+      if (data.status === 'success') {
+        rememberEnvironment(env.clientId);
         // Clear all SW caches on login to guarantee fresh resources
         if ('caches' in window) {
           try {

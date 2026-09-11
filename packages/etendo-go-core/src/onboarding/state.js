@@ -56,14 +56,30 @@ export function selectPreferredOrg(role) {
   return role?.orgList?.find(org => org.name !== '*') || role?.orgList?.[0] || null;
 }
 
-// ETP-4576 — ENVIRONMENT_SESSION_KEYS, buildEnvironmentSessionStorage and
-// clearEnvironmentSession lived here. Those seven keys were never state: they
-// were a handoff channel between two page loads, written just before the
-// full-page redirect so the app could boot cold and read them back to hydrate
-// its auth context. The server-side __Host- session cookie survives that
-// navigation on its own and the app now restores from GET /sws/go/session, so
-// the channel is gone. Purging keys a pre-cookie session may have left behind
-// is app-shell-core's purgeLegacyAuthStorage, which owns the canonical list.
+// Canonical list of the Etendo environment session keys persisted on login.
+// buildEnvironmentSessionStorage below is the single writer of these keys, so
+// any consumer that needs to clear the environment session (e.g. logout) MUST
+// reuse this constant instead of hardcoding its own copy. Keep this in sync
+// with the keys assigned inside buildEnvironmentSessionStorage.
+//
+// ETP-4576 — these seven keys are a handoff channel between two page loads,
+// written just before the full-page redirect so the app can boot cold and
+// hydrate its auth context. Under the cookie scheme the server-side __Host-
+// session survives that navigation on its own and the app restores from
+// GET /sws/go/session, so the channel is dead weight there and the onboarding
+// steps only take this path when the login response actually carries a token.
+// It stays for the bearer scheme, which has no other way across the redirect.
+// Purging what a pre-cookie session left behind is app-shell-core's
+// purgeLegacyAuthStorage, which owns its own canonical list.
+export const ENVIRONMENT_SESSION_KEYS = [
+  'sf_auth_token',
+  'sf_auth_user',
+  'sf_auth_client_id',
+  'sf_auth_client_name',
+  'sf_auth_rolelist',
+  'sf_auth_selected_role',
+  'sf_auth_selected_org',
+];
 
 // sf_last_environment is a UX preference, not authentication state. It
 // deliberately survives logout and must never be grouped with the removed

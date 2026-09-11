@@ -77,10 +77,6 @@ export function buildWriteHeaders() {
 // that must carry the scheme's write proof.
 const UNSAFE_METHODS = new Set(['POST', 'PUT', 'PATCH', 'DELETE']);
 
-export function isTokenExpired(token) {
-  return !token;
-}
-
 /**
  * Resolves a request URL against the client's base URL.
  *
@@ -679,10 +675,21 @@ export function createApiFetch(baseUrl, getToken, onUnauthorized, scope) {
       } else {
         canonical = unsafe ? buildWriteHeaders() : buildHeaders();
       }
+      // ETP-5195 x ETP-5255 x ETP-4576 — when THIS dispatch resolved a credential, that one
+      // wins over whatever the module-level store holds. `resolveSession` re-reads the bearer
+      // through the scope after the queue wait precisely so a rotation is absorbed, and
+      // letting the builders rebuild it from the store puts the superseded token straight
+      // back — the session renews while every request keeps going out under the previous JWT.
+      // `token` already folds in the explicit `token` option, which still wins over both.
+      //
+      // When it resolved NOTHING the store stands, and that is not a fallback for a missing
+      // credential but the normal path for two callers: a legacy three-argument client whose
+      // getter was never wired to a session, and every client under the cookie scheme, where
+      // there is no token to resolve and the `__Host-` session travels on its own. A logged-out
+      // client never reaches here — `stillOurs()` and `resolveSession()` throw first.
       const headers = {
         ...canonical,
-        // An explicit `token` option still wins — that is what it is for.
-        ...(tokenOverride ? credentialHeadersForToken(tokenOverride) : {}),
+        ...credentialHeadersForToken(token),
         ...extraHeaders,
       };
       // ETP-4576 — every unsafe request carries the proof whenever one is held, WITHOUT
@@ -849,4 +856,50 @@ export function apiFetch(path, options = {}) {
     session ? session.onUnauthorized : () => {},
     session?.scope,
   )(path, options);
+}
+
+// ETP-4576 — restores the backend-managed session (ADR-0001). This is the
+// platform default for AuthProvider's `restoreSession`, so a host gets the
+// cookie session without wiring anything; passing the prop overrides it.
+// Authenticates purely with the `__Host-` cookie: `credentials: 'include'` and
+// no Authorization header, since the browser never holds a bearer token.
+// Fails closed with null on the 401 for "no session", a network error, or an
+// unparsable body — every one of those means "not authenticated".
+export async function fetchCookieSession(baseUrl = defaultBaseUrl()) {
+  try {
+    const res = await fetch(`${baseUrl}/sws/go/session`, {
+      method: 'GET',
+      credentials: 'include',
+    });
+    if (!res.ok) return null;
+    return await res.json();
+  } catch {
+    return null;
+  }
+}
+
+// ETP-4576 — revokes the session server-side (ADR-0001). Without this the
+// cookie outlives a "logout" and the session stays valid on the server, so
+// clearing client state alone is not a logout at all.
+//
+// DELETE is an unsafe method, so the backend requires the CSRF proof. The proof
+// defaults to the one sessionCredentials holds, which is still the live session's
+// at the moment logout runs — AuthProvider clears it only after this resolves.
+// Callers that clear their own state first must pass the token explicitly.
+// Never throws: the local logout has to proceed even if the network call fails,
+// or a user who asked to log out would stay stuck in the session. Returns
+// whether the server confirmed the revoke.
+export async function deleteCookieSession(csrfToken = getSessionCsrfToken(), baseUrl = defaultBaseUrl()) {
+  try {
+    const headers = {};
+    if (csrfToken) headers['X-Go-CSRF'] = csrfToken;
+    const res = await fetch(`${baseUrl}/sws/go/session`, {
+      method: 'DELETE',
+      credentials: 'include',
+      headers,
+    });
+    return res.ok;
+  } catch {
+    return false;
+  }
 }

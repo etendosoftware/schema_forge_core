@@ -97,11 +97,22 @@ describe('credentialMode alone decides whether the session is restored', () => {
     return renderHook(() => useAuth(), { wrapper: Wrapper });
   }
 
-  it('does NOT call the session endpoint under the bearer default', async () => {
-    // The regression that broke the app when #101 landed without its backend:
-    // every host, migrated or not, requested a cookie session on mount.
+  it('DOES call the session endpoint under the `auto` default', async () => {
+    // This case used to assert the opposite, against a `bearer` default. That default
+    // read as the conservative choice and was not one: `restoreSession` derives from
+    // this value, so `bearer` also turned the restore off — and the session had already
+    // moved out of localStorage into memory. Nothing to restore from and nothing
+    // restoring, so every cold load came up anonymous, a browser refresh signed the user
+    // out, and 564 mocked E2E specs timed out on a dashboard that never arrived (the
+    // suite enters through page.goto, which IS a cold load). The default has to be the
+    // one that asks the backend, and `auto` resolves the scheme from the answer: a CSRF
+    // token in the response means cookie, a failure leaves none and means bearer, so a
+    // bearer backend pays one 401 on boot and behaves exactly as before.
     await act(async () => { mountWithoutRestoreProp(undefined); });
-    expect(globalThis.fetch).not.toHaveBeenCalled();
+    expect(globalThis.fetch).toHaveBeenCalledWith('/sws/go/session', expect.objectContaining({
+      method: 'GET',
+      credentials: 'include',
+    }));
   });
 
   it('does NOT call it for an explicit bearer mode either', async () => {

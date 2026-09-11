@@ -4,7 +4,7 @@ import {
   createApiFetch, apiFetch, resolveApiUrl, registerApiSession, resetApiSessionForTests,
   entityFromPath,
 } from '../api.js';
-import { CREDENTIAL_MODES, setSessionCredentials } from '../sessionCredentials.js';
+import { CREDENTIAL_MODES, resetSessionCredentials, setSessionCredentials } from '../sessionCredentials.js';
 import {
   rememberRecordVersion, getRecordVersion, resetRecordVersionsForTests,
 } from '../../lib/recordVersions.js';
@@ -22,7 +22,11 @@ const src = readFileSync(join(__dirname, '..', 'api.js'), 'utf8');
 // Negative assertions run against a comment-stripped copy: api.js documents its own
 // guarantee ("no Authorization header", ADR-0001) in prose, and a raw source read
 // cannot tell code from comment, so that sentence alone would trip them.
-const codeOnly = src.replace(/^\s*\/\/.*$/gm, '');
+// Comments stripped BOTH ways: the `doesNotMatch` guards below are about what the module
+// DOES, and the prose explaining why it does not hand-roll a credential necessarily names
+// the header it refuses to build. Leaving JSDoc in made every such explanation trip its own
+// guard, which pushes the next reader to delete the reasoning rather than keep it.
+const codeOnly = src.replace(/\/\*[\s\S]*?\*\//g, '').replace(/^\s*\/\/.*$/gm, '');
 
 describe('authHeaders', () => {
   // ETP-5022: the canonical READ-request header builder. Selectors that hand-rolled
@@ -87,7 +91,7 @@ describe('buildHeaders', () => {
   });
 
   it('never references a Bearer-token scheme anywhere in the module', () => {
-    assert.doesNotMatch(src, /Bearer/);
+    assert.doesNotMatch(codeOnly, /Bearer/);
   });
 });
 
@@ -119,15 +123,23 @@ describe('isTokenExpired — removed entirely', () => {
 });
 
 describe('createApiFetch — CSRF header on unsafe methods, session lives in an httpOnly cookie', () => {
-  it('is exported with the (baseUrl, getCsrfToken, onUnauthorized) signature', () => {
+  // The second slot used to be `getCsrfToken`. ETP-5195 needs it to be the TOKEN getter:
+  // a scoped client reads it through to the live session on every dispatch, which is what
+  // re-arms a queued write with a bearer that rotated while it waited its turn. The proof
+  // moved to ./sessionCredentials.js, read inside the dispatch — see the suite below, which
+  // is what now keeps a credential out of the proof's slot.
+  it('is exported with the (baseUrl, getToken, onUnauthorized, scope) signature', () => {
     assert.match(
       src,
-      /export function createApiFetch\s*\(\s*baseUrl\s*,\s*getCsrfToken\s*,\s*onUnauthorized\s*\)/
+      /export function createApiFetch\s*\(\s*baseUrl\s*,\s*getToken\s*,\s*onUnauthorized\s*,\s*scope\s*\)/
     );
   });
 
-  it('normalizes options.method case-insensitively before deciding safe vs unsafe', () => {
-    assert.match(src, /options\.method[\s\S]{0,40}\.toUpperCase\(\)|\.toUpperCase\(\)[\s\S]{0,40}options\.method/);
+  // Matches the method however it is spelled at the point of use — `options.method` before
+  // ETP-5255, `rest.method` now that the options are destructured — because the property is
+  // the upper-casing, not where the value happens to be read from.
+  it('normalizes the request method case-insensitively before deciding safe vs unsafe', () => {
+    assert.match(src, /\.method[\s\S]{0,40}\.toUpperCase\(\)|\.toUpperCase\(\)[\s\S]{0,40}\.method/);
   });
 
   it('defines an unsafe-method list covering POST, PUT, PATCH and DELETE', () => {
@@ -141,13 +153,14 @@ describe('createApiFetch — CSRF header on unsafe methods, session lives in an 
     assert.match(src, /X-Go-CSRF/);
   });
 
-  it('guards the X-Go-CSRF assignment behind a truthy check on getCsrfToken()', () => {
+  it('guards the X-Go-CSRF assignment behind a truthy check on getSessionCsrfToken()', () => {
     // The header assignment (bracket or object-literal form) must be reachable
-    // only through a conditional that both calls getCsrfToken() and checks
-    // truthiness — i.e. it must NOT be an unconditional assignment.
+    // only through a conditional that both reads the proof off the active scheme
+    // and checks truthiness — i.e. it must NOT be an unconditional assignment.
+    // An empty value is not a proof; the backend rejects it as malformed.
     assert.match(
       src,
-      /if\s*\([^)]*\)[\s\S]{0,300}getCsrfToken\(\)[\s\S]{0,200}X-Go-CSRF|getCsrfToken\(\)[\s\S]{0,200}if\s*\([^)]*\)[\s\S]{0,200}X-Go-CSRF/
+      /if\s*\([^)]*\)[\s\S]{0,300}getSessionCsrfToken\(\)[\s\S]{0,200}X-Go-CSRF|getSessionCsrfToken\(\)[\s\S]{0,200}if\s*\([^)]*\)[\s\S]{0,200}X-Go-CSRF/
     );
   });
 
@@ -415,6 +428,10 @@ describe('ambient apiFetch', () => {
     // Behaving like the raw `fetch` it replaced beats throwing at import time.
     const f = stubFetch();
     resetApiSessionForTests();
+    // The published scheme is the other half of "no session": AuthProvider is its only
+    // writer, so in the real case it is empty here too. Without this the credential a
+    // sibling case published leaks in and the assertion passes or fails on test order.
+    resetSessionCredentials();
     try {
       await apiFetch('/x');
       assert.equal(f.calls[0].options.headers['Authorization'], undefined);
@@ -635,8 +652,11 @@ describe('the CSRF proof does not depend on the scheme the client believes it is
   it('sends X-Go-CSRF on an unsafe request even while the active scheme is bearer', async () => {
     const f = stubFetch();
     try {
-      setSessionCredentials({ mode: CREDENTIAL_MODES.bearer, token: 'tok' });
-      await createApiFetch('', () => 'csrf-abc', () => {})('/x', { method: 'POST', body: '{}' });
+      // The proof is PUBLISHED on the scheme, not injected: that is the wiring since the
+      // token getter took the second slot, and it is what makes the property structural —
+      // a caller can no longer forget to pass it, or pass the wrong thing.
+      setSessionCredentials({ mode: CREDENTIAL_MODES.bearer, token: 'tok', csrfToken: 'csrf-abc' });
+      await createApiFetch('', () => 'tok', () => {})('/x', { method: 'POST', body: '{}' });
       assert.equal(f.calls[0].options.headers['X-Go-CSRF'], 'csrf-abc');
     } finally { f.restore(); }
   });
@@ -644,8 +664,8 @@ describe('the CSRF proof does not depend on the scheme the client believes it is
   it('still sends nothing on a safe request, whatever the scheme', async () => {
     const f = stubFetch();
     try {
-      setSessionCredentials({ mode: CREDENTIAL_MODES.bearer, token: 'tok' });
-      await createApiFetch('', () => 'csrf-abc', () => {})('/x');
+      setSessionCredentials({ mode: CREDENTIAL_MODES.bearer, token: 'tok', csrfToken: 'csrf-abc' });
+      await createApiFetch('', () => 'tok', () => {})('/x');
       assert.equal(f.calls[0].options.headers['X-Go-CSRF'], undefined);
     } finally { f.restore(); }
   });
@@ -655,11 +675,17 @@ describe('the CSRF slot never receives a credential (ETP-4576)', () => {
   const src = readFileSync(new URL('../api.js', import.meta.url), 'utf8');
   const codeOnly = src.replace(/\/\*[\s\S]*?\*\//g, '').replace(/^\s*\/\/.*$/gm, '');
 
-  it('apiFetch reads the proof off the active scheme, not off the session token', () => {
-    const call = codeOnly.slice(codeOnly.indexOf('return createApiFetch('));
-    assert.match(call, /getSessionCsrfToken/);
-    assert.doesNotMatch(call.slice(0, call.indexOf(')(path')), /getToken/);
-      });
+  it('assigns X-Go-CSRF from the active scheme and from nothing else', () => {
+    // Previously this read the ambient client's own `createApiFetch(...)` call, because the
+    // proof was the second argument there and a bearer passed into that slot shipped the
+    // credential as X-Go-CSRF. That slot is now the token getter, so the guard moved to the
+    // assignment itself: wherever the header is set, its value must come from the scheme.
+    const assignment = codeOnly.slice(codeOnly.indexOf("headers['X-Go-CSRF']"));
+    const rhs = assignment.slice(0, assignment.indexOf(';'));
+    assert.match(codeOnly, /const csrf = getSessionCsrfToken\(\)/);
+    assert.match(rhs, /=\s*csrf\b/);
+    assert.doesNotMatch(rhs, /token/i);
+  });
     });
 
 // ── ETP-5112 ────────────────────────────────────────────────────────────────

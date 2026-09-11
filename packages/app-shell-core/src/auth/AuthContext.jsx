@@ -1,6 +1,7 @@
 import { createContext, useContext, useState, useCallback, useMemo, useRef, useEffect, useLayoutEffect, useSyncExternalStore } from 'react';
 import {
-  createLocalAuthStorage, mapRestoredSession, normalizeAuthSession, purgeLegacyAuthStorage,
+  createLocalAuthStorage, createMemoryAuthStorage, mapRestoredSession, normalizeAuthSession,
+  purgeLegacyAuthStorage,
 } from './session.js';
 import {
   createApiFetch, deleteCookieSession, fetchCookieSession, registerApiSession,
@@ -54,7 +55,17 @@ export function AuthProvider({
   restoreSession = credentialMode === CREDENTIAL_MODES.cookie
     || credentialMode === CREDENTIAL_MODES.auto ? fetchCookieSession : null,
 }) {
-  const authStorage = useMemo(() => storage || createLocalAuthStorage(), [storage]);
+  // ETP-4576 — under the cookie scheme the default storage is MEMORY, not localStorage:
+  // the server response is authoritative and `purgeLegacyAuthStorage` deletes the sf_auth_*
+  // keys on mount, so persisting the session there would rewrite the very keys just purged.
+  // A legacy bearer host (restoreSession opted out) keeps localStorage verbatim, and an
+  // explicit `storage` prop always wins. Keyed on the BOOLEAN so a host passing an inline
+  // arrow as `restoreSession` does not rebuild the adapter on every render.
+  const usesRestore = typeof restoreSession === 'function';
+  const authStorage = useMemo(
+    () => storage || (usesRestore ? createMemoryAuthStorage() : createLocalAuthStorage()),
+    [storage, usesRestore],
+  );
   const [controller] = useState(() => createSessionController(normalizeAuthSession({
     ...authStorage.read(), ...initialSession,
   }), authStorage, onSessionChange, apiBaseUrl));
@@ -111,7 +122,7 @@ export function AuthProvider({
       .then((result) => {
         if (!result) throw new Error('No active session');
         setCsrfToken(result.csrfToken ?? null);
-        controller.replace(normalizeAuthSession(mapRestoredSession(result)), { refresh: false });
+        controller.replace(normalizeAuthSession(mapRestoredSession(result)), { refresh: false, persist: false });
         setStatus('authenticated');
       })
       .catch(() => {
@@ -346,22 +357,32 @@ export function AuthProvider({
     selectRole: (role) => controller.replace({ ...controller.getSnapshot().session, selectedRole: role || null }, { refresh: false }),
     selectOrg: (org) => controller.replace({ ...controller.getSnapshot().session, selectedOrg: org || null }, { refresh: false }),
     // ETP-4576 — controller.logout only clears local state. Under the cookie scheme the
-    // session lives server-side, so it has to be revoked there too; the local clear runs
-    // either way, so a failed revocation still logs the user out of this tab.
-    logout: async () => {
-      try {
-        if (typeof restoreSession === 'function') await deleteCookieSession();
-      } finally {
-        setCsrfToken(null);
-        setStatus('anonymous');
-        controller.logout();
-      }
+    // session lives server-side, so it has to be revoked there too.
+    //
+    // The revoke is FIRED, never awaited, and the local clear is synchronous: a user who
+    // asked to leave is out of this tab the moment they ask, whatever the network does.
+    // Awaiting it made logout() return a promise and deferred the clear behind a round
+    // trip, so a request issued in between still carried the session. deleteCookieSession
+    // never throws, so nothing here can trap the user in a session they asked to leave.
+    // The proof is passed explicitly because the next line discards it.
+    logout: () => {
+      if (typeof restoreSession === 'function') deleteCookieSession(csrfToken);
+      // ETP-4576 — purge the legacy sf_auth_*/sf_platform_* keys too, in BOTH schemes.
+      // controller.logout() clears only the storage adapter the host injected, which under
+      // the default (memory) is not where those keys live, so a credential left by an
+      // earlier version or by the onboarding app survived a logout untouched. The mount
+      // purge does not cover it either: it runs inside the restore effect, which the bearer
+      // scheme never schedules. Logout is exactly the moment when nothing may survive.
+      purgeLegacyAuthStorage();
+      setCsrfToken(null);
+      setStatus('anonymous');
+      controller.logout();
     },
     captureSession: controller.capture,
     isCurrentSession: controller.isCurrent,
     apiSessionScope: controller,
     refreshToken: () => refresh(true),
-  }), [controller, refresh, restoreSession]);
+  }), [controller, refresh, restoreSession, csrfToken]);
 
   const value = useMemo(() => ({
     ...state.session,

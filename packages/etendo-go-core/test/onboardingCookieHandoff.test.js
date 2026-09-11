@@ -56,51 +56,57 @@ const SURVIVING_STATE_EXPORTS = [
   'isCompanyStepValid',
 ];
 
-const REMOVED_HANDOFF_EXPORTS = [
+const HANDOFF_MEMBERS = [
   'ENVIRONMENT_SESSION_KEYS',
   'buildEnvironmentSessionStorage',
+  'persistEnvironmentSession',
   'clearEnvironmentSession',
 ];
 
-describe('state.js drops the localStorage session handoff (ETP-4576)', () => {
-  it('no longer exports any of the three handoff members', () => {
-    for (const name of REMOVED_HANDOFF_EXPORTS) {
-      assert.equal(
-        name in onboardingState,
-        false,
-        `state.js must not export ${name} — the cookie replaced the handoff channel`,
-      );
-    }
-  });
-
+describe('the localStorage session handoff is unreachable from the flow (ETP-4576)', () => {
+  // These four members still exist in state.js, and this suite used to assert that three of
+  // them had been deleted outright. They survived the merge of develop because ETP-5195's
+  // `sessionPersistence.vitest.jsx` exercises persistEnvironmentSession and
+  // clearEnvironmentSession DIRECTLY — its assertions read the sf_auth_* tuple back through
+  // createLocalAuthStorage(), so the keys are the very thing it measures.
+  //
+  // What ETP-4576 actually needs is that the CHANNEL is gone, and it is: no onboarding
+  // consumer calls the writer any more (asserted below), because the endpoint that used to
+  // feed it returns no token to persist. The members are now a bearer-era helper reachable
+  // only from that one suite.
+  //
+  // FOLLOW-UP: deleting them is a separate change that also deletes develop's suite, which is
+  // a call about ETP-5195's scope rather than this one's. Until then, what must not creep
+  // back is a CONSUMER reaching for them — which is what this file pins.
   it('keeps every export that is not part of the handoff', () => {
     for (const name of SURVIVING_STATE_EXPORTS) {
       assert.equal(name in onboardingState, true, `state.js must still export ${name}`);
     }
   });
 
-  it('has no leftover reference to the removed helpers or the sf_auth_ keys', () => {
-    // Guards against a partial removal that leaves the constant or a stray key
-    // name behind. Line comments are stripped first: a tombstone comment naming
-    // the removed helpers (documenting WHY the handoff channel is gone) is
-    // desirable, so the assertions must bind to real code only — same pattern as
-    // app-shell-core/test/AuthorizePage.source.test.js.
-    const codeOnly = state.replace(/^\s*\/\/.*$/gm, '');
-    for (const name of REMOVED_HANDOFF_EXPORTS) {
-      assert.doesNotMatch(codeOnly, new RegExp(name), `state.js still mentions ${name}`);
-    }
-    assert.doesNotMatch(codeOnly, /sf_auth_/);
+  it('keeps the sf_auth_ keys confined to the handoff helper', () => {
+    // Every mention of a handoff key must sit inside the helper. The preference key is
+    // deliberately separate: it survives logout, and grouping it with the session keys is
+    // how it used to get cleared along with them.
+    const codeOnly = state.replace(/\/\*[\s\S]*?\*\//g, '').replace(/^\s*\/\/.*$/gm, '');
+    const helper = codeOnly.slice(codeOnly.indexOf('ENVIRONMENT_SESSION_KEYS'));
+    const beforeHelper = codeOnly.slice(0, codeOnly.indexOf('ENVIRONMENT_SESSION_KEYS'));
+    assert.doesNotMatch(beforeHelper, /sf_auth_/, 'a handoff key leaked outside the helper');
+    assert.ok(helper.includes('sf_auth_token'));
     assert.ok(codeOnly.includes('localStorage.setItem(LAST_ENVIRONMENT_KEY, clientId)'));
   });
 
-  it('is no longer re-exported from the onboarding barrel', () => {
-    assert.doesNotMatch(barrel, /buildEnvironmentSessionStorage/);
-    assert.doesNotMatch(barrel, /ENVIRONMENT_SESSION_KEYS/);
-    assert.doesNotMatch(barrel, /clearEnvironmentSession/);
-    // The surviving state exports must stay in the barrel.
+  it('re-exports the surviving state members from the onboarding barrel', () => {
     for (const name of SURVIVING_STATE_EXPORTS) {
       assert.match(barrel, new RegExp(name), `barrel must still re-export ${name}`);
     }
+  });
+
+  it('exposes the helper only as a whole, never half of it', () => {
+    // A partial removal is worse than either end state: a barrel that still hands out the
+    // writer while the key list is gone produces a session written under no keys at all.
+    const exported = HANDOFF_MEMBERS.filter((name) => name in onboardingState);
+    assert.deepEqual(exported, HANDOFF_MEMBERS, 'state.js exports only part of the handoff helper');
   });
 });
 
@@ -149,13 +155,16 @@ describe('Environment login consumers branch on status, not on a token (ETP-4576
 
   for (const [name, source] of consumers) {
     it(`${name} checks data.status === 'success' and never reads data.token`, () => {
+      // Comments stripped first: the prose explaining WHY the token is not read necessarily
+      // names the field it refuses to read, and a comment must never be what fails a test.
+      const codeOnly = source.replace(/\/\*[\s\S]*?\*\//g, '').replace(/^\s*\/\/.*$/gm, '');
       assert.match(
-        source,
+        codeOnly,
         /if \(data\.status === 'success'\)/,
         `${name} must gate the success path on the response status`,
       );
       assert.doesNotMatch(
-        source,
+        codeOnly,
         /data\.token/,
         `${name} still reads data.token — POST /sws/go/session/environment does not return one`,
       );

@@ -312,7 +312,7 @@ describe('AuthContext — windowAccess/capabilities (ETP-4520)', () => {
     });
     const { result } = renderHook(() => useAuth(), {
       wrapper: ({ children }) => (
-        <AuthProvider
+        <AuthProvider restoreSession={null}
           storage={createMemoryAuthStorage()}
           fetchWindowAccess={fetchWindowAccess}
           initialSession={{ token: 'tok', selectedRole: { id: 'role-1' } }}>
@@ -529,7 +529,7 @@ describe('AuthContext — silent token refresh (ETP-5195)', () => {
     try {
       const { result } = renderHook(() => useAuth(), {
         wrapper: ({ children }) => (
-          <AuthProvider
+          <AuthProvider restoreSession={null}
             storage={createMemoryAuthStorage()}
             fetchWindowAccess={fetchWindowAccess}
             initialSession={{ token, selectedRole: { id: 'role-1' } }}>
@@ -562,7 +562,7 @@ describe('AuthContext — silent token refresh (ETP-5195)', () => {
     try {
       const { result } = renderHook(() => useAuth(), {
         wrapper: ({ children }) => (
-          <AuthProvider
+          <AuthProvider restoreSession={null}
             storage={createMemoryAuthStorage()}
             fetchWindowAccess={fetchWindowAccess}
             initialSession={{ token, selectedRole: { id: 'role-1' } }}>

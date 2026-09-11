@@ -2,11 +2,12 @@ import { useMemo } from 'react';
 import { createApiFetch, getAmbientToken, notifyAmbientUnauthorized } from './api.js';
 import { useAuthOptional } from './AuthContext.jsx';
 
-// What this hook hands createApiFetch is `csrfToken`, never a client-held credential
-// (ETP-4576): under the cookie scheme the browser holds none, the `__Host-` session
-// travels on its own, and what the client must supply is the proof of intent on unsafe
-// methods. Under the bearer scheme sessionCredentials restores the credential header
-// inside the shared builders, so this hook is identical either way.
+// This hook hands createApiFetch the TOKEN getter, not a CSRF getter (ETP-4576 +
+// ETP-5195). The proof of intent on unsafe methods is no longer injected here: api.js
+// reads it from ./sessionCredentials.js, whose single writer is AuthProvider. Under the
+// cookie scheme the client holds no token and that getter simply returns null — the
+// `__Host-` session travels on its own and the builders add the proof — so this hook is
+// identical either way, and there is one less way to thread a stale value through.
 //
 // The optional-context shape and the ambient fallback are ETP-5022's (a module used
 // outside a provider still gets an authenticated request). Depends on WHETHER there is
@@ -14,28 +15,13 @@ import { useAuthOptional } from './AuthContext.jsx';
 // object each render would otherwise produce a fresh request function each render.
 export function useApiFetch(baseUrl) {
   const auth = useAuthOptional();
-  const csrfToken = auth?.csrfToken ?? null;
+  const token = auth?.token ?? null;
   const logout = auth?.logout;
   const hasSession = auth != null;
   const scope = auth?.apiSessionScope;
 
-  // The fallback reads the CSRF proof off the active scheme, NOT `getAmbientToken`. That
-  // slot is the proof, and the ambient token is the bearer: handing it over sent the
-  // credential out as `X-Go-CSRF` under the bearer scheme, and under the cookie one it put
-  // a value that is not the proof where the proof belongs — so every unsafe request from a
-  // component rendered outside a provider came back 403.
-  //
-  // The provider branch falls back to the same store rather than trusting the context
-  // alone. `csrfToken` there is populated by the session restore, and a host can render a
-  // provider before that settles (or never populate it at all), so `() => csrfToken` on its
-  // own hands back null and the unsafe request goes out with no proof — a 403 on the write
-  // while every read still succeeds, which is what made it read as anything but this. The
-  // context value still wins whenever it has one.
   return useMemo(() => createApiFetch(
     baseUrl,
-    // ETP-4576 — this stays develop's TOKEN getter: the CSRF proof is no longer injected
-    // here, api.js reads it from ./sessionCredentials.js, the single writer of which is
-    // AuthProvider. One less argument to thread, and one less way to pass a stale one.
     scope ? () => scope.getSnapshot().session.token : hasSession ? () => token : getAmbientToken,
     logout || notifyAmbientUnauthorized,
     scope,

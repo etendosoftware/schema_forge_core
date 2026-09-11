@@ -1,6 +1,7 @@
 import { createContext, useContext, useState, useEffect } from 'react';
 import { useAuth } from '../auth/index.js';
 import { createApiFetch, authHeaders } from '../auth/api.js';
+import { credentialOptions } from '../auth/sessionCredentials.js';
 
 /* ------------------------------------------------------------------
  * Internal helpers
@@ -64,10 +65,13 @@ export function CurrencyProvider({ children, value, apiBaseUrl, fetcher = global
     async function resolve() {
       try {
         // apiFetch carries the active credential itself; the injected-fetcher branch is
-        // the test seam, and authHeaders() now resolves the scheme on its own.
+        // the test seam, and authHeaders() resolves the scheme on its own. It still has to
+        // spread credentialOptions(): under the cookie scheme the credential IS the cookie,
+        // and headers alone leave it at home — the request goes out anonymous and the
+        // currency silently falls back to USD.
         const res = fetcher === globalThis.fetch
           ? await request(`${base}/session`, { on401: 'ignore' })
-          : await fetcher(`${base}/session`, { headers: authHeaders() });
+          : await fetcher(`${base}/session`, { ...credentialOptions(), headers: authHeaders() });
         if (res.ok) {
           const json = await res.json();
           const code = json?.currencyCode;
