@@ -539,16 +539,31 @@ export function createApiFetch(baseUrl, getToken, onUnauthorized, scope) {
       return { token, snapshot, isCurrent };
     };
 
-    // Fail fast on a session that is ALREADY gone, so a dead request never enters the queue and
-    // never delays a live one behind it. Identity only, token excluded: a rotation between this
-    // check and the dispatch is routine and is absorbed by `resolveSession`, whereas a logout or
-    // a different user/client is not. See `sessionController.isSameIdentity`.
-    if (requestScope && tokenOverride === undefined) {
-      const stillOurs = typeof requestScope.isSameIdentity === 'function'
-        ? requestScope.isSameIdentity(requestScope.capture())
-        : requestScope.isCurrent(requestScope.capture());
-      if (!stillOurs) throw staleSessionError();
-    }
+    /**
+     * The identity of the session that ASKED for this request, captured now and re-checked when
+     * the request actually goes out.
+     *
+     * Capturing it is the whole point: `resolveSession` reads the session as it stands at
+     * dispatch time, so on its own it cannot tell "the queue held me for 200ms and the token
+     * rotated" (fine, re-arm) from "the queue held me for 200ms and the user logged out"
+     * (not fine). After a logout both `getToken()` readings agree — they are both null — and a
+     * snapshot captured after the fact is trivially current, so the queued write would sail
+     * through and reach the server with NO `Authorization` header at all.
+     *
+     * Identity only, token deliberately excluded: a rotation between the ask and the dispatch is
+     * routine and must be absorbed; a logout, another user, another client or another base URL
+     * must not. See `sessionController.isSameIdentity`.
+     */
+    const enqueuedIdentity = tokenOverride === undefined ? requestScope?.capture() : undefined;
+    const stillOurs = () => {
+      if (!requestScope || enqueuedIdentity === undefined) return true;
+      return typeof requestScope.isSameIdentity === 'function'
+        ? requestScope.isSameIdentity(enqueuedIdentity)
+        : requestScope.isCurrent(enqueuedIdentity);
+    };
+    // Fail fast, so a request whose session is already gone never enters the queue and never
+    // delays a live one behind it.
+    if (!stillOurs()) throw staleSessionError();
 
     /**
      * The single exit for every response, so the ETP-5195 guards cannot be applied on one
@@ -622,6 +637,8 @@ export function createApiFetch(baseUrl, getToken, onUnauthorized, scope) {
       // waits; sending the frozen one would earn a 401 and log the user out over a save they
       // legitimately made. Exactly the reason `withRecordVersion` is also read inside this
       // function and not before the queue wait.
+      // The session that asked for this write may have ended while it waited its turn.
+      if (!stillOurs()) throw staleSessionError();
       const { token, isCurrent } = resolveSession();
       // A bodyless request (GET, DELETE) gets authHeaders, which deliberately omits
       // Content-Type — declaring a body type on a request that has no body is wrong, and

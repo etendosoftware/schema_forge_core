@@ -2,6 +2,19 @@ import { normalizeAuthSession, decodeJwtPayload } from './session.js';
 
 const fingerprint = (session) => JSON.stringify(normalizeAuthSession(session));
 
+/**
+ * The stored session WITHOUT its bearer.
+ *
+ * `fingerprint` keeps the token, so comparing `storage` is comparing the token by another name.
+ * An identity check that excluded `token` but kept `storage` would therefore be indistinguishable
+ * from `isCurrent` in the only configuration the real app runs in (storage configured) — the
+ * exclusion would buy nothing. See {@link createSessionController}'s `isSameIdentity`.
+ */
+const identityFingerprint = (session) => {
+  const { token, ...identity } = normalizeAuthSession(session);
+  return JSON.stringify(identity);
+};
+
 /** Synchronous authority for async work. React renders observe, never own, its generation. */
 export function createSessionController(initialSession, storage, onSessionChange, apiBaseUrl) {
   const listeners = new Set();
@@ -28,10 +41,14 @@ export function createSessionController(initialSession, storage, onSessionChange
   const readStorage = () => {
     try { return fingerprint(config.storage?.read()); } catch { return null; }
   };
+  const readStorageIdentity = () => {
+    try { return identityFingerprint(config.storage?.read()); } catch { return null; }
+  };
   const capture = () => {
     const claims = decodeJwtPayload(state.session.token);
     return {
       owner, generation: state.generation, storage: readStorage(),
+      storageIdentity: readStorageIdentity(),
       token: state.session.token,
       userId: claims?.user ?? null,
       clientId: claims?.client ?? null,
@@ -42,7 +59,7 @@ export function createSessionController(initialSession, storage, onSessionChange
   // Everything that makes this a DIFFERENT session, deliberately WITHOUT the token: a silent
   // rotation (`bump: false`) replaces the bearer while the user, client, role and storage stay
   // exactly as they were.
-  const IDENTITY_KEYS = ['storage', 'userId', 'clientId', 'sessionClientId', 'apiBaseUrl'];
+  const IDENTITY_KEYS = ['storageIdentity', 'userId', 'clientId', 'sessionClientId', 'apiBaseUrl'];
 
   const matches = (snapshot, keys) => {
     if (!active || snapshot?.owner !== owner || snapshot.generation !== state.generation) return false;
@@ -50,7 +67,7 @@ export function createSessionController(initialSession, storage, onSessionChange
     return keys.every((key) => snapshot[key] === current[key]);
   };
 
-  const isCurrent = (snapshot) => matches(snapshot, [...IDENTITY_KEYS, 'token']);
+  const isCurrent = (snapshot) => matches(snapshot, [...IDENTITY_KEYS, 'storage', 'token']);
 
   /**
    * Same session, token comparison excluded (ETP-5255 x ETP-5195).
