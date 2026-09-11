@@ -445,7 +445,11 @@ export function generateTableComponent(entityName, contract) {
     const badgeVariantsPart = jsonWrapIf(', badgeVariants: ', f.badgeVariants);
     const enumVariantsPart = jsonWrapIf(', enumVariants: ', f.enumVariants);
     const labelsPart = jsonWrapIf(', labels: ', f.labels);
-    const summablePart = fragmentIf(f.summable, ', summable: true');
+    // ETP-5245 — tri-state, mirroring the contract (see generate-contract.js). An
+    // explicit `summable: false` must REACH the column so DataTable can keep the
+    // money formatting while dropping the footer total; `undefined` emits nothing,
+    // which DataTable still reads as "sums" (the pre-existing default for `amount`).
+    const summablePart = optProp('summable', f.summable === undefined ? undefined : f.summable === true);
     const displayPart = wrapIf(", display: '", f.display, "'");
     let renderPart = '';
     if (f.cellType === 'depreciationProgress') renderPart = ', render: renderDepreciationProgress';
@@ -485,7 +489,11 @@ export function generateTableComponent(entityName, contract) {
     // byte-compare generated files).
     const filterModePart = quotedProp('filterMode', f.filterMode);
     const backendFilterKeyPart = quotedProp('backendFilterKey', f.backendFilterKey);
-    return `  { key: '${f.name}', column: '${f.column}', type: '${type}'${labelsPart}${labelPart}${enumLabelsPart}${enumVariantsPart}${selectionPart}${togglePart}${badgePart}${badgeLabelsPart}${badgeColorsPart}${badgeVariantsPart}${summablePart}${displayPart}${renderPart}${requiredPart}${lookupPart}${lookupDrawerColPart}${excludeValueOfColPart}${popupPart}${minColPart}${maxColPart}${growPart}${columnWidthPart}${noTrailingPart}${filterOnlyPart}${dotPart}${gridReadOnlyPart}${computedPart}${visibleWhenCapabilityPart}${filterModePart}${backendFilterKeyPart} },`;
+    // ETP-5245 — per-row currency source for `amount` cells and the footer total
+    // (resolveRowCurrency in app-shell's lib/rowCurrency.js). Appended at the tail
+    // for the same byte-identity reason as the filter overrides above.
+    const currencyFieldPart = quotedProp('currencyField', f.currencyField);
+    return `  { key: '${f.name}', column: '${f.column}', type: '${type}'${labelsPart}${labelPart}${enumLabelsPart}${enumVariantsPart}${selectionPart}${togglePart}${badgePart}${badgeLabelsPart}${badgeColorsPart}${badgeVariantsPart}${summablePart}${displayPart}${renderPart}${requiredPart}${lookupPart}${lookupDrawerColPart}${excludeValueOfColPart}${popupPart}${minColPart}${maxColPart}${growPart}${columnWidthPart}${noTrailingPart}${filterOnlyPart}${dotPart}${gridReadOnlyPart}${computedPart}${visibleWhenCapabilityPart}${filterModePart}${backendFilterKeyPart}${currencyFieldPart} },`;
   }).join('\n') + buildDimensionsPanelColumn(dimensionFieldsRaw);
 
   const filtersArray = searchableFields.map(f => `'${f}'`).join(', ');

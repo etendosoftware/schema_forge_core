@@ -176,6 +176,17 @@ Final response written to client
 
 **Key insight:** One handler receives ALL endpoint types for that entity. Use `context.getEndpointType()` to discriminate.
 
+### 2.3a Post-Hook Writes and the `updated` Audit Token
+
+**The rule:** a handler MAY write to its own record inside `afterHandle`. You do **not** need to build a "refreshed" response yourself to keep the CRUD `updated` concurrency token correct — the dispatcher already does that for you, right after `afterHandle` returns, on both the REST and MCP hook paths (`NeoAuditTokenRefresh`). Just return your normal response (or `null` to keep the default); the token is corrected underneath you.
+
+> ⚠️ **If a handler serialises `updated` itself — e.g. a handler that reads straight from native SQL instead of going through the generic service — always render it with `NeoDateFormat.toAuditToken`, never `toCanonical`.**
+> `toCanonical` deliberately drops the timezone offset (correct for a *business* date, wrong for a *concurrency* token): core's reader treats an offsetless value as UTC, so every subsequent write against that record then fails as falsely stale, by exactly the server's UTC offset — indistinguishable from a real conflict without checking the logs. This exact mistake has shipped three times in three different handlers (`FinancialAccountsPageHandler`, then independently `ProductPriceHandler` and `ChartOfAccountsHandler`), each time by reaching for `toCanonical` because it looks like the obvious tool. `toAuditToken` is the one method that formats through core's own writer and is guaranteed to round-trip through the reader that will later compare it.
+
+Why this lives in the dispatcher and not in each handler: a post-hook that saves its own record — e.g. `UserRoleAssignmentHandler` assigning a personal role right after user creation — writes to the row **after** the response body was already serialised. Returning `null` means "keep that body" (the documented `afterHandle` contract above), so the client ends up caching a token the row has already moved past, and the very first edit of a record the user just created gets refused as a stale-record conflict against nobody. Fixing this per-handler is a rule every future handler has to remember on a failure mode that looks like an unreproducible 409 in production, not a broken test; fixing it once at the dispatch point means a new handler is covered automatically, without having to know this section exists.
+
+Full forensic write-up — the exact ETP-5262 scenario, the field-diagnosis table keyed on `NeoRecordVersion`'s logged signed delta, and the failure mode of the refresh itself — lives in `docs/neo-headless.md` §5.3.1 in the `com.etendoerp.go` repo (ETP-5255 / ETP-5262).
+
 ### 2.4 NeoContext: What Your Handler Receives
 
 | Field | Type | Description |

@@ -1,4 +1,5 @@
 import { ONBOARDING_FIELD_LIMITS, fullNameLimitFor, exceedsLimit } from './fieldLimits.js';
+import { replaceAmbientSession } from '@etendosoftware/app-shell-core/auth/api';
 
 export const SETUP_STEP_DEFINITIONS = [
   { name: 'setup', estimate: '1s' },
@@ -110,10 +111,31 @@ export function buildEnvironmentSessionStorage(env, loginResponse) {
   return values;
 }
 
+/** Replace the entire environment tuple before any async cleanup or navigation. */
+export function persistEnvironmentSession(env, loginResponse) {
+  const values = buildEnvironmentSessionStorage(env, loginResponse);
+  const parse = (key) => values[key] ? JSON.parse(values[key]) : null;
+  const session = {
+    token: values.sf_auth_token,
+    username: values.sf_auth_user,
+    clientId: values.sf_auth_client_id,
+    roleList: parse('sf_auth_rolelist') || [],
+    selectedRole: parse('sf_auth_selected_role'),
+    selectedOrg: parse('sf_auth_selected_org'),
+  };
+  replaceAmbientSession(session);
+  for (const key of ENVIRONMENT_SESSION_KEYS) {
+    if (values[key] == null) localStorage.removeItem(key);
+    else localStorage.setItem(key, values[key]);
+  }
+  return session;
+}
+
 // Clears the Etendo environment session written by buildEnvironmentSessionStorage.
 // Fail-safe: if localStorage is unavailable (SSR) or removeItem throws (private
 // mode), the caller's own logout flow still resets state and redirects to login.
 export function clearEnvironmentSession() {
+  replaceAmbientSession({});
   if (typeof localStorage === 'undefined' || !localStorage) return;
   for (const key of ENVIRONMENT_SESSION_KEYS) {
     try {

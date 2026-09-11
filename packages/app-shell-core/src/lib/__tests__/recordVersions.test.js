@@ -1,8 +1,9 @@
-import { describe, it, beforeEach } from 'node:test';
+import { describe, it, beforeEach, afterEach } from 'node:test';
 import { strict as assert } from 'node:assert';
 import {
   getRecordVersion, rememberRecordVersion, rememberRecordVersions,
   forgetRecordVersion, resetRecordVersionsForTests,
+  registerEntityAliases, resetEntityAliasesForTests,
 } from '../recordVersions.js';
 
 // ETP-5073 / DOC-04. This store is what lets `apiFetch` attach the optimistic-locking token
@@ -268,5 +269,155 @@ describe('forgetRecordVersion', () => {
     assert.doesNotThrow(() => forgetRecordVersion('D3', 'not-a-bucket'));
     assert.doesNotThrow(() => forgetRecordVersion(null, 'organization'));
     assert.equal(getRecordVersion('D3', 'organization'), 'ORG');
+  });
+});
+
+// ── ETP-5263: the alias table ───────────────────────────────────────────────
+//
+// The composite (id, entity) key above is unavoidably too FINE in the opposite direction: a
+// window's spec can expose ONE table under several generated entity names, so a single row gets
+// several independent buckets — and because a lookup prefers an exact entity match, a STALE exact
+// bucket beats a sibling holding a fresher token → a 409 `stale_record` nobody can explain.
+//
+// This module carries only the MECHANISM for collapsing those names onto one bucket. The POLICY —
+// WHICH names happen to share a table — is window-specific knowledge and lives in the window that
+// knows it, so every test here uses neutral entity names on purpose. A real window's groups are
+// asserted where they are declared, not here.
+
+describe('registerEntityAliases', () => {
+  beforeEach(() => {
+    resetRecordVersionsForTests();
+    resetEntityAliasesForTests();
+  });
+
+  // Aliases are module-load configuration, not per-record state, so the other suites in this file
+  // do NOT reset them. Leaving a group registered would silently change their arithmetic.
+  afterEach(() => resetEntityAliasesForTests());
+
+  it('nothing is aliased by default, so two entities keep separate buckets', () => {
+    // THE invariant that protects the satellite case: `ad_org` and `ad_orginfo` put two different
+    // rows, with different `updated` values, under one id. Collapsing them would hand out a token
+    // for a row nobody read. Registering no group must therefore change nothing.
+    rememberRecordVersion({ id: 'K', updated: 'first' }, 'a');
+    rememberRecordVersion({ id: 'K', updated: 'second' }, 'b');
+    assert.equal(getRecordVersion('K', 'a'), 'first');
+    assert.equal(getRecordVersion('K', 'b'), 'second');
+  });
+
+  it('keeps an unregistered entity in its own bucket even when a group exists', () => {
+    // A window declares a group for the names that DO share a table; every other entity of that
+    // window — accounting satellites and the like — must stay distinct. Over-registering is the
+    // dangerous direction, so it is pinned separately from the empty-table case above.
+    registerEntityAliases('a', ['b']);
+    rememberRecordVersion({ id: 'K', updated: 'shared' }, 'a');
+    rememberRecordVersion({ id: 'K', updated: 'own' }, 'c');
+    assert.equal(getRecordVersion('K', 'b'), 'shared');
+    assert.equal(getRecordVersion('K', 'c'), 'own');
+  });
+
+  it('canonicalises on READ, so a token read under the canonical arms an alias', () => {
+    // Two buckets on purpose: with a single entry the sole-entry step of the cascade would answer
+    // the lookup whether the alias table did anything or not.
+    registerEntityAliases('a', ['b']);
+    rememberRecordVersion({ id: 'K', updated: 'shared' }, 'a');
+    rememberRecordVersion({ id: 'K', updated: 'other' }, 'z');
+    assert.equal(getRecordVersion('K', 'b'), 'shared');
+  });
+
+  it('canonicalises on WRITE, so a save through an alias refreshes the shared bucket', () => {
+    // This is the 409 the alias table exists to remove: the second save of a sitting used to go
+    // out with the token the first one had already consumed.
+    registerEntityAliases('a', ['b']);
+    rememberRecordVersion({ id: 'K', updated: 'v1' }, 'a');
+    rememberRecordVersion({ id: 'K', updated: 'v2' }, 'b');
+    assert.equal(getRecordVersion('K', 'a'), 'v2');
+    assert.equal(getRecordVersion('K', 'b'), 'v2');
+  });
+
+  it('canonicalises on FORGET, so dropping an alias drops the shared bucket', () => {
+    // Three buckets, so the two survivors stay ambiguous: with a single one left the sole-entry
+    // step of the cascade would answer the lookup for the dropped entity and hide the effect.
+    registerEntityAliases('a', ['b']);
+    rememberRecordVersion({ id: 'K', updated: 'shared' }, 'a');
+    rememberRecordVersion({ id: 'K', updated: 'other' }, 'y');
+    rememberRecordVersion({ id: 'K', updated: 'another' }, 'z');
+    forgetRecordVersion('K', 'b');
+    assert.equal(getRecordVersion('K', 'a'), undefined, 'the shared bucket is gone');
+    assert.equal(getRecordVersion('K', 'y'), 'other', 'an unrelated bucket survives');
+    assert.equal(getRecordVersion('K', 'z'), 'another');
+  });
+
+  it('is additive across separate calls, so one window cannot disarm another', () => {
+    // Several windows register independently at module load. A replacing API would mean the last
+    // module loaded silently un-aliases everyone else.
+    registerEntityAliases('a', ['b']);
+    registerEntityAliases('a', ['c']);
+    rememberRecordVersion({ id: 'K', updated: 'shared' }, 'a');
+    rememberRecordVersion({ id: 'K', updated: 'other' }, 'z');
+    assert.equal(getRecordVersion('K', 'b'), 'shared');
+    assert.equal(getRecordVersion('K', 'c'), 'shared');
+  });
+
+  it('is idempotent, so a hot reload or a repeated import re-registers harmlessly', () => {
+    registerEntityAliases('a', ['b']);
+    registerEntityAliases('a', ['b']);
+    rememberRecordVersion({ id: 'K', updated: 'shared' }, 'b');
+    rememberRecordVersion({ id: 'K', updated: 'other' }, 'z');
+    assert.equal(getRecordVersion('K', 'a'), 'shared');
+  });
+
+  it('lets the FIRST registration win on a conflicting alias, without throwing', () => {
+    // Determinism under hot reload and repeated test imports matters more than which claim is
+    // "right": this is a concurrency-token optimisation, and throwing would fail a window's
+    // module load over it.
+    registerEntityAliases('a', ['b']);
+    assert.doesNotThrow(() => registerEntityAliases('x', ['b']));
+    rememberRecordVersion({ id: 'K', updated: 'under-a' }, 'a');
+    rememberRecordVersion({ id: 'K', updated: 'under-x' }, 'x');
+    assert.equal(getRecordVersion('K', 'b'), 'under-a', 'b still resolves through a');
+  });
+
+  it('collapses a chain at registration time, keeping lookup a single hop', () => {
+    // Registering b→a and then c→b must store c→a, not a chain the cache would have to walk on
+    // every read.
+    registerEntityAliases('a', ['b']);
+    registerEntityAliases('b', ['c']);
+    rememberRecordVersion({ id: 'K', updated: 'shared' }, 'a');
+    rememberRecordVersion({ id: 'K', updated: 'other' }, 'z');
+    assert.equal(getRecordVersion('K', 'c'), 'shared');
+  });
+
+  it('skips invalid input silently instead of throwing', () => {
+    for (const args of [[null, ['b']], [undefined, ['b']], ['', ['b']], [42, ['b']],
+      ['a', null], ['a', 'b'], ['a', 42], ['a', [null]], ['a', ['']], ['a', [42]],
+      ['a', ['a']]]) {
+      assert.doesNotThrow(() => registerEntityAliases(...args));
+    }
+    // None of the above registered anything, so buckets are still independent.
+    rememberRecordVersion({ id: 'K', updated: 'first' }, 'a');
+    rememberRecordVersion({ id: 'K', updated: 'second' }, 'b');
+    assert.equal(getRecordVersion('K', 'a'), 'first');
+    assert.equal(getRecordVersion('K', 'b'), 'second');
+  });
+
+  it('resets aliases without touching remembered versions', () => {
+    // The two seams are separate because aliases are configuration and versions are state: the
+    // existing suites reset only the versions and must keep their groups.
+    registerEntityAliases('a', ['b']);
+    rememberRecordVersion({ id: 'K', updated: 'v-a' }, 'a');
+    resetEntityAliasesForTests();
+    rememberRecordVersion({ id: 'K', updated: 'v-b' }, 'b');
+    assert.equal(getRecordVersion('K', 'a'), 'v-a', 'the remembered token survived');
+    assert.equal(getRecordVersion('K', 'b'), 'v-b', 'and the bucket is separate again');
+  });
+
+  it('resets remembered versions without dropping registered aliases', () => {
+    registerEntityAliases('a', ['b']);
+    rememberRecordVersion({ id: 'K', updated: 'v' }, 'a');
+    resetRecordVersionsForTests();
+    assert.equal(getRecordVersion('K', 'b'), undefined, 'the state is gone');
+    rememberRecordVersion({ id: 'K2', updated: 'v2' }, 'b');
+    rememberRecordVersion({ id: 'K2', updated: 'other' }, 'z');
+    assert.equal(getRecordVersion('K2', 'a'), 'v2', 'the group is still registered');
   });
 });

@@ -28,6 +28,7 @@ export function createQueryCache({ now = () => Date.now(), defaultStaleTime = DE
   const entries = new Map();
   /** id -> Promise (in-flight fetch, shared by concurrent readers) */
   const inflight = new Map();
+  let generation = 0;
 
   function isFresh(entry, staleTime) {
     if (!entry || entry.stale) return false;
@@ -58,19 +59,20 @@ export function createQueryCache({ now = () => Date.now(), defaultStaleTime = DE
     const pending = inflight.get(id);
     if (pending) return pending;
 
+    const requestGeneration = generation;
     const promise = Promise.resolve()
       .then(() => fetcher({ signal, key: descriptor }))
       .then((data) => {
         // An abort that landed while the request was resolving must not
         // be stored as a successful entry.
-        if (signal?.aborted) {
+        if (signal?.aborted || requestGeneration !== generation) {
           throw new DOMException('The operation was aborted.', 'AbortError');
         }
         entries.set(id, { descriptor, data, updatedAt: now(), stale: false });
         return data;
       })
       .finally(() => {
-        inflight.delete(id);
+        if (inflight.get(id) === promise) inflight.delete(id);
       });
 
     inflight.set(id, promise);
@@ -99,6 +101,7 @@ export function createQueryCache({ now = () => Date.now(), defaultStaleTime = DE
 
   /** Wipe everything — used when the session / role / org changes. */
   function clear() {
+    generation += 1;
     entries.clear();
     inflight.clear();
   }
