@@ -362,6 +362,34 @@ function applyFlatBound(field, fieldDecision, key) {
   if (v !== undefined && v !== false) field[key] = v;
 }
 
+/**
+ * ETP-5245 — apply a decisions-declared derivation over the raw AD-derived one.
+ *
+ * Shapes accepted in decisions.json:
+ *   "derivation": null                 -> suppress the raw derivation entirely
+ *   "derivation": "fromConfig"         -> shorthand, normalized to { type: 'fromConfig' }
+ *   "derivation": { type, source, ... } -> taken verbatim
+ *
+ * The shorthand MUST be expanded here: every consumer reads `derivation.type`
+ * (quality-gate invariants' hasServerDefault, validate-schema's system-field and
+ * fromParent checks, the contract's computedFields), so a bare string would be
+ * copied through and silently match nothing.
+ *
+ * Any other value (false, 0, "", an array) is not a decision and leaves the raw
+ * derivation untouched.
+ */
+function applyDecisionDerivation(field, fieldDecision) {
+  if (!Object.prototype.hasOwnProperty.call(fieldDecision, 'derivation')) return;
+  const decided = fieldDecision.derivation;
+  if (decided === null) {
+    delete field.derivation;
+  } else if (typeof decided === 'string' && decided !== '') {
+    field.derivation = { type: decided };
+  } else if (decided && typeof decided === 'object' && !Array.isArray(decided)) {
+    field.derivation = decided;
+  }
+}
+
 function applyForeignKeyLookupProps(field, fieldDecision) {
   if (fieldDecision.lookup) field.lookup = true;
   if (fieldDecision.popup) field.popup = true;
@@ -468,12 +496,13 @@ function buildCuratedField(rawField, fieldDecision, discardPatterns) {
     field.enumValues = decidedEnumValues;
   }
 
-  // Allow decisions to explicitly suppress a raw derivation by setting derivation: null.
-  // This is needed when a field transitions from system/readOnly (auto-derived) to editable
-  // (user-provided), so NEO does not override the user's value on save.
-  if (Object.prototype.hasOwnProperty.call(fieldDecision, 'derivation') && fieldDecision.derivation === null) {
-    delete field.derivation;
-  }
+  // ETP-5245 — decisions own the derivation: they can SUPPRESS a raw one (`derivation: null`,
+  // needed when a field transitions from system/readOnly (auto-derived) to editable so NEO does
+  // not override the user's value on save) and they can DECLARE one the raw AD schema does not
+  // carry — a real server-side default written by a NeoHandler, for instance, which every
+  // consumer must see (quality-gate invariants, validate-schema, generate-contract).
+  // Runs AFTER copyRawProps(FIELD_RAW_COPY_PROPS) so the decision always wins over the raw value.
+  applyDecisionDerivation(field, fieldDecision);
 
   // Decisions can override raw-copied process routing (e.g. swap obuiapp JS handler
   // for a classic stored-procedure process that NEO can actually execute).
