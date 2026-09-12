@@ -152,4 +152,33 @@ describe('synchronous session ownership', () => {
     assert.equal(controller.isCurrent(beforeDispose), false);
     assert.equal(controller.isCurrent(controller.capture()), true);
   });
+
+  // [ETP-5189] `menuAccess` is a third flat-map slot alongside `windowAccess`/`capabilities` —
+  // `replace()` must carry it through the same `access?.<key> ?? {}` contract as the other two,
+  // not silently drop it or leave a stale value behind.
+  it('replace() populates menuAccess from access.menuAccess', () => {
+    const { controller, session } = setup();
+    controller.replace(session, {
+      access: { windowAccess: { W1: 'full' }, capabilities: { c: true }, menuAccess: { M1: true } },
+    });
+    assert.deepEqual(controller.getSnapshot().menuAccess, { M1: true });
+  });
+
+  it('replace() defaults menuAccess to {} when access has no menuAccess key', () => {
+    const { controller, session } = setup();
+    controller.replace(session, { access: { windowAccess: { W1: 'full' }, capabilities: { c: true } } });
+    assert.deepEqual(controller.getSnapshot().menuAccess, {});
+  });
+
+  it('replace() defaults windowAccess/capabilities/menuAccess to {} when access is undefined', () => {
+    const { controller, session } = setup();
+    // Seed a non-empty menuAccess first, so the next replace() with no `access` at all
+    // proves it actively resets rather than merely leaving a previous value untouched.
+    controller.replace(session, { access: { windowAccess: { W1: 'full' }, menuAccess: { M1: true } } });
+    assert.deepEqual(controller.getSnapshot().menuAccess, { M1: true });
+    controller.replace(session);
+    assert.deepEqual(controller.getSnapshot().windowAccess, {});
+    assert.deepEqual(controller.getSnapshot().capabilities, {});
+    assert.deepEqual(controller.getSnapshot().menuAccess, {});
+  });
 });
