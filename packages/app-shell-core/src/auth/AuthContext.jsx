@@ -78,7 +78,14 @@ export function AuthProvider({ children, storage, initialSession, onSessionChang
     }
     const work = { snapshot: controller.capture(), trailing: false };
     operation.current = work;
-    controller.publish({ isRefreshingSession: true, sessionRefreshStatus: 'refreshing' });
+    // Only an imperative call (refreshToken(), a user-initiated action that may show a
+    // spinner) needs to broadcast "refreshing" to the whole app's UI. Automatic refreshes
+    // (bootstrap, focus/visibility, the poll interval) are background work — publishing this
+    // transient status for them doubles the re-render volume on every page navigation for a
+    // signal nothing actually consumes (see docs/auth-session-refresh.md; no UI gates on
+    // `isRefreshingSession`/`sessionRefreshStatus === 'refreshing'` for the automatic path).
+    if (imperative) controller.publish({ isRefreshingSession: true, sessionRefreshStatus: 'refreshing' });
+    let finalized = false;
     work.promise = (async () => {
       let outcome;
       do {
@@ -145,12 +152,13 @@ export function AuthProvider({ children, storage, initialSession, onSessionChang
           const accessChanged = !sameFlatMap(nextWindowAccess, latest.windowAccess)
             || !sameFlatMap(nextCapabilities, latest.capabilities);
           const finalUpdate = {
-            sessionRefreshStatus: 'ready', isSessionReady: true,
+            sessionRefreshStatus: 'ready', isSessionReady: true, isRefreshingSession: false,
             windowAccess: accessChanged ? nextWindowAccess : latest.windowAccess,
             capabilities: accessChanged ? nextCapabilities : latest.capabilities,
           };
           if (accessChanged) controller.invalidate(finalUpdate);
           else controller.publish(finalUpdate);
+          finalized = true;
           work.snapshot = controller.capture();
         } else {
           const blocked = outcome.status === 'metadata-required' || current.metadataRequired;
@@ -178,7 +186,7 @@ export function AuthProvider({ children, storage, initialSession, onSessionChang
           const accessChanged = !!access
             && (!sameFlatMap(nextWindowAccess, previous.windowAccess) || !sameFlatMap(nextCapabilities, previous.capabilities));
           const update = {
-            needsRefresh: false, isSessionReady: !blocked,
+            needsRefresh: false, isSessionReady: !blocked, isRefreshingSession: false,
             metadataRequired: blocked,
             sessionRefreshStatus: blocked ? 'metadata-required' : outcome.status,
             ...(blocked ? { windowAccess: {}, capabilities: {} } : {}),
@@ -191,6 +199,7 @@ export function AuthProvider({ children, storage, initialSession, onSessionChang
           };
           if (blocked || accessChanged) controller.invalidate(update);
           else controller.publish(update);
+          finalized = true;
           work.snapshot = controller.capture();
         }
       } while (work.trailing);
@@ -198,7 +207,15 @@ export function AuthProvider({ children, storage, initialSession, onSessionChang
     })().finally(() => {
       if (operation.current !== work) return;
       operation.current = null;
-      if (controller.isCurrent(work.snapshot)) controller.publish({ isRefreshingSession: false });
+      // The normal-completion path above already folded `isRefreshingSession: false` into its
+      // own final publish/invalidate — firing it again here would be a second, redundant
+      // notification cycle for the same state transition. This fallback exists ONLY for the
+      // early-return/superseded paths, where the loop exited before ever reaching its own
+      // final publish (session token missing, or superseded by a concurrent identity change) —
+      // `finalized` distinguishes the two. In practice a superseded exit also fails
+      // `isCurrent(work.snapshot)`, so this condition is a belt-and-suspenders guard, not the
+      // only one.
+      if (!finalized && controller.isCurrent(work.snapshot)) controller.publish({ isRefreshingSession: false });
     });
     return work.promise;
   }, [controller, loadAccess]);

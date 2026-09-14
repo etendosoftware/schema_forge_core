@@ -10,6 +10,7 @@ import { DataProvider, useDataCache } from '../../data/DataProvider.jsx';
 import { useQuery } from '../../data/useQuery.jsx';
 import { CurrencyProvider, useCurrency } from '../../hooks/useCurrency.jsx';
 import { deferred, jsonResponse, metadataResponse, refreshResponse, sessionFixture } from './refreshFixtures.js';
+import * as sessionControllerModule from '../sessionController.js';
 
 vi.mock('../../i18n/useUI.js', () => ({ useUI: () => (key) => key }));
 // Unrelated runtime chrome is not part of this contract. Providers and guards stay real.
@@ -287,6 +288,57 @@ describe('real provider authoritative refresh', () => {
 });
 
 describe('automatic refresh lifecycle and form preservation', () => {
+  // ETP-5307 — new code fired 2 listener-notification cycles for a normal AUTOMATIC
+  // refresh's completion: the do-while loop's own final `publish`/`invalidate` for the
+  // resolved outcome, THEN a separate `.finally()` publish just to flip
+  // `isRefreshingSession` back to false. Combined with the leading "refreshing" publish
+  // (also fired for every automatic refresh, not just an imperative one), this doubled
+  // `AuthProvider` re-render volume at the exact moment every page navigation bootstraps.
+  // Regression: for a bootstrap (non-imperative) refresh that resolves to a no-op/failed
+  // outcome, the controller's `publish`/`invalidate` combined must be called ONCE, not
+  // three times, and that single call must already carry `isRefreshingSession: false`.
+  it('folds a normal automatic refresh completion into a single controller notification', async () => {
+    // Legacy no-op outcome (unchanged token/identity) WITH a fetchWindowAccess provided, so
+    // access is resolved and `accessLoaded` is set to true inside refresh()'s own final
+    // update — this isolates refresh()'s own publish sequence from the separate
+    // access-loading effect (lines below `refresh` in AuthContext.jsx), which is a distinct,
+    // pre-existing effect outside this fix's scope and would otherwise add its own publish.
+    const session = sessionFixture();
+    let controllerSpies;
+    const originalCreateController = sessionControllerModule.createSessionController;
+    vi.spyOn(sessionControllerModule, 'createSessionController').mockImplementation((...args) => {
+      const controller = originalCreateController(...args);
+      controllerSpies = { publish: vi.spyOn(controller, 'publish'), invalidate: vi.spyOn(controller, 'invalidate') };
+      return controller;
+    });
+    fetch.mockResolvedValue(refreshResponse({ token: session.token }));
+    const access = vi.fn().mockResolvedValue({ windowAccess: {}, capabilities: {} });
+    const { result } = setup({ session, fetchWindowAccess: access });
+    await waitFor(() => expect(result.current.sessionRefreshStatus).toBe('legacy'));
+    expect(access).toHaveBeenCalledTimes(1);
+    expect(controllerSpies.invalidate).not.toHaveBeenCalled();
+    expect(controllerSpies.publish).toHaveBeenCalledTimes(1);
+    expect(controllerSpies.publish).toHaveBeenCalledWith(expect.objectContaining({
+      isRefreshingSession: false, sessionRefreshStatus: 'legacy', accessLoaded: true,
+    }));
+    // The transient "refreshing" broadcast is imperative-only; an automatic refresh never
+    // shows it — nothing in the call history sets `isRefreshingSession: true`.
+    expect(controllerSpies.publish.mock.calls.some(([patch]) => patch.isRefreshingSession === true)).toBe(false);
+  });
+
+  it('still broadcasts "refreshing" for an imperative refreshToken() call', async () => {
+    const session = sessionFixture();
+    fetch.mockResolvedValueOnce(refreshResponse(metadataResponse(session)))
+      .mockReturnValueOnce(new Promise(() => {})); // never resolves — inspect mid-flight state
+    const { result } = setup({ session });
+    await settled(result);
+    let refreshPromise;
+    act(() => { refreshPromise = result.current.refreshToken(); });
+    expect(result.current.isRefreshingSession).toBe(true);
+    expect(result.current.sessionRefreshStatus).toBe('refreshing');
+    void refreshPromise;
+  });
+
   it('ignores focus and visibility while hidden, then refreshes on visible focus', async () => {
     vi.useFakeTimers();
     fetch.mockResolvedValue(refreshResponse({ token: sessionFixture().token }));
