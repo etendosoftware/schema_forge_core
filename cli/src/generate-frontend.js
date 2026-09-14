@@ -731,7 +731,14 @@ export function generateFormComponent(entityName, contract) {
     // ETP-4749: fixed chip rendered before the input (e.g. "https://"); see EntityForm's
     // renderInputField and recipientEdits.js's format validators.
     const inputPrefixPart = wrapIf(", inputPrefix: '", f.inputPrefix, "'");
-    const fieldLine = `  { key: '${f.name}', column: '${f.column}', type: '${type}'${labelsPart}${formLabelPart}${requiredPart}${lookupPart}${popupPart}${readOnlyPart}${inlinePart}${sectionPart}${referencePart}${inputModePart}${searchSelectPart}${allowCreatePart}${createPart}${dependsOnPart}${optionsPart}${valueTypePart}${defaultValuePart}${helpPart}${placeholderPart}${emptyOptionPart}${fieldGroupPart}${precisionPart}${minPart}${integerPart}${displayLogicPart}${readOnlyLogicPart}${spanPart}${rowsPart}${clearablePart}${customRendererPart}${editModalPart}${inputPrefixPart} },`;
+    // ETP-5031 — native HTML maxLength truncation. Resolved into contract.json's
+    // per-field `validation.maxLength` by ETP-4555 (cli/src/lib/field-validation.js)
+    // but never projected onto this flat field literal, so EntityForm's
+    // `f.maxLength` reads (DeferredInput, the plain <Input>, and <textarea>) never
+    // fired. Projected here as a flat prop for that reason. Appended at the tail so
+    // fields without a declared maxLength stay byte-identical.
+    const maxLengthPart = optProp('maxLength', f.validation?.maxLength);
+    const fieldLine = `  { key: '${f.name}', column: '${f.column}', type: '${type}'${labelsPart}${formLabelPart}${requiredPart}${lookupPart}${popupPart}${readOnlyPart}${inlinePart}${sectionPart}${referencePart}${inputModePart}${searchSelectPart}${allowCreatePart}${createPart}${dependsOnPart}${optionsPart}${valueTypePart}${defaultValuePart}${helpPart}${placeholderPart}${emptyOptionPart}${fieldGroupPart}${precisionPart}${minPart}${integerPart}${displayLogicPart}${readOnlyLogicPart}${spanPart}${rowsPart}${clearablePart}${customRendererPart}${editModalPart}${inputPrefixPart}${maxLengthPart} },`;
     return [...slotLines, fieldLine].join('\n');
   }).join('\n');
 
