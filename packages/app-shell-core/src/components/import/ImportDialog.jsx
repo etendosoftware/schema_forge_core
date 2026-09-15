@@ -10,7 +10,7 @@ import { ImportProgressStep } from './ImportProgressStep.jsx';
 import { ImportFileErrorDialog } from './ImportFileErrorDialog.jsx';
 import { ImportSystemErrorDialog } from './ImportSystemErrorDialog.jsx';
 import { ImportSendingCloseDialog } from './ImportSendingCloseDialog.jsx';
-import { decodeCsvBuffer, parseDelimited } from '../../lib/import/parseDelimited.js';
+import { decodeCsvBuffer, parseDelimited, ImportParseError } from '../../lib/import/parseDelimited.js';
 import { parseXlsx } from '../../lib/import/parseXlsx.js';
 import { mapColumns } from '../../lib/import/mapColumns.js';
 import { dedupeRows } from '../../lib/import/dedupeRows.js';
@@ -20,7 +20,9 @@ import { buildOperations } from '../../lib/import/buildOperations.js';
 import { runImport, sendRow, SEND_STATUS } from '../../lib/import/importEngine.js';
 import { buildTemplateCsv, resolveTemplateHeaders } from '../../lib/import/buildTemplateCsv.js';
 import { buildTemplateXlsx } from '../../lib/import/buildTemplateXlsx.js';
-import { isXlsxFileName, outputFormats } from '../../lib/import/importFormats.js';
+import {
+  isXlsxFileName, outputFormats, isAcceptedFileName, formatNames,
+} from '../../lib/import/importFormats.js';
 import { runImportRowValidator } from '../../lib/import/rowValidators.js';
 import { findExistingKeys, buildLookupKey } from '../../lib/import/existingRecordLookup.js';
 
@@ -225,6 +227,21 @@ export function ImportDialog({ open, onOpenChange, config, token, postBatch, sim
   const dedupeKeyTargets = config.dedupe?.key ?? [];
 
   /**
+   * ETP-5348: the contract nests these under `limit` — `window.import.limit` in decisions.json,
+   * and `frontendContract.window.import.limit` in the generated contract.json, verified against
+   * artifacts/product and artifacts/contacts. They were read as `config.maxRows` /
+   * `config.concurrency`, which are ALWAYS `undefined`, so `runImport`'s own parameter defaults
+   * took over. Those defaults are 5000 and 4 — the same numbers every window happens to declare
+   * today — which is exactly why nothing ever looked wrong: a window that declared a different
+   * limit would have been ignored in complete silence.
+   *
+   * The flat `config.maxRows` is still honored as a second choice so a caller (or a test) that
+   * passes it directly keeps working; the nested value is the one the pipeline actually produces.
+   */
+  const maxRows = config.limit?.maxRows ?? config.maxRows ?? 5000;
+  const concurrency = config.limit?.concurrency ?? config.concurrency ?? 4;
+
+  /**
    * One locale lookup with an English fallback, the same posture `validateRows.js` and
    * `importEngine.js` take: no translator, an unknown key, or a dictionary that echoes the
    * key back all degrade to the English text rather than printing a raw key at the user.
@@ -313,12 +330,40 @@ export function ImportDialog({ open, onOpenChange, config, token, postBatch, sim
       // A new file starts a fresh review session. Do not carry a previous
       // Errors/All selection into the next upload.
       setStatusFilterPreSend('ok');
+      // ETP-5348: the FIRST thing that happens to an upload is a format check, because nothing
+      // downstream performs one. The dropzone's `accept` attribute only filters the OS picker's
+      // default view — drag-and-drop bypasses it — and `parseDelimited` cannot refuse a binary
+      // either, since its Windows-1252 fallback decodes any byte sequence without error. So a
+      // `.docx` used to parse into one nonsense column and drop the user on a mapping screen
+      // with nothing mapped and nothing said. `formatNames` is reused rather than re-listing the
+      // extensions here, so the message and the dropzone hint can never disagree.
+      if (!isAcceptedFileName(file.name, config.formats)) {
+        const accepted = formatNames(config.formats).join(', ');
+        throw new ImportParseError(
+          `Unsupported file format. Accepted formats: ${accepted}.`,
+          { messageKey: 'importErrorUnsupportedFormat', params: { formats: accepted } },
+        );
+      }
       // One boundary, two parsers. `parseXlsx` is contracted to return exactly what
       // `parseDelimited` returns, so everything from here down — mapColumns, runValidation,
       // the FK resolvers, the dedupe, the review queue — is format-blind and unchanged.
       const { headers: parsedHeaders, rows } = isXlsxFileName(file.name)
         ? await parseXlsx(file)
         : parseDelimited(decodeCsvBuffer(await file.arrayBuffer()));
+      // ETP-5348: reject an oversized file HERE, before it is validated, reviewed and confirmed.
+      // `runImport` already honored `maxRows`, but it did so with `rows.slice(0, maxRows)` at
+      // send time: the extra rows were never attempted, never counted and never reported, so a
+      // 5001-row file imported 5000 and lost the last one with no error, no warning and no trace
+      // in the summary. The user's only way to notice was to count the records afterwards.
+      // Refusing the file is the honest answer — silently importing part of what someone handed
+      // us is the behaviour being fixed, and truncating with a nicer notice is still that.
+      if (rows.length > maxRows) {
+        throw new ImportParseError(
+          `The file has ${rows.length} rows, more than the ${maxRows} this import accepts. `
+          + 'Split it into smaller files.',
+          { messageKey: 'importErrorTooManyRows', params: { count: rows.length, limit: maxRows } },
+        );
+      }
       const { mapping: autoMapping } = mapColumns(parsedHeaders, localizedFields);
       setHeaders(parsedHeaders);
       setRawRows(rows);
@@ -329,7 +374,7 @@ export function ImportDialog({ open, onOpenChange, config, token, postBatch, sim
       setFileErrorMessage(localizeError(error));
       setStep(STEP.FILE_ERROR);
     }
-  }, [localizedFields, runValidation, localizeError]);
+  }, [localizedFields, runValidation, localizeError, config.formats, maxRows]);
 
   const handleApplyMapping = useCallback(async (newMapping) => {
     setMapping(newMapping);
@@ -426,8 +471,8 @@ export function ImportDialog({ open, onOpenChange, config, token, postBatch, sim
         buildRowOperations: (row) => buildOperations(row, operationsConfig),
         postBatch,
         translate,
-        concurrency: config.concurrency,
-        maxRows: config.maxRows,
+        concurrency,
+        maxRows,
         onProgress: (completed, total) => setProgress(Math.round((completed / total) * 100)),
       }));
     } catch (error) {
@@ -507,7 +552,7 @@ export function ImportDialog({ open, onOpenChange, config, token, postBatch, sim
         { count: trueFailures.length },
       ));
     }
-  }, [entries, operationsConfig, config.concurrency, config.maxRows, postBatch, onImported, translate, localize, labelFor, localizeError]);
+  }, [entries, operationsConfig, concurrency, maxRows, postBatch, onImported, translate, localize, labelFor, localizeError]);
 
   const handleRetryEntryPostSend = useCallback(async (index) => {
     const entry = entries[index];
