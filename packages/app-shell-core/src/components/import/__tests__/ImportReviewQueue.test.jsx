@@ -185,6 +185,12 @@ describe('ImportReviewQueue', () => {
       />
     );
     const rowError = screen.getByTestId('ImportReviewQueue__rowError-0');
+    // Absence of `truncate` is NOT enough, and asserting only that is how this shipped
+    // broken: since ETP-5281 the enclosing TableCell carries `whitespace-nowrap`, which
+    // clips the message no matter what this span does about word breaking. Only
+    // `whitespace-normal` overrides it. jsdom computes no cascade, so this class check is
+    // the closest a unit test gets — the real proof is the browser.
+    expect(rowError.className).toMatch(/\bwhitespace-normal\b/);
     expect(rowError.textContent).toBe(longMessage);
     expect(rowError.className).not.toMatch(/\btruncate\b/);
   });
@@ -947,5 +953,73 @@ describe('formatValue hook', () => {
       renderQueue([{ row: { name: 'Lucia' }, errors: [], status: 'pending' }]);
       expect(screen.getByTestId('ImportReviewQueue__value-0-amount').textContent).toBe('');
     });
+  });
+});
+
+// ETP-5223 — the grid printed `field.label`, the ENGLISH caption declared in decisions.json,
+// so a Spanish session read "Search Key" / "Sales Price" as column headers (and inside the
+// "Errors in: …" tooltip) while the CSV template downloaded from the very same dialog was
+// already translated. `fieldLabelFn` is the dialog's own resolver, now threaded down here.
+describe('ImportReviewQueue — localized column captions', () => {
+  const fields = [
+    { id: 'searchKey', target: 'searchKey', label: 'Search Key' },
+    { id: 'salesPrice', target: 'salesPrice', label: 'Sales Price' },
+  ];
+  const fieldLabelFn = (field) => (
+    { searchKey: 'Identificador', salesPrice: 'Precio de venta' }[field.target]
+  );
+
+  const renderQueue = (entries, props = {}) => render(
+    <ImportReviewQueue
+      entries={entries}
+      fields={fields}
+      statusFilter="all"
+      onStatusFilterChange={() => {}}
+      onEditField={() => {}}
+      onRetryEntry={() => {}}
+      onSkipEntry={() => {}}
+      onUnskipEntry={() => {}}
+      onDownloadErrors={() => {}}
+      {...props}
+    />,
+  );
+
+  const okEntry = { row: { searchKey: 'SKU-1', salesPrice: '10' }, errors: [], status: 'pending' };
+
+  it('renders the resolved caption as the column header, not the declared English label', () => {
+    renderQueue([okEntry], { fieldLabelFn });
+    const header = screen.getByTestId('TableHead__searchKey');
+    expect(header.textContent).toBe('Identificador');
+    expect(screen.getByTestId('TableHead__salesPrice').textContent).toBe('Precio de venta');
+  });
+
+  it('names the failing columns in the row tooltip with the resolved caption', () => {
+    renderQueue([{
+      row: { searchKey: '', salesPrice: '10' },
+      errors: [{ target: 'searchKey', message: 'Falta un campo obligatorio.' }],
+      status: 'pending',
+    }], { fieldLabelFn });
+    expect(screen.getByTestId('AlertCircle__a73779').getAttribute('title')).toContain('Identificador');
+  });
+
+  it('falls back to the declared label when no fieldLabelFn is given', () => {
+    renderQueue([okEntry]);
+    expect(screen.getByTestId('TableHead__searchKey').textContent).toBe('Search Key');
+  });
+
+  // The message used to be `truncate`d inside a narrow column, so "Falta un campo
+  // obligatorio." rendered as "Falta un campo obligat…" and the only way to read it was to
+  // find the native title tooltip — exactly what ETP-5223 reported.
+  it('does not truncate a field-level error message', () => {
+    renderQueue([{
+      row: { searchKey: '', salesPrice: '10' },
+      errors: [{ target: 'searchKey', message: 'Falta un campo obligatorio.' }],
+      status: 'pending',
+    }], { fieldLabelFn });
+    const fieldError = screen.getByTestId('ImportReviewQueue__fieldError-0-searchKey');
+    // See the row-level twin above: `whitespace-normal` is the class that actually wraps.
+    expect(fieldError.className).toMatch(/\bwhitespace-normal\b/);
+    expect(fieldError.textContent).toBe('Falta un campo obligatorio.');
+    expect(fieldError.className).not.toMatch(/\btruncate\b/);
   });
 });

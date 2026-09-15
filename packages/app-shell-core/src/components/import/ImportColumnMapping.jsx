@@ -18,9 +18,26 @@ function formatTemplate(template, vars) {
   return template.replace(/\{(\w+)\}/g, (_, key) => vars[key] ?? '');
 }
 
-function targetLabel(importFields, target) {
+/**
+ * A field's caption in the session language.
+ *
+ * ETP-5223: this used to read `field.label` straight off the descriptor, which is the ENGLISH
+ * text declared in decisions.json — so the mapping chips and the "Editar correspondencia"
+ * dropdown printed "Search Key" / "Sales Price" no matter what language the session was in,
+ * even though the dialog already resolved the localized caption for the CSV template header.
+ * `fieldLabelFn` is that same resolver (AD label dictionary, or the field's `labelKey`),
+ * threaded down here so one field carries one name everywhere in the flow.
+ */
+function labelOf(field, fieldLabelFn) {
+  if (!field) return null;
+  const resolved = typeof fieldLabelFn === 'function' ? fieldLabelFn(field) : null;
+  return resolved || field.label || field.target;
+}
+
+function targetLabel(importFields, target, fieldLabelFn) {
   if (!target) return null;
-  return importFields.find((f) => f.target === target)?.label ?? target;
+  const field = importFields.find((f) => f.target === target);
+  return field ? labelOf(field, fieldLabelFn) : target;
 }
 
 /**
@@ -28,7 +45,7 @@ function targetLabel(importFields, target) {
  * Only ever mounted inside the edit modal, operating on draft state owned by
  * the parent; nothing here touches the dialog's real mapping until Save.
  */
-function MappingGrid({ headers, importFields, mapping, onMappingChange, text }) {
+function MappingGrid({ headers, importFields, mapping, onMappingChange, text, fieldLabelFn }) {
   return (
     <div className="flex flex-wrap gap-2 py-2">
       {headers.map((header) => {
@@ -49,7 +66,7 @@ function MappingGrid({ headers, importFields, mapping, onMappingChange, text }) 
                   <SelectItem
                     key={field.target}
                     value={field.target}
-                    data-testid={"SelectItem__" + field.target}>{field.label}</SelectItem>
+                    data-testid={"SelectItem__" + field.target}>{labelOf(field, fieldLabelFn)}</SelectItem>
                 ))}
               </SelectContent>
             </Select>
@@ -60,7 +77,7 @@ function MappingGrid({ headers, importFields, mapping, onMappingChange, text }) 
   );
 }
 
-export function ImportColumnMapping({ headers, importFields, mapping, onApplyMapping, labels }) {
+export function ImportColumnMapping({ headers, importFields, mapping, onApplyMapping, labels, fieldLabelFn }) {
   const text = { ...DEFAULT_LABELS, ...labels };
   const [open, setOpen] = useState(false);
   const [draftMapping, setDraftMapping] = useState(mapping);
@@ -96,7 +113,7 @@ export function ImportColumnMapping({ headers, importFields, mapping, onApplyMap
       </div>
       <div className="flex flex-wrap gap-1.5" data-testid="ImportColumnMapping__chips">
         {headers.map((header) => {
-          const label = targetLabel(importFields, mapping[header]);
+          const label = targetLabel(importFields, mapping[header], fieldLabelFn);
           return (
             <span
               key={header}
@@ -121,6 +138,7 @@ export function ImportColumnMapping({ headers, importFields, mapping, onApplyMap
             mapping={draftMapping}
             onMappingChange={handleDraftChange}
             text={text}
+            fieldLabelFn={fieldLabelFn}
             data-testid="MappingGrid__bf9e7b" />
           <DialogFooter data-testid="DialogFooter__columnMappingEdit">
             <Button type="button" variant="outline" onClick={() => setOpen(false)} data-testid="ImportColumnMapping__cancelButton">

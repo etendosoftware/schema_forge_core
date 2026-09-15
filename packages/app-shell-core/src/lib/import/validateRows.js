@@ -18,7 +18,7 @@ function isBlank(value) {
 const VALIDATION_FALLBACKS = {
   importErrorRequiredGeneric: () => 'Required field is missing.',
   importErrorInvalidEmail: () => 'Not a valid email address.',
-  importErrorNotANumber: (p) => `"${p.value}" is not a valid number.`,
+  importErrorNotANumber: (p) => `"${p.value}" is not a valid number. Use 1234.56 or 1,234.56.`,
   importErrorFkUnmatched: (p) => `"${p.value}" could not be matched to an existing record.`,
 };
 
