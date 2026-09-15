@@ -91,9 +91,19 @@ function renameRowKeys(row, mapping) {
 
 /**
  * @param {(field: object) => string} [fieldLabelFn] Resolves a field's session-language
- *   header for the downloaded template. Without it the template falls back to the field's
- *   first alias, which in every window is the Spanish term — the template then came out in
- *   Spanish no matter what language the session was in.
+ *   caption. Used for the downloaded template's headers — without it the template falls back
+ *   to the field's first alias, which in every window is the Spanish term, so the template
+ *   came out in Spanish no matter what language the session was in — AND (ETP-5223) for the
+ *   review grid's column headers and the column-mapping dropdown, which read `field.label`
+ *   (the English text in decisions.json) and so stayed English in a Spanish session while
+ *   the template beside them was already translated.
+ *
+ *   Locale keys this dialog resolves through `translate`, beyond the `labels` object:
+ *   `importSuccessToast`/`importSkippedToast` (`{count}`), the
+ *   `ImportParseError` keys
+ *   `importErrorFileEmpty`, `importErrorDuplicateHeader` (`{header}`),
+ *   `importErrorUnreadableXlsx` (`{detail}`), `importErrorMultipleSheets` (`{sheets}`),
+ *   and `importErrorUnknown`.
  * @param {(criteria: object, keyTargets: string[]) => Promise<Array<object>>} [existingKeyFetchFn]
  *   Queries the entity for records matching the dedupe key, so rows that already exist are
  *   marked Saltada in the review queue instead of being discovered as duplicates after the
@@ -202,15 +212,36 @@ export function ImportDialog({ open, onOpenChange, config, token, postBatch, sim
   // missing config: dedupe only runs when there's an actual non-empty key list.
   const dedupeKeyTargets = config.dedupe?.key ?? [];
 
+  /**
+   * One locale lookup with an English fallback, the same posture `validateRows.js` and
+   * `importEngine.js` take: no translator, an unknown key, or a dictionary that echoes the
+   * key back all degrade to the English text rather than printing a raw key at the user.
+   */
+  const localize = useCallback((key, fallback, params) => {
+    if (typeof translate !== 'function') return fallback;
+    const translated = translate(key, params);
+    return translated && translated !== key ? translated : fallback;
+  }, [translate]);
+
   // The two reasons a row is skipped rather than failed. Both are shown verbatim in the
   // review queue, so both go through `translate` — they were hardcoded English strings
   // sitting in the middle of an app used primarily in Spanish.
   const labelFor = useCallback((which) => {
     const { key, fallback } = SKIP_MESSAGES[which];
-    if (typeof translate !== 'function') return fallback;
-    const translated = translate(key);
-    return translated && translated !== key ? translated : fallback;
-  }, [translate]);
+    return localize(key, fallback);
+  }, [localize]);
+
+  /**
+   * ETP-5223: `parseDelimited`/`parseXlsx` are plain modules with no translator, so they
+   * throw the English text on `message` plus the locale `messageKey`/`params` to resolve it
+   * — "The file is empty." and `Duplicate column header: "…"` reached the user in English
+   * even in a fully Spanish session. Anything else thrown here (a genuine runtime fault)
+   * has no key and keeps its own message.
+   */
+  const localizeError = useCallback((error) => {
+    if (error?.messageKey) return localize(error.messageKey, error.message, error.params);
+    return error?.message || localize('importErrorUnknown', 'Unknown error.');
+  }, [localize]);
 
   // Single definition of "what makes a row valid", shared by the initial pass and by both
   // re-validate-after-edit paths. Kept as one function on purpose: when the edit paths
@@ -278,10 +309,10 @@ export function ImportDialog({ open, onOpenChange, config, token, postBatch, sim
       await runValidation(rows.map((row) => renameRowKeys(row, autoMapping)));
       setStep(STEP.MAPPING);
     } catch (error) {
-      setFileErrorMessage(error.message);
+      setFileErrorMessage(localizeError(error));
       setStep(STEP.FILE_ERROR);
     }
-  }, [localizedFields, runValidation]);
+  }, [localizedFields, runValidation, localizeError]);
 
   const handleApplyMapping = useCallback(async (newMapping) => {
     setMapping(newMapping);
@@ -380,7 +411,7 @@ export function ImportDialog({ open, onOpenChange, config, token, postBatch, sim
         onProgress: (completed, total) => setProgress(Math.round((completed / total) * 100)),
       }));
     } catch (error) {
-      setFileErrorMessage(error.message || 'Unknown error while sending the import.');
+      setFileErrorMessage(localizeError(error));
       setStep(STEP.FILE_ERROR);
       return;
     }
@@ -394,8 +425,8 @@ export function ImportDialog({ open, onOpenChange, config, token, postBatch, sim
     const duplicateResults = results.filter((r) => r.status === SEND_STATUS.DUPLICATE);
     const trueFailures = results.filter((r) => r.status !== 'ok' && r.status !== SEND_STATUS.DUPLICATE);
     const resultEntries = [
-      ...duplicateResults.map((r) => ({ row: r.row, errors: [{ target: '', message: r.error?.message || 'Already exists' }], status: 'skipped' })),
-      ...trueFailures.map((r) => ({ row: r.row, errors: [{ target: '', message: r.error?.message || 'Unknown error' }], status: 'pending' })),
+      ...duplicateResults.map((r) => ({ row: r.row, errors: [{ target: '', message: r.error?.message || labelFor('alreadyExists') }], status: 'skipped' })),
+      ...trueFailures.map((r) => ({ row: r.row, errors: [{ target: '', message: r.error?.message || localize('importErrorUnknown', 'Unknown error.') }], status: 'pending' })),
     ];
     setEntries(resultEntries);
     setStep(STEP.RESULT);
@@ -426,9 +457,20 @@ export function ImportDialog({ open, onOpenChange, config, token, postBatch, sim
     // failedCount only counts trueFailures — duplicates alone should not keep the dialog
     // forced open, since there's nothing left for the user to act on.
     onImported({ okCount, failedCount: trueFailures.length });
-    if (okCount > 0) toast.success(`${okCount} records imported successfully`);
-    if (duplicateResults.length > 0) toast.info(`${duplicateResults.length} row(s) skipped — already exist`);
-  }, [entries, operationsConfig, config.concurrency, config.maxRows, postBatch, onImported, translate]);
+    // ETP-5223: both toasts are the LAST thing a user sees after a successful import, and
+    // both were hardcoded English template literals — the one place where "N records
+    // imported successfully" greeted a Spanish user at the end of an otherwise Spanish flow.
+    if (okCount > 0) {
+      toast.success(localize('importSuccessToast', `${okCount} records imported successfully`, { count: okCount }));
+    }
+    if (duplicateResults.length > 0) {
+      toast.info(localize(
+        'importSkippedToast',
+        `${duplicateResults.length} row(s) skipped — already exist`,
+        { count: duplicateResults.length },
+      ));
+    }
+  }, [entries, operationsConfig, config.concurrency, config.maxRows, postBatch, onImported, translate, localize, labelFor, localizeError]);
 
   const handleRetryEntryPostSend = useCallback(async (index) => {
     const entry = entries[index];
@@ -539,6 +581,7 @@ export function ImportDialog({ open, onOpenChange, config, token, postBatch, sim
                 mapping={mapping}
                 onApplyMapping={handleApplyMapping}
                 labels={labels?.mapping}
+                fieldLabelFn={fieldLabelFn}
                 data-testid="ImportColumnMapping__38a6c3" />
               <div className="relative flex min-h-0 flex-1 flex-col">
                 {isRevalidating && (
@@ -559,9 +602,10 @@ export function ImportDialog({ open, onOpenChange, config, token, postBatch, sim
                   onSkipEntry={handleSkipEntry}
                   onUnskipEntry={handleUnskipEntry}
                   onApplyFkValue={handleApplyFkValue}
-                  onDownloadErrors={() => downloadCsv(buildErrorsCsv(entries, headers, mapping), 'import-errors.csv')}
+                  onDownloadErrors={() => downloadCsv(buildErrorsCsv(entries, headers, mapping, labels?.reviewQueue?.statusError), 'import-errors.csv')}
                   labels={labels?.reviewQueue}
                   simSearchFn={simSearchFn}
+                  fieldLabelFn={fieldLabelFn}
                   token={token}
                   data-testid="ImportReviewQueue__38a6c3" />
               </div>
@@ -603,10 +647,11 @@ export function ImportDialog({ open, onOpenChange, config, token, postBatch, sim
                   onSkipEntry={handleSkipEntry}
                   onUnskipEntry={handleUnskipEntry}
                   onApplyFkValue={handleApplyFkValue}
-                  onDownloadErrors={() => downloadCsv(buildErrorsCsv(entries, headers, mapping), 'import-errors.csv')}
+                  onDownloadErrors={() => downloadCsv(buildErrorsCsv(entries, headers, mapping, labels?.reviewQueue?.statusError), 'import-errors.csv')}
                   retryLabel={labels?.reviewQueue?.retry ?? 'Retry'}
                   labels={labels?.reviewQueue}
                   simSearchFn={simSearchFn}
+                  fieldLabelFn={fieldLabelFn}
                   token={token}
                   data-testid="ImportReviewQueue__38a6c3" />
               )}
