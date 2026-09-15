@@ -75,6 +75,13 @@ vi.mock('../ImportSystemErrorDialog.jsx', () => ({
   },
 }));
 
+vi.mock('../ImportSendingCloseDialog.jsx', () => ({
+  ImportSendingCloseDialog: (props) => {
+    captured.sendingClose = props;
+    return props.open ? <div data-testid="mock-sendingClose" /> : null;
+  },
+}));
+
 import { ImportDialog } from '../ImportDialog.jsx';
 
 // The real Radix Dialog stays mounted (only the step children are mocked); jsdom needs the
@@ -114,6 +121,7 @@ const labels = {
   fileError: { title: 'L_fileErrorTitle', cancel: 'L_cancel', retry: 'L_retry' },
   reviewQueue: { filterAll: 'L_filterAll', filterError: 'L_filterError', skip: 'L_skip', retry: 'L_rqRetry' },
   systemError: { title: 'L_sysTitle', subtitle: 'L_sysSubtitle', close: 'L_sysClose' },
+  sendingClose: { title: 'L_scTitle', body: 'L_scBody', keepWatching: 'L_scKeep', closeAnyway: 'L_scCloseAnyway' },
 };
 
 function renderDialog(props = {}) {
@@ -153,6 +161,14 @@ describe('ImportDialog — label forwarding to every child', () => {
     renderDialog();
     expect(captured.systemError.labels).toBe(labels.systemError);
     expect(captured.systemError.open).toBe(false);
+  });
+
+  // ETP-5225 — same posture as the system-error dialog: always mounted, shut until the one
+  // moment it has something to say (a close attempt mid-send).
+  it('always mounts ImportSendingCloseDialog with labels.sendingClose (closed until a close is attempted mid-send)', () => {
+    renderDialog();
+    expect(captured.sendingClose.labels).toBe(labels.sendingClose);
+    expect(captured.sendingClose.open).toBe(false);
   });
 
   it('forwards labels.mapping to ImportColumnMapping, labels.reviewQueue to ImportReviewQueue, and interpolates the import button with the valid-row count', async () => {

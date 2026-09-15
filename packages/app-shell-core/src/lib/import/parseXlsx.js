@@ -118,28 +118,35 @@ export async function parseXlsx(file) {
     // A corrupt or non-OOXML file surfaces as the reader's own low-level complaint ("Can't find
     // ...xl/workbook.xml", a zip error). Re-thrown as ImportParseError so ImportDialog routes it
     // to the file-error step like every other unreadable upload, instead of the generic catch.
-    throw new ImportParseError(`Unable to read the Excel file — ${error.message}`);
+    throw new ImportParseError(`Unable to read the Excel file — ${error.message}`, {
+      messageKey: 'importErrorUnreadableXlsx',
+      params: { detail: error.message },
+    });
   }
 
   const withContent = sheets.filter(hasContent);
   if (withContent.length === 0) {
     // Same wording as parseDelimited's empty-file case, so the dialog says one thing.
-    throw new ImportParseError('The file is empty.');
+    throw new ImportParseError('The file is empty.', { messageKey: 'importErrorFileEmpty' });
   }
   if (withContent.length > 1) {
     // Taking the first and discarding the rest would import part of a file and report success.
     // Naming the sheets is what makes the error actionable — the user has to know which ones.
     const names = withContent.map((s) => s.sheet).filter(Boolean).join(', ');
+    // The parenthetical is built here rather than inside the locale entry so a file whose
+    // sheets are unnamed does not render an empty "()" in any language.
+    const namesSuffix = names ? ` (${names})` : '';
     throw new ImportParseError(
-      `The file has more than one sheet with data${names ? ` (${names})` : ''}. `
+      `The file has more than one sheet with data${namesSuffix}. `
       + 'Leave only the sheet you want to import.',
+      { messageKey: 'importErrorMultipleSheets', params: { sheets: namesSuffix } },
     );
   }
 
   const data = withContent[0].data;
   const headers = readHeaders(data);
   if (headers.length === 0) {
-    throw new ImportParseError('The file is empty.');
+    throw new ImportParseError('The file is empty.', { messageKey: 'importErrorFileEmpty' });
   }
 
   const seen = new Set();
@@ -148,7 +155,10 @@ export async function parseXlsx(file) {
       // Same rejection and same message as parseDelimited: a duplicate header makes the column
       // mapping ambiguous, and the template writer's collision fallback exists precisely so a
       // downloaded template can never produce one.
-      throw new ImportParseError(`Duplicate column header: "${header}"`);
+      throw new ImportParseError(`Duplicate column header: "${header}"`, {
+        messageKey: 'importErrorDuplicateHeader',
+        params: { header },
+      });
     }
     seen.add(header);
   }

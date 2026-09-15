@@ -1,4 +1,4 @@
-import { useRef, useState } from 'react';
+import { useCallback, useRef, useState } from 'react';
 import { RotateCw, Ban, AlertCircle, ChevronDown, Check } from 'lucide-react';
 import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from '../ui/table.jsx';
 import { Input } from '../ui/input.jsx';
@@ -352,10 +352,15 @@ function FkMismatchCell({ index, field, value, error, onSelect, simSearchFn, tok
  * set. Additive to the queue, never a replacement for it (the mock's
  * "download once, never revisit" behavior was explicitly NOT adopted; see
  * the design spec's UI divergences).
+ *
+ * ETP-5223: `errorHeader` is the caption of that trailing column. It defaults to the English
+ * word so every existing caller keeps its output, but the dialog passes the session-language
+ * one — the downloaded file is read by the same user who could not read the English messages
+ * on screen, so leaving one English header in it would only move the problem into the file.
  */
-export function buildErrorsCsv(entries, headers, mapping) {
+export function buildErrorsCsv(entries, headers, mapping, errorHeader = 'Error') {
   const mappedHeaders = headers.filter((h) => mapping[h]);
-  const lines = [[...mappedHeaders, 'Error'].map(csvField).join(',')];
+  const lines = [[...mappedHeaders, errorHeader].map(csvField).join(',')];
   for (const entry of entries) {
     if (entry.errors.length === 0) continue;
     const values = mappedHeaders.map((h) => entry.row[mapping[h]]);
@@ -381,9 +386,20 @@ export function ImportReviewQueue({
   showRetry = true,
   labels,
   simSearchFn,
+  fieldLabelFn,
   token,
 }) {
   const text = { ...DEFAULT_LABELS, ...labels };
+  // ETP-5223: the grid used to print `field.label` — the ENGLISH caption declared in
+  // decisions.json — so every column header and every "Errors in: …" tooltip stayed in
+  // English in a Spanish session, while the CSV template downloaded from the very same
+  // dialog was already localized. `fieldLabelFn` is the dialog's own resolver; falling back
+  // to `label`/`target` keeps this component usable with no resolver at all (its tests, and
+  // the row-level error branch that synthesizes columns from error targets alone).
+  const columnLabel = useCallback((field) => {
+    const resolved = typeof fieldLabelFn === 'function' ? fieldLabelFn(field) : null;
+    return resolved || field.label || field.target;
+  }, [fieldLabelFn]);
   // Which row/field's input currently has focus, if any — `{ index, target }` or null.
   // Editing a cell re-validates its whole entry immediately (see ImportDialog's
   // handleEditField), so the very first keystroke that fixes a row's last error can, in
@@ -516,7 +532,7 @@ export function ImportReviewQueue({
             {dataColumns
               ? dataColumns.map((field) => (
                 <TableHead key={field.target} className={DATA_COLUMN_WIDTH_CLASS + numericCellClass(field)} data-testid={"TableHead__" + field.id}>
-                  <span className={TRUNCATE_CLASS} title={field.label ?? field.target}>{field.label ?? field.target}</span>
+                  <span className={TRUNCATE_CLASS} title={columnLabel(field)}>{columnLabel(field)}</span>
                 </TableHead>
               ))
               : <TableHead data-testid="TableHead__a73779">Row</TableHead>}
@@ -527,11 +543,24 @@ export function ImportReviewQueue({
             const isSkipped = entry.status === 'skipped';
 
             if (isSkipped) {
-              // Why it was skipped, when the dialog attached a reason: a blank-target error is
-              // the row-level message ("already exists", "duplicate in file"), the same shape
-              // the error branch below reads. A row the user skipped by hand carries none, and
-              // then there is nothing to explain.
-              const skipReason = entry.errors?.find((e) => !e.target)?.message;
+              // Why it was skipped, when the dialog attached a reason. A row the user skipped by
+              // hand carries none, and then there is nothing to explain.
+              //
+              // ETP-5226: this used to read ONLY a blank-target error, on the assumption — stated
+              // in this very comment — that both skip reasons were row-level. They are not.
+              // `ImportDialog` tags "already exists" with `dedupe.key[0]` (`searchKey` for
+              // products) and leaves only "duplicate in file" blank, so a row skipped because the
+              // record exists server-side rendered the Skipped tag with NO reason under it: the
+              // queue marked the row correctly and then declined to say why, which is the half of
+              // the feature the user actually reads.
+              //
+              // `isSkipReason` rather than "fall back to the first error": a skipped row can also
+              // carry ordinary field errors, and printing one of those here would report "Not a
+              // valid email address." as the reason we skipped — the exact confusion the test
+              // below this one was written to prevent. And rather than blanking the producer's
+              // target, because that target is not decoration: `buildErrorsCsv` prefixes it
+              // ("searchKey: This record already exists…") in the downloadable error file.
+              const skipReason = entry.errors?.find((e) => !e.target || e.isSkipReason)?.message;
               return (
                 <TableRow key={index} data-testid="TableRow__a73779">
                   <TableCell className={`${STICKY_CELL_CLASS} align-top`} data-testid="TableCell__a73779">
@@ -557,7 +586,15 @@ export function ImportReviewQueue({
                       </div>
                       {skipReason && (
                         <span
-                          className="text-xs text-muted-foreground"
+                          // ETP-5226: `whitespace-normal` is what makes this wrap, and it is not
+                          // optional styling. Since ETP-5281 every `TableCell` carries
+                          // `overflow-hidden text-ellipsis whitespace-nowrap`, so this span
+                          // inherited the nowrap and clipped: "Fila duplicada: este valor ya ap".
+                          // `break-words` alone would NOT fix it — it only chooses where a long
+                          // word may break, and does nothing while an ancestor forbids line breaks
+                          // at all. Same defect ETP-5223 fixed on the two spans in the error
+                          // branch below; this third one, in the skipped branch, was missed then.
+                          className="whitespace-normal break-words text-xs text-muted-foreground"
                           data-testid={`ImportReviewQueue__skipReason-${index}`}
                         >
                           {skipReason}
@@ -631,7 +668,10 @@ export function ImportReviewQueue({
 
             const fieldErrorLabels = entry.errors
               .filter((e) => e.target)
-              .map((e) => rowColumns.find((f) => f.target === e.target)?.label ?? e.target);
+              .map((e) => {
+                const field = rowColumns.find((f) => f.target === e.target);
+                return field ? columnLabel(field) : e.target;
+              });
             const errorTooltip = fieldErrorLabels.length > 0
               ? formatTemplate(text.fieldErrorsTooltip, { fields: fieldErrorLabels.join(', ') })
               : undefined;
@@ -695,7 +735,12 @@ export function ImportReviewQueue({
                     </div>
                     {rowLevelError && (
                       <span
-                        className="text-xs text-destructive"
+                        // Same ETP-5281 cell-level `whitespace-nowrap` as the per-field error
+                        // below. This span never carried a wrapping class at all, so a backend
+                        // message — "There is already a Product Category with the same (Client,
+                        // Organization, Search Key)…" and every other long one — was shown as
+                        // its first few words plus an ellipsis, with no tooltip to read the rest.
+                        className="whitespace-normal break-words text-xs text-destructive"
                         data-testid={`ImportReviewQueue__rowError-${index}`}
                       >
                         {rowLevelError.message}
@@ -727,7 +772,19 @@ export function ImportReviewQueue({
                         <div className="flex flex-col gap-1">
                           {fieldError && !rowLevelError && (
                             <span
-                              className="truncate text-xs text-destructive"
+                              // ETP-5223: this was `truncate`, so "Falta un campo obligatorio."
+                              // rendered as "Falta un campo obligat…" in a narrow column and the
+                              // only way to read it was to find the native title tooltip.
+                              //
+                              // `whitespace-normal` is what actually makes it wrap, and it is NOT
+                              // redundant with `break-words`: since ETP-5281 every `TableCell`
+                              // carries `whitespace-nowrap overflow-hidden text-ellipsis`, and
+                              // `break-words` only chooses WHERE a long word may break — it does
+                              // nothing while an ancestor forbids line breaks at all. Dropping
+                              // `truncate` therefore fixed nothing on its own; the message stayed
+                              // clipped, in every language, and the class-list test still passed.
+                              // `title` stays as a belt-and-braces for anything still too long.
+                              className="whitespace-normal break-words text-xs text-destructive"
                               title={fieldError.message}
                               data-testid={`ImportReviewQueue__fieldError-${index}-${field.target}`}
                             >
