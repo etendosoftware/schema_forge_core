@@ -67,9 +67,92 @@ describe('parseDelimited', () => {
     );
   });
 
+  // ETP-5223: this module has no translator, so the English text stays on `message` as the
+  // fallback and the locale key travels with the error for ImportDialog to resolve. Without
+  // the key the user read "The file is empty." in a fully Spanish session.
+  it('carries the locale key and params so the dialog can localize the message', () => {
+    assert.throws(() => parseDelimited(''), (error) => {
+      assert.ok(error instanceof ImportParseError);
+      assert.equal(error.messageKey, 'importErrorFileEmpty');
+      assert.deepEqual(error.params, {});
+      return true;
+    });
+
+    assert.throws(() => parseDelimited('name,email,email\nA,a@x.com,b@x.com'), (error) => {
+      assert.equal(error.messageKey, 'importErrorDuplicateHeader');
+      assert.deepEqual(error.params, { header: 'email' });
+      return true;
+    });
+  });
+
   it('fills missing trailing cells with empty string', () => {
     const { rows } = parseDelimited('name,email,phone\nLucia,lucia@x.com');
     assert.deepEqual(rows[0], { name: 'Lucia', email: 'lucia@x.com', phone: '' });
+  });
+
+  /**
+   * ETP-5348. The duplicate guard compared the RAW header text against a Set while `mapColumns`
+   * matches on `normalizeHeader`, so the guard and the matcher it protects disagreed: a case- or
+   * accent-only duplicate passed here, and then downstream `mapColumns` handed the field to the
+   * first claimant and left the second column unmapped. One of the user's columns was discarded
+   * with no message anywhere in the flow.
+   */
+  describe('ETP-5348 — header rejections', () => {
+    it('rejects a duplicate header that differs only in case', () => {
+      assert.throws(
+        () => parseDelimited('codigo,nombre,Nombre,precio\nA,x,y,1'),
+        /Duplicate column header: "Nombre"/,
+      );
+    });
+
+    it('rejects a duplicate header that differs only in accents', () => {
+      assert.throws(
+        () => parseDelimited('codigo,código\nA,B'),
+        /Duplicate column header: "código"/,
+      );
+    });
+
+    it('rejects a duplicate header that differs only in inner whitespace', () => {
+      assert.throws(() => parseDelimited('precio compra,precio  compra\n1,2'), ImportParseError);
+    });
+
+    it('still accepts headers that merely share a word', () => {
+      // The guard must not start rejecting legitimate files: Contacts really does carry both
+      // "nombre comercial" and "nombre", and they map to different fields.
+      const { headers } = parseDelimited('nombre comercial,nombre\nAcme,Ana');
+      assert.deepEqual(headers, ['nombre comercial', 'nombre']);
+    });
+
+    it('rejects a blank header instead of waiting for a second one', () => {
+      // Previously a lone blank was invisible — only a SECOND blank tripped the duplicate check
+      // on `""`. The single blank became a row key of `''` and broke the mapping grid.
+      assert.throws(() => parseDelimited('codigo,nombre,,precio\nA,x,y,1'), (error) => {
+        assert.ok(error instanceof ImportParseError);
+        assert.equal(error.messageKey, 'importErrorEmptyHeader');
+        assert.deepEqual(error.params, { position: 3 });
+        return true;
+      });
+    });
+
+    it('rejects a file that carries only its header row', () => {
+      // Not the empty-file case: there IS a line, so the `lines.length === 0` guard never fired
+      // and the dialog walked on to a review screen it would then refuse to leave, unexplained.
+      assert.throws(() => parseDelimited('codigo,nombre,precio'), (error) => {
+        assert.equal(error.messageKey, 'importErrorNoDataRows');
+        assert.deepEqual(error.params, {});
+        return true;
+      });
+      assert.throws(() => parseDelimited('codigo,nombre,precio\n\n\n'), ImportParseError);
+    });
+
+    it('reports the header as the user typed it, not normalized', () => {
+      // The message exists to help someone find the column in their own file.
+      assert.throws(() => parseDelimited('Código,CÓDIGO\n1,2'), (error) => {
+        assert.equal(error.messageKey, 'importErrorDuplicateHeader');
+        assert.deepEqual(error.params, { header: 'CÓDIGO' });
+        return true;
+      });
+    });
   });
 });
 

@@ -1,5 +1,5 @@
 import readXlsxFile from 'read-excel-file/universal';
-import { ImportParseError } from './parseDelimited.js';
+import { ImportParseError, validateHeaders } from './parseDelimited.js';
 
 /**
  * Parse an `.xlsx` upload into the SAME shape {@link parseDelimited} returns, so the whole
@@ -118,40 +118,45 @@ export async function parseXlsx(file) {
     // A corrupt or non-OOXML file surfaces as the reader's own low-level complaint ("Can't find
     // ...xl/workbook.xml", a zip error). Re-thrown as ImportParseError so ImportDialog routes it
     // to the file-error step like every other unreadable upload, instead of the generic catch.
-    throw new ImportParseError(`Unable to read the Excel file — ${error.message}`);
+    throw new ImportParseError(`Unable to read the Excel file — ${error.message}`, {
+      messageKey: 'importErrorUnreadableXlsx',
+      params: { detail: error.message },
+    });
   }
 
   const withContent = sheets.filter(hasContent);
   if (withContent.length === 0) {
     // Same wording as parseDelimited's empty-file case, so the dialog says one thing.
-    throw new ImportParseError('The file is empty.');
+    throw new ImportParseError('The file is empty.', { messageKey: 'importErrorFileEmpty' });
   }
   if (withContent.length > 1) {
     // Taking the first and discarding the rest would import part of a file and report success.
     // Naming the sheets is what makes the error actionable — the user has to know which ones.
     const names = withContent.map((s) => s.sheet).filter(Boolean).join(', ');
+    // The parenthetical is built here rather than inside the locale entry so a file whose
+    // sheets are unnamed does not render an empty "()" in any language.
+    const namesSuffix = names ? ` (${names})` : '';
     throw new ImportParseError(
-      `The file has more than one sheet with data${names ? ` (${names})` : ''}. `
+      `The file has more than one sheet with data${namesSuffix}. `
       + 'Leave only the sheet you want to import.',
+      { messageKey: 'importErrorMultipleSheets', params: { sheets: namesSuffix } },
     );
   }
 
   const data = withContent[0].data;
   const headers = readHeaders(data);
   if (headers.length === 0) {
-    throw new ImportParseError('The file is empty.');
+    throw new ImportParseError('The file is empty.', { messageKey: 'importErrorFileEmpty' });
   }
 
-  const seen = new Set();
-  for (const header of headers) {
-    if (seen.has(header)) {
-      // Same rejection and same message as parseDelimited: a duplicate header makes the column
-      // mapping ambiguous, and the template writer's collision fallback exists precisely so a
-      // downloaded template can never produce one.
-      throw new ImportParseError(`Duplicate column header: "${header}"`);
-    }
-    seen.add(header);
-  }
+  // Same rejection and same messages as parseDelimited — literally the same function since
+  // ETP-5348, so the case-insensitive duplicate rule and the blank-header rule cannot be fixed
+  // on one path and left broken on the other. A duplicate header makes the column mapping
+  // ambiguous, and the template writer's collision fallback exists precisely so a downloaded
+  // template can never produce one. Called AFTER `readHeaders`, which is what keeps the
+  // trailing-blank divergence documented there intact: those are dropped before they are judged,
+  // while an interior blank still reaches this check.
+  validateHeaders(headers);
 
   const rows = [];
   for (const row of data.slice(1)) {
@@ -165,6 +170,15 @@ export async function parseXlsx(file) {
       record[header] = cellToText(cells[i]);
     });
     rows.push(record);
+  }
+
+  // ETP-5348: same rule as the CSV path. A sheet whose only non-blank row is the header passes
+  // `hasContent` — it genuinely has content — and then produces zero records, which the dialog
+  // used to accept in silence and turn into a review screen it would not let the user leave.
+  if (rows.length === 0) {
+    throw new ImportParseError('The file has no data rows — only the column headers.', {
+      messageKey: 'importErrorNoDataRows',
+    });
   }
 
   return { headers, rows };

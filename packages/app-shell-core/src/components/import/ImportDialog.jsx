@@ -1,4 +1,4 @@
-import { useCallback, useMemo, useState } from 'react';
+import { useCallback, useMemo, useRef, useState } from 'react';
 import { toast } from 'sonner';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '../ui/dialog.jsx';
 import { Button } from '../ui/button.jsx';
@@ -9,7 +9,8 @@ import { ImportConfirmStep } from './ImportConfirmStep.jsx';
 import { ImportProgressStep } from './ImportProgressStep.jsx';
 import { ImportFileErrorDialog } from './ImportFileErrorDialog.jsx';
 import { ImportSystemErrorDialog } from './ImportSystemErrorDialog.jsx';
-import { decodeCsvBuffer, parseDelimited } from '../../lib/import/parseDelimited.js';
+import { ImportSendingCloseDialog } from './ImportSendingCloseDialog.jsx';
+import { decodeCsvBuffer, parseDelimited, ImportParseError } from '../../lib/import/parseDelimited.js';
 import { parseXlsx } from '../../lib/import/parseXlsx.js';
 import { mapColumns } from '../../lib/import/mapColumns.js';
 import { dedupeRows } from '../../lib/import/dedupeRows.js';
@@ -19,7 +20,9 @@ import { buildOperations } from '../../lib/import/buildOperations.js';
 import { runImport, sendRow, SEND_STATUS } from '../../lib/import/importEngine.js';
 import { buildTemplateCsv, resolveTemplateHeaders } from '../../lib/import/buildTemplateCsv.js';
 import { buildTemplateXlsx } from '../../lib/import/buildTemplateXlsx.js';
-import { isXlsxFileName, outputFormats } from '../../lib/import/importFormats.js';
+import {
+  isXlsxFileName, outputFormats, isAcceptedFileName, formatNames,
+} from '../../lib/import/importFormats.js';
 import { runImportRowValidator } from '../../lib/import/rowValidators.js';
 import { findExistingKeys, buildLookupKey } from '../../lib/import/existingRecordLookup.js';
 
@@ -57,7 +60,8 @@ const SKIP_MESSAGES = {
  *                     bulkApplyDescription, bulkApplyOnlyThis, bulkApplyAll, retry },  // ImportReviewQueue
  *                     // NB: `retry` feeds ImportReviewQueue's separate `retryLabel` prop, not its DEFAULT_LABELS
  *     systemError:  { title, subtitle, copy, copied, copyFailed, close, showReport, hideReport,
- *                     rowData, requestSent, serverResponse },                 // ImportSystemErrorDialog
+ *                     rowData, requestSent, serverResponse },         // ImportSystemErrorDialog
+ *     sendingClose: { title, body, keepWatching, closeAnyway },        // ImportSendingCloseDialog
  *   }
  *
  * Templated strings (mappedSummary's {mapped}/{total}, fieldErrorsTooltip's {fields},
@@ -91,9 +95,19 @@ function renameRowKeys(row, mapping) {
 
 /**
  * @param {(field: object) => string} [fieldLabelFn] Resolves a field's session-language
- *   header for the downloaded template. Without it the template falls back to the field's
- *   first alias, which in every window is the Spanish term — the template then came out in
- *   Spanish no matter what language the session was in.
+ *   caption. Used for the downloaded template's headers — without it the template falls back
+ *   to the field's first alias, which in every window is the Spanish term, so the template
+ *   came out in Spanish no matter what language the session was in — AND (ETP-5223) for the
+ *   review grid's column headers and the column-mapping dropdown, which read `field.label`
+ *   (the English text in decisions.json) and so stayed English in a Spanish session while
+ *   the template beside them was already translated.
+ *
+ *   Locale keys this dialog resolves through `translate`, beyond the `labels` object:
+ *   `importSuccessToast`/`importSkippedToast`/`importFailedToast` (`{count}`), the
+ *   `ImportParseError` keys
+ *   `importErrorFileEmpty`, `importErrorDuplicateHeader` (`{header}`),
+ *   `importErrorUnreadableXlsx` (`{detail}`), `importErrorMultipleSheets` (`{sheets}`),
+ *   and `importErrorUnknown`.
  * @param {(criteria: object, keyTargets: string[]) => Promise<Array<object>>} [existingKeyFetchFn]
  *   Queries the entity for records matching the dedupe key, so rows that already exist are
  *   marked Saltada in the review queue instead of being discovered as duplicates after the
@@ -123,6 +137,16 @@ export function ImportDialog({ open, onOpenChange, config, token, postBatch, sim
   // Result step — not a replacement for the per-row review queue underneath, which stays
   // for retry/skip/download. Null means no system-error dialog is showing.
   const [systemError, setSystemError] = useState(null);
+  // ETP-5225: the user tried to close the dialog while the send was running, and has been
+  // asked what they actually meant. Null-op outside STEP.SENDING — see `handleOpenChange`.
+  const [pendingCloseWhileSending, setPendingCloseWhileSending] = useState(false);
+  /**
+   * Whether the user confirmed closing mid-send, i.e. whether the RESULT step will have anywhere
+   * to render. A ref rather than state on purpose: `handleSend` reads it from inside an async
+   * closure that was created before the close happened, so a state value would be the stale
+   * `false` captured at send time and the failure toast below would never fire.
+   */
+  const closedWhileSendingRef = useRef(false);
 
   const requiredTargets = useMemo(() => config.fields.filter((f) => f.required).map((f) => f.target), [config.fields]);
   const emailTargets = useMemo(() => config.fields.filter((f) => f.isEmail).map((f) => f.target), [config.fields]);
@@ -202,15 +226,51 @@ export function ImportDialog({ open, onOpenChange, config, token, postBatch, sim
   // missing config: dedupe only runs when there's an actual non-empty key list.
   const dedupeKeyTargets = config.dedupe?.key ?? [];
 
+  /**
+   * ETP-5348: the contract nests these under `limit` — `window.import.limit` in decisions.json,
+   * and `frontendContract.window.import.limit` in the generated contract.json, verified against
+   * artifacts/product and artifacts/contacts. They were read as `config.maxRows` /
+   * `config.concurrency`, which are ALWAYS `undefined`, so `runImport`'s own parameter defaults
+   * took over. Those defaults are 5000 and 4 — the same numbers every window happens to declare
+   * today — which is exactly why nothing ever looked wrong: a window that declared a different
+   * limit would have been ignored in complete silence.
+   *
+   * The flat `config.maxRows` is still honored as a second choice so a caller (or a test) that
+   * passes it directly keeps working; the nested value is the one the pipeline actually produces.
+   */
+  const maxRows = config.limit?.maxRows ?? config.maxRows ?? 5000;
+  const concurrency = config.limit?.concurrency ?? config.concurrency ?? 4;
+
+  /**
+   * One locale lookup with an English fallback, the same posture `validateRows.js` and
+   * `importEngine.js` take: no translator, an unknown key, or a dictionary that echoes the
+   * key back all degrade to the English text rather than printing a raw key at the user.
+   */
+  const localize = useCallback((key, fallback, params) => {
+    if (typeof translate !== 'function') return fallback;
+    const translated = translate(key, params);
+    return translated && translated !== key ? translated : fallback;
+  }, [translate]);
+
   // The two reasons a row is skipped rather than failed. Both are shown verbatim in the
   // review queue, so both go through `translate` — they were hardcoded English strings
   // sitting in the middle of an app used primarily in Spanish.
   const labelFor = useCallback((which) => {
     const { key, fallback } = SKIP_MESSAGES[which];
-    if (typeof translate !== 'function') return fallback;
-    const translated = translate(key);
-    return translated && translated !== key ? translated : fallback;
-  }, [translate]);
+    return localize(key, fallback);
+  }, [localize]);
+
+  /**
+   * ETP-5223: `parseDelimited`/`parseXlsx` are plain modules with no translator, so they
+   * throw the English text on `message` plus the locale `messageKey`/`params` to resolve it
+   * — "The file is empty." and `Duplicate column header: "…"` reached the user in English
+   * even in a fully Spanish session. Anything else thrown here (a genuine runtime fault)
+   * has no key and keeps its own message.
+   */
+  const localizeError = useCallback((error) => {
+    if (error?.messageKey) return localize(error.messageKey, error.message, error.params);
+    return error?.message || localize('importErrorUnknown', 'Unknown error.');
+  }, [localize]);
 
   // Single definition of "what makes a row valid", shared by the initial pass and by both
   // re-validate-after-edit paths. Kept as one function on purpose: when the edit paths
@@ -248,7 +308,12 @@ export function ImportDialog({ open, onOpenChange, config, token, postBatch, sim
       if (key !== null && existingKeys.has(key)) {
         return {
           row,
-          errors: [{ target: dedupeKeyTargets[0] ?? '', message: labelFor('alreadyExists') }],
+          // ETP-5226: `isSkipReason` marks this as WHY the row was skipped, not as a validation
+          // error on the key column. The review queue shows only flagged (or blank-target)
+          // messages under the Skipped tag, so an ordinary field error on the same row cannot be
+          // mistaken for the reason. The target stays because `buildErrorsCsv` prefixes it in the
+          // downloadable error file.
+          errors: [{ target: dedupeKeyTargets[0] ?? '', message: labelFor('alreadyExists'), isSkipReason: true }],
           status: 'skipped',
         };
       }
@@ -265,12 +330,40 @@ export function ImportDialog({ open, onOpenChange, config, token, postBatch, sim
       // A new file starts a fresh review session. Do not carry a previous
       // Errors/All selection into the next upload.
       setStatusFilterPreSend('ok');
+      // ETP-5348: the FIRST thing that happens to an upload is a format check, because nothing
+      // downstream performs one. The dropzone's `accept` attribute only filters the OS picker's
+      // default view — drag-and-drop bypasses it — and `parseDelimited` cannot refuse a binary
+      // either, since its Windows-1252 fallback decodes any byte sequence without error. So a
+      // `.docx` used to parse into one nonsense column and drop the user on a mapping screen
+      // with nothing mapped and nothing said. `formatNames` is reused rather than re-listing the
+      // extensions here, so the message and the dropzone hint can never disagree.
+      if (!isAcceptedFileName(file.name, config.formats)) {
+        const accepted = formatNames(config.formats).join(', ');
+        throw new ImportParseError(
+          `Unsupported file format. Accepted formats: ${accepted}.`,
+          { messageKey: 'importErrorUnsupportedFormat', params: { formats: accepted } },
+        );
+      }
       // One boundary, two parsers. `parseXlsx` is contracted to return exactly what
       // `parseDelimited` returns, so everything from here down — mapColumns, runValidation,
       // the FK resolvers, the dedupe, the review queue — is format-blind and unchanged.
       const { headers: parsedHeaders, rows } = isXlsxFileName(file.name)
         ? await parseXlsx(file)
         : parseDelimited(decodeCsvBuffer(await file.arrayBuffer()));
+      // ETP-5348: reject an oversized file HERE, before it is validated, reviewed and confirmed.
+      // `runImport` already honored `maxRows`, but it did so with `rows.slice(0, maxRows)` at
+      // send time: the extra rows were never attempted, never counted and never reported, so a
+      // 5001-row file imported 5000 and lost the last one with no error, no warning and no trace
+      // in the summary. The user's only way to notice was to count the records afterwards.
+      // Refusing the file is the honest answer — silently importing part of what someone handed
+      // us is the behaviour being fixed, and truncating with a nicer notice is still that.
+      if (rows.length > maxRows) {
+        throw new ImportParseError(
+          `The file has ${rows.length} rows, more than the ${maxRows} this import accepts. `
+          + 'Split it into smaller files.',
+          { messageKey: 'importErrorTooManyRows', params: { count: rows.length, limit: maxRows } },
+        );
+      }
       const { mapping: autoMapping } = mapColumns(parsedHeaders, localizedFields);
       setHeaders(parsedHeaders);
       setRawRows(rows);
@@ -278,10 +371,10 @@ export function ImportDialog({ open, onOpenChange, config, token, postBatch, sim
       await runValidation(rows.map((row) => renameRowKeys(row, autoMapping)));
       setStep(STEP.MAPPING);
     } catch (error) {
-      setFileErrorMessage(error.message);
+      setFileErrorMessage(localizeError(error));
       setStep(STEP.FILE_ERROR);
     }
-  }, [localizedFields, runValidation]);
+  }, [localizedFields, runValidation, localizeError, config.formats, maxRows]);
 
   const handleApplyMapping = useCallback(async (newMapping) => {
     setMapping(newMapping);
@@ -362,6 +455,9 @@ export function ImportDialog({ open, onOpenChange, config, token, postBatch, sim
   const handleSend = useCallback(async () => {
     setStep(STEP.SENDING);
     setProgress(0);
+    // A previous run's unanswered question must not resurface over this one.
+    setPendingCloseWhileSending(false);
+    closedWhileSendingRef.current = false;
     const toSend = entries.filter((e) => e.status === 'pending' && e.errors.length === 0);
     // runImport isolates per-row build/send failures on its own (a bad row surfaces as
     // that row's FAILED result, not a thrown exception) — this catch is a last-resort
@@ -375,12 +471,12 @@ export function ImportDialog({ open, onOpenChange, config, token, postBatch, sim
         buildRowOperations: (row) => buildOperations(row, operationsConfig),
         postBatch,
         translate,
-        concurrency: config.concurrency,
-        maxRows: config.maxRows,
+        concurrency,
+        maxRows,
         onProgress: (completed, total) => setProgress(Math.round((completed / total) * 100)),
       }));
     } catch (error) {
-      setFileErrorMessage(error.message || 'Unknown error while sending the import.');
+      setFileErrorMessage(localizeError(error));
       setStep(STEP.FILE_ERROR);
       return;
     }
@@ -394,8 +490,8 @@ export function ImportDialog({ open, onOpenChange, config, token, postBatch, sim
     const duplicateResults = results.filter((r) => r.status === SEND_STATUS.DUPLICATE);
     const trueFailures = results.filter((r) => r.status !== 'ok' && r.status !== SEND_STATUS.DUPLICATE);
     const resultEntries = [
-      ...duplicateResults.map((r) => ({ row: r.row, errors: [{ target: '', message: r.error?.message || 'Already exists' }], status: 'skipped' })),
-      ...trueFailures.map((r) => ({ row: r.row, errors: [{ target: '', message: r.error?.message || 'Unknown error' }], status: 'pending' })),
+      ...duplicateResults.map((r) => ({ row: r.row, errors: [{ target: '', message: r.error?.message || labelFor('alreadyExists') }], status: 'skipped' })),
+      ...trueFailures.map((r) => ({ row: r.row, errors: [{ target: '', message: r.error?.message || localize('importErrorUnknown', 'Unknown error.') }], status: 'pending' })),
     ];
     setEntries(resultEntries);
     setStep(STEP.RESULT);
@@ -426,9 +522,37 @@ export function ImportDialog({ open, onOpenChange, config, token, postBatch, sim
     // failedCount only counts trueFailures — duplicates alone should not keep the dialog
     // forced open, since there's nothing left for the user to act on.
     onImported({ okCount, failedCount: trueFailures.length });
-    if (okCount > 0) toast.success(`${okCount} records imported successfully`);
-    if (duplicateResults.length > 0) toast.info(`${duplicateResults.length} row(s) skipped — already exist`);
-  }, [entries, operationsConfig, config.concurrency, config.maxRows, postBatch, onImported, translate]);
+    // ETP-5223: both toasts are the LAST thing a user sees after a successful import, and
+    // both were hardcoded English template literals — the one place where "N records
+    // imported successfully" greeted a Spanish user at the end of an otherwise Spanish flow.
+    if (okCount > 0) {
+      toast.success(localize('importSuccessToast', `${okCount} records imported successfully`, { count: okCount }));
+    }
+    if (duplicateResults.length > 0) {
+      toast.info(localize(
+        'importSkippedToast',
+        `${duplicateResults.length} row(s) skipped — already exist`,
+        { count: duplicateResults.length },
+      ));
+    }
+    // ETP-5225 — the failure counterpart, and ONLY when the user closed mid-send.
+    //
+    // Failures are normally reported by the RESULT step's review queue, row by row with the
+    // reason and a retry. Closing the dialog unmounts that, so a run where 3 of 10 rows failed
+    // announced "7 records imported successfully" and nothing else: the smaller-than-expected
+    // number was the only hint anything had gone wrong. The success toast survives the unmount
+    // because `<Toaster>` is mounted at the app root, so this one does too.
+    //
+    // Guarded on the close because with the dialog still open the queue IS on screen and this
+    // would only restate, less usefully, what it already shows in full.
+    if (closedWhileSendingRef.current && trueFailures.length > 0) {
+      toast.error(localize(
+        'importFailedToast',
+        `${trueFailures.length} row(s) could not be imported`,
+        { count: trueFailures.length },
+      ));
+    }
+  }, [entries, operationsConfig, concurrency, maxRows, postBatch, onImported, translate, localize, labelFor, localizeError]);
 
   const handleRetryEntryPostSend = useCallback(async (index) => {
     const entry = entries[index];
@@ -491,9 +615,34 @@ export function ImportDialog({ open, onOpenChange, config, token, postBatch, sim
     setStep(STEP.DROPZONE);
   }, []);
 
+  /**
+   * ETP-5225: closing MID-SEND used to go straight through to `onOpenChange`, so the dialog
+   * disappeared while `handleSend` kept creating records. Nothing said so, and a user who
+   * closed it to abort a mistaken import found the products there after a reload — the modal
+   * read as a cancel button that silently was not one.
+   *
+   * The send cannot actually be stopped (each row is its own committed `/batch` call), so the
+   * close is intercepted and the user is told what it does, rather than offered a cancel that
+   * would be a lie. Every other step closes as before — this only guards the one window where
+   * closing means something different from what it looks like.
+   */
+  const handleOpenChange = useCallback((next) => {
+    if (!next && step === STEP.SENDING) {
+      setPendingCloseWhileSending(true);
+      return;
+    }
+    onOpenChange(next);
+  }, [step, onOpenChange]);
+
+  const closeAnyway = useCallback(() => {
+    setPendingCloseWhileSending(false);
+    closedWhileSendingRef.current = true;
+    onOpenChange(false);
+  }, [onOpenChange]);
+
   return (
     <>
-      <Dialog open={open} onOpenChange={onOpenChange} data-testid="Dialog__38a6c3">
+      <Dialog open={open} onOpenChange={handleOpenChange} data-testid="Dialog__38a6c3">
         <DialogContent className="w-[90vw] max-w-[1200px] max-h-[90vh] overflow-y-auto" data-testid="DialogContent__38a6c3">
           <DialogHeader data-testid="DialogHeader__38a6c3">
             <DialogTitle data-testid="DialogTitle__38a6c3">{text.title}</DialogTitle>
@@ -539,6 +688,7 @@ export function ImportDialog({ open, onOpenChange, config, token, postBatch, sim
                 mapping={mapping}
                 onApplyMapping={handleApplyMapping}
                 labels={labels?.mapping}
+                fieldLabelFn={fieldLabelFn}
                 data-testid="ImportColumnMapping__38a6c3" />
               <div className="relative flex min-h-0 flex-1 flex-col">
                 {isRevalidating && (
@@ -559,9 +709,10 @@ export function ImportDialog({ open, onOpenChange, config, token, postBatch, sim
                   onSkipEntry={handleSkipEntry}
                   onUnskipEntry={handleUnskipEntry}
                   onApplyFkValue={handleApplyFkValue}
-                  onDownloadErrors={() => downloadCsv(buildErrorsCsv(entries, headers, mapping), 'import-errors.csv')}
+                  onDownloadErrors={() => downloadCsv(buildErrorsCsv(entries, headers, mapping, labels?.reviewQueue?.statusError), 'import-errors.csv')}
                   labels={labels?.reviewQueue}
                   simSearchFn={simSearchFn}
+                  fieldLabelFn={fieldLabelFn}
                   token={token}
                   data-testid="ImportReviewQueue__38a6c3" />
               </div>
@@ -603,10 +754,11 @@ export function ImportDialog({ open, onOpenChange, config, token, postBatch, sim
                   onSkipEntry={handleSkipEntry}
                   onUnskipEntry={handleUnskipEntry}
                   onApplyFkValue={handleApplyFkValue}
-                  onDownloadErrors={() => downloadCsv(buildErrorsCsv(entries, headers, mapping), 'import-errors.csv')}
+                  onDownloadErrors={() => downloadCsv(buildErrorsCsv(entries, headers, mapping, labels?.reviewQueue?.statusError), 'import-errors.csv')}
                   retryLabel={labels?.reviewQueue?.retry ?? 'Retry'}
                   labels={labels?.reviewQueue}
                   simSearchFn={simSearchFn}
+                  fieldLabelFn={fieldLabelFn}
                   token={token}
                   data-testid="ImportReviewQueue__38a6c3" />
               )}
@@ -633,6 +785,15 @@ export function ImportDialog({ open, onOpenChange, config, token, postBatch, sim
         onClose={() => setSystemError(null)}
         labels={labels?.systemError}
         data-testid="ImportSystemErrorDialog__38a6c3" />
+      <ImportSendingCloseDialog
+        // The `step` half is what dismisses the question on its own when the import finishes
+        // while it is still on screen: there is nothing left to warn about, and leaving it up
+        // would ask the user to decide about a send that already ended.
+        open={pendingCloseWhileSending && step === STEP.SENDING}
+        onKeepWatching={() => setPendingCloseWhileSending(false)}
+        onCloseAnyway={closeAnyway}
+        labels={labels?.sendingClose}
+        data-testid="ImportSendingCloseDialog__38a6c3" />
     </>
   );
 }

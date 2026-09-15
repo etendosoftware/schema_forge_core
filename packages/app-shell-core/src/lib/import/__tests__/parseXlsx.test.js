@@ -144,6 +144,35 @@ describe('parseXlsx — structure', () => {
     );
   });
 
+  // ETP-5223: same contract as parseDelimited — the English text is the fallback on
+  // `message`, and the locale key travels with the error so ImportDialog can render the
+  // Spanish wording. The xlsx path had the same hardcoded English strings.
+  it('carries the locale key and params so the dialog can localize the message', async () => {
+    await assert.rejects(parseXlsx(await textWorkbook([['Email', 'Email'], ['a@b.c', 'd@e.f']])), (error) => {
+      assert.equal(error.messageKey, 'importErrorDuplicateHeader');
+      assert.deepEqual(error.params, { header: 'Email' });
+      return true;
+    });
+
+    // Same construction the "no content" case above uses.
+    await assert.rejects(parseXlsx(await workbook([[{ value: null, type: String }]])), (error) => {
+      assert.equal(error.messageKey, 'importErrorFileEmpty');
+      return true;
+    });
+
+    const multiSheet = await workbook([
+      { sheet: 'Contactos', data: [[t('Nombre')], [t('Ana')]] },
+      { sheet: 'Notas', data: [[t('Comentario')], [t('revisar')]] },
+    ]);
+    await assert.rejects(parseXlsx(multiSheet), (error) => {
+      assert.equal(error.messageKey, 'importErrorMultipleSheets');
+      // The parenthetical is built in the thrower, not in the locale entry, so an unnamed
+      // set of sheets cannot render an empty "()" in any language.
+      assert.equal(error.params.sheets, ' (Contactos, Notas)');
+      return true;
+    });
+  });
+
   it('rejects a workbook with more than one sheet holding data, naming the sheets', async () => {
     // Importing the first and discarding the rest would report success on a partial import.
     const blob = await workbook([
@@ -172,5 +201,65 @@ describe('parseXlsx — structure', () => {
     // Routed to the dialog's file-error step like any other unreadable upload, rather than
     // escaping as the reader's own low-level zip complaint.
     await rejects(parseXlsx(new Blob(['this is not a spreadsheet'])), /Unable to read the Excel file/);
+  });
+});
+
+/**
+ * ETP-5348. Both parsers now share one `validateHeaders`, so the case-insensitive duplicate rule
+ * and the blank-header rule cannot be fixed on the CSV path and left broken on the Excel one —
+ * which is exactly how they drifted before. These assert the xlsx side of that contract, plus the
+ * one divergence that must SURVIVE it: trailing blank header columns are still dropped, because a
+ * spreadsheet's used range grows them on its own.
+ */
+describe('parseXlsx — ETP-5348 header and data-row rejections', () => {
+  it('rejects a duplicate header that differs only in case, exactly as the CSV path does', async () => {
+    await rejects(
+      parseXlsx(await textWorkbook([['Nombre', 'NOMBRE'], ['Ana', 'Beatriz']])),
+      /Duplicate column header: "NOMBRE"/,
+    );
+  });
+
+  it('rejects a duplicate header that differs only in accents', async () => {
+    await rejects(
+      parseXlsx(await textWorkbook([['Codigo', 'Código'], ['A', 'B']])),
+      /Duplicate column header: "Código"/,
+    );
+  });
+
+  it('rejects an INTERIOR blank header while still dropping trailing ones', async () => {
+    // The gap between two named columns is real structure, so it is judged; the blanks after the
+    // last named column are an artifact of the sheet's used range, so they are not.
+    await assert.rejects(
+      parseXlsx(await workbook([
+        [t('Nombre'), { value: null, type: String }, t('CP')],
+        [t('Ana'), { value: null, type: String }, t('41002')],
+      ])),
+      (error) => {
+        assert.equal(error.messageKey, 'importErrorEmptyHeader');
+        assert.deepEqual(error.params, { position: 2 });
+        return true;
+      },
+    );
+
+    const { headers } = await parseXlsx(await workbook([
+      [t('Nombre'), t('CP'), { value: null, type: String }],
+      [t('Ana'), t('41002'), { value: null, type: String }],
+    ]));
+    assert.deepEqual(headers, ['Nombre', 'CP']);
+  });
+
+  it('rejects a sheet whose only non-blank row is the header', async () => {
+    // `hasContent` passes — the sheet genuinely has content — so the empty-file guard never
+    // fired and zero records were accepted in silence.
+    await assert.rejects(parseXlsx(await textWorkbook([['Codigo', 'Nombre', 'Precio']])), (error) => {
+      assert.equal(error.messageKey, 'importErrorNoDataRows');
+      return true;
+    });
+  });
+
+  it('still accepts a sheet with exactly one data row', async () => {
+    // Guards the off-by-one: "no data rows" must mean zero, not "too few".
+    const { rows } = await parseXlsx(await textWorkbook([['Codigo', 'Nombre'], ['A-1', 'Ana']]));
+    assert.deepEqual(rows, [{ Codigo: 'A-1', Nombre: 'Ana' }]);
   });
 });
