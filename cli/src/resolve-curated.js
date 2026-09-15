@@ -275,6 +275,10 @@ const FIELD_DECISION_COPY_PROPS = [
   // property the criteria is built against.
   'filterMode',
   'backendFilterKey',
+  // ETP-5345 — public API curation: { exposed, name, type, handlerId }. Copied
+  // verbatim so generate-contract.js's mapFieldForContract can stamp it onto
+  // contract.json for the generate-public-api-schema.js resolver to read.
+  'publicApi',
 ];
 
 const FIELD_RAW_COPY_PROPS = [
