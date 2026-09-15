@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import type { PublicApiSchema } from '../src/types.js';
+import type { PublicApiSchema } from '../src/types.ts';
 
 test('a resolved schema literal matches the PublicApiSchema shape', () => {
   const schema: PublicApiSchema = {
