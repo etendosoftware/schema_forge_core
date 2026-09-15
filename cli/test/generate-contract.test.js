@@ -7,6 +7,7 @@ import {
   generateContract,
   generateApiPrediction,
   splitWindowContractArtifacts,
+  mapFieldForContract,
 } from '../src/generate-contract.js';
 import { resolveCurated } from '../src/resolve-curated.js';
 
@@ -2876,5 +2877,30 @@ describe('generateContract — field-order stability lock precedence (ETP-4566)'
     const contract = generateContract(schema, [], [], null, previousContract);
     const names = contract.backendContract.entities.order.fields.map(f => f.name);
     assert.deepEqual(names, ['fieldA', 'brandNewField']);
+  });
+});
+
+describe('mapFieldForContract — publicApi stamping (ETP-5345)', () => {
+  it('stamps publicApi onto the mapped contract field when present', () => {
+    const decisionField = {
+      name: 'name',
+      visibility: 'editable',
+      grid: true,
+      form: true,
+      publicApi: { exposed: true, name: 'name', type: 'passthrough', handlerId: null },
+    };
+    const mapped = mapFieldForContract(decisionField, { rules: [] });
+    assert.deepEqual(mapped.publicApi, {
+      exposed: true,
+      name: 'name',
+      type: 'passthrough',
+      handlerId: null,
+    });
+  });
+
+  it('omits publicApi from the mapped field when absent', () => {
+    const decisionField = { name: 'internalNotes', visibility: 'editable' };
+    const mapped = mapFieldForContract(decisionField, { rules: [] });
+    assert.equal('publicApi' in mapped, false);
   });
 });
