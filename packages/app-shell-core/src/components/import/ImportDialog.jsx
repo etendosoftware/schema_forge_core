@@ -1,4 +1,4 @@
-import { useCallback, useMemo, useState } from 'react';
+import { useCallback, useMemo, useRef, useState } from 'react';
 import { toast } from 'sonner';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '../ui/dialog.jsx';
 import { Button } from '../ui/button.jsx';
@@ -9,6 +9,7 @@ import { ImportConfirmStep } from './ImportConfirmStep.jsx';
 import { ImportProgressStep } from './ImportProgressStep.jsx';
 import { ImportFileErrorDialog } from './ImportFileErrorDialog.jsx';
 import { ImportSystemErrorDialog } from './ImportSystemErrorDialog.jsx';
+import { ImportSendingCloseDialog } from './ImportSendingCloseDialog.jsx';
 import { decodeCsvBuffer, parseDelimited } from '../../lib/import/parseDelimited.js';
 import { parseXlsx } from '../../lib/import/parseXlsx.js';
 import { mapColumns } from '../../lib/import/mapColumns.js';
@@ -57,7 +58,8 @@ const SKIP_MESSAGES = {
  *                     bulkApplyDescription, bulkApplyOnlyThis, bulkApplyAll, retry },  // ImportReviewQueue
  *                     // NB: `retry` feeds ImportReviewQueue's separate `retryLabel` prop, not its DEFAULT_LABELS
  *     systemError:  { title, subtitle, copy, copied, copyFailed, close, showReport, hideReport,
- *                     rowData, requestSent, serverResponse },                 // ImportSystemErrorDialog
+ *                     rowData, requestSent, serverResponse },         // ImportSystemErrorDialog
+ *     sendingClose: { title, body, keepWatching, closeAnyway },        // ImportSendingCloseDialog
  *   }
  *
  * Templated strings (mappedSummary's {mapped}/{total}, fieldErrorsTooltip's {fields},
@@ -99,7 +101,7 @@ function renameRowKeys(row, mapping) {
  *   the template beside them was already translated.
  *
  *   Locale keys this dialog resolves through `translate`, beyond the `labels` object:
- *   `importSuccessToast`/`importSkippedToast` (`{count}`), the
+ *   `importSuccessToast`/`importSkippedToast`/`importFailedToast` (`{count}`), the
  *   `ImportParseError` keys
  *   `importErrorFileEmpty`, `importErrorDuplicateHeader` (`{header}`),
  *   `importErrorUnreadableXlsx` (`{detail}`), `importErrorMultipleSheets` (`{sheets}`),
@@ -133,6 +135,16 @@ export function ImportDialog({ open, onOpenChange, config, token, postBatch, sim
   // Result step — not a replacement for the per-row review queue underneath, which stays
   // for retry/skip/download. Null means no system-error dialog is showing.
   const [systemError, setSystemError] = useState(null);
+  // ETP-5225: the user tried to close the dialog while the send was running, and has been
+  // asked what they actually meant. Null-op outside STEP.SENDING — see `handleOpenChange`.
+  const [pendingCloseWhileSending, setPendingCloseWhileSending] = useState(false);
+  /**
+   * Whether the user confirmed closing mid-send, i.e. whether the RESULT step will have anywhere
+   * to render. A ref rather than state on purpose: `handleSend` reads it from inside an async
+   * closure that was created before the close happened, so a state value would be the stale
+   * `false` captured at send time and the failure toast below would never fire.
+   */
+  const closedWhileSendingRef = useRef(false);
 
   const requiredTargets = useMemo(() => config.fields.filter((f) => f.required).map((f) => f.target), [config.fields]);
   const emailTargets = useMemo(() => config.fields.filter((f) => f.isEmail).map((f) => f.target), [config.fields]);
@@ -393,6 +405,9 @@ export function ImportDialog({ open, onOpenChange, config, token, postBatch, sim
   const handleSend = useCallback(async () => {
     setStep(STEP.SENDING);
     setProgress(0);
+    // A previous run's unanswered question must not resurface over this one.
+    setPendingCloseWhileSending(false);
+    closedWhileSendingRef.current = false;
     const toSend = entries.filter((e) => e.status === 'pending' && e.errors.length === 0);
     // runImport isolates per-row build/send failures on its own (a bad row surfaces as
     // that row's FAILED result, not a thrown exception) — this catch is a last-resort
@@ -470,6 +485,23 @@ export function ImportDialog({ open, onOpenChange, config, token, postBatch, sim
         { count: duplicateResults.length },
       ));
     }
+    // ETP-5225 — the failure counterpart, and ONLY when the user closed mid-send.
+    //
+    // Failures are normally reported by the RESULT step's review queue, row by row with the
+    // reason and a retry. Closing the dialog unmounts that, so a run where 3 of 10 rows failed
+    // announced "7 records imported successfully" and nothing else: the smaller-than-expected
+    // number was the only hint anything had gone wrong. The success toast survives the unmount
+    // because `<Toaster>` is mounted at the app root, so this one does too.
+    //
+    // Guarded on the close because with the dialog still open the queue IS on screen and this
+    // would only restate, less usefully, what it already shows in full.
+    if (closedWhileSendingRef.current && trueFailures.length > 0) {
+      toast.error(localize(
+        'importFailedToast',
+        `${trueFailures.length} row(s) could not be imported`,
+        { count: trueFailures.length },
+      ));
+    }
   }, [entries, operationsConfig, config.concurrency, config.maxRows, postBatch, onImported, translate, localize, labelFor, localizeError]);
 
   const handleRetryEntryPostSend = useCallback(async (index) => {
@@ -533,9 +565,34 @@ export function ImportDialog({ open, onOpenChange, config, token, postBatch, sim
     setStep(STEP.DROPZONE);
   }, []);
 
+  /**
+   * ETP-5225: closing MID-SEND used to go straight through to `onOpenChange`, so the dialog
+   * disappeared while `handleSend` kept creating records. Nothing said so, and a user who
+   * closed it to abort a mistaken import found the products there after a reload — the modal
+   * read as a cancel button that silently was not one.
+   *
+   * The send cannot actually be stopped (each row is its own committed `/batch` call), so the
+   * close is intercepted and the user is told what it does, rather than offered a cancel that
+   * would be a lie. Every other step closes as before — this only guards the one window where
+   * closing means something different from what it looks like.
+   */
+  const handleOpenChange = useCallback((next) => {
+    if (!next && step === STEP.SENDING) {
+      setPendingCloseWhileSending(true);
+      return;
+    }
+    onOpenChange(next);
+  }, [step, onOpenChange]);
+
+  const closeAnyway = useCallback(() => {
+    setPendingCloseWhileSending(false);
+    closedWhileSendingRef.current = true;
+    onOpenChange(false);
+  }, [onOpenChange]);
+
   return (
     <>
-      <Dialog open={open} onOpenChange={onOpenChange} data-testid="Dialog__38a6c3">
+      <Dialog open={open} onOpenChange={handleOpenChange} data-testid="Dialog__38a6c3">
         <DialogContent className="w-[90vw] max-w-[1200px] max-h-[90vh] overflow-y-auto" data-testid="DialogContent__38a6c3">
           <DialogHeader data-testid="DialogHeader__38a6c3">
             <DialogTitle data-testid="DialogTitle__38a6c3">{text.title}</DialogTitle>
@@ -678,6 +735,15 @@ export function ImportDialog({ open, onOpenChange, config, token, postBatch, sim
         onClose={() => setSystemError(null)}
         labels={labels?.systemError}
         data-testid="ImportSystemErrorDialog__38a6c3" />
+      <ImportSendingCloseDialog
+        // The `step` half is what dismisses the question on its own when the import finishes
+        // while it is still on screen: there is nothing left to warn about, and leaving it up
+        // would ask the user to decide about a send that already ended.
+        open={pendingCloseWhileSending && step === STEP.SENDING}
+        onKeepWatching={() => setPendingCloseWhileSending(false)}
+        onCloseAnyway={closeAnyway}
+        labels={labels?.sendingClose}
+        data-testid="ImportSendingCloseDialog__38a6c3" />
     </>
   );
 }
