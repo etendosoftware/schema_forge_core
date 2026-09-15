@@ -20,10 +20,17 @@ alone does not complete affected-user permission propagation in the functional a
     clientId,
     selectedRoleId,
     selectedOrgId,
-    roleList: [{ id, name, orgList: [{ id, name }] }]
+    roleList: [{ id, name, orgList: [{ id, name }], effectiveRoleNames?: string[] }]
   }
 }
 ```
+
+`effectiveRoleNames` is attached only to the `roleList` entry matching the user's
+actual personal/default role, and is omitted (not an empty array) when that
+personal role has no composed template roles applied yet. It is purely
+additive/opaque to this repo's own session-refresh validation logic —
+`sessionRefresh.js`'s `reconcileSessionRefresh` does not reject unknown extra
+fields on a `roleList` entry, so it passes through untouched.
 
 The server must validate an active caller and an active, eligible assignment in
 the intended client, then resolve token and metadata from that same context.
