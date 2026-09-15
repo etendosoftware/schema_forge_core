@@ -143,6 +143,42 @@ describe('ImportColumnMapping', () => {
     expect(onApplyMapping).toHaveBeenCalledWith({ Nombre: 'name' });
   });
 
+  // ETP-5223 — `label` is the ENGLISH caption declared in decisions.json. The chips and the
+  // "Editar correspondencia" dropdown printed it verbatim, so both stayed English in a
+  // Spanish session while the CSV template downloaded from the same dialog was translated.
+  it('prefers fieldLabelFn over the field\'s English label in the chips and the dropdown', () => {
+    const fieldLabelFn = (field) => ({ name: 'Nombre', email: 'Correo electrónico' }[field.target]);
+    render(
+      <ImportColumnMapping
+        headers={['Nombre']}
+        importFields={importFields}
+        mapping={{ Nombre: 'name' }}
+        onApplyMapping={() => {}}
+        fieldLabelFn={fieldLabelFn}
+      />,
+    );
+    expect(screen.getByTestId('ImportColumnMapping__chip-Nombre').textContent).toContain('Nombre');
+    expect(screen.getByTestId('ImportColumnMapping__chip-Nombre').textContent).not.toContain('Name');
+
+    fireEvent.click(screen.getByTestId('ImportColumnMapping__editButton'));
+    fireEvent.click(screen.getByTestId('ImportColumnMapping__select-Nombre'));
+    expect(screen.getByTestId('SelectItem__email').textContent).toBe('Correo electrónico');
+  });
+
+  // No resolver at all (every existing caller before this change, and the tests above) must
+  // keep rendering the declared label rather than a blank cell.
+  it('falls back to the declared label when no fieldLabelFn is given', () => {
+    render(
+      <ImportColumnMapping
+        headers={['Nombre']}
+        importFields={importFields}
+        mapping={{ Nombre: 'name' }}
+        onApplyMapping={() => {}}
+      />,
+    );
+    expect(screen.getByTestId('ImportColumnMapping__chip-Nombre').textContent).toContain('Name');
+  });
+
   it('calls onApplyMapping with the updated mapping after changing a select and clicking Save', () => {
     const onApplyMapping = vi.fn();
     render(
