@@ -1,5 +1,7 @@
 import { Injectable, type CanActivate, type ExecutionContext, UnauthorizedException } from '@nestjs/common';
-import type { CachedTokenExchangeService } from '../auth/cached-token-exchange.service.ts';
+// Regular (not `import type`) import — see cached-token-exchange.service.ts for why:
+// constructor-injected types must be real imports for emitDecoratorMetadata (ETP-5345).
+import { CachedTokenExchangeService } from '../auth/cached-token-exchange.service.ts';
 
 @Injectable()
 export class PublicApiKeyGuard implements CanActivate {

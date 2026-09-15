@@ -1,4 +1,8 @@
-import type { TokenExchangeService } from './token-exchange.service.ts';
+// Regular (not `import type`) import: this class is constructor-injected by
+// NestJS elsewhere (gateway/src/app.module.ts), which needs `emitDecoratorMetadata`
+// to reflect the real class reference for design:paramtypes — a type-only import
+// erases that reference, silently breaking DI resolution at runtime (ETP-5345).
+import { TokenExchangeService } from './token-exchange.service.ts';
 
 export class CachedTokenExchangeService {
   private cache = new Map<string, { jwt: string; expiresAt: number }>();
