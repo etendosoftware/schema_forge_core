@@ -6,7 +6,7 @@
   "types": "./dist/index.d.ts",
   "scripts": {
     "build": "tsc -p tsconfig.json",
-    "test": "node --test --experimental-transform-types test/**/*.test.ts"
+    "test": "tsx --test test/**/*.test.ts"
   },
   "dependencies": {
     "@nestjs/common": "^10.4.0",
@@ -15,6 +15,7 @@
     "@nestjs/throttler": "^6.2.0"
   },
   "devDependencies": {
+    "tsx": "^4.23.0",
     "typescript": "^5.6.0"
   }
 }
