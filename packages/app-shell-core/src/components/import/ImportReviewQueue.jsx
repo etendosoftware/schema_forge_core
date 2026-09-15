@@ -543,11 +543,24 @@ export function ImportReviewQueue({
             const isSkipped = entry.status === 'skipped';
 
             if (isSkipped) {
-              // Why it was skipped, when the dialog attached a reason: a blank-target error is
-              // the row-level message ("already exists", "duplicate in file"), the same shape
-              // the error branch below reads. A row the user skipped by hand carries none, and
-              // then there is nothing to explain.
-              const skipReason = entry.errors?.find((e) => !e.target)?.message;
+              // Why it was skipped, when the dialog attached a reason. A row the user skipped by
+              // hand carries none, and then there is nothing to explain.
+              //
+              // ETP-5226: this used to read ONLY a blank-target error, on the assumption — stated
+              // in this very comment — that both skip reasons were row-level. They are not.
+              // `ImportDialog` tags "already exists" with `dedupe.key[0]` (`searchKey` for
+              // products) and leaves only "duplicate in file" blank, so a row skipped because the
+              // record exists server-side rendered the Skipped tag with NO reason under it: the
+              // queue marked the row correctly and then declined to say why, which is the half of
+              // the feature the user actually reads.
+              //
+              // `isSkipReason` rather than "fall back to the first error": a skipped row can also
+              // carry ordinary field errors, and printing one of those here would report "Not a
+              // valid email address." as the reason we skipped — the exact confusion the test
+              // below this one was written to prevent. And rather than blanking the producer's
+              // target, because that target is not decoration: `buildErrorsCsv` prefixes it
+              // ("searchKey: This record already exists…") in the downloadable error file.
+              const skipReason = entry.errors?.find((e) => !e.target || e.isSkipReason)?.message;
               return (
                 <TableRow key={index} data-testid="TableRow__a73779">
                   <TableCell className={`${STICKY_CELL_CLASS} align-top`} data-testid="TableCell__a73779">
@@ -573,7 +586,15 @@ export function ImportReviewQueue({
                       </div>
                       {skipReason && (
                         <span
-                          className="text-xs text-muted-foreground"
+                          // ETP-5226: `whitespace-normal` is what makes this wrap, and it is not
+                          // optional styling. Since ETP-5281 every `TableCell` carries
+                          // `overflow-hidden text-ellipsis whitespace-nowrap`, so this span
+                          // inherited the nowrap and clipped: "Fila duplicada: este valor ya ap".
+                          // `break-words` alone would NOT fix it — it only chooses where a long
+                          // word may break, and does nothing while an ancestor forbids line breaks
+                          // at all. Same defect ETP-5223 fixed on the two spans in the error
+                          // branch below; this third one, in the skipped branch, was missed then.
+                          className="whitespace-normal break-words text-xs text-muted-foreground"
                           data-testid={`ImportReviewQueue__skipReason-${index}`}
                         >
                           {skipReason}

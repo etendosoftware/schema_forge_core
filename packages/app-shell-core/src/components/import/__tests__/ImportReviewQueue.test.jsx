@@ -302,6 +302,59 @@ describe('ImportReviewQueue', () => {
       renderSkipped({ ...errorEntry, status: 'skipped' });
       expect(screen.queryByTestId('ImportReviewQueue__skipReason-0')).toBeNull();
     });
+
+    // ETP-5226 — "already exists" is NOT blank-target: ImportDialog tags it with the dedupe key
+    // (`searchKey` for products) so `buildErrorsCsv` can prefix it in the downloadable file. This
+    // reader only looked for blank targets, so re-importing a file whose records already existed
+    // marked every row Skipped and explained none of them.
+    it('shows a targeted skip reason when the producer flags it as one', () => {
+      renderSkipped({
+        row: { name: 'Lucia', email: 'lucia@x.com' },
+        errors: [{ target: 'searchKey', message: 'Este registro ya existe', isSkipReason: true }],
+        status: 'skipped',
+      });
+      expect(screen.getByTestId('ImportReviewQueue__skipReason-0').textContent).toBe('Este registro ya existe');
+    });
+
+    // The flag is what separates the two, so a targeted error WITHOUT it must still stay out —
+    // otherwise the fix above silently repeals the test before it.
+    it('still ignores a targeted error that is not flagged as the skip reason', () => {
+      renderSkipped({
+        row: { name: 'Lucia', email: 'lucia@x.com' },
+        errors: [{ target: 'email', message: 'Correo inválido' }],
+        status: 'skipped',
+      });
+      expect(screen.queryByTestId('ImportReviewQueue__skipReason-0')).toBeNull();
+    });
+
+    it('prefers the flagged reason over an unrelated field error on the same row', () => {
+      renderSkipped({
+        row: { name: 'Lucia', email: 'no-arroba' },
+        errors: [
+          { target: 'email', message: 'Correo inválido' },
+          { target: 'searchKey', message: 'Este registro ya existe', isSkipReason: true },
+        ],
+        status: 'skipped',
+      });
+      expect(screen.getByTestId('ImportReviewQueue__skipReason-0').textContent).toBe('Este registro ya existe');
+    });
+
+    // ETP-5226 — the reason rendered but arrived clipped: "Fila duplicada: este valor ya ap".
+    // Since ETP-5281 every TableCell carries `whitespace-nowrap`, so this span needs
+    // `whitespace-normal` to wrap at all; `break-words` alone is inert under an ancestor that
+    // forbids line breaks. Same defect ETP-5223 fixed on the two spans in the error branch — this
+    // third one was missed, so assert the class that does the work, not the one that reads like it.
+    it('lets a long skip reason wrap instead of clipping it', () => {
+      renderSkipped({
+        row: { name: 'Lucia', email: 'lucia@x.com' },
+        errors: [{ target: '', message: 'Fila duplicada: este valor ya aparece antes en el archivo.' }],
+        status: 'skipped',
+      });
+      const reason = screen.getByTestId('ImportReviewQueue__skipReason-0');
+      expect(reason.className).toMatch(/\bwhitespace-normal\b/);
+      expect(reason.className).not.toMatch(/\btruncate\b/);
+      expect(reason.textContent).toBe('Fila duplicada: este valor ya aparece antes en el archivo.');
+    });
   });
 
   it('marks a skipped entry distinctly and does not offer edit/retry for it', () => {

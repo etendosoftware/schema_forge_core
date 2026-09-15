@@ -291,7 +291,12 @@ export function ImportDialog({ open, onOpenChange, config, token, postBatch, sim
       if (key !== null && existingKeys.has(key)) {
         return {
           row,
-          errors: [{ target: dedupeKeyTargets[0] ?? '', message: labelFor('alreadyExists') }],
+          // ETP-5226: `isSkipReason` marks this as WHY the row was skipped, not as a validation
+          // error on the key column. The review queue shows only flagged (or blank-target)
+          // messages under the Skipped tag, so an ordinary field error on the same row cannot be
+          // mistaken for the reason. The target stays because `buildErrorsCsv` prefixes it in the
+          // downloadable error file.
+          errors: [{ target: dedupeKeyTargets[0] ?? '', message: labelFor('alreadyExists'), isSkipReason: true }],
           status: 'skipped',
         };
       }
