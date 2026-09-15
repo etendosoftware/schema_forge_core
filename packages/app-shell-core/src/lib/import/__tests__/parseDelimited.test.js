@@ -67,6 +67,24 @@ describe('parseDelimited', () => {
     );
   });
 
+  // ETP-5223: this module has no translator, so the English text stays on `message` as the
+  // fallback and the locale key travels with the error for ImportDialog to resolve. Without
+  // the key the user read "The file is empty." in a fully Spanish session.
+  it('carries the locale key and params so the dialog can localize the message', () => {
+    assert.throws(() => parseDelimited(''), (error) => {
+      assert.ok(error instanceof ImportParseError);
+      assert.equal(error.messageKey, 'importErrorFileEmpty');
+      assert.deepEqual(error.params, {});
+      return true;
+    });
+
+    assert.throws(() => parseDelimited('name,email,email\nA,a@x.com,b@x.com'), (error) => {
+      assert.equal(error.messageKey, 'importErrorDuplicateHeader');
+      assert.deepEqual(error.params, { header: 'email' });
+      return true;
+    });
+  });
+
   it('fills missing trailing cells with empty string', () => {
     const { rows } = parseDelimited('name,email,phone\nLucia,lucia@x.com');
     assert.deepEqual(rows[0], { name: 'Lucia', email: 'lucia@x.com', phone: '' });
