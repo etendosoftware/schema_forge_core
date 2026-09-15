@@ -648,6 +648,22 @@ function getOptionsPart(type, f) {
   }
 }
 
+// ETP-5323 — the contract's DB-derived `validation.maxLength` (projectValidation, sourced
+// from AD_Column.FieldLength) as a client-side hard stop. EntityForm's plain text input and
+// `renderTextareaField` already read `f.maxLength` (DeferredInput's `maxLength` prop); this
+// was the missing passthrough that left it always undefined. Gated to `type === 'text' ||
+// 'textarea'` — the only two form field types whose renderer consumes `maxLength` — for the
+// same reason as generateTableComponent's maxLengthColPart: AD_Column.FieldLength exists for
+// every column type and is meaningless as an HTML maxLength on a selector/number/date field.
+// Emitted ONLY when both hold — additive, so a field with neither stays byte-for-byte the
+// same, same rationale as minPart. Extracted out of generateFormComponent's field-mapping
+// closure (rather than inlined) to keep that closure's cognitive complexity under S3776's cap.
+function buildFormMaxLengthPart(type, f) {
+  return (type === 'text' || type === 'textarea') && f.validation?.maxLength != null
+    ? `, maxLength: ${f.validation.maxLength}`
+    : '';
+}
+
 /**
  * Generate a detail/edit form component for an entity.
  * Produces a thin declarative component that imports EntityForm from contract-ui.
@@ -721,17 +737,8 @@ export function generateFormComponent(entityName, contract) {
     // `integer`, not `type`, and EntityForm.getInputType only recognizes 'number'.
     const minPart = f.min != null ? `, min: ${f.min}` : '';
     const integerPart = fragmentIf(f.integer === true, ', integer: true');
-    // ETP-5323 — the contract's DB-derived `validation.maxLength` (projectValidation, sourced
-    // from AD_Column.FieldLength) as a client-side hard stop. EntityForm's plain text input and
-    // `renderTextareaField` already read `f.maxLength` (DeferredInput's `maxLength` prop); this
-    // was the missing passthrough that left it always undefined. Gated to `type === 'text' ||
-    // 'textarea'` — the only two form field types whose renderer consumes `maxLength` — for the
-    // same reason as generateTableComponent's maxLengthColPart: AD_Column.FieldLength exists for
-    // every column type and is meaningless as an HTML maxLength on a selector/number/date field.
-    // Emitted ONLY when both hold — additive, so a field with neither stays byte-for-byte the
-    // same, same rationale as minPart.
-    const maxLengthPart = (type === 'text' || type === 'textarea') && f.validation?.maxLength != null
-      ? `, maxLength: ${f.validation.maxLength}` : '';
+    // ETP-5323 — see buildFormMaxLengthPart for the full rationale (gating, emission rule).
+    const maxLengthPart = buildFormMaxLengthPart(type, f);
     // Behavioral metadata: displayLogic and readOnlyLogic
     let displayLogicPart = buildDisplayLogicPart(f);
     let readOnlyLogicPart = buildReadOnlyLogicPart(f);
