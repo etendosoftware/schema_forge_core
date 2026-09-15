@@ -10,6 +10,7 @@ const schema: PublicApiSchema = {
   entities: {
     product: {
       publicApi: true,
+      specName: 'product',
       operations: ['GET', 'LIST'],
       fields: {
         name: { publicApi: true, direction: 'out', internalPath: 'name', type: 'passthrough', handlerId: null },

@@ -3,7 +3,7 @@ import { dirname } from 'node:path';
 
 export function resolvePublicApiSchema({ apiVersion, windows }) {
   const entities = {};
-  for (const { entityName, contract } of windows) {
+  for (const { entityName, specName, contract } of windows) {
     const fields = contract.frontendContract.entities[entityName].fields;
     const exposedFields = {};
     for (const field of fields) {
@@ -19,6 +19,10 @@ export function resolvePublicApiSchema({ apiVersion, windows }) {
     if (Object.keys(exposedFields).length === 0) continue;
     entities[entityName] = {
       publicApi: true,
+      // NeoServlet's real URL pattern is /sws/neo/{specName}/{entityName} (see
+      // docs/architecture-overview.md) — the artifact/spec directory name, not
+      // always the same as the AD entity name (e.g. contacts -> businessPartner).
+      specName: specName ?? entityName,
       operations: ['GET', 'LIST'],
       fields: exposedFields,
     };
@@ -36,6 +40,7 @@ export function writePublicApiSchema({ apiVersion, windows, outputPath }) {
 export function loadContractsForWindows(entries, artifactsRoot) {
   return entries.map(({ entityName, windowName }) => ({
     entityName,
+    specName: windowName,
     contract: JSON.parse(
       readFileSync(`${artifactsRoot}/${windowName}/contract.json`, 'utf-8')
     ),

@@ -8,6 +8,7 @@ test('a resolved schema literal matches the PublicApiSchema shape', () => {
     entities: {
       product: {
         publicApi: true,
+        specName: 'product',
         operations: ['GET', 'LIST'],
         fields: {
           name: {
