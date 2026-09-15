@@ -470,6 +470,17 @@ export function generateTableComponent(entityName, contract) {
     const popupPart = fragmentIf(f.popup, ', popup: true');
     const minColPart = optProp('min', f.min);
     const maxColPart = optProp('max', f.max);
+    // ETP-5323 — the contract's DB-derived `validation.maxLength` (projectValidation, sourced
+    // from AD_Column.FieldLength) reaching the grid column as a client-side hard stop on the
+    // inline-edit and add-row text inputs (InlineLinesPanel's EditCell / DataTable's
+    // renderInputCell). AD_Column.FieldLength is populated for EVERY column type (it is a
+    // storage-precision hint, not "chars typed"), so this must be gated to `type === 'string'`
+    // — the plain-text fallback both those editors render — or a selector/amount/number column
+    // would pick up a nonsensical HTML maxLength (e.g. a 2-digit cap on a currency amount
+    // column whose FieldLength just reflects its numeric precision). Emitted only when the
+    // contract declares one AND the column is textual, so every other column stays byte-for-byte
+    // identical to before this feature existed — same additive pattern as minColPart/maxColPart.
+    const maxLengthColPart = type === 'string' ? optProp('maxLength', f.validation?.maxLength) : '';
     const growPart = fragmentIf(f.grow, ', grow: true');
     const columnWidthPart = optProp('minWidth', f.columnWidth);
     const noTrailingPart = fragmentIf(f.noTrailing, ', noTrailing: true');
@@ -493,7 +504,7 @@ export function generateTableComponent(entityName, contract) {
     // (resolveRowCurrency in app-shell's lib/rowCurrency.js). Appended at the tail
     // for the same byte-identity reason as the filter overrides above.
     const currencyFieldPart = quotedProp('currencyField', f.currencyField);
-    return `  { key: '${f.name}', column: '${f.column}', type: '${type}'${labelsPart}${labelPart}${enumLabelsPart}${enumVariantsPart}${selectionPart}${togglePart}${badgePart}${badgeLabelsPart}${badgeColorsPart}${badgeVariantsPart}${summablePart}${displayPart}${renderPart}${requiredPart}${lookupPart}${lookupDrawerColPart}${excludeValueOfColPart}${popupPart}${minColPart}${maxColPart}${growPart}${columnWidthPart}${noTrailingPart}${filterOnlyPart}${dotPart}${gridReadOnlyPart}${computedPart}${visibleWhenCapabilityPart}${filterModePart}${backendFilterKeyPart}${currencyFieldPart} },`;
+    return `  { key: '${f.name}', column: '${f.column}', type: '${type}'${labelsPart}${labelPart}${enumLabelsPart}${enumVariantsPart}${selectionPart}${togglePart}${badgePart}${badgeLabelsPart}${badgeColorsPart}${badgeVariantsPart}${summablePart}${displayPart}${renderPart}${requiredPart}${lookupPart}${lookupDrawerColPart}${excludeValueOfColPart}${popupPart}${minColPart}${maxColPart}${maxLengthColPart}${growPart}${columnWidthPart}${noTrailingPart}${filterOnlyPart}${dotPart}${gridReadOnlyPart}${computedPart}${visibleWhenCapabilityPart}${filterModePart}${backendFilterKeyPart}${currencyFieldPart} },`;
   }).join('\n') + buildDimensionsPanelColumn(dimensionFieldsRaw);
 
   const filtersArray = searchableFields.map(f => `'${f}'`).join(', ');
@@ -637,6 +648,22 @@ function getOptionsPart(type, f) {
   }
 }
 
+// ETP-5323 — the contract's DB-derived `validation.maxLength` (projectValidation, sourced
+// from AD_Column.FieldLength) as a client-side hard stop. EntityForm's plain text input and
+// `renderTextareaField` already read `f.maxLength` (DeferredInput's `maxLength` prop); this
+// was the missing passthrough that left it always undefined. Gated to `type === 'text' ||
+// 'textarea'` — the only two form field types whose renderer consumes `maxLength` — for the
+// same reason as generateTableComponent's maxLengthColPart: AD_Column.FieldLength exists for
+// every column type and is meaningless as an HTML maxLength on a selector/number/date field.
+// Emitted ONLY when both hold — additive, so a field with neither stays byte-for-byte the
+// same, same rationale as minPart. Extracted out of generateFormComponent's field-mapping
+// closure (rather than inlined) to keep that closure's cognitive complexity under S3776's cap.
+function buildFormMaxLengthPart(type, f) {
+  return (type === 'text' || type === 'textarea') && f.validation?.maxLength != null
+    ? `, maxLength: ${f.validation.maxLength}`
+    : '';
+}
+
 /**
  * Generate a detail/edit form component for an entity.
  * Produces a thin declarative component that imports EntityForm from contract-ui.
@@ -710,6 +737,8 @@ export function generateFormComponent(entityName, contract) {
     // `integer`, not `type`, and EntityForm.getInputType only recognizes 'number'.
     const minPart = f.min != null ? `, min: ${f.min}` : '';
     const integerPart = fragmentIf(f.integer === true, ', integer: true');
+    // ETP-5323 — see buildFormMaxLengthPart for the full rationale (gating, emission rule).
+    const maxLengthPart = buildFormMaxLengthPart(type, f);
     // Behavioral metadata: displayLogic and readOnlyLogic
     let displayLogicPart = buildDisplayLogicPart(f);
     let readOnlyLogicPart = buildReadOnlyLogicPart(f);
@@ -731,7 +760,7 @@ export function generateFormComponent(entityName, contract) {
     // ETP-4749: fixed chip rendered before the input (e.g. "https://"); see EntityForm's
     // renderInputField and recipientEdits.js's format validators.
     const inputPrefixPart = wrapIf(", inputPrefix: '", f.inputPrefix, "'");
-    const fieldLine = `  { key: '${f.name}', column: '${f.column}', type: '${type}'${labelsPart}${formLabelPart}${requiredPart}${lookupPart}${popupPart}${readOnlyPart}${inlinePart}${sectionPart}${referencePart}${inputModePart}${searchSelectPart}${allowCreatePart}${createPart}${dependsOnPart}${optionsPart}${valueTypePart}${defaultValuePart}${helpPart}${placeholderPart}${emptyOptionPart}${fieldGroupPart}${precisionPart}${minPart}${integerPart}${displayLogicPart}${readOnlyLogicPart}${spanPart}${rowsPart}${clearablePart}${customRendererPart}${editModalPart}${inputPrefixPart} },`;
+    const fieldLine = `  { key: '${f.name}', column: '${f.column}', type: '${type}'${labelsPart}${formLabelPart}${requiredPart}${lookupPart}${popupPart}${readOnlyPart}${inlinePart}${sectionPart}${referencePart}${inputModePart}${searchSelectPart}${allowCreatePart}${createPart}${dependsOnPart}${optionsPart}${valueTypePart}${defaultValuePart}${helpPart}${placeholderPart}${emptyOptionPart}${fieldGroupPart}${precisionPart}${minPart}${maxLengthPart}${integerPart}${displayLogicPart}${readOnlyLogicPart}${spanPart}${rowsPart}${clearablePart}${customRendererPart}${editModalPart}${inputPrefixPart} },`;
     return [...slotLines, fieldLine].join('\n');
   }).join('\n');
 
