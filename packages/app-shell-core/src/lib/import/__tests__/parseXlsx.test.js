@@ -144,6 +144,35 @@ describe('parseXlsx — structure', () => {
     );
   });
 
+  // ETP-5223: same contract as parseDelimited — the English text is the fallback on
+  // `message`, and the locale key travels with the error so ImportDialog can render the
+  // Spanish wording. The xlsx path had the same hardcoded English strings.
+  it('carries the locale key and params so the dialog can localize the message', async () => {
+    await assert.rejects(parseXlsx(await textWorkbook([['Email', 'Email'], ['a@b.c', 'd@e.f']])), (error) => {
+      assert.equal(error.messageKey, 'importErrorDuplicateHeader');
+      assert.deepEqual(error.params, { header: 'Email' });
+      return true;
+    });
+
+    // Same construction the "no content" case above uses.
+    await assert.rejects(parseXlsx(await workbook([[{ value: null, type: String }]])), (error) => {
+      assert.equal(error.messageKey, 'importErrorFileEmpty');
+      return true;
+    });
+
+    const multiSheet = await workbook([
+      { sheet: 'Contactos', data: [[t('Nombre')], [t('Ana')]] },
+      { sheet: 'Notas', data: [[t('Comentario')], [t('revisar')]] },
+    ]);
+    await assert.rejects(parseXlsx(multiSheet), (error) => {
+      assert.equal(error.messageKey, 'importErrorMultipleSheets');
+      // The parenthetical is built in the thrower, not in the locale entry, so an unnamed
+      // set of sheets cannot render an empty "()" in any language.
+      assert.equal(error.params.sheets, ' (Contactos, Notas)');
+      return true;
+    });
+  });
+
   it('rejects a workbook with more than one sheet holding data, naming the sheets', async () => {
     // Importing the first and discarding the rest would report success on a partial import.
     const blob = await workbook([

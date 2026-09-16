@@ -1,6 +1,9 @@
 import { render, screen, fireEvent } from '@testing-library/react';
 
-vi.mock('@/i18n', () => ({
+// Core has no `@/` alias (unlike the functional app-shell) — mock by the same
+// relative specifier the component itself imports, matching the precedent in
+// add-line-button.vitest.jsx for '../../../i18n/index.js'.
+vi.mock('../../../i18n/index.js', () => ({
   useUI: () => (key) => {
     const map = {
       dateRangeToday: 'Hoy',

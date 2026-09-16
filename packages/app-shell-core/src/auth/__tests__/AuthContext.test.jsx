@@ -2,6 +2,7 @@ import { describe, it, expect, vi, afterEach } from 'vitest';
 import { renderHook, cleanup, act, waitFor } from '@testing-library/react';
 import { createMemoryAuthStorage } from '../session.js';
 import { AuthProvider, useAuth } from '../AuthContext.jsx';
+import { metadataResponse, refreshResponse, sessionFixture } from './refreshFixtures.js';
 
 afterEach(cleanup);
 
@@ -793,6 +794,173 @@ describe('AuthContext — silent refresh polling fallback (ETP-5195)', () => {
       expect(f.calls[1].url).toBe('/sws/neo/refreshtoken');
       // ...but since the role didn't change, it stayed a no-op — same guard as every other trigger.
       expect(writeSpy).not.toHaveBeenCalled();
+    } finally { f.restore(); }
+  });
+});
+
+describe('AuthContext — menuAccess (ETP-5189)', () => {
+  it('defaults menuAccess to {} before any role is selected', () => {
+    const { result } = renderHook(() => useAuth(), { wrapper: wrapperWith() });
+    expect(result.current.menuAccess).toEqual({});
+  });
+
+  it('exposes menuAccess from fetchWindowAccess alongside windowAccess/capabilities', async () => {
+    const fetchWindowAccess = vi.fn().mockResolvedValue({
+      windowAccess: { '147': 'full' },
+      capabilities: { showAccountingFields: true },
+      menuAccess: { '108': true, P1: true },
+    });
+    const { result } = renderHook(() => useAuth(), { wrapper: wrapperWith({ fetchWindowAccess }) });
+
+    await act(async () => {
+      result.current.selectRole({ id: 'role-1' });
+    });
+
+    await waitFor(() => {
+      expect(result.current.menuAccess).toEqual({ '108': true, P1: true });
+    });
+    expect(result.current.windowAccess).toEqual({ '147': 'full' });
+  });
+
+  it('populates menuAccess from fetchWindowAccess on the initial-access-load effect (hydration)', async () => {
+    // Mirrors the ETP-4520 hydration test above — a host whose persisted/initial session
+    // already carries a selectedRole must still get menuAccess populated by the
+    // `!state.accessLoaded` effect, not just by an explicit selectRole() call.
+    const fetchWindowAccess = vi.fn().mockResolvedValue({
+      windowAccess: { '147': 'full' },
+      capabilities: { showAccountingFields: true },
+      menuAccess: { '200': true },
+    });
+    const { result } = renderHook(() => useAuth(), {
+      wrapper: ({ children }) => (
+        <AuthProvider
+          storage={createMemoryAuthStorage()}
+          fetchWindowAccess={fetchWindowAccess}
+          initialSession={{ token: 'tok', selectedRole: { id: 'role-1' } }}>
+          {children}
+        </AuthProvider>
+      ),
+    });
+
+    await waitFor(() => {
+      expect(fetchWindowAccess).toHaveBeenCalledTimes(1);
+    });
+    await waitFor(() => {
+      expect(result.current.menuAccess).toEqual({ '200': true });
+    });
+    expect(result.current.windowAccess).toEqual({ '147': 'full' });
+  });
+
+  it('bumps authRevision on a same-metadata refresh (role-changed branch) when only menuAccess resolves differently', async () => {
+    // Uses a full metadataResponse (the `outcome.session` truthy branch in AuthContext's
+    // refresh()), with metadata content unchanged between the two calls — that carries the
+    // PREVIOUS windowAccess/capabilities/menuAccess forward as the access baseline (see
+    // `metadataUnchanged` in AuthContext.jsx), isolating menuAccess as the only thing that
+    // actually differs between the two loadAccess() resolutions below.
+    const initial = sessionFixture();
+    const next = sessionFixture({ revision: 1 }); // same role/org/client — only the token rotates
+    const fetchWindowAccess = vi.fn()
+      .mockResolvedValueOnce({ windowAccess: { W1: 'full' }, capabilities: { c: true }, menuAccess: { m1: true } })
+      .mockResolvedValueOnce({ windowAccess: { W1: 'full' }, capabilities: { c: true }, menuAccess: { m2: true } });
+    const f = stubFetch(refreshResponse(metadataResponse(next)));
+    try {
+      const { result } = renderHook(() => useAuth(), {
+        wrapper: ({ children }) => (
+          <AuthProvider storage={createMemoryAuthStorage(initial)} fetchWindowAccess={fetchWindowAccess}>
+            {children}
+          </AuthProvider>
+        ),
+      });
+
+      await waitFor(() => {
+        expect(result.current.menuAccess).toEqual({ m1: true });
+      });
+      const authRevisionAfterMount = result.current.authRevision;
+
+      await act(async () => {
+        await result.current.refreshToken();
+      });
+
+      await waitFor(() => {
+        expect(result.current.menuAccess).toEqual({ m2: true });
+      });
+      // windowAccess/capabilities resolved to the SAME values both times — only menuAccess
+      // differed — yet the refresh still must not be treated as a no-op.
+      expect(result.current.windowAccess).toEqual({ W1: 'full' });
+      expect(result.current.capabilities).toEqual({ c: true });
+      expect(result.current.authRevision).toBeGreaterThan(authRevisionAfterMount);
+    } finally { f.restore(); }
+  });
+
+  it('does not bump authRevision on a same-role visibilitychange refresh when menuAccess also resolves unchanged (regression guard)', async () => {
+    // Mirrors the sibling "does not bump ... when window access resolves unchanged" test in the
+    // ETP-5195 describe above, but with a non-empty, IDENTICAL menuAccess both times — proving
+    // the menuAccess diff itself doesn't cause a false-positive bump on a genuine no-op refresh.
+    const token = makeToken({ role: 'R1', user: 'U1' });
+    const fetchWindowAccess = vi.fn().mockResolvedValue({
+      windowAccess: { '147': 'full' },
+      capabilities: { showAccountingFields: true },
+      menuAccess: { m1: true },
+    });
+    const f = stubFetch({ ok: true, json: async () => ({ result: JSON.stringify({ token }) }) });
+    try {
+      const { result } = renderHook(() => useAuth(), {
+        wrapper: ({ children }) => (
+          <AuthProvider
+            storage={createMemoryAuthStorage()}
+            fetchWindowAccess={fetchWindowAccess}
+            initialSession={{ token, selectedRole: { id: 'role-1' } }}>
+            {children}
+          </AuthProvider>
+        ),
+      });
+      await waitFor(() => expect(result.current.menuAccess).toEqual({ m1: true }));
+      const authRevisionAfterMount = result.current.authRevision;
+
+      await act(async () => {
+        document.dispatchEvent(new Event('visibilitychange'));
+        await Promise.resolve();
+      });
+      await waitFor(() => expect(fetchWindowAccess).toHaveBeenCalledTimes(2));
+      // Flush the microtasks the second refresh's own loadAccess()/publish need.
+      await act(async () => { await Promise.resolve(); await Promise.resolve(); });
+
+      expect(result.current.menuAccess).toEqual({ m1: true });
+      expect(result.current.authRevision).toBe(authRevisionAfterMount);
+    } finally { f.restore(); }
+  });
+
+  it('still bumps authRevision when a same-role visibilitychange refresh resolves DIFFERENT menuAccess only (regression guard)', async () => {
+    // Mirrors the sibling "still bumps ... resolves DIFFERENT window access" test in the
+    // ETP-5195 describe above — windowAccess/capabilities are IDENTICAL across both calls here,
+    // only menuAccess changes, proving the menu diff alone is enough to flip accessChanged.
+    const token = makeToken({ role: 'R1', user: 'U1' });
+    const fetchWindowAccess = vi.fn()
+      .mockResolvedValueOnce({ windowAccess: { '147': 'full' }, capabilities: {}, menuAccess: { m1: true } })
+      .mockResolvedValueOnce({ windowAccess: { '147': 'full' }, capabilities: {}, menuAccess: { m2: true } });
+    const f = stubFetch({ ok: true, json: async () => ({ result: JSON.stringify({ token }) }) });
+    try {
+      const { result } = renderHook(() => useAuth(), {
+        wrapper: ({ children }) => (
+          <AuthProvider
+            storage={createMemoryAuthStorage()}
+            fetchWindowAccess={fetchWindowAccess}
+            initialSession={{ token, selectedRole: { id: 'role-1' } }}>
+            {children}
+          </AuthProvider>
+        ),
+      });
+      await waitFor(() => expect(result.current.menuAccess).toEqual({ m1: true }));
+      const authRevisionAfterMount = result.current.authRevision;
+
+      await act(async () => {
+        document.dispatchEvent(new Event('visibilitychange'));
+        await Promise.resolve();
+      });
+      await waitFor(() => expect(result.current.menuAccess).toEqual({ m2: true }));
+
+      expect(result.current.windowAccess).toEqual({ '147': 'full' });
+      expect(result.current.authRevision).toBe(authRevisionAfterMount + 1);
     } finally { f.restore(); }
   });
 });
