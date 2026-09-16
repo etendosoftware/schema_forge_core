@@ -237,6 +237,47 @@ describe('ImportColumnMapping — saving', () => {
     expect(onApplyMapping).toHaveBeenCalledWith({ Nombre: 'name' });
   });
 
+  // ETP-5223 — `label` is the ENGLISH caption declared in decisions.json. The chips and the
+  // "Editar correspondencia" dropdown printed it verbatim, so both stayed English in a
+  // Spanish session while the CSV template downloaded from the same dialog was translated.
+  //
+  // Adapted for the field-first grid (ETP-4954): a field's select no longer lists every
+  // importField as an option (options are now the file's headers), so the dropdown-side
+  // assertion here checks the field CAPTION in the edit modal — `ImportColumnMapping__field-*` —
+  // rather than a since-removed `SelectItem__email` header-keyed option.
+  it('prefers fieldLabelFn over the field\'s English label in the chips and the edit modal', () => {
+    const fieldLabelFn = (field) => ({ name: 'Nombre', email: 'Correo electrónico' }[field.target]);
+    render(
+      <ImportColumnMapping
+        headers={['Nombre']}
+        importFields={importFields}
+        mapping={{ Nombre: 'name' }}
+        onApplyMapping={() => {}}
+        fieldLabelFn={fieldLabelFn}
+      />,
+    );
+    expect(screen.getByTestId('ImportColumnMapping__chip-Nombre').textContent).toContain('Nombre');
+    expect(screen.getByTestId('ImportColumnMapping__chip-Nombre').textContent).not.toContain('Name');
+
+    fireEvent.click(screen.getByTestId('ImportColumnMapping__editButton'));
+    expect(screen.getByTestId('ImportColumnMapping__field-name').textContent).toContain('Nombre');
+    expect(screen.getByTestId('ImportColumnMapping__field-email').textContent).toContain('Correo electrónico');
+  });
+
+  // No resolver at all (every existing caller before this change, and the tests above) must
+  // keep rendering the declared label rather than a blank cell.
+  it('falls back to the declared label when no fieldLabelFn is given', () => {
+    render(
+      <ImportColumnMapping
+        headers={['Nombre']}
+        importFields={importFields}
+        mapping={{ Nombre: 'name' }}
+        onApplyMapping={() => {}}
+      />,
+    );
+    expect(screen.getByTestId('ImportColumnMapping__chip-Nombre').textContent).toContain('Name');
+  });
+
   it('emits a plain string (not an array) for a field pointed at a fresh column', () => {
     const onApplyMapping = vi.fn();
     render(

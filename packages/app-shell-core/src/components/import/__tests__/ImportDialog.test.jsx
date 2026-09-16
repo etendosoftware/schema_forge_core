@@ -1,4 +1,11 @@
 import { describe, it, expect, vi, afterEach } from 'vitest';
+
+// ETP-5225 — after "close anyway" the dialog is unmounted by its caller, so the outcome of the
+// send reaches the user ONLY as a toast. `<Toaster>` is mounted at the app root and never here,
+// so the real sonner would make every call an unobservable no-op.
+const sonnerMocks = vi.hoisted(() => ({ success: vi.fn(), info: vi.fn(), error: vi.fn() }));
+vi.mock('sonner', () => ({ toast: sonnerMocks }));
+
 import { render, screen, fireEvent, waitFor, cleanup } from '@testing-library/react';
 import { ImportDialog } from '../ImportDialog.jsx';
 import { registerImportDescriptor } from '../../../lib/import/buildOperations.js';
@@ -516,5 +523,149 @@ describe('ImportDialog — ETP-4996', () => {
       URL.createObjectURL = originalCreate;
       URL.revokeObjectURL = originalRevoke;
     }
+  });
+});
+
+/**
+ * ETP-5225 — the "X" during the send.
+ *
+ * It used to close the progress modal outright while `handleSend` carried on creating records,
+ * with nothing on screen saying so. A user who clicked it to abort a mistaken import found the
+ * products there after a reload, which is the whole report: a close that reads as a cancel and
+ * silently is not one.
+ */
+describe('ImportDialog — closing while the send is running', () => {
+  /** A postBatch that never settles, so the dialog stays parked on the progress step. */
+  function heldPostBatch() {
+    return vi.fn(() => new Promise(() => {}));
+  }
+
+  async function startSend(onOpenChange, postBatch) {
+    render(
+      <ImportDialog
+        open
+        onOpenChange={onOpenChange}
+        config={config}
+        token="t"
+        postBatch={postBatch}
+        simSearchFn={vi.fn()}
+        onImported={() => {}}
+      />,
+    );
+    await uploadFile('Name,Email\nLucia,lucia@x.com');
+    fireEvent.click(screen.getByTestId('ImportDialog__importButton'));
+    fireEvent.click(screen.getByTestId('ImportConfirmStep__confirm'));
+    await waitFor(() => screen.getByTestId('ImportProgressStep__title'));
+  }
+
+  it('asks what closing means instead of closing silently', async () => {
+    const onOpenChange = vi.fn();
+    await startSend(onOpenChange, heldPostBatch());
+
+    // Only one dialog is open at this point, so this is unambiguously the wizard's own X.
+    fireEvent.click(screen.getByLabelText('Close'));
+
+    await waitFor(() => screen.getByTestId('ImportSendingCloseDialog__title'));
+    // The two halves of the bug: the caller was never told to close, and the progress step is
+    // still on screen rather than replaced by nothing.
+    expect(onOpenChange).not.toHaveBeenCalled();
+    expect(screen.getByTestId('ImportProgressStep__title')).toBeDefined();
+  });
+
+  it('stays open when the user chooses to keep watching', async () => {
+    const onOpenChange = vi.fn();
+    await startSend(onOpenChange, heldPostBatch());
+    fireEvent.click(screen.getByLabelText('Close'));
+    await waitFor(() => screen.getByTestId('ImportSendingCloseDialog__keepWatching'));
+
+    fireEvent.click(screen.getByTestId('ImportSendingCloseDialog__keepWatching'));
+
+    await waitFor(() => expect(screen.queryByTestId('ImportSendingCloseDialog__title')).toBeNull());
+    expect(onOpenChange).not.toHaveBeenCalled();
+    expect(screen.getByTestId('ImportProgressStep__title')).toBeDefined();
+  });
+
+  it('closes only on an explicit "close anyway"', async () => {
+    const onOpenChange = vi.fn();
+    await startSend(onOpenChange, heldPostBatch());
+    fireEvent.click(screen.getByLabelText('Close'));
+    await waitFor(() => screen.getByTestId('ImportSendingCloseDialog__closeAnyway'));
+
+    fireEvent.click(screen.getByTestId('ImportSendingCloseDialog__closeAnyway'));
+
+    expect(onOpenChange).toHaveBeenCalledWith(false);
+  });
+
+  /**
+   * The other half of the hole the confirmation opens: once the caller unmounts the dialog, the
+   * RESULT step's review queue — the only place failures are ever reported — goes with it. A run
+   * where 3 of 10 rows failed used to announce "7 records imported successfully" and nothing
+   * else, so the smaller-than-expected number was the only hint anything had gone wrong.
+   *
+   * `open` is a literal here, so the dialog is not actually torn down when onOpenChange fires;
+   * what these two assert is the gate itself (did the user confirm the close?), which is what
+   * decides whether the toast is the user's only channel. The unmount is the caller's job.
+   */
+  it('reports the failures in a toast when the user confirmed closing mid-send', async () => {
+    sonnerMocks.error.mockClear();
+    let settle;
+    const postBatch = vi.fn(() => new Promise((resolve) => {
+      settle = () => resolve({ message: 'boom' });
+    }));
+    const onOpenChange = vi.fn();
+    await startSend(onOpenChange, postBatch);
+
+    fireEvent.click(screen.getByLabelText('Close'));
+    await waitFor(() => screen.getByTestId('ImportSendingCloseDialog__closeAnyway'));
+    fireEvent.click(screen.getByTestId('ImportSendingCloseDialog__closeAnyway'));
+    expect(onOpenChange).toHaveBeenCalledWith(false);
+
+    settle();
+
+    await waitFor(() => expect(sonnerMocks.error).toHaveBeenCalledTimes(1));
+    expect(sonnerMocks.error.mock.calls[0][0]).toMatch(/could not be imported/i);
+  });
+
+  it('stays silent when the dialog was never closed — the review queue already shows the failures', async () => {
+    sonnerMocks.error.mockClear();
+    const postBatch = vi.fn().mockResolvedValue({ message: 'boom' });
+    render(
+      <ImportDialog
+        open
+        onOpenChange={vi.fn()}
+        config={config}
+        token="t"
+        postBatch={postBatch}
+        simSearchFn={vi.fn()}
+        onImported={() => {}}
+      />,
+    );
+    await uploadFile('Name,Email\nLucia,lucia@x.com');
+    fireEvent.click(screen.getByTestId('ImportDialog__importButton'));
+    fireEvent.click(screen.getByTestId('ImportConfirmStep__confirm'));
+
+    // The row and its reason are on screen; a toast here would restate it, less usefully.
+    await waitFor(() => screen.getByTestId('ImportReviewQueue__rowError-0'));
+    expect(sonnerMocks.error).not.toHaveBeenCalled();
+  });
+
+  // The guard is scoped to the one step where closing means something other than what it looks
+  // like. Every other step must keep closing on the first click, with no question in the way.
+  it('does not interrupt closing on any other step', () => {
+    const onOpenChange = vi.fn();
+    render(
+      <ImportDialog
+        open
+        onOpenChange={onOpenChange}
+        config={config}
+        token="t"
+        postBatch={vi.fn()}
+        simSearchFn={vi.fn()}
+        onImported={() => {}}
+      />,
+    );
+    fireEvent.click(screen.getByLabelText('Close'));
+    expect(onOpenChange).toHaveBeenCalledWith(false);
+    expect(screen.queryByTestId('ImportSendingCloseDialog__title')).toBeNull();
   });
 });
