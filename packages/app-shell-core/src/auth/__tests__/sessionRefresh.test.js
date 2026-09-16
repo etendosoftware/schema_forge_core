@@ -74,6 +74,55 @@ describe('authoritative session refresh contract (ETP-5195)', () => {
     assert.deepEqual(reconcileSessionRefresh(sessionFixture(), { unchanged: true }), { status: 'legacy' });
   });
 
+  it('surfaces a fresh roleList on an unchanged-token refresh without minting a new token', () => {
+    // ETP-5329 — a role TEMPLATE composition can change (e.g. a demotion from
+    // Finance-Sales-Purchasing-Inventory down to just Sales) while the personal AD_Role id, and
+    // so the JWT, stays exactly the same. `SFRefreshToken` now surfaces this via
+    // `{ unchanged: true, roleList }`; the caller (AuthContext.jsx) treats a `session` on the
+    // outcome as "apply this update" regardless of the status string, so `status: 'ready'` here
+    // routes it through the correct replace-and-revalidate path without a `token` field forcing
+    // a JWT decode.
+    const current = sessionFixture();
+    current.selectedRole.effectiveRoleNames = ['Finance', 'Sales', 'Purchasing', 'Inventory'];
+    const original = structuredClone(current);
+    const freshRole = { ...current.selectedRole, effectiveRoleNames: ['Sales'] };
+    const roleList = [freshRole];
+    const outcome = reconcileSessionRefresh(current, { unchanged: true, roleList });
+    assert.deepEqual(outcome, {
+      status: 'ready',
+      session: { ...current, roleList, selectedRole: freshRole, selectedOrg: freshRole.orgList[0] },
+    });
+    assert.equal(outcome.session.token, current.token);
+    assert.deepEqual(current, original);
+  });
+
+  const unchangedRoleListFallbacks = [
+    ['absent', undefined],
+    ['not an array', 'not-a-role-list'],
+    ['empty', []],
+    ['missing name', [{ id: 'X-personal', orgList: [{ id: 'X-main', name: 'X main' }] }]],
+    ['missing orgList', [{ id: 'X-personal', name: 'X personal' }]],
+    ['duplicate role ids', [
+      { id: 'X-personal', name: 'X personal', orgList: [{ id: 'X-main', name: 'X main' }] },
+      { id: 'X-personal', name: 'X personal (dup)', orgList: [{ id: 'X-main', name: 'X main' }] },
+    ]],
+    ['duplicate organization ids', [{
+      id: 'X-personal', name: 'X personal',
+      orgList: [{ id: 'X-main', name: 'X main' }, { id: 'X-main', name: 'X main (dup)' }],
+    }]],
+  ];
+  for (const [name, roleList] of unchangedRoleListFallbacks) {
+    it(`falls back to the legacy no-op when unchanged:true carries a roleList that is ${name}`, () => {
+      assert.deepEqual(reconcileSessionRefresh(sessionFixture(), { unchanged: true, roleList }), { status: 'legacy' });
+    });
+  }
+
+  it('falls back to the legacy no-op when a valid roleList no longer contains the current role', () => {
+    const current = sessionFixture();
+    const roleList = [sessionFixture({ role: 'admin' }).selectedRole];
+    assert.deepEqual(reconcileSessionRefresh(current, { unchanged: true, roleList }), { status: 'legacy' });
+  });
+
   for (const change of [{ role: 'admin' }, { org: 'another' }, { tenant: 'Y' }]) {
     it(`blocks token-only identity changes ${JSON.stringify(change)}`, () => {
       assert.deepEqual(reconcileSessionRefresh(sessionFixture(), { token: sessionFixture(change).token }),
@@ -151,5 +200,34 @@ describe('synchronous session ownership', () => {
     controller.activate();
     assert.equal(controller.isCurrent(beforeDispose), false);
     assert.equal(controller.isCurrent(controller.capture()), true);
+  });
+
+  // [ETP-5189] `menuAccess` is a third flat-map slot alongside `windowAccess`/`capabilities` —
+  // `replace()` must carry it through the same `access?.<key> ?? {}` contract as the other two,
+  // not silently drop it or leave a stale value behind.
+  it('replace() populates menuAccess from access.menuAccess', () => {
+    const { controller, session } = setup();
+    controller.replace(session, {
+      access: { windowAccess: { W1: 'full' }, capabilities: { c: true }, menuAccess: { M1: true } },
+    });
+    assert.deepEqual(controller.getSnapshot().menuAccess, { M1: true });
+  });
+
+  it('replace() defaults menuAccess to {} when access has no menuAccess key', () => {
+    const { controller, session } = setup();
+    controller.replace(session, { access: { windowAccess: { W1: 'full' }, capabilities: { c: true } } });
+    assert.deepEqual(controller.getSnapshot().menuAccess, {});
+  });
+
+  it('replace() defaults windowAccess/capabilities/menuAccess to {} when access is undefined', () => {
+    const { controller, session } = setup();
+    // Seed a non-empty menuAccess first, so the next replace() with no `access` at all
+    // proves it actively resets rather than merely leaving a previous value untouched.
+    controller.replace(session, { access: { windowAccess: { W1: 'full' }, menuAccess: { M1: true } } });
+    assert.deepEqual(controller.getSnapshot().menuAccess, { M1: true });
+    controller.replace(session);
+    assert.deepEqual(controller.getSnapshot().windowAccess, {});
+    assert.deepEqual(controller.getSnapshot().capabilities, {});
+    assert.deepEqual(controller.getSnapshot().menuAccess, {});
   });
 });

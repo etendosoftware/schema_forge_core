@@ -154,3 +154,56 @@ describe('resolveDependentEntity', () => {
     });
   });
 });
+
+/**
+ * ETP-5227 — the in-run cache exists so that two rows naming the same new category do not both
+ * create it. It was also remembering FAILURES, and `clearResolutionCache` is never called
+ * anywhere in production code, so one failed creation became that value's permanent answer for
+ * the life of the tab: every later row and every retry replayed the identical rejection without
+ * ever calling the server again. That is why the reported error survived "reintentar".
+ */
+describe('resolveDependentEntity — a failed creation is not a cached result', () => {
+  const existingRecords = [{ id: 'CAT-ELEC', searchKey: 'ELEC', name: 'Electrónica' }];
+
+  it('retries the creation on the next call instead of replaying the rejection', async () => {
+    const cache = getResolutionCache('etp-5227-retry');
+    let attempts = 0;
+    const createFn = async ({ searchKey, name }) => {
+      attempts += 1;
+      if (attempts === 1) throw new Error('There is already a Product Category with the same (…)');
+      return { id: 'CAT-NEW', searchKey, name };
+    };
+
+    await assert.rejects(
+      resolveOrAutoCreateDependentEntity({ name: 'Herramientas', existingRecords, createFn, cache }),
+      /already a Product Category/,
+    );
+
+    // Same value, same cache: the second call must reach createFn again, not the dead promise.
+    const second = await resolveOrAutoCreateDependentEntity({
+      name: 'Herramientas', existingRecords, createFn, cache,
+    });
+    assert.equal(attempts, 2);
+    assert.equal(second.status, 'created');
+    assert.equal(second.id, 'CAT-NEW');
+    clearResolutionCache('etp-5227-retry');
+  });
+
+  it('still shares ONE creation between concurrent rows naming the same record', async () => {
+    // The eviction must not cost the property the cache exists for.
+    const cache = getResolutionCache('etp-5227-concurrent');
+    let created = 0;
+    const createFn = async ({ searchKey, name }) => {
+      created += 1;
+      return { id: 'CAT-ONE', searchKey, name };
+    };
+
+    const results = await Promise.all([1, 2, 3].map(() => resolveOrAutoCreateDependentEntity({
+      name: 'Herramientas', existingRecords, createFn, cache,
+    })));
+
+    assert.equal(created, 1);
+    for (const result of results) assert.equal(result.id, 'CAT-ONE');
+    clearResolutionCache('etp-5227-concurrent');
+  });
+});
