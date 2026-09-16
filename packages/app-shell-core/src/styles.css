@@ -23,20 +23,29 @@
   scrollbar-color: #E8EAEF transparent;
 }
 
-/* Contacts — row states (scoped to avoid affecting other windows) */
+/* Contacts — row states (scoped to avoid affecting other windows).
+   ETP-5268 follow-up — the plain-white lift read as "no hover feedback" next
+   to every other window's grey `hover:bg-muted/50` tint, so this keeps the
+   elevated-card shadow but tints the background the same as everywhere else
+   instead of leaving it pure white. `box-shadow`, not `filter: drop-shadow` —
+   `drop-shadow` rasterizes the element (background included) and blurs
+   through its alpha channel, so once the background went translucent the
+   shadow bled through it as a smudged halo instead of a clean lift.
+   `box-shadow` paints independently of the element's own fill, so it stays
+   crisp regardless of background opacity. */
 .contacts-rows tr:hover {
-  background-color: #ffffff !important;
+  background-color: hsl(var(--muted) / 0.5) !important;
   position: relative;
   z-index: 1;
-  filter: drop-shadow(0px 10px 15px rgba(18, 18, 23, 0.08))
-          drop-shadow(0px 4px 6px rgba(18, 18, 23, 0.05));
+  box-shadow: 0px 10px 15px rgba(18, 18, 23, 0.08),
+              0px 4px 6px rgba(18, 18, 23, 0.05);
 }
 .contacts-rows tr:has([aria-checked="true"]):hover {
   background-color: #ECEEF1 !important;
   position: relative;
   z-index: 1;
-  filter: drop-shadow(0px 10px 15px rgba(18, 18, 23, 0.08))
-          drop-shadow(0px 4px 6px rgba(18, 18, 23, 0.05));
+  box-shadow: 0px 10px 15px rgba(18, 18, 23, 0.08),
+              0px 4px 6px rgba(18, 18, 23, 0.05);
 }
 
 .address-grid {
