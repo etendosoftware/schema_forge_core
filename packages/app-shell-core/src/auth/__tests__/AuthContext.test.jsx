@@ -837,7 +837,12 @@ describe('AuthContext — menuAccess (ETP-5189)', () => {
     });
     const { result } = renderHook(() => useAuth(), {
       wrapper: ({ children }) => (
+          // ETP-4576 — a BEARER host: `credentialMode` defaults to `auto`, which arms the
+          // cookie-session restore, and a probe that fails (no server in jsdom) fails CLOSED
+          // and clears the seeded session — `selectedRole` with it, so the access effect
+          // below would never run. Opting out declares what this case actually models.
         <AuthProvider
+            restoreSession={null}
           storage={createMemoryAuthStorage()}
           fetchWindowAccess={fetchWindowAccess}
           initialSession={{ token: 'tok', selectedRole: { id: 'role-1' } }}>
@@ -870,7 +875,11 @@ describe('AuthContext — menuAccess (ETP-5189)', () => {
     try {
       const { result } = renderHook(() => useAuth(), {
         wrapper: ({ children }) => (
-          <AuthProvider storage={createMemoryAuthStorage(initial)} fetchWindowAccess={fetchWindowAccess}>
+          // ETP-4576 — a BEARER host: `credentialMode` defaults to `auto`, which arms the
+          // cookie-session restore, and a probe that fails (no server in jsdom) fails CLOSED
+          // and clears the seeded session — `selectedRole` with it, so the access effect
+          // below would never run. Opting out declares what this case actually models.
+          <AuthProvider restoreSession={null} storage={createMemoryAuthStorage(initial)} fetchWindowAccess={fetchWindowAccess}>
             {children}
           </AuthProvider>
         ),
@@ -910,7 +919,12 @@ describe('AuthContext — menuAccess (ETP-5189)', () => {
     try {
       const { result } = renderHook(() => useAuth(), {
         wrapper: ({ children }) => (
+          // ETP-4576 — a BEARER host: `credentialMode` defaults to `auto`, which arms the
+          // cookie-session restore, and a probe that fails (no server in jsdom) fails CLOSED
+          // and clears the seeded session — `selectedRole` with it, so the access effect
+          // below would never run. Opting out declares what this case actually models.
           <AuthProvider
+            restoreSession={null}
             storage={createMemoryAuthStorage()}
             fetchWindowAccess={fetchWindowAccess}
             initialSession={{ token, selectedRole: { id: 'role-1' } }}>
@@ -946,7 +960,12 @@ describe('AuthContext — menuAccess (ETP-5189)', () => {
     try {
       const { result } = renderHook(() => useAuth(), {
         wrapper: ({ children }) => (
+          // ETP-4576 — a BEARER host: `credentialMode` defaults to `auto`, which arms the
+          // cookie-session restore, and a probe that fails (no server in jsdom) fails CLOSED
+          // and clears the seeded session — `selectedRole` with it, so the access effect
+          // below would never run. Opting out declares what this case actually models.
           <AuthProvider
+            restoreSession={null}
             storage={createMemoryAuthStorage()}
             fetchWindowAccess={fetchWindowAccess}
             initialSession={{ token, selectedRole: { id: 'role-1' } }}>
