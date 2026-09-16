@@ -1,7 +1,19 @@
+/**
+ * A file the user uploaded cannot be parsed.
+ *
+ * ETP-5223: the `message` is the ENGLISH fallback, not the string to show. These errors are
+ * thrown from plain modules that have no access to the app's translator, so each one also
+ * carries the locale `messageKey` and its `params`; `ImportDialog` — the one boundary that
+ * does hold `translate` — resolves them before the text reaches the screen. Keeping the
+ * English text on `message` means every existing caller (and every test asserting on it)
+ * keeps working, and a missing locale entry degrades to English instead of a raw key.
+ */
 export class ImportParseError extends Error {
-  constructor(message) {
+  constructor(message, { messageKey = null, params = {} } = {}) {
     super(message);
     this.name = 'ImportParseError';
+    this.messageKey = messageKey;
+    this.params = params;
   }
 }
 
@@ -90,7 +102,7 @@ function splitLine(line, delimiter) {
 export function parseDelimited(text) {
   const lines = text.split(/\r\n|\n/).filter((line) => line.trim() !== '');
   if (lines.length === 0) {
-    throw new ImportParseError('The file is empty.');
+    throw new ImportParseError('The file is empty.', { messageKey: 'importErrorFileEmpty' });
   }
 
   const delimiter = detectDelimiter(lines[0]);
@@ -99,7 +111,10 @@ export function parseDelimited(text) {
   const seen = new Set();
   for (const header of headers) {
     if (seen.has(header)) {
-      throw new ImportParseError(`Duplicate column header: "${header}"`);
+      throw new ImportParseError(`Duplicate column header: "${header}"`, {
+        messageKey: 'importErrorDuplicateHeader',
+        params: { header },
+      });
     }
     seen.add(header);
   }

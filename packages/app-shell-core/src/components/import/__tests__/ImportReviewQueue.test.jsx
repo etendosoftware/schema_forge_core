@@ -185,6 +185,12 @@ describe('ImportReviewQueue', () => {
       />
     );
     const rowError = screen.getByTestId('ImportReviewQueue__rowError-0');
+    // Absence of `truncate` is NOT enough, and asserting only that is how this shipped
+    // broken: since ETP-5281 the enclosing TableCell carries `whitespace-nowrap`, which
+    // clips the message no matter what this span does about word breaking. Only
+    // `whitespace-normal` overrides it. jsdom computes no cascade, so this class check is
+    // the closest a unit test gets — the real proof is the browser.
+    expect(rowError.className).toMatch(/\bwhitespace-normal\b/);
     expect(rowError.textContent).toBe(longMessage);
     expect(rowError.className).not.toMatch(/\btruncate\b/);
   });
@@ -295,6 +301,59 @@ describe('ImportReviewQueue', () => {
       // reading it here would print "Not a valid email address." as if it were why we skipped.
       renderSkipped({ ...errorEntry, status: 'skipped' });
       expect(screen.queryByTestId('ImportReviewQueue__skipReason-0')).toBeNull();
+    });
+
+    // ETP-5226 — "already exists" is NOT blank-target: ImportDialog tags it with the dedupe key
+    // (`searchKey` for products) so `buildErrorsCsv` can prefix it in the downloadable file. This
+    // reader only looked for blank targets, so re-importing a file whose records already existed
+    // marked every row Skipped and explained none of them.
+    it('shows a targeted skip reason when the producer flags it as one', () => {
+      renderSkipped({
+        row: { name: 'Lucia', email: 'lucia@x.com' },
+        errors: [{ target: 'searchKey', message: 'Este registro ya existe', isSkipReason: true }],
+        status: 'skipped',
+      });
+      expect(screen.getByTestId('ImportReviewQueue__skipReason-0').textContent).toBe('Este registro ya existe');
+    });
+
+    // The flag is what separates the two, so a targeted error WITHOUT it must still stay out —
+    // otherwise the fix above silently repeals the test before it.
+    it('still ignores a targeted error that is not flagged as the skip reason', () => {
+      renderSkipped({
+        row: { name: 'Lucia', email: 'lucia@x.com' },
+        errors: [{ target: 'email', message: 'Correo inválido' }],
+        status: 'skipped',
+      });
+      expect(screen.queryByTestId('ImportReviewQueue__skipReason-0')).toBeNull();
+    });
+
+    it('prefers the flagged reason over an unrelated field error on the same row', () => {
+      renderSkipped({
+        row: { name: 'Lucia', email: 'no-arroba' },
+        errors: [
+          { target: 'email', message: 'Correo inválido' },
+          { target: 'searchKey', message: 'Este registro ya existe', isSkipReason: true },
+        ],
+        status: 'skipped',
+      });
+      expect(screen.getByTestId('ImportReviewQueue__skipReason-0').textContent).toBe('Este registro ya existe');
+    });
+
+    // ETP-5226 — the reason rendered but arrived clipped: "Fila duplicada: este valor ya ap".
+    // Since ETP-5281 every TableCell carries `whitespace-nowrap`, so this span needs
+    // `whitespace-normal` to wrap at all; `break-words` alone is inert under an ancestor that
+    // forbids line breaks. Same defect ETP-5223 fixed on the two spans in the error branch — this
+    // third one was missed, so assert the class that does the work, not the one that reads like it.
+    it('lets a long skip reason wrap instead of clipping it', () => {
+      renderSkipped({
+        row: { name: 'Lucia', email: 'lucia@x.com' },
+        errors: [{ target: '', message: 'Fila duplicada: este valor ya aparece antes en el archivo.' }],
+        status: 'skipped',
+      });
+      const reason = screen.getByTestId('ImportReviewQueue__skipReason-0');
+      expect(reason.className).toMatch(/\bwhitespace-normal\b/);
+      expect(reason.className).not.toMatch(/\btruncate\b/);
+      expect(reason.textContent).toBe('Fila duplicada: este valor ya aparece antes en el archivo.');
     });
   });
 
@@ -947,5 +1006,73 @@ describe('formatValue hook', () => {
       renderQueue([{ row: { name: 'Lucia' }, errors: [], status: 'pending' }]);
       expect(screen.getByTestId('ImportReviewQueue__value-0-amount').textContent).toBe('');
     });
+  });
+});
+
+// ETP-5223 — the grid printed `field.label`, the ENGLISH caption declared in decisions.json,
+// so a Spanish session read "Search Key" / "Sales Price" as column headers (and inside the
+// "Errors in: …" tooltip) while the CSV template downloaded from the very same dialog was
+// already translated. `fieldLabelFn` is the dialog's own resolver, now threaded down here.
+describe('ImportReviewQueue — localized column captions', () => {
+  const fields = [
+    { id: 'searchKey', target: 'searchKey', label: 'Search Key' },
+    { id: 'salesPrice', target: 'salesPrice', label: 'Sales Price' },
+  ];
+  const fieldLabelFn = (field) => (
+    { searchKey: 'Identificador', salesPrice: 'Precio de venta' }[field.target]
+  );
+
+  const renderQueue = (entries, props = {}) => render(
+    <ImportReviewQueue
+      entries={entries}
+      fields={fields}
+      statusFilter="all"
+      onStatusFilterChange={() => {}}
+      onEditField={() => {}}
+      onRetryEntry={() => {}}
+      onSkipEntry={() => {}}
+      onUnskipEntry={() => {}}
+      onDownloadErrors={() => {}}
+      {...props}
+    />,
+  );
+
+  const okEntry = { row: { searchKey: 'SKU-1', salesPrice: '10' }, errors: [], status: 'pending' };
+
+  it('renders the resolved caption as the column header, not the declared English label', () => {
+    renderQueue([okEntry], { fieldLabelFn });
+    const header = screen.getByTestId('TableHead__searchKey');
+    expect(header.textContent).toBe('Identificador');
+    expect(screen.getByTestId('TableHead__salesPrice').textContent).toBe('Precio de venta');
+  });
+
+  it('names the failing columns in the row tooltip with the resolved caption', () => {
+    renderQueue([{
+      row: { searchKey: '', salesPrice: '10' },
+      errors: [{ target: 'searchKey', message: 'Falta un campo obligatorio.' }],
+      status: 'pending',
+    }], { fieldLabelFn });
+    expect(screen.getByTestId('AlertCircle__a73779').getAttribute('title')).toContain('Identificador');
+  });
+
+  it('falls back to the declared label when no fieldLabelFn is given', () => {
+    renderQueue([okEntry]);
+    expect(screen.getByTestId('TableHead__searchKey').textContent).toBe('Search Key');
+  });
+
+  // The message used to be `truncate`d inside a narrow column, so "Falta un campo
+  // obligatorio." rendered as "Falta un campo obligat…" and the only way to read it was to
+  // find the native title tooltip — exactly what ETP-5223 reported.
+  it('does not truncate a field-level error message', () => {
+    renderQueue([{
+      row: { searchKey: '', salesPrice: '10' },
+      errors: [{ target: 'searchKey', message: 'Falta un campo obligatorio.' }],
+      status: 'pending',
+    }], { fieldLabelFn });
+    const fieldError = screen.getByTestId('ImportReviewQueue__fieldError-0-searchKey');
+    // See the row-level twin above: `whitespace-normal` is the class that actually wraps.
+    expect(fieldError.className).toMatch(/\bwhitespace-normal\b/);
+    expect(fieldError.textContent).toBe('Falta un campo obligatorio.');
+    expect(fieldError.className).not.toMatch(/\btruncate\b/);
   });
 });

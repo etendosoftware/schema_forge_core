@@ -4,19 +4,51 @@ const isId = (value) => typeof value === 'string' && value.length > 0;
 const same = (a, b) => a === b;
 const identityClaims = ['user', 'client', 'role', 'organization'];
 
+// Shape contract for `session.roleList` / `{ unchanged: true }.roleList`: a non-empty array of
+// `{ id, name, orgList: [{ id, name }] }` with no duplicate role or organization ids. Shared by
+// the full metadata path and the `unchanged: true` refresh-only path below.
+function isValidRoleList(roleList) {
+  if (!Array.isArray(roleList) || roleList.length === 0) return false;
+  const ids = new Set();
+  for (const role of roleList) {
+    if (!role || !isId(role.id) || typeof role.name !== 'string' || ids.has(role.id)
+        || !Array.isArray(role.orgList)) return false;
+    ids.add(role.id);
+    const orgIds = new Set();
+    for (const org of role.orgList) {
+      if (!org || !isId(org.id) || typeof org.name !== 'string' || orgIds.has(org.id)) return false;
+      orgIds.add(org.id);
+    }
+  }
+  return true;
+}
+
 /**
  * Proposed SFRefreshToken session v1 contract; backend support is a separate rollout.
  * JWT decoding is a consistency check, never signature verification or authorization.
  */
 export function reconcileSessionRefresh(current, response) {
-  // [ETP-5195 follow-up] `SFRefreshToken` now skips minting a new JWT entirely when the
-  // caller's role hasn't changed (it was previously reissuing one, with a fresh iat/exp,
-  // on EVERY call — the whole reason a no-op refresh needed the `sameFlatMap`/`bump`
-  // machinery elsewhere in this file's caller). `{ unchanged: true }` carries no token/session
-  // at all; route it through the EXISTING 'legacy' no-op path (same as a legacy backend
-  // response with an unchanged role) rather than inventing a new status — the caller already
-  // knows how to handle 'legacy' correctly (revalidate access, never touch the session/token).
+  // [ETP-5195 follow-up] `SFRefreshToken` skips minting a new JWT entirely when the caller's
+  // role hasn't changed (it was previously reissuing one, with a fresh iat/exp, on EVERY call —
+  // the whole reason a no-op refresh needed the `sameFlatMap`/`bump` machinery elsewhere in this
+  // file's caller). `{ unchanged: true }` never carries a token, but it MAY carry a fresh
+  // `roleList` (ETP-5329: role TEMPLATE composition can change — e.g. a demotion — while the
+  // personal AD_Role id, and so the JWT, stays the same). When that roleList is present and
+  // valid, surface it as a real session update: `status: 'ready'` is what the caller
+  // (AuthContext.jsx) already branches on via `outcome.session` to replace roleList/selectedRole
+  // and revalidate access, and it does so WITHOUT touching `current.token` (kept as-is, since it
+  // genuinely did not change). `selectedRole`/`selectedOrg` are re-derived from the CURRENT
+  // session's already-selected ids — there is no freshly decoded token here to read them from.
+  // Any missing/empty/malformed roleList falls back to the pre-existing no-op 'legacy' path.
   if (response?.unchanged === true) {
+    const roleList = response.roleList;
+    if (isValidRoleList(roleList)) {
+      const selectedRole = roleList.find((role) => role.id === current.selectedRole?.id);
+      const selectedOrg = selectedRole?.orgList.find((org) => org.id === current.selectedOrg?.id);
+      if (selectedRole && selectedOrg) {
+        return { status: 'ready', session: { ...current, roleList, selectedRole, selectedOrg } };
+      }
+    }
     return { status: 'legacy' };
   }
   const token = response?.token;
@@ -41,18 +73,7 @@ export function reconcileSessionRefresh(current, response) {
       || (current.clientId && current.clientId !== after.client)) return invalid();
   if (metadata.userId !== after.user || metadata.clientId !== after.client
       || metadata.selectedRoleId !== after.role || metadata.selectedOrgId !== after.organization) return invalid();
-  if (!Array.isArray(metadata.roleList) || metadata.roleList.length === 0) return invalid();
-  const ids = new Set();
-  for (const role of metadata.roleList) {
-    if (!role || !isId(role.id) || typeof role.name !== 'string' || ids.has(role.id)
-        || !Array.isArray(role.orgList)) return invalid();
-    ids.add(role.id);
-    const orgIds = new Set();
-    for (const org of role.orgList) {
-      if (!org || !isId(org.id) || typeof org.name !== 'string' || orgIds.has(org.id)) return invalid();
-      orgIds.add(org.id);
-    }
-  }
+  if (!isValidRoleList(metadata.roleList)) return invalid();
   const selectedRole = metadata.roleList.find((role) => role.id === after.role);
   const selectedOrg = selectedRole?.orgList.find((org) => org.id === after.organization);
   if (!selectedRole || !selectedOrg) return invalid();

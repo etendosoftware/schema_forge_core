@@ -13,7 +13,14 @@ vi.mock('../dropdown-menu.jsx', async () => {
     DropdownMenu: ({ children }) => <>{children}</>,
     DropdownMenuTrigger: React.forwardRef(({ children, asChild, ...props }, ref) => {
       if (asChild && React.isValidElement(children)) {
-        return React.cloneElement(children, { ...props, ref });
+        // Mirror Radix's real asChild merge precedence (@radix-ui/react-slot
+        // mergeProps): the child element's own props win over the trigger's
+        // props for plain attributes like data-testid/aria-label/style —
+        // only event handlers get composed. Spreading `props` before
+        // `children.props` (child last) previously let the trigger's own
+        // `data-testid="DropdownMenuTrigger__..."` clobber the button's real
+        // `data-testid="action-add-line-more"`, which the tests query for.
+        return React.cloneElement(children, { ...props, ...children.props, ref });
       }
       return <div {...props} ref={ref}>{children}</div>;
     }),
