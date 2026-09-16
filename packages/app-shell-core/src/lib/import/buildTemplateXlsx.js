@@ -42,6 +42,20 @@ export async function buildTemplateXlsx(fields, options = {}) {
     rows.push(fields.map((field) => ({ value: toCellText(field.example), type: String })));
   }
 
+  // Sized to the wider of the header and its example value, so a downloaded template shows every
+  // column in full — the workbook otherwise opens with each header truncated to Excel's default
+  // ~8.43-character width, which is unreadable for anything but the shortest columns. Clamped so
+  // one long example (a free-text description) cannot blow the sheet out; a clamped column still
+  // shows more than the default, and the cell's own content is never truncated, only the column
+  // chrome around it.
+  const MIN_COLUMN_WIDTH = 10;
+  const MAX_COLUMN_WIDTH = 40;
+  const columnWidth = (header, field) => {
+    const exampleText = toCellText(field.example);
+    const longest = Math.max(header.length, exampleText.length);
+    return Math.min(MAX_COLUMN_WIDTH, Math.max(MIN_COLUMN_WIDTH, longest + 2));
+  };
+
   const { toBlob } = await writeXlsxFile(rows, {
     sheet: sheetName,
     // Every column formatted as text ('@'), which is the only lever available against Excel's
@@ -49,7 +63,7 @@ export async function buildTemplateXlsx(fields, options = {}) {
     // and the leading zero is gone before any of our code sees the file — unrecoverable. A
     // text-formatted column keeps it a string. This protects rows typed into OUR template; a
     // workbook the user builds from scratch is still Excel's to coerce.
-    columns: headers.map(() => ({ format: '@' })),
+    columns: headers.map((header, i) => ({ format: '@', width: columnWidth(header, fields[i]) })),
     // The header row stays visible while scrolling a long file — the whole point of the
     // template is that a human fills it in by hand, and 20 columns of Contacts data is
     // unreadable once the header scrolls away.
