@@ -237,6 +237,11 @@ export async function loginEnvironment(fetchImpl, baseUrl, csrfToken, env) {
   // picking an environment now updates the backend-managed session rather than minting
   // a token for the client to hold. Headers come from buildAuthHeaders so this call
   // keeps ETP-5022's Accept-Language like every other one.
+  //
+  // The answer is { status, environment, roleList, csrfToken } and carries NO token
+  // (verified in EtendoGoJwtServlet.handleSessionEnvironment), so `status` is the only
+  // success signal a caller has: gating on `data.token`, as develop does, turns the
+  // environment switch into a silent no-op — the user clicks and nothing happens.
   const response = await fetchImpl(`${baseUrl}/sws/go/session/environment`, {
     method: 'POST',
     credentials: 'include',

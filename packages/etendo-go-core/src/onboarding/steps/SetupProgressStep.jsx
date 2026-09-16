@@ -71,11 +71,6 @@ export function SetupProgressStep({ config, stepData, onNext, onBack, goToStep, 
     try {
       const data = await loginEnvironment(fetch, apiBase, token, env);
       if (!isMountedRef.current) return;
-      // ETP-4576 — POST /sws/go/session/environment rotates the session cookie and answers
-      // { status, environment, roleList, csrfToken }, carrying NO token (verified in
-      // EtendoGoJwtServlet.handleSessionEnvironment). Gating on `data.token`, as develop
-      // does, therefore makes the environment switch a silent no-op: the user clicks and
-      // nothing happens. The response status is the only signal there is.
       if (data.status === 'success') {
         rememberEnvironment(env.clientId);
         // Clear all SW caches on login to guarantee fresh resources

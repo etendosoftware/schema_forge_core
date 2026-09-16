@@ -1,14 +1,9 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {
-  createLocalAuthStorage,
-  createMemoryAuthStorage,
-  decodeJwtPayload,
-  decodeJwtRole,
-  decodeJwtUser,
-  mapRestoredSession,
-  normalizeAuthSession,
-  purgeLegacyAuthStorage,
+  createLocalAuthStorage, createMemoryAuthStorage, normalizeAuthSession,
+  decodeJwtPayload, decodeJwtRole, decodeJwtUser,
+  mapRestoredSession, purgeLegacyAuthStorage,
 } from '../session.js';
 
 /**
