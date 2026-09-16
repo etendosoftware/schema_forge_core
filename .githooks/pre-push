@@ -165,11 +165,11 @@ run_step() {
   # passed. Announced loudly and never silently: a quiet skip is how "it passed
   # locally" turns into a lie.
   if step_cache_lookup "$step_num" "$cache_key"; then
-    echo "==> [$step_num/3] $step_name... CACHED (inputs unchanged since it last passed)"
+    echo "==> [$step_num/4] $step_name... CACHED (inputs unchanged since it last passed)"
     return 0
   fi
 
-  echo "==> [$step_num/3] $step_name..."
+  echo "==> [$step_num/4] $step_name..."
 
   # Capture the exit status without tripping `set -e`. Calling exec_with_progress
   # bare would abort the whole script on a non-zero return (before we print the
@@ -178,10 +178,10 @@ run_step() {
   exec_with_progress "step-${step_num}" "$run_dir" "$abs_log" "$cmd" || exit_status=$?
 
   if [ $exit_status -eq 0 ]; then
-    echo "==> [$step_num/3] $step_name... SUCCESS ✅ (${LAST_DURATION}s)"
+    echo "==> [$step_num/4] $step_name... SUCCESS ✅ (${LAST_DURATION}s)"
     step_cache_store "$step_num" "$cache_key"
   else
-    echo "==> [$step_num/3] $step_name... FAILED ❌ (${LAST_DURATION}s)"
+    echo "==> [$step_num/4] $step_name... FAILED ❌ (${LAST_DURATION}s)"
     step_cache_invalidate "$step_num"
     fail_with_log "$step_name" "$exit_status" "$abs_log"
   fi
@@ -191,12 +191,12 @@ run_step() {
 run_domain_boundary_check() {
   local log_file="tmp/pre-push/domain-boundary-check.log"
   local abs_log="$REPO_DIR/$log_file"
-  echo "==> [1/3] Running domain boundary check..."
+  echo "==> [1/4] Running domain boundary check..."
 
   mkdir -p "$(dirname "$abs_log")"
 
   if [ -z "$BASE_REF" ]; then
-    echo "==> [1/3] Running domain boundary check... SKIPPED ⚠️ (No base ref found)"
+    echo "==> [1/4] Running domain boundary check... SKIPPED ⚠️ (No base ref found)"
     return 0
   fi
 
@@ -207,7 +207,7 @@ run_domain_boundary_check() {
   exec_with_progress "step-1" "$REPO_DIR" "$abs_log" "make domain-boundary-check BASE=\"$BASE_REF\"" || status_no_label=$?
 
   if [ $status_no_label -eq 0 ]; then
-    echo "==> [1/3] Running domain boundary check... SUCCESS ✅ (Single-domain, ${LAST_DURATION}s)"
+    echo "==> [1/4] Running domain boundary check... SUCCESS ✅ (Single-domain, ${LAST_DURATION}s)"
     return 0
   fi
 
@@ -216,7 +216,7 @@ run_domain_boundary_check() {
   exec_with_progress "step-1" "$REPO_DIR" "$abs_log" "make domain-boundary-check BASE=\"$BASE_REF\" LABELS=\"cross-domain-approved,scope:vertical-slice,scope:platform-change,scope:generator-change\"" || status_with_labels=$?
 
   if [ $status_with_labels -eq 0 ]; then
-    echo "==> [1/3] Running domain boundary check... SUCCESS ✅ (Cross-domain, ${LAST_DURATION}s)"
+    echo "==> [1/4] Running domain boundary check... SUCCESS ✅ (Cross-domain, ${LAST_DURATION}s)"
     echo ""
     echo "========================================================================="
     echo "⚠️  WARNING: Cross-domain/mixed-scope changes detected."
@@ -230,7 +230,7 @@ run_domain_boundary_check() {
     echo ""
     return 0
   else
-    echo "==> [1/3] Running domain boundary check... FAILED ❌ (${LAST_DURATION}s)"
+    echo "==> [1/4] Running domain boundary check... FAILED ❌ (${LAST_DURATION}s)"
     echo ""
     echo "========================================================================="
     echo "❌ ERROR: Domain boundary check failed. Cross-domain changes detected but no plan/checklist matches."
@@ -381,20 +381,38 @@ run_step "0" "Running data-testid check" "$REPO_DIR" "tmp/pre-push/data-testid-c
 # uncommenting the call below (function still defined above).
 # run_domain_boundary_check
 
-# 2. Run SonarQube analysis (issues only)
+# 2. Run the full Vitest suite (MANDATORY — a broken test blocks the push,
+# exactly like the Sonar gate below). Covers every package that has a Vitest
+# suite in this monorepo (packages/app-shell-core, packages/etendo-go-core) —
+# check for new `vitest.config.*` files if another package adds one later.
+# Placed before Sonar so a broken test fails fast without waiting on the
+# slower static-analysis run; Sonar does not depend on Vitest's output here
+# (it only runs tests itself when invoked with --coverage, which this repo's
+# pre-push does not pass — see the note below).
+VITEST_KEY="$(step_cache_compute "node-$(node -e "process.stdout.write(process.versions.node.split('.')[0])" 2>/dev/null || echo 0)" \
+  packages/app-shell-core/src packages/app-shell-core/vitest.config.js packages/app-shell-core/package.json \
+  packages/etendo-go-core/src packages/etendo-go-core/test packages/etendo-go-core/vitest.config.js packages/etendo-go-core/package.json \
+  package-lock.json)"
+run_step "2" "Running full Vitest suite (app-shell-core + etendo-go-core)" "$REPO_DIR" "tmp/pre-push/vitest.log" \
+  "npm run test:vitest --workspace=packages/app-shell-core && npm run test:vitest --workspace=packages/etendo-go-core" \
+  "$VITEST_KEY"
+
+# 3. Run SonarQube analysis (issues only)
 # --fail-on-gate makes run-sonar.sh exit non-zero when the Quality Gate is in
 # ERROR, so this step (and the push) is blocked exactly when CI's gate would fail.
-# NOTE: coverage measurement is intentionally SKIPPED in this repo (schema_forge_core)
+# NOTE: coverage MEASUREMENT is intentionally SKIPPED in this repo (schema_forge_core)
 # to keep pre-push fast — `make test-all-coverage` + --compare-coverage add 1-2+ minutes
-# and are sensitive to local node_modules/workspace-hoisting drift. Coverage still runs
-# in etendo_schema_forge's own pre-push. Re-enable here by restoring
+# and are sensitive to local node_modules/workspace-hoisting drift. Test CORRECTNESS
+# is NOT skipped: step 2 above already ran the full Vitest suite and blocked the push
+# on any failure, independent of coverage. Coverage measurement still runs in
+# etendo_schema_forge's own pre-push. Re-enable coverage here by restoring
 # `--coverage --compare-coverage` if this repo's coverage gate needs to be enforced again.
 if [ -n "$BASE_REF" ]; then
   SONAR_CMD="./run-sonar.sh --base-ref \"$BASE_REF\" --fail-on-gate"
 else
   SONAR_CMD="./run-sonar.sh --all-issues --fail-on-gate"
 fi
-run_step "2" "Running SonarQube analysis" "$REPO_DIR" "tmp/pre-push/sonar-and-tests.log" "$SONAR_CMD"
+run_step "3" "Running SonarQube analysis" "$REPO_DIR" "tmp/pre-push/sonar-and-tests.log" "$SONAR_CMD"
 
 # Mandatory checks passed — offer the optional Playwright E2E run before the banner.
 run_optional_playwright
