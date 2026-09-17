@@ -1,0 +1,30 @@
+{
+  "frontendContract": {
+    "entities": {
+      "businessPartner": {
+        "fields": [
+          {
+            "name": "name",
+            "visibility": "editable",
+            "grid": true,
+            "form": true,
+            "publicApi": { "exposed": true, "name": "name", "type": "passthrough", "handlerId": null }
+          },
+          {
+            "name": "taxID",
+            "visibility": "editable",
+            "grid": true,
+            "form": true,
+            "publicApi": { "exposed": true, "name": "taxId", "type": "passthrough", "handlerId": null }
+          },
+          {
+            "name": "creditLimit",
+            "visibility": "editable",
+            "grid": true,
+            "form": true
+          }
+        ]
+      }
+    }
+  }
+}
