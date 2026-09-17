@@ -529,7 +529,13 @@ export function AdvancedFilterBuilder({
                   up to max-w, floored by min-w, never grabs free space (no gap) */}
               <div className="w-fit min-w-[12rem] max-w-[22rem]">
                 <Select
-                  value={row.field || undefined}
+                  // ETP-5009: same rule as the operator Select below — pass the
+                  // empty string, NOT undefined, which would drop Radix out of
+                  // controlled mode and let it render the value it stored
+                  // internally instead of the row's. Nothing clears `field`
+                  // programmatically today, so this is prevention, and the two
+                  // sibling selects staying identical is the point.
+                  value={row.field ?? ''}
                   onValueChange={(v) => updateRow(idx, { field: v })}
                   data-testid="Select__4eedf1">
                   <SelectTrigger className="h-9 text-xs" data-testid="advanced-filter-field">

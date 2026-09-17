@@ -2,6 +2,8 @@ import { describe, it, expect, vi, beforeAll, beforeEach, afterEach } from 'vite
 import '@testing-library/jest-dom/vitest';
 import { render, screen, cleanup, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
+// Raw source of the component under test, for the ETP-5009 invariant at the bottom.
+import advancedFilterBuilderSource from '../AdvancedFilterBuilder.jsx?raw';
 
 // Core vitest runs without `globals: true`, so RTL's automatic afterEach
 // cleanup is not registered — do it explicitly to avoid DOM bleed between tests.
@@ -2562,5 +2564,26 @@ describe('operator select resets when the field changes (ETP-5009)', () => {
     const operator = screen.getByTestId('advanced-filter-operator');
     expect(operator).toHaveTextContent('advancedFilterSelectOp');
     expect(operator).not.toHaveTextContent('opContains');
+  });
+});
+
+// ================================================================
+// ETP-5009 — the FIELD select must stay controlled too
+// ================================================================
+// INVARIANT TEST, not a regression test: unlike the operator select above, the
+// field defect is NOT reachable through the UI today. Every path that empties a
+// field goes through `makeEmptyRow`/`ensureRowKeys`, which mint a fresh
+// `_rowKey`, so React remounts the Select and Radix's internal state is
+// discarded anyway. The moment a future change clears `field` in place (as
+// `updateRow` already does for `operator`), `|| undefined` would resurrect the
+// stale value exactly as it did for the operator — so the invariant is pinned at
+// the source, which is the only level at which it can currently fail.
+describe('field select stays controlled (ETP-5009)', () => {
+  const source = advancedFilterBuilderSource;
+
+  it('hands both row selects the empty string, never undefined', () => {
+    expect(source).toMatch(/value=\{row\.field \?\? ''\}/);
+    expect(source).toMatch(/value=\{row\.operator \?\? ''\}/);
+    expect(source).not.toMatch(/value=\{row\.(field|operator) \|\| undefined\}/);
   });
 });
