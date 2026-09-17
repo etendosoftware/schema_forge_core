@@ -295,6 +295,10 @@ const FIELD_DECISION_COPY_PROPS = [
   // column's UUID. Filtering needs no suffix. Full rule and worked examples:
   // `docs/decisions-reference.md` in the functional repo.
   'backendSortKey',
+  // ETP-5345 — public API curation: { exposed, name, type, handlerId }. Copied
+  // verbatim so generate-contract.js's mapFieldForContract can stamp it onto
+  // contract.json for the generate-public-api-schema.js resolver to read.
+  'publicApi',
 ];
 
 const FIELD_RAW_COPY_PROPS = [
