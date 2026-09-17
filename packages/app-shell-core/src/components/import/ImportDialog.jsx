@@ -299,10 +299,8 @@ export function ImportDialog({ open, onOpenChange, config, token, postBatch, sim
     // `dedupe.scope: "database"`. A failed batch costs only its own keys (ETP-5374) and never
     // blocks the import — send-time duplicate handling stays the backstop.
     //
-    // `findExistingKeys` also reports `complete`, which nothing reads yet: surfacing "this check
-    // did not finish" in the review queue is deliberately left out of ETP-5374. Until something
-    // shows it, a row that could not be checked is still presented exactly like one that was
-    // checked and found absent.
+    // `findExistingKeys` also reports `complete`, which nothing here reads: a row whose batch
+    // failed is presented exactly like one that was checked and found absent.
     const { existing: existingKeys } = config.dedupe?.scope === 'database'
       ? await findExistingKeys({ rows: uniqueRows, keyTargets: dedupeKeyTargets, fetchFn: existingKeyFetchFn })
       : { existing: new Set() };

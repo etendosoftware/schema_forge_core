@@ -454,9 +454,9 @@ describe('ImportDialog — ETP-4996', () => {
     // A pre-flight check that cannot reach the server must not block an import the
     // server would have accepted.
     //
-    // Note what it still does NOT do, deliberately left out of ETP-5374: the row shows as
-    // Correcta, which reads as "checked, and not a duplicate" for a check that never
-    // completed. `findExistingKeys` reports that through `complete`; nothing surfaces it yet.
+    // Note what it still does NOT do: the row shows as Correcta, which reads as "checked, and
+    // not a duplicate" for a check that never completed. `findExistingKeys` reports the
+    // difference through `complete`; nothing in this dialog surfaces it.
     const existingKeyFetchFn = vi.fn(async () => { throw new Error('network down'); });
     render(<ImportDialog open config={productConfig} token="t" postBatch={vi.fn()}
       simSearchFn={vi.fn()} existingKeyFetchFn={existingKeyFetchFn} onImported={() => {}} />);

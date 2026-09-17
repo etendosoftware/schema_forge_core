@@ -181,9 +181,9 @@ export function buildLookupBatches(tuples, keyTargets, {
  * @param {number} [params.concurrency] Override for {@link LOOKUP_CONCURRENCY}.
  * @returns {Promise<{existing: Set<string>, complete: boolean, failedBatches: number, totalBatches: number}>}
  *   `existing` holds the normalized keys that already exist. `complete` is false when any batch
- *   failed. NOTHING READS IT YET — surfacing "this check did not finish" in the review screen
- *   was deliberately left out of ETP-5374 — but it is what makes the per-batch isolation below
- *   observable, and it is the hook that change will need. `failedBatches` counts batches that
+ *   failed; it is what makes the per-batch isolation below observable at all, since without it
+ *   "found no duplicates" and "could not check" are the same empty answer — which is how the
+ *   original bug stayed invisible. No UI reads it today. `failedBatches` counts batches that
  *   were ATTEMPTED and failed, so after an abort (see {@link LOOKUP_FAILURE_ABORT_THRESHOLD})
  *   it is smaller than the number left unanswered; `complete` is false either way.
  *
@@ -193,9 +193,8 @@ export function buildLookupBatches(tuples, keyTargets, {
  *    answered correctly. One transient network error among twenty-five requests erased all
  *    twenty-five results. Each batch is now isolated, so a failure costs only its own keys.
  * 2. Losing the results was invisible. Every row came back unmatched, which the review queue
- *    renders identically to "checked, and not a duplicate" — the UI asserts something nobody
- *    verified. `complete` is what would let it stop doing that; wiring it up is a separate
- *    change, so for now the flag is reported and not consumed.
+ *    renders identically to "checked, and not a duplicate" — so the failure had no symptom to
+ *    notice. `complete` is what distinguishes the two, for any caller that wants to.
  *
  * The fallback itself is unchanged and still correct: a pre-flight check that cannot reach the
  * server must never block an import the server would have accepted, so a failed lookup still
