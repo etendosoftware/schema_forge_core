@@ -1,0 +1,30 @@
+{
+  "frontendContract": {
+    "entities": {
+      "product": {
+        "fields": [
+          {
+            "name": "searchKey",
+            "visibility": "editable",
+            "grid": true,
+            "form": true,
+            "publicApi": { "exposed": true, "name": "searchKey", "type": "passthrough", "handlerId": null }
+          },
+          {
+            "name": "name",
+            "visibility": "editable",
+            "grid": true,
+            "form": true,
+            "publicApi": { "exposed": true, "name": "name", "type": "passthrough", "handlerId": null }
+          },
+          {
+            "name": "internalCostBasis",
+            "visibility": "editable",
+            "grid": true,
+            "form": true
+          }
+        ]
+      }
+    }
+  }
+}

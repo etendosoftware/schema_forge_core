@@ -193,6 +193,15 @@ export async function resolveOrAutoCreateDependentEntity({
 
   if (cache) {
     cache.set(cacheKey, resolutionPromise);
+    // ETP-5227: the cache exists to stop concurrent rows creating the same record twice, and it
+    // was keeping REJECTED promises too. `clearResolutionCache` is never called anywhere in
+    // production code, so one failed creation — a timeout, a 500, a unique-index rejection from
+    // a stale catalogue — became the permanent answer for that value: every later row and every
+    // retry replayed the identical failure without ever calling the server again, which is why
+    // the reported error "persisted on retry". A failure is not a result worth remembering.
+    resolutionPromise.catch(() => {
+      if (cache.get(cacheKey) === resolutionPromise) cache.delete(cacheKey);
+    });
   }
 
   return resolutionPromise;
