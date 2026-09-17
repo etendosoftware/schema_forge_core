@@ -453,11 +453,36 @@ describe('ImportDialog — ETP-4996', () => {
   it('still imports when the existence lookup fails', async () => {
     // A pre-flight check that cannot reach the server must not block an import the
     // server would have accepted.
+    //
+    // Note what it still does NOT do, deliberately left out of ETP-5374: the row shows as
+    // Correcta, which reads as "checked, and not a duplicate" for a check that never
+    // completed. `findExistingKeys` reports that through `complete`; nothing surfaces it yet.
     const existingKeyFetchFn = vi.fn(async () => { throw new Error('network down'); });
     render(<ImportDialog open config={productConfig} token="t" postBatch={vi.fn()}
       simSearchFn={vi.fn()} existingKeyFetchFn={existingKeyFetchFn} onImported={() => {}} />);
     await uploadTo('codigo,nombre,precio\nSKU-1001,Tornillo,3.50');
     expect(screen.getByTestId('ImportReviewQueue__statusFilterCount-ok').textContent).toContain('1');
+  });
+
+  // ETP-5374, the half that survives any batch size: one failing request used to discard the
+  // answers of every request that had succeeded, so a single network blip erased the whole
+  // check. The file is large enough to need several batches, and exactly one of them fails.
+  it('keeps the duplicates found by the batches that answered when one batch fails', async () => {
+    const rows = Array.from({ length: 120 }, (_, i) => `SKU-${String(i).padStart(4, '0')},Item ${i},1.00`);
+    const existingKeyFetchFn = vi.fn(async (criteria) => {
+      const values = criteria.criteria.map((term) => term.value);
+      // Deterministic rather than call-ordered: the batches run concurrently, so "the second
+      // call" is a race, while "the batch carrying SKU-0000" is always the same one.
+      if (values.includes('SKU-0000')) throw new Error('network blip');
+      return values.filter((v) => v === 'SKU-0119').map((searchKey) => ({ searchKey }));
+    });
+    render(<ImportDialog open config={productConfig} token="t" postBatch={vi.fn()}
+      simSearchFn={vi.fn()} existingKeyFetchFn={existingKeyFetchFn} onImported={() => {}} />);
+    await uploadTo(`codigo,nombre,precio\n${rows.join('\n')}`);
+
+    expect(existingKeyFetchFn.mock.calls.length).toBeGreaterThan(1);
+    // SKU-0119 lives in a batch that answered: its duplicate must survive the failed one.
+    expect(screen.getByTestId('ImportReviewQueue__statusFilterCount-ok').textContent).toContain('119');
   });
 
   it('fails a row with a non-numeric price during review, not at send time', async () => {

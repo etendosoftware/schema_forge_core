@@ -296,12 +296,16 @@ export function ImportDialog({ open, onOpenChange, config, token, postBatch, sim
     setFkResolutions(resolutions);
 
     // Rows already present server-side. Checked only when the window opts in with
-    // `dedupe.scope: "database"`; on any lookup failure this comes back empty and the
-    // send-time duplicate handling stays the backstop, so a pre-flight check that cannot
-    // reach the server never blocks an import the server would have accepted.
-    const existingKeys = config.dedupe?.scope === 'database'
+    // `dedupe.scope: "database"`. A failed batch costs only its own keys (ETP-5374) and never
+    // blocks the import — send-time duplicate handling stays the backstop.
+    //
+    // `findExistingKeys` also reports `complete`, which nothing reads yet: surfacing "this check
+    // did not finish" in the review queue is deliberately left out of ETP-5374. Until something
+    // shows it, a row that could not be checked is still presented exactly like one that was
+    // checked and found absent.
+    const { existing: existingKeys } = config.dedupe?.scope === 'database'
       ? await findExistingKeys({ rows: uniqueRows, keyTargets: dedupeKeyTargets, fetchFn: existingKeyFetchFn })
-      : new Set();
+      : { existing: new Set() };
 
     const validated = uniqueRows.map((row) => {
       const key = buildLookupKey(row, dedupeKeyTargets);
