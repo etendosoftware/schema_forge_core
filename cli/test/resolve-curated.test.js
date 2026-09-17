@@ -674,6 +674,52 @@ describe('resolveCurated — gridReadOnly passthrough', () => {
   });
 });
 
+// ─── publicApi curation passthrough (ETP-5345) ───────────────────────────────
+describe('resolveCurated — publicApi passthrough', () => {
+  const schemaRaw = {
+    window: { id: '902', name: 'Product' },
+    entities: [{
+      name: 'product',
+      tableName: 'M_Product',
+      tabId: '51',
+      tabName: 'Header',
+      fields: [
+        { name: 'name', columnName: 'Name', label: 'Name',
+          type: 'string', visibility: 'editable', mandatory: false },
+        { name: 'internalCostBasis', columnName: 'InternalCostBasis', label: 'Internal Cost Basis',
+          type: 'amount', visibility: 'editable', mandatory: false },
+      ],
+    }],
+  };
+
+  const decisionsWithPublicApi = {
+    version: 2,
+    window: { name: 'Product' },
+    entities: {
+      product: {
+        name: 'product',
+        fields: {
+          name: { publicApi: { exposed: true, name: 'name', type: 'passthrough', handlerId: null } },
+          internalCostBasis: {},
+        },
+      },
+    },
+    rules: {},
+  };
+
+  it('copies publicApi from decisions to the curated field', async () => {
+    const { schema } = await resolveCurated(schemaRaw, { rules: [] }, decisionsWithPublicApi);
+    const name = schema.entities[0].fields.find(f => f.name === 'name');
+    assert.deepEqual(name.publicApi, { exposed: true, name: 'name', type: 'passthrough', handlerId: null });
+  });
+
+  it('does NOT set publicApi on a field that lacks it in decisions', async () => {
+    const { schema } = await resolveCurated(schemaRaw, { rules: [] }, decisionsWithPublicApi);
+    const internalCostBasis = schema.entities[0].fields.find(f => f.name === 'internalCostBasis');
+    assert.equal(internalCostBasis.publicApi, undefined);
+  });
+});
+
 // ─── businessCritical per-field flag (ETP-4233) ──────────────────────────────
 
 describe('resolveCurated — businessCritical per-field flag (ETP-4233)', () => {
