@@ -964,3 +964,83 @@ describe('AuthContext — menuAccess (ETP-5189)', () => {
     } finally { f.restore(); }
   });
 });
+
+describe('AuthContext — access-load effect runs without a selected role (ETP-5395)', () => {
+  it('resolves accessLoaded to true with empty maps for a role-less but already-ready session (invited user, empty roleList)', async () => {
+    // Regression for the bug fixed by ETP-5395: the initial access-load effect used to ALSO
+    // gate on `state.session.selectedRole`, so a session that is ready/refreshed but never
+    // got a role (an invited user with an empty roleList) made the effect return forever —
+    // `accessLoaded` stayed `false` and every consumer waiting on it (e.g. `useRoleMenu()`)
+    // hung indefinitely. The fix drops that extra gate; `loadAccess()` itself still
+    // short-circuits to `{}` with no network call when `selectedRole` is missing (unchanged
+    // by this fix).
+    const fetchWindowAccess = vi.fn().mockResolvedValue({
+      windowAccess: { '147': 'full' }, capabilities: { showAccountingFields: true }, menuAccess: { m: true },
+    });
+    const { result } = renderHook(() => useAuth(), { wrapper: wrapperWith({ fetchWindowAccess }) });
+
+    act(() => {
+      // `refresh: false` mirrors an already-refreshed/ready session — no bootstrap refresh
+      // fires, isolating the access-load-gate effect under test.
+      result.current.replaceSession({ token: 'tok-no-role' }, { refresh: false });
+    });
+
+    expect(result.current.isSessionReady).toBe(true);
+    expect(result.current.selectedRole).toBeFalsy();
+
+    await waitFor(() => {
+      expect(result.current.accessLoaded).toBe(true);
+    });
+    expect(result.current.windowAccess).toEqual({});
+    expect(result.current.capabilities).toEqual({});
+    expect(result.current.menuAccess).toEqual({});
+    // loadAccess()'s own short-circuit means a role-less session must never reach the network.
+    expect(fetchWindowAccess).not.toHaveBeenCalled();
+  });
+
+  it('still fetches and resolves real access maps for a normal role-holding session (regression guard)', async () => {
+    // The fix must not accidentally short-circuit or skip the real fetch path for a normal
+    // role-holding user — this must behave EXACTLY as before ETP-5395.
+    const fetchWindowAccess = vi.fn().mockResolvedValue({
+      windowAccess: { '147': 'full' }, capabilities: { showAccountingFields: true }, menuAccess: { m: true },
+    });
+    const { result } = renderHook(() => useAuth(), {
+      wrapper: ({ children }) => (
+        <AuthProvider
+          storage={createMemoryAuthStorage()}
+          fetchWindowAccess={fetchWindowAccess}
+          initialSession={{ token: 'tok', selectedRole: { id: 'role-1' } }}>
+          {children}
+        </AuthProvider>
+      ),
+    });
+
+    await waitFor(() => {
+      expect(result.current.accessLoaded).toBe(true);
+    });
+    expect(fetchWindowAccess).toHaveBeenCalledTimes(1);
+    expect(result.current.windowAccess).toEqual({ '147': 'full' });
+    expect(result.current.capabilities).toEqual({ showAccountingFields: true });
+    expect(result.current.menuAccess).toEqual({ m: true });
+  });
+
+  it('resolves accessLoaded to true harmlessly for a fully anonymous, no-token session (no crash)', async () => {
+    // A logged-out/no-token session is `isSessionReady: true` from the very first render (see
+    // sessionController's initial state: `isSessionReady: !initialSession?.token`) — a real,
+    // reachable state the same gate now runs for too. It must resolve without crashing and
+    // without ever reaching the network.
+    const fetchWindowAccess = vi.fn();
+    const { result } = renderHook(() => useAuth(), { wrapper: wrapperWith({ fetchWindowAccess }) });
+
+    expect(result.current.isSessionReady).toBe(true);
+    expect(result.current.token).toBeFalsy();
+
+    await waitFor(() => {
+      expect(result.current.accessLoaded).toBe(true);
+    });
+    expect(result.current.windowAccess).toEqual({});
+    expect(result.current.capabilities).toEqual({});
+    expect(result.current.menuAccess).toEqual({});
+    expect(fetchWindowAccess).not.toHaveBeenCalled();
+  });
+});
