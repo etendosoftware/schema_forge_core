@@ -273,8 +273,26 @@ const FIELD_DECISION_COPY_PROPS = [
   // 'custom' (or any type resolveFilterMode does not recognize) degrades the
   // advanced filter to text operators. `backendFilterKey` overrides the entity
   // property the criteria is built against.
+  //
+  // ETP-5382 — `backendFilterKey` and its sorting sibling `backendSortKey` (see
+  // below) are now AUTO-DERIVED by applyBackendKeyDerivation() whenever a field
+  // is renamed via decisions.json's `name` (contract key != raw AD-derived
+  // property). Declaring either one explicitly here is only needed as an escape
+  // hatch for the rare case where the real backend key is NOT the field's raw
+  // name — e.g. a hand-written custom component's own synthetic key (see
+  // artifacts/chart-of-accounts/custom/AccountTreeView.jsx's backendSortKey:
+  // 'searchKey', which the generator does not touch at all). An explicit value
+  // here always wins over the derived one.
   'filterMode',
   'backendFilterKey',
+  // ETP-5382 — sibling of `backendFilterKey` for SORTING. A field renamed via
+  // decisions.json's `name` override (e.g. AD column `SOPOType` exposed as
+  // `applicableTo`) sends the frontend contract key as the sort param, but
+  // Etendo Classic's AdvancedQueryBuilder resolves it against the real Hibernate
+  // property (`salesPurchaseType`) and silently drops it. `backendSortKey`
+  // overrides the entity property the sort criteria is built against, consumed
+  // by resolveBackendSort() in app-shell-core's gridQuery.js.
+  'backendSortKey',
 ];
 
 const FIELD_RAW_COPY_PROPS = [
@@ -360,6 +378,94 @@ function applyFieldDecisionProps(field, fieldDecision) {
 function applyFlatBound(field, fieldDecision, key) {
   const v = fieldDecision[key];
   if (v !== undefined && v !== false) field[key] = v;
+}
+
+/**
+ * ETP-5382 — auto-derive `backendFilterKey`/`backendSortKey` whenever
+ * decisions.json renames a field via `name` (the exposed contract key differs
+ * from the raw AD-derived one).
+ *
+ * WHY THIS IS SAFE: `rawField.apiKey` is not a guess — extract-fields.js's
+ * `mapFieldRow()` sets it to `toPropertyName(row.obdal_name, ...)`, a faithful
+ * port of Etendo's own `NamingUtil.getPropertyMappingName()` (see utils.js).
+ * That is exactly the OBDal/Hibernate property name Etendo Classic's
+ * AdvancedQueryBuilder / `JsonUtils.getPropertiesOnPath()` resolves filter AND
+ * sort criteria against. So for every field that reaches this function (i.e.
+ * every field built from a real `rawField` via `buildCuratedFields` — synthetic
+ * `virtualFields` from decisions.json never do, they are appended separately by
+ * `appendVirtualFields()` and have no real backend property at all), the apiKey
+ * IS the real backend key, with no per-window declaration required.
+ *
+ * READ `apiKey`, NOT `name`. They hold the same string for the overwhelming
+ * majority of fields, but NOT always: `deduplicateFieldNames()` in
+ * extract-fields.js appends a counter to `name` when two AD fields of the same
+ * tab resolve to the same property (`documentNo` → `documentNo2`), leaving
+ * `apiKey` untouched. `documentNo2` is not a Hibernate property, so deriving
+ * from `name` would emit a key `getPropertiesOnPath()` cannot resolve — the
+ * exact silent drop this ticket exists to remove. Six such fields exist today
+ * and one of them, `payment-out` lines `documentNo2` → `invoiceNo`, is a
+ * renamed GRID field: a live case, not a theoretical one.
+ *
+ * FOREIGN KEYS SORT BY IDENTIFIER, not by the bare FK property. The rule the
+ * derivation follows is "a renamed field must behave exactly as the same field
+ * would unrenamed". Unrenamed, an FK emits a `type: 'selector'` grid column and
+ * `resolveBackendSort()` (app-shell-core's gridQuery.js) infers
+ * `sortMode: 'identifier'`, sorting on `<key>$_identifier`. But setting
+ * `backendSortKey` at all makes `resolveBackendSort()` treat the value as final
+ * (`isIdentifierSort` turns true and the `$_identifier` suffix is no longer
+ * appended), so a bare FK property here would order by the join column's UUID —
+ * visually random, and silent. Hence the `$_identifier` suffix for exactly the
+ * fields that emit a selector column, mirroring `mapColumnType()` in
+ * generate-frontend.js. Filtering needs no suffix: unrenamed, the criteria is
+ * built on the bare property (`col.backendFilterKey ?? col.key`).
+ *
+ * A window agent renaming a field (e.g. `SOPOType` → `applicableTo`) used to
+ * have to remember to ALSO declare `backendFilterKey`/`backendSortKey` by hand
+ * — in practice nobody ever did, across every rename in the repo, because the
+ * gap is not discoverable from decisions.json alone. Auto-deriving removes the
+ * failure mode instead of documenting it.
+ *
+ * PRECEDENCE: an explicit decisions.json value always wins — it has already
+ * been copied onto `field` by `applyFieldDecisionProps()` (FIELD_DECISION_COPY_PROPS)
+ * by the time this runs, so this function only fills in the gap when the key is
+ * still absent. This is the escape hatch for the rare field whose true backend
+ * key is NOT its own raw name (there is no such case among AD-column-backed
+ * fields today, but hand-written custom components declare their own literal
+ * `backendSortKey` outside this pipeline entirely, e.g.
+ * artifacts/chart-of-accounts/custom/AccountTreeView.jsx's `backendSortKey: 'searchKey'`).
+ *
+ * NO-OP when the exposed key already IS the backend property: both keys stay
+ * absent exactly as before this feature existed — zero behavior change for the
+ * other 99%+ of fields in the repo that declare no `name` override.
+ */
+function applyBackendKeyDerivation(field, rawField) {
+  const backendKey = rawField.apiKey || rawField.name;
+  if (!backendKey || field.name === backendKey) return;
+  if (!field.backendFilterKey) field.backendFilterKey = backendKey;
+  if (!field.backendSortKey) {
+    field.backendSortKey = emitsSelectorColumn(field, rawField)
+      ? `${backendKey}$_identifier`
+      : backendKey;
+  }
+}
+
+/**
+ * ETP-5382 — will this field's grid column be emitted as `type: 'selector'`?
+ *
+ * Mirrors `mapColumnType()` in generate-frontend.js, restricted to the branches
+ * that can produce (or steal) `'selector'`. Kept deliberately narrow: an
+ * explicit `columnType` decision wins outright, an enum reference never renders
+ * as a selector, and mapColumnType's `status` branch is itself guarded by
+ * `type !== 'foreignKey'` so it can never shadow an FK.
+ *
+ * `enumValues` is read from BOTH sides because `copyRawProps(FIELD_RAW_COPY_PROPS)`
+ * runs LATER in `buildCuratedField()` than this derivation does, so the raw
+ * value has not landed on `field` yet at this point.
+ */
+function emitsSelectorColumn(field, rawField) {
+  if (field.columnType) return field.columnType === 'selector';
+  if ((field.enumValues ?? rawField.enumValues)?.length) return false;
+  return field.type === 'foreignKey';
 }
 
 /**
@@ -457,6 +563,11 @@ function buildCuratedField(rawField, fieldDecision, discardPatterns) {
   const isVisible = isVisibleField(visibility);
 
   applyFieldDecisionProps(field, fieldDecision);
+  // ETP-5382 — must run AFTER applyFieldDecisionProps (so an explicit decisions.json
+  // backendFilterKey/backendSortKey is already on `field` and wins) and does not need
+  // to be gated by `isVisible`: a discarded/system field never reaches the grid (see
+  // generate-contract.js's `isVisible` filter), so a derived key on one is inert.
+  applyBackendKeyDerivation(field, rawField);
   if (isVisible) applyForeignKeyProps(field, rawField, fieldDecision);
 
   // forceCalloutFields is not FK-specific — any visible field that triggers a callout
