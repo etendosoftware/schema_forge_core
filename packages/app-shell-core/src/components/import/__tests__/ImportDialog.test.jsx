@@ -385,13 +385,14 @@ describe('ImportDialog', () => {
     await uploadFile('Name,Email\nLucia,not-an-email');
     fireEvent.click(screen.getByTestId('ImportReviewQueue__statusFilter-error'));
     await waitFor(() => screen.getByTestId('ImportReviewQueue__fieldError-0-email'));
-    // Unmap the "Email" CSV header entirely — proves entries are rebuilt from the
+    // Set the `email` FIELD back to "not imported" — proves entries are rebuilt from the
     // persisted raw rows with the new mapping, not just cosmetically relabeled: the
     // invalid value is no longer read into the `email` target at all, so the email
-    // format check has nothing to flag.
+    // format check has nothing to flag. The editor is keyed by field target, not by the
+    // file's header text.
     fireEvent.click(screen.getByTestId('ImportColumnMapping__editButton'));
-    fireEvent.click(screen.getByTestId('ImportColumnMapping__select-Email'));
-    fireEvent.click(screen.getByText('Not imported'));
+    fireEvent.click(screen.getByTestId('ImportColumnMapping__select-email'));
+    fireEvent.click(screen.getByTestId('SelectItem__bf9e7b'));
     fireEvent.click(screen.getByTestId('ImportColumnMapping__saveButton'));
     await waitFor(() => expect(screen.queryByTestId('ImportReviewQueue__fieldError-0-email')).toBeNull());
   });
