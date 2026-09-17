@@ -179,7 +179,23 @@ export function OnboardingFlow({ steps = [], config = {} }) {
             status: 'started',
           });
           const data = await loginEnvironment(fetch, apiBase, authToken, env);
-          if (data.token) {
+          // ETP-5395 — refuse to auto-enter an environment the user has no role in.
+          // `GET /sws/go/login` does NOT fail in that case: it calls generateToken(user, null)
+          // and answers 200 with an empty roleList, so `data.token` is always truthy here and
+          // this branch would otherwise persist a session with no role and drop a freshly
+          // invited, role-less user straight into the full app with an empty sidebar (mirrors
+          // the guard in useEnvironmentSwitch.switchTo(), etendo_schema_forge).
+          //
+          // Only an explicitly EMPTY array blocks: a missing roleList is left to the existing
+          // behaviour below, since persistEnvironmentSession already treats it as optional and
+          // an older backend must not be locked out.
+          if (Array.isArray(data.roleList) && data.roleList.length === 0) {
+            trackOnboarding(config, 'onboarding_environment_enter_failed', {
+              action: 'enter_environment',
+              status: 'failed',
+            });
+            alert(ui('onboardingEnvironmentLoginFailed'));
+          } else if (data.token) {
             persistEnvironmentSession(env, data);
 
             // Clear all SW caches on login to guarantee fresh resources
