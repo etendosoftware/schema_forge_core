@@ -1024,6 +1024,51 @@ describe('AuthContext — access-load effect runs without a selected role (ETP-5
     expect(result.current.menuAccess).toEqual({ m: true });
   });
 
+  it('re-settles accessLoaded to true with fully empty maps after a ROLE-HOLDING session is deselected mid-session (dynamic transition, not just role-less-from-the-start)', async () => {
+    // [ETP-5395 QA] The two tests above cover the STATIC case (a session that never had a
+    // role). This is the DYNAMIC case the fix must equally not break: a user who HAD a role
+    // and real, non-empty access maps loses it mid-session (selectRole(null) — the same
+    // `controller.replace()` path a role revocation ultimately funnels through). `replace()`
+    // resets `accessLoaded` to `false` (no `access` argument passed) alongside clearing the
+    // session's `selectedRole`, which re-arms the exact effect this fix changed — so this
+    // proves the fix's relaxed gate (dropping the `state.session.selectedRole` check) still
+    // correctly re-resolves `accessLoaded: true` with empty maps for THIS session, not just
+    // for one that started role-less.
+    const fetchWindowAccess = vi.fn().mockResolvedValue({
+      windowAccess: { '147': 'full' }, capabilities: { showAccountingFields: true }, menuAccess: { m: true },
+    });
+    const { result } = renderHook(() => useAuth(), {
+      wrapper: ({ children }) => (
+        <AuthProvider
+          storage={createMemoryAuthStorage()}
+          fetchWindowAccess={fetchWindowAccess}
+          initialSession={{ token: 'tok', selectedRole: { id: 'role-1' } }}>
+          {children}
+        </AuthProvider>
+      ),
+    });
+
+    await waitFor(() => expect(result.current.accessLoaded).toBe(true));
+    expect(result.current.windowAccess).toEqual({ '147': 'full' });
+
+    act(() => {
+      result.current.selectRole(null);
+    });
+
+    // Synchronously reset by replace() in the same commit selectRole() triggers.
+    expect(result.current.selectedRole).toBeFalsy();
+    expect(result.current.windowAccess).toEqual({});
+    expect(result.current.capabilities).toEqual({});
+    expect(result.current.menuAccess).toEqual({});
+
+    // Must not get stuck at `accessLoaded: false` — the exact hang this ETP-5395 fix
+    // resolves for the role-less-from-scratch case must equally resolve here.
+    await waitFor(() => expect(result.current.accessLoaded).toBe(true));
+    expect(result.current.windowAccess).toEqual({});
+    expect(result.current.capabilities).toEqual({});
+    expect(result.current.menuAccess).toEqual({});
+  });
+
   it('resolves accessLoaded to true harmlessly for a fully anonymous, no-token session (no crash)', async () => {
     // A logged-out/no-token session is `isSessionReady: true` from the very first render (see
     // sessionController's initial state: `isSessionReady: !initialSession?.token`) — a real,
