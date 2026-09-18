@@ -29,6 +29,14 @@ const DEFAULT_LABELS = {
   // (in-file duplicate, already exists) records its own reason as an error, and that
   // reason is what the file shows. A hand-skipped row has no error to explain it.
   skippedByUser: 'Skipped by the user.',
+  // ETP-5350 — the unresolved-foreign-key popover. ETP-5223 translated the engine's error
+  // messages, the review grid's headers and the mapping editor's captions; these four were
+  // written inline in `FkMismatchCell` and stayed English in every session. The popover is
+  // exactly where a user lands when a row needs fixing, so it was the worst place to leave.
+  fkSearchPlaceholder: 'Search or type a value…',
+  fkSearching: 'Searching…',
+  fkNoMatches: 'No matches found — type a value above.',
+  fkUseTyped: 'Use “{value}”',
 };
 
 /**
@@ -213,7 +221,7 @@ function StatusLineTag({ index, tag, children }) {
  * round-trip needed), while `null` means the user accepted free-typed text
  * (still needs a fresh SimSearch lookup, same as the old "Re-validate" button).
  */
-function FkMismatchCell({ index, field, value, error, onSelect, simSearchFn, token }) {
+function FkMismatchCell({ index, field, value, error, onSelect, simSearchFn, token, text }) {
   const [open, setOpen] = useState(false);
   const [query, setQuery] = useState('');
   const [candidates, setCandidates] = useState(error.candidates ?? []);
@@ -302,7 +310,7 @@ function FkMismatchCell({ index, field, value, error, onSelect, simSearchFn, tok
           <CommandInput
             value={query}
             onValueChange={handleQueryChange}
-            placeholder="Search or type a value…"
+            placeholder={text.fkSearchPlaceholder}
             data-testid={`ImportReviewQueue__fkSearch-${index}-${field.target}`}
           />
           <CommandList data-testid={"CommandList__" + field.id}>
@@ -313,16 +321,16 @@ function FkMismatchCell({ index, field, value, error, onSelect, simSearchFn, tok
                   onSelect={() => handleUseTyped(query.trim())}
                   data-testid={`ImportReviewQueue__fkUseTyped-${index}-${field.target}`}
                 >
-                  Use &ldquo;{query.trim()}&rdquo;
+                  {formatTemplate(text.fkUseTyped, { value: query.trim() })}
                 </CommandItem>
               </CommandGroup>
             )}
             {loading ? (
               <div className="px-2 py-3 text-center text-xs text-muted-foreground" data-testid={`ImportReviewQueue__fkLoading-${index}-${field.target}`}>
-                Searching…
+                {text.fkSearching}
               </div>
             ) : candidates.length === 0 ? (
-              <CommandEmpty data-testid={"CommandEmpty__" + field.id}>{query.trim() ? null : 'No matches found — type a value above.'}</CommandEmpty>
+              <CommandEmpty data-testid={"CommandEmpty__" + field.id}>{query.trim() ? null : text.fkNoMatches}</CommandEmpty>
             ) : (
               <CommandGroup data-testid={"CommandGroup__" + field.id}>
                 {candidates.map((c) => (
@@ -799,6 +807,7 @@ export function ImportReviewQueue({
                           onSelect={(value, resolvedId) => handleFkValueSelected(index, field, value, resolvedId)}
                           simSearchFn={simSearchFn}
                           token={token}
+                          text={text}
                           data-testid={"FkMismatchCell__" + field.id} />
                       ) : isEditable ? (
                         <div className="flex flex-col gap-1">

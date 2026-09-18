@@ -526,6 +526,67 @@ describe('ImportDialog — ETP-4996', () => {
     }
   });
 
+  /**
+   * ETP-5350 — the sample row follows the session language too.
+   *
+   * The headers were already localized; the values under them were not, so "Download CSV
+   * template" in an English session produced English headers over Spanish data ("Tornillo
+   * hexagonal M8", "Unidad", "Herramientas"). The user who asked for an English file opened it
+   * and found a language they had not chosen.
+   */
+  it('writes the sample row in the session language when the window declares exampleKeys', async () => {
+    const createObjectURLSpy = vi.fn().mockReturnValue('blob:mock-url');
+    const originalCreate = URL.createObjectURL;
+    const originalRevoke = URL.revokeObjectURL;
+    URL.createObjectURL = createObjectURLSpy;
+    URL.revokeObjectURL = vi.fn();
+    const keyed = {
+      ...productConfig,
+      fields: [
+        // Language-neutral: no key, and it must keep its value rather than gain an empty one.
+        { target: 'searchKey', label: 'Search Key', aliases: ['codigo'], required: true, example: 'SKU-1001' },
+        { target: 'name', label: 'Name', aliases: ['nombre'], required: true, example: 'Tornillo M8', exampleKey: 'exProductName' },
+        { target: 'salesPrice', label: 'Sales Price', aliases: ['precio'], isNumeric: true, example: '12,50', exampleKey: 'exProductPrice' },
+      ],
+    };
+    const dictionary = { exProductName: 'Hex bolt M8', exProductPrice: '12.50' };
+    try {
+      render(<ImportDialog open config={keyed} token="t" postBatch={vi.fn()} simSearchFn={vi.fn()}
+        onImported={() => {}} translate={(key) => dictionary[key]} />);
+      fireEvent.click(screen.getByTestId('ImportDialog__downloadTemplate'));
+      const csv = await createObjectURLSpy.mock.calls[0][0].text();
+      expect(csv.split('\n')[1]).toBe('SKU-1001,Hex bolt M8,12.50');
+    } finally {
+      URL.createObjectURL = originalCreate;
+      URL.revokeObjectURL = originalRevoke;
+    }
+  });
+
+  // A key the dictionary does not carry must fall back to the declared example, not blank the
+  // cell: a template with an empty sample row teaches nothing, and `validateRow` would then
+  // reject the very file the dialog handed out on its required columns.
+  it('falls back to the declared example when the key is unknown or there is no translator', async () => {
+    const createObjectURLSpy = vi.fn().mockReturnValue('blob:mock-url');
+    const originalCreate = URL.createObjectURL;
+    const originalRevoke = URL.revokeObjectURL;
+    URL.createObjectURL = createObjectURLSpy;
+    URL.revokeObjectURL = vi.fn();
+    const keyed = {
+      ...productConfig,
+      fields: productConfig.fields.map((f) => ({ ...f, exampleKey: `missing.${f.target}` })),
+    };
+    try {
+      render(<ImportDialog open config={keyed} token="t" postBatch={vi.fn()} simSearchFn={vi.fn()}
+        onImported={() => {}} translate={(key) => key} />);
+      fireEvent.click(screen.getByTestId('ImportDialog__downloadTemplate'));
+      const csv = await createObjectURLSpy.mock.calls[0][0].text();
+      expect(csv).toBe('codigo *,nombre *,precio\nSKU-1001,Tornillo M8,"12,50"');
+    } finally {
+      URL.createObjectURL = originalCreate;
+      URL.revokeObjectURL = originalRevoke;
+    }
+  });
+
   it('writes the template in the session language and still maps it back', async () => {
     const createObjectURLSpy = vi.fn().mockReturnValue('blob:mock-url');
     const originalCreate = URL.createObjectURL;
