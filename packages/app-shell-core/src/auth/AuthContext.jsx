@@ -346,7 +346,13 @@ export function AuthProvider({
   }, [state.generation, state.needsRefresh, refresh]);
 
   useEffect(() => {
-    if (!state.isSessionReady || state.needsRefresh || state.accessLoaded || !state.session.selectedRole) return;
+    // ETP-5395 — do NOT also gate on `state.session.selectedRole` here: a role-less session
+    // (invited user with an empty roleList) never gets one, and that used to make this effect
+    // return forever, so `accessLoaded` never became `true` and every consumer waiting on it
+    // (e.g. `useRoleMenu()`) hung indefinitely. `loadAccess()` below already short-circuits to
+    // `{}` with no network call when `selectedRole` is missing, so proceeding here is safe and
+    // still resolves `accessLoaded: true` for that case.
+    if (!state.isSessionReady || state.needsRefresh || state.accessLoaded) return;
     const snapshot = controller.capture();
     let cancelled = false;
     loadAccess(state.session, snapshot).then((access) => {
