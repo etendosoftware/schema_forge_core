@@ -91,12 +91,22 @@ export const DOC_TYPE_LABEL_OVERRIDES = {
     ARI: 'Sales Invoice',
     API: 'Purchase Invoice',
     MMR: 'Goods Receipt',
+    MMS: 'Goods Shipment',
+    MMI: 'Physical Inventory',
+    APP: 'Payment Out',
+    GLJ: 'Manual Journals',
+    ARR: 'Payment In',
   },
   es_ES: {
     MXI: 'Relación albarán-factura',
     ARI: 'Factura de Venta',
     API: 'Factura de Compra',
     MMR: 'Albarán de Compra',
+    MMS: 'Albarán de Venta',
+    MMI: 'Inventario físico',
+    APP: 'Pago',
+    GLJ: 'Asientos Manuales',
+    ARR: 'Cobro',
   },
 };
 
