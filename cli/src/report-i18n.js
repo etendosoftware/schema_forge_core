@@ -86,8 +86,28 @@ export const RETURN_LABELS = {
  * matched against its invoice — without touching the shared AD data at all.
  */
 export const DOC_TYPE_LABEL_OVERRIDES = {
-  en_US: { MXI: 'Receipt-Invoice Link' },
-  es_ES: { MXI: 'Relación albarán-factura' },
+  en_US: {
+    MXI: 'Receipt-Invoice Link',
+    ARI: 'Sales Invoice',
+    API: 'Purchase Invoice',
+    MMR: 'Goods Receipt',
+    MMS: 'Goods Shipment',
+    MMI: 'Physical Inventory',
+    APP: 'Payment Out',
+    GLJ: 'Manual Journals',
+    ARR: 'Payment In',
+  },
+  es_ES: {
+    MXI: 'Relación albarán-factura',
+    ARI: 'Factura de Venta',
+    API: 'Factura de Compra',
+    MMR: 'Albarán de Compra',
+    MMS: 'Albarán de Venta',
+    MMI: 'Inventario físico',
+    APP: 'Pago',
+    GLJ: 'Asientos Manuales',
+    ARR: 'Cobro',
+  },
 };
 
 /** Resolve a {en_US, es_ES} label object for the requested locale. */

@@ -500,11 +500,15 @@ export function generateTableComponent(entityName, contract) {
     // byte-compare generated files).
     const filterModePart = quotedProp('filterMode', f.filterMode);
     const backendFilterKeyPart = quotedProp('backendFilterKey', f.backendFilterKey);
+    // ETP-5382 — sibling of backendFilterKey for SORTING. Consumed by
+    // resolveBackendSort() in app-shell-core's gridQuery.js. Appended right after
+    // backendFilterKey for the same byte-identity reason as the filter overrides above.
+    const backendSortKeyPart = quotedProp('backendSortKey', f.backendSortKey);
     // ETP-5245 — per-row currency source for `amount` cells and the footer total
     // (resolveRowCurrency in app-shell's lib/rowCurrency.js). Appended at the tail
     // for the same byte-identity reason as the filter overrides above.
     const currencyFieldPart = quotedProp('currencyField', f.currencyField);
-    return `  { key: '${f.name}', column: '${f.column}', type: '${type}'${labelsPart}${labelPart}${enumLabelsPart}${enumVariantsPart}${selectionPart}${togglePart}${badgePart}${badgeLabelsPart}${badgeColorsPart}${badgeVariantsPart}${summablePart}${displayPart}${renderPart}${requiredPart}${lookupPart}${lookupDrawerColPart}${excludeValueOfColPart}${popupPart}${minColPart}${maxColPart}${maxLengthColPart}${growPart}${columnWidthPart}${noTrailingPart}${filterOnlyPart}${dotPart}${gridReadOnlyPart}${computedPart}${visibleWhenCapabilityPart}${filterModePart}${backendFilterKeyPart}${currencyFieldPart} },`;
+    return `  { key: '${f.name}', column: '${f.column}', type: '${type}'${labelsPart}${labelPart}${enumLabelsPart}${enumVariantsPart}${selectionPart}${togglePart}${badgePart}${badgeLabelsPart}${badgeColorsPart}${badgeVariantsPart}${summablePart}${displayPart}${renderPart}${requiredPart}${lookupPart}${lookupDrawerColPart}${excludeValueOfColPart}${popupPart}${minColPart}${maxColPart}${maxLengthColPart}${growPart}${columnWidthPart}${noTrailingPart}${filterOnlyPart}${dotPart}${gridReadOnlyPart}${computedPart}${visibleWhenCapabilityPart}${filterModePart}${backendFilterKeyPart}${backendSortKeyPart}${currencyFieldPart} },`;
   }).join('\n') + buildDimensionsPanelColumn(dimensionFieldsRaw);
 
   const filtersArray = searchableFields.map(f => `'${f}'`).join(', ');
@@ -1634,7 +1638,10 @@ function buildListModalColumns(entity) {
     // likewise appended at the tail to keep existing output byte-identical.
     const filterModePart = quotedProp('filterMode', f.filterMode);
     const backendFilterKeyPart = quotedProp('backendFilterKey', f.backendFilterKey);
-    return `  { key: '${f.name}', column: '${f.column}', type: '${type}'${labelPart}${labelKeyPart}${enumLabelsPart}${enumVariantsPart}${togglePart}${inlineEditPart}${badgePart}${displayPart}${cellTypePart}${subFieldPart}${subEmptyKeyPart}${kindFieldPart}${patternFieldPart}${kindLabelsPart}${tonesPart}${visibleWhenCapabilityPart}${filterModePart}${backendFilterKeyPart} },`;
+    // ETP-5382 — same sort-key override as the standard DataTable columns, appended
+    // right after backendFilterKey for the same byte-identity reason as above.
+    const backendSortKeyPart = quotedProp('backendSortKey', f.backendSortKey);
+    return `  { key: '${f.name}', column: '${f.column}', type: '${type}'${labelPart}${labelKeyPart}${enumLabelsPart}${enumVariantsPart}${togglePart}${inlineEditPart}${badgePart}${displayPart}${cellTypePart}${subFieldPart}${subEmptyKeyPart}${kindFieldPart}${patternFieldPart}${kindLabelsPart}${tonesPart}${visibleWhenCapabilityPart}${filterModePart}${backendFilterKeyPart}${backendSortKeyPart} },`;
   }).join('\n');
 }
 

@@ -1,3 +1,5 @@
+import { normalizeHeader } from './mapColumns.js';
+
 /**
  * A file the user uploaded cannot be parsed.
  *
@@ -15,6 +17,49 @@ export class ImportParseError extends Error {
     this.messageKey = messageKey;
     this.params = params;
   }
+}
+
+/**
+ * Reject a header row the rest of the pipeline cannot represent. Shared by both parsers so the
+ * CSV and the xlsx paths cannot drift apart — the whole safety argument for xlsx support is that
+ * it inherits the CSV path's rules rather than restating them.
+ *
+ * ETP-5348 closes two holes in what this used to be:
+ *
+ * - **The duplicate check compared RAW header text.** `mapColumns` matches on `normalizeHeader`
+ *   (lower-cased, accent-stripped, whitespace-collapsed), so `nombre,Nombre` and `codigo,código`
+ *   sailed past a guard written to stop exactly them. Downstream the two columns then fight over
+ *   one field: `mapColumns` lets the first claimant keep it and leaves the second unmapped, so
+ *   one of the user's columns was silently discarded. Comparing normalized headers here is what
+ *   makes the guard agree with the matcher it exists to protect.
+ * - **A blank header was only caught when a SECOND blank appeared**, as a duplicate of `""`. One
+ *   blank — `codigo,nombre,,precio` — went through and became a row key of `''`, which is what
+ *   broke the "Editar correspondencia" grid.
+ *
+ * The reported `header` is the text as the user typed it, never the normalized form: the point of
+ * the message is to help them find the column in their own file.
+ *
+ * @param {string[]} headers trimmed header cells, in file order.
+ * @throws {ImportParseError} on a blank header or a duplicate one.
+ */
+export function validateHeaders(headers) {
+  const seen = new Set();
+  headers.forEach((header, index) => {
+    if (header === '') {
+      throw new ImportParseError(`Column ${index + 1} has no header.`, {
+        messageKey: 'importErrorEmptyHeader',
+        params: { position: index + 1 },
+      });
+    }
+    const normalized = normalizeHeader(header);
+    if (seen.has(normalized)) {
+      throw new ImportParseError(`Duplicate column header: "${header}"`, {
+        messageKey: 'importErrorDuplicateHeader',
+        params: { header },
+      });
+    }
+    seen.add(normalized);
+  });
 }
 
 const REPLACEMENT_CHAR = '\uFFFD';
@@ -108,16 +153,7 @@ export function parseDelimited(text) {
   const delimiter = detectDelimiter(lines[0]);
   const headers = splitLine(lines[0], delimiter).map((h) => h.trim());
 
-  const seen = new Set();
-  for (const header of headers) {
-    if (seen.has(header)) {
-      throw new ImportParseError(`Duplicate column header: "${header}"`, {
-        messageKey: 'importErrorDuplicateHeader',
-        params: { header },
-      });
-    }
-    seen.add(header);
-  }
+  validateHeaders(headers);
 
   const rows = lines.slice(1).map((line) => {
     const cells = splitLine(line, delimiter);
@@ -127,6 +163,17 @@ export function parseDelimited(text) {
     });
     return row;
   });
+
+  // ETP-5348: a file carrying only its header row is not "empty" — `lines.length` is 1, so the
+  // empty-file guard above never fired — but there is nothing to import either. The dialog used
+  // to walk on to a review screen with zero rows and simply refuse to advance, with no message
+  // explaining why. Distinct key from `importErrorFileEmpty` so the wording can say what is
+  // actually wrong: the columns are fine, the data is missing.
+  if (rows.length === 0) {
+    throw new ImportParseError('The file has no data rows — only the column headers.', {
+      messageKey: 'importErrorNoDataRows',
+    });
+  }
 
   return { delimiter, headers, rows };
 }

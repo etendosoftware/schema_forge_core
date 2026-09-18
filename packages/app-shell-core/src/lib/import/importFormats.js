@@ -64,3 +64,21 @@ export function formatNames(formats) {
 export function isXlsxFileName(name) {
   return /\.xlsx$/i.test(String(name ?? ''));
 }
+
+/**
+ * Whether an uploaded file's name carries one of the declared input extensions.
+ *
+ * ETP-5348: `acceptAttribute` feeds the file input's `accept`, which is a **picker hint, not a
+ * gate** — drag-and-drop ignores it outright, and every OS file chooser offers an "All files"
+ * escape. So an arbitrary file reached the parser, and `parseDelimited` never refused it either:
+ * `decodeCsvBuffer` falls back to Windows-1252, an encoding that maps every possible byte and
+ * therefore cannot fail, so a `.docx` (a zip) decoded into one garbage column that matched no
+ * field. The user landed on the mapping screen with nothing mapped and no explanation.
+ *
+ * A name with no extension is rejected too: the parser choice downstream is made by extension, so
+ * a file whose format we cannot name is a file we cannot promise to read.
+ */
+export function isAcceptedFileName(name, formats) {
+  const extension = String(name ?? '').toLowerCase().match(/\.([a-z0-9]+)$/)?.[1];
+  return extension ? normalize(formats).includes(extension) : false;
+}

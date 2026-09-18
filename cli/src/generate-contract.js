@@ -410,6 +410,74 @@ function applyFieldUIHints(f, mapped) {
  * Generate frontend contract: visible fields, searchable fields, computed fields.
  * Includes behavioral metadata (callout, displayLogic, readOnlyLogic) when present.
  */
+export function mapFieldForContract(f, { rules = [], columnMap = {}, booleanFields = [] } = {}) {
+  const mapped = {
+    name: f.name,
+    apiKey: f.apiKey || f.name,
+    column: f.column,
+    label: f.label,
+    type: f.type,
+    tsType: mapTsType(f.type),
+    visibility: f.visibility,
+    required: f.required,
+    grid: f.grid,
+    form: f.form,
+  };
+  mapFieldAttributes(f, mapped);
+
+  // UI hints
+  applyFieldUIHints(f, mapped);
+  if (f.inline) mapped.inline = true;
+  // HandleDefaults opt-out: the add-row never applies a backend-resolved
+  // default to a field flagged skipDefault.
+  if (f.skipDefault) mapped.skipDefault = true;
+
+  // Behavioral metadata: validationRule (e.g. M_PriceList.issopricelist = @isSOTrx@)
+  if (f.validationRule) mapped.validationRule = f.validationRule;
+
+  // Behavioral metadata: callout
+  if (f.callout) {
+    processCalloutMetadata(mapped, f, rules);
+  }
+
+  // Behavioral metadata: onChangeFunction
+  if (f.onChangeFunction) {
+    mapped.onChangeFunction = { name: f.onChangeFunction };
+  }
+
+  // Public API curation (ETP-5345): copied verbatim from decisions.json so the
+  // public-api-schema resolver can read field.publicApi straight off contract.json.
+  if (f.publicApi) {
+    mapped.publicApi = f.publicApi;
+  }
+
+  // Behavioral metadata: displayLogic
+  if (f.displayLogic) {
+    processDisplayLogic(mapped, f, rules, columnMap);
+  }
+  // Standalone displayLogicJs on custom fields that have no raw displayLogic
+  if (f.displayLogicJs != null && !mapped.displayLogic) {
+    mapped.displayLogic = { js: f.displayLogicJs, evaluable: true };
+  }
+
+  // Behavioral metadata: readOnlyLogic
+  if (f.readOnlyLogic) {
+    applyReadOnlyLogic(mapped, f, rules, columnMap, booleanFields);
+  }
+  // Prefer explicit readOnlyLogicJs from decisions over AD-expression translation.
+  // This overrides whatever applyReadOnlyLogic derived, so clear any non-evaluable
+  // marker it left (e.g. 'untranslatable-token' when the raw AD expr didn't parse) —
+  // the explicit JS is authoritative and evaluable.
+  if (f.readOnlyLogicJs != null) {
+    if (!mapped.readOnlyLogic) mapped.readOnlyLogic = {};
+    mapped.readOnlyLogic.js = f.readOnlyLogicJs;
+    mapped.readOnlyLogic.evaluable = true;
+    delete mapped.readOnlyLogic.reason;
+  }
+
+  return mapped;
+}
+
 export function generateFrontendContract(schema, rules = []) {
   const entities = {};
 
@@ -422,67 +490,7 @@ export function generateFrontendContract(schema, rules = []) {
   for (const entity of schema.entities) {
     const visibleFields = entity.fields.filter(isVisible);
 
-    const fields = visibleFields.map(f => {
-      const mapped = {
-        name: f.name,
-        apiKey: f.apiKey || f.name,
-        column: f.column,
-        label: f.label,
-        type: f.type,
-        tsType: mapTsType(f.type),
-        visibility: f.visibility,
-        required: f.required,
-        grid: f.grid,
-        form: f.form,
-      };
-      mapFieldAttributes(f, mapped);
-
-      // UI hints
-      applyFieldUIHints(f, mapped);
-      if (f.inline) mapped.inline = true;
-      // HandleDefaults opt-out: the add-row never applies a backend-resolved
-      // default to a field flagged skipDefault.
-      if (f.skipDefault) mapped.skipDefault = true;
-
-      // Behavioral metadata: validationRule (e.g. M_PriceList.issopricelist = @isSOTrx@)
-      if (f.validationRule) mapped.validationRule = f.validationRule;
-
-      // Behavioral metadata: callout
-      if (f.callout) {
-        processCalloutMetadata(mapped, f, rules);
-      }
-
-      // Behavioral metadata: onChangeFunction
-      if (f.onChangeFunction) {
-        mapped.onChangeFunction = { name: f.onChangeFunction };
-      }
-
-      // Behavioral metadata: displayLogic
-      if (f.displayLogic) {
-        processDisplayLogic(mapped, f, rules, columnMap);
-      }
-      // Standalone displayLogicJs on custom fields that have no raw displayLogic
-      if (f.displayLogicJs != null && !mapped.displayLogic) {
-        mapped.displayLogic = { js: f.displayLogicJs, evaluable: true };
-      }
-
-      // Behavioral metadata: readOnlyLogic
-      if (f.readOnlyLogic) {
-        applyReadOnlyLogic(mapped, f, rules, columnMap, booleanFields);
-      }
-      // Prefer explicit readOnlyLogicJs from decisions over AD-expression translation.
-      // This overrides whatever applyReadOnlyLogic derived, so clear any non-evaluable
-      // marker it left (e.g. 'untranslatable-token' when the raw AD expr didn't parse) —
-      // the explicit JS is authoritative and evaluable.
-      if (f.readOnlyLogicJs != null) {
-        if (!mapped.readOnlyLogic) mapped.readOnlyLogic = {};
-        mapped.readOnlyLogic.js = f.readOnlyLogicJs;
-        mapped.readOnlyLogic.evaluable = true;
-        delete mapped.readOnlyLogic.reason;
-      }
-
-      return mapped;
-    });
+    const fields = visibleFields.map(f => mapFieldForContract(f, { rules, columnMap, booleanFields }));
 
     const searchableFields = visibleFields
       .filter(f => f.searchable)
@@ -652,6 +660,10 @@ const FIELD_ATTR_SPECS = [
   // "https://") rendered before a text input; see resolve-curated.js's
   // FIELD_DECISION_COPY_PROPS for the full description.
   ['inputPrefix', 'verbatim'],
+  // ETP-5382 — same append-at-tail rule as above. Sibling of `backendFilterKey`
+  // for sorting; see resolve-curated.js's FIELD_DECISION_COPY_PROPS for the
+  // full description.
+  ['backendSortKey', 'verbatim'],
 ];
 
 function mapFieldAttributes(f, mapped) {
