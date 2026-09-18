@@ -155,6 +155,17 @@ export function ImportDialog({ open, onOpenChange, config, token, postBatch, sim
   // inside buildOperations, where the user only saw it after confirming the import.
   const numericTargets = useMemo(() => config.fields.filter((f) => f.isNumeric).map((f) => f.target), [config.fields]);
 
+  /**
+   * One locale lookup with an English fallback, the same posture `validateRows.js` and
+   * `importEngine.js` take: no translator, an unknown key, or a dictionary that echoes the
+   * key back all degrade to the English text rather than printing a raw key at the user.
+   */
+  const localize = useCallback((key, fallback, params) => {
+    if (typeof translate !== 'function') return fallback;
+    const translated = translate(key, params);
+    return translated && translated !== key ? translated : fallback;
+  }, [translate]);
+
   // The template is written in the session language, so the header a user gets back in
   // their filled-in file is NOT necessarily the field's first (Spanish) alias. Adding that
   // header to the field's aliases is what keeps the round-trip working in any language:
@@ -167,12 +178,23 @@ export function ImportDialog({ open, onOpenChange, config, token, postBatch, sim
       config.fields.map((f) => ({ ...f, required: false })),
       { headerFor: fieldLabelFn },
     );
-    return config.fields.map((field, i) => (
-      headers[i] && !(field.aliases ?? []).includes(headers[i])
-        ? { ...field, aliases: [...(field.aliases ?? []), headers[i]] }
-        : field
-    ));
-  }, [config.fields, fieldLabelFn]);
+    return config.fields.map((field, i) => {
+      // ETP-5350 — the EXAMPLE row follows the session language too. The headers were already
+      // localized here; the sample values under them were not, so an English template came out
+      // with Spanish data ("Tornillo hexagonal M8", "Unidad", "Herramientas") and the user who
+      // asked for an English file opened it to find a language they did not choose.
+      //
+      // Resolved from `exampleKey` when the window declares one, falling back to `example` —
+      // which stays the value for everything that is language-neutral (a code, an email, a
+      // phone) and for any window that has not declared keys. `translate` is the dialog's own
+      // resolver, the same one the error messages use.
+      const example = field.exampleKey ? localize(field.exampleKey, field.example) : field.example;
+      const localized = example === field.example ? field : { ...field, example };
+      return headers[i] && !(localized.aliases ?? []).includes(headers[i])
+        ? { ...localized, aliases: [...(localized.aliases ?? []), headers[i]] }
+        : localized;
+    });
+  }, [config.fields, fieldLabelFn, localize]);
   // `matchEntity` presence is the real signal a column needs FK resolution — there is no
   // separate `isForeignKey` flag anywhere in the actual pipeline: generate-contract.js
   // never emits one (it only backfills `type`/`reference` from the contract), and
@@ -240,17 +262,6 @@ export function ImportDialog({ open, onOpenChange, config, token, postBatch, sim
    */
   const maxRows = config.limit?.maxRows ?? config.maxRows ?? 5000;
   const concurrency = config.limit?.concurrency ?? config.concurrency ?? 4;
-
-  /**
-   * One locale lookup with an English fallback, the same posture `validateRows.js` and
-   * `importEngine.js` take: no translator, an unknown key, or a dictionary that echoes the
-   * key back all degrade to the English text rather than printing a raw key at the user.
-   */
-  const localize = useCallback((key, fallback, params) => {
-    if (typeof translate !== 'function') return fallback;
-    const translated = translate(key, params);
-    return translated && translated !== key ? translated : fallback;
-  }, [translate]);
 
   // The two reasons a row is skipped rather than failed. Both are shown verbatim in the
   // review queue, so both go through `translate` — they were hardcoded English strings
@@ -711,7 +722,7 @@ export function ImportDialog({ open, onOpenChange, config, token, postBatch, sim
                   onSkipEntry={handleSkipEntry}
                   onUnskipEntry={handleUnskipEntry}
                   onApplyFkValue={handleApplyFkValue}
-                  onDownloadErrors={() => downloadCsv(buildErrorsCsv(entries, headers, mapping, labels?.reviewQueue?.statusError), 'import-errors.csv')}
+                  onDownloadErrors={() => downloadCsv(buildErrorsCsv(entries, headers, mapping, labels?.reviewQueue?.statusError, labels?.reviewQueue?.skippedByUser), 'import-errors.csv')}
                   labels={labels?.reviewQueue}
                   simSearchFn={simSearchFn}
                   fieldLabelFn={fieldLabelFn}
@@ -756,7 +767,7 @@ export function ImportDialog({ open, onOpenChange, config, token, postBatch, sim
                   onSkipEntry={handleSkipEntry}
                   onUnskipEntry={handleUnskipEntry}
                   onApplyFkValue={handleApplyFkValue}
-                  onDownloadErrors={() => downloadCsv(buildErrorsCsv(entries, headers, mapping, labels?.reviewQueue?.statusError), 'import-errors.csv')}
+                  onDownloadErrors={() => downloadCsv(buildErrorsCsv(entries, headers, mapping, labels?.reviewQueue?.statusError, labels?.reviewQueue?.skippedByUser), 'import-errors.csv')}
                   retryLabel={labels?.reviewQueue?.retry ?? 'Retry'}
                   labels={labels?.reviewQueue}
                   simSearchFn={simSearchFn}

@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, afterEach } from 'vitest';
 import { render, screen, fireEvent, cleanup } from '@testing-library/react';
-import { ImportReviewQueue, buildErrorsCsv } from '../ImportReviewQueue.jsx';
+import { ImportReviewQueue, buildErrorsCsv, needsAttention } from '../ImportReviewQueue.jsx';
 
 // cmdk (the FK-mismatch popover's command list) observes its list size via
 // ResizeObserver and scrolls the selected item into view — neither of which
@@ -97,6 +97,87 @@ describe('buildErrorsCsv', () => {
     };
     const csv = buildErrorsCsv([entry], headers, mapping);
     expect(csv).not.toContain('Pais');
+  });
+
+  /**
+   * ETP-5349 — a row the user skipped BY HAND was shown under the "Errors" tag, counted in its
+   * badge, and then missing from the downloaded file: skipping adds no error, and this builder
+   * tested only `errors.length`. Skip every row of a file and the download came out as a header
+   * line and nothing else. The screen and the file disagreed with nothing to notice it by.
+   */
+  describe('rows the user skipped by hand', () => {
+    const skipped = { row: { name: 'Lucia', email: 'lucia@x.com' }, errors: [], status: 'skipped' };
+
+    it('writes the skipped row, which used to be dropped for having no error', () => {
+      const csv = buildErrorsCsv([skipped], headers, mapping);
+      const [, dataLine] = csv.split('\n');
+      expect(dataLine).toBe('Lucia,lucia@x.com,Skipped by the user.');
+    });
+
+    it('translates the reason when the caller supplies one', () => {
+      const csv = buildErrorsCsv([skipped], headers, mapping, 'Motivo', 'Omitida por el usuario.');
+      expect(csv.split('\n')[0]).toBe('Nombre Comercial,Correo,Motivo');
+      expect(csv.split('\n')[1]).toBe('Lucia,lucia@x.com,Omitida por el usuario.');
+    });
+
+    // A skip WITH a reason already carries it as an error — an in-file duplicate, a record that
+    // already exists. That reason is the specific one, and it must not be overwritten by the
+    // generic fallback.
+    it('keeps the recorded reason when the skip has one, rather than the fallback', () => {
+      const withReason = {
+        row: { name: 'Andres', email: 'andres@x.com' },
+        errors: [{ target: '', message: 'Duplicate row (already in file).' }],
+        status: 'skipped',
+      };
+      const csv = buildErrorsCsv([withReason], headers, mapping, 'Error', 'Skipped by the user.');
+      expect(csv.split('\n')[1]).toBe('Andres,andres@x.com,Duplicate row (already in file).');
+    });
+
+    // The bug's worst shape: nothing is wrong with any row, so the file was header-only.
+    it('produces a file with every row when the user skips all of them', () => {
+      const rows = [
+        { row: { name: 'A', email: 'a@x.com' }, errors: [], status: 'skipped' },
+        { row: { name: 'B', email: 'b@x.com' }, errors: [], status: 'skipped' },
+      ];
+      const csv = buildErrorsCsv(rows, headers, mapping);
+      expect(csv.split('\n').filter((l) => l.trim()).length).toBe(3); // header + 2
+    });
+  });
+});
+
+/**
+ * ETP-5349 — the single definition of "this row is under the Errors tag". It was written out
+ * three times (the filter, the tab counts, the CSV builder) and the CSV's copy disagreed, which
+ * is the whole defect. The contract worth pinning is that it answers for BOTH reasons a row
+ * lands there, not just for errors.
+ */
+describe('needsAttention', () => {
+  const headers = ['Nombre Comercial', 'Correo', 'Pais'];
+  const mapping = { 'Nombre Comercial': 'name', 'Correo': 'email', 'Pais': null };
+
+  it('is true for a row with errors and for a row the user skipped, and false otherwise', () => {
+    expect(needsAttention({ errors: [{ message: 'x' }], status: 'pending' })).toBe(true);
+    expect(needsAttention({ errors: [], status: 'skipped' })).toBe(true);
+    expect(needsAttention({ errors: [{ message: 'x' }], status: 'skipped' })).toBe(true);
+    expect(needsAttention({ errors: [], status: 'pending' })).toBe(false);
+  });
+
+  // The builder and the tab must not be able to drift again: whatever the predicate says is in,
+  // the file has, for every combination of the two reasons.
+  it('agrees with what buildErrorsCsv writes, for every combination', () => {
+    const rows = [
+      { row: { name: 'ok', email: 'ok@x.com' }, errors: [], status: 'pending' },
+      { row: { name: 'err', email: 'err@x.com' }, errors: [{ message: 'bad' }], status: 'pending' },
+      { row: { name: 'skip', email: 'skip@x.com' }, errors: [], status: 'skipped' },
+      { row: { name: 'both', email: 'both@x.com' }, errors: [{ message: 'bad' }], status: 'skipped' },
+    ];
+    const csv = buildErrorsCsv(rows, headers, mapping);
+    const written = csv.split('\n').slice(1).filter((l) => l.trim());
+    expect(written).toHaveLength(rows.filter(needsAttention).length);
+    for (const entry of rows.filter(needsAttention)) {
+      expect(csv).toContain(entry.row.name);
+    }
+    expect(csv).not.toContain('ok@x.com');
   });
 });
 
