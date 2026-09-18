@@ -216,6 +216,13 @@ const FIELD_DECISION_COPY_PROPS = [
   // ("cCurrencyID"), not the AD column ("C_Currency_ID"). Absent ⇒ unchanged
   // behavior (the row's `currency$_identifier`, then the session currency).
   'currencyField',
+  // ETP-5133 — opt out of the default grid-cell ellipsis/truncate behavior:
+  // the value renders in full, scrolling horizontally within its own cell
+  // when it overflows, instead of being clipped with a hover tooltip. Read
+  // directly off the column object by InlineLinesPanel's renderLineCell/
+  // ReadCell/LookupTrigger — see docs/decisions-reference.md's Grid cell
+  // flags table (etendo_schema_forge repo).
+  'noTruncate',
   'inline',
   'addLineFromSibling',
   // Opt-in (ETP-4529): collect this field into the ONE synthetic `dimensionsPanel`
