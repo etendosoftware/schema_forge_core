@@ -665,6 +665,10 @@ const FIELD_ATTR_SPECS = [
   // "https://") rendered before a text input; see resolve-curated.js's
   // FIELD_DECISION_COPY_PROPS for the full description.
   ['inputPrefix', 'verbatim'],
+  // ETP-5382 — same append-at-tail rule as above. Sibling of `backendFilterKey`
+  // for sorting; see resolve-curated.js's FIELD_DECISION_COPY_PROPS for the
+  // full description.
+  ['backendSortKey', 'verbatim'],
 ];
 
 function mapFieldAttributes(f, mapped) {

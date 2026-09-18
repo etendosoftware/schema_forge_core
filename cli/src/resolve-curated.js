@@ -282,6 +282,26 @@ const FIELD_DECISION_COPY_PROPS = [
   // property the criteria is built against.
   'filterMode',
   'backendFilterKey',
+  // ETP-5382 — sibling of `backendFilterKey` for SORTING, consumed by
+  // resolveBackendSort() in app-shell-core's gridQuery.js. Overrides the entity
+  // property the sort criteria is built against.
+  //
+  // Both keys are EXPLICIT, per-field opt-ins: nothing is inferred here from a
+  // rename. When decisions.json renames a field via `name` (e.g. AD column
+  // `SOPOType`, whose real OBDal/Hibernate property is `salesPurchaseType`,
+  // exposed as `applicableTo`), the frontend sends the contract key as the
+  // filter/sort param while Etendo Classic's AdvancedQueryBuilder resolves it
+  // against the real property — silently dropping the filter criterion and
+  // failing the sort. Renaming a GRID field therefore REQUIRES declaring both
+  // keys by hand in that field's decisions.json entry.
+  //
+  // FK caveat: declaring `backendSortKey` at all makes resolveBackendSort()
+  // treat the value as final (no `$_identifier` suffix is appended afterwards),
+  // so a renamed foreign key must spell the suffix out itself
+  // (`finPaymentmethodID$_identifier`) or the column orders by the join
+  // column's UUID. Filtering needs no suffix. Full rule and worked examples:
+  // `docs/decisions-reference.md` in the functional repo.
+  'backendSortKey',
   // ETP-5345 — public API curation: { exposed, name, type, handlerId }. Copied
   // verbatim so generate-contract.js's mapFieldForContract can stamp it onto
   // contract.json for the generate-public-api-schema.js resolver to read.
