@@ -453,11 +453,36 @@ describe('ImportDialog — ETP-4996', () => {
   it('still imports when the existence lookup fails', async () => {
     // A pre-flight check that cannot reach the server must not block an import the
     // server would have accepted.
+    //
+    // Note what it still does NOT do: the row shows as Correcta, which reads as "checked, and
+    // not a duplicate" for a check that never completed. `findExistingKeys` reports the
+    // difference through `complete`; nothing in this dialog surfaces it.
     const existingKeyFetchFn = vi.fn(async () => { throw new Error('network down'); });
     render(<ImportDialog open config={productConfig} token="t" postBatch={vi.fn()}
       simSearchFn={vi.fn()} existingKeyFetchFn={existingKeyFetchFn} onImported={() => {}} />);
     await uploadTo('codigo,nombre,precio\nSKU-1001,Tornillo,3.50');
     expect(screen.getByTestId('ImportReviewQueue__statusFilterCount-ok').textContent).toContain('1');
+  });
+
+  // ETP-5374, the half that survives any batch size: one failing request used to discard the
+  // answers of every request that had succeeded, so a single network blip erased the whole
+  // check. The file is large enough to need several batches, and exactly one of them fails.
+  it('keeps the duplicates found by the batches that answered when one batch fails', async () => {
+    const rows = Array.from({ length: 120 }, (_, i) => `SKU-${String(i).padStart(4, '0')},Item ${i},1.00`);
+    const existingKeyFetchFn = vi.fn(async (criteria) => {
+      const values = criteria.criteria.map((term) => term.value);
+      // Deterministic rather than call-ordered: the batches run concurrently, so "the second
+      // call" is a race, while "the batch carrying SKU-0000" is always the same one.
+      if (values.includes('SKU-0000')) throw new Error('network blip');
+      return values.filter((v) => v === 'SKU-0119').map((searchKey) => ({ searchKey }));
+    });
+    render(<ImportDialog open config={productConfig} token="t" postBatch={vi.fn()}
+      simSearchFn={vi.fn()} existingKeyFetchFn={existingKeyFetchFn} onImported={() => {}} />);
+    await uploadTo(`codigo,nombre,precio\n${rows.join('\n')}`);
+
+    expect(existingKeyFetchFn.mock.calls.length).toBeGreaterThan(1);
+    // SKU-0119 lives in a batch that answered: its duplicate must survive the failed one.
+    expect(screen.getByTestId('ImportReviewQueue__statusFilterCount-ok').textContent).toContain('119');
   });
 
   it('fails a row with a non-numeric price during review, not at send time', async () => {
@@ -667,5 +692,77 @@ describe('ImportDialog — closing while the send is running', () => {
     fireEvent.click(screen.getByLabelText('Close'));
     expect(onOpenChange).toHaveBeenCalledWith(false);
     expect(screen.queryByTestId('ImportSendingCloseDialog__title')).toBeNull();
+  });
+});
+
+/**
+ * ETP-5348 — the two rejections that need the dialog rather than a parser, because both depend on
+ * the window's own `config`: which formats it declares, and what row limit it declares.
+ */
+describe('ImportDialog — ETP-5348 file rejection', () => {
+  const formatsConfig = { ...config, formats: ['csv', 'txt', 'xlsx'] };
+
+  /** Drops a file straight on the input, bypassing `accept` exactly as a real drag-and-drop does. */
+  function dropFile(name, content = 'Name,Email\nAna,ana@x.com') {
+    const input = screen.getByTestId('ImportDropzone__fileInput');
+    fireEvent.change(input, { target: { files: [new File([content], name)] } });
+  }
+
+  it('rejects a file whose extension the window does not declare, naming the accepted formats', async () => {
+    // The reported case: a Word document reached `parseDelimited`, whose Windows-1252 fallback
+    // decodes ANY byte sequence without error, so it became one garbage column that matched no
+    // field and the user landed on an empty mapping screen with nothing said.
+    render(<ImportDialog open config={formatsConfig} token="t" postBatch={vi.fn()} simSearchFn={vi.fn()} onImported={() => {}} />);
+    dropFile('products-invalid-format.docx');
+    await waitFor(() => screen.getByTestId('ImportFileErrorDialog__title'));
+    expect(screen.getByTestId('ImportFileErrorDialog__message').textContent).toContain('CSV, TXT, XLSX');
+  });
+
+  it('judges the extension against the window\'s declaration, not a fixed list', async () => {
+    // The base config declares no formats, so it falls back to csv/txt — an xlsx must be refused
+    // there even though the window above accepts one.
+    //
+    // Asserting the MESSAGE, not just that some error appeared: a file named `.xlsx` carrying CSV
+    // bytes also makes `parseXlsx` throw, so "the file-error dialog is showing" passes with the
+    // format gate removed entirely. Only the gate can produce a message naming CSV and TXT.
+    render(<ImportDialog open config={config} token="t" postBatch={vi.fn()} simSearchFn={vi.fn()} onImported={() => {}} />);
+    dropFile('contacts.xlsx');
+    await waitFor(() => screen.getByTestId('ImportFileErrorDialog__title'));
+    expect(screen.getByTestId('ImportFileErrorDialog__message').textContent).toContain('CSV, TXT');
+  });
+
+  it('still accepts a declared format', async () => {
+    render(<ImportDialog open config={formatsConfig} token="t" postBatch={vi.fn()} simSearchFn={vi.fn()} onImported={() => {}} />);
+    dropFile('contacts.csv');
+    await waitFor(() => screen.getByTestId('ImportColumnMapping__chip-Name'));
+  });
+
+  it('rejects a file with more rows than the window\'s declared limit, instead of truncating in silence', async () => {
+    // The bug: `runImport` applied `maxRows` as `rows.slice(0, maxRows)` at SEND time, so the
+    // extra rows were never attempted, never counted and never reported. A 5001-row file
+    // imported 5000 and lost the last one with nothing on screen to say so.
+    const limited = { ...config, formats: ['csv'], limit: { maxRows: 2, concurrency: 4 } };
+    render(<ImportDialog open config={limited} token="t" postBatch={vi.fn()} simSearchFn={vi.fn()} onImported={() => {}} />);
+    dropFile('contacts.csv', 'Name,Email\nA,a@x.com\nB,b@x.com\nC,c@x.com');
+    await waitFor(() => screen.getByTestId('ImportFileErrorDialog__title'));
+    const message = screen.getByTestId('ImportFileErrorDialog__message').textContent;
+    expect(message).toContain('3');
+    expect(message).toContain('2');
+  });
+
+  it('reads the limit from the nested `limit` block the contract actually produces', async () => {
+    // `config.maxRows` was always `undefined` — the contract nests it under `limit` — so
+    // `runImport`'s own default of 5000 silently took over and a declared limit did nothing.
+    // Exactly the limit is accepted; one more is not.
+    const limited = { ...config, formats: ['csv'], limit: { maxRows: 2, concurrency: 4 } };
+    render(<ImportDialog open config={limited} token="t" postBatch={vi.fn()} simSearchFn={vi.fn()} onImported={() => {}} />);
+    dropFile('contacts.csv', 'Name,Email\nA,a@x.com\nB,b@x.com');
+    await waitFor(() => screen.getByTestId('ImportColumnMapping__chip-Name'));
+  });
+
+  it('rejects a file that carries only its header row', async () => {
+    render(<ImportDialog open config={formatsConfig} token="t" postBatch={vi.fn()} simSearchFn={vi.fn()} onImported={() => {}} />);
+    dropFile('contacts.csv', 'Name,Email');
+    await waitFor(() => screen.getByTestId('ImportFileErrorDialog__title'));
   });
 });
