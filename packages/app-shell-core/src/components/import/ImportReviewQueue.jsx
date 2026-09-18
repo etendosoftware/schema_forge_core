@@ -25,6 +25,10 @@ const DEFAULT_LABELS = {
   bulkApplyDescription: '{count} other row(s) also have "{raw}". Apply "{value}" to all of them too?',
   bulkApplyOnlyThis: 'Just this row',
   bulkApplyAll: 'Apply to all',
+  // ETP-5349. Only ever reached by a row the user skipped BY HAND: every other skip
+  // (in-file duplicate, already exists) records its own reason as an error, and that
+  // reason is what the file shows. A hand-skipped row has no error to explain it.
+  skippedByUser: 'Skipped by the user.',
 };
 
 /**
@@ -358,13 +362,42 @@ function FkMismatchCell({ index, field, value, error, onSelect, simSearchFn, tok
  * one — the downloaded file is read by the same user who could not read the English messages
  * on screen, so leaving one English header in it would only move the problem into the file.
  */
-export function buildErrorsCsv(entries, headers, mapping, errorHeader = 'Error') {
+/**
+ * Whether a row belongs under the "Errors" tag: it carries errors, or the user skipped it.
+ *
+ * ETP-5349 — the ONE definition of that question. It used to be written out three times: the
+ * filter, the tab counts, and `buildErrorsCsv`. The first two agreed; the CSV did not, testing
+ * only `errors.length` — so a row the user skipped by hand appeared in the tab, was counted in
+ * its badge, and was then missing from the downloaded file, which came out with nothing but its
+ * header line. The screen and the file disagreed with no way for the user to notice.
+ *
+ * Exported because that is the point: a caller that renders its own queue asks the same
+ * question here rather than writing a fourth copy of it.
+ */
+export function needsAttention(entry) {
+  return entry.status === 'skipped' || entry.errors.length > 0;
+}
+
+/**
+ * The rows under the "Errors" tag, as CSV.
+ *
+ * @param {Array<object>} entries The review queue's entries.
+ * @param {string[]} headers The uploaded file's headers, in file order.
+ * @param {object} mapping header -> target.
+ * @param {string} [errorHeader] Caption of the reason column.
+ * @param {string} [skippedText] Reason written for a row the user skipped by hand, which is the
+ *   only kind that carries no error of its own. Every other skip — an in-file duplicate, a record
+ *   that already exists — records its reason as an error at skip time, and that is what is shown.
+ */
+export function buildErrorsCsv(entries, headers, mapping, errorHeader = 'Error', skippedText = DEFAULT_LABELS.skippedByUser) {
   const mappedHeaders = headers.filter((h) => mapping[h]);
   const lines = [[...mappedHeaders, errorHeader].map(csvField).join(',')];
   for (const entry of entries) {
-    if (entry.errors.length === 0) continue;
+    if (!needsAttention(entry)) continue;
     const values = mappedHeaders.map((h) => entry.row[mapping[h]]);
-    const errorText = entry.errors.map((e) => (e.target ? `${e.target}: ${e.message}` : e.message)).join(' | ');
+    const errorText = entry.errors.length > 0
+      ? entry.errors.map((e) => (e.target ? `${e.target}: ${e.message}` : e.message)).join(' | ')
+      : skippedText;
     lines.push([...values, errorText].map(csvField).join(','));
   }
   return lines.join('\n');
@@ -415,14 +448,13 @@ export function ImportReviewQueue({
     .filter(({ entry, index }) => {
       if (statusFilter === 'all') return true;
       if (focusedCell?.index === index) return true;
-      const isAttentionNeeded = entry.status === 'skipped' || entry.errors.length > 0;
-      return statusFilter === 'error' ? isAttentionNeeded : !isAttentionNeeded;
+      return statusFilter === 'error' ? needsAttention(entry) : !needsAttention(entry);
     });
 
   const counts = {
     all: entries.length,
-    ok: entries.filter((e) => e.status !== 'skipped' && e.errors.length === 0).length,
-    error: entries.filter((e) => e.status === 'skipped' || e.errors.length > 0).length,
+    ok: entries.filter((e) => !needsAttention(e)).length,
+    error: entries.filter(needsAttention).length,
   };
 
   // Awaiting the user's yes/no on whether a just-picked FK fix should also apply to every

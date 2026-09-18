@@ -5,6 +5,7 @@ import {
   acceptAttribute,
   formatNames,
   inputFormats,
+  isAcceptedFileName,
   isXlsxFileName,
   outputFormats,
 } from '../importFormats.js';
@@ -81,5 +82,52 @@ describe('isXlsxFileName', () => {
   it('survives a missing name', () => {
     assert.ok(!isXlsxFileName(undefined));
     assert.ok(!isXlsxFileName(null));
+  });
+});
+
+/**
+ * ETP-5348. `accept` on the file input only filters the OS picker's default view — drag-and-drop
+ * ignores it and every chooser offers "All files" — so this is the only real gate an upload
+ * passes before a parser sees it.
+ */
+describe('isAcceptedFileName', () => {
+  const FORMATS = ['csv', 'txt', 'xlsx'];
+
+  it('accepts a declared extension regardless of case', () => {
+    assert.equal(isAcceptedFileName('productos.csv', FORMATS), true);
+    assert.equal(isAcceptedFileName('PRODUCTOS.CSV', FORMATS), true);
+    assert.equal(isAcceptedFileName('productos.XlsX', FORMATS), true);
+  });
+
+  it('rejects the formats the reported bug actually used', () => {
+    // The QA run uploaded a Word document and landed on an empty mapping screen with no message,
+    // because `decodeCsvBuffer`'s Windows-1252 fallback decodes any byte sequence without error.
+    assert.equal(isAcceptedFileName('products-invalid-format.docx', FORMATS), false);
+    assert.equal(isAcceptedFileName('catalogo.pdf', FORMATS), false);
+  });
+
+  it('rejects a file with no extension at all', () => {
+    // The parser is chosen by extension, so a format we cannot name is one we cannot promise
+    // to read.
+    assert.equal(isAcceptedFileName('productos', FORMATS), false);
+    assert.equal(isAcceptedFileName('', FORMATS), false);
+    assert.equal(isAcceptedFileName(undefined, FORMATS), false);
+  });
+
+  it('judges against the window\'s own declaration, not a hardcoded list', () => {
+    // A window that never declared xlsx must not silently accept one just because another
+    // window does.
+    assert.equal(isAcceptedFileName('productos.xlsx', ['csv', 'txt']), false);
+    assert.equal(isAcceptedFileName('productos.csv', ['csv', 'txt']), true);
+  });
+
+  it('falls back to the default formats when the window declares none', () => {
+    assert.equal(isAcceptedFileName('productos.csv', undefined), true);
+    assert.equal(isAcceptedFileName('productos.xlsx', undefined), false);
+  });
+
+  it('is not fooled by an accepted extension appearing mid-name', () => {
+    assert.equal(isAcceptedFileName('lista.csv.docx', FORMATS), false);
+    assert.equal(isAcceptedFileName('informe-csv-final.pdf', FORMATS), false);
   });
 });
