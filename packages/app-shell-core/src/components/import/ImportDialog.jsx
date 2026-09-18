@@ -711,7 +711,7 @@ export function ImportDialog({ open, onOpenChange, config, token, postBatch, sim
                   onSkipEntry={handleSkipEntry}
                   onUnskipEntry={handleUnskipEntry}
                   onApplyFkValue={handleApplyFkValue}
-                  onDownloadErrors={() => downloadCsv(buildErrorsCsv(entries, headers, mapping, labels?.reviewQueue?.statusError), 'import-errors.csv')}
+                  onDownloadErrors={() => downloadCsv(buildErrorsCsv(entries, headers, mapping, labels?.reviewQueue?.statusError, labels?.reviewQueue?.skippedByUser), 'import-errors.csv')}
                   labels={labels?.reviewQueue}
                   simSearchFn={simSearchFn}
                   fieldLabelFn={fieldLabelFn}
@@ -756,7 +756,7 @@ export function ImportDialog({ open, onOpenChange, config, token, postBatch, sim
                   onSkipEntry={handleSkipEntry}
                   onUnskipEntry={handleUnskipEntry}
                   onApplyFkValue={handleApplyFkValue}
-                  onDownloadErrors={() => downloadCsv(buildErrorsCsv(entries, headers, mapping, labels?.reviewQueue?.statusError), 'import-errors.csv')}
+                  onDownloadErrors={() => downloadCsv(buildErrorsCsv(entries, headers, mapping, labels?.reviewQueue?.statusError, labels?.reviewQueue?.skippedByUser), 'import-errors.csv')}
                   retryLabel={labels?.reviewQueue?.retry ?? 'Retry'}
                   labels={labels?.reviewQueue}
                   simSearchFn={simSearchFn}
