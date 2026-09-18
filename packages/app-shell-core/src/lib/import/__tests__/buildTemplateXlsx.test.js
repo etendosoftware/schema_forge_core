@@ -2,6 +2,7 @@ import { describe, it } from 'node:test';
 import assert from 'node:assert/strict';
 import { buildTemplateXlsx } from '../buildTemplateXlsx.js';
 import { buildTemplateCsv, resolveTemplateHeaders } from '../buildTemplateCsv.js';
+import readXlsxFile from 'read-excel-file/universal';
 import { parseXlsx } from '../parseXlsx.js';
 import { mapColumns } from '../mapColumns.js';
 
@@ -75,15 +76,30 @@ describe('buildTemplateXlsx', () => {
     assert.equal(rows[0][headers[4]], '08018');
   });
 
+  /**
+   * ETP-5348: `parseXlsx` now REFUSES a workbook whose only non-blank row is the header, so a
+   * header-only template can no longer be read back through it. Reading the sheet directly is
+   * the right adjustment rather than relaxing the parser: re-uploading the blank template
+   * unedited is precisely the mistake the new `importErrorNoDataRows` message exists to explain,
+   * so each of these two cases asserts BOTH halves — the template really does carry only its
+   * header row, and handing that file straight back to the import is rejected for saying so.
+   */
+  async function assertHeaderRowOnly(fields, options) {
+    const blob = await buildTemplateXlsx(fields, options);
+    assert.equal((await readXlsxFile(blob, { trim: false })).length, 1);
+    await assert.rejects(parseXlsx(blob), (error) => {
+      assert.equal(error.messageKey, 'importErrorNoDataRows');
+      return true;
+    });
+  }
+
   it('emits the header row alone when no field declares an example', async () => {
     const bare = FIELDS.map(({ example, ...rest }) => rest);
-    const { rows } = await readTemplate(bare, { headerFor });
-    assert.deepEqual(rows, []);
+    await assertHeaderRowOnly(bare, { headerFor });
   });
 
   it('emits the header row alone when the example row is switched off', async () => {
-    const { rows } = await readTemplate(FIELDS, { headerFor, includeExampleRow: false });
-    assert.deepEqual(rows, []);
+    await assertHeaderRowOnly(FIELDS, { headerFor, includeExampleRow: false });
   });
 
   it('writes a single sheet, which is the only shape parseXlsx accepts', async () => {
