@@ -289,6 +289,11 @@ function applyGridHints(f, mapped) {
   if (f.grow) mapped.grow = true;
   if (f.columnWidth != null) mapped.columnWidth = f.columnWidth;
   if (f.gridReadOnly) mapped.gridReadOnly = true;
+  // ETP-5133 — opt out of the default grid-cell truncate/ellipsis: the value
+  // renders in full and scrolls horizontally within its own cell on overflow.
+  // Read directly off the column object by InlineLinesPanel (functional repo);
+  // passed through unconditionally like every other grid cell flag here.
+  if (f.noTruncate) mapped.noTruncate = true;
   // ETP-4603 — composite `multiField` list-column decorator (host grid field).
   // Passed through verbatim; generate-frontend.js resolves its part fields and
   // emits the `type: 'multiField'` column plus the absorbed-column suppression.
