@@ -1030,6 +1030,7 @@ describe('AuthContext — access-load effect runs without a selected role (ETP-5
     const { result } = renderHook(() => useAuth(), {
       wrapper: ({ children }) => (
         <AuthProvider
+          restoreSession={null}
           storage={createMemoryAuthStorage()}
           fetchWindowAccess={fetchWindowAccess}
           initialSession={{ token: 'tok', selectedRole: { id: 'role-1' } }}>
@@ -1063,6 +1064,7 @@ describe('AuthContext — access-load effect runs without a selected role (ETP-5
     const { result } = renderHook(() => useAuth(), {
       wrapper: ({ children }) => (
         <AuthProvider
+          restoreSession={null}
           storage={createMemoryAuthStorage()}
           fetchWindowAccess={fetchWindowAccess}
           initialSession={{ token: 'tok', selectedRole: { id: 'role-1' } }}>
