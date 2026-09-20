@@ -247,6 +247,29 @@ export function ImportDialog({ open, onOpenChange, config, token, postBatch, sim
   // dedupeRows.js). Guard against that same failure mode for any other future empty/
   // missing config: dedupe only runs when there's an actual non-empty key list.
   const dedupeKeyTargets = config.dedupe?.key ?? [];
+  const dedupesAgainstDatabase = config.dedupe?.scope === 'database' && dedupeKeyTargets.length > 0;
+
+  /**
+   * ETP-5350 / IC-18 — what the existing-record lookup has already answered.
+   *
+   * `runValidation` ran the lookup exactly once, over the rows as the FILE delivered them, and
+   * nothing re-ran it afterwards. `buildLookupKey` returns `null` when any part of the key is
+   * blank, so a file with no CIF/NIF column produced a null key for every row, asked the
+   * database about none of them, and imported them all as new — even the ones the user then
+   * typed a CIF into during the review. The review is where a key is most likely to be BORN,
+   * and it was the one moment the check ignored.
+   *
+   * Two sets rather than one, because "not found" and "never asked" are different answers and
+   * collapsing them is the original bug in miniature:
+   *  - `checked` — every key the database has answered about. What makes the re-check
+   *    incremental: an untouched row is never asked about twice.
+   *  - `existing` — of those, the ones that came back. Needed because a row can ADOPT a key
+   *    that some other row already had checked; the verdict is about the key, not the row.
+   *
+   * Refs, not state: nothing renders from them, and `handleProceedToConfirm` reads them inside
+   * an async callback where a state snapshot would be the one captured at click time.
+   */
+  const lookupCacheRef = useRef({ checked: new Set(), existing: new Set() });
 
   /**
    * ETP-5348: the contract nests these under `limit` — `window.import.limit` in decisions.json,
@@ -312,9 +335,22 @@ export function ImportDialog({ open, onOpenChange, config, token, postBatch, sim
     //
     // `findExistingKeys` also reports `complete`, which nothing here reads: a row whose batch
     // failed is presented exactly like one that was checked and found absent.
-    const { existing: existingKeys } = config.dedupe?.scope === 'database'
+    const { existing: existingKeys } = dedupesAgainstDatabase
       ? await findExistingKeys({ rows: uniqueRows, keyTargets: dedupeKeyTargets, fetchFn: existingKeyFetchFn })
       : { existing: new Set() };
+
+    // A new file (or a re-mapping) invalidates everything the previous one established, so the
+    // cache is rebuilt here rather than merged into. What was asked is every non-null key of
+    // `uniqueRows` — `findExistingKeys` skips the null ones, and so must this, or a blank key
+    // would be recorded as "checked, absent" and never looked at again.
+    const checked = new Set();
+    if (dedupesAgainstDatabase) {
+      for (const row of uniqueRows) {
+        const key = buildLookupKey(row, dedupeKeyTargets);
+        if (key !== null) checked.add(key);
+      }
+    }
+    lookupCacheRef.current = { checked, existing: new Set(existingKeys) };
 
     const validated = uniqueRows.map((row) => {
       const key = buildLookupKey(row, dedupeKeyTargets);
@@ -336,7 +372,7 @@ export function ImportDialog({ open, onOpenChange, config, token, postBatch, sim
 
     const skippedDuplicates = duplicates.map((d) => ({ row: d.row, errors: [{ target: '', message: labelFor('duplicateInFile') }], status: 'skipped' }));
     setEntries([...validated, ...skippedDuplicates]);
-  }, [dedupeKeyTargets, fkColumns, revalidate, simSearchFn, token, config, existingKeyFetchFn, labelFor]);
+  }, [dedupeKeyTargets, dedupesAgainstDatabase, fkColumns, revalidate, simSearchFn, token, config, existingKeyFetchFn, labelFor]);
 
   const handleFileSelected = useCallback(async (file) => {
     try {
@@ -464,6 +500,77 @@ export function ImportDialog({ open, onOpenChange, config, token, postBatch, sim
 
   const validCount = entries.filter((e) => e.status === 'pending' && e.errors.length === 0).length;
   const skipCount = entries.length - validCount;
+
+  /**
+   * ETP-5350 / IC-18 — the last chance to notice a row is already in the database.
+   *
+   * Runs on the way from the review to the confirm step, NOT on every edit: the lookup is a
+   * batched network call (~136 requests for a full file since ETP-5374), and the field it
+   * watches is wired to the row input's `onChange`, so per-keystroke would be absurd. Once per
+   * confirm is enough because the confirm step is the only thing between an edit and the send.
+   *
+   * It must run BEFORE the confirm step renders, not inside `handleSend`: that step's whole
+   * job is to state how many rows will be imported and how many skipped. Re-checking after the
+   * user has read those numbers would make the dialog's one factual claim a lie — the same
+   * "the row counts they confirmed were a lie" that motivated the pre-flight check itself.
+   *
+   * Only rows that would actually be sent are considered, and only keys nobody has asked about
+   * yet are sent to the server, so the common case — nothing edited — costs zero requests.
+   *
+   * Deliberately one-directional: a row is moved INTO Saltada, never back out. A row already
+   * marked as existing may have been skipped by hand instead, and un-skipping rows behind the
+   * user's back is a worse failure than leaving one they can un-skip themselves.
+   */
+  const handleProceedToConfirm = useCallback(async () => {
+    if (!dedupesAgainstDatabase || typeof existingKeyFetchFn !== 'function') {
+      setStep(STEP.CONFIRM);
+      return;
+    }
+    const candidates = entries
+      .map((entry, index) => ({ entry, index, key: buildLookupKey(entry.row, dedupeKeyTargets) }))
+      .filter(({ entry, key }) => key !== null && entry.status === 'pending' && entry.errors.length === 0);
+
+    const { checked, existing } = lookupCacheRef.current;
+    const unasked = candidates.filter(({ key }) => !checked.has(key));
+
+    if (unasked.length > 0) {
+      setIsRevalidating(true);
+      try {
+        const found = await findExistingKeys({
+          rows: unasked.map(({ entry }) => entry.row),
+          keyTargets: dedupeKeyTargets,
+          fetchFn: existingKeyFetchFn,
+        });
+        // Merged, not replaced: the batches answered during `runValidation` are still true, and
+        // `findExistingKeys` was only asked about the new keys.
+        unasked.forEach(({ key }) => checked.add(key));
+        found.existing.forEach((key) => existing.add(key));
+      } catch {
+        // The initial lookup has always been best-effort: an unavailable server must not
+        // turn a reviewable file into an impossible import. Keep that posture for the
+        // pre-confirm re-check too. Send-time duplicate handling remains the backstop.
+      } finally {
+        setIsRevalidating(false);
+      }
+    }
+
+    // Re-derived over EVERY candidate, not just the ones just asked about: a row can have been
+    // edited onto a key some other row had already established as existing, and that verdict is
+    // about the key, not about the row that first carried it.
+    const nowExisting = new Set(
+      candidates.filter(({ key }) => existing.has(key)).map(({ index }) => index),
+    );
+    if (nowExisting.size > 0) {
+      setEntries((prev) => prev.map((entry, i) => (nowExisting.has(i)
+        ? {
+          ...entry,
+          errors: [{ target: dedupeKeyTargets[0] ?? '', message: labelFor('alreadyExists'), isSkipReason: true }],
+          status: 'skipped',
+        }
+        : entry)));
+    }
+    setStep(STEP.CONFIRM);
+  }, [dedupesAgainstDatabase, dedupeKeyTargets, entries, existingKeyFetchFn, labelFor]);
 
   const handleSend = useCallback(async () => {
     setStep(STEP.SENDING);
@@ -732,8 +839,8 @@ export function ImportDialog({ open, onOpenChange, config, token, postBatch, sim
               <div className="flex justify-end">
                 <Button
                   type="button"
-                  onClick={() => setStep(STEP.CONFIRM)}
-                  disabled={validCount === 0}
+                  onClick={handleProceedToConfirm}
+                  disabled={validCount === 0 || isRevalidating}
                   data-testid="ImportDialog__importButton"
                 >
                   {text.importButton(validCount)}

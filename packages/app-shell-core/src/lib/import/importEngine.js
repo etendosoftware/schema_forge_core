@@ -29,6 +29,14 @@ const IMPORT_ERROR_FALLBACKS = {
   importErrorDependentInvalidName: (p) => `Cannot generate a valid identifier from "${p.value}".`,
   importErrorDependentKeyConflict: (p) => `Derived code "${p.key}" conflicts with existing record "${p.existing}".`,
   importErrorCategoryUnresolved: (p) => `The category "${p.category}" could not be resolved or created.`,
+  // ETP-5350 — the TRANSPORT kinds: the request never produced a response to classify. Same
+  // contract as every kind above (an i18n key plus an English default), so the rejection path
+  // in `sendRow` can go through `friendlyImportMessage` exactly like the response path does.
+  importErrorServerFailure: (p) => `The server rejected the request (error ${p.status}).`,
+  importErrorSessionExpired: () => 'Your session has expired. Sign in again and retry the import.',
+  importErrorConnection: () => 'Could not reach the server. Check your connection and retry.',
+  importErrorTimeout: () => 'The server took too long to answer. The row may or may not have been imported — check before retrying.',
+  importErrorUnknown: () => 'Unknown error.',
 };
 
 /** snake_case / camelCase DB column → a human-readable "Title Case" label, self-contained. */
@@ -92,14 +100,53 @@ export function classifyImportError(rawMessage) {
 }
 
 /**
+ * Classifies a REJECTION — `postBatch` threw, so there is no response body to read and
+ * `classifyImportError`'s message shapes do not apply. Every throw that can land here
+ * carries a hardcoded English message written at its throw site: `Batch failed (<status>)`
+ * (the app's own batch hook, for a non-ok response whose body is not even JSON),
+ * `Unauthorized` (apiFetch's 401 branch), the browser's `Failed to fetch`, a
+ * {@link BatchTimeoutError}. Recognized by `name` first and prose second, because the name
+ * is ours and the prose is not — a browser is free to word `Failed to fetch` differently
+ * per engine and per language, so it must never be the only signal.
+ *
+ * A thrower that already knows its kind says so with `messageKey` (+ optional `params`) —
+ * the same contract `parseDelimited`/`parseXlsx` use for file-level errors — and that
+ * always wins over parsing prose.
+ */
+export function classifyTransportError(error) {
+  if (error?.messageKey) return { key: error.messageKey, params: error.params ?? {} };
+  const name = String(error?.name || '');
+  const msg = String(error?.message || '');
+  if (name === 'BatchTimeoutError' || name === 'AbortError' || /timed?\s?out/i.test(msg)) {
+    return { key: 'importErrorTimeout', params: {} };
+  }
+  if (/^unauthorized$/i.test(msg.trim()) || /\b401\b/.test(msg)) {
+    return { key: 'importErrorSessionExpired', params: {} };
+  }
+  // The status the batch hook puts in parentheses. Bounded to 3 digits so this cannot match
+  // an arbitrary parenthesised number somewhere else in the sentence.
+  const status = msg.match(/\((\d{3})\)/);
+  if (status) return { key: 'importErrorServerFailure', params: { status: status[1] } };
+  if (name === 'TypeError' || /failed to fetch|networkerror|network\s?request failed|load failed|network/i.test(msg)) {
+    return { key: 'importErrorConnection', params: {} };
+  }
+  return { key: 'importErrorUnknown', params: {} };
+}
+
+/**
  * Turns a classification into the user-facing message. With an injected `translate` it
  * returns the localized string (falling back to the English default if the key is missing —
  * `translate` returning the key unchanged is the "missing" signal, same guard the app's own
  * translate helpers use). With no `translate`, the English default. Never the raw backend text.
+ *
+ * `fallbackText` covers the one case the map cannot: a thrower that declared its own
+ * `messageKey` for a key this module does not know. Even then the raw text is the LAST
+ * resort, reached only when the app has no translation for a key its own code chose.
  */
-function friendlyImportMessage(classification, translate) {
+function friendlyImportMessage(classification, translate, fallbackText) {
   const { key, params } = classification;
-  const fallback = IMPORT_ERROR_FALLBACKS[key](params);
+  const build = IMPORT_ERROR_FALLBACKS[key];
+  const fallback = build ? build(params) : (fallbackText || IMPORT_ERROR_FALLBACKS.importErrorGeneric());
   if (typeof translate !== 'function') return fallback;
   const translated = translate(key, params);
   return translated && translated !== key ? translated : fallback;
@@ -136,10 +183,25 @@ export async function sendRow(operations, { postBatch, translate } = {}) {
   try {
     response = await postBatch(operations);
   } catch (error) {
-    // No structured response to inspect at all — the closest thing to a "trace" is the
-    // rejection's own stack, which console.error already loses once this bubbles up
-    // through a Promise.all in the bounded pool.
-    return { status: SEND_STATUS.UNKNOWN, error: Object.assign(error, { raw: error.raw ?? (error.stack || error.message) }) };
+    // ETP-5350 — this branch used to hand the thrown Error straight back, so its own
+    // `message` became the user-facing text: `Batch failed (500)`, `Unauthorized`,
+    // `Failed to fetch`. All three are hardcoded English at their throw sites, and they
+    // were printed verbatim in the review-queue row and in the blocking system-error
+    // dialog's red line — inside a flow that is Spanish everywhere else. That is exactly
+    // the leak the committed-failure branch below was written to prevent; the rejection
+    // path simply skipped the guard. It now classifies and localizes like any other
+    // outcome.
+    //
+    // The status stays UNKNOWN, unchanged: `/batch` has no idempotency key, so a rejection
+    // is still "may or may not have committed", never a safe retry target.
+    //
+    // Nothing diagnostic is lost. `raw` keeps the original English text AND the response
+    // body when the thrower captured one; with no body it keeps the stack, the closest
+    // thing to a trace here — console.error loses it once this bubbles up through a
+    // Promise.all in the bounded pool.
+    const raw = error?.raw ? `${error.message}\n\n${error.raw}` : (error?.stack || error?.message);
+    const message = friendlyImportMessage(classifyTransportError(error), translate, error?.message);
+    return { status: SEND_STATUS.UNKNOWN, error: { ...error, name: error?.name, message, raw } };
   }
   if (response.committed) {
     const recordId = response.operations?.[0]?.recordId;

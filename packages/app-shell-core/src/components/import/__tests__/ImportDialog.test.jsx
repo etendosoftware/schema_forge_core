@@ -827,3 +827,140 @@ describe('ImportDialog — ETP-5348 file rejection', () => {
     await waitFor(() => screen.getByTestId('ImportFileErrorDialog__title'));
   });
 });
+
+/**
+ * ETP-5350 / IC-18 — the existing-record lookup must survive an edit to the dedupe key.
+ *
+ * `runValidation` ran it once, over the rows as the FILE delivered them, and nothing re-ran it.
+ * `buildLookupKey` returns `null` when any part of the key is blank, so a row that arrives
+ * WITHOUT its key was never asked about — and the review is precisely where a missing key gets
+ * typed in. The contacts dedupe key is `taxID`, which is also a required column, so the real
+ * shape of the bug is: the row lands in Errores for the missing key, the user fills it, the row
+ * turns Correcta, and it is imported as new however many copies of it the database already has.
+ * The re-check runs on the way to the confirm step, so the counts that step states are true.
+ */
+describe('ImportDialog — ETP-5350 dedupe re-check after editing the key', () => {
+  const keyedConfig = {
+    spec: 'product',
+    entity: 'product',
+    descriptor: 'etp5350-demo',
+    fields: [
+      // Required, like the real dedupe keys (contacts' taxID, product's searchKey): a row that
+      // arrives without it is an ERROR row, not a silently-unchecked valid one.
+      { target: 'searchKey', label: 'Search Key', aliases: ['codigo'], required: true, example: 'SKU-1001' },
+      { target: 'name', label: 'Name', aliases: ['nombre'], required: true, example: 'Tornillo M8' },
+    ],
+    dedupe: { scope: 'database', key: ['searchKey'] },
+  };
+
+  async function uploadTo(content) {
+    fireEvent.change(screen.getByTestId('ImportDropzone__fileInput'), {
+      target: { files: [makeFile(content, 'products.csv')] },
+    });
+    await waitFor(() => screen.getByTestId('ImportReviewQueue__statusFilter-ok'));
+  }
+
+  /** Every searchKey the lookup has been asked about, flattened across batches. */
+  function askedKeys(fetchFn) {
+    return fetchFn.mock.calls.flatMap(([criteria]) => criteria.criteria.map((term) => term.value));
+  }
+
+  it('asks the database about a key the user typed during the review, and skips the row', async () => {
+    const existingKeyFetchFn = vi.fn(async (criteria) => criteria.criteria
+      .filter((term) => term.value === 'SKU-1001')
+      .map((term) => ({ searchKey: term.value })));
+    render(<ImportDialog open config={keyedConfig} token="t" postBatch={vi.fn()}
+      simSearchFn={vi.fn()} existingKeyFetchFn={existingKeyFetchFn} onImported={() => {}} />);
+    // Arrives with no key at all: nothing to look up, and nothing was looked up.
+    await uploadTo('codigo,nombre\n,Tornillo');
+    expect(askedKeys(existingKeyFetchFn)).not.toContain('SKU-1001');
+
+    fireEvent.click(screen.getByTestId('ImportReviewQueue__statusFilter-error'));
+    fireEvent.change(screen.getByTestId('ImportReviewQueue__input-0-searchKey'), {
+      target: { value: 'SKU-1001' },
+    });
+    fireEvent.click(screen.getByTestId('ImportDialog__importButton'));
+
+    await waitFor(() => screen.getByTestId('ImportConfirmStep__title'));
+    expect(askedKeys(existingKeyFetchFn)).toContain('SKU-1001');
+    // The count the confirm step states must already account for the row it just disqualified.
+    expect(screen.getByTestId('ImportConfirmStep__importCount').textContent).toContain('0');
+  });
+
+  it('applies a verdict the lookup already gave when a row is edited ONTO a known key', async () => {
+    // The verdict belongs to the KEY, not to the row that first carried it: row 0 established
+    // that SKU-1001 exists, and row 1 then adopts it. Re-deriving over every candidate — not
+    // only the ones just asked about — is what covers this, and it costs no request, because
+    // the key was already answered on the first pass.
+    const existingKeyFetchFn = vi.fn(async (criteria) => criteria.criteria
+      .filter((term) => term.value === 'SKU-1001')
+      .map((term) => ({ searchKey: term.value })));
+    render(<ImportDialog open config={keyedConfig} token="t" postBatch={vi.fn()}
+      simSearchFn={vi.fn()} existingKeyFetchFn={existingKeyFetchFn} onImported={() => {}} />);
+    // Row 1 arrives with no key, so it is an error row — which is also the only kind the queue
+    // lets you edit: a clean cell is read-only until something is wrong with it.
+    await uploadTo('codigo,nombre\nSKU-1001,Existente\n,Sin clave');
+    const callsAfterUpload = existingKeyFetchFn.mock.calls.length;
+
+    fireEvent.click(screen.getByTestId('ImportReviewQueue__statusFilter-error'));
+    fireEvent.change(screen.getByTestId('ImportReviewQueue__input-1-searchKey'), {
+      target: { value: 'SKU-1001' },
+    });
+    fireEvent.click(screen.getByTestId('ImportDialog__importButton'));
+
+    await waitFor(() => screen.getByTestId('ImportConfirmStep__title'));
+    expect(existingKeyFetchFn.mock.calls.length).toBe(callsAfterUpload);
+    expect(screen.getByTestId('ImportConfirmStep__importCount').textContent).toContain('0');
+  });
+
+  it('costs no extra request when nothing was edited', async () => {
+    // The lookup is ~136 requests for a full file (ETP-5374). Re-asking about keys the first
+    // pass already answered would double that on every confirm, for nothing.
+    const existingKeyFetchFn = vi.fn(async () => []);
+    render(<ImportDialog open config={keyedConfig} token="t" postBatch={vi.fn()}
+      simSearchFn={vi.fn()} existingKeyFetchFn={existingKeyFetchFn} onImported={() => {}} />);
+    await uploadTo('codigo,nombre\nSKU-1,Uno\nSKU-2,Dos');
+    const callsAfterUpload = existingKeyFetchFn.mock.calls.length;
+    expect(callsAfterUpload).toBeGreaterThan(0);
+
+    fireEvent.click(screen.getByTestId('ImportDialog__importButton'));
+
+    await waitFor(() => screen.getByTestId('ImportConfirmStep__title'));
+    expect(existingKeyFetchFn.mock.calls.length).toBe(callsAfterUpload);
+    expect(screen.getByTestId('ImportConfirmStep__importCount').textContent).toContain('2');
+  });
+
+  it('does not re-check a window that never opted into database dedupe', async () => {
+    const existingKeyFetchFn = vi.fn(async () => []);
+    render(<ImportDialog open config={{ ...keyedConfig, dedupe: { scope: 'file', key: ['searchKey'] } }}
+      token="t" postBatch={vi.fn()} simSearchFn={vi.fn()} existingKeyFetchFn={existingKeyFetchFn} onImported={() => {}} />);
+    await uploadTo('codigo,nombre\n,Tornillo');
+
+    fireEvent.click(screen.getByTestId('ImportReviewQueue__statusFilter-error'));
+    fireEvent.change(screen.getByTestId('ImportReviewQueue__input-0-searchKey'), {
+      target: { value: 'SKU-1001' },
+    });
+    fireEvent.click(screen.getByTestId('ImportDialog__importButton'));
+
+    await waitFor(() => screen.getByTestId('ImportConfirmStep__title'));
+    expect(existingKeyFetchFn).not.toHaveBeenCalled();
+  });
+
+  it('still reaches the confirm step when the re-check fails', async () => {
+    // Unchanged posture: a pre-flight check that cannot reach the server must never block an
+    // import the server would have accepted. Send-time duplicate handling stays the backstop.
+    const existingKeyFetchFn = vi.fn(async () => { throw new Error('network down'); });
+    render(<ImportDialog open config={keyedConfig} token="t" postBatch={vi.fn()}
+      simSearchFn={vi.fn()} existingKeyFetchFn={existingKeyFetchFn} onImported={() => {}} />);
+    await uploadTo('codigo,nombre\n,Tornillo');
+
+    fireEvent.click(screen.getByTestId('ImportReviewQueue__statusFilter-error'));
+    fireEvent.change(screen.getByTestId('ImportReviewQueue__input-0-searchKey'), {
+      target: { value: 'SKU-1001' },
+    });
+    fireEvent.click(screen.getByTestId('ImportDialog__importButton'));
+
+    await waitFor(() => screen.getByTestId('ImportConfirmStep__title'));
+    expect(screen.getByTestId('ImportConfirmStep__importCount').textContent).toContain('1');
+  });
+});
