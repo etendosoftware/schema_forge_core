@@ -2,6 +2,8 @@ import { describe, it, expect, vi, beforeAll, beforeEach, afterEach } from 'vite
 import '@testing-library/jest-dom/vitest';
 import { render, screen, cleanup, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
+// Raw source of the component under test, for the ETP-5009 invariant at the bottom.
+import advancedFilterBuilderSource from '../AdvancedFilterBuilder.jsx?raw';
 
 // Core vitest runs without `globals: true`, so RTL's automatic afterEach
 // cleanup is not registered — do it explicitly to avoid DOM bleed between tests.
@@ -2503,5 +2505,85 @@ describe('AdvancedFilterBuilder — save preset uses the draft (ETP-5007)', () =
       .toHaveTextContent('filterPresetBlockedIncomplete');
     expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
     expect(onSavePreset).not.toHaveBeenCalled();
+  });
+});
+
+// ================================================================
+// ETP-5009 — changing the field must reset the operator SELECT itself
+// ================================================================
+// `updateRow` already clears `row.operator` when the field changes, but the
+// trigger kept rendering the previous operator (or went blank) because the
+// Select was handed `undefined` for an empty operator, which drops Radix out of
+// controlled mode and leaves the value it stored internally when the user
+// picked the operator. Two symptoms, one cause:
+//   - the old operator is absent from the new mode's list  -> empty trigger,
+//     no placeholder (Radix holds a value, but no SelectItem matches it);
+//   - the old operator is shared with the new mode         -> the trigger keeps
+//     showing it while `row.operator` is '', so Apply stays disabled silently.
+// The operator MUST be chosen through the UI here: seeding it via `value` never
+// populates Radix's internal state, so the bug would not reproduce.
+describe('operator select resets when the field changes (ETP-5009)', () => {
+  const COLS = [
+    { key: 'name', label: 'Name', type: 'text', column: 'Name' },
+    { key: 'orderDate', label: 'Order Date', type: 'date', column: 'OrderDate' },
+    { key: 'partner', label: 'Partner', type: 'selector', column: 'C_BPartner_ID' },
+  ];
+
+  const pickFrom = async (user, testId, optionName) => {
+    await user.click(screen.getByTestId(testId));
+    await user.click(await screen.findByRole('option', { name: optionName }));
+  };
+
+  const seedTextContains = async (user) => {
+    render(<AdvancedFilterBuilder columns={COLS} />);
+    await pickFrom(user, 'advanced-filter-field', 'Name');
+    await pickFrom(user, 'advanced-filter-operator', 'opContains');
+    expect(screen.getByTestId('advanced-filter-operator')).toHaveTextContent('opContains');
+  };
+
+  it('shows the placeholder when the new field mode drops the old operator', async () => {
+    const user = userEvent.setup();
+    await seedTextContains(user);
+
+    // text -> date: OPERATORS_BY_MODE.date has no 'iContains'.
+    await pickFrom(user, 'advanced-filter-field', 'OrderDate');
+
+    const operator = screen.getByTestId('advanced-filter-operator');
+    expect(operator).toHaveTextContent('advancedFilterSelectOp');
+    expect(operator).not.toHaveTextContent('opContains');
+  });
+
+  it('shows the placeholder even when the new field mode shares the old operator', async () => {
+    const user = userEvent.setup();
+    await seedTextContains(user);
+
+    // text -> identifier: both modes offer 'iContains', so the stale internal
+    // value renders happily and the UI lies about the (cleared) row state.
+    await pickFrom(user, 'advanced-filter-field', 'C_BPartner_ID');
+
+    const operator = screen.getByTestId('advanced-filter-operator');
+    expect(operator).toHaveTextContent('advancedFilterSelectOp');
+    expect(operator).not.toHaveTextContent('opContains');
+  });
+});
+
+// ================================================================
+// ETP-5009 — the FIELD select must stay controlled too
+// ================================================================
+// INVARIANT TEST, not a regression test: unlike the operator select above, the
+// field defect is NOT reachable through the UI today. Every path that empties a
+// field goes through `makeEmptyRow`/`ensureRowKeys`, which mint a fresh
+// `_rowKey`, so React remounts the Select and Radix's internal state is
+// discarded anyway. The moment a future change clears `field` in place (as
+// `updateRow` already does for `operator`), `|| undefined` would resurrect the
+// stale value exactly as it did for the operator — so the invariant is pinned at
+// the source, which is the only level at which it can currently fail.
+describe('field select stays controlled (ETP-5009)', () => {
+  const source = advancedFilterBuilderSource;
+
+  it('hands both row selects the empty string, never undefined', () => {
+    expect(source).toMatch(/value=\{row\.field \?\? ''\}/);
+    expect(source).toMatch(/value=\{row\.operator \?\? ''\}/);
+    expect(source).not.toMatch(/value=\{row\.(field|operator) \|\| undefined\}/);
   });
 });
