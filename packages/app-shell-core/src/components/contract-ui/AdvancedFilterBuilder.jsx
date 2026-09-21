@@ -529,7 +529,13 @@ export function AdvancedFilterBuilder({
                   up to max-w, floored by min-w, never grabs free space (no gap) */}
               <div className="w-fit min-w-[12rem] max-w-[22rem]">
                 <Select
-                  value={row.field || undefined}
+                  // ETP-5009: same rule as the operator Select below — pass the
+                  // empty string, NOT undefined, which would drop Radix out of
+                  // controlled mode and let it render the value it stored
+                  // internally instead of the row's. Nothing clears `field`
+                  // programmatically today, so this is prevention, and the two
+                  // sibling selects staying identical is the point.
+                  value={row.field ?? ''}
                   onValueChange={(v) => updateRow(idx, { field: v })}
                   data-testid="Select__4eedf1">
                   <SelectTrigger className="h-9 text-xs" data-testid="advanced-filter-field">
@@ -548,7 +554,14 @@ export function AdvancedFilterBuilder({
                   up to max-w, floored by min-w, never grabs free space (no gap) */}
               <div className="w-fit min-w-[12rem] max-w-[18rem]">
                 <Select
-                  value={row.operator || undefined}
+                  // ETP-5009: pass the empty string, NOT undefined. `undefined`
+                  // drops Radix out of controlled mode, so after `updateRow`
+                  // clears the operator on a field change the Select falls back
+                  // to the value it stored internally when the user picked it —
+                  // rendering a stale operator when the new mode still offers it,
+                  // or a blank trigger with no placeholder when it does not.
+                  // Radix shows the placeholder for '' and stays controlled.
+                  value={row.operator ?? ''}
                   onValueChange={(v) => updateRow(idx, { operator: v })}
                   disabled={!col}
                   data-testid="Select__4eedf1">
@@ -1091,11 +1104,21 @@ function IdentifierMultiPicker({ col, entity, apiBaseUrl, rows, value, onChange,
   const triggerLabel = selected.length === 0
     ? ui('advancedFilterSelectValue')
     : (
-      <span className="inline-flex items-center gap-1 truncate">
+      // ETP-5331 follow-up: this wrapper used to be `inline-flex`, which never
+      // shrinks below its content's natural width (a flex/inline-flex item's
+      // default min-width is `auto`) — so it rendered at full size and got
+      // hard-clipped by the OUTER span's `overflow:hidden` below with no "…"
+      // painted (CSS text-overflow: ellipsis only paints on a clipped run of
+      // plain inline text, not on a hard-clipped nested flex box). `flex
+      // w-full min-w-0` makes this wrapper actually fill/shrink within the
+      // OUTER span's box, and `min-w-0 truncate` on the label span makes IT
+      // the element that shrinks and gets the ellipsis. Icon/badge siblings
+      // get `shrink-0` so they don't get squeezed instead of the label.
+      <span className="flex w-full min-w-0 items-center gap-1">
         {firstSelected?.pending
-          ? <Loader2 className="h-3 w-3 animate-spin" data-testid="Loader2__4eedf1" />
-          : <span className="truncate">{firstSelected?.label}</span>}
-        {selected.length > 1 && <span>{`+${selected.length - 1}`}</span>}
+          ? <Loader2 className="h-3 w-3 shrink-0 animate-spin" data-testid="Loader2__4eedf1" />
+          : <span className="min-w-0 truncate">{firstSelected?.label}</span>}
+        {selected.length > 1 && <span className="shrink-0">{`+${selected.length - 1}`}</span>}
       </span>
     );
 

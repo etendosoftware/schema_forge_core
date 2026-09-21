@@ -2,6 +2,8 @@ import { describe, it, expect, vi, beforeAll, beforeEach, afterEach } from 'vite
 import '@testing-library/jest-dom/vitest';
 import { render, screen, cleanup, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
+// Raw source of the component under test, for the ETP-5009 invariant at the bottom.
+import advancedFilterBuilderSource from '../AdvancedFilterBuilder.jsx?raw';
 
 // Core vitest runs without `globals: true`, so RTL's automatic afterEach
 // cleanup is not registered — do it explicitly to avoid DOM bleed between tests.
@@ -1430,6 +1432,190 @@ describe('AdvancedFilterBuilder — content-based sizing (ETP-4705)', () => {
 });
 
 // ================================================================
+// ETP-5331 — value column max-w bound.
+//
+// A long selector label (e.g. a BPartner name) used to grow the value
+// column's wrapper div unbounded (`flex-1 min-w-0` / `flex-[2] min-w-0` for
+// the isBetween two-input case), which widened the whole `w-max` filter
+// panel along with it and overlapped table columns. The fix bounds the
+// wrapper with `max-w-[16rem]` (single value) / `max-w-[22rem]` (isBetween),
+// so the existing `truncate` styling inside gets a box to truncate against.
+// These assertions lock the bound in place so a regression back to the
+// unbounded flex styles is caught immediately.
+// ================================================================
+describe('AdvancedFilterBuilder — value column width bound (ETP-5331)', () => {
+  it('single-value case: value wrapper is bounded by max-w-[16rem]', () => {
+    const { container } = render(<AdvancedFilterBuilder columns={COLUMNS} />);
+    const wrapper = container.querySelector('div.max-w-\\[16rem\\]');
+    expect(wrapper).not.toBeNull();
+    const cls = wrapper.className;
+
+    expect(cls).toContain('max-w-[16rem]');
+    expect(cls).toContain('flex-1');
+    expect(cls).toContain('min-w-0');
+  });
+
+  it('isBetween case: value wrapper is bounded by max-w-[22rem], not unbounded flex-[2]', () => {
+    const value = {
+      rowOperator: 'and',
+      conditions: [{ field: 'amount', operator: 'between', value: ['', ''] }],
+    };
+    const { container } = render(<AdvancedFilterBuilder columns={COLUMNS} value={value} />);
+    // Both the Field select wrapper (w-fit, no flex) and the isBetween value
+    // wrapper (flex-[2]) carry max-w-[22rem] in this case — scope the
+    // selector to flex-[2] to land on the value wrapper specifically.
+    const wrapper = container.querySelector('div.flex-\\[2\\].max-w-\\[22rem\\]');
+    expect(wrapper).not.toBeNull();
+    const cls = wrapper.className;
+
+    expect(cls).toContain('max-w-[22rem]');
+    expect(cls).toContain('flex-[2]');
+    expect(cls).toContain('min-w-0');
+  });
+
+  it('a long selected identifier label truncates inside the bounded wrapper instead of growing it (regression guard)', () => {
+    const bpCol = { key: 'bp', label: 'Partner', type: 'selector', column: 'C_BPartner_ID' };
+    const longLabel = 'Sociedad Mercantil Industrial de Componentes Electromecanicos del Sur S.A. de C.V.';
+    distinctState.values = [{ id: 'BP1', _identifier: longLabel }];
+    const value = {
+      rowOperator: 'and',
+      conditions: [{ field: 'bp', operator: 'equals', value: ['BP1'] }],
+    };
+    const { container } = render(
+      <AdvancedFilterBuilder
+        columns={[bpCol]}
+        value={value}
+        rows={[{ bp: 'BP1', 'bp$_identifier': longLabel }]}
+        entity="business-partners"
+        apiBaseUrl="/api"
+      />,
+    );
+
+    const labelNode = screen.getByText(longLabel);
+    expect(labelNode).toBeInTheDocument();
+    // The label is rendered inside the trigger's `truncate` span.
+    expect(labelNode.className).toContain('truncate');
+
+    const wrapper = container.querySelector('div.max-w-\\[16rem\\]');
+    expect(wrapper).not.toBeNull();
+    expect(wrapper.className).toContain('max-w-[16rem]');
+    // The long label lives inside the bounded wrapper, not escaping it.
+    expect(wrapper.contains(labelNode)).toBe(true);
+  });
+});
+
+// ================================================================
+// ETP-5331 follow-up — the trigger label's "…" must actually paint.
+//
+// The bound added above (max-w-[16rem] on the OUTER wrapper) stopped the
+// panel from growing, but a separate bug survived it: the OUTER span
+// (`truncate`, direct child of the trigger <button>) correctly shrinks and
+// gets `overflow:hidden`/`text-overflow:ellipsis` — but its only child, the
+// MIDDLE wrapper span around the label/spinner/count-badge, was
+// `inline-flex`. A flex/inline-flex item's default `min-width` is `auto`
+// ("never shrink below your content size"), so that MIDDLE box rendered at
+// its full natural width and got hard-clipped by the OUTER span's
+// `overflow:hidden` with no "…" painted — CSS text-overflow: ellipsis only
+// paints on a clipped run of plain inline text, not on a hard-clipped
+// nested atomic inline-level box. Confirmed live in Chrome via
+// getComputedStyle/getBoundingClientRect before the fix: the OUTER span's
+// scrollWidth (292px) exceeded its clientWidth (212px) — genuine overflow —
+// yet no ellipsis glyph was painted, just a mid-word cut.
+//
+// The fix: the MIDDLE wrapper becomes `flex w-full min-w-0` (fills/shrinks
+// within the OUTER span's box instead of sizing to its own content) and the
+// label span itself carries `min-w-0 truncate` (so IT is the plain-text run
+// that overflows and gets the ellipsis), with `shrink-0` on the icon/count
+// siblings so they don't get squeezed instead of the label.
+//
+// IMPORTANT — JSDOM has no layout engine: it cannot compute box widths, so
+// it cannot verify the "…" glyph actually paints. That visual claim was
+// verified out-of-band, live in Chrome via claude-in-chrome (zoomed
+// screenshot of the rendered trigger button showing a genuine ellipsis
+// before the chevron, for the longest BPartner name in the goods-receipt
+// window's Contact filter). These assertions only pin the structural
+// invariants the fix relies on — flex/min-w-0/truncate placement — so a
+// regression back to the unbounded `inline-flex` (or a missing `min-w-0`)
+// is caught here even though the pixel-level symptom cannot be.
+// ================================================================
+describe('AdvancedFilterBuilder — trigger label ellipsis mechanics (ETP-5331 follow-up)', () => {
+  it('the middle wrapper is a shrinkable flex box (flex w-full min-w-0), not inline-flex sized to content', () => {
+    const bpCol = { key: 'bp', label: 'Partner', type: 'selector', column: 'C_BPartner_ID' };
+    const longLabel = 'Sociedad Mercantil Industrial de Componentes Electromecanicos del Sur S.A. de C.V.';
+    distinctState.values = [{ id: 'BP1', _identifier: longLabel }];
+    const value = {
+      rowOperator: 'and',
+      conditions: [{ field: 'bp', operator: 'equals', value: ['BP1'] }],
+    };
+    render(
+      <AdvancedFilterBuilder
+        columns={[bpCol]}
+        value={value}
+        rows={[{ bp: 'BP1', 'bp$_identifier': longLabel }]}
+        entity="business-partners"
+        apiBaseUrl="/api"
+      />,
+    );
+
+    const labelNode = screen.getByText(longLabel);
+    const middleWrapper = labelNode.parentElement;
+    expect(middleWrapper.className).toContain('flex');
+    expect(middleWrapper.className).not.toContain('inline-flex');
+    expect(middleWrapper.className).toContain('w-full');
+    expect(middleWrapper.className).toContain('min-w-0');
+
+    // The label span itself is the element that must shrink and paint "…".
+    expect(labelNode.className).toContain('min-w-0');
+    expect(labelNode.className).toContain('truncate');
+  });
+
+  it('the count badge (+N) does not shrink instead of the label', () => {
+    distinctState.values = []; // rely on in-memory rows only, see note above
+    const bpCol = { key: 'bp', label: 'Partner', type: 'selector', column: 'C_BPartner_ID' };
+    const value = {
+      rowOperator: 'and',
+      conditions: [{ field: 'bp', operator: 'equals', value: ['BP1', 'BP2'] }],
+    };
+    render(
+      <AdvancedFilterBuilder
+        columns={[bpCol]}
+        value={value}
+        rows={[
+          { bp: 'BP1', 'bp$_identifier': 'Alpha' },
+          { bp: 'BP2', 'bp$_identifier': 'Beta' },
+        ]}
+      />,
+    );
+
+    const badge = screen.getByText('+1');
+    expect(badge.className).toContain('shrink-0');
+  });
+
+  it('a short value still renders without truncation classes hiding it (no regression)', () => {
+    // distinctState.values is not reset by the shared beforeEach (see other
+    // tests in this file doing the same) — clear it so the previous test's
+    // BP1/BP2 entries don't shadow this test's in-memory-only row.
+    distinctState.values = [];
+    const bpCol = { key: 'bp', label: 'Partner', type: 'selector', column: 'C_BPartner_ID' };
+    const value = {
+      rowOperator: 'and',
+      conditions: [{ field: 'bp', operator: 'equals', value: ['BP1'] }],
+    };
+    render(
+      <AdvancedFilterBuilder
+        columns={[bpCol]}
+        value={value}
+        rows={[{ bp: 'BP1', 'bp$_identifier': 'Acme' }]}
+      />,
+    );
+
+    const labelNode = screen.getByText('Acme');
+    expect(labelNode).toBeInTheDocument();
+    expect(labelNode.className).toContain('truncate');
+  });
+});
+
+// ================================================================
 // ETP-4956 — advanced filter usability fixes.
 //
 // Five independent bugs, all observable only once the component is mounted:
@@ -2503,5 +2689,85 @@ describe('AdvancedFilterBuilder — save preset uses the draft (ETP-5007)', () =
       .toHaveTextContent('filterPresetBlockedIncomplete');
     expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
     expect(onSavePreset).not.toHaveBeenCalled();
+  });
+});
+
+// ================================================================
+// ETP-5009 — changing the field must reset the operator SELECT itself
+// ================================================================
+// `updateRow` already clears `row.operator` when the field changes, but the
+// trigger kept rendering the previous operator (or went blank) because the
+// Select was handed `undefined` for an empty operator, which drops Radix out of
+// controlled mode and leaves the value it stored internally when the user
+// picked the operator. Two symptoms, one cause:
+//   - the old operator is absent from the new mode's list  -> empty trigger,
+//     no placeholder (Radix holds a value, but no SelectItem matches it);
+//   - the old operator is shared with the new mode         -> the trigger keeps
+//     showing it while `row.operator` is '', so Apply stays disabled silently.
+// The operator MUST be chosen through the UI here: seeding it via `value` never
+// populates Radix's internal state, so the bug would not reproduce.
+describe('operator select resets when the field changes (ETP-5009)', () => {
+  const COLS = [
+    { key: 'name', label: 'Name', type: 'text', column: 'Name' },
+    { key: 'orderDate', label: 'Order Date', type: 'date', column: 'OrderDate' },
+    { key: 'partner', label: 'Partner', type: 'selector', column: 'C_BPartner_ID' },
+  ];
+
+  const pickFrom = async (user, testId, optionName) => {
+    await user.click(screen.getByTestId(testId));
+    await user.click(await screen.findByRole('option', { name: optionName }));
+  };
+
+  const seedTextContains = async (user) => {
+    render(<AdvancedFilterBuilder columns={COLS} />);
+    await pickFrom(user, 'advanced-filter-field', 'Name');
+    await pickFrom(user, 'advanced-filter-operator', 'opContains');
+    expect(screen.getByTestId('advanced-filter-operator')).toHaveTextContent('opContains');
+  };
+
+  it('shows the placeholder when the new field mode drops the old operator', async () => {
+    const user = userEvent.setup();
+    await seedTextContains(user);
+
+    // text -> date: OPERATORS_BY_MODE.date has no 'iContains'.
+    await pickFrom(user, 'advanced-filter-field', 'OrderDate');
+
+    const operator = screen.getByTestId('advanced-filter-operator');
+    expect(operator).toHaveTextContent('advancedFilterSelectOp');
+    expect(operator).not.toHaveTextContent('opContains');
+  });
+
+  it('shows the placeholder even when the new field mode shares the old operator', async () => {
+    const user = userEvent.setup();
+    await seedTextContains(user);
+
+    // text -> identifier: both modes offer 'iContains', so the stale internal
+    // value renders happily and the UI lies about the (cleared) row state.
+    await pickFrom(user, 'advanced-filter-field', 'C_BPartner_ID');
+
+    const operator = screen.getByTestId('advanced-filter-operator');
+    expect(operator).toHaveTextContent('advancedFilterSelectOp');
+    expect(operator).not.toHaveTextContent('opContains');
+  });
+});
+
+// ================================================================
+// ETP-5009 — the FIELD select must stay controlled too
+// ================================================================
+// INVARIANT TEST, not a regression test: unlike the operator select above, the
+// field defect is NOT reachable through the UI today. Every path that empties a
+// field goes through `makeEmptyRow`/`ensureRowKeys`, which mint a fresh
+// `_rowKey`, so React remounts the Select and Radix's internal state is
+// discarded anyway. The moment a future change clears `field` in place (as
+// `updateRow` already does for `operator`), `|| undefined` would resurrect the
+// stale value exactly as it did for the operator — so the invariant is pinned at
+// the source, which is the only level at which it can currently fail.
+describe('field select stays controlled (ETP-5009)', () => {
+  const source = advancedFilterBuilderSource;
+
+  it('hands both row selects the empty string, never undefined', () => {
+    expect(source).toMatch(/value=\{row\.field \?\? ''\}/);
+    expect(source).toMatch(/value=\{row\.operator \?\? ''\}/);
+    expect(source).not.toMatch(/value=\{row\.(field|operator) \|\| undefined\}/);
   });
 });
