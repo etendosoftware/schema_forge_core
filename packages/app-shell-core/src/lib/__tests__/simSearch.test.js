@@ -1,6 +1,8 @@
 import { describe, it } from 'node:test';
 import assert from 'node:assert/strict';
-import { parseSimSearchEnvelope, simSearch } from '../simSearch.js';
+import {
+  parseSimSearchEnvelope, simSearch, simSearchEveryLanguage, IMPORT_MATCH_LANGUAGES,
+} from '../simSearch.js';
 
 describe('parseSimSearchEnvelope', () => {
   it('returns array of nulls when envelope is missing', () => {
@@ -199,6 +201,88 @@ describe('simSearch request', () => {
       assert.deepEqual(await simSearch({ token: 't', entityName: '', items: ['x'] }), [null]);
       assert.deepEqual(await simSearch({ token: 't', entityName: 'Country', items: [] }), []);
       assert.equal(calls.length, 0);
+    });
+  });
+});
+
+
+/**
+ * ETP-5350 — an imported file must be readable whatever language it was written in.
+ *
+ * The endpoint translates the search term OUT of the session language before matching it
+ * against the base rows, which are English. So an English term matches the base row directly
+ * in any session and always worked, while a Spanish term only worked in a Spanish session:
+ * "Unit" was accepted for a Spanish user and "Unidad" refused for an English one, for the same
+ * file. A CSV was not portable between two users of the same client.
+ */
+describe('simSearchEveryLanguage', () => {
+  /** Stubs fetch per Accept-Language, so a test says what each language answers. */
+  async function withLanguageStubs({ locale, byLanguage }, body) {
+    const saved = { fetch: globalThis.fetch, window: globalThis.window, localStorage: globalThis.localStorage };
+    const asked = [];
+    globalThis.window = { location: { pathname: '/etendo/web/app/' } };
+    globalThis.localStorage = { getItem: () => locale };
+    globalThis.fetch = async (url, options) => {
+      const language = options.headers['Accept-Language'];
+      asked.push(language);
+      return { ok: true, json: async () => byLanguage[language] ?? {} };
+    };
+    try {
+      return await body(asked);
+    } finally {
+      Object.assign(globalThis, saved);
+    }
+  }
+
+  const spainInEnglish = { item_0: { data: [{ id: 'C-1', name: 'Spain', similarity_percent: '100' }] } };
+  const nothing = { item_0: { data: [] } };
+
+  it('asks every installed AD language, not only the session one', async () => {
+    await withLanguageStubs({ locale: 'es_ES', byLanguage: { es_ES: nothing, en_US: spainInEnglish } }, async (asked) => {
+      await simSearchEveryLanguage({ token: 'tok', entityName: 'Country', items: ['Spain'] });
+      assert.deepEqual([...asked].sort(), [...IMPORT_MATCH_LANGUAGES].sort());
+    });
+  });
+
+  // The regression itself: the value is written in the OTHER language, and the session's own
+  // lookup finds nothing. Before this, that empty answer was the whole answer.
+  it('resolves a term written in a language other than the session one', async () => {
+    await withLanguageStubs({ locale: 'en_US', byLanguage: { en_US: nothing, es_ES: spainInEnglish } }, async () => {
+      const [result] = await simSearchEveryLanguage({ token: 'tok', entityName: 'Country', items: ['España'] });
+      assert.equal(result.id, 'C-1');
+      assert.equal(result.candidates.length, 1);
+    });
+  });
+
+  // Merging on id rather than concatenating is what keeps the answer usable: the same record
+  // comes back from both languages, and a duplicate would become its own runner-up, collapsing
+  // the gap `classifyCandidates` requires and turning a clean match into "needs review".
+  it('merges the same record from two languages into one candidate, keeping its best score', async () => {
+    const weaker = { item_0: { data: [{ id: 'C-1', name: 'Spain', similarity_percent: '40' }] } };
+    await withLanguageStubs({ locale: 'es_ES', byLanguage: { es_ES: weaker, en_US: spainInEnglish } }, async () => {
+      const [result] = await simSearchEveryLanguage({ token: 'tok', entityName: 'Country', items: ['Spain'], qtyResults: 5 });
+      assert.equal(result.candidates.length, 1);
+      assert.equal(result.candidates[0].similarityPercent, '100');
+    });
+  });
+
+  // `parseSimSearchEnvelope` gives an entry whose own fields mirror its best candidate, and
+  // callers read them directly (`result.id`, `result.name`). The merged entry must do the same,
+  // or it would disagree with its own candidate list whenever the other language matched better.
+  it('mirrors the merged best candidate in the entry itself', async () => {
+    const other = { item_0: { data: [{ id: 'C-9', name: 'Spain (other)', similarity_percent: '55' }] } };
+    await withLanguageStubs({ locale: 'es_ES', byLanguage: { es_ES: other, en_US: spainInEnglish } }, async () => {
+      const [result] = await simSearchEveryLanguage({ token: 'tok', entityName: 'Country', items: ['Spain'], qtyResults: 5 });
+      assert.equal(result.id, 'C-1');
+      assert.equal(result.name, 'Spain');
+      assert.equal(result.candidates[0].id, 'C-1');
+    });
+  });
+
+  it('answers null for an item no language matched', async () => {
+    await withLanguageStubs({ locale: 'es_ES', byLanguage: { es_ES: nothing, en_US: nothing } }, async () => {
+      const [result] = await simSearchEveryLanguage({ token: 'tok', entityName: 'Country', items: ['Nowhere'] });
+      assert.equal(result, null);
     });
   });
 });
