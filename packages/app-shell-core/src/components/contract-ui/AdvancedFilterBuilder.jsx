@@ -577,8 +577,18 @@ export function AdvancedFilterBuilder({
                   </SelectContent>
                 </Select>
               </div>
-              {/* Value */}
-              <div className={isBetween ? 'flex-[2] min-w-0' : 'flex-1 min-w-0'}>
+              {/* Value — bounded like the field/operator columns (w-fit + max-w)
+                  so a long selector label (e.g. a BPartner name) truncates
+                  inside the column instead of growing it — and, since the
+                  panel above is `w-max` (sizes to its content), growing the
+                  whole popover along with it. Without a max-w here, `min-w-0`
+                  + the inner `truncate` span never get a bounded box to
+                  truncate against (ETP-5331). `isBetween` renders two inputs
+                  side by side (numeric/date only — `between` never pairs with
+                  the identifier/enum pickers that carry long text), so it gets
+                  a wider cap sized like the field column rather than the
+                  single-value one. */}
+              <div className={isBetween ? 'flex-[2] min-w-0 max-w-[22rem]' : 'flex-1 min-w-0 max-w-[16rem]'}>
                 {showValue && col && (
                   <ValueInput
                     col={col}
