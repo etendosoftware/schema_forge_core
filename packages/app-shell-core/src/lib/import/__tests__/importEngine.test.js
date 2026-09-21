@@ -101,6 +101,98 @@ describe('sendRow', () => {
     assert.equal(result.status, SEND_STATUS.UNKNOWN);
   });
 
+  // ETP-5350 / QA point 11 — the rejection path never reached classifyImportError, so the
+  // thrown Error's own message WAS the user-facing text. Every throw that can land here is
+  // English, hardcoded at its throw site: `Batch failed (500)` (useBatch.js), `Unauthorized`
+  // (apiFetch's 401 branch), the browser's `Failed to fetch`. That text went straight into the
+  // review-queue row and into the blocking ImportSystemErrorDialog's red line, in a session
+  // that was Spanish everywhere else — the exact leak the committed-failure branch already
+  // guards against, on the one path that skipped the guard.
+  describe('rejection path — classified and localized like any other outcome (ETP-5350)', () => {
+    const translations = {
+      importErrorServerFailure: 'El servidor rechazó la petición (error {status}).',
+      importErrorSessionExpired: 'Tu sesión ha caducado.',
+      importErrorConnection: 'No se pudo conectar con el servidor.',
+      importErrorTimeout: 'El servidor tardó demasiado en responder.',
+      importErrorUnknown: 'Error desconocido.',
+    };
+    const translate = (key, params = {}) => {
+      const text = translations[key];
+      if (!text) return key;
+      return Object.keys(params).reduce((acc, p) => acc.replace(`{${p}}`, params[p]), text);
+    };
+
+    it('localizes a non-JSON HTTP failure and keeps the English throw text out of the message', async () => {
+      // The real useBatch.js shape: a non-ok response whose body is not JSON at all (a raw
+      // servlet-container error page), thrown as `Batch failed (<status>)` with the page text
+      // preserved on `.raw`.
+      const postBatch = async () => {
+        const err = new Error('Batch failed (500)');
+        err.raw = '<html>Internal Server Error</html>';
+        throw err;
+      };
+      const result = await sendRow([{ id: 'row' }], { postBatch, translate });
+      assert.equal(result.status, SEND_STATUS.UNKNOWN);
+      assert.equal(result.error.message, 'El servidor rechazó la petición (error 500).');
+      assert.ok(!/Batch failed/.test(result.error.message), `expected no English leak, got: ${result.error.message}`);
+    });
+
+    it('prefers a messageKey the thrower attached over parsing its English text', async () => {
+      // Same contract parseDelimited/parseXlsx already use: the throw site declares the key
+      // and its params, so the message never has to be re-derived from prose.
+      const postBatch = async () => {
+        const err = new Error('Batch failed (503)');
+        err.messageKey = 'importErrorServerFailure';
+        err.params = { status: 503 };
+        throw err;
+      };
+      const result = await sendRow([{ id: 'row' }], { postBatch, translate });
+      assert.equal(result.error.message, 'El servidor rechazó la petición (error 503).');
+    });
+
+    it('localizes an expired session (apiFetch throws a bare `Unauthorized`)', async () => {
+      const postBatch = async () => { throw new Error('Unauthorized'); };
+      const result = await sendRow([{ id: 'row' }], { postBatch, translate });
+      assert.equal(result.error.message, 'Tu sesión ha caducado.');
+    });
+
+    it('localizes a dropped connection (the browser throws its own TypeError)', async () => {
+      const postBatch = async () => { throw new TypeError('Failed to fetch'); };
+      const result = await sendRow([{ id: 'row' }], { postBatch, translate });
+      assert.equal(result.error.message, 'No se pudo conectar con el servidor.');
+    });
+
+    it('localizes a timeout by the error name, not only by its prose', async () => {
+      const postBatch = async () => { throw new BatchTimeoutError(); };
+      const result = await sendRow([{ id: 'row' }], { postBatch, translate });
+      assert.equal(result.error.message, 'El servidor tardó demasiado en responder.');
+    });
+
+    it('preserves the original English text on error.raw — nothing diagnostic is lost', async () => {
+      const postBatch = async () => {
+        const err = new Error('Batch failed (500)');
+        err.raw = '<html>Internal Server Error</html>';
+        throw err;
+      };
+      const result = await sendRow([{ id: 'row' }], { postBatch, translate });
+      assert.ok(result.error.raw.includes('Batch failed (500)'), `expected raw to keep the throw text, got: ${result.error.raw}`);
+      assert.ok(result.error.raw.includes('Internal Server Error'), `expected raw to keep the server body, got: ${result.error.raw}`);
+    });
+
+    it('falls back to the English default when no translate is injected — never to the raw throw text', async () => {
+      const postBatch = async () => { throw new Error('Batch failed (500)'); };
+      const result = await sendRow([{ id: 'row' }], { postBatch });
+      assert.notEqual(result.error.message, 'Batch failed (500)');
+      assert.match(result.error.message, /server/i);
+    });
+
+    it('an unrecognizable rejection gets the generic unknown message, not its own prose', async () => {
+      const postBatch = async () => { throw new Error('kaboom'); };
+      const result = await sendRow([{ id: 'row' }], { postBatch, translate });
+      assert.equal(result.error.message, 'Error desconocido.');
+    });
+  });
+
   it('regression (ETP-4669): an uncontrolled backend leak ({ message } shape) never reaches the user as-is — friendly message, raw kept on error.raw', async () => {
     // Confirmed via a live capture: an unhandled server-side exception (a genuine 500, not
     // a graceful BatchService.java transactional rollback) comes back as Etendo's generic
@@ -154,7 +246,12 @@ describe('sendRow', () => {
     const postBatch = async () => { const e = new Error('Batch failed (502)'); e.raw = 'Gateway error: upstream connection reset'; throw e; };
     const result = await sendRow([{ id: 'row' }], { postBatch });
     assert.equal(result.status, SEND_STATUS.UNKNOWN);
-    assert.equal(result.error.raw, 'Gateway error: upstream connection reset');
+    assert.ok(result.error.raw.includes('Gateway error: upstream connection reset'), `expected the captured body to survive, got: ${result.error.raw}`);
+    assert.ok(!result.error.raw.includes('at '), `expected the body, not the stack, got: ${result.error.raw}`);
+    // ETP-5350: the throw's own text joins it rather than replacing it. It stopped being the
+    // user-facing message, so the report is now the only place `Batch failed (502)` survives —
+    // and that line is what tells support which HTTP status the browser actually saw.
+    assert.ok(result.error.raw.includes('Batch failed (502)'), `expected the throw text to be kept too, got: ${result.error.raw}`);
   });
 
   it('regression: a validation-error op (NEO status -4) nests its message under error.detail.response.errors — must surface the joined field message, not the generic wrapper', async () => {
