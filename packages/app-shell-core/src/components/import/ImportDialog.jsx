@@ -155,6 +155,17 @@ export function ImportDialog({ open, onOpenChange, config, token, postBatch, sim
   // inside buildOperations, where the user only saw it after confirming the import.
   const numericTargets = useMemo(() => config.fields.filter((f) => f.isNumeric).map((f) => f.target), [config.fields]);
 
+  /**
+   * One locale lookup with an English fallback, the same posture `validateRows.js` and
+   * `importEngine.js` take: no translator, an unknown key, or a dictionary that echoes the
+   * key back all degrade to the English text rather than printing a raw key at the user.
+   */
+  const localize = useCallback((key, fallback, params) => {
+    if (typeof translate !== 'function') return fallback;
+    const translated = translate(key, params);
+    return translated && translated !== key ? translated : fallback;
+  }, [translate]);
+
   // The template is written in the session language, so the header a user gets back in
   // their filled-in file is NOT necessarily the field's first (Spanish) alias. Adding that
   // header to the field's aliases is what keeps the round-trip working in any language:
@@ -167,12 +178,23 @@ export function ImportDialog({ open, onOpenChange, config, token, postBatch, sim
       config.fields.map((f) => ({ ...f, required: false })),
       { headerFor: fieldLabelFn },
     );
-    return config.fields.map((field, i) => (
-      headers[i] && !(field.aliases ?? []).includes(headers[i])
-        ? { ...field, aliases: [...(field.aliases ?? []), headers[i]] }
-        : field
-    ));
-  }, [config.fields, fieldLabelFn]);
+    return config.fields.map((field, i) => {
+      // ETP-5350 — the EXAMPLE row follows the session language too. The headers were already
+      // localized here; the sample values under them were not, so an English template came out
+      // with Spanish data ("Tornillo hexagonal M8", "Unidad", "Herramientas") and the user who
+      // asked for an English file opened it to find a language they did not choose.
+      //
+      // Resolved from `exampleKey` when the window declares one, falling back to `example` —
+      // which stays the value for everything that is language-neutral (a code, an email, a
+      // phone) and for any window that has not declared keys. `translate` is the dialog's own
+      // resolver, the same one the error messages use.
+      const example = field.exampleKey ? localize(field.exampleKey, field.example) : field.example;
+      const localized = example === field.example ? field : { ...field, example };
+      return headers[i] && !(localized.aliases ?? []).includes(headers[i])
+        ? { ...localized, aliases: [...(localized.aliases ?? []), headers[i]] }
+        : localized;
+    });
+  }, [config.fields, fieldLabelFn, localize]);
   // `matchEntity` presence is the real signal a column needs FK resolution — there is no
   // separate `isForeignKey` flag anywhere in the actual pipeline: generate-contract.js
   // never emits one (it only backfills `type`/`reference` from the contract), and
@@ -225,6 +247,29 @@ export function ImportDialog({ open, onOpenChange, config, token, postBatch, sim
   // dedupeRows.js). Guard against that same failure mode for any other future empty/
   // missing config: dedupe only runs when there's an actual non-empty key list.
   const dedupeKeyTargets = config.dedupe?.key ?? [];
+  const dedupesAgainstDatabase = config.dedupe?.scope === 'database' && dedupeKeyTargets.length > 0;
+
+  /**
+   * ETP-5350 / IC-18 — what the existing-record lookup has already answered.
+   *
+   * `runValidation` ran the lookup exactly once, over the rows as the FILE delivered them, and
+   * nothing re-ran it afterwards. `buildLookupKey` returns `null` when any part of the key is
+   * blank, so a file with no CIF/NIF column produced a null key for every row, asked the
+   * database about none of them, and imported them all as new — even the ones the user then
+   * typed a CIF into during the review. The review is where a key is most likely to be BORN,
+   * and it was the one moment the check ignored.
+   *
+   * Two sets rather than one, because "not found" and "never asked" are different answers and
+   * collapsing them is the original bug in miniature:
+   *  - `checked` — every key the database has answered about. What makes the re-check
+   *    incremental: an untouched row is never asked about twice.
+   *  - `existing` — of those, the ones that came back. Needed because a row can ADOPT a key
+   *    that some other row already had checked; the verdict is about the key, not the row.
+   *
+   * Refs, not state: nothing renders from them, and `handleProceedToConfirm` reads them inside
+   * an async callback where a state snapshot would be the one captured at click time.
+   */
+  const lookupCacheRef = useRef({ checked: new Set(), existing: new Set() });
 
   /**
    * ETP-5348: the contract nests these under `limit` — `window.import.limit` in decisions.json,
@@ -240,17 +285,6 @@ export function ImportDialog({ open, onOpenChange, config, token, postBatch, sim
    */
   const maxRows = config.limit?.maxRows ?? config.maxRows ?? 5000;
   const concurrency = config.limit?.concurrency ?? config.concurrency ?? 4;
-
-  /**
-   * One locale lookup with an English fallback, the same posture `validateRows.js` and
-   * `importEngine.js` take: no translator, an unknown key, or a dictionary that echoes the
-   * key back all degrade to the English text rather than printing a raw key at the user.
-   */
-  const localize = useCallback((key, fallback, params) => {
-    if (typeof translate !== 'function') return fallback;
-    const translated = translate(key, params);
-    return translated && translated !== key ? translated : fallback;
-  }, [translate]);
 
   // The two reasons a row is skipped rather than failed. Both are shown verbatim in the
   // review queue, so both go through `translate` — they were hardcoded English strings
@@ -301,9 +335,22 @@ export function ImportDialog({ open, onOpenChange, config, token, postBatch, sim
     //
     // `findExistingKeys` also reports `complete`, which nothing here reads: a row whose batch
     // failed is presented exactly like one that was checked and found absent.
-    const { existing: existingKeys } = config.dedupe?.scope === 'database'
+    const { existing: existingKeys } = dedupesAgainstDatabase
       ? await findExistingKeys({ rows: uniqueRows, keyTargets: dedupeKeyTargets, fetchFn: existingKeyFetchFn })
       : { existing: new Set() };
+
+    // A new file (or a re-mapping) invalidates everything the previous one established, so the
+    // cache is rebuilt here rather than merged into. What was asked is every non-null key of
+    // `uniqueRows` — `findExistingKeys` skips the null ones, and so must this, or a blank key
+    // would be recorded as "checked, absent" and never looked at again.
+    const checked = new Set();
+    if (dedupesAgainstDatabase) {
+      for (const row of uniqueRows) {
+        const key = buildLookupKey(row, dedupeKeyTargets);
+        if (key !== null) checked.add(key);
+      }
+    }
+    lookupCacheRef.current = { checked, existing: new Set(existingKeys) };
 
     const validated = uniqueRows.map((row) => {
       const key = buildLookupKey(row, dedupeKeyTargets);
@@ -325,7 +372,7 @@ export function ImportDialog({ open, onOpenChange, config, token, postBatch, sim
 
     const skippedDuplicates = duplicates.map((d) => ({ row: d.row, errors: [{ target: '', message: labelFor('duplicateInFile') }], status: 'skipped' }));
     setEntries([...validated, ...skippedDuplicates]);
-  }, [dedupeKeyTargets, fkColumns, revalidate, simSearchFn, token, config, existingKeyFetchFn, labelFor]);
+  }, [dedupeKeyTargets, dedupesAgainstDatabase, fkColumns, revalidate, simSearchFn, token, config, existingKeyFetchFn, labelFor]);
 
   const handleFileSelected = useCallback(async (file) => {
     try {
@@ -453,6 +500,77 @@ export function ImportDialog({ open, onOpenChange, config, token, postBatch, sim
 
   const validCount = entries.filter((e) => e.status === 'pending' && e.errors.length === 0).length;
   const skipCount = entries.length - validCount;
+
+  /**
+   * ETP-5350 / IC-18 — the last chance to notice a row is already in the database.
+   *
+   * Runs on the way from the review to the confirm step, NOT on every edit: the lookup is a
+   * batched network call (~136 requests for a full file since ETP-5374), and the field it
+   * watches is wired to the row input's `onChange`, so per-keystroke would be absurd. Once per
+   * confirm is enough because the confirm step is the only thing between an edit and the send.
+   *
+   * It must run BEFORE the confirm step renders, not inside `handleSend`: that step's whole
+   * job is to state how many rows will be imported and how many skipped. Re-checking after the
+   * user has read those numbers would make the dialog's one factual claim a lie — the same
+   * "the row counts they confirmed were a lie" that motivated the pre-flight check itself.
+   *
+   * Only rows that would actually be sent are considered, and only keys nobody has asked about
+   * yet are sent to the server, so the common case — nothing edited — costs zero requests.
+   *
+   * Deliberately one-directional: a row is moved INTO Saltada, never back out. A row already
+   * marked as existing may have been skipped by hand instead, and un-skipping rows behind the
+   * user's back is a worse failure than leaving one they can un-skip themselves.
+   */
+  const handleProceedToConfirm = useCallback(async () => {
+    if (!dedupesAgainstDatabase || typeof existingKeyFetchFn !== 'function') {
+      setStep(STEP.CONFIRM);
+      return;
+    }
+    const candidates = entries
+      .map((entry, index) => ({ entry, index, key: buildLookupKey(entry.row, dedupeKeyTargets) }))
+      .filter(({ entry, key }) => key !== null && entry.status === 'pending' && entry.errors.length === 0);
+
+    const { checked, existing } = lookupCacheRef.current;
+    const unasked = candidates.filter(({ key }) => !checked.has(key));
+
+    if (unasked.length > 0) {
+      setIsRevalidating(true);
+      try {
+        const found = await findExistingKeys({
+          rows: unasked.map(({ entry }) => entry.row),
+          keyTargets: dedupeKeyTargets,
+          fetchFn: existingKeyFetchFn,
+        });
+        // Merged, not replaced: the batches answered during `runValidation` are still true, and
+        // `findExistingKeys` was only asked about the new keys.
+        unasked.forEach(({ key }) => checked.add(key));
+        found.existing.forEach((key) => existing.add(key));
+      } catch {
+        // The initial lookup has always been best-effort: an unavailable server must not
+        // turn a reviewable file into an impossible import. Keep that posture for the
+        // pre-confirm re-check too. Send-time duplicate handling remains the backstop.
+      } finally {
+        setIsRevalidating(false);
+      }
+    }
+
+    // Re-derived over EVERY candidate, not just the ones just asked about: a row can have been
+    // edited onto a key some other row had already established as existing, and that verdict is
+    // about the key, not about the row that first carried it.
+    const nowExisting = new Set(
+      candidates.filter(({ key }) => existing.has(key)).map(({ index }) => index),
+    );
+    if (nowExisting.size > 0) {
+      setEntries((prev) => prev.map((entry, i) => (nowExisting.has(i)
+        ? {
+          ...entry,
+          errors: [{ target: dedupeKeyTargets[0] ?? '', message: labelFor('alreadyExists'), isSkipReason: true }],
+          status: 'skipped',
+        }
+        : entry)));
+    }
+    setStep(STEP.CONFIRM);
+  }, [dedupesAgainstDatabase, dedupeKeyTargets, entries, existingKeyFetchFn, labelFor]);
 
   const handleSend = useCallback(async () => {
     setStep(STEP.SENDING);
@@ -711,7 +829,7 @@ export function ImportDialog({ open, onOpenChange, config, token, postBatch, sim
                   onSkipEntry={handleSkipEntry}
                   onUnskipEntry={handleUnskipEntry}
                   onApplyFkValue={handleApplyFkValue}
-                  onDownloadErrors={() => downloadCsv(buildErrorsCsv(entries, headers, mapping, labels?.reviewQueue?.statusError), 'import-errors.csv')}
+                  onDownloadErrors={() => downloadCsv(buildErrorsCsv(entries, headers, mapping, labels?.reviewQueue?.statusError, labels?.reviewQueue?.skippedByUser), 'import-errors.csv')}
                   labels={labels?.reviewQueue}
                   simSearchFn={simSearchFn}
                   fieldLabelFn={fieldLabelFn}
@@ -721,8 +839,8 @@ export function ImportDialog({ open, onOpenChange, config, token, postBatch, sim
               <div className="flex justify-end">
                 <Button
                   type="button"
-                  onClick={() => setStep(STEP.CONFIRM)}
-                  disabled={validCount === 0}
+                  onClick={handleProceedToConfirm}
+                  disabled={validCount === 0 || isRevalidating}
                   data-testid="ImportDialog__importButton"
                 >
                   {text.importButton(validCount)}
@@ -756,7 +874,7 @@ export function ImportDialog({ open, onOpenChange, config, token, postBatch, sim
                   onSkipEntry={handleSkipEntry}
                   onUnskipEntry={handleUnskipEntry}
                   onApplyFkValue={handleApplyFkValue}
-                  onDownloadErrors={() => downloadCsv(buildErrorsCsv(entries, headers, mapping, labels?.reviewQueue?.statusError), 'import-errors.csv')}
+                  onDownloadErrors={() => downloadCsv(buildErrorsCsv(entries, headers, mapping, labels?.reviewQueue?.statusError, labels?.reviewQueue?.skippedByUser), 'import-errors.csv')}
                   retryLabel={labels?.reviewQueue?.retry ?? 'Retry'}
                   labels={labels?.reviewQueue}
                   simSearchFn={simSearchFn}
