@@ -25,6 +25,18 @@ const DEFAULT_LABELS = {
   bulkApplyDescription: '{count} other row(s) also have "{raw}". Apply "{value}" to all of them too?',
   bulkApplyOnlyThis: 'Just this row',
   bulkApplyAll: 'Apply to all',
+  // ETP-5349. Only ever reached by a row the user skipped BY HAND: every other skip
+  // (in-file duplicate, already exists) records its own reason as an error, and that
+  // reason is what the file shows. A hand-skipped row has no error to explain it.
+  skippedByUser: 'Skipped by the user.',
+  // ETP-5350 — the unresolved-foreign-key popover. ETP-5223 translated the engine's error
+  // messages, the review grid's headers and the mapping editor's captions; these four were
+  // written inline in `FkMismatchCell` and stayed English in every session. The popover is
+  // exactly where a user lands when a row needs fixing, so it was the worst place to leave.
+  fkSearchPlaceholder: 'Search or type a value…',
+  fkSearching: 'Searching…',
+  fkNoMatches: 'No matches found — type a value above.',
+  fkUseTyped: 'Use “{value}”',
 };
 
 /**
@@ -209,7 +221,7 @@ function StatusLineTag({ index, tag, children }) {
  * round-trip needed), while `null` means the user accepted free-typed text
  * (still needs a fresh SimSearch lookup, same as the old "Re-validate" button).
  */
-function FkMismatchCell({ index, field, value, error, onSelect, simSearchFn, token }) {
+function FkMismatchCell({ index, field, value, error, onSelect, simSearchFn, token, text }) {
   const [open, setOpen] = useState(false);
   const [query, setQuery] = useState('');
   const [candidates, setCandidates] = useState(error.candidates ?? []);
@@ -298,7 +310,7 @@ function FkMismatchCell({ index, field, value, error, onSelect, simSearchFn, tok
           <CommandInput
             value={query}
             onValueChange={handleQueryChange}
-            placeholder="Search or type a value…"
+            placeholder={text.fkSearchPlaceholder}
             data-testid={`ImportReviewQueue__fkSearch-${index}-${field.target}`}
           />
           <CommandList data-testid={"CommandList__" + field.id}>
@@ -309,16 +321,16 @@ function FkMismatchCell({ index, field, value, error, onSelect, simSearchFn, tok
                   onSelect={() => handleUseTyped(query.trim())}
                   data-testid={`ImportReviewQueue__fkUseTyped-${index}-${field.target}`}
                 >
-                  Use &ldquo;{query.trim()}&rdquo;
+                  {formatTemplate(text.fkUseTyped, { value: query.trim() })}
                 </CommandItem>
               </CommandGroup>
             )}
             {loading ? (
               <div className="px-2 py-3 text-center text-xs text-muted-foreground" data-testid={`ImportReviewQueue__fkLoading-${index}-${field.target}`}>
-                Searching…
+                {text.fkSearching}
               </div>
             ) : candidates.length === 0 ? (
-              <CommandEmpty data-testid={"CommandEmpty__" + field.id}>{query.trim() ? null : 'No matches found — type a value above.'}</CommandEmpty>
+              <CommandEmpty data-testid={"CommandEmpty__" + field.id}>{query.trim() ? null : text.fkNoMatches}</CommandEmpty>
             ) : (
               <CommandGroup data-testid={"CommandGroup__" + field.id}>
                 {candidates.map((c) => (
@@ -358,13 +370,42 @@ function FkMismatchCell({ index, field, value, error, onSelect, simSearchFn, tok
  * one — the downloaded file is read by the same user who could not read the English messages
  * on screen, so leaving one English header in it would only move the problem into the file.
  */
-export function buildErrorsCsv(entries, headers, mapping, errorHeader = 'Error') {
+/**
+ * Whether a row belongs under the "Errors" tag: it carries errors, or the user skipped it.
+ *
+ * ETP-5349 — the ONE definition of that question. It used to be written out three times: the
+ * filter, the tab counts, and `buildErrorsCsv`. The first two agreed; the CSV did not, testing
+ * only `errors.length` — so a row the user skipped by hand appeared in the tab, was counted in
+ * its badge, and was then missing from the downloaded file, which came out with nothing but its
+ * header line. The screen and the file disagreed with no way for the user to notice.
+ *
+ * Exported because that is the point: a caller that renders its own queue asks the same
+ * question here rather than writing a fourth copy of it.
+ */
+export function needsAttention(entry) {
+  return entry.status === 'skipped' || entry.errors.length > 0;
+}
+
+/**
+ * The rows under the "Errors" tag, as CSV.
+ *
+ * @param {Array<object>} entries The review queue's entries.
+ * @param {string[]} headers The uploaded file's headers, in file order.
+ * @param {object} mapping header -> target.
+ * @param {string} [errorHeader] Caption of the reason column.
+ * @param {string} [skippedText] Reason written for a row the user skipped by hand, which is the
+ *   only kind that carries no error of its own. Every other skip — an in-file duplicate, a record
+ *   that already exists — records its reason as an error at skip time, and that is what is shown.
+ */
+export function buildErrorsCsv(entries, headers, mapping, errorHeader = 'Error', skippedText = DEFAULT_LABELS.skippedByUser) {
   const mappedHeaders = headers.filter((h) => mapping[h]);
   const lines = [[...mappedHeaders, errorHeader].map(csvField).join(',')];
   for (const entry of entries) {
-    if (entry.errors.length === 0) continue;
+    if (!needsAttention(entry)) continue;
     const values = mappedHeaders.map((h) => entry.row[mapping[h]]);
-    const errorText = entry.errors.map((e) => (e.target ? `${e.target}: ${e.message}` : e.message)).join(' | ');
+    const errorText = entry.errors.length > 0
+      ? entry.errors.map((e) => (e.target ? `${e.target}: ${e.message}` : e.message)).join(' | ')
+      : skippedText;
     lines.push([...values, errorText].map(csvField).join(','));
   }
   return lines.join('\n');
@@ -415,14 +456,13 @@ export function ImportReviewQueue({
     .filter(({ entry, index }) => {
       if (statusFilter === 'all') return true;
       if (focusedCell?.index === index) return true;
-      const isAttentionNeeded = entry.status === 'skipped' || entry.errors.length > 0;
-      return statusFilter === 'error' ? isAttentionNeeded : !isAttentionNeeded;
+      return statusFilter === 'error' ? needsAttention(entry) : !needsAttention(entry);
     });
 
   const counts = {
     all: entries.length,
-    ok: entries.filter((e) => e.status !== 'skipped' && e.errors.length === 0).length,
-    error: entries.filter((e) => e.status === 'skipped' || e.errors.length > 0).length,
+    ok: entries.filter((e) => !needsAttention(e)).length,
+    error: entries.filter(needsAttention).length,
   };
 
   // Awaiting the user's yes/no on whether a just-picked FK fix should also apply to every
@@ -767,6 +807,7 @@ export function ImportReviewQueue({
                           onSelect={(value, resolvedId) => handleFkValueSelected(index, field, value, resolvedId)}
                           simSearchFn={simSearchFn}
                           token={token}
+                          text={text}
                           data-testid={"FkMismatchCell__" + field.id} />
                       ) : isEditable ? (
                         <div className="flex flex-col gap-1">
