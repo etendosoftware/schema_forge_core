@@ -106,7 +106,9 @@ export function parseSimSearchEnvelope(envelope, itemCount) {
  * }} params
  * @returns {Promise<ReturnType<typeof parseSimSearchEnvelope>>}
  */
-export async function simSearch({ entityName, items, minSimPercent = 30, qtyResults = 1 }) {
+export async function simSearch({
+  entityName, items, minSimPercent = 30, qtyResults = 1, language = getStoredLocale(),
+}) {
   if (!entityName || !Array.isArray(items) || items.length === 0) {
     return Array(items?.length || 0).fill(null);
   }
@@ -129,7 +131,7 @@ export async function simSearch({ entityName, items, minSimPercent = 30, qtyResu
       // user whose AD default is en_US would silently get no translation at all. Every
       // other NEO call already sends this via `buildHeaders`; this client built its own
       // headers and was the one that did not.
-      headers: { ...readCredentialHeaders(), 'Accept-Language': getStoredLocale() },
+      headers: { ...readCredentialHeaders(), 'Accept-Language': language },
     });
     if (!res.ok) return Array(items.length).fill(null);
     const envelope = await res.json().catch(() => null);
@@ -137,4 +139,64 @@ export async function simSearch({ entityName, items, minSimPercent = 30, qtyResu
   } catch {
     return Array(items.length).fill(null);
   }
+}
+
+
+/**
+ * The AD languages an imported file may be written in, regardless of who is importing it.
+ *
+ * Both are `AD_LANGUAGE.issystemlanguage = 'Y'` on this product; every other locale the UI
+ * ships (es_AR) is a UI translation, not an AD language, so the dictionary holds no names in
+ * it and asking for it would return exactly what `en_US` returns.
+ */
+export const IMPORT_MATCH_LANGUAGES = ['en_US', 'es_ES'];
+
+/**
+ * Similarity search that accepts a term written in ANY of the installed AD languages, not only
+ * the importer's session language (ETP-5350).
+ *
+ * The asymmetry this removes: the endpoint translates the search term OUT of the session
+ * language before matching it against the base rows, which are English. So an English term
+ * matches the base row directly in any session and always worked, while a Spanish term only
+ * worked in a Spanish session — "Unit" was accepted by a Spanish user and "Unidad" was refused
+ * by an English one, for the same file. A CSV was not portable between two users of the same
+ * client, which is the thing a shared import file most needs to be.
+ *
+ * Fixed by asking once per language and keeping each item's best candidate per record. Cost is
+ * one extra request per COLUMN — these calls are already batched across every row — and the
+ * second one is skipped when the session language is the only one there is to ask.
+ *
+ * Merging on `id` rather than concatenating matters: the same record comes back from both
+ * languages, and a duplicate would become its own runner-up, collapsing the gap
+ * `classifyCandidates` requires and turning a clean match into "needs review".
+ */
+export async function simSearchEveryLanguage(params) {
+  const { items, qtyResults = 1 } = params;
+  const languages = [...new Set([params.language ?? getStoredLocale(), ...IMPORT_MATCH_LANGUAGES])];
+  if (languages.length === 1) return simSearch(params);
+
+  const perLanguage = await Promise.all(
+    languages.map((language) => simSearch({ ...params, language })),
+  );
+
+  return (items ?? []).map((_, i) => {
+    const best = new Map();
+    for (const results of perLanguage) {
+      for (const candidate of results[i]?.candidates ?? []) {
+        const previous = best.get(candidate.id);
+        if (!previous || Number(candidate.similarityPercent) > Number(previous.similarityPercent)) {
+          best.set(candidate.id, candidate);
+        }
+      }
+    }
+    if (best.size === 0) return null;
+    const candidates = [...best.values()]
+      .sort((a, b) => Number(b.similarityPercent) - Number(a.similarityPercent))
+      .slice(0, qtyResults);
+    // Same shape `parseSimSearchEnvelope` produces: the entry's own fields MIRROR its best
+    // candidate, and callers read them directly (`result.id`, `result.name`). Keeping the
+    // first language's winner here instead would hand back an entry disagreeing with its
+    // own candidate list whenever the other language matched better.
+    return { ...candidates[0], candidates };
+  });
 }
