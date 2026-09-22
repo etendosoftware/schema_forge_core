@@ -651,6 +651,36 @@ async function fetchReportSelectors(selectorMatch, url, req, res) {
     const clientId = getClientIdFromToken(req.headers.authorization);
     const byClient = (col) => clientId ? `AND ${col} = '${clientId}'` : '';
 
+    // ETP-5420 — must match report-api.js's dev-plugin fix exactly (the two
+    // report-render engines drifted): scoped to the client's base currency +
+    // anything with an active C_Conversion_Rate row for this client (either
+    // direction), not the full ~150-row ISO currency table. Default/first
+    // choice prefers the active ORGANIZATION's own currency when selectedOrgId
+    // is present, falling back to the client's base currency otherwise.
+    // Extracted into plain statements (Sonar S3358/S4624 — no nested ternaries
+    // or nested template literals).
+    function buildCurrencyFromWhere() {
+      const base = `FROM c_currency WHERE isactive='Y' AND (iso_code ILIKE $1 OR description ILIKE $1)`;
+      if (!clientId) return base;
+      let orgClause = '';
+      if (selectedOrgId) {
+        orgClause = ` OR c_currency_id = (SELECT c_currency_id FROM ad_org WHERE ad_org_id = '${selectedOrgId}')`;
+      }
+      const scoped = " AND ( c_currency_id = (SELECT c_currency_id FROM ad_client WHERE ad_client_id = '"
+        + clientId + "')" + orgClause
+        + " OR EXISTS ( SELECT 1 FROM c_conversion_rate cr WHERE cr.isactive = 'Y' AND cr.ad_client_id IN ('"
+        + clientId + "', '0') AND (cr.c_currency_id = c_currency.c_currency_id OR cr.c_currency_id_to = c_currency.c_currency_id) ) )";
+      return base + scoped;
+    }
+
+    function buildCurrencyOrderBy() {
+      if (!clientId) return 'ORDER BY iso_code';
+      if (selectedOrgId) {
+        return `ORDER BY (CASE WHEN c_currency_id = (SELECT c_currency_id FROM ad_org WHERE ad_org_id = '${selectedOrgId}') THEN 0 ELSE 1 END), iso_code`;
+      }
+      return `ORDER BY (CASE WHEN c_currency_id = (SELECT c_currency_id FROM ad_client WHERE ad_client_id = '${clientId}') THEN 0 ELSE 1 END), iso_code`;
+    }
+
     const queries = {
       bpartner: { select: `SELECT c_bpartner_id AS id, name, name AS label`, fromWhere: `FROM c_bpartner WHERE isactive='Y' ${byClient('ad_client_id')} AND name ILIKE $1`, orderBy: 'ORDER BY name' },
       product: { select: `SELECT m_product_id AS id, value AS "searchKey", name, value || ' - ' || name AS label`, fromWhere: `FROM m_product WHERE isactive='Y' ${byClient('ad_client_id')} AND (name ILIKE $1 OR value ILIKE $1)`, orderBy: 'ORDER BY value, name' },
@@ -660,7 +690,7 @@ async function fetchReportSelectors(selectorMatch, url, req, res) {
       org: { select: `SELECT ad_org_id AS id, name, name AS label`, fromWhere: `FROM ad_org WHERE isactive='Y' AND ad_org_id != '0' ${byClient('ad_client_id')} AND name ILIKE $1`, orderBy: 'ORDER BY name' },
       account: { select: `SELECT ev.value AS id, ev.value || ' - ' || ev.name AS name, ev.value || ' - ' || ev.name AS label`, fromWhere: `FROM c_elementvalue ev WHERE ev.isactive='Y' AND ev.issummary='N' ${byClient('ev.ad_client_id')} AND (ev.value ILIKE $1 OR ev.name ILIKE $1)`, orderBy: 'ORDER BY ev.value' },
       acctschema: { select: `SELECT c_acctschema_id AS id, name, name AS label`, fromWhere: `FROM c_acctschema WHERE isactive='Y' ${byClient('ad_client_id')} AND name ILIKE $1`, orderBy: 'ORDER BY name' },
-      currency: { select: `SELECT c_currency_id AS id, iso_code AS name, iso_code || ' - ' || description AS label`, fromWhere: `FROM c_currency WHERE isactive='Y' AND (iso_code ILIKE $1 OR description ILIKE $1)`, orderBy: clientId ? `ORDER BY (CASE WHEN c_currency_id = (SELECT c_currency_id FROM ad_client WHERE ad_client_id = '${clientId}') THEN 0 ELSE 1 END), iso_code` : 'ORDER BY iso_code' },
+      currency: { select: `SELECT c_currency_id AS id, iso_code AS name, iso_code || ' - ' || description AS label`, fromWhere: buildCurrencyFromWhere(), orderBy: buildCurrencyOrderBy() },
       tax: { select: `SELECT c_tax_id AS id, name, name AS label`, fromWhere: `FROM c_tax WHERE isactive='Y' ${byClient('ad_client_id')} AND name ILIKE $1`, orderBy: 'ORDER BY name' },
       year: { select: `SELECT y.c_year_id AS id, y.year || ' (' || c.name || ')' AS name, y.year || ' (' || c.name || ')' AS label`, fromWhere: `FROM c_year y JOIN c_calendar c ON c.c_calendar_id = y.c_calendar_id WHERE y.isactive='Y' ${byClient('y.ad_client_id')} AND (y.year || ' (' || c.name || ')') ILIKE $1`, orderBy: 'ORDER BY y.year DESC' },
     };
