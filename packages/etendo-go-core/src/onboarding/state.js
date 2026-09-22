@@ -61,6 +61,16 @@ export function selectPreferredOrg(role) {
 // any consumer that needs to clear the environment session (e.g. logout) MUST
 // reuse this constant instead of hardcoding its own copy. Keep this in sync
 // with the keys assigned inside buildEnvironmentSessionStorage.
+//
+// ETP-4576 — these seven keys are a handoff channel between two page loads,
+// written just before the full-page redirect so the app can boot cold and
+// hydrate its auth context. Under the cookie scheme the server-side __Host-
+// session survives that navigation on its own and the app restores from
+// GET /sws/go/session, so the channel is dead weight there and the onboarding
+// steps only take this path when the login response actually carries a token.
+// It stays for the bearer scheme, which has no other way across the redirect.
+// Purging what a pre-cookie session left behind is app-shell-core's
+// purgeLegacyAuthStorage, which owns its own canonical list.
 export const ENVIRONMENT_SESSION_KEYS = [
   'sf_auth_token',
   'sf_auth_user',
@@ -71,12 +81,9 @@ export const ENVIRONMENT_SESSION_KEYS = [
   'sf_auth_selected_org',
 ];
 
-/**
- * Remembers which environment was last entered, so signing in again returns to
- * it instead of to whichever one happens to be first. Deliberately NOT in
- * {@link ENVIRONMENT_SESSION_KEYS}: the session is cleared on logout, the
- * preference is not.
- */
+// sf_last_environment is a UX preference, not authentication state. It
+// deliberately survives logout and must never be grouped with the removed
+// sf_auth_* handoff keys.
 export const LAST_ENVIRONMENT_KEY = 'sf_last_environment';
 
 export function rememberEnvironment(clientId) {

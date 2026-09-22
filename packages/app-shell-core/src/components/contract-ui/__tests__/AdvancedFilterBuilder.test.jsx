@@ -1432,6 +1432,190 @@ describe('AdvancedFilterBuilder — content-based sizing (ETP-4705)', () => {
 });
 
 // ================================================================
+// ETP-5331 — value column max-w bound.
+//
+// A long selector label (e.g. a BPartner name) used to grow the value
+// column's wrapper div unbounded (`flex-1 min-w-0` / `flex-[2] min-w-0` for
+// the isBetween two-input case), which widened the whole `w-max` filter
+// panel along with it and overlapped table columns. The fix bounds the
+// wrapper with `max-w-[16rem]` (single value) / `max-w-[22rem]` (isBetween),
+// so the existing `truncate` styling inside gets a box to truncate against.
+// These assertions lock the bound in place so a regression back to the
+// unbounded flex styles is caught immediately.
+// ================================================================
+describe('AdvancedFilterBuilder — value column width bound (ETP-5331)', () => {
+  it('single-value case: value wrapper is bounded by max-w-[16rem]', () => {
+    const { container } = render(<AdvancedFilterBuilder columns={COLUMNS} />);
+    const wrapper = container.querySelector('div.max-w-\\[16rem\\]');
+    expect(wrapper).not.toBeNull();
+    const cls = wrapper.className;
+
+    expect(cls).toContain('max-w-[16rem]');
+    expect(cls).toContain('flex-1');
+    expect(cls).toContain('min-w-0');
+  });
+
+  it('isBetween case: value wrapper is bounded by max-w-[22rem], not unbounded flex-[2]', () => {
+    const value = {
+      rowOperator: 'and',
+      conditions: [{ field: 'amount', operator: 'between', value: ['', ''] }],
+    };
+    const { container } = render(<AdvancedFilterBuilder columns={COLUMNS} value={value} />);
+    // Both the Field select wrapper (w-fit, no flex) and the isBetween value
+    // wrapper (flex-[2]) carry max-w-[22rem] in this case — scope the
+    // selector to flex-[2] to land on the value wrapper specifically.
+    const wrapper = container.querySelector('div.flex-\\[2\\].max-w-\\[22rem\\]');
+    expect(wrapper).not.toBeNull();
+    const cls = wrapper.className;
+
+    expect(cls).toContain('max-w-[22rem]');
+    expect(cls).toContain('flex-[2]');
+    expect(cls).toContain('min-w-0');
+  });
+
+  it('a long selected identifier label truncates inside the bounded wrapper instead of growing it (regression guard)', () => {
+    const bpCol = { key: 'bp', label: 'Partner', type: 'selector', column: 'C_BPartner_ID' };
+    const longLabel = 'Sociedad Mercantil Industrial de Componentes Electromecanicos del Sur S.A. de C.V.';
+    distinctState.values = [{ id: 'BP1', _identifier: longLabel }];
+    const value = {
+      rowOperator: 'and',
+      conditions: [{ field: 'bp', operator: 'equals', value: ['BP1'] }],
+    };
+    const { container } = render(
+      <AdvancedFilterBuilder
+        columns={[bpCol]}
+        value={value}
+        rows={[{ bp: 'BP1', 'bp$_identifier': longLabel }]}
+        entity="business-partners"
+        apiBaseUrl="/api"
+      />,
+    );
+
+    const labelNode = screen.getByText(longLabel);
+    expect(labelNode).toBeInTheDocument();
+    // The label is rendered inside the trigger's `truncate` span.
+    expect(labelNode.className).toContain('truncate');
+
+    const wrapper = container.querySelector('div.max-w-\\[16rem\\]');
+    expect(wrapper).not.toBeNull();
+    expect(wrapper.className).toContain('max-w-[16rem]');
+    // The long label lives inside the bounded wrapper, not escaping it.
+    expect(wrapper.contains(labelNode)).toBe(true);
+  });
+});
+
+// ================================================================
+// ETP-5331 follow-up — the trigger label's "…" must actually paint.
+//
+// The bound added above (max-w-[16rem] on the OUTER wrapper) stopped the
+// panel from growing, but a separate bug survived it: the OUTER span
+// (`truncate`, direct child of the trigger <button>) correctly shrinks and
+// gets `overflow:hidden`/`text-overflow:ellipsis` — but its only child, the
+// MIDDLE wrapper span around the label/spinner/count-badge, was
+// `inline-flex`. A flex/inline-flex item's default `min-width` is `auto`
+// ("never shrink below your content size"), so that MIDDLE box rendered at
+// its full natural width and got hard-clipped by the OUTER span's
+// `overflow:hidden` with no "…" painted — CSS text-overflow: ellipsis only
+// paints on a clipped run of plain inline text, not on a hard-clipped
+// nested atomic inline-level box. Confirmed live in Chrome via
+// getComputedStyle/getBoundingClientRect before the fix: the OUTER span's
+// scrollWidth (292px) exceeded its clientWidth (212px) — genuine overflow —
+// yet no ellipsis glyph was painted, just a mid-word cut.
+//
+// The fix: the MIDDLE wrapper becomes `flex w-full min-w-0` (fills/shrinks
+// within the OUTER span's box instead of sizing to its own content) and the
+// label span itself carries `min-w-0 truncate` (so IT is the plain-text run
+// that overflows and gets the ellipsis), with `shrink-0` on the icon/count
+// siblings so they don't get squeezed instead of the label.
+//
+// IMPORTANT — JSDOM has no layout engine: it cannot compute box widths, so
+// it cannot verify the "…" glyph actually paints. That visual claim was
+// verified out-of-band, live in Chrome via claude-in-chrome (zoomed
+// screenshot of the rendered trigger button showing a genuine ellipsis
+// before the chevron, for the longest BPartner name in the goods-receipt
+// window's Contact filter). These assertions only pin the structural
+// invariants the fix relies on — flex/min-w-0/truncate placement — so a
+// regression back to the unbounded `inline-flex` (or a missing `min-w-0`)
+// is caught here even though the pixel-level symptom cannot be.
+// ================================================================
+describe('AdvancedFilterBuilder — trigger label ellipsis mechanics (ETP-5331 follow-up)', () => {
+  it('the middle wrapper is a shrinkable flex box (flex w-full min-w-0), not inline-flex sized to content', () => {
+    const bpCol = { key: 'bp', label: 'Partner', type: 'selector', column: 'C_BPartner_ID' };
+    const longLabel = 'Sociedad Mercantil Industrial de Componentes Electromecanicos del Sur S.A. de C.V.';
+    distinctState.values = [{ id: 'BP1', _identifier: longLabel }];
+    const value = {
+      rowOperator: 'and',
+      conditions: [{ field: 'bp', operator: 'equals', value: ['BP1'] }],
+    };
+    render(
+      <AdvancedFilterBuilder
+        columns={[bpCol]}
+        value={value}
+        rows={[{ bp: 'BP1', 'bp$_identifier': longLabel }]}
+        entity="business-partners"
+        apiBaseUrl="/api"
+      />,
+    );
+
+    const labelNode = screen.getByText(longLabel);
+    const middleWrapper = labelNode.parentElement;
+    expect(middleWrapper.className).toContain('flex');
+    expect(middleWrapper.className).not.toContain('inline-flex');
+    expect(middleWrapper.className).toContain('w-full');
+    expect(middleWrapper.className).toContain('min-w-0');
+
+    // The label span itself is the element that must shrink and paint "…".
+    expect(labelNode.className).toContain('min-w-0');
+    expect(labelNode.className).toContain('truncate');
+  });
+
+  it('the count badge (+N) does not shrink instead of the label', () => {
+    distinctState.values = []; // rely on in-memory rows only, see note above
+    const bpCol = { key: 'bp', label: 'Partner', type: 'selector', column: 'C_BPartner_ID' };
+    const value = {
+      rowOperator: 'and',
+      conditions: [{ field: 'bp', operator: 'equals', value: ['BP1', 'BP2'] }],
+    };
+    render(
+      <AdvancedFilterBuilder
+        columns={[bpCol]}
+        value={value}
+        rows={[
+          { bp: 'BP1', 'bp$_identifier': 'Alpha' },
+          { bp: 'BP2', 'bp$_identifier': 'Beta' },
+        ]}
+      />,
+    );
+
+    const badge = screen.getByText('+1');
+    expect(badge.className).toContain('shrink-0');
+  });
+
+  it('a short value still renders without truncation classes hiding it (no regression)', () => {
+    // distinctState.values is not reset by the shared beforeEach (see other
+    // tests in this file doing the same) — clear it so the previous test's
+    // BP1/BP2 entries don't shadow this test's in-memory-only row.
+    distinctState.values = [];
+    const bpCol = { key: 'bp', label: 'Partner', type: 'selector', column: 'C_BPartner_ID' };
+    const value = {
+      rowOperator: 'and',
+      conditions: [{ field: 'bp', operator: 'equals', value: ['BP1'] }],
+    };
+    render(
+      <AdvancedFilterBuilder
+        columns={[bpCol]}
+        value={value}
+        rows={[{ bp: 'BP1', 'bp$_identifier': 'Acme' }]}
+      />,
+    );
+
+    const labelNode = screen.getByText('Acme');
+    expect(labelNode).toBeInTheDocument();
+    expect(labelNode.className).toContain('truncate');
+  });
+});
+
+// ================================================================
 // ETP-4956 — advanced filter usability fixes.
 //
 // Five independent bugs, all observable only once the component is mounted:
