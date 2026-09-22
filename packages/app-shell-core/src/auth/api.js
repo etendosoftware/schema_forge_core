@@ -1,5 +1,12 @@
 import { getStoredLocale } from '../i18n/useLocaleState.js';
 import { canonicalEntityName, getRecordVersion, rememberRecordVersion } from '../lib/recordVersions.js';
+import {
+  credentialHeadersForToken,
+  getSessionCsrfToken,
+  jsonHeaders,
+  readCredentialHeaders,
+  writeHeaders,
+} from './sessionCredentials.js';
 
 export function detectBaseUrl() {
   // Guarded so this module can be imported outside a browser. `plain node --test` runs
@@ -41,30 +48,34 @@ function defaultBaseUrl() {
  * @param {string} [token] bearer token; omitted when absent
  * @returns {Record<string,string>} headers for a read request
  */
-export function authHeaders(token) {
-  const headers = {
-    'Accept-Language': getStoredLocale(),
-  };
-  if (token) {
-    headers['Authorization'] = `Bearer ${token}`;
-  }
-  return headers;
+export function authHeaders() {
+  // ETP-4576 — the credential comes from the ACTIVE SCHEME, not from a parameter:
+  // `bearer` puts the Authorization header back, `cookie` sends nothing and lets the
+  // `__Host-` session travel on its own. A caller still passing a token is harmless —
+  // the argument is ignored. `Accept-Language` stays exactly as ETP-4685/ETP-5022 left
+  // it: without it the backend silently resolves `*_Trl` names in the AD language.
+  return { ...readCredentialHeaders(), 'Accept-Language': getStoredLocale() };
 }
 
 /**
  * Headers for a WRITE request (POST/PUT/DELETE with a JSON body): everything
  * {@link authHeaders} sends, plus `Content-Type: application/json`.
  */
-export function buildHeaders(token) {
-  return {
-    ...authHeaders(token),
-    'Content-Type': 'application/json',
-  };
+export function buildHeaders() {
+  return { ...jsonHeaders(), 'Accept-Language': getStoredLocale() };
 }
 
-export function isTokenExpired(token) {
-  return !token;
+/**
+ * Headers for an UNSAFE write (POST/PUT/PATCH/DELETE): {@link buildHeaders} plus whatever
+ * the active scheme requires to prove intent. See ./sessionCredentials.js.
+ */
+export function buildWriteHeaders() {
+  return { ...writeHeaders(), 'Accept-Language': getStoredLocale() };
 }
+
+// ETP-4576 — the methods the backend treats as state-changing, and therefore the ones
+// that must carry the scheme's write proof.
+const UNSAFE_METHODS = new Set(['POST', 'PUT', 'PATCH', 'DELETE']);
 
 /**
  * Resolves a request URL against the client's base URL.
@@ -630,7 +641,7 @@ export function createApiFetch(baseUrl, getToken, onUnauthorized, scope) {
       try {
         const reread = await fetch(resolveApiUrl(base, recordPath), {
           credentials: credentials || 'include',
-          headers: authHeaders(token),
+          headers: authHeaders(),
         });
         if (reread.ok) await harvestReadVersions(reread, recordPath, isOurs);
       } catch {
@@ -651,8 +662,48 @@ export function createApiFetch(baseUrl, getToken, onUnauthorized, scope) {
       // Content-Type — declaring a body type on a request that has no body is wrong, and
       // it also keeps a migrated call site byte-identical on the wire to the raw `fetch`
       // it replaced.
-      const canonical = rest.body === undefined ? authHeaders(token) : buildHeaders(token);
-      const headers = { ...canonical, ...extraHeaders };
+      const method = (rest.method || 'GET').toUpperCase();
+      const unsafe = UNSAFE_METHODS.has(method);
+      // ETP-5022 — a bodyless request declares no Content-Type. ETP-4576 — an unsafe one
+      // still carries the scheme's proof. Independent: a bodyless DELETE needs both.
+      let canonical;
+      if (rest.body === undefined) {
+        canonical = unsafe
+          ? { ...writeHeaders(), 'Accept-Language': getStoredLocale() }
+          : authHeaders();
+        delete canonical['Content-Type'];
+      } else {
+        canonical = unsafe ? buildWriteHeaders() : buildHeaders();
+      }
+      // ETP-5195 x ETP-5255 x ETP-4576 — when THIS dispatch resolved a credential, that one
+      // wins over whatever the module-level store holds. `resolveSession` re-reads the bearer
+      // through the scope after the queue wait precisely so a rotation is absorbed, and
+      // letting the builders rebuild it from the store puts the superseded token straight
+      // back — the session renews while every request keeps going out under the previous JWT.
+      // `token` already folds in the explicit `token` option, which still wins over both.
+      //
+      // When it resolved NOTHING the store stands, and that is not a fallback for a missing
+      // credential but the normal path for two callers: a legacy three-argument client whose
+      // getter was never wired to a session, and every client under the cookie scheme, where
+      // there is no token to resolve and the `__Host-` session travels on its own. A logged-out
+      // client never reaches here — `stillOurs()` and `resolveSession()` throw first.
+      const headers = {
+        ...canonical,
+        ...credentialHeadersForToken(token),
+        ...extraHeaders,
+      };
+      // ETP-4576 — every unsafe request carries the proof whenever one is held, WITHOUT
+      // consulting the active scheme. Gating this on `mode !== bearer` reads tidier and was
+      // tried: the browser attaches a same-origin session cookie on its own, whatever the
+      // client believes it is doing, and the backend validates CSRF the moment it sees that
+      // cookie on an unsafe method. A client that decides it is in bearer mode loses that bet
+      // as a 403 on the write while every read still succeeds — the shape that took three
+      // confirm flows down in the integration suite. Sending the header under a scheme that
+      // ignores it costs nothing; omitting it when the cookie rides along costs the write.
+      if (unsafe) {
+        const csrf = getSessionCsrfToken();
+        if (csrf) headers['X-Go-CSRF'] = csrf;
+      }
       if (rest.body instanceof FormData) delete headers['Content-Type'];
       // ETP-5073 / DOC-04: the optimistic-locking token is attached here, not at the ~41 call
       // sites that issue an update. See `withRecordVersion` for why every guard fails open.
@@ -805,4 +856,50 @@ export function apiFetch(path, options = {}) {
     session ? session.onUnauthorized : () => {},
     session?.scope,
   )(path, options);
+}
+
+// ETP-4576 — restores the backend-managed session (ADR-0001). This is the
+// platform default for AuthProvider's `restoreSession`, so a host gets the
+// cookie session without wiring anything; passing the prop overrides it.
+// Authenticates purely with the `__Host-` cookie: `credentials: 'include'` and
+// no Authorization header, since the browser never holds a bearer token.
+// Fails closed with null on the 401 for "no session", a network error, or an
+// unparsable body — every one of those means "not authenticated".
+export async function fetchCookieSession(baseUrl = defaultBaseUrl()) {
+  try {
+    const res = await fetch(`${baseUrl}/sws/go/session`, {
+      method: 'GET',
+      credentials: 'include',
+    });
+    if (!res.ok) return null;
+    return await res.json();
+  } catch {
+    return null;
+  }
+}
+
+// ETP-4576 — revokes the session server-side (ADR-0001). Without this the
+// cookie outlives a "logout" and the session stays valid on the server, so
+// clearing client state alone is not a logout at all.
+//
+// DELETE is an unsafe method, so the backend requires the CSRF proof. The proof
+// defaults to the one sessionCredentials holds, which is still the live session's
+// at the moment logout runs — AuthProvider clears it only after this resolves.
+// Callers that clear their own state first must pass the token explicitly.
+// Never throws: the local logout has to proceed even if the network call fails,
+// or a user who asked to log out would stay stuck in the session. Returns
+// whether the server confirmed the revoke.
+export async function deleteCookieSession(csrfToken = getSessionCsrfToken(), baseUrl = defaultBaseUrl()) {
+  try {
+    const headers = {};
+    if (csrfToken) headers['X-Go-CSRF'] = csrfToken;
+    const res = await fetch(`${baseUrl}/sws/go/session`, {
+      method: 'DELETE',
+      credentials: 'include',
+      headers,
+    });
+    return res.ok;
+  } catch {
+    return false;
+  }
 }
