@@ -2671,7 +2671,16 @@ ${statusPills.map(p => {
   const pillCapabilityPart = pillField?.visibleWhenCapability
     ? `, visibleWhenCapability: '${String(pillField.visibleWhenCapability).replace(/'/g, "\\'")}'`
     : '';
-  return `  { key: '${p.field}', type: 'statusPill', trueKey: '${p.trueKey}', falseKey: '${p.falseKey}'${pillCapabilityPart} },`;
+  // ETP-5436 — an optional code → i18n-key map so ONE window can attach a
+  // table-specific explanation to a posted-status code whose meaning is otherwise
+  // generic (see resolveStatusPill's javadoc in postedStatus.js for why this is a
+  // per-window declaration, not a new case in the shared registry). JSON.stringify
+  // rather than hand-built template interpolation: hintKeys values are i18n keys
+  // (safe identifiers) but this avoids re-deriving JS-string-literal escaping here.
+  const pillHintKeysPart = p.hintKeys && Object.keys(p.hintKeys).length > 0
+    ? `, hintKeys: ${JSON.stringify(p.hintKeys)}`
+    : '';
+  return `  { key: '${p.field}', type: 'statusPill', trueKey: '${p.trueKey}', falseKey: '${p.falseKey}'${pillCapabilityPart}${pillHintKeysPart} },`;
 }).join('\n')}
 ];
 ${MARKERS.GENERATED_END(`extraBadges:${headerEntity}`)}
