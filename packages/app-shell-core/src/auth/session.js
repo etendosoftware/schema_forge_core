@@ -11,6 +11,21 @@ const SESSION_KEYS = {
 
 const JSON_KEYS = new Set(['roleList', 'selectedRole', 'selectedOrg']);
 
+// Full set of pre-cookie-session localStorage keys, including sf_auth_client_name
+// (written by onboarding but never covered by clear(), since SESSION_KEYS has no
+// clientName entry) — ETP-4576 purges these once on migration to the __Host- cookie.
+const LEGACY_AUTH_KEYS = [
+  'sf_auth_token',
+  'sf_auth_user',
+  'sf_auth_client_id',
+  'sf_auth_client_name',
+  'sf_auth_rolelist',
+  'sf_auth_selected_role',
+  'sf_auth_selected_org',
+  'sf_platform_token',
+  'sf_platform_auth_method',
+];
+
 function getBrowserStorage() {
   if (typeof window === 'undefined') return null;
   return window.localStorage || null;
@@ -36,6 +51,43 @@ function writeValue(storage, key, value, json = false) {
     return;
   }
   storage.setItem(key, json ? JSON.stringify(value) : String(value));
+}
+
+export function purgeLegacyAuthStorage(storage = getBrowserStorage()) {
+  try {
+    for (const key of LEGACY_AUTH_KEYS) {
+      storage?.removeItem(key);
+    }
+  } catch {
+    // ignore — storage access can throw (e.g. disabled in some privacy modes);
+    // never let a purge failure block logout/session restore.
+  }
+}
+
+// ETP-4576 — maps the GET /sws/go/session payload onto the `session` shape the
+// AuthContext consumers expect. The backend's `environment` block carries only
+// IDs, while the UI needs the full role/org objects (it renders their `.name`),
+// so the selection is resolved by cross-referencing those IDs against the
+// returned `roleList`. Everything falls back to null/[] instead of throwing: a
+// session can legitimately have `environment: null` (logged in, no environment
+// entered yet), and an unexpected payload must not break the app boot.
+export function mapRestoredSession(restored = {}) {
+  const { account, environment, roleList } = restored;
+  const roles = Array.isArray(roleList) ? roleList : [];
+  const selectedRole = environment?.roleId
+    ? roles.find((role) => role?.id === environment.roleId) || null
+    : null;
+  const selectedOrg = environment?.orgId
+    ? selectedRole?.orgList?.find((org) => org?.id === environment.orgId) || null
+    : null;
+
+  return {
+    username: account?.name || account?.email || null,
+    clientId: environment?.clientId || null,
+    roleList: roles,
+    selectedRole,
+    selectedOrg,
+  };
 }
 
 export function normalizeAuthSession(session = {}) {

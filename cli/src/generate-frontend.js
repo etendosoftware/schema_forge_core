@@ -508,7 +508,12 @@ export function generateTableComponent(entityName, contract) {
     // (resolveRowCurrency in app-shell's lib/rowCurrency.js). Appended at the tail
     // for the same byte-identity reason as the filter overrides above.
     const currencyFieldPart = quotedProp('currencyField', f.currencyField);
-    return `  { key: '${f.name}', column: '${f.column}', type: '${type}'${labelsPart}${labelPart}${enumLabelsPart}${enumVariantsPart}${selectionPart}${togglePart}${badgePart}${badgeLabelsPart}${badgeColorsPart}${badgeVariantsPart}${summablePart}${displayPart}${renderPart}${requiredPart}${lookupPart}${lookupDrawerColPart}${excludeValueOfColPart}${popupPart}${minColPart}${maxColPart}${maxLengthColPart}${growPart}${columnWidthPart}${noTrailingPart}${filterOnlyPart}${dotPart}${gridReadOnlyPart}${computedPart}${visibleWhenCapabilityPart}${filterModePart}${backendFilterKeyPart}${backendSortKeyPart}${currencyFieldPart} },`;
+    // ETP-5133 — opt out of the default grid-cell truncate/ellipsis (InlineLinesPanel's
+    // renderLineCell/ReadCell/LookupTrigger read col.noTruncate directly). New flag,
+    // appended at the tail per the ETP-4681 convention above so emitted output stays
+    // byte-identical for every window that does not declare it.
+    const noTruncatePart = fragmentIf(f.noTruncate, ', noTruncate: true');
+    return `  { key: '${f.name}', column: '${f.column}', type: '${type}'${labelsPart}${labelPart}${enumLabelsPart}${enumVariantsPart}${selectionPart}${togglePart}${badgePart}${badgeLabelsPart}${badgeColorsPart}${badgeVariantsPart}${summablePart}${displayPart}${renderPart}${requiredPart}${lookupPart}${lookupDrawerColPart}${excludeValueOfColPart}${popupPart}${minColPart}${maxColPart}${maxLengthColPart}${growPart}${columnWidthPart}${noTrailingPart}${filterOnlyPart}${dotPart}${gridReadOnlyPart}${computedPart}${visibleWhenCapabilityPart}${filterModePart}${backendFilterKeyPart}${backendSortKeyPart}${currencyFieldPart}${noTruncatePart} },`;
   }).join('\n') + buildDimensionsPanelColumn(dimensionFieldsRaw);
 
   const filtersArray = searchableFields.map(f => `'${f}'`).join(', ');

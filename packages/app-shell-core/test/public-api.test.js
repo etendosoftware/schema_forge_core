@@ -20,6 +20,41 @@ test('public package exports the expected runtime entrypoints', async () => {
   assert.equal(pkg.exports['./components/ui/*'], './src/components/ui/*');
   assert.equal(pkg.exports['./components/import/*'], './src/components/import/*');
   assert.equal(pkg.exports['./lib/*'], './src/lib/*');
+  assert.equal(
+    pkg.exports['./auth/sessionCredentials.js'],
+    './src/auth/sessionCredentials.js',
+  );
+});
+
+// ETP-4576. The `./auth` barrel re-exports AuthContext.jsx, so anything reached
+// through it drags React and a `.jsx` file into the module graph. That is fine
+// under a bundler and fatal under plain Node: `node --test` has no JSX loader,
+// so a host unit test whose subject transitively imports a header builder dies
+// with ERR_UNKNOWN_FILE_EXTENSION before running a single assertion. Two whole
+// host test files went dark exactly this way.
+//
+// The fix is the dedicated `./auth/sessionCredentials.js` subpath asserted
+// above, and it only holds while that module stays a LEAF. One `import` added
+// here — even of another core module — can re-introduce the JSX edge
+// transitively and take the host's suite down again, far from the cause. So the
+// leaf property is asserted directly rather than left as a convention.
+test('sessionCredentials stays import-free so it is loadable without a JSX loader', async () => {
+  const src = await readFile(
+    new URL('../src/auth/sessionCredentials.js', import.meta.url),
+    'utf8',
+  );
+  const withoutComments = src
+    .replace(/\/\*[\s\S]*?\*\//g, '')
+    .replace(/^\s*\/\/.*$/gm, '');
+
+  const imports = withoutComments.match(/^\s*import\b.*$/gm) ?? [];
+  assert.deepEqual(
+    imports,
+    [],
+    `sessionCredentials.js must not import anything, found:\n  ${imports.join('\n  ')}`,
+  );
+  // `export ... from` is an import edge too, just spelled differently.
+  assert.doesNotMatch(withoutComments, /\bexport\b[^;]*\bfrom\b/);
 });
 
 async function listSourceFiles(dir) {

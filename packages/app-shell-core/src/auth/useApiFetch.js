@@ -2,31 +2,21 @@ import { useMemo } from 'react';
 import { createApiFetch, getAmbientToken, notifyAmbientUnauthorized } from './api.js';
 import { useAuthOptional } from './AuthContext.jsx';
 
-/**
- * The authenticated `fetch` for a component or hook: {@link createApiFetch} bound to the
- * current session, with the same contract and the same extra options (`on401`,
- * `credentials`).
- *
- * Works WITHOUT an `AuthProvider` above it, falling back to the ambient session
- * (ETP-5022). That is not cosmetic: this hook replaced a raw `fetch` in ~105 components
- * whose existing tests render them bare, and throwing "useAuth must be used within
- * AuthProvider" would have forced a provider wrapper into hundreds of test files — a
- * larger and riskier change than the migration it was enabling. In the running app the
- * ambient session is registered by `AuthProvider`, so the token resolves either way; in
- * a test with neither, the request goes out anonymous, which is exactly what the raw
- * `fetch` it replaced did.
- *
- * @param {string} [baseUrl] prefix for relative paths; omit to use the base detected
- *   from the page location
- */
+// This hook hands createApiFetch the TOKEN getter, not a CSRF getter (ETP-4576 +
+// ETP-5195). The proof of intent on unsafe methods is no longer injected here: api.js
+// reads it from ./sessionCredentials.js, whose single writer is AuthProvider. Under the
+// cookie scheme the client holds no token and that getter simply returns null — the
+// `__Host-` session travels on its own and the builders add the proof — so this hook is
+// identical either way, and there is one less way to thread a stale value through.
+//
+// The optional-context shape and the ambient fallback are ETP-5022's (a module used
+// outside a provider still gets an authenticated request). Depends on WHETHER there is
+// a session, never on the context object's identity: a provider handing back a fresh
+// object each render would otherwise produce a fresh request function each render.
 export function useApiFetch(baseUrl) {
   const auth = useAuthOptional();
   const token = auth?.token ?? null;
   const logout = auth?.logout;
-  // Depend on WHETHER there is a session, never on the context object's identity: a provider
-  // (or a test double) that hands back a fresh object each render would otherwise produce a
-  // fresh request function each render, and any effect that lists it as a dependency would
-  // re-fire forever.
   const hasSession = auth != null;
   const scope = auth?.apiSessionScope;
 
