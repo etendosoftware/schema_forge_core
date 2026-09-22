@@ -378,6 +378,16 @@ function harvestReadVersions(res, path, isOurs = () => true) {
  * - `baseUrl: ''` — for a URL that is already complete, or that points outside the base
  *   (a helper such as `buildCreateUrl` returns a sibling path from the app root, which
  *   the base-prefix guard cannot recognise as already-resolved).
+ * - `refreshVersion: false` — for a POST action endpoint (`/{spec}/{entity}/{id}/action/<name>`)
+ *   that does NOT mutate the record it addresses, skip the post-action re-read described at
+ *   {@link refreshVersionAfterAction}. Default `true`, so every existing call site keeps
+ *   re-reading exactly as before. ETP-5434: three endpoints behind one modal
+ *   (`invoiceAccounts`, `invoicePaymentMethods`, `invoiceCreditSources`) are queries disguised
+ *   as POSTs, so their re-read is 100% waste. **Only set this on an action verified to NOT
+ *   change the row's `updated`** — setting it on one that does silently reintroduces the 409
+ *   `stale_record` ETP-5255 exists to prevent, because the client's cached token then goes
+ *   stale with nothing to refresh it. The caller opting in owns that verification; this flag
+ *   does not and cannot check it.
  *
  * @param {string|null|undefined} baseUrl prefix for relative paths; `null`/`undefined`
  *   falls back to the base detected from the page location
@@ -454,6 +464,64 @@ function actionRecordPath(path) {
 const recordWriteChains = new Map();
 
 /**
+ * record key → the in-flight post-action re-read for that record, so N concurrent action POSTs
+ * against the SAME record share one re-read instead of racing N identical GETs.
+ *
+ * ## Why this exists (ETP-5434)
+ *
+ * Measured on the "Añadir cobro" modal (app.etendo.software): it fires three action POSTs
+ * against the same invoice (`invoiceAccounts`, `invoicePaymentMethods`, `invoiceCreditSources`),
+ * each triggering {@link refreshVersionAfterAction}'s re-read of the SAME record. Three
+ * identical GETs competed for the connection and the DB row, and the POST promises — which each
+ * `await` their own re-read before resolving — settled at 1072/1875/2516ms instead of
+ * 381/414/593ms. This map collapses the three GETs into one: the second and third callers await
+ * the first caller's in-flight re-read instead of issuing their own.
+ *
+ * ## Key
+ *
+ * Same composition as {@link recordWriteKey} — session-scoped `(entity, id)` — for the same
+ * reason: `(entity, id)` alone carries no tenant, and two sessions hitting the same final URL
+ * for the same id can legitimately see different rows (the URL never encodes
+ * `ad_client_id`/`ad_org_id`; only the session does). Reusing `sessionQueueKey` rather than the
+ * literal `base` resolved for THIS dispatch is deliberate: it is exactly the key shape the write
+ * queue already trusts for this identical concern, and a `baseUrlOverride` divergence between two
+ * calls of the SAME session is not a case this cache needs to protect against on top of that.
+ *
+ * ## What this does and does not promise
+ *
+ * The FIRST caller's `isOurs` gates whether the shared re-read's result is written into the
+ * version cache — see {@link harvestReadVersions}. A later caller whose own session outlives the
+ * first caller's does not get its own `isOurs` re-checked; it inherits the first caller's
+ * outcome. This is the same best-effort, silent-failure contract `refreshVersionAfterAction`
+ * already has for a lone caller (a failed re-read leaves the cache as it was and the next write
+ * falls back to the loud 400/409 path) — just shared across waiters instead of evaluated per
+ * caller. Accepted rather than solved: tracking N `isOurs` functions per shared promise would add
+ * real complexity for a race that needs a session to end mid-flight during a fan-out of
+ * concurrent actions on one record, which is not the case this ticket measured or was asked to
+ * fix.
+ *
+ * Entries are deleted as the shared re-read settles (success or failure), exactly like
+ * {@link recordWriteChains}.
+ *
+ * @type {Map<string, Promise<void>>}
+ */
+const pendingActionRereads = new Map();
+
+/**
+ * The dedupe key for a post-action re-read: session-scoped `(entity, id)`, matching
+ * {@link recordWriteKey}'s composition so the two caches can never disagree about what counts as
+ * "the same record". `null` when the record cannot be identified — same fail-open policy as
+ * everywhere else in this module: an un-keyable re-read is dispatched on its own rather than
+ * risked against a bucket it might not belong to.
+ */
+function actionRereadKey(recordPath, sessionKey) {
+  const id = recordIdFromPath(recordPath);
+  if (id == null || id === '') return null;
+  const entity = canonicalEntityName(entityFromPath(recordPath, id));
+  return `${sessionKey}\u0000${entity ?? ''}\u0000${String(id)}`;
+}
+
+/**
  * Identity prefix for a write queue: who is writing, not which token they hold. A silent token
  * rotation must leave a queued write in its own queue, so the bearer is deliberately absent —
  * see `sessionController.isSameIdentity` for the same distinction.
@@ -514,7 +582,7 @@ export function createApiFetch(baseUrl, getToken, onUnauthorized, scope) {
   return async function apiFetch(path, options = {}) {
     const {
       on401, credentials, baseUrl: baseUrlOverride, token: tokenOverride,
-      headers: extraHeaders, ...rest
+      headers: extraHeaders, refreshVersion = true, ...rest
     } = options;
     // Legacy three-argument clients inherit the registered scope, including host wrappers
     // with a captured token. Explicit null opts out (bootstrap refresh owns its guard).
@@ -633,20 +701,45 @@ export function createApiFetch(baseUrl, getToken, onUnauthorized, scope) {
      * Failure is silent by design. A refused or unparseable re-read leaves the cache exactly as
      * the action found it, so the next write falls back to the loud 400/409 path rather than this
      * best-effort refresh turning a request that already succeeded into an error.
+     *
+     * ETP-5434: when another dispatch already has a re-read of this same (session, entity, id) in
+     * flight, this joins it instead of firing a duplicate GET — see `pendingActionRereads`. Every
+     * guarantee above is unchanged for the joining caller: a re-read still happens and is still
+     * awaited before the caller's own POST promise resolves, which is what keeps ETP-5255's
+     * guarantee (the next PATCH of this record carries a fresh `updated`) intact.
      */
     const refreshVersionAfterAction = async (recordPath, token, isOurs) => {
       const id = recordIdFromPath(recordPath);
       if (id == null || id === '') return;
       if (getRecordVersion(id, entityFromPath(recordPath, id)) === undefined) return;
-      try {
-        const reread = await fetch(resolveApiUrl(base, recordPath), {
-          credentials: credentials || 'include',
-          headers: authHeaders(),
-        });
-        if (reread.ok) await harvestReadVersions(reread, recordPath, isOurs);
-      } catch {
-        // Offline, aborted, CORS — the action itself succeeded and must not be reported as failed.
+      // ETP-5434: join an in-flight re-read for this record instead of racing a duplicate GET.
+      const key = actionRereadKey(recordPath, sessionQueueKey(requestScope));
+      const inFlight = key !== null ? pendingActionRereads.get(key) : undefined;
+      if (inFlight) {
+        await inFlight;
+        return;
       }
+      const rereadTask = (async () => {
+        try {
+          const reread = await fetch(resolveApiUrl(base, recordPath), {
+            credentials: credentials || 'include',
+            headers: authHeaders(),
+          });
+          if (reread.ok) await harvestReadVersions(reread, recordPath, isOurs);
+        } catch {
+          // Offline, aborted, CORS — the action itself succeeded and must not be reported as failed.
+        }
+      })();
+      if (key !== null) {
+        pendingActionRereads.set(key, rereadTask);
+        // `rereadTask` never actually rejects (its own try/catch swallows everything), but this
+        // mirrors `recordWriteChains`'s cleanup shape so both caches are torn down the same way,
+        // regardless of how the task settles.
+        rereadTask.catch(() => {}).then(() => {
+          if (pendingActionRereads.get(key) === rereadTask) pendingActionRereads.delete(key);
+        });
+      }
+      await rereadTask;
     };
 
     const dispatch = async (awaitHarvest) => {
@@ -726,7 +819,9 @@ export function createApiFetch(baseUrl, getToken, onUnauthorized, scope) {
       // extra round trip disappears on its own once the backend does, with no client change.
       const actionPath = verb === 'POST' ? actionRecordPath(path) : null;
       if (actionPath !== null) {
-        if (res.ok) await refreshVersionAfterAction(actionPath, token, isOurs);
+        // ETP-5434: `refreshVersion: false` opts a verified non-mutating action endpoint out of
+        // this re-read. Default `true`, so every existing call site re-reads exactly as before.
+        if (res.ok && refreshVersion) await refreshVersionAfterAction(actionPath, token, isOurs);
         return finish(res, token, isOurs);
       }
       if (VERSIONED_WRITE_METHODS.has(verb) || verb === 'POST') {
