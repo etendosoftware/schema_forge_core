@@ -1114,12 +1114,12 @@ function IdentifierMultiPicker({ col, entity, apiBaseUrl, rows, value, onChange,
       // OUTER span's box, and `min-w-0 truncate` on the label span makes IT
       // the element that shrinks and gets the ellipsis. Icon/badge siblings
       // get `shrink-0` so they don't get squeezed instead of the label.
-      <span className="flex w-full min-w-0 items-center gap-1">
+      (<span className="flex w-full min-w-0 items-center gap-1">
         {firstSelected?.pending
           ? <Loader2 className="h-3 w-3 shrink-0 animate-spin" data-testid="Loader2__4eedf1" />
           : <span className="min-w-0 truncate">{firstSelected?.label}</span>}
         {selected.length > 1 && <span className="shrink-0">{`+${selected.length - 1}`}</span>}
-      </span>
+      </span>)
     );
 
   const colLabelKey = labelOf(col.column) ?? col.label ?? col.key;
