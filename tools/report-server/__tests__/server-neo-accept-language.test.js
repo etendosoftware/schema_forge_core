@@ -22,6 +22,11 @@
  * a header sent only by the dev plugin would translate reports on developer
  * machines while silently leaving every deployed server rendering the wrong
  * language — which is precisely the failure mode this change exists to prevent.
+ *
+ * ETP-5460: the NEO branch no longer takes a raw `authToken` — it receives a
+ * `session` (the object `report-auth.js`'s `resolveReportSession` returns)
+ * and spreads `session.forwardHeaders` (Cookie, + Origin/Referer, + CSRF on
+ * unsafe methods) instead of building an `Authorization: Bearer` header.
  */
 import { describe, it } from 'node:test';
 import { strict as assert } from 'node:assert';
@@ -36,15 +41,14 @@ const ETENDO_URL = 'http://localhost:8080/etendo';
 // Byte-identical in behaviour to the real one; the `server.js source` suite
 // below fails if the original drifts away from this shape.
 
-async function fetchNeoReportData(contract, { authToken, params = {}, locale } = {}, fetchImpl) {
-  if (!authToken) throw new Error('No auth token');
+async function fetchNeoReportData(contract, { session, params = {}, locale } = {}, fetchImpl) {
   const neoUrl = `${ETENDO_URL}${contract.neo.endpoint}`;
   const neoBody = { ...contract.neo.body, ...params };
   const neoRes = await fetchImpl(neoUrl, {
     method: contract.neo.method || 'POST',
     headers: {
       'Content-Type': 'application/json',
-      'Authorization': `Bearer ${authToken}`,
+      ...session.forwardHeaders,
       ...(locale ? { 'Accept-Language': locale } : {}),
     },
     body: JSON.stringify(neoBody),
@@ -62,6 +66,8 @@ const CONTRACT = {
   neo: { endpoint: '/sws/neo/tax-report', method: 'POST', body: {}, dataPath: 'response.data' },
 };
 
+const TEST_SESSION = { clientId: 'C1', forwardHeaders: { Cookie: '__Host-go_session=abc123' } };
+
 function makeFetchSpy() {
   const calls = [];
   const impl = async (url, init) => {
@@ -75,7 +81,7 @@ function makeFetchSpy() {
 
 async function headersFor(opts) {
   const fetchImpl = makeFetchSpy();
-  await fetchNeoReportData(CONTRACT, { authToken: 'test-token', ...opts }, fetchImpl);
+  await fetchNeoReportData(CONTRACT, { session: TEST_SESSION, ...opts }, fetchImpl);
   return fetchImpl.lastHeaders();
 }
 
@@ -114,22 +120,22 @@ describe('report-server NEO fetch — Accept-Language (ETP-5013)', () => {
   });
 
   describe('pre-existing headers (regression guard)', () => {
-    it('still sends Content-Type and Authorization alongside Accept-Language', async () => {
+    it('still sends Content-Type and the session Cookie alongside Accept-Language', async () => {
       const headers = await headersFor({ locale: 'es_ES' });
       assert.equal(headers['Content-Type'], 'application/json');
-      assert.equal(headers.Authorization, 'Bearer test-token');
+      assert.equal(headers.Cookie, TEST_SESSION.forwardHeaders.Cookie);
       assert.equal(headers['Accept-Language'], 'es_ES');
     });
 
-    it('still sends Content-Type and Authorization when no locale is supplied', async () => {
+    it('still sends Content-Type and the session Cookie when no locale is supplied', async () => {
       const headers = await headersFor({});
-      assert.deepEqual(Object.keys(headers), ['Content-Type', 'Authorization']);
-      assert.equal(headers.Authorization, 'Bearer test-token');
+      assert.deepEqual(Object.keys(headers), ['Content-Type', 'Cookie']);
+      assert.equal(headers.Cookie, TEST_SESSION.forwardHeaders.Cookie);
     });
 
     it('leaves the method and body of the NEO call untouched', async () => {
       const fetchImpl = makeFetchSpy();
-      await fetchNeoReportData(CONTRACT, { authToken: 't', params: { dateFrom: '2026-01-01' }, locale: 'es_ES' }, fetchImpl);
+      await fetchNeoReportData(CONTRACT, { session: TEST_SESSION, params: { dateFrom: '2026-01-01' }, locale: 'es_ES' }, fetchImpl);
       const { url, init } = fetchImpl.calls.at(-1);
       assert.equal(url, `${ETENDO_URL}/sws/neo/tax-report`);
       assert.equal(init.method, 'POST');
@@ -152,21 +158,23 @@ describe('report-server NEO fetch — Accept-Language (ETP-5013)', () => {
       // The piece most likely to be silently dropped in a refactor: the header
       // code would still look correct while receiving `undefined` forever.
       assert.match(SERVER_SRC,
-        /fetchReportData\(reportId, \{ limit, authToken, params, locale \}\)/);
+        /fetchReportData\(reportId, \{ limit, session, params, locale \}\)/);
     });
 
     it('deliberately does NOT pass a locale at the /data call site', () => {
       // /data is a raw-data endpoint with no render/locale concept; the asymmetry
       // is intentional and is what keeps the "absent key" branch alive in
       // production, not just in this test file.
-      assert.match(SERVER_SRC, /fetchReportData\(reportId, \{ limit, authToken \}\)/);
+      assert.match(SERVER_SRC, /fetchReportData\(reportId, \{ limit, session \}\)/);
     });
 
-    it('keeps Content-Type and Authorization in the NEO headers literal', () => {
-      const literal = SERVER_SRC.match(/headers: \{\s*'Content-Type': 'application\/json',\s*'Authorization': `Bearer \$\{authToken\}`,[\s\S]*?\},/);
+    it('spreads session.forwardHeaders (Cookie, + Origin/Referer, + CSRF on unsafe methods) into the NEO headers literal, never a Bearer token', () => {
+      const literal = SERVER_SRC.match(/headers: \{\s*'Content-Type': 'application\/json',[\s\S]*?\.\.\.session\.forwardHeaders,[\s\S]*?\},/);
       assert.ok(literal, 'could not locate the NEO headers literal — did it get restructured?');
       assert.ok(literal[0].includes("'Accept-Language': locale"),
         'the NEO headers literal lost its Accept-Language entry');
+      assert.ok(!literal[0].includes('Authorization'),
+        'the NEO headers literal must never build a Bearer Authorization header under the cookie session');
     });
   });
 });

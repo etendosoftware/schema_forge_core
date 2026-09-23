@@ -57,6 +57,43 @@ describe('stripBlankOptionalClauses', () => {
   });
 });
 
+describe('applyPlaceholders — clientId guard (ETP-5460, defense in depth)', () => {
+  // report-auth.js is the primary guard (never resolves a blank/'0' clientId
+  // in the first place), but this module does raw string substitution into
+  // SQL text — a second, independent guard here means a future caller that
+  // forgets to go through report-auth.js still cannot scope a query to a
+  // blank or malformed clientId.
+  const sql = "WHERE c = '__CLIENT_ID__'";
+
+  it('throws when clientId is blank', () => {
+    assert.throws(() => applyPlaceholders(sql, { clientId: '', params: {}, contract: {} }), /clientId/);
+  });
+
+  it('throws when clientId is undefined', () => {
+    assert.throws(() => applyPlaceholders(sql, { params: {}, contract: {} }), /clientId/);
+  });
+
+  it('throws when clientId is null', () => {
+    assert.throws(() => applyPlaceholders(sql, { clientId: null, params: {}, contract: {} }), /clientId/);
+  });
+
+  it('throws when clientId does not match the strict AD id shape (alphanumeric, 1-32 chars)', () => {
+    for (const bad of ["1' OR '1'='1", '0; DROP TABLE x;--', 'a'.repeat(33), ' ', 'has space']) {
+      assert.throws(
+        () => applyPlaceholders(sql, { clientId: bad, params: {}, contract: {} }),
+        /clientId/,
+        `expected applyPlaceholders to reject clientId=${JSON.stringify(bad)}`,
+      );
+    }
+  });
+
+  it('accepts a legacy numeric-looking id and a real Etendo 32-char UUID', () => {
+    for (const good of ['0', '19', '130', '95E2A8B50A254B2AAE6774B8C2F28120']) {
+      assert.doesNotThrow(() => applyPlaceholders(sql, { clientId: good, params: {}, contract: {} }));
+    }
+  });
+});
+
 describe('applyPlaceholders', () => {
   const base = { clientId: 'C1', params: {}, contract: {} };
 
