@@ -405,150 +405,18 @@ describe('harvesting under a session that moved', () => {
   });
 });
 
-// ETP-5434: N concurrent action POSTs against the SAME record each trigger
-// `refreshVersionAfterAction`'s post-action re-read. Measured on the "Añadir cobro" modal, three
-// concurrent actions produced three identical GETs racing the connection and the DB row; this
-// collapses them into one shared re-read (`pendingActionRereads`), and adds the `refreshVersion`
-// option to skip the re-read entirely for an action verified to not mutate the row.
+// ETP-5434: the `refreshVersion` option lets a caller skip `refreshVersionAfterAction`'s
+// post-action re-read for an action verified to not mutate the row. Default behaviour (re-read)
+// must be unchanged for every other call site.
 //
-// All fixtures below target `/fixture/header/<id>/action/<name>`, mirroring the parametrised
-// action/normal paths already used above (`entityFromPath` resolves `header` as the entity for
-// both the action path and its derived record path `/fixture/header/<id>`) — and every re-read
-// is gated on a version already being cached for the record (`refreshVersionAfterAction`'s
-// pre-existing `getRecordVersion(...) === undefined` guard), so every test that expects a
-// re-read to fire seeds one with `rememberRecordVersion` first.
-describe('shared post-action re-read (ETP-5434)', () => {
+// All fixtures below target `/fixture/header/<id>/action/<name>` (`entityFromPath` resolves
+// `header` as the entity for both the action path and its derived record path
+// `/fixture/header/<id>`) — and every re-read is gated on a version already being cached for the
+// record (`getRecordVersion(...) === undefined` guard), so every test that expects a re-read to
+// fire seeds one with `rememberRecordVersion` first.
+describe('post-action re-read opt-out (ETP-5434)', () => {
   /** True while `url` is the action POST itself, false for the plain-GET record re-read. */
   const isActionCall = (url) => url.includes('/action/');
-
-  it('collapses two concurrent actions against the SAME record into ONE shared re-read', async () => {
-    const { client } = setup();
-    rememberRecordVersion({ id: 'record-one', updated: 'v0' }, 'header');
-    let rereads = 0;
-    const rereadGate = deferred();
-    globalThis.fetch = async (url) => {
-      if (isActionCall(url)) return { ok: true, status: 200 };
-      rereads += 1;
-      await rereadGate.promise;
-      return recordResponse({ id: 'record-one', updated: 'v1' });
-    };
-
-    const a = client('/fixture/header/record-one/action/nameA', { method: 'POST', body: '{}' });
-    const b = client('/fixture/header/record-one/action/nameB', { method: 'POST', body: '{}' });
-    await flush();
-    assert.equal(rereads, 1, 'the second action must join the first re-read instead of firing its own');
-
-    rereadGate.resolve();
-    await Promise.all([a, b]);
-  });
-
-  it('does NOT share a re-read across two DIFFERENT record ids', async () => {
-    const { client } = setup();
-    rememberRecordVersion({ id: 'record-one', updated: 'v0' }, 'header');
-    rememberRecordVersion({ id: 'record-two', updated: 'v0' }, 'header');
-    const rereads = [];
-    globalThis.fetch = async (url) => {
-      if (isActionCall(url)) return { ok: true, status: 200 };
-      rereads.push(url);
-      return recordResponse({ id: url.split('/').pop(), updated: 'v1' });
-    };
-
-    await Promise.all([
-      client('/fixture/header/record-one/action/nameA', { method: 'POST', body: '{}' }),
-      client('/fixture/header/record-two/action/nameA', { method: 'POST', body: '{}' }),
-    ]);
-
-    assert.equal(rereads.length, 2, 'different ids must never be folded into the same in-flight re-read');
-  });
-
-  it('does NOT share a re-read across two different sessions, even for the SAME record id', async () => {
-    // The version cache itself (lib/recordVersions.js) carries no tenant, so one
-    // rememberRecordVersion seeds the gate for both sessions below — what this test pins down is
-    // that the DEDUPE key (pendingActionRereads, prefixed by sessionQueueKey) still tells them
-    // apart, exactly like recordWriteChains does for the write queue above.
-    const mine = setup({ tenant: 'X' });
-    const theirs = setup({ tenant: 'Y' });
-    rememberRecordVersion({ id: 'record-one', updated: 'v0' }, 'header');
-    let rereads = 0;
-    globalThis.fetch = async (url) => {
-      if (isActionCall(url)) return { ok: true, status: 200 };
-      rereads += 1;
-      return recordResponse({ id: 'record-one', updated: 'v1' });
-    };
-
-    await Promise.all([
-      mine.client('/fixture/header/record-one/action/nameA', { method: 'POST', body: '{}' }),
-      theirs.client('/fixture/header/record-one/action/nameA', { method: 'POST', body: '{}' }),
-    ]);
-
-    assert.equal(rereads, 2, 'sessionQueueKey must differentiate the two tenants');
-  });
-
-  it('lets the joining caller see the harvested version too, once its own promise resolves', async () => {
-    const { client } = setup();
-    rememberRecordVersion({ id: 'record-one', updated: 'v0' }, 'header');
-    const rereadGate = deferred();
-    globalThis.fetch = async (url) => {
-      if (isActionCall(url)) return { ok: true, status: 200 };
-      await rereadGate.promise;
-      return recordResponse({ id: 'record-one', updated: 'v1' });
-    };
-
-    const a = client('/fixture/header/record-one/action/nameA', { method: 'POST', body: '{}' });
-    const b = client('/fixture/header/record-one/action/nameB', { method: 'POST', body: '{}' });
-    await flush();
-    assert.equal(getRecordVersion('record-one', 'header'), 'v0', 'not harvested yet — the shared re-read is still pending');
-
-    rereadGate.resolve();
-    await Promise.all([a, b]);
-
-    // Both callers awaited the SAME task, and the task only settles after harvestReadVersions has
-    // already written the cache — so the joining caller (b) never returns "too early".
-    assert.equal(getRecordVersion('record-one', 'header'), 'v1');
-  });
-
-  it('starts a FRESH re-read for a later, non-concurrent action once the shared one has settled', async () => {
-    const { client } = setup();
-    rememberRecordVersion({ id: 'record-one', updated: 'v0' }, 'header');
-    let rereads = 0;
-    globalThis.fetch = async (url) => {
-      if (isActionCall(url)) return { ok: true, status: 200 };
-      rereads += 1;
-      return recordResponse({ id: 'record-one', updated: `v${rereads}` });
-    };
-
-    await client('/fixture/header/record-one/action/nameA', { method: 'POST', body: '{}' });
-    assert.equal(rereads, 1);
-
-    await client('/fixture/header/record-one/action/nameB', { method: 'POST', body: '{}' });
-    assert.equal(rereads, 2, 'the pendingActionRereads entry must not outlive its own settlement');
-  });
-
-  it('still cleans up the pending entry when the re-read itself fails, so nobody is left waiting forever', async () => {
-    const { client } = setup();
-    rememberRecordVersion({ id: 'record-one', updated: 'v0' }, 'header');
-    let rereads = 0;
-    globalThis.fetch = async (url) => {
-      if (isActionCall(url)) return { ok: true, status: 200 };
-      rereads += 1;
-      if (rereads === 1) throw new Error('network down');
-      return recordResponse({ id: 'record-one', updated: 'v-after-retry' });
-    };
-
-    // Neither promise may reject — refreshVersionAfterAction's own try/catch swallows a failed
-    // re-read, exactly as it did for a single caller before ETP-5434 (the action itself succeeded
-    // and must not be reported as failed).
-    const a = client('/fixture/header/record-one/action/nameA', { method: 'POST', body: '{}' });
-    const b = client('/fixture/header/record-one/action/nameB', { method: 'POST', body: '{}' });
-    await Promise.all([a, b]);
-
-    assert.equal(rereads, 1, 'the second action joined the failed re-read instead of racing its own');
-    assert.equal(getRecordVersion('record-one', 'header'), 'v0', 'a failed re-read must not corrupt the cache');
-
-    await client('/fixture/header/record-one/action/nameC', { method: 'POST', body: '{}' });
-    assert.equal(rereads, 2, 'a later action must get a fresh re-read, not join a dead entry');
-    assert.equal(getRecordVersion('record-one', 'header'), 'v-after-retry');
-  });
 
   it('preserves the pre-existing gate: no cached version for the record means NO re-read at all', async () => {
     const { client } = setup();
@@ -617,30 +485,6 @@ describe('shared post-action re-read (ETP-5434)', () => {
 
     assert.deepEqual(bodies, [{ name: 'x', updated: 'v0' }]);
     assert.equal(getRecordVersion('record-one', 'records'), 'v1');
-  });
-
-  it('regression (the original motive): after two concurrent actions on a record, an immediate PATCH to it carries the FRESH token — no 409 stale_record', async () => {
-    const { client } = setup();
-    rememberRecordVersion({ id: 'record-one', updated: 'v0' }, 'header');
-    const patchBodies = [];
-    globalThis.fetch = async (url, init) => {
-      if (isActionCall(url)) return { ok: true, status: 200 };
-      if ((init?.method || 'GET') === 'PATCH') {
-        patchBodies.push(JSON.parse(init.body));
-        return recordResponse({ id: 'record-one', updated: 'v2' });
-      }
-      // The shared re-read triggered by the two actions below.
-      return recordResponse({ id: 'record-one', updated: 'v1' });
-    };
-
-    await Promise.all([
-      client('/fixture/header/record-one/action/nameA', { method: 'POST', body: '{}' }),
-      client('/fixture/header/record-one/action/nameB', { method: 'POST', body: '{}' }),
-    ]);
-
-    await client('/fixture/header/record-one', { method: 'PATCH', body: JSON.stringify({ name: 'after' }) });
-
-    assert.deepEqual(patchBodies, [{ name: 'after', updated: 'v1' }]);
   });
 });
 
