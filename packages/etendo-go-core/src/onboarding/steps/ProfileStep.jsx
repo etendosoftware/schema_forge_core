@@ -58,7 +58,7 @@ export function ProfileStep({ config, stepData, onNext, onBack, goToStep, accoun
   // stays data-driven if the country list ever expands again.
   const fixedCountry = buildCountryOptions(config.countryCodes, locale)[0];
 
-  const businessTypeOptions = (config.businessTypeValues || ['company', 'freelancer', 'advisory']).map((value) => ({
+  const businessTypeOptions = (config.businessTypeValues || ['company', 'freelancer']).map((value) => ({
     value,
     label: ui(`onboardingBusinessType${value.charAt(0).toUpperCase()}${value.slice(1)}`),
     icon: value === 'company' ? Building2 : value === 'freelancer' ? User : MessageCircle,

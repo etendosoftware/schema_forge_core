@@ -313,6 +313,9 @@ export async function runOnboardingStream(fetchImpl, baseUrl, csrfToken, form, o
     headers: buildAuthHeaders(csrfToken),
     body: JSON.stringify({
       clientName: form.clientName,
+      // Persist the business type selected during onboarding so the Organization
+      // editor can show the same Empresa / Autónomo selection after setup.
+      ...(form.businessType ? { businessType: form.businessType } : {}),
       currency: form.currency,
       language: form.language,
       countryCode: form.countryCode,

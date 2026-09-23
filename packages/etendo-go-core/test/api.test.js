@@ -501,7 +501,7 @@ describe('onboarding session API — resource-access cluster (ETP-4576)', () => 
       };
       const form = {
         clientName: 'Acme', currency: 'EUR', language: 'en_US', countryCode: 'ES',
-        address: '123 Main St', fullName: 'Ada', extra: 'not-sent',
+        address: '123 Main St', fullName: 'Ada', businessType: 'company', extra: 'not-sent',
       };
       const messages = [];
 
@@ -517,10 +517,25 @@ describe('onboarding session API — resource-access cluster (ETP-4576)', () => 
       assert.equal('Authorization' in calls[0].options.headers, false);
       assert.deepEqual(JSON.parse(calls[0].options.body), {
         clientName: 'Acme', currency: 'EUR', language: 'en_US', countryCode: 'ES',
-        address: '123 Main St', fullName: 'Ada',
+        businessType: 'company', address: '123 Main St', fullName: 'Ada',
       });
       assert.deepEqual(result, { type: 'result', success: true });
       assert.deepEqual(messages.map(({ type }) => type), ['progress', 'result']);
+    });
+
+    it('preserves the freelancer business type selected during onboarding', async () => {
+      const calls = [];
+      const fetchImpl = async (url, options = {}) => {
+        calls.push({ url, options });
+        return streamResponse([{ type: 'result', success: true }]);
+      };
+
+      await runOnboardingStream(fetchImpl, '/etendo', 'csrf-abc', {
+        clientName: 'Ada Consulting', currency: 'EUR', language: 'es_ES', countryCode: 'ES',
+        businessType: 'freelancer',
+      }, () => {});
+
+      assert.equal(JSON.parse(calls[0].options.body).businessType, 'freelancer');
     });
 
     it('omits the X-Go-CSRF header (without throwing) when csrfToken is null or undefined', async () => {
