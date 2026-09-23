@@ -378,6 +378,16 @@ function harvestReadVersions(res, path, isOurs = () => true) {
  * - `baseUrl: ''` — for a URL that is already complete, or that points outside the base
  *   (a helper such as `buildCreateUrl` returns a sibling path from the app root, which
  *   the base-prefix guard cannot recognise as already-resolved).
+ * - `refreshVersion: false` — for a POST action endpoint (`/{spec}/{entity}/{id}/action/<name>`)
+ *   that does NOT mutate the record it addresses, skip the post-action re-read described at
+ *   {@link refreshVersionAfterAction}. Default `true`, so every existing call site keeps
+ *   re-reading exactly as before. ETP-5434: three endpoints behind one modal
+ *   (`invoiceAccounts`, `invoicePaymentMethods`, `invoiceCreditSources`) are queries disguised
+ *   as POSTs, so their re-read is 100% waste. **Only set this on an action verified to NOT
+ *   change the row's `updated`** — setting it on one that does silently reintroduces the 409
+ *   `stale_record` ETP-5255 exists to prevent, because the client's cached token then goes
+ *   stale with nothing to refresh it. The caller opting in owns that verification; this flag
+ *   does not and cannot check it.
  *
  * @param {string|null|undefined} baseUrl prefix for relative paths; `null`/`undefined`
  *   falls back to the base detected from the page location
@@ -514,7 +524,7 @@ export function createApiFetch(baseUrl, getToken, onUnauthorized, scope) {
   return async function apiFetch(path, options = {}) {
     const {
       on401, credentials, baseUrl: baseUrlOverride, token: tokenOverride,
-      headers: extraHeaders, ...rest
+      headers: extraHeaders, refreshVersion = true, ...rest
     } = options;
     // Legacy three-argument clients inherit the registered scope, including host wrappers
     // with a captured token. Explicit null opts out (bootstrap refresh owns its guard).
@@ -726,7 +736,9 @@ export function createApiFetch(baseUrl, getToken, onUnauthorized, scope) {
       // extra round trip disappears on its own once the backend does, with no client change.
       const actionPath = verb === 'POST' ? actionRecordPath(path) : null;
       if (actionPath !== null) {
-        if (res.ok) await refreshVersionAfterAction(actionPath, token, isOurs);
+        // ETP-5434: `refreshVersion: false` opts a verified non-mutating action endpoint out of
+        // this re-read. Default `true`, so every existing call site re-reads exactly as before.
+        if (res.ok && refreshVersion) await refreshVersionAfterAction(actionPath, token, isOurs);
         return finish(res, token, isOurs);
       }
       if (VERSIONED_WRITE_METHODS.has(verb) || verb === 'POST') {
