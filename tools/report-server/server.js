@@ -31,6 +31,7 @@ import { resolveGrouping, buildNestedGroups, buildAccountReportTree } from '../.
 import { applyPlaceholders } from '../../cli/src/report-sql.js';
 import { filterAndTransformParams } from '../../cli/src/report-filters.js';
 import { hydrateDocumentBranding, resolveCompanyLogoDataUrl } from '../../cli/src/report-branding.js';
+import { resolveReportSession, reportAuthErrorBody } from '../../cli/src/report-auth.js';
 
 const _require = createRequire(import.meta.url);
 const __dirname = dirname(fileURLToPath(import.meta.url));
@@ -98,15 +99,6 @@ async function getReportCurrencySeparators() {
   return currencySeparatorsPromise;
 }
 
-function getClientIdFromToken(authHeader) {
-  try {
-    const token = (authHeader || '').replace(/^Bearer\s+/i, '');
-    if (!token) return null;
-    const payload = JSON.parse(Buffer.from(token.split('.')[1], 'base64url').toString());
-    return payload.client || null;
-  } catch { return null; }
-}
-
 function readBody(req) {
   return new Promise((resolve, reject) => {
     let body = '';
@@ -137,20 +129,22 @@ function listReports() {
 // Data fetching
 // ---------------------------------------------------------------------------
 
-async function fetchReportData(reportId, { limit, authToken, params = {}, locale } = {}) {
+async function fetchReportData(reportId, { limit, session, params = {}, locale } = {}) {
   const contractPath = join(ARTIFACTS_DIR, reportId, 'report-contract.json');
   const contract = JSON.parse(readFileSync(contractPath, 'utf8'));
 
   // NEO API path
   if (contract.neo?.endpoint) {
-    if (!authToken) throw new Error('No auth token');
     const neoUrl = `${ETENDO_URL}${contract.neo.endpoint}`;
     const neoBody = { ...contract.neo.body, ...params };
     const neoRes = await fetch(neoUrl, {
       method: contract.neo.method || 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'Authorization': `Bearer ${authToken}`,
+        // ETP-5460: forwards the session's Cookie (+ Origin/Referer, + CSRF
+        // when the caller's own request was unsafe) instead of a Bearer
+        // token — see report-auth.js's resolveReportSession.
+        ...session.forwardHeaders,
         // Same as the dev plugin's copy (report-api.js) — see its comment for the
         // full rationale (ETP-5013). Kept byte-identical in behaviour on purpose:
         // a header sent only by the dev engine would translate reports locally and
@@ -178,9 +172,8 @@ async function fetchReportData(reportId, { limit, authToken, params = {}, locale
     const logoPool = new pg.default.Pool(getDbConfig());
     let companyLogoDataUrl;
     try {
-      const clientId = getClientIdFromToken(`Bearer ${authToken}`) || '0';
       companyLogoDataUrl = await resolveCompanyLogoDataUrl(logoPool, {
-        clientId, orgId: params.orgId, authToken, etendoBase: ETENDO_URL,
+        clientId: session.clientId, orgId: params.orgId, authHeaders: session.forwardHeaders, etendoBase: ETENDO_URL,
       });
     } finally {
       await logoPool.end();
@@ -218,7 +211,7 @@ async function fetchReportData(reportId, { limit, authToken, params = {}, locale
           'SELECT (SELECT oi.your_company_document_image FROM ad_orginfo oi WHERE oi.ad_org_id = org.ad_org_id) AS org_logo_id, ');
       const headerResult = await pool.query(brandedHeaderSql);
       const header = await hydrateDocumentBranding(headerResult.rows[0] || {}, {
-        authToken,
+        authHeaders: session.forwardHeaders,
         etendoBase: process.env.ETENDO_URL || 'http://localhost:8080/etendo',
       });
       const linesResult = await pool.query(replace(contract.sql.lines));
@@ -235,7 +228,7 @@ async function fetchReportData(reportId, { limit, authToken, params = {}, locale
   }
 
   // SQL / Jasper path
-  let sql = await buildReportSql(contract, reportId, authToken, params, locale);
+  let sql = await buildReportSql(contract, reportId, session.clientId, params, locale);
 
   sql = injectDateFilters(contract, params, sql);
 
@@ -244,7 +237,7 @@ async function fetchReportData(reportId, { limit, authToken, params = {}, locale
   // Same client the main query was scoped to — the secondary queries below must
   // not resolve it independently, or they could annotate one client's rows with
   // another's data.
-  const clientId = getClientIdFromToken(`Bearer ${authToken}`) || '0';
+  const clientId = session.clientId;
 
   const pg = await import('pg');
   const pool = new pg.default.Pool(getDbConfig());
@@ -274,7 +267,7 @@ async function fetchReportData(reportId, { limit, authToken, params = {}, locale
     // so this falls back to the client's own logo when the report has no
     // `orgId` filter (e.g. Inventory Stock Report, Order Not Shipped).
     const companyLogoDataUrl = await resolveCompanyLogoDataUrl(pool, {
-      clientId, orgId: params.orgId, authToken,
+      clientId, orgId: params.orgId, authHeaders: session.forwardHeaders,
       etendoBase: process.env.ETENDO_URL || 'http://localhost:8080/etendo',
     });
 
@@ -320,7 +313,7 @@ function applyDateFilters(dateParams, params, contract, sql, extraClauses) {
   }
 }
 
-async function buildReportSql(contract, reportId, authToken, params, locale) {
+async function buildReportSql(contract, reportId, clientId, params, locale) {
   let sql = contract.sql?.query || null;
 
   if (!sql && contract.jasper?.originalFile) {
@@ -334,7 +327,6 @@ async function buildReportSql(contract, reportId, authToken, params, locale) {
 
   if (!sql) throw new Error(`No data source configured for report '${reportId}'`);
 
-  const clientId = getClientIdFromToken(`Bearer ${authToken}`) || '0';
   return applyPlaceholders(sql, { clientId, params, contract, locale });
 }
 
@@ -408,9 +400,21 @@ async function renderReport(renderMatch, req, res) {
   const body = await readBody(req);
   const { format = 'html', limit, params = {}, locale = 'en_US' } = JSON.parse(body || '{}');
 
+  // ETP-5460: resolve identity from the session cookie BEFORE any report
+  // data fetch — a missing/invalid/CSRF-rejected session must reach the SPA
+  // with the exact status resolveReportSession decided (401/403/502), never
+  // a generic 500, and must never touch the DB or call NEO at all.
+  let session;
   try {
-    const authToken = (req.headers.authorization || '').replace(/^Bearer\s+/i, '');
-    const result = await fetchReportData(reportId, { limit, authToken, params, locale });
+    session = await resolveReportSession(req.headers, { method: req.method, etendoBase: ETENDO_URL });
+  } catch (e) {
+    const { status, body: errorBody } = reportAuthErrorBody(e);
+    json(res, status, errorBody);
+    return;
+  }
+
+  try {
+    const result = await fetchReportData(reportId, { limit, session, params, locale });
     const { contract, documentData, neoMeta = {}, companyLogoDataUrl } = result;
     const {
       rows, groupLabel, descriptionLabel, dimensionLabel, dimensionField, tbGroups, openingRows,
@@ -647,9 +651,22 @@ async function fetchReportSelectors(selectorMatch, url, req, res) {
   const selectedWarehouseIds = (url.searchParams.get('warehouseIds') || '').split(',').map(s => s.trim()).filter(Boolean);
   const roleOrgIds = (url.searchParams.get('roleOrgIds') || '').split(',').map(s => s.trim()).filter(Boolean);
 
+  let session;
   try {
-    const clientId = getClientIdFromToken(req.headers.authorization);
-    const byClient = (col) => clientId ? `AND ${col} = '${clientId}'` : '';
+    session = await resolveReportSession(req.headers, { method: req.method, etendoBase: ETENDO_URL });
+  } catch (e) {
+    const { status, body } = reportAuthErrorBody(e);
+    json(res, status, body);
+    return;
+  }
+
+  try {
+    const clientId = session.clientId;
+    // ETP-5460: clientId is always resolved by this point (resolveReportSession
+    // already rejected the request with 401 otherwise) — the filter is
+    // therefore unconditional, unlike the old token-derived value which could
+    // be null and silently return every client's rows.
+    const byClient = (col) => `AND ${col} = '${clientId}'`;
 
     // ETP-5420 — must match report-api.js's dev-plugin fix exactly (the two
     // report-render engines drifted): scoped to the client's base currency +
@@ -782,9 +799,18 @@ function isPostRequestForRender(method, renderMatch) {
 async function fetchReportDataById(dataMatch, url, req, res) {
   const reportId = dataMatch[1];
   const limit = url.searchParams.get('limit');
+
+  let session;
   try {
-    const authToken = (req.headers.authorization || '').replace(/^Bearer\s+/i, '');
-    const { rows, contract } = await fetchReportData(reportId, { limit, authToken });
+    session = await resolveReportSession(req.headers, { method: req.method, etendoBase: ETENDO_URL });
+  } catch (e) {
+    const { status, body } = reportAuthErrorBody(e);
+    json(res, status, body);
+    return;
+  }
+
+  try {
+    const { rows, contract } = await fetchReportData(reportId, { limit, session });
     json(res, 200, { rows, contract, count: rows.length });
   } catch (e) { json(res, 500, { error: e.message }); }
 }

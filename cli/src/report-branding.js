@@ -20,18 +20,23 @@
  * listing reports (a synthetic `{ org_logo_id }` object resolved from
  * `params.orgId` via `ad_orginfo` — see the report engines) — this function
  * doesn't care where `org_logo_id` came from, only that the object has one.
+ *
+ * ETP-5460: auth is `authHeaders` — the `forwardHeaders` object
+ * `report-auth.js`'s `resolveReportSession` returns — not a Bearer token.
+ * The image GET is a safe method, so `authHeaders.Cookie` alone is enough;
+ * there is no CSRF header to forward here.
  */
 export async function hydrateDocumentBranding(header, {
-  authToken,
+  authHeaders,
   etendoBase = 'http://localhost:8080/etendo',
   fetchImpl = fetch,
 } = {}) {
-  if (!header || !header.org_logo_id || !authToken) return header;
+  if (!header || !header.org_logo_id || !authHeaders?.Cookie) return header;
 
   try {
     const imageUrl = `${etendoBase}/sws/neo/image/${encodeURIComponent(header.org_logo_id)}`;
     const response = await fetchImpl(imageUrl, {
-      headers: { Authorization: `Bearer ${authToken}` },
+      headers: { Cookie: authHeaders.Cookie },
     });
     if (!response.ok) return header;
 
@@ -68,7 +73,7 @@ export async function hydrateDocumentBranding(header, {
  * `pool` must already be open — callers that don't have one yet (the NEO
  * branch has no DB access otherwise) open a short-lived one just for this.
  */
-export async function resolveCompanyLogoDataUrl(pool, { clientId, orgId, authToken, etendoBase } = {}) {
+export async function resolveCompanyLogoDataUrl(pool, { clientId, orgId, authHeaders, etendoBase } = {}) {
   if (!clientId) return undefined;
 
   let logoRow;
@@ -89,6 +94,6 @@ export async function resolveCompanyLogoDataUrl(pool, { clientId, orgId, authTok
     logoRow = result.rows[0];
   }
 
-  const branded = await hydrateDocumentBranding(logoRow || {}, { authToken, etendoBase });
+  const branded = await hydrateDocumentBranding(logoRow || {}, { authHeaders, etendoBase });
   return branded.companyLogoDataUrl;
 }
