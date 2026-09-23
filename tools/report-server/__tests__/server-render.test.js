@@ -237,7 +237,7 @@ describe('document-branding partial expansion (ETP-5013 regression)', () => {
       // resolveCompanyLogoDataUrl for the actual SQL and fallback logic.
       assert.match(
         serverSource,
-        /const companyLogoDataUrl = await resolveCompanyLogoDataUrl\(pool, \{\s*\n\s*clientId, orgId: params\.orgId, authToken,/,
+        /const companyLogoDataUrl = await resolveCompanyLogoDataUrl\(pool, \{\s*\n\s*clientId, orgId: params\.orgId, authHeaders: session\.forwardHeaders,/,
       );
     });
 

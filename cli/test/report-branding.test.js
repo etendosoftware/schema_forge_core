@@ -12,6 +12,13 @@
  * report-i18n.test.js's docstring): code living only in a Vite plugin never
  * reaches production, only a shared module reliably does.
  *
+ * ETP-5460: the report engines moved from `Authorization: Bearer` to the
+ * `__Host-go_session` cookie session. This module's auth is now supplied as
+ * `authHeaders` (the `forwardHeaders` object `report-auth.js`'s
+ * `resolveReportSession` returns), and the NEO image GET sends
+ * `authHeaders.Cookie` — never a Bearer header. GET is a safe method, so the
+ * Cookie alone is enough; there is no CSRF header to forward here.
+ *
  * Exercises the REAL shared function — both the report-server
  * (tools/report-server/server.js) and the functional repo's dev plugin
  * (report-api.js) import this module directly, never a local copy.
@@ -19,6 +26,8 @@
 import { describe, it } from 'node:test';
 import { strict as assert } from 'node:assert';
 import { hydrateDocumentBranding, resolveCompanyLogoDataUrl } from '../src/report-branding.js';
+
+const AUTH_HEADERS = { Cookie: '__Host-go_session=abc123' };
 
 function response({ ok = true, contentType = 'image/png', bytes = [1, 2, 3] } = {}) {
   return {
@@ -29,15 +38,16 @@ function response({ ok = true, contentType = 'image/png', bytes = [1, 2, 3] } = 
 }
 
 describe('hydrateDocumentBranding — document reports (header.org_logo_id)', () => {
-  it('embeds the organization image returned by the authenticated NEO endpoint', async () => {
+  it('embeds the organization image returned by the session-authenticated NEO endpoint', async () => {
     const result = await hydrateDocumentBranding(
       { org_name: 'Acme', org_logo_id: 'img-1' },
       {
-        authToken: 'token',
+        authHeaders: AUTH_HEADERS,
         etendoBase: 'http://etendo.test/etendo',
         fetchImpl: async (url, options) => {
           assert.equal(url, 'http://etendo.test/etendo/sws/neo/image/img-1');
-          assert.equal(options.headers.Authorization, 'Bearer token');
+          assert.equal(options.headers.Cookie, AUTH_HEADERS.Cookie);
+          assert.equal(options.headers.Authorization, undefined, 'must never send a Bearer header under the cookie session');
           return response({ contentType: 'image/svg+xml', bytes: [60, 115, 118, 103, 62] });
         },
       },
@@ -54,7 +64,7 @@ describe('hydrateDocumentBranding — document reports (header.org_logo_id)', ()
     await hydrateDocumentBranding(
       { org_logo_id: 'a/b c' },
       {
-        authToken: 'token',
+        authHeaders: AUTH_HEADERS,
         etendoBase: 'http://etendo.test/etendo',
         fetchImpl: async (url) => {
           capturedUrl = url;
@@ -70,7 +80,7 @@ describe('hydrateDocumentBranding — document reports (header.org_logo_id)', ()
     await hydrateDocumentBranding(
       { org_logo_id: 'img-1' },
       {
-        authToken: 'token',
+        authHeaders: AUTH_HEADERS,
         fetchImpl: async (url) => {
           capturedUrl = url;
           return response();
@@ -83,7 +93,7 @@ describe('hydrateDocumentBranding — document reports (header.org_logo_id)', ()
   it('keeps the report printable when branding is unavailable (image fetch not ok)', async () => {
     const header = { org_name: 'Acme', org_logo_id: 'missing' };
     const result = await hydrateDocumentBranding(header, {
-      authToken: 'token',
+      authHeaders: AUTH_HEADERS,
       fetchImpl: async () => response({ ok: false }),
     });
     assert.deepEqual(result, header);
@@ -92,7 +102,7 @@ describe('hydrateDocumentBranding — document reports (header.org_logo_id)', ()
   it('keeps the report printable when the image fetch throws', async () => {
     const header = { org_name: 'Acme', org_logo_id: 'img-1' };
     const result = await hydrateDocumentBranding(header, {
-      authToken: 'token',
+      authHeaders: AUTH_HEADERS,
       fetchImpl: async () => { throw new Error('network down'); },
     });
     assert.deepEqual(result, header, 'a network failure must degrade to the original header, not throw');
@@ -102,14 +112,14 @@ describe('hydrateDocumentBranding — document reports (header.org_logo_id)', ()
     const header = { org_name: 'Acme' };
     let fetchCalled = false;
     const result = await hydrateDocumentBranding(header, {
-      authToken: 'token',
+      authHeaders: AUTH_HEADERS,
       fetchImpl: async () => { fetchCalled = true; return response(); },
     });
     assert.deepEqual(result, header);
     assert.equal(fetchCalled, false, 'must not attempt a fetch when there is nothing to fetch');
   });
 
-  it('returns the header unchanged when there is no authToken', async () => {
+  it('returns the header unchanged when there is no authHeaders (or no Cookie inside it)', async () => {
     const header = { org_name: 'Acme', org_logo_id: 'img-1' };
     let fetchCalled = false;
     const result = await hydrateDocumentBranding(header, {
@@ -117,11 +127,19 @@ describe('hydrateDocumentBranding — document reports (header.org_logo_id)', ()
     });
     assert.deepEqual(result, header);
     assert.equal(fetchCalled, false, 'must not attempt an unauthenticated NEO image fetch');
+
+    fetchCalled = false;
+    const result2 = await hydrateDocumentBranding(header, {
+      authHeaders: {},
+      fetchImpl: async () => { fetchCalled = true; return response(); },
+    });
+    assert.deepEqual(result2, header);
+    assert.equal(fetchCalled, false, 'authHeaders without a Cookie must also stay unauthenticated (fail-soft)');
   });
 
   it('returns undefined/null header input unchanged rather than throwing', async () => {
-    assert.equal(await hydrateDocumentBranding(null, { authToken: 'token' }), null);
-    assert.equal(await hydrateDocumentBranding(undefined, { authToken: 'token' }), undefined);
+    assert.equal(await hydrateDocumentBranding(null, { authHeaders: AUTH_HEADERS }), null);
+    assert.equal(await hydrateDocumentBranding(undefined, { authHeaders: AUTH_HEADERS }), undefined);
   });
 });
 
@@ -134,7 +152,7 @@ describe('hydrateDocumentBranding — listing reports (synthetic {org_logo_id} o
     const result = await hydrateDocumentBranding(
       { org_logo_id: 'img-listing' },
       {
-        authToken: 'token',
+        authHeaders: AUTH_HEADERS,
         etendoBase: 'http://etendo.test/etendo',
         fetchImpl: async (url) => {
           assert.equal(url, 'http://etendo.test/etendo/sws/neo/image/img-listing');
@@ -146,7 +164,7 @@ describe('hydrateDocumentBranding — listing reports (synthetic {org_logo_id} o
   });
 
   it('returns an empty object unchanged when org_logo_id resolves to null (no image configured)', async () => {
-    const result = await hydrateDocumentBranding({ org_logo_id: null }, { authToken: 'token' });
+    const result = await hydrateDocumentBranding({ org_logo_id: null }, { authHeaders: AUTH_HEADERS });
     assert.deepEqual(result, { org_logo_id: null });
   });
 });
@@ -189,7 +207,7 @@ describe('resolveCompanyLogoDataUrl — listing report two-step lookup (ETP-5013
 
   it('returns undefined without querying anything when there is no clientId', async () => {
     const pool = createMockPool({ orgLogoId: 'org-logo' });
-    const result = await resolveCompanyLogoDataUrl(pool, { orgId: 'ORG1', authToken: 'token' });
+    const result = await resolveCompanyLogoDataUrl(pool, { orgId: 'ORG1', authHeaders: AUTH_HEADERS });
     assert.equal(result, undefined);
     assert.equal(pool.calls.length, 0);
   });
@@ -198,7 +216,7 @@ describe('resolveCompanyLogoDataUrl — listing report two-step lookup (ETP-5013
     stubImageFetch();
     try {
       const pool = createMockPool({ orgLogoId: 'org-logo', clientLogoId: 'client-logo' });
-      const result = await resolveCompanyLogoDataUrl(pool, { clientId: 'C1', orgId: 'ORG1', authToken: 'token' });
+      const result = await resolveCompanyLogoDataUrl(pool, { clientId: 'C1', orgId: 'ORG1', authHeaders: AUTH_HEADERS });
       assert.equal(result, 'data:image/png;base64,AQID');
       assert.equal(pool.calls.length, 1, 'must not fall back to the client-wide query once the org query succeeds');
       assert.deepEqual(pool.calls[0].params, ['ORG1']);
@@ -209,7 +227,7 @@ describe('resolveCompanyLogoDataUrl — listing report two-step lookup (ETP-5013
     stubImageFetch();
     try {
       const pool = createMockPool({ clientLogoId: 'client-logo' });
-      const result = await resolveCompanyLogoDataUrl(pool, { clientId: 'C1', authToken: 'token' });
+      const result = await resolveCompanyLogoDataUrl(pool, { clientId: 'C1', authHeaders: AUTH_HEADERS });
       assert.equal(result, 'data:image/png;base64,AQID');
       assert.equal(pool.calls.length, 1, 'the org query must be skipped entirely when there is no orgId to scope it by');
       assert.deepEqual(pool.calls[0].params, ['C1']);
@@ -220,7 +238,7 @@ describe('resolveCompanyLogoDataUrl — listing report two-step lookup (ETP-5013
     stubImageFetch();
     try {
       const pool = createMockPool({ orgLogoId: null, clientLogoId: 'client-logo' });
-      const result = await resolveCompanyLogoDataUrl(pool, { clientId: 'C1', orgId: 'ORG1', authToken: 'token' });
+      const result = await resolveCompanyLogoDataUrl(pool, { clientId: 'C1', orgId: 'ORG1', authHeaders: AUTH_HEADERS });
       assert.equal(result, 'data:image/png;base64,AQID');
       assert.equal(pool.calls.length, 2, 'must query both the org row and the client-wide fallback');
       assert.deepEqual(pool.calls[1].params, ['C1']);
@@ -229,11 +247,11 @@ describe('resolveCompanyLogoDataUrl — listing report two-step lookup (ETP-5013
 
   it('returns undefined when neither the org nor any org of the client has a logo configured', async () => {
     const pool = createMockPool({ orgLogoId: null, clientLogoId: null });
-    const result = await resolveCompanyLogoDataUrl(pool, { clientId: 'C1', orgId: 'ORG1', authToken: 'token' });
+    const result = await resolveCompanyLogoDataUrl(pool, { clientId: 'C1', orgId: 'ORG1', authHeaders: AUTH_HEADERS });
     assert.equal(result, undefined);
   });
 
-  it('returns undefined without a network fetch when there is no authToken (fail-soft, same as hydrateDocumentBranding)', async () => {
+  it('returns undefined without a network fetch when there is no authHeaders (fail-soft, same as hydrateDocumentBranding)', async () => {
     let fetchCalled = false;
     originalFetch = globalThis.fetch;
     globalThis.fetch = async () => { fetchCalled = true; return { ok: true, headers: { get: () => 'image/png' }, arrayBuffer: async () => new Uint8Array().buffer }; };

@@ -43,7 +43,7 @@ describe('server.js — listing report company-logo lookup (ETP-5013)', () => {
   it('resolves the logo for the SQL/Jasper listing branch via the shared helper, scoped by clientId and the report\'s own orgId param', () => {
     assert.match(
       SERVER_SRC,
-      /const companyLogoDataUrl = await resolveCompanyLogoDataUrl\(pool, \{\s*\n\s*clientId, orgId: params\.orgId, authToken,/,
+      /const companyLogoDataUrl = await resolveCompanyLogoDataUrl\(pool, \{\s*\n\s*clientId, orgId: params\.orgId, authHeaders: session\.forwardHeaders,/,
     );
   });
 
@@ -56,7 +56,7 @@ describe('server.js — listing report company-logo lookup (ETP-5013)', () => {
     // in just one of them.
     assert.match(
       SERVER_SRC,
-      /companyLogoDataUrl = await resolveCompanyLogoDataUrl\(logoPool, \{\s*\n\s*clientId, orgId: params\.orgId, authToken, etendoBase: ETENDO_URL,/,
+      /companyLogoDataUrl = await resolveCompanyLogoDataUrl\(logoPool, \{\s*\n\s*clientId: session\.clientId, orgId: params\.orgId, authHeaders: session\.forwardHeaders, etendoBase: ETENDO_URL,/,
     );
   });
 
