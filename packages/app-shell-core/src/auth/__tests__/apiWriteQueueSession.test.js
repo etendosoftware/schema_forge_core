@@ -405,6 +405,89 @@ describe('harvesting under a session that moved', () => {
   });
 });
 
+// ETP-5434: the `refreshVersion` option lets a caller skip `refreshVersionAfterAction`'s
+// post-action re-read for an action verified to not mutate the row. Default behaviour (re-read)
+// must be unchanged for every other call site.
+//
+// All fixtures below target `/fixture/header/<id>/action/<name>` (`entityFromPath` resolves
+// `header` as the entity for both the action path and its derived record path
+// `/fixture/header/<id>`) — and every re-read is gated on a version already being cached for the
+// record (`getRecordVersion(...) === undefined` guard), so every test that expects a re-read to
+// fire seeds one with `rememberRecordVersion` first.
+describe('post-action re-read opt-out (ETP-5434)', () => {
+  /** True while `url` is the action POST itself, false for the plain-GET record re-read. */
+  const isActionCall = (url) => url.includes('/action/');
+
+  it('preserves the pre-existing gate: no cached version for the record means NO re-read at all', async () => {
+    const { client } = setup();
+    // No rememberRecordVersion call — the record was never read through this client.
+    let rereads = 0;
+    globalThis.fetch = async (url) => {
+      if (isActionCall(url)) return { ok: true, status: 200 };
+      rereads += 1;
+      return recordResponse({ id: 'record-one', updated: 'v1' });
+    };
+
+    await client('/fixture/header/record-one/action/nameA', { method: 'POST', body: '{}' });
+    assert.equal(rereads, 0);
+  });
+
+  it('keeps re-reading by default when refreshVersion is not passed at all', async () => {
+    const { client } = setup();
+    rememberRecordVersion({ id: 'record-one', updated: 'v0' }, 'header');
+    let rereads = 0;
+    globalThis.fetch = async (url) => {
+      if (isActionCall(url)) return { ok: true, status: 200 };
+      rereads += 1;
+      return recordResponse({ id: 'record-one', updated: 'v1' });
+    };
+
+    await client('/fixture/header/record-one/action/nameA', { method: 'POST', body: '{}' });
+    assert.equal(rereads, 1);
+    assert.equal(getRecordVersion('record-one', 'header'), 'v1');
+  });
+
+  it('skips the re-read entirely when refreshVersion:false is passed, and the action still resolves with its own response', async () => {
+    const { client } = setup();
+    rememberRecordVersion({ id: 'record-one', updated: 'v0' }, 'header');
+    let rereads = 0;
+    globalThis.fetch = async (url) => {
+      if (isActionCall(url)) return { ok: true, status: 200 };
+      rereads += 1;
+      return recordResponse({ id: 'record-one', updated: 'v1' });
+    };
+
+    const response = await client('/fixture/header/record-one/action/nameA', {
+      method: 'POST', body: '{}', refreshVersion: false,
+    });
+
+    assert.equal(rereads, 0);
+    assert.equal(response.status, 200);
+    // Nothing refreshed it, so the cache is left exactly as it was.
+    assert.equal(getRecordVersion('record-one', 'header'), 'v0');
+  });
+
+  it('does not touch version injection or the write harvest on a normal (non-action) PUT, even when refreshVersion:false is passed', async () => {
+    // refreshVersion is only ever consulted on the action branch (`actionPath !== null`) — this
+    // pins that passing it on an ordinary record write is a no-op, not a second flag with its own
+    // (accidental) effect on `withRecordVersion` / `harvestWrittenVersion`.
+    const { client } = setup();
+    rememberRecordVersion({ id: 'record-one', updated: 'v0' }, 'records');
+    const bodies = [];
+    globalThis.fetch = async (url, init) => {
+      bodies.push(JSON.parse(init.body));
+      return recordResponse({ id: 'record-one', updated: 'v1' });
+    };
+
+    await client('/fixture/records/record-one', {
+      method: 'PUT', body: JSON.stringify({ name: 'x' }), refreshVersion: false,
+    });
+
+    assert.deepEqual(bodies, [{ name: 'x', updated: 'v0' }]);
+    assert.equal(getRecordVersion('record-one', 'records'), 'v1');
+  });
+});
+
 describe('sessionController.isSameIdentity', () => {
   const controllerWithoutStorage = (session, apiBaseUrl = '/api') => createSessionController(
     session, undefined, undefined, apiBaseUrl,

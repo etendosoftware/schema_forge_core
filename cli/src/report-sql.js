@@ -79,8 +79,22 @@ export function stripBlankOptionalClauses(q) {
  * / `server.js`) supplies it — and is validated against a strict `xx_YY`
  * shape before being spliced into SQL text, since this module does raw string
  * substitution, not parameterized binding.
+ *
+ * `clientId` MUST already be a caller-resolved, trustworthy value (from
+ * `report-auth.js`'s `resolveReportSession`, never `|| '0'`) — this function
+ * only validates its SHAPE as defense in depth (ETP-5460): a blank or
+ * malformed clientId here means a caller upstream forgot to go through the
+ * session resolver, and this module does raw string substitution into SQL
+ * text, not parameterized binding, so a bad value here is a SQL-scoping bug,
+ * not just a cosmetic one.
  */
+const CLIENT_ID_SHAPE = /^[0-9A-Za-z]{1,32}$/;
+
 export function applyPlaceholders(rawSql, { clientId, params = {}, contract = {}, locale } = {}) {
+  if (!CLIENT_ID_SHAPE.test(clientId || '')) {
+    throw new Error(`applyPlaceholders: invalid or missing clientId (${JSON.stringify(clientId)})`);
+  }
+
   let q = rawSql.replace(/__CLIENT_ID__/g, clientId);
 
   for (const [key, value] of Object.entries(params)) {
