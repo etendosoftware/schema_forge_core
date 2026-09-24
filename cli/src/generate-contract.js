@@ -93,18 +93,42 @@ function findMatchingRule(rules, identifier, type) {
  */
 export function convertLogicToJs(rawExpr, columnMap, booleanFields) {
   const boolSet = new Set(booleanFields || []);
-  // Helper: for Y/N comparisons on boolean fields, use true/false instead of string
+  // Helper: for Y/N comparisons on boolean fields, compare against BOTH the coerced
+  // boolean and the raw AD string.
+  //
+  // ETP-5273 follow-up: the contract's `type: boolean` for a Yes/No-reference column is
+  // a compile-time assumption (the AD reference), not a runtime guarantee. Most Yes/No
+  // columns (e.g. Processed) ARE coerced to a real JSON boolean by the backend, but a
+  // column modeled as a process/action field (e.g. Posted — a Post/Unpost button whose
+  // full value range is Y/N/AD/C/D/DT/E/L/NC/NO/T/b/c/d/i/p/y, not a plain Yes/No) is
+  // NOT — its GET response carries the raw AD string ("Y"/"N") straight through. A
+  // strict `=== true` comparison against that string is always false, so a field whose
+  // readOnlyLogic depends on such a column (accountingDate: `@Posted@='Y'`) rendered
+  // editable on first paint and only flipped to read-only once a SEPARATE, slower
+  // server round-trip (`POST .../header/evaluate-display`) corrected it — a visible
+  // 1-2s flicker reproduced on already-posted sales/purchase invoices. `processed`-based
+  // logic never showed this because Processed IS reliably boolean, so the comparison
+  // never depended on catching the string form.
+  //
+  // Checking both forms costs nothing when the field really is boolean (the `=== 'Y'`
+  // side is simply always false) and fixes the case where it is not — matching the
+  // defensive pattern already hand-written elsewhere for this exact field
+  // (`data?.posted === 'Y' || data?.posted === true` in generated menuActions).
   function eqExpr(col, val) {
     const prop = columnMap[col] ?? (col.charAt(0).toLowerCase() + col.slice(1));
     if ((val === 'Y' || val === 'N') && boolSet.has(prop)) {
-      return val === 'Y' ? `record['${prop}'] === true` : `record['${prop}'] !== true`;
+      return val === 'Y'
+        ? `(record['${prop}'] === true || record['${prop}'] === 'Y')`
+        : `(record['${prop}'] !== true && record['${prop}'] !== 'Y')`;
     }
     return `record['${prop}'] === '${val}'`;
   }
   function neqExpr(col, val) {
     const prop = columnMap[col] ?? (col.charAt(0).toLowerCase() + col.slice(1));
     if ((val === 'Y' || val === 'N') && boolSet.has(prop)) {
-      return val === 'Y' ? `record['${prop}'] !== true` : `record['${prop}'] === true`;
+      return val === 'Y'
+        ? `(record['${prop}'] !== true && record['${prop}'] !== 'Y')`
+        : `(record['${prop}'] === true || record['${prop}'] === 'Y')`;
     }
     return `record['${prop}'] !== '${val}'`;
   }
