@@ -143,6 +143,84 @@ describe('authoritative session refresh contract (ETP-5195)', () => {
   }
 });
 
+describe('cookie session refresh (ETP-5395)', () => {
+  // A cookie session carries no token: the server session holds the role, so the refresh has no
+  // decoded "before" token to diff against and must never hand the client a bearer to send.
+  const cookieSession = (options) => ({ ...sessionFixture(options), token: null });
+
+  it('adopts the role the server rebound the session to on an unchanged refresh', () => {
+    const current = cookieSession();
+    const admin = sessionFixture({ role: 'admin', org: 'hq' });
+    const roleList = [admin.selectedRole];
+    const outcome = reconcileSessionRefresh(current, {
+      unchanged: true, roleList, selectedRoleId: admin.selectedRole.id, selectedOrgId: admin.selectedOrg.id,
+    });
+    assert.deepEqual(outcome, {
+      status: 'ready',
+      session: { ...current, roleList, selectedRole: admin.selectedRole, selectedOrg: admin.selectedOrg },
+    });
+    assert.equal(outcome.session.token, null);
+  });
+
+  it('keeps the current ids when an unchanged refresh omits the selected ids (older backend)', () => {
+    const current = cookieSession();
+    const outcome = reconcileSessionRefresh(current, { unchanged: true, roleList: current.roleList });
+    assert.equal(outcome.status, 'ready');
+    assert.equal(outcome.session.selectedRole.id, current.selectedRole.id);
+  });
+
+  it('falls back to legacy when the reported role is missing from the role list', () => {
+    const current = cookieSession();
+    assert.deepEqual(reconcileSessionRefresh(current,
+      { unchanged: true, roleList: current.roleList, selectedRoleId: 'X-unknown' }), { status: 'legacy' });
+  });
+
+  it('adopts a promotion payload ({ token, session }) without keeping the token', () => {
+    // Shape of the live promotion capture: personal role -> tenant Admin role, new token + v1 metadata.
+    const current = cookieSession();
+    const admin = sessionFixture({ role: 'admin' });
+    const original = structuredClone(current);
+    const outcome = reconcileSessionRefresh(current, metadataResponse(admin));
+    assert.deepEqual(outcome, {
+      status: 'ready',
+      session: { ...current, roleList: admin.roleList, selectedRole: admin.selectedRole, selectedOrg: admin.selectedOrg },
+    });
+    assert.equal(outcome.session.token, null);
+    assert.deepEqual(current, original);
+  });
+
+  it('treats a bare token as a legacy no-op', () => {
+    assert.deepEqual(reconcileSessionRefresh(cookieSession(), { token: sessionFixture({ role: 'admin' }).token }),
+      { status: 'legacy' });
+  });
+
+  it('rejects metadata from another tenant', () => {
+    assert.deepEqual(reconcileSessionRefresh(cookieSession(), metadataResponse(sessionFixture({ tenant: 'Y' }))),
+      { status: 'metadata-required' });
+  });
+
+  it('rejects a session without a known tenant', () => {
+    const current = { ...cookieSession(), clientId: null };
+    assert.deepEqual(reconcileSessionRefresh(current, metadataResponse(sessionFixture({ role: 'admin' }))),
+      { status: 'metadata-required' });
+  });
+
+  const mismatches = [
+    ['user', (r) => { r.session.userId = 'other-user'; }],
+    ['role', (r) => { r.session.selectedRoleId = 'other-role'; }],
+    ['organization', (r) => { r.session.selectedOrgId = 'other-org'; }],
+    ['version', (r) => { r.session.version = 2; }],
+    ['role list', (r) => { r.session.roleList = []; }],
+  ];
+  for (const [name, mutate] of mismatches) {
+    it(`rejects metadata whose ${name} disagrees with the new token`, () => {
+      const response = metadataResponse(sessionFixture({ role: 'admin' }));
+      mutate(response);
+      assert.deepEqual(reconcileSessionRefresh(cookieSession(), response), { status: 'metadata-required' });
+    });
+  }
+});
+
 describe('synchronous session ownership', () => {
   function setup(onSessionChange) {
     const session = sessionFixture();

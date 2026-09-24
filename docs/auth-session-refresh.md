@@ -118,6 +118,34 @@ invalidates the old environment. Generations, revisions and permissions are not 
   empty permissions. Subsequent network failures do not reopen this blocked state.
 - Only valid authoritative metadata recovers a metadata-required session.
 
+### Cookie sessions and role changes (ETP-5395)
+
+A cookie session (`credentialMode` `cookie`/`auto`, ETP-4576) holds no token: the server
+session record carries the role, and `current.token` is always `null`. There is no decoded
+"before" token to diff, so the bearer path above cannot validate the response. It used to
+answer `metadata-required` for any `{ token, session }` refresh, which blanked the whole app
+(`AppShellRuntime` renders nothing while `isSessionReady === false`) as soon as an admin
+promoted or demoted the user.
+
+The server is the authority. When an admin revokes the session's role, `com.etendoerp.go`
+rebinds the cookie session to the user's current eligible role on the next request
+(`GoSessionRoleReconciler`, see that module's `docs/neo-headless.md`). The client just
+adopts what the server reports:
+
+- `{ unchanged: true, roleList, selectedRoleId?, selectedOrgId? }`: `selectedRoleId` and
+  `selectedOrgId` are the role/org the request was authorized with. When present, they
+  select the role and org from `roleList`; when absent (older backend), the current ids are
+  kept. A resulting role/org missing from `roleList` falls back to `legacy`.
+- `{ token, session }` on a cookie session: validated against `current.clientId` (the tenant
+  must not change) and the new token's own claims (metadata must agree with them), then the
+  role list, role and org are adopted. **The token is discarded**, so a cookie session never
+  starts sending a bearer. A mismatch is still `metadata-required`.
+- A bare `{ token }` on a cookie session is `legacy`: the permission maps, resolved
+  server-side, revalidate without changing the session.
+
+A changed role takes the normal `ready` path: the generation bumps and access reloads for the
+new role, with `isSessionReady` staying `true`.
+
 Bootstrap permission fetching waits for refresh. Every accepted authoritative tuple,
 including same-role token renewal, is published before invoking the host permission
 fetcher. Ambient and session-bound transports therefore use the same renewed JWT.

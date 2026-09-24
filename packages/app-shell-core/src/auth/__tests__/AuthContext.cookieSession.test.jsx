@@ -1307,6 +1307,209 @@ describe('AuthContext — isAuthenticated legacy fallback (ETP-4576 cycle 14 reg
   });
 });
 
+// ETP-5395 regression — `refresh()`'s early-return guard checked ONLY
+// `session.token`, which a cookie-session host never populates. Under the cookie
+// scheme `refresh()` therefore always resolved `{ status: 'idle' }` immediately,
+// with no network call at all — silently killing every trigger wired to it:
+// tab-focus/visibility, the 5-minute poll, and the imperative refreshToken()
+// action. Symptom reported live: after an admin changes a user's role mid-session,
+// refocusing that user's tab fires no request and the sidebar stays stale; only a
+// full reload recovers it (a reload re-runs the separate mount-time restore path,
+// masking the bug). Fixed by also treating `status === 'authenticated'` as a live
+// session, mirroring the `isAuthenticated` computation elsewhere in this file.
+// None of the existing trigger tests above (this file's session-restore describe,
+// or AuthContext.test.jsx's own visibilitychange/focus/poll suite) ever combined
+// a cookie session with one of these triggers — each dimension was well covered
+// individually, but never together, which is exactly the combination that shipped
+// broken.
+describe('AuthContext — silent refresh fires under the cookie scheme (ETP-5395 regression guard)', () => {
+  // A resolved, role-holding cookie session: `token` stays null/falsy (as the real
+  // cookie scheme always leaves it), `status` becomes 'authenticated', and
+  // `selectedRole`/`selectedOrg` resolve to real objects so `loadAccess()` actually
+  // calls `fetchWindowAccess` on every refresh cycle instead of short-circuiting.
+  function makeRestoreSession() {
+    return vi.fn().mockResolvedValue({
+      account: { name: 'Ada' },
+      environment: { clientId: 'client-1', roleId: 'role-1', orgId: 'org-1' },
+      roleList: [{ id: 'role-1', name: 'Purchasing', orgList: [{ id: 'org-1', name: 'Main Org' }] }],
+      csrfToken: 'csrf-abc',
+    });
+  }
+
+  // The backend's "nothing changed" refresh-token shape (see sessionRefresh.js's
+  // `unchanged: true` branch) — resolves to `{ status: 'legacy' }`, which is the
+  // path that revalidates access without needing a fresh token at all, exactly
+  // what a cookie session's refresh cycle relies on.
+  function answerUnchanged() {
+    fetchStub.mockImplementation(async () => ({
+      ok: true,
+      json: async () => ({ result: JSON.stringify({ unchanged: true }) }),
+    }));
+  }
+
+  afterEach(() => {
+    vi.useRealTimers();
+  });
+
+  it('re-triggers the silent refresh when the document becomes visible', async () => {
+    const restoreSession = makeRestoreSession();
+    const fetchWindowAccess = vi.fn().mockResolvedValue({ windowAccess: { '147': 'full' }, capabilities: {} });
+    const { result } = renderHook(() => useAuth(), {
+      wrapper: ({ children }) => (
+        <AuthProvider storage={createMemoryAuthStorage()} restoreSession={restoreSession} fetchWindowAccess={fetchWindowAccess}>
+          {children}
+        </AuthProvider>
+      ),
+    });
+
+    await waitFor(() => expect(result.current.status).toBe('authenticated'));
+    await waitFor(() => expect(fetchWindowAccess).toHaveBeenCalledTimes(1));
+    answerUnchanged();
+
+    await act(async () => {
+      document.dispatchEvent(new Event('visibilitychange'));
+      await Promise.resolve();
+    });
+
+    await waitFor(() => expect(fetchStub.mock.calls.some(([url]) => String(url).includes('/sws/neo/refreshtoken'))).toBe(true));
+    await waitFor(() => expect(fetchWindowAccess).toHaveBeenCalledTimes(2));
+  });
+
+  it('re-triggers the silent refresh on window focus', async () => {
+    const restoreSession = makeRestoreSession();
+    const fetchWindowAccess = vi.fn().mockResolvedValue({ windowAccess: { '147': 'full' }, capabilities: {} });
+    const { result } = renderHook(() => useAuth(), {
+      wrapper: ({ children }) => (
+        <AuthProvider storage={createMemoryAuthStorage()} restoreSession={restoreSession} fetchWindowAccess={fetchWindowAccess}>
+          {children}
+        </AuthProvider>
+      ),
+    });
+
+    await waitFor(() => expect(result.current.status).toBe('authenticated'));
+    await waitFor(() => expect(fetchWindowAccess).toHaveBeenCalledTimes(1));
+    answerUnchanged();
+
+    await act(async () => {
+      window.dispatchEvent(new Event('focus'));
+      await Promise.resolve();
+    });
+
+    await waitFor(() => expect(fetchWindowAccess).toHaveBeenCalledTimes(2));
+  });
+
+  it('fires a silent refresh after the 5-minute poll interval elapses', async () => {
+    const POLL_INTERVAL_MS = 5 * 60 * 1000;
+    const restoreSession = makeRestoreSession();
+    const fetchWindowAccess = vi.fn().mockResolvedValue({ windowAccess: { '147': 'full' }, capabilities: {} });
+    // Fake timers installed before renderHook() so the provider's own setInterval()
+    // call is captured by the fake clock (mirrors AuthContext.test.jsx's poll suite).
+    vi.useFakeTimers();
+    renderHook(() => useAuth(), {
+      wrapper: ({ children }) => (
+        <AuthProvider storage={createMemoryAuthStorage()} restoreSession={restoreSession} fetchWindowAccess={fetchWindowAccess}>
+          {children}
+        </AuthProvider>
+      ),
+    });
+
+    await vi.waitFor(() => expect(fetchWindowAccess).toHaveBeenCalledTimes(1));
+    answerUnchanged();
+
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(POLL_INTERVAL_MS);
+    });
+
+    expect(fetchWindowAccess).toHaveBeenCalledTimes(2);
+  });
+
+  it('the imperative refreshToken() action also fires under the cookie scheme', async () => {
+    const restoreSession = makeRestoreSession();
+    const fetchWindowAccess = vi.fn().mockResolvedValue({ windowAccess: { '147': 'full' }, capabilities: {} });
+    const { result } = renderHook(() => useAuth(), {
+      wrapper: ({ children }) => (
+        <AuthProvider storage={createMemoryAuthStorage()} restoreSession={restoreSession} fetchWindowAccess={fetchWindowAccess}>
+          {children}
+        </AuthProvider>
+      ),
+    });
+
+    await waitFor(() => expect(result.current.status).toBe('authenticated'));
+    await waitFor(() => expect(fetchWindowAccess).toHaveBeenCalledTimes(1));
+    answerUnchanged();
+
+    await act(async () => {
+      await result.current.refreshToken();
+    });
+
+    expect(fetchWindowAccess).toHaveBeenCalledTimes(2);
+  });
+});
+
+// ETP-5395 Fix 4 — an admin swaps the user's AD role (personal -> Admin) while their
+// tab is open. The server rebinds the cookie session to the new role; the refresh on refocus
+// must carry the client over to it. Before the fix a cookie session (no token to diff against)
+// answered `metadata-required` here, which clears access and sets `isSessionReady: false` —
+// AppShellRuntime then renders nothing: a permanently blank tab.
+describe('AuthContext — role swap on a cookie session (ETP-5395)', () => {
+  const personal = { id: 'role-personal', name: 'Personal', orgList: [{ id: 'org-1', name: 'Main Org' }] };
+  const admin = { id: 'role-admin', name: 'Admin', orgList: [{ id: 'org-1', name: 'Main Org' }] };
+
+  function renderCookieSession(fetchWindowAccess) {
+    const restoreSession = vi.fn().mockResolvedValue({
+      account: { name: 'Ada' },
+      environment: { clientId: 'client-1', roleId: personal.id, orgId: 'org-1' },
+      roleList: [personal],
+      csrfToken: 'csrf-abc',
+    });
+    return renderHook(() => useAuth(), {
+      wrapper: ({ children }) => (
+        <AuthProvider storage={createMemoryAuthStorage()} restoreSession={restoreSession} fetchWindowAccess={fetchWindowAccess}>
+          {children}
+        </AuthProvider>
+      ),
+    });
+  }
+
+  function answerRefresh(body) {
+    fetchStub.mockImplementation(async () => ({ ok: true, json: async () => ({ result: JSON.stringify(body) }) }));
+  }
+
+  async function refocus() {
+    await act(async () => {
+      window.dispatchEvent(new Event('focus'));
+      await Promise.resolve();
+    });
+  }
+
+  const tokenFor = (claims) => `eyJhbGciOiJub25lIn0.${Buffer.from(JSON.stringify(claims)).toString('base64url')}.fixture`;
+
+  for (const [name, body] of [
+    ['an unchanged refresh reporting the rebound role',
+      { unchanged: true, roleList: [admin], selectedRoleId: admin.id, selectedOrgId: 'org-1' }],
+    ['a { token, session } refresh for the new role',
+      { token: tokenFor({ user: 'user-1', client: 'client-1', role: admin.id, organization: 'org-1' }),
+        session: { version: 1, userId: 'user-1', clientId: 'client-1', selectedRoleId: admin.id,
+          selectedOrgId: 'org-1', roleList: [admin] } }],
+  ]) {
+    it(`moves to the new role and stays ready on ${name}`, async () => {
+      const fetchWindowAccess = vi.fn().mockResolvedValue({ windowAccess: { '147': 'full' }, capabilities: {} });
+      const { result } = renderCookieSession(fetchWindowAccess);
+      await waitFor(() => expect(result.current.status).toBe('authenticated'));
+      await waitFor(() => expect(fetchWindowAccess).toHaveBeenCalledTimes(1));
+
+      answerRefresh(body);
+      await refocus();
+
+      await waitFor(() => expect(result.current.selectedRole?.id).toBe(admin.id));
+      await waitFor(() => expect(fetchWindowAccess).toHaveBeenCalledTimes(2));
+      expect(fetchWindowAccess.mock.calls[1][0].selectedRole.id).toBe(admin.id);
+      expect(result.current.isSessionReady).toBe(true);
+      expect(result.current.token).toBeNull();
+    });
+  }
+});
+
 /**
  * ETP-4576 — `auto` resolves the scheme from what the backend issued, so the
  * restore is not optional under it: the restore's response is WHERE the answer
