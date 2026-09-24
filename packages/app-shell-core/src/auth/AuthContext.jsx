@@ -159,7 +159,11 @@ export function AuthProvider({
 
   const refresh = useCallback((imperative = false) => {
     const current = controller.getSnapshot();
-    if (!current.session.token) return Promise.resolve({ status: 'idle' });
+    // ETP-4576 left this guard token-only when it introduced cookie sessions, which never
+    // populate `session.token` — so it silently killed every trigger wired to refresh()
+    // (visibilitychange/focus, the 5-minute poll, refreshToken()) for a cookie-session user.
+    // Mirrors the `isAuthenticated` tri-state check used elsewhere in this file.
+    if (!current.session.token && status !== 'authenticated') return Promise.resolve({ status: 'idle' });
     const pending = operation.current;
     if (pending && controller.isCurrent(pending.snapshot)) {
       if (imperative) pending.trailing = true;
@@ -317,7 +321,7 @@ export function AuthProvider({
       if (!finalized && controller.isCurrent(work.snapshot)) controller.publish({ isRefreshingSession: false });
     });
     return work.promise;
-  }, [controller, loadAccess]);
+  }, [controller, loadAccess, status]);
 
   useBrowserLayoutEffect(() => {
     controller.activate();
