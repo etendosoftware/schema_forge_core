@@ -24,6 +24,33 @@ function isValidRoleList(roleList) {
 }
 
 /**
+ * ETP-5395 — a cookie session holds no token, so there is nothing to diff the new token against
+ * (the bearer path below compares user/client claims before and after). The server derived this
+ * metadata from the cookie session's own user, so the checks here are: same tenant as the session,
+ * metadata consistent with the new token's own claims, and a valid role/org. The token itself is
+ * discarded — a cookie session must never start sending a bearer.
+ */
+function reconcileCookieSession(current, response, after) {
+  const metadata = response.session;
+  // A bare token without metadata is meaningless to a cookie client: keep the session and let the
+  // access maps (resolved server-side) revalidate.
+  if (metadata == null) return { status: 'legacy' };
+  const invalid = { status: 'metadata-required' };
+  if (!isId(current.clientId) || current.clientId !== after.client) return invalid;
+  if (metadata.version !== 1 || !identityClaims.every((key) => isId(after[key]))) return invalid;
+  if (metadata.userId !== after.user || metadata.clientId !== after.client
+      || metadata.selectedRoleId !== after.role || metadata.selectedOrgId !== after.organization) return invalid;
+  if (!isValidRoleList(metadata.roleList)) return invalid;
+  const selectedRole = metadata.roleList.find((role) => role.id === after.role);
+  const selectedOrg = selectedRole?.orgList.find((org) => org.id === after.organization);
+  if (!selectedRole || !selectedOrg) return invalid;
+  return {
+    status: 'ready',
+    session: { ...current, roleList: metadata.roleList, selectedRole, selectedOrg },
+  };
+}
+
+/**
  * Proposed SFRefreshToken session v1 contract; backend support is a separate rollout.
  * JWT decoding is a consistency check, never signature verification or authorization.
  */
@@ -43,8 +70,13 @@ export function reconcileSessionRefresh(current, response) {
   if (response?.unchanged === true) {
     const roleList = response.roleList;
     if (isValidRoleList(roleList)) {
-      const selectedRole = roleList.find((role) => role.id === current.selectedRole?.id);
-      const selectedOrg = selectedRole?.orgList.find((org) => org.id === current.selectedOrg?.id);
+      // ETP-5395: the server reports the role/org this request was authorized with. A cookie
+      // session is rebound server-side when its role is revoked, and a cookie client has no token
+      // to learn that from, so prefer these over the ids the client still holds.
+      const roleId = isId(response.selectedRoleId) ? response.selectedRoleId : current.selectedRole?.id;
+      const orgId = isId(response.selectedOrgId) ? response.selectedOrgId : current.selectedOrg?.id;
+      const selectedRole = roleList.find((role) => role.id === roleId);
+      const selectedOrg = selectedRole?.orgList.find((org) => org.id === orgId);
       if (selectedRole && selectedOrg) {
         return { status: 'ready', session: { ...current, roleList, selectedRole, selectedOrg } };
       }
@@ -57,6 +89,7 @@ export function reconcileSessionRefresh(current, response) {
   if (!isId(token) || !after || typeof after !== 'object' || Array.isArray(after)) {
     return { status: response?.session != null ? 'metadata-required' : 'failed' };
   }
+  if (!current.token) return reconcileCookieSession(current, response, after);
   const changed = identityClaims.some((key) => !same(before?.[key], after[key]));
   // A persisted tenant/token mismatch is not a usable legacy fallback either.
   if (current.clientId && after.client && current.clientId !== after.client) {
