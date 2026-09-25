@@ -152,7 +152,11 @@ fetcher. Ambient and session-bound transports therefore use the same renewed JWT
 Acceptance advances the generation; the access request captures that new generation
 and can only publish its result while it remains current.
 
-Valid context changes withdraw previous permissions before loading new access.
+Valid context changes withdraw previous permissions before loading new access. They are withdrawn
+as **not loaded** (`accessLoaded: false`), never as loaded-and-empty maps: hosts render an empty
+menu map as "your role has no access", which flashed for as long as the new access request took
+(~2s in production). The initial-load effect stays off while the refresh itself loads the maps, so
+the new role's access is requested once.
 Same-context refresh retains only the already-settled access map until the replacement
 map is ready, then publishes permissions atomically; failure resolves to empty grants.
 No new grants are inferred from metadata. This avoids a temporary access-denied branch

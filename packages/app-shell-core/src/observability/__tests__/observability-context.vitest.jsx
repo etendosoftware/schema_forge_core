@@ -27,4 +27,15 @@ describe('ObservabilityContext', () => {
     expect(spy).toHaveBeenCalledTimes(1);
     expect(spy).toHaveBeenCalledWith({ client: 'production' });
   });
+
+  it('exposes trackUsageEvent as a no-op by default', () => {
+    let value;
+    function Probe() {
+      value = useObservability();
+      return null;
+    }
+    render(<Probe />);
+    expect(typeof value.trackUsageEvent).toBe('function');
+    expect(value.trackUsageEvent('ui.test', { a: 1 })).toBeUndefined();
+  });
 });

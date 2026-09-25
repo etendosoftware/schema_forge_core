@@ -12,6 +12,9 @@ const defaultValue = {
   trackWalkthroughMenuOpened: noop,
   trackWalkthroughStarted: noop,
   trackWalkthroughFinished: noop,
+  // Usage events (ETP-5462). `useUsage()` hands this the events whose catalog entry declares
+  // the `mixpanel` destination (`lib/usage/usageEvents.js`), as `(eventType, properties)`.
+  trackUsageEvent: noop,
 };
 
 const ObservabilityContext = createContext(defaultValue);

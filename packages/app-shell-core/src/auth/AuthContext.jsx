@@ -230,12 +230,16 @@ export function AuthProvider({
           const replaced = controller.replace(outcome.session, {
             refresh: false, status: 'refreshing', ready: previous.isSessionReady,
             bump: !metadataUnchanged,
+            // ETP-5395 — a real context change withdraws the old grants as NOT LOADED
+            // (`undefined` → accessLoaded false), never as `{}`: `{}` means "loaded and empty",
+            // which hosts render as "your role has no access" for as long as the new access
+            // request takes (~2s in production).
             access: metadataUnchanged
               ? {
                 windowAccess: previous.windowAccess, capabilities: previous.capabilities,
                 menuAccess: previous.menuAccess,
               }
-              : {},
+              : undefined,
           });
           if (controller.getSnapshot().session !== replaced) return { status: 'superseded' };
           work.snapshot = controller.capture();
@@ -251,6 +255,7 @@ export function AuthProvider({
             || !sameFlatMap(nextMenuAccess, latest.menuAccess);
           const finalUpdate = {
             sessionRefreshStatus: 'ready', isSessionReady: true, isRefreshingSession: false,
+            accessLoaded: true,
             windowAccess: accessChanged ? nextWindowAccess : latest.windowAccess,
             capabilities: accessChanged ? nextCapabilities : latest.capabilities,
             menuAccess: accessChanged ? nextMenuAccess : latest.menuAccess,
@@ -356,7 +361,9 @@ export function AuthProvider({
     // (e.g. `useRoleMenu()`) hung indefinitely. `loadAccess()` below already short-circuits to
     // `{}` with no network call when `selectedRole` is missing, so proceeding here is safe and
     // still resolves `accessLoaded: true` for that case.
-    if (!state.isSessionReady || state.needsRefresh || state.accessLoaded) return;
+    // A refresh in progress loads the access maps itself (a role change leaves them not loaded
+    // until then); loading them here too would issue a second, duplicate request.
+    if (!state.isSessionReady || state.needsRefresh || state.accessLoaded || state.isRefreshingSession) return;
     const snapshot = controller.capture();
     let cancelled = false;
     loadAccess(state.session, snapshot).then((access) => {
@@ -366,7 +373,8 @@ export function AuthProvider({
       });
     });
     return () => { cancelled = true; };
-  }, [controller, state.generation, state.isSessionReady, state.needsRefresh, state.accessLoaded, state.session, loadAccess]);
+  }, [controller, state.generation, state.isSessionReady, state.needsRefresh, state.accessLoaded,
+    state.isRefreshingSession, state.session, loadAccess]);
 
   useEffect(() => {
     if (typeof document === 'undefined' || typeof window === 'undefined') return undefined;
