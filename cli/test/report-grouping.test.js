@@ -11,6 +11,8 @@ import {
   buildNestedGroups,
   foldAggregateRows,
   groupAggregateRowsByAccount,
+  buildAccountReportTree,
+  cleanAmount,
   TRIAL_BALANCE_AMOUNT_FIELDS,
 } from '../src/report-grouping.js';
 
@@ -333,5 +335,161 @@ describe('groupAggregateRowsByAccount (ETP-5013)', () => {
       { account_no: '1', account_id: 'i', account_name: 'n', dimensionValue: null, opening_balance: 1, activity_debit: 0, activity_credit: 0, closing_balance: 1 },
     ]);
     assert.equal(groups[0].dimensionRows[0].dimensionValue, '');
+  });
+});
+
+// ── cleanAmount — binary floating-point noise stripping (ETP-5483 follow-up) ─
+//
+// Every aggregated amount this module produces (Balance Sheet/P&L account
+// trees, Trial Balance folds, General Ledger opening/subtotal/total/running
+// balances) is the result of JS `+=` accumulation on doubles, which routinely
+// yields noise like `32222.570000000007`. Raw per-line amounts read straight
+// from SQL never go through this — they are already clean.
+
+describe('cleanAmount', () => {
+  it('strips binary noise from real reported values, precision-agnostically (no assumed 2 decimals)', () => {
+    assert.equal(cleanAmount(32222.570000000007), 32222.57);
+    assert.equal(cleanAmount(441239.68999999994), 441239.69);
+    assert.equal(cleanAmount(-221443.77000000002), -221443.77);
+    assert.equal(cleanAmount(166358.84999999998), 166358.85);
+    assert.equal(cleanAmount(2585.2699999999995), 2585.27);
+    assert.equal(cleanAmount(-89959.90000000001), -89959.9);
+    assert.equal(cleanAmount(30638.559999999998), 30638.56);
+    assert.equal(cleanAmount(0.1 + 0.2), 0.3);
+  });
+
+  it('keeps legitimate decimals up to 10 places untouched', () => {
+    assert.equal(cleanAmount(1.2345678912), 1.2345678912);
+    assert.equal(cleanAmount(1.23), 1.23);
+    assert.equal(cleanAmount(0), 0);
+  });
+
+  it('preserves negative values that are not noise', () => {
+    assert.equal(cleanAmount(-100.5), -100.5);
+  });
+
+  it('normalizes -0 to 0', () => {
+    const cleaned = cleanAmount(-0);
+    assert.equal(cleaned, 0);
+    assert.equal(Object.is(cleaned, -0), false);
+  });
+
+  it('passes non-finite and non-number values through unchanged', () => {
+    assert.equal(Number.isNaN(cleanAmount(NaN)), true);
+    assert.equal(cleanAmount(Infinity), Infinity);
+    assert.equal(cleanAmount(-Infinity), -Infinity);
+    assert.equal(cleanAmount(null), null);
+    assert.equal(cleanAmount(undefined), undefined);
+    assert.equal(cleanAmount('12.5'), '12.5');
+  });
+
+  it('strips noise at large magnitudes (millions), where fixed-decimal rounding would overflow the safe-integer range', () => {
+    assert.equal(cleanAmount(1500000.3 + 0.1), 1500000.4);
+    assert.equal(cleanAmount(12345678.9 + 0.2), 12345679.1);
+    assert.equal(cleanAmount(987654321.1 + 0.2), 987654321.3);
+  });
+});
+
+describe('buildNestedGroups — regression: accumulated amounts and running balance are noise-free', () => {
+  it('cleans a subtotal/total sum that would otherwise show binary noise', () => {
+    // 0.1 + 0.2 style accumulation across 3 lines of the SAME account -
+    // without cleanAmount this sums to 166358.84999999998 (a real reported
+    // Trial Balance/General Ledger value).
+    const rows = [
+      { value: '100', name: 'Cash', total: 100000.1, amtacctdr: 100000.1, amtacctcr: 0 },
+      { value: '100', name: 'Cash', total: 66358.7, amtacctdr: 66358.7, amtacctcr: 0 },
+      { value: '100', name: 'Cash', total: 0.04999998, amtacctdr: 0.04999998, amtacctcr: 0 },
+    ];
+    const [group] = buildNestedGroups(rows, undefined, null);
+    const [account] = group.accounts;
+    assert.equal(account.subtotal.total, 166358.84999998);
+    assert.equal(account.total.total, 166358.84999998);
+  });
+
+  it('keeps the running-balance invariant: the last row equals the account total', () => {
+    const openingRows = [{ value: '100', openingdr: 0, openingcr: 0, openingtotal: 32222.570000000007 }];
+    const rows = [
+      { value: '100', name: 'Cash', total: 0.1, amtacctdr: 0.1, amtacctcr: 0 },
+      { value: '100', name: 'Cash', total: 0.2, amtacctdr: 0.2, amtacctcr: 0 },
+    ];
+    const [group] = buildNestedGroups(rows, undefined, openingRows);
+    const [account] = group.accounts;
+    assert.equal(account.opening.total, 32222.57, 'opening itself must be clean');
+    const lastRow = account.rows[account.rows.length - 1];
+    assert.equal(lastRow.runningBalance, account.total.total,
+      'the last line\'s runningBalance must equal the account\'s own cleaned total');
+    assert.equal(account.total.total, 32222.87);
+  });
+});
+
+describe('foldAggregateRows — regression: folded amounts are noise-free', () => {
+  it('cleans a fold sum that reproduces a real reported Trial Balance value', () => {
+    const rows = [
+      tbRow({ account_no: '35000000', opening_balance: 100000.1 }),
+      tbRow({ account_no: '35000000', opening_balance: 66358.7 }),
+      tbRow({ account_no: '35000000', opening_balance: 0.04999998 }),
+    ];
+    const [folded] = foldAggregateRows(rows, null);
+    assert.equal(folded.opening_balance, 166358.84999998);
+  });
+});
+
+describe('groupAggregateRowsByAccount — regression: re-summed group totals stay noise-free', () => {
+  it('cleans the group total even when it sums already-clean per-dimension rows', () => {
+    const rows = [
+      { account_no: '1', account_id: 'i', account_name: 'n', dimensionValue: 'A', opening_balance: 0.1, activity_debit: 0, activity_credit: 0, closing_balance: 0.1 },
+      { account_no: '1', account_id: 'i', account_name: 'n', dimensionValue: 'B', opening_balance: 0.2, activity_debit: 0, activity_credit: 0, closing_balance: 0.2 },
+    ];
+    const [group] = groupAggregateRowsByAccount(rows);
+    assert.equal(group.opening_balance, 0.3);
+    assert.equal(group.closing_balance, 0.3);
+  });
+});
+
+describe('buildAccountReportTree — regression: roll-up and formula sums are noise-free', () => {
+  function node(node_id, {
+    parent_id = '', sort_path = node_id, value = node_id, name = `Name ${node_id}`,
+    elementlevel = 'C', isalwaysshown = 'N', own_amt = 0, own_amt_ref = 0,
+    accountsign = 'D', group_name = 'G1',
+  } = {}) {
+    return {
+      node_id, parent_id, sort_path, value, name, elementlevel, isalwaysshown,
+      own_amt, own_amt_ref, accountsign, group_name,
+    };
+  }
+  function byId(rows) {
+    return Object.fromEntries(rows.map((r) => [r.node_id, r]));
+  }
+
+  it('cleans a children roll-up sum (e.g. Balance Sheet\'s 166358.84999999998)', () => {
+    // Each own_amt is a clean, real-looking amount (2 decimals) — same as a
+    // raw per-line amount from SQL. The noise comes purely from summing THREE
+    // of them as IEEE 754 doubles, exactly like the reported Balance Sheet bug.
+    const nodes = [
+      node('root', { sort_path: '000001' }),
+      node('P', { parent_id: 'root', sort_path: '000001.000001', elementlevel: 'E' }),
+      node('c1', { parent_id: 'P', sort_path: '000001.000001.000001', own_amt: 100000.1 }),
+      node('c2', { parent_id: 'P', sort_path: '000001.000001.000002', own_amt: 66358.7 }),
+      node('c3', { parent_id: 'P', sort_path: '000001.000001.000003', own_amt: 0.05 }),
+    ];
+    assert.equal(100000.1 + 66358.7 + 0.05, 166358.84999999998, 'sanity check: the raw sum IS noisy');
+    const rows = byId(buildAccountReportTree(nodes, []));
+    assert.equal(rows.P.amount, 166358.85);
+  });
+
+  it('cleans a formula-node sum built from signed operands (e.g. P&L\'s 30638.559999999998)', () => {
+    const nodes = [
+      node('root', { sort_path: '000001' }),
+      node('A', { parent_id: 'root', sort_path: '000001.000001', own_amt: 30000.1 }),
+      node('B', { parent_id: 'root', sort_path: '000001.000002', own_amt: 638.46 }),
+      node('F', { parent_id: 'root', sort_path: '000001.000003', elementlevel: 'E' }),
+    ];
+    const operands = [
+      { owner_id: 'F', operand_id: 'A', sign: 1, seqno: 10 },
+      { owner_id: 'F', operand_id: 'B', sign: 1, seqno: 20 },
+    ];
+    assert.equal(30000.1 + 638.46, 30638.559999999998, 'sanity check: the raw sum IS noisy');
+    const rows = byId(buildAccountReportTree(nodes, operands));
+    assert.equal(rows.F.amount, 30638.56);
   });
 });

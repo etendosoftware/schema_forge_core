@@ -25,6 +25,35 @@
 import { pickLabel } from './report-i18n.js';
 
 /**
+ * Strips binary floating-point accumulation noise from an amount, without
+ * assuming any particular currency precision — this module never sees the
+ * currency, so it cannot round to "2 decimals". Repeated `+=` on JS doubles
+ * routinely produces artifacts like `32222.570000000007` or `0.1 + 0.2 =
+ * 0.30000000000000004` from operands that were themselves exact to a few
+ * decimals; rounding to 15 SIGNIFICANT digits (the most a double round-trips
+ * exactly) removes that noise at any realistic accounting magnitude while
+ * preserving legitimate precision — up to 15 significant digits in total, so
+ * a 2-decimal amount stays exact up to 999,999,999,999.99 (a value needing
+ * more digits than that would lose its last one). Rounding to a fixed number
+ * of decimal places instead
+ * (`Math.round(n * 1e10) / 1e10`) silently stops working above ~900,000,
+ * where `n * 1e10` exceeds Number.MAX_SAFE_INTEGER — `1500000.3 + 0.1` would
+ * still come out as 1500000.4000000001. Raw per-line amounts read
+ * straight from SQL are already clean and never need this — it is only for
+ * values THIS module accumulates or derives (subtotals, totals, running
+ * balances, formula roll-ups).
+ *
+ * Non-numbers (including NaN) pass through unchanged, so a caller that feeds
+ * this something other than a number sees no behavior change. `-0` is
+ * normalized to `0` so it never renders as a spurious negative zero.
+ */
+export function cleanAmount(n) {
+  if (typeof n !== 'number' || !Number.isFinite(n)) return n;
+  const cleaned = Number(n.toPrecision(15));
+  return Object.is(cleaned, -0) ? 0 : cleaned;
+}
+
+/**
  * Sums an account's opening-balance rows (`contract.sql.openingQuery`'s output —
  * one row per account × dimension-breakdown combo, already aggregated in SQL) down
  * to a single {amtacctdr, amtacctcr, total} for one account. When `dimensionField`
@@ -44,6 +73,9 @@ export function foldOpeningBalance(openingRows, accountValue, dimensionField, di
     opening.amtacctcr += Number(r.openingcr) || 0;
     opening.total += Number(r.openingtotal) || 0;
   }
+  opening.amtacctdr = cleanAmount(opening.amtacctdr);
+  opening.amtacctcr = cleanAmount(opening.amtacctcr);
+  opening.total = cleanAmount(opening.total);
   return opening;
 }
 
@@ -86,8 +118,16 @@ export function buildNestedGroups(rows, dimensionField, openingRows) {
       group.accounts.push(account);
       running = opening.total;
     }
+    // `running` itself stays a raw (unclean) accumulator on purpose: only the
+    // DISPLAYED value is cleaned. Feeding a cleaned value back in every
+    // iteration would round-trip a fresh 1e-10 clamp at every row, and over
+    // many rows that repeated clamping can drift from the final total by more
+    // than one clamp's worth — cleaning once per row, from a raw running sum,
+    // keeps the last row's displayed runningBalance exactly equal to the
+    // account's own cleaned `total.total` below (same two raw terms, same
+    // single rounding).
     running += Number(r.total) || 0;
-    r.runningBalance = running;
+    r.runningBalance = cleanAmount(running);
     account.rows.push(r);
     account.subtotal.amtacctdr += Number(r.amtacctdr) || 0;
     account.subtotal.amtacctcr += Number(r.amtacctcr) || 0;
@@ -95,10 +135,13 @@ export function buildNestedGroups(rows, dimensionField, openingRows) {
   }
   for (const g of groups) {
     for (const a of g.accounts) {
+      a.subtotal.amtacctdr = cleanAmount(a.subtotal.amtacctdr);
+      a.subtotal.amtacctcr = cleanAmount(a.subtotal.amtacctcr);
+      a.subtotal.total = cleanAmount(a.subtotal.total);
       a.total = {
-        amtacctdr: a.opening.amtacctdr + a.subtotal.amtacctdr,
-        amtacctcr: a.opening.amtacctcr + a.subtotal.amtacctcr,
-        total: a.opening.total + a.subtotal.total,
+        amtacctdr: cleanAmount(a.opening.amtacctdr + a.subtotal.amtacctdr),
+        amtacctcr: cleanAmount(a.opening.amtacctcr + a.subtotal.amtacctcr),
+        total: cleanAmount(a.opening.total + a.subtotal.total),
       };
     }
   }
@@ -148,6 +191,9 @@ export function foldAggregateRows(rows, dimensionField, dimensionIdField) {
       folded.set(key, acc);
     }
     for (const f of TRIAL_BALANCE_AMOUNT_FIELDS) acc[f] += Number(r[f]) || 0;
+  }
+  for (const acc of folded.values()) {
+    for (const f of TRIAL_BALANCE_AMOUNT_FIELDS) acc[f] = cleanAmount(acc[f]);
   }
   return [...folded.values()]
     // Matches Classic's real "has activity" criterion (ReportTrialBalance_data.xsql:
@@ -218,6 +264,9 @@ export function groupAggregateRowsByAccount(rows) {
       activity_credit: r.activity_credit, closing_balance: r.closing_balance,
     });
     for (const f of TRIAL_BALANCE_AMOUNT_FIELDS) current[f] += r[f];
+  }
+  for (const g of groups) {
+    for (const f of TRIAL_BALANCE_AMOUNT_FIELDS) g[f] = cleanAmount(g[f]);
   }
   return groups;
 }
@@ -342,8 +391,8 @@ export function buildAccountReportTree(nodeRows, operandRows, options = {}) {
         sum += sign * target.amount;
         sumRef += sign * target.amount_ref;
       }
-      node.amount = sum;
-      node.amount_ref = sumRef;
+      node.amount = cleanAmount(sum);
+      node.amount_ref = cleanAmount(sumRef);
     } else if (node.children.length) {
       let sum = own;
       let sumRef = ownRef;
@@ -352,11 +401,11 @@ export function buildAccountReportTree(nodeRows, operandRows, options = {}) {
         sum += child.amount;
         sumRef += child.amount_ref;
       }
-      node.amount = sum;
-      node.amount_ref = sumRef;
+      node.amount = cleanAmount(sum);
+      node.amount_ref = cleanAmount(sumRef);
     } else {
-      node.amount = own;
-      node.amount_ref = ownRef;
+      node.amount = cleanAmount(own);
+      node.amount_ref = cleanAmount(ownRef);
     }
     inProgress.delete(node.node_id);
     return node;
