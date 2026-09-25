@@ -96,12 +96,15 @@ export function extractFieldsFromContract(backendContract) {
   return fields;
 }
 
+const quoteName = (name) => `'${name}'`;
+
 function extractPushableFields(backendContract) {
   const { fields, collapsed } = coalesceDuplicateColumnFields(extractFieldsFromContract(backendContract));
   for (const c of collapsed) {
+    const ignored = c.dropped.map(quoteName).join(', ');
     console.warn(
       `  Warning: ${c.entityName}.${c.column} is declared by ${c.dropped.length + 1} fields; `
-      + `pushing '${c.kept}', ignoring ${c.dropped.map((n) => `'${n}'`).join(', ')}`,
+      + `pushing '${c.kept}', ignoring ${ignored}`,
     );
   }
   return fields;
