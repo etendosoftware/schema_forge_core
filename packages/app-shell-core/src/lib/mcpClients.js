@@ -20,16 +20,16 @@
  * Clients with genuinely different UI flows use `subTabs` (Claude Desktop only).
  */
 
-const BASE_SERVER_NAME = 'etendo-go';
+const BASE_SERVER_NAME = 'etendo-mcp';
 
 /**
  * Derives the MCP server alias from the environment encoded in the URL, so devs
  * can tell their connections apart at a glance and it is obvious which
  * environment a server points to:
- *   localhost / 127.0.0.1  -> etendo-go-local
- *   staging                -> etendo-go-staging
- *   experimental           -> etendo-go-experimental
- *   anything else          -> etendo-go   (production)
+ *   localhost / 127.0.0.1  -> etendo-mcp-local
+ *   staging                -> etendo-mcp-staging
+ *   experimental           -> etendo-mcp-experimental
+ *   anything else          -> etendo-mcp   (production)
  * @param {string} mcpUrl resolved MCP server URL (from detectMcpUrl()).
  */
 export function deriveServerName(mcpUrl) {
@@ -97,6 +97,20 @@ export function buildMcpClients(mcpUrl) {
       ],
     },
     {
+      // The ChatGPT desktop app (Codex): Plugins > MCP > Add > custom MCP, then Authenticate.
+      id: 'ChatGptDesktop',
+      content: [
+        { step: 1 },
+        { step: 2 },
+        { step: 3 },
+        { code: mcpUrl },
+        { step: 4 },
+        { step: 5 },
+        { step: 6 },
+        { step: 7 },
+      ],
+    },
+    {
       id: 'ClaudeCode',
       content: [
         { step: 1 },
@@ -131,7 +145,7 @@ export function buildMcpClients(mcpUrl) {
       id: 'Codex',
       content: [
         { step: 1 },
-        { code: `[mcp_servers.${SERVER_NAME}]\nurl = "${mcpUrl}"` },
+        { code: `codex mcp add ${SERVER_NAME} --url ${mcpUrl}` },
         { step: 2 },
         { code: `codex mcp login ${SERVER_NAME}` },
         { step: 3 },
