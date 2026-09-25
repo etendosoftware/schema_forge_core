@@ -1484,6 +1484,35 @@ describe('AuthContext — role swap on a cookie session (ETP-5395)', () => {
 
   const tokenFor = (claims) => `eyJhbGciOiJub25lIn0.${Buffer.from(JSON.stringify(claims)).toString('base64url')}.fixture`;
 
+  // Production answers the new role's access maps in ~2s. Until they arrive the state must read
+  // "not loaded yet" (accessLoaded false), never "loaded and empty": an empty menu map is what the
+  // host renders as "Tu rol no tiene acceso", which flashed for those 2s on every role change.
+  it('reports access as not loaded, never as empty, while the new role access is in flight', async () => {
+    let releaseSecondLoad;
+    const secondLoad = new Promise((resolve) => { releaseSecondLoad = resolve; });
+    const fetchWindowAccess = vi.fn()
+      .mockResolvedValueOnce({ windowAccess: { '147': 'full' }, capabilities: {}, menuAccess: { '147': true } })
+      .mockImplementationOnce(() => secondLoad);
+    const { result } = renderCookieSession(fetchWindowAccess);
+    await waitFor(() => expect(result.current.status).toBe('authenticated'));
+    await waitFor(() => expect(result.current.accessLoaded).toBe(true));
+
+    answerRefresh({ unchanged: true, roleList: [admin], selectedRoleId: admin.id, selectedOrgId: 'org-1' });
+    await refocus();
+    await waitFor(() => expect(fetchWindowAccess).toHaveBeenCalledTimes(2));
+
+    expect(result.current.selectedRole?.id).toBe(admin.id);
+    expect(result.current.accessLoaded).toBe(false);
+
+    await act(async () => {
+      releaseSecondLoad({ windowAccess: { '143': 'full' }, capabilities: {}, menuAccess: { '143': true } });
+      await secondLoad;
+    });
+    await waitFor(() => expect(result.current.accessLoaded).toBe(true));
+    expect(result.current.menuAccess).toEqual({ '143': true });
+    expect(result.current.isSessionReady).toBe(true);
+  });
+
   for (const [name, body] of [
     ['an unchanged refresh reporting the rebound role',
       { unchanged: true, roleList: [admin], selectedRoleId: admin.id, selectedOrgId: 'org-1' }],
