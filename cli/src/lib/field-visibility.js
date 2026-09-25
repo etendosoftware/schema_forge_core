@@ -94,3 +94,50 @@ export function visibilityMatchesFlags(row) {
     expected,
   };
 }
+
+// Higher rank = more exposed. Anything else (discarded, absent) ranks 0.
+const VISIBILITY_RANK = { editable: 3, readOnly: 2, system: 1 };
+
+/**
+ * Collapse contract fields that share the same `(entityName, column)` into one.
+ *
+ * ETGO_SF_FIELD is unique per (entity, AD column), so every field targeting the same
+ * column is written into the SAME row, and the last one pushed would win. An AD window
+ * can carry two AD fields over one column (e.g. `accountType` + `accountType2` on
+ * C_ElementValue.AccountType); when the duplicate is curated `discarded` and comes last,
+ * it closed the row and NEO silently dropped the column on every write (ETP-5399).
+ * Shared by `push-to-neo.js` and `lib/neo-delta.js` so both write the same row.
+ *
+ * The most-exposed visibility wins (editable > readOnly > system > discarded); on a tie
+ * the first field in contract order (the primary AD field) is kept. Order of the
+ * surviving fields is preserved.
+ *
+ * @param {Array<{entityName: string, column: string, fieldName: string, visibility?: string}>} fields
+ * @returns {{ fields: Array, collapsed: Array<{entityName: string, column: string, kept: string, dropped: string[]}> }}
+ */
+export function coalesceDuplicateColumnFields(fields) {
+  const winners = new Map();
+  const groups = new Map();
+  for (const f of fields) {
+    const key = `${f.entityName}\u0000${f.column}`;
+    if (!groups.has(key)) groups.set(key, []);
+    groups.get(key).push(f);
+    const current = winners.get(key);
+    if (!current || (VISIBILITY_RANK[f.visibility] ?? 0) > (VISIBILITY_RANK[current.visibility] ?? 0)) {
+      winners.set(key, f);
+    }
+  }
+  const collapsed = [];
+  for (const [key, group] of groups) {
+    if (group.length < 2) continue;
+    const kept = winners.get(key);
+    collapsed.push({
+      entityName: kept.entityName,
+      column: kept.column,
+      kept: kept.fieldName,
+      dropped: group.filter((f) => f !== kept).map((f) => f.fieldName),
+    });
+  }
+  const winnerSet = new Set(winners.values());
+  return { fields: fields.filter((f) => winnerSet.has(f)), collapsed };
+}

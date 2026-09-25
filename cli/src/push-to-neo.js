@@ -24,7 +24,7 @@ import {
 import { computeWindowDelta, serializeDelta } from './lib/neo-delta.js';
 import { resolveAgentPromptRefs } from './lib/agent-prompt-ref.js';
 import { loadEtgoXmlSnapshot } from './lib/etgo-xml-parser.js';
-import { mapVisibility } from './lib/field-visibility.js';
+import { mapVisibility, coalesceDuplicateColumnFields } from './lib/field-visibility.js';
 import { GO_MODULE_ID } from './lib/constants.js';
 import {
   isEntityExcludedFromContract,
@@ -63,7 +63,7 @@ export function toSpecName(windowName) {
  * offline delta path and validator rule F23 share it instead of re-declaring
  * it. Re-exported here because this name is part of the module's public API.
  */
-export { mapVisibility };
+export { mapVisibility, coalesceDuplicateColumnFields };
 
 /**
  * Build the full webhook URL from a base Etendo URL and webhook name.
@@ -92,6 +92,17 @@ export function extractFieldsFromContract(backendContract) {
         businessCritical: field.businessCritical || false,
       });
     }
+  }
+  return fields;
+}
+
+function extractPushableFields(backendContract) {
+  const { fields, collapsed } = coalesceDuplicateColumnFields(extractFieldsFromContract(backendContract));
+  for (const c of collapsed) {
+    console.warn(
+      `  Warning: ${c.entityName}.${c.column} is declared by ${c.dropped.length + 1} fields; `
+      + `pushing '${c.kept}', ignoring ${c.dropped.map((n) => `'${n}'`).join(', ')}`,
+    );
   }
   return fields;
 }
@@ -280,7 +291,7 @@ export async function pushToNeo(windowName, options = {}) {
   const specAgentPrompt = normalizeAgentPrompt(decisionsData.window?.agentPrompt);
   // Opt-out MCP visibility (ETP-4278): only an explicit `false` hides the spec.
   const specShowInMcp = decisionsData.window?.showInMcp;
-  const allFields = extractFieldsFromContract(contract.backendContract);
+  const allFields = extractPushableFields(contract.backendContract);
 
   if (options.dryRun === true) {
     return reportDryRunPlan({
