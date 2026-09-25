@@ -36,7 +36,7 @@ SELECT * FROM (
   JOIN AD_Table tbl ON c.AD_Table_ID = tbl.AD_Table_ID
   LEFT JOIN AD_Package pkg ON tbl.AD_Package_ID = pkg.AD_Package_ID
   JOIN AD_Reference r ON c.AD_Reference_ID = r.AD_Reference_ID
-  LEFT JOIN AD_Model_Object mo ON mo.AD_Callout_ID = c.AD_Callout_ID
+  LEFT JOIN AD_Model_Object mo ON mo.AD_Callout_ID = c.AD_Callout_ID AND mo.Action = 'C'
   WHERE w.AD_Window_ID = $1
     AND t.IsActive = 'Y'
 
@@ -65,7 +65,7 @@ SELECT * FROM (
   JOIN AD_Column c ON c.AD_Table_ID = tbl.AD_Table_ID AND c.IsActive = 'Y'
   LEFT JOIN AD_Package pkg ON tbl.AD_Package_ID = pkg.AD_Package_ID
   JOIN AD_Reference r ON c.AD_Reference_ID = r.AD_Reference_ID
-  LEFT JOIN AD_Model_Object mo ON mo.AD_Callout_ID = c.AD_Callout_ID
+  LEFT JOIN AD_Model_Object mo ON mo.AD_Callout_ID = c.AD_Callout_ID AND mo.Action = 'C'
   WHERE w.AD_Window_ID = $1
     AND t.IsActive = 'Y'
     AND NOT EXISTS (
@@ -82,7 +82,7 @@ SELECT co.AD_Callout_ID, co.Name AS callout_name,
 FROM AD_Callout co
 JOIN AD_Column col ON col.AD_Callout_ID = co.AD_Callout_ID
 JOIN AD_Tab t ON col.AD_Table_ID = t.AD_Table_ID
-LEFT JOIN AD_Model_Object mo ON mo.AD_Callout_ID = co.AD_Callout_ID
+LEFT JOIN AD_Model_Object mo ON mo.AD_Callout_ID = co.AD_Callout_ID AND mo.Action = 'C'
 WHERE t.AD_Window_ID = $1
 ORDER BY co.AD_Callout_ID COLLATE "C", col.AD_Table_ID COLLATE "C", col.ColumnName COLLATE "C"`,
 

@@ -136,8 +136,10 @@ The case that exposed it was not a legitimate duplicate: the extractor joined `A
 on `AD_Callout_ID` without filtering the action, and core ships a stray `Action = 'P'` row for the
 callout `SE_ElementValue_AccountSign` (etendosoftware/etendo_core#1162). `C_ElementValue.AccountType`
 came out twice, the copy was named `accountType2` and curated `discarded`, and being pushed last it
-closed the real field — NEO then dropped the account type on every write. The extractor now joins
-only `Action = 'C'` (`cli/src/extract-fields.js`).
+closed the real field — NEO then dropped the account type on every write. The same join in
+`extract-rules.js` / `extract-from-db.js` also listed that callout twice in `rules-raw.json`. Every
+extractor now joins only `Action = 'C'` (`extract-fields.js`, `extract-from-db.js`, `extract-rules.js`;
+guarded by `cli/test/extract-callout-join.test.js`).
 
 ## How Runtime Endpoint Resolution Actually Works
 
