@@ -263,6 +263,37 @@ describe('foldAggregateRows — sort order (ETP-5013)', () => {
   });
 });
 
+// ETP-5401 — the Trial Balance grand Total sums only is_root rows. foldAggregateRows
+// rebuilds every row from a fixed field list, and it used to omit is_root: every
+// folded row then looked non-root and the Total rendered 0,00 at every account level.
+// The earlier template tests missed it because they rendered raw SQL rows directly,
+// never going through resolveGrouping — so this suite goes through the real path.
+describe('foldAggregateRows / resolveGrouping — is_root survives the fold (ETP-5401)', () => {
+  it('carries is_root from the fine-grain rows onto the folded row', () => {
+    const rows = [
+      tbRow({ account_no: 'PYG', is_root: true, dim: 'A', activity_debit: 10 }),
+      tbRow({ account_no: 'PYG', is_root: true, dim: 'B', activity_debit: 5 }),
+      tbRow({ account_no: 'P.G.1', is_root: false, dim: 'A', activity_debit: 15 }),
+    ];
+    const byAccount = Object.fromEntries(foldAggregateRows(rows, null).map((r) => [r.account_no, r.is_root]));
+    assert.deepEqual(byAccount, { PYG: true, 'P.G.1': false });
+  });
+
+  it('keeps the Total nonzero once rows go through resolveGrouping (the real render path)', async () => {
+    const { createReportHelpers } = await import('../../templates/reports/helpers/report-html-helpers.js');
+    const { sumFieldWhere } = createReportHelpers();
+    const sqlRows = [
+      tbRow({ account_no: '43000000', is_root: true, activity_debit: 50, activity_credit: 20 }),
+      tbRow({ account_no: '70000000', is_root: true, activity_debit: 0, activity_credit: 30 }),
+      // A nested Epígrafe row over the same money — must stay out of the Total.
+      tbRow({ account_no: 'P.G.1', is_root: false, activity_debit: 50, activity_credit: 50 }),
+    ];
+    const { rows } = resolveGrouping(DIMENSION_CONTRACT, { groupBy: '' }, sqlRows, 'es_ES');
+    assert.equal(sumFieldWhere(rows, 'is_root', 'activity_debit'), 50);
+    assert.equal(sumFieldWhere(rows, 'is_root', 'activity_credit'), 50);
+  });
+});
+
 describe('groupAggregateRowsByAccount (ETP-5013)', () => {
   // Real GO-client data for account 35000000, verified digit-for-digit against
   // a real Classic Trial Balance PDF export.

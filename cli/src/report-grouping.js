@@ -143,6 +143,12 @@ export function foldAggregateRows(rows, dimensionField, dimensionIdField) {
         // without one (Product/Project/Cost Center for now) keeps its value
         // as plain, non-navigable text.
         dimensionId: dimensionIdField ? (r[dimensionIdField] || '') : null,
+        // ETP-5401 — the template's grand Total sums only is_root rows (an
+        // Epígrafe nested under another Epígrafe would otherwise be counted
+        // twice). is_root is a property of the ACCOUNT, identical on every
+        // fine-grain row folded here, so it must survive the fold — dropping it
+        // made every row look non-root and the Total rendered 0,00.
+        is_root: r.is_root,
         opening_balance: 0, activity_debit: 0, activity_credit: 0, closing_balance: 0,
       };
       folded.set(key, acc);
