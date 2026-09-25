@@ -48,7 +48,7 @@ import {
 // cycle). Now a sibling in lib/, so there is no cycle and no second copy: the
 // live push, this offline projection and validator rule F23 all read the same
 // function.
-import { mapVisibility } from './field-visibility.js';
+import { mapVisibility, coalesceDuplicateColumnFields } from './field-visibility.js';
 
 function normalizeAgentPrompt(value) {
   if (value == null) return null;
@@ -579,7 +579,11 @@ function applyContractVisibilityToFields({
   fieldUpserts,
   closedEntityIds = new Set(),
 }) {
-  const contractFields = extractFieldsFromContract(contract.backendContract);
+  // ETP-5399 — same duplicate-column coalescing push-to-neo applies, so the offline
+  // delta writes the row push-to-neo would.
+  const { fields: contractFields } = coalesceDuplicateColumnFields(
+    extractFieldsFromContract(contract.backendContract),
+  );
   const fieldDefaultExprs = buildFieldDefaultExprMap(decisions);
   const fieldAgentPrompts = buildFieldAgentPromptMap(decisions);
 

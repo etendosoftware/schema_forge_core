@@ -626,7 +626,7 @@ JOIN AD_Table tab_tbl ON t.AD_Table_ID = tab_tbl.AD_Table_ID
 LEFT JOIN AD_Package pkg ON tbl.AD_Package_ID = pkg.AD_Package_ID
 LEFT JOIN AD_FieldGroup fg ON fg.AD_FieldGroup_ID = f.AD_FieldGroup_ID
 JOIN AD_Reference r ON c.AD_Reference_ID = r.AD_Reference_ID
-LEFT JOIN AD_Model_Object mo ON mo.AD_Callout_ID = c.AD_Callout_ID
+LEFT JOIN AD_Model_Object mo ON mo.AD_Callout_ID = c.AD_Callout_ID AND mo.Action = 'C'
 LEFT JOIN ad_ref_table rt ON c.ad_reference_value_id = rt.ad_reference_id
 LEFT JOIN ad_table rt_tgt ON rt.ad_table_id = rt_tgt.ad_table_id
 LEFT JOIN ad_column rt_key ON rt.ad_key = rt_key.ad_column_id
@@ -698,7 +698,7 @@ JOIN AD_Table tbl ON t.AD_Table_ID = tbl.AD_Table_ID
 JOIN AD_Column c ON c.AD_Table_ID = tbl.AD_Table_ID AND c.IsActive = 'Y'
 LEFT JOIN AD_Package pkg ON tbl.AD_Package_ID = pkg.AD_Package_ID
 JOIN AD_Reference r ON c.AD_Reference_ID = r.AD_Reference_ID
-LEFT JOIN AD_Model_Object mo ON mo.AD_Callout_ID = c.AD_Callout_ID
+LEFT JOIN AD_Model_Object mo ON mo.AD_Callout_ID = c.AD_Callout_ID AND mo.Action = 'C'
 LEFT JOIN ad_val_rule vr ON c.ad_val_rule_id = vr.ad_val_rule_id
 LEFT JOIN ad_ref_table rt ON c.ad_reference_value_id = rt.ad_reference_id
 LEFT JOIN ad_table rt_tgt ON rt.ad_table_id = rt_tgt.ad_table_id

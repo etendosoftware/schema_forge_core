@@ -16,7 +16,7 @@ SELECT co.AD_Callout_ID, co.Name,
 FROM AD_Callout co
 JOIN AD_Column col ON col.AD_Callout_ID = co.AD_Callout_ID
 JOIN AD_Tab t ON col.AD_Table_ID = t.AD_Table_ID
-LEFT JOIN AD_Model_Object mo ON mo.AD_Callout_ID = co.AD_Callout_ID
+LEFT JOIN AD_Model_Object mo ON mo.AD_Callout_ID = co.AD_Callout_ID AND mo.Action = 'C'
 WHERE t.AD_Window_ID = $1
 ORDER BY co.AD_Callout_ID COLLATE "C", col.AD_Table_ID COLLATE "C", col.ColumnName COLLATE "C"
 `;
