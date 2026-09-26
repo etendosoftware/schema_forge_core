@@ -4,6 +4,7 @@ import { readFile, writeFile } from 'node:fs/promises';
 import { join, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { createDbPool, closePool } from './db.js';
+import { isMainModule } from './utils.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -164,12 +165,7 @@ function formatTable(entries) {
 }
 
 // CLI entry point
-const isMainModule = process.argv[1] && (
-  process.argv[1].endsWith('menu-cache.js') ||
-  process.argv[1].endsWith('sf-menu')
-);
-
-if (isMainModule) {
+if (isMainModule(import.meta.url)) {
   const command = process.argv[2];
   const arg = process.argv.slice(3).join(' ');
 

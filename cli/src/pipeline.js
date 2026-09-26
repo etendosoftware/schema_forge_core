@@ -2,6 +2,7 @@
 
 import { toSpecName, pushProcessToNeo } from './push-to-neo.js';
 import { resolveAgentPromptRefs } from './lib/agent-prompt-ref.js';
+import { isMainModule } from './utils.js';
 
 /**
  * Resolve a window's spec name (kebab-case) from its AD_Window_ID by querying
@@ -900,10 +901,6 @@ async function runWindowPipeline({ windowId, windowName, skipTo, skipInteractive
 }
 
 // Only run main if executed directly
-const isMainModule = process.argv[1] && (
-  process.argv[1].endsWith('pipeline.js') ||
-  process.argv[1].endsWith('sf-pipeline')
-);
-if (isMainModule) {
+if (isMainModule(import.meta.url)) {
   main().catch(err => { console.error(err); process.exit(1); });
 }

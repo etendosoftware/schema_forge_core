@@ -1,3 +1,4 @@
+#!/usr/bin/env node
 import { readFile, mkdir, writeFile, readdir } from 'node:fs/promises';
 import { fileURLToPath } from 'node:url';
 import { dirname, join, sep } from 'node:path';

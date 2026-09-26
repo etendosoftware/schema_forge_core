@@ -1,5 +1,7 @@
+#!/usr/bin/env node
 import { readFileSync, writeFileSync, mkdirSync, readdirSync, existsSync } from 'node:fs';
 import { resolve, dirname } from 'node:path';
+import { isMainModule } from './utils.js';
 import { MARKERS } from './custom-section-markers.js';
 import { convertLogicToJs } from './generate-contract.js';
 import { resolveEnumLabelKey } from './enum-label-key.js';
@@ -3043,8 +3045,7 @@ export function generateAllReport(contract) {
 }
 
 // CLI entry point -- only runs when executed directly
-const isDirectRun = process.argv[1] && import.meta.url.endsWith(process.argv[1].replace(/.*\//, ''));
-if (isDirectRun) {
+if (isMainModule(import.meta.url)) {
   const contractPath = process.argv[2];
   if (!contractPath) {
     console.error('Usage: node cli/src/generate-frontend.js <contract-path>');

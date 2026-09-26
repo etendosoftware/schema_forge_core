@@ -4,6 +4,7 @@ import { mkdir, writeFile } from 'node:fs/promises';
 import { fileURLToPath } from 'node:url';
 import { dirname, join } from 'node:path';
 import { createDbPool, closePool, applyCacheModeFromEnv, flushCacheWrites } from './db.js';
+import { isMainModule } from './utils.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -208,10 +209,7 @@ async function main(windowId, windowSlug) {
 export { QUERIES, rowsToCsv };
 
 // CLI entry point — only runs when executed directly
-const isCLI = process.argv[1] && (
-  process.argv[1].endsWith('extract-from-db.js') ||
-  process.argv[1].endsWith('sf-extract-db')
-);
+const isCLI = isMainModule(import.meta.url);
 
 if (isCLI) {
   // Extract flags

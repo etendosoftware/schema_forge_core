@@ -1,6 +1,8 @@
+#!/usr/bin/env node
 import { readFileSync, writeFileSync, mkdirSync, readdirSync, existsSync } from 'node:fs';
 import { resolve, dirname } from 'node:path';
 import { execSync } from 'node:child_process';
+import { isMainModule } from './utils.js';
 
 /**
  * Parse a columns or fields array from a JSX source string.
@@ -416,8 +418,7 @@ export function readFromDisk(windowName, repoRoot) {
 }
 
 // CLI entry point
-const isDirectRun = process.argv[1] && import.meta.url.endsWith(process.argv[1].replace(/.*\//, ''));
-if (isDirectRun) {
+if (isMainModule(import.meta.url)) {
   const windowName = process.argv[2];
   const trigger = process.argv[3] || 'manual run';
 

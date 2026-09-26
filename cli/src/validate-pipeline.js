@@ -32,6 +32,7 @@ import {
 } from './lib/entity-methods.js';
 import { parseEtgoXmlFile } from './lib/etgo-xml-parser.js';
 import { visibilityMatchesFlags } from './lib/field-visibility.js';
+import { isMainModule } from './utils.js';
 
 const execFileAsync = promisify(execFile);
 
@@ -2304,10 +2305,6 @@ async function main() {
 }
 
 // Only run main when executed directly
-const isMainModule = process.argv[1] && (
-  process.argv[1].endsWith('validate-pipeline.js') ||
-  process.argv[1].endsWith('validate-pipeline')
-);
-if (isMainModule) {
+if (isMainModule(import.meta.url)) {
   main().catch(err => { process.stderr.write(`${err.stack}\n`); process.exit(1); });
 }

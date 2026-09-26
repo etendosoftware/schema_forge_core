@@ -1,5 +1,7 @@
+#!/usr/bin/env node
 import { writeFileSync, mkdirSync, readFileSync } from 'node:fs';
 import { dirname } from 'node:path';
+import { isMainModule } from './utils.js';
 
 export function resolvePublicApiSchema({ apiVersion, windows }) {
   const entities = {};
@@ -47,7 +49,7 @@ export function loadContractsForWindows(entries, artifactsRoot) {
   }));
 }
 
-if (import.meta.url === `file://${process.argv[1]}`) {
+if (isMainModule(import.meta.url)) {
   const artifactsRoot = process.argv.includes('--artifacts-root')
     ? process.argv[process.argv.indexOf('--artifacts-root') + 1]
     : 'artifacts';
