@@ -1,12 +1,10 @@
 #!/usr/bin/env node
 import { readFile, writeFile } from 'node:fs/promises';
-import { fileURLToPath } from 'node:url';
-import { dirname, join } from 'node:path';
+import { join } from 'node:path';
 import { isMainModule } from './utils.js';
+import { resolveRepoRoot } from './lib/repo-root.js';
 
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = dirname(__filename);
-const ROOT = process.env.SF_ROOT || join(__dirname, '..', '..');
+const ROOT = resolveRepoRoot();
 
 // Properties whose changes are considered breaking (structural contract changes)
 const BREAKING_PROPERTIES = new Set(['name', 'type', 'tsType', 'column']);

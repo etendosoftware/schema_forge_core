@@ -11,10 +11,9 @@ import { runQualityGate } from './quality-gate/runner.js';
 import { buildQualityGateAnalysisBundle, buildQualityGateReport } from './quality-gate/report.js';
 import { QUALITY_GATE_CHECKS } from './quality-gate/checks/index.js';
 import { isMainModule } from './utils.js';
+import { resolveRepoRoot } from './lib/repo-root.js';
 
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = dirname(__filename);
-const ROOT = process.env.SF_ROOT || join(__dirname, '..', '..');
+const ROOT = resolveRepoRoot();
 
 function collectRuntimeFiles(dir) {
   if (!existsSync(dir)) {

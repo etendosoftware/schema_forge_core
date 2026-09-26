@@ -1,14 +1,12 @@
 #!/usr/bin/env node
 
 import { mkdir, writeFile } from 'node:fs/promises';
-import { fileURLToPath } from 'node:url';
-import { dirname, join } from 'node:path';
+import { join } from 'node:path';
 import { createDbPool, closePool, applyCacheModeFromEnv, flushCacheWrites } from './db.js';
 import { isMainModule } from './utils.js';
+import { resolveRepoRoot } from './lib/repo-root.js';
 
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = dirname(__filename);
-const ROOT = process.env.SF_ROOT || join(__dirname, '..', '..');
+const ROOT = resolveRepoRoot();
 
 const QUERIES = {
   fields: `

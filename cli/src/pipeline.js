@@ -3,6 +3,7 @@
 import { toSpecName, pushProcessToNeo } from './push-to-neo.js';
 import { resolveAgentPromptRefs } from './lib/agent-prompt-ref.js';
 import { isMainModule } from './utils.js';
+import { resolveRepoRoot } from './lib/repo-root.js';
 
 /**
  * Resolve a window's spec name (kebab-case) from its AD_Window_ID by querying
@@ -563,15 +564,14 @@ export async function loadWindowDecisions(readFile, windowName, schemaRaw, decis
 }
 
 export async function scaffoldSecondaryTabCustomForms(contract, windowName, deps) {
-  const {fileURLToPath: fileURLToPathMod, resolve: resolvePath, dirname: dirnamePath, mkdir, access, writeFile} = deps;
+  const {resolve: resolvePath, mkdir, access, writeFile} = deps;
   const secondaryTabsDecl = contract.frontendContract?.window?.secondaryTabs;
   if (secondaryTabsDecl) {
     const customForms = Object.values(secondaryTabsDecl)
         .filter(cfg => cfg.customForm)
         .map(cfg => cfg.customForm);
     if (customForms.length > 0) {
-      const __filename = fileURLToPathMod(import.meta.url);
-      const repoRoot = process.env.SF_ROOT || resolvePath(dirnamePath(__filename), '../../');
+      const repoRoot = resolveRepoRoot();
       const customDir = resolvePath(repoRoot, `tools/app-shell/src/windows/custom/${windowName}`);
       await mkdir(customDir, {recursive: true});
       for (const formName of customForms) {
@@ -722,17 +722,14 @@ export function printTranslateTodosGuidance(step) {
 export async function runGenerateFrontendStep(windowName, result) {
   const {generateAll} = await import('./generate-frontend.js');
   const {readFile, writeFile, mkdir, access} = await import('node:fs/promises');
-  const {resolve: resolvePath, dirname: dirnamePath} = await import('node:path');
-  const {fileURLToPath: fileURLToPathMod} = await import('node:url');
+  const {resolve: resolvePath} = await import('node:path');
   const contract = JSON.parse(await readFile(`artifacts/${windowName}/contract.json`, 'utf8'));
   const layoutType = contract.frontendContract?.window?.layoutType ?? 'default';
   const files = generateAll(contract);
 
   if (layoutType === 'custom') {
     // Custom scaffold path: write to windows/custom/{windowName}/
-    // Resolve the app-shell src directory relative to this file's location
-    const __filename = fileURLToPathMod(import.meta.url);
-    const repoRoot = process.env.SF_ROOT || resolvePath(dirnamePath(__filename), '../../');
+    const repoRoot = resolveRepoRoot();
     const customDir = resolvePath(repoRoot, `tools/app-shell/src/windows/custom/${windowName}`);
     await mkdir(customDir, {recursive: true});
 
@@ -762,9 +759,7 @@ export async function runGenerateFrontendStep(windowName, result) {
 
     // Scaffold customForm stubs for secondary tabs that declare a custom form
     result.frontendGenerated = await scaffoldSecondaryTabCustomForms(contract, windowName, {
-      fileURLToPath: fileURLToPathMod,
       resolve: resolvePath,
-      dirname: dirnamePath,
       mkdir,
       access,
       writeFile,

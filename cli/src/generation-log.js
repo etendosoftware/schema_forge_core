@@ -3,6 +3,7 @@ import { readFileSync, writeFileSync, mkdirSync, readdirSync, existsSync } from 
 import { resolve, dirname } from 'node:path';
 import { execSync } from 'node:child_process';
 import { isMainModule } from './utils.js';
+import { resolveRepoRoot } from './lib/repo-root.js';
 
 /**
  * Parse a columns or fields array from a JSX source string.
@@ -427,7 +428,7 @@ if (isMainModule(import.meta.url)) {
     process.exit(1);
   }
 
-  const repoRoot = process.env.SF_ROOT || resolve(dirname(import.meta.url.replace('file://', '')), '..', '..');
+  const repoRoot = resolveRepoRoot();
   const logPath = resolve(repoRoot, 'artifacts/generation-log.json');
 
   // Read before (git) and after (disk)
