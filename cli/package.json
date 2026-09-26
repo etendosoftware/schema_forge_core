@@ -13,7 +13,9 @@
     "test": "node --test 'test/*.test.js'"
   },
   "dependencies": {
+    "@babel/parser": "^7.29.2",
     "@clack/prompts": "^1.5.1",
+    "ajv": "^8.17.0",
     "pg": "^8.13.0"
   },
   "bin": {
@@ -56,9 +58,5 @@
     "core-maps",
     "sonar-coverage.sh",
     "!test"
-  ],
-  "devDependencies": {
-    "@babel/parser": "^7.29.2",
-    "ajv": "^8.17.0"
-  }
+  ]
 }
