@@ -19,6 +19,17 @@ export function isMainModule(moduleUrl) {
   }
 }
 
+/**
+ * `--help` / `-h` handling for a CLI entry point: print the usage to stdout and
+ * exit 0. Call it first, before a positional argument is read — otherwise the
+ * flag is taken as that argument (a contract path, a window name, ...).
+ */
+export function exitOnHelp(usage, argv = process.argv.slice(2)) {
+  if (!argv.includes('--help') && !argv.includes('-h')) return;
+  console.log(usage);
+  process.exit(0);
+}
+
 export function computeChecksum(data) {
   return createHash('sha256')
     .update(typeof data === 'string' ? data : JSON.stringify(data))

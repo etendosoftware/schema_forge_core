@@ -2,7 +2,7 @@
 import { readFileSync, writeFileSync, mkdirSync, readdirSync, existsSync } from 'node:fs';
 import { resolve, dirname } from 'node:path';
 import { execSync } from 'node:child_process';
-import { isMainModule } from './utils.js';
+import { exitOnHelp, isMainModule } from './utils.js';
 import { resolveRepoRoot } from './lib/repo-root.js';
 
 /**
@@ -420,11 +420,13 @@ export function readFromDisk(windowName, repoRoot) {
 
 // CLI entry point
 if (isMainModule(import.meta.url)) {
+  const usage = 'Usage: node cli/src/generation-log.js <window-name> <trigger-description>';
+  exitOnHelp(usage);
   const windowName = process.argv[2];
   const trigger = process.argv[3] || 'manual run';
 
   if (!windowName) {
-    console.error('Usage: node cli/src/generation-log.js <window-name> <trigger-description>');
+    console.error(usage);
     process.exit(1);
   }
 

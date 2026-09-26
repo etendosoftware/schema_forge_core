@@ -4,7 +4,7 @@
 
 import { readFileSync, writeFileSync } from 'node:fs';
 import { resolve } from 'node:path';
-import { isMainModule } from './utils.js';
+import { exitOnHelp, isMainModule } from './utils.js';
 
 // --- Parse JUnit XML ---
 
@@ -285,6 +285,8 @@ export { parseTestSuites, parseTestCases, parseAttrs, escapeHtml, renderSuite, g
 
 // CLI entry point — only runs when executed directly
 if (isMainModule(import.meta.url)) {
+  exitOnHelp('Usage: node cli/src/test-report-html.js [input.xml] [output.html]\n'
+    + '  defaults: artifacts/test-report.xml -> artifacts/test-report.html');
   const inputPath = resolve(process.argv[2] || 'artifacts/test-report.xml');
   const outputPath = resolve(process.argv[3] || 'artifacts/test-report.html');
   const xml = readFileSync(inputPath, 'utf8');
