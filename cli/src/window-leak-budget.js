@@ -26,7 +26,6 @@
  */
 import { existsSync, readFileSync, readdirSync, writeFileSync, statSync } from 'node:fs';
 import { extname, join } from 'node:path';
-import { fileURLToPath } from 'node:url';
 import { isMainModule } from './utils.js';
 import { resolveRepoRoot } from './lib/repo-root.js';
 

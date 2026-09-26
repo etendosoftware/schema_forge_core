@@ -16,7 +16,6 @@
 
 import { readFile, writeFile, readdir, stat } from 'node:fs/promises';
 import { resolve, join } from 'node:path';
-import { fileURLToPath } from 'node:url';
 import { isMainModule } from './utils.js';
 import { resolveRepoRoot } from './lib/repo-root.js';
 

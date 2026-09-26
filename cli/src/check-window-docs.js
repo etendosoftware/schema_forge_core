@@ -2,7 +2,6 @@
 import { execFileSync } from 'node:child_process';
 import { existsSync } from 'node:fs';
 import { join } from 'node:path';
-import { fileURLToPath } from 'node:url';
 import { isMainModule } from './utils.js';
 import { resolveRepoRoot } from './lib/repo-root.js';
 

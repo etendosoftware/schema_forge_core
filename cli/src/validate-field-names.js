@@ -3,7 +3,6 @@
 import { readFile } from 'node:fs/promises';
 import { execSync } from 'node:child_process';
 import { resolve } from 'node:path';
-import { fileURLToPath } from 'node:url';
 import { resolveRepoRoot } from './lib/repo-root.js';
 
 const ROOT = resolveRepoRoot();

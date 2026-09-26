@@ -3,7 +3,6 @@ import { execFileSync } from 'node:child_process';
 import { createHash } from 'node:crypto';
 import { existsSync, mkdirSync, readdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
-import { fileURLToPath } from 'node:url';
 import { resolveBaseline } from './quality-gate/baseline.js';
 import { loadQualityGateConfig, QualityGateConfigError } from './quality-gate/config.js';
 import { collectDecisionWindows, detectAffectedWindows, detectAffectedWindowsDetailed, getChangedFiles, resolveGitRef } from './quality-gate/detect.js';

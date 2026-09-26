@@ -2,7 +2,6 @@
 
 import { readFile, writeFile } from 'node:fs/promises';
 import { join } from 'node:path';
-import { fileURLToPath } from 'node:url';
 import { createDbPool, closePool } from './db.js';
 import { isMainModule } from './utils.js';
 import { resolveRepoRoot } from './lib/repo-root.js';

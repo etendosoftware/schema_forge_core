@@ -13,6 +13,7 @@ const PACKAGE_ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..', '..'
  * 3. Installed under node_modules: the nearest directory at or above cwd that
  *    holds artifacts/, else cwd. Never the package's own location — `../..` of
  *    an installed script is node_modules/@etendosoftware, which holds no repo.
+ *    The nearest ancestor holding artifacts/ wins, so a nested one shadows the root.
  */
 export function resolveRepoRoot({ env = process.env, cwd = process.cwd(), packageRoot = PACKAGE_ROOT } = {}) {
   if (env.SF_ROOT) return resolve(env.SF_ROOT);
