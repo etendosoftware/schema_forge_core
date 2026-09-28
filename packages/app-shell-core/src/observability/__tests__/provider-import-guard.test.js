@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import { readFileSync, readdirSync, statSync } from 'node:fs';
 import { join, dirname, relative, sep } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { findBannedProviderImports, BANNED_PROVIDER_PACKAGES } from '../providerImportGuard.js';
+import { findBannedProviderImports, BANNED_PROVIDER_PREFIXES } from '../providerImportGuard.js';
 
 /**
  * ETP-4577 guardrail — "bypass imports fail CI" (Jira acceptance criterion).
@@ -52,8 +52,44 @@ describe('provider import guard (ETP-4577)', () => {
     assert.equal(hits.length, 2);
   });
 
+  const DETECTED = {
+    'a side-effect import': ["import '@sentry/react';", '@sentry/react'],
+    'a dynamic import': ["const S = await import('@sentry/browser');", '@sentry/browser'],
+    'a dynamic import with a template literal': ['const S = await import(`@sentry/${pkg}`);', '@sentry/${pkg}'],
+    'a require': ["const mixpanel = require('mixpanel-browser');", 'mixpanel-browser'],
+    'a require with a space before the parenthesis': ["const S = require ('aws-rum-web');", 'aws-rum-web'],
+    'a re-export': ["export * from 'posthog-js';", 'posthog-js'],
+    'a named re-export': ["export { init } from '@sentry/browser';", '@sentry/browser'],
+    'any package under a banned scope': ["import * as S from '@sentry/vue';", '@sentry/vue'],
+    'an internal Sentry package': ["import { x } from '@sentry-internal/replay';", '@sentry-internal/replay'],
+    'a subpath of a banned package': ["import m from 'mixpanel-browser/src/loader';", 'mixpanel-browser/src/loader'],
+    'a dynamic import carrying a bundler comment': ["import(/* webpackChunkName: 's' */ '@datadog/browser-rum')", '@datadog/browser-rum'],
+    'an import after a string that looks like a comment opener': [
+      "const routes = [{ path: '/app/*' }];\nconst S = await import('@sentry/react');\n/** doc */",
+      '@sentry/react',
+    ],
+    'an import on the same line as a URL string': ["const u = 'https://x'; import S from '@sentry/react';", '@sentry/react'],
+  };
+
+  for (const [label, [snippet, specifier]] of Object.entries(DETECTED)) {
+    it(`detects ${label}`, () => {
+      assert.deepEqual(findBannedProviderImports(snippet), [specifier]);
+    });
+  }
+
   it('does not flag an import of the gateway itself or an unrelated package', () => {
     const snippet = "import { createTelemetryGateway } from './gateway.js';\nimport { z } from 'zod';\n";
+    assert.deepEqual(findBannedProviderImports(snippet), []);
+  });
+
+  it('does not flag a commented-out import, a package name in a string, or a lookalike scope', () => {
+    const snippet = [
+      "// import * as Sentry from '@sentry/react';",
+      "/* const m = require('mixpanel-browser'); */",
+      "const docs = ['@sentry/react'];",
+      "import x from '@sentryish/tools';",
+      "import y from 'mixpanel-browser-lookalike';",
+    ].join('\n');
     assert.deepEqual(findBannedProviderImports(snippet), []);
   });
 
@@ -72,7 +108,7 @@ describe('provider import guard (ETP-4577)', () => {
       'These files import a provider SDK directly, bypassing the sanitization gateway:\n'
       + offenders.map((o) => `  - ${o}`).join('\n')
       + '\n\nRoute all provider calls through createTelemetryGateway() (./gateway.js) instead.\n'
-      + `Known provider packages: ${BANNED_PROVIDER_PACKAGES.join(', ')}\n`,
+      + `Banned package prefixes: ${BANNED_PROVIDER_PREFIXES.join(', ')}\n`,
     );
   });
 });

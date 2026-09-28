@@ -5,44 +5,114 @@
  *
  * Every outbound operation — track, page, identify, group, groupSet, captureException,
  * breadcrumb, setContext — is sanitized here (see `./sanitize.js`) before it ever
- * reaches an adapter. Adapter dispatch mirrors the resilience contract the functional
- * host's `lib/observability/core.js` already had: an adapter that throws, or one that
- * is disabled, never blocks another adapter or the caller — telemetry failure must
- * never become a product failure.
+ * reaches an adapter, positional arguments included: an event name, a route or an id is
+ * as capable of carrying an email or a token as a properties object is.
+ *
+ * No public method ever rejects. Adapter dispatch mirrors the resilience contract the
+ * functional host's `lib/observability/core.js` already had — an adapter that throws, or
+ * one that is disabled, never blocks another adapter or the caller — and any other failure
+ * inside a method is logged and swallowed: telemetry failure must never become a product
+ * failure.
  *
  * Relocating the real provider adapters (Sentry/RUM/Mixpanel) into this package,
  * wiring their kill switches, and writing the `docs/security/telemetry-egress.md`
  * inventory are ETP-4578's scope, not this one. `provider-import-guard.test.js`
  * enforces that nothing outside this module talks to a provider SDK directly.
  */
-import { sanitizeValue } from './sanitize.js';
+import { sanitizeValue, REDACTED } from './sanitize.js';
+
+function safeWarn(logger, message, error) {
+  try {
+    if (typeof logger?.warn === 'function') logger.warn(message, error);
+  } catch {
+    // A broken logger must not turn a swallowed telemetry failure back into a thrown one.
+  }
+}
 
 function isAdapterEnabled(adapter) {
-  return Boolean(adapter) && adapter.enabled !== false;
+  try {
+    return Boolean(adapter) && adapter.enabled !== false;
+  } catch {
+    return false;
+  }
 }
 
 function adapterName(adapter) {
-  return adapter?.name || 'unknown-adapter';
+  try {
+    return adapter?.name || 'unknown-adapter';
+  } catch {
+    return 'unknown-adapter';
+  }
 }
 
 async function callAdapter(adapter, methodName, args, logger) {
-  const method = adapter?.[methodName];
-  if (typeof method !== 'function') return undefined;
-
   try {
+    const method = adapter?.[methodName];
+    if (typeof method !== 'function') return undefined;
     return await method.apply(adapter, args);
   } catch (error) {
-    if (typeof logger?.warn === 'function') {
-      logger.warn(`[observability] ${adapterName(adapter)}.${methodName} failed`, error);
-    }
+    safeWarn(logger, `[observability] ${adapterName(adapter)}.${methodName} failed`, error);
     return undefined;
   }
 }
 
-function stripRoute(path) {
-  const raw = String(path ?? '/');
-  const idx = raw.search(/[?#]/);
-  return idx === -1 ? raw : raw.slice(0, idx);
+function safeRead(target, key) {
+  try {
+    return target[key];
+  } catch {
+    return undefined;
+  }
+}
+
+function toStringOrNull(value) {
+  try {
+    return String(value);
+  } catch {
+    return null;
+  }
+}
+
+function sanitizeText(value, options) {
+  const raw = toStringOrNull(value);
+  return raw === null ? REDACTED : sanitizeValue(raw, options);
+}
+
+/**
+ * An identifier (user id, group key, group id) is either sent exactly as given or not at
+ * all. Sending '[REDACTED]' instead would merge every such user into one profile in
+ * Mixpanel/Sentry, so any change the scrub would make means the call is dropped.
+ */
+function sanitizeIdentifier(value, options) {
+  const raw = toStringOrNull(value);
+  if (raw === null) return null;
+  return sanitizeValue(raw, options) === raw ? raw : null;
+}
+
+function sanitizeRoute(path, options) {
+  const raw = toStringOrNull(path ?? '/');
+  if (raw === null) return REDACTED;
+  const queryStart = raw.search(/[?#]/);
+  return sanitizeValue(queryStart === -1 ? raw : raw.slice(0, queryStart), options);
+}
+
+function sanitizeOptionalText(value, options) {
+  return typeof value === 'string' ? sanitizeValue(value, options) : undefined;
+}
+
+/** Only name, message and stack leave — never the Error itself, whose other fields were never vetted. */
+function sanitizeError(error, options) {
+  if (error !== null && typeof error === 'object') {
+    return {
+      name: sanitizeOptionalText(safeRead(error, 'name'), options),
+      message: sanitizeOptionalText(safeRead(error, 'message'), options),
+      stack: sanitizeOptionalText(safeRead(error, 'stack'), options),
+    };
+  }
+  return { name: undefined, message: sanitizeText(error, options), stack: undefined };
+}
+
+function isRecord(value) {
+  return typeof value === 'object' && value !== null && !Array.isArray(value);
 }
 
 /**
@@ -57,6 +127,8 @@ function stripRoute(path) {
  * @param {number} [options.maxKeys]
  * @param {number} [options.maxArrayLength]
  * @param {number} [options.maxStringLength]
+ * @param {number} [options.maxSerializedBytes]
+ * @param {number} [options.maxNodes]
  */
 export function createTelemetryGateway({
   adapters: initialAdapters = [],
@@ -66,89 +138,101 @@ export function createTelemetryGateway({
   maxKeys,
   maxArrayLength,
   maxStringLength,
+  maxSerializedBytes,
+  maxNodes,
 } = {}) {
-  const adapters = initialAdapters.filter(isAdapterEnabled);
+  const adapters = Array.isArray(initialAdapters) ? initialAdapters.filter(isAdapterEnabled) : [];
+  const sanitizeOptions = {
+    allowedKeys,
+    maxDepth,
+    maxKeys,
+    maxArrayLength,
+    maxStringLength,
+    maxSerializedBytes,
+    maxNodes,
+  };
   let context = {};
-  const sanitizeOptions = { allowedKeys, maxDepth, maxKeys, maxArrayLength, maxStringLength };
 
-  function sanitize(value) {
-    return sanitizeValue(value, sanitizeOptions);
-  }
+  const sanitize = (value) => sanitizeValue(value, sanitizeOptions);
+  const envelope = () => ({ context: sanitize(context) });
+  const dispatch = (methodName, args) =>
+    Promise.all(adapters.map((adapter) => callAdapter(adapter, methodName, args, logger)));
 
-  function sanitizeError(error) {
-    if (!error) return error;
-    const isErrorLike = typeof error === 'object';
-    const message = isErrorLike ? error.message : String(error);
-    const name = isErrorLike ? error.name : undefined;
-    const stack = isErrorLike && typeof error.stack === 'string' ? error.stack : undefined;
-
-    return {
-      name: typeof name === 'string' ? sanitizeValue(name, sanitizeOptions) : undefined,
-      message: typeof message === 'string' ? sanitizeValue(message, sanitizeOptions) : undefined,
-      stack: stack ? sanitizeValue(stack, sanitizeOptions) : undefined,
+  function guarded(methodName, body) {
+    return async (...args) => {
+      try {
+        await body(...args);
+      } catch (error) {
+        safeWarn(logger, `[observability] gateway.${methodName} failed`, error);
+      }
     };
   }
 
-  function dispatch(methodName, args) {
-    return Promise.all(adapters.map((adapter) => callAdapter(adapter, methodName, args, logger)));
+  function drop(methodName) {
+    safeWarn(logger, `[observability] ${methodName} dropped: its identifier did not survive sanitization`);
+  }
+
+  async function dispatchGroup(methodName, groupKey, groupId, payload) {
+    if (!groupKey || !groupId) return;
+    const key = sanitizeIdentifier(groupKey, sanitizeOptions);
+    const id = sanitizeIdentifier(groupId, sanitizeOptions);
+    if (key === null || id === null) {
+      drop(methodName);
+      return;
+    }
+    await dispatch(methodName, [key, id, sanitize(payload), envelope()]);
   }
 
   return {
-    async track(eventName, properties = {}) {
+    track: guarded('track', async (eventName, properties = {}) => {
       if (!eventName) return;
-      await dispatch('track', [String(eventName), sanitize(properties), { context: sanitize(context) }]);
-    },
+      await dispatch('track', [sanitizeText(eventName, sanitizeOptions), sanitize(properties), envelope()]);
+    }),
 
-    async page(path, properties = {}) {
-      const route = stripRoute(path);
-      await dispatch('page', [route, sanitize(properties), { context: sanitize(context) }]);
-    },
+    page: guarded('page', async (path, properties = {}) => {
+      await dispatch('page', [sanitizeRoute(path, sanitizeOptions), sanitize(properties), envelope()]);
+    }),
 
-    async identify(userId, traits = {}) {
+    identify: guarded('identify', async (userId, traits = {}) => {
       if (!userId) return;
-      await dispatch('identify', [String(userId), sanitize(traits), { context: sanitize(context) }]);
-    },
+      const id = sanitizeIdentifier(userId, sanitizeOptions);
+      if (id === null) {
+        drop('identify');
+        return;
+      }
+      await dispatch('identify', [id, sanitize(traits), envelope()]);
+    }),
 
-    async group(groupKey, groupId, traits = {}) {
-      if (!groupKey || !groupId) return;
-      await dispatch('group', [
-        String(groupKey),
-        String(groupId),
-        sanitize(traits),
-        { context: sanitize(context) },
-      ]);
-    },
+    group: guarded('group', (groupKey, groupId, traits = {}) => dispatchGroup('group', groupKey, groupId, traits)),
 
-    async groupSet(groupKey, groupId, properties = {}) {
-      if (!groupKey || !groupId) return;
-      await dispatch('groupSet', [
-        String(groupKey),
-        String(groupId),
-        sanitize(properties),
-        { context: sanitize(context) },
-      ]);
-    },
+    groupSet: guarded('groupSet', (groupKey, groupId, properties = {}) =>
+      dispatchGroup('groupSet', groupKey, groupId, properties)),
 
-    async captureException(error, details = {}) {
+    captureException: guarded('captureException', async (error, details = {}) => {
       if (!error) return;
-      await dispatch('captureException', [sanitizeError(error), sanitize(details), { context: sanitize(context) }]);
-    },
+      await dispatch('captureException', [sanitizeError(error, sanitizeOptions), sanitize(details), envelope()]);
+    }),
 
-    async breadcrumb(crumb = {}) {
+    breadcrumb: guarded('breadcrumb', async (crumb = {}) => {
       await dispatch('breadcrumb', [sanitize(crumb)]);
-    },
+    }),
 
-    async setContext(nextContext = {}) {
-      context = { ...context, ...sanitize(nextContext) };
+    setContext: guarded('setContext', async (nextContext = {}) => {
+      const safe = sanitize(nextContext);
+      if (isRecord(safe)) context = { ...context, ...safe };
       await dispatch('setContext', [sanitize(context)]);
-    },
+    }),
 
-    async flush() {
+    flush: guarded('flush', async () => {
       await dispatch('flush', []);
-    },
+    }),
 
     getContext() {
-      return sanitize(context);
+      try {
+        return sanitize(context);
+      } catch {
+        return {};
+      }
     },
   };
 }

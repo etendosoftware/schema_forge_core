@@ -20,9 +20,22 @@ export const SECRET_TOKEN = 'FAKE_TEST_TOKEN_ab12cd34ef56gh78ij90kl12mn34op56qr7
 export const SECRET_EMAIL = 'jane.doe@example.com';
 export const SECRET_PASSWORD = 'Tr0ub4dor&3-super-secret';
 export const SECRET_SSN = '123-45-6789';
+// Short and low-entropy on purpose: it can only be caught by stripping the query string
+// it lives in, never by the opaque-token heuristic.
+export const SECRET_QUERY_CODE = 'sh0rtC0de42';
+// Assembled at runtime so no JWT-shaped literal sits in the source for a secret scanner
+// to flag. Decodes to {"alg":"none"} / {"sub":"fake-user"} with an unsigned signature.
+export const FAKE_JWT = ['eyJhbGciOiJub25lIn0', 'eyJzdWIiOiJmYWtlLXVzZXIifQ', 'FAKE-signature-not-real'].join('.');
 
 /** Every value that must never appear, in any form, in a sanitized/dispatched payload. */
-export const NESTED_SECRET_FIXTURE_SECRETS = [SECRET_TOKEN, SECRET_EMAIL, SECRET_PASSWORD, SECRET_SSN];
+export const NESTED_SECRET_FIXTURE_SECRETS = [
+  SECRET_TOKEN,
+  SECRET_EMAIL,
+  SECRET_PASSWORD,
+  SECRET_SSN,
+  SECRET_QUERY_CODE,
+  FAKE_JWT,
+];
 
 /**
  * A realistic bundle with secrets planted at multiple depths and under multiple key
@@ -43,15 +56,18 @@ export function buildNestedSecretFixture() {
     request: {
       headers: { authorization: `Bearer ${SECRET_TOKEN}`, cookie: `sid=${SECRET_TOKEN}` },
       url: `https://go.etendo.cloud/sws/neo/session?access_token=${SECRET_TOKEN}`,
+      referrer: `/login/callback?code=${SECRET_QUERY_CODE}#state`,
     },
     message: `User ${SECRET_EMAIL} failed auth with ${SECRET_TOKEN}`,
+    note: `retry with ${FAKE_JWT}`,
+    stack: `Error: boom\n    at fetch (https://go.etendo.cloud/app.js?code=${SECRET_QUERY_CODE}:1:1)`,
   };
 }
 
 /** The full set of key names `buildNestedSecretFixture()` uses, for a caller's `allowedKeys`. */
 export const NESTED_SECRET_FIXTURE_ALLOWED_KEYS = [
   'user', 'profile', 'email', 'ssn', 'credentials', 'token', 'password',
-  'request', 'headers', 'authorization', 'cookie', 'url', 'message',
+  'request', 'headers', 'authorization', 'cookie', 'url', 'referrer', 'message', 'note', 'stack',
 ];
 
 /**
