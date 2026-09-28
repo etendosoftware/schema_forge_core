@@ -27,6 +27,12 @@ describe('app-shell-core plain observability subpaths', () => {
     assert.equal(typeof sentry.sanitizeSentryEvent, 'function');
   });
 
+  it('exposes the Mixpanel adapter', async () => {
+    const mixpanel = await import('@etendosoftware/app-shell-core/observability/adapters/mixpanel');
+    assert.equal(typeof mixpanel.createMixpanelAdapter, 'function');
+    assert.equal(typeof mixpanel.sanitizeMixpanelEvent, 'function');
+  });
+
   it('exposes the sanitizer', async () => {
     const sanitize = await import('@etendosoftware/app-shell-core/observability/sanitize');
     assert.equal(typeof sanitize.sanitizeValue, 'function');

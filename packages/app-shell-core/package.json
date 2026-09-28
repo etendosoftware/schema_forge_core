@@ -24,6 +24,7 @@
     "./observability/sanitize": "./src/observability/sanitize.js",
     "./observability/providerImportGuard": "./src/observability/providerImportGuard.js",
     "./observability/adapters/sentry": "./src/observability/adapters/sentry.js",
+    "./observability/adapters/mixpanel": "./src/observability/adapters/mixpanel.js",
     "./reports": "./src/reports/index.js",
     "./runtime": "./src/runtime/index.js",
     "./theme": "./src/theme/index.js",

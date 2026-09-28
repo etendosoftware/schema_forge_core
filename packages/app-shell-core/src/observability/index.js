@@ -9,6 +9,7 @@ export { sanitizeValue, sanitizeStack, normalizeRoute } from './sanitize.js';
 // use the `/observability/gateway`, `/observability/sanitize` and
 // `/observability/providerImportGuard` subpaths instead.
 export { createSentryAdapter } from './adapters/sentry.js';
+export { createMixpanelAdapter } from './adapters/mixpanel.js';
 export {
   findBannedProviderImports,
   isBannedProviderSpecifier,
