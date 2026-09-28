@@ -29,9 +29,15 @@ function safeWarn(logger, ...args) {
   }
 }
 
-function isAdapterEnabled(adapter) {
+/**
+ * The adapter's own configuration gate (a DSN present, an explicit opt-in), read on every
+ * dispatch rather than once: `enabled` may be a value or a function.
+ */
+function isAdapterConfiguredOn(adapter) {
   try {
-    return Boolean(adapter) && adapter.enabled !== false;
+    if (!adapter) return false;
+    const { enabled } = adapter;
+    return typeof enabled === 'function' ? Boolean(enabled.call(adapter)) : enabled !== false;
   } catch {
     return false;
   }
@@ -118,8 +124,12 @@ function isRecord(value) {
 /**
  * @param {object} options
  * @param {Array<object>} [options.adapters] Provider adapters. Each may implement any
- *   subset of init/reset/track/page/identify/group/groupSet/captureException/breadcrumb/
- *   setContext/flush; missing methods are silently skipped. `{ enabled: false }` disables one.
+ *   subset of init/shutdown/reset/track/page/identify/group/groupSet/captureException/
+ *   breadcrumb/setContext/flush; missing methods are silently skipped. `enabled` (a value
+ *   or a function, read on every dispatch) is the adapter's own configuration gate.
+ * @param {boolean|Iterable<string>} [options.disabled] Initial kill-switch state: `true`
+ *   kills every adapter, a list of adapter names kills those. Same as calling `disable()`
+ *   before `init()`, so a killed adapter's SDK is never started.
  * @param {Iterable<string>} [options.allowedKeys] Forwarded to every `sanitizeValue`
  *   call — see `./sanitize.js` for the deny-by-default contract.
  * @param {{warn?: Function}} [options.logger]
@@ -140,8 +150,21 @@ export function createTelemetryGateway({
   maxStringLength,
   maxSerializedBytes,
   maxNodes,
+  disabled = false,
 } = {}) {
-  const adapters = Array.isArray(initialAdapters) ? initialAdapters.filter(isAdapterEnabled) : [];
+  const adapters = Array.isArray(initialAdapters) ? initialAdapters.filter(Boolean) : [];
+  // Kill switch: a global flag plus a set of killed adapter names. It is the gateway's
+  // own state, separate from each adapter's configuration gate, so the host can drive it
+  // from runtime flags without rebuilding adapters.
+  let killedAll = disabled === true;
+  const killedNames = new Set(
+    disabled && disabled !== true && typeof disabled !== 'string' ? Array.from(disabled) : [],
+  );
+  if (typeof disabled === 'string') killedNames.add(disabled);
+  // Adapters whose init() has run and no shutdown() since. A kill only needs to shut an
+  // adapter down if it was actually started.
+  const running = new Set();
+  let initialized = false;
   const sanitizeOptions = {
     allowedKeys,
     maxDepth,
@@ -157,8 +180,33 @@ export function createTelemetryGateway({
 
   const sanitize = (value) => sanitizeValue(value, sanitizeOptions);
   const envelope = () => ({ context: sanitize(context) });
-  const dispatch = (methodName, args) =>
-    Promise.all(adapters.map((adapter) => callAdapter(adapter, methodName, args, logger)));
+
+  const isActive = (adapter) =>
+    isAdapterConfiguredOn(adapter) && !killedAll && !killedNames.has(adapterName(adapter));
+
+  async function start(adapter) {
+    running.add(adapter);
+    await callAdapter(adapter, 'init', [envelope()], logger);
+  }
+
+  async function stop(adapter) {
+    running.delete(adapter);
+    await callAdapter(adapter, 'shutdown', [envelope()], logger);
+  }
+
+  // An adapter that turned active after init() (a late opt-in, a lifted kill) is started
+  // before its first call, so an SDK never receives events without having been set up.
+  async function dispatch(methodName, args) {
+    const active = adapters.filter(isActive);
+    if (initialized) await Promise.all(active.filter((a) => !running.has(a)).map(start));
+    await Promise.all(active.map((adapter) => callAdapter(adapter, methodName, args, logger)));
+  }
+
+  function setKilled(name, killed) {
+    if (name === undefined) killedAll = killed;
+    else if (killed) killedNames.add(name);
+    else killedNames.delete(name);
+  }
 
   function guarded(methodName, body) {
     return async (...args) => {
@@ -191,11 +239,37 @@ export function createTelemetryGateway({
   }
 
   return {
-    /** Starts every enabled adapter, handing it the sanitized initial context. */
+    /** Starts every active adapter, handing it the sanitized initial context. */
     init: guarded('init', async (initialContext = {}) => {
       mergeContext(initialContext);
-      await dispatch('init', [envelope()]);
+      initialized = true;
+      await Promise.all(adapters.filter((a) => isActive(a) && !running.has(a)).map(start));
     }),
+
+    /**
+     * Kill switch. Without a name it kills every adapter; with one, that adapter only. A
+     * running adapter is shut down once (its SDK stops auto-instrumenting); one that never
+     * started is simply never started. Every later call skips a killed adapter.
+     */
+    disable: guarded('disable', async (name) => {
+      setKilled(name, true);
+      await Promise.all([...running].filter((a) => !isActive(a)).map(stop));
+    }),
+
+    /**
+     * Lifts the global switch (no name) or one adapter's. If the gateway is already
+     * initialized, every adapter that becomes active is started again. Lifting the global
+     * switch does not revive an adapter killed by name.
+     */
+    enable: guarded('enable', async (name) => {
+      setKilled(name, false);
+      if (!initialized) return;
+      await Promise.all(adapters.filter((a) => isActive(a) && !running.has(a)).map(start));
+    }),
+
+    isEnabled(name) {
+      return adapters.some((adapter) => adapterName(adapter) === name && isActive(adapter));
+    },
 
     /** Clears provider-side identity (logout). The gateway's own context is app-level and kept. */
     reset: guarded('reset', async () => {

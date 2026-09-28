@@ -426,6 +426,191 @@ describe('createTelemetryGateway — lifecycle (init / reset)', () => {
   });
 });
 
+describe('createTelemetryGateway — kill switch', () => {
+  function switchAdapter(name, extra = {}) {
+    const calls = [];
+    return {
+      adapter: {
+        name,
+        init: (...args) => calls.push(['init', ...args]),
+        shutdown: (...args) => calls.push(['shutdown', ...args]),
+        track: (...args) => calls.push(['track', ...args]),
+        ...extra,
+      },
+      calls,
+      methods: () => calls.map(([method]) => method),
+    };
+  }
+
+  it('re-evaluates adapter.enabled on every dispatch, not once at creation', async () => {
+    const toggled = switchAdapter('toggled');
+    let flag = true;
+    const fn = switchAdapter('fn', { enabled: () => flag });
+    const gw = createTelemetryGateway({ adapters: [toggled.adapter, fn.adapter], allowedKeys: [] });
+
+    await gw.track('a');
+    toggled.adapter.enabled = false;
+    flag = false;
+    await gw.track('b');
+    toggled.adapter.enabled = true;
+    flag = true;
+    await gw.track('c');
+
+    assert.deepEqual(toggled.calls.map((c) => c[1]), ['a', 'c']);
+    assert.deepEqual(fn.calls.map((c) => c[1]), ['a', 'c']);
+  });
+
+  it('an adapter disabled before init() never receives init, so its SDK never starts', async () => {
+    const killed = switchAdapter('killed');
+    const live = switchAdapter('live');
+    const gw = createTelemetryGateway({ adapters: [killed.adapter, live.adapter], allowedKeys: [] });
+
+    await gw.disable('killed');
+    await gw.init();
+    await gw.track('x');
+
+    assert.deepEqual(killed.calls, []);
+    assert.deepEqual(live.methods(), ['init', 'track']);
+  });
+
+  it('the global switch before init() means zero calls to any adapter', async () => {
+    const first = switchAdapter('first');
+    const second = switchAdapter('second');
+    const gw = createTelemetryGateway({ adapters: [first.adapter, second.adapter], allowedKeys: [] });
+
+    await gw.disable();
+    await gw.init();
+    await gw.track('x');
+    await gw.page('/orders/1');
+    await gw.captureException(new Error('boom'));
+
+    assert.deepEqual(first.calls, []);
+    assert.deepEqual(second.calls, []);
+  });
+
+  it('the initial `disabled` option works like calling disable() before init()', async () => {
+    const byName = switchAdapter('mixpanel');
+    const other = switchAdapter('sentry');
+    const gwByName = createTelemetryGateway({ adapters: [byName.adapter, other.adapter], allowedKeys: [], disabled: ['mixpanel'] });
+    await gwByName.init();
+    assert.deepEqual(byName.calls, []);
+    assert.deepEqual(other.methods(), ['init']);
+
+    const all = switchAdapter('all');
+    const gwGlobal = createTelemetryGateway({ adapters: [all.adapter], allowedKeys: [], disabled: true });
+    await gwGlobal.init();
+    await gwGlobal.track('x');
+    assert.deepEqual(all.calls, []);
+  });
+
+  it('a hot kill shuts the running adapter down once and stops every later call to it', async () => {
+    const killed = switchAdapter('killed');
+    const live = switchAdapter('live');
+    const gw = createTelemetryGateway({ adapters: [killed.adapter, live.adapter], allowedKeys: [] });
+
+    await gw.init();
+    await gw.disable('killed');
+    await gw.disable('killed');
+    await gw.track('after');
+
+    assert.deepEqual(killed.methods(), ['init', 'shutdown']);
+    assert.deepEqual(live.methods(), ['init', 'track']);
+  });
+
+  it('a global hot kill shuts every running adapter down', async () => {
+    const first = switchAdapter('first');
+    const second = switchAdapter('second');
+    const gw = createTelemetryGateway({ adapters: [first.adapter, second.adapter], allowedKeys: [] });
+
+    await gw.init();
+    await gw.disable();
+    await gw.track('after');
+
+    assert.deepEqual(first.methods(), ['init', 'shutdown']);
+    assert.deepEqual(second.methods(), ['init', 'shutdown']);
+  });
+
+  it('re-enabling a killed adapter re-initializes it with the current context', async () => {
+    const { adapter, methods, calls } = switchAdapter('back');
+    const gw = createTelemetryGateway({ adapters: [adapter], allowedKeys: ['app'] });
+
+    await gw.init({ app: 'app-shell' });
+    await gw.disable('back');
+    await gw.enable('back');
+    await gw.track('again');
+
+    assert.deepEqual(methods(), ['init', 'shutdown', 'init', 'track']);
+    assert.deepEqual(calls[2], ['init', { context: { app: 'app-shell' } }]);
+  });
+
+  it('enabling before the gateway was initialized does not start the adapter early', async () => {
+    const { adapter, methods } = switchAdapter('late');
+    const gw = createTelemetryGateway({ adapters: [adapter], allowedKeys: [], disabled: ['late'] });
+
+    await gw.enable('late');
+    assert.deepEqual(methods(), []);
+
+    await gw.init();
+    assert.deepEqual(methods(), ['init']);
+  });
+
+  it('lifting the global switch does not revive an adapter killed by name', async () => {
+    const byName = switchAdapter('byName');
+    const other = switchAdapter('other');
+    const gw = createTelemetryGateway({ adapters: [byName.adapter, other.adapter], allowedKeys: [] });
+
+    await gw.init();
+    await gw.disable('byName');
+    await gw.disable();
+    await gw.enable();
+    await gw.track('x');
+
+    assert.deepEqual(byName.methods(), ['init', 'shutdown']);
+    assert.deepEqual(other.methods(), ['init', 'shutdown', 'init', 'track']);
+    assert.equal(gw.isEnabled('byName'), false);
+    assert.equal(gw.isEnabled('other'), true);
+  });
+
+  it('isEnabled() reflects both the global switch and the per-adapter one', async () => {
+    const { adapter } = switchAdapter('a');
+    const gw = createTelemetryGateway({ adapters: [adapter], allowedKeys: [] });
+
+    assert.equal(gw.isEnabled('a'), true);
+    await gw.disable();
+    assert.equal(gw.isEnabled('a'), false);
+    await gw.enable();
+    await gw.disable('a');
+    assert.equal(gw.isEnabled('a'), false);
+    assert.equal(gw.isEnabled('unknown'), false);
+  });
+
+  it('an adapter switched on after init() is initialized before its first call', async () => {
+    let optedIn = false;
+    const { adapter, methods } = switchAdapter('late-opt-in', { enabled: () => optedIn });
+    const gw = createTelemetryGateway({ adapters: [adapter], allowedKeys: [] });
+
+    await gw.init();
+    await gw.track('before');
+    optedIn = true;
+    await gw.track('after');
+
+    assert.deepEqual(methods(), ['init', 'track']);
+  });
+
+  it('a shutdown that throws never rejects disable(), and the adapter stays killed', async () => {
+    const { adapter, calls } = switchAdapter('broken', { shutdown: () => { throw new Error('close failed'); } });
+    const { logger, warnings } = recordingLogger();
+    const gw = createTelemetryGateway({ adapters: [adapter], allowedKeys: [], logger });
+
+    await gw.init();
+    await assert.doesNotReject(() => gw.disable('broken'));
+    await gw.track('after');
+
+    assert.deepEqual(calls.map(([method]) => method), ['init']);
+    assert.deepEqual(warnings, ['[observability] broken.shutdown failed']);
+  });
+});
+
 describe('createTelemetryGateway — resilience', () => {
   it('never calls a disabled adapter', async () => {
     const { adapter, calls } = mockAdapter('disabled');
