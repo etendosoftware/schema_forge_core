@@ -19,7 +19,7 @@
  * inventory are ETP-4578's scope, not this one. `provider-import-guard.test.js`
  * enforces that nothing outside this module talks to a provider SDK directly.
  */
-import { sanitizeValue, normalizeRoute, REDACTED } from './sanitize.js';
+import { sanitizeValue, sanitizeStack, normalizeRoute, REDACTED } from './sanitize.js';
 
 function safeWarn(logger, ...args) {
   try {
@@ -135,7 +135,7 @@ function sanitizeError(error, options) {
     return {
       name: sanitizeOptionalText(safeRead(error, 'name'), options),
       message: sanitizeOptionalText(safeRead(error, 'message'), options),
-      stack: sanitizeOptionalText(safeRead(error, 'stack'), options),
+      stack: sanitizeStack(safeRead(error, 'stack'), options),
     };
   }
   return { name: undefined, message: sanitizeText(error, options), stack: undefined };

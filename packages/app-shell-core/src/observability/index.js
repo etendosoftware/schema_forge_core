@@ -4,7 +4,7 @@ export { ObservabilityProvider, useObservability } from './ObservabilityContext.
 // is ETP-4578's scope; this export is what makes the gateway "reusable from
 // app-shell-core" per that ticket's acceptance criterion.
 export { createTelemetryGateway } from './gateway.js';
-export { sanitizeValue, normalizeRoute } from './sanitize.js';
+export { sanitizeValue, sanitizeStack, normalizeRoute } from './sanitize.js';
 // A plain module or a `node --test` file must not import this barrel (it re-exports JSX):
 // use the `/observability/gateway`, `/observability/sanitize` and
 // `/observability/providerImportGuard` subpaths instead.

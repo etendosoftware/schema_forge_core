@@ -2,6 +2,7 @@ import { describe, it } from 'node:test';
 import assert from 'node:assert/strict';
 import {
   sanitizeValue,
+  sanitizeStack,
   normalizeRoute,
   REDACTED,
   DEPTH_LIMIT_MARKER,
@@ -596,5 +597,55 @@ describe('sanitizeValue — Basic credentials', () => {
     for (const m of ['Basic information required', 'Plan: basic INFORMATION', 'basic settings']) {
       assert.equal(sanitizeValue({ m }, { allowedKeys: ['m'] }).m, m);
     }
+  });
+});
+
+describe('sanitizeStack — redaction per frame', () => {
+  const FRAME_A = '    at OrderGrid (https://go.etendo.cloud/go/assets/index-B3kd9Fq2.js:12:345)';
+  const FRAME_B = '    at https://go.etendo.cloud/go/assets/SalesOrderEditor-DkP09aZq.js:1:2';
+
+  it('redacts only the frame that carries a secret and keeps every other frame', () => {
+    const stack = ['Error: save failed', FRAME_A, `    at login (${SECRET_EMAIL})`, FRAME_B].join('\n');
+    const out = sanitizeStack(stack, {});
+    assert.equal(out, ['Error: save failed', FRAME_A, REDACTED, FRAME_B].join('\n'));
+  });
+
+  it('scrubs each frame like any string: queries stripped, path ids collapsed', () => {
+    const stack = [
+      'Error: boom',
+      `    at f (https://go.etendo.cloud/app.js?session=${SECRET_QUERY_CODE}:1:1)`,
+      '    at g (https://go.etendo.cloud/reset/a1b2c3d4e5f60718293a4b5c6d7e8f90: 404)',
+    ].join('\n');
+    const out = sanitizeStack(stack, {});
+    assertNoLeak(out, SECRET_QUERY_CODE, 'a1b2c3d4e5f60718293a4b5c6d7e8f90');
+    assert.equal(out, [
+      'Error: boom',
+      '    at f (https://go.etendo.cloud/app.js)',
+      '    at g (https://go.etendo.cloud/reset/:id: 404)',
+    ].join('\n'));
+  });
+
+  it('keeps at most maxArrayLength frames and marks the cut', () => {
+    const stack = ['Error: deep', ...Array.from({ length: 10 }, (_, i) => `    at f${i} (app.js:${i}:1)`)].join('\n');
+    const lines = sanitizeStack(stack, { maxArrayLength: 3 }).split('\n');
+    assert.deepEqual(lines, ['Error: deep', '    at f0 (app.js:0:1)', '    at f1 (app.js:1:1)', SIZE_LIMIT_MARKER]);
+  });
+
+  it('truncates an overly long frame without dropping the rest', () => {
+    const stack = ['Error: x', `    at ${'a'.repeat(1000)}`, FRAME_A].join('\n');
+    const lines = sanitizeStack(stack, { maxStringLength: 20 }).split('\n');
+    assert.equal(lines.length, 3);
+    assert.ok(lines[1].endsWith(SIZE_LIMIT_MARKER));
+    assert.ok(lines[1].length < 60);
+  });
+
+  it('returns undefined for a missing or non-string stack', () => {
+    assert.equal(sanitizeStack(undefined, {}), undefined);
+    assert.equal(sanitizeStack(42, {}), undefined);
+  });
+
+  it('scans a 200KB single-line stack in bounded time', () => {
+    const ms = elapsedMs(() => sanitizeStack('x'.repeat(200_000), {}));
+    assert.ok(ms < TIME_BUDGET_MS, `took ${ms.toFixed(1)}ms`);
   });
 });

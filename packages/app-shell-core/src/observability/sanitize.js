@@ -414,6 +414,33 @@ export function sanitizeValue(value, options = {}) {
   }
 }
 
+/**
+ * Sanitizes a stack trace one frame (line) at a time, so a single frame that carries a
+ * secret is redacted on its own instead of taking every other frame with it. Each frame
+ * is scrubbed like any string (queries stripped, path ids collapsed, maxStringLength cap);
+ * at most `maxArrayLength` frames are kept, with a marker for the rest. Never throws.
+ *
+ * @param {unknown} stack
+ * @param {object} [options] Same options as `sanitizeValue()`.
+ * @returns {string|undefined} `undefined` for a missing or non-string stack.
+ */
+export function sanitizeStack(stack, options = {}) {
+  if (typeof stack !== 'string') return undefined;
+  try {
+    const { maxArrayLength = DEFAULT_MAX_ARRAY_LENGTH } = options ?? {};
+    const frames = stack.split('\n');
+    const kept = frames.slice(0, maxArrayLength).map((frame) => {
+      const clean = sanitizeValue(frame, options);
+      return typeof clean === 'string' ? clean : REDACTED;
+    });
+    if (frames.length > maxArrayLength) kept.push(SIZE_LIMIT_MARKER);
+    return kept.join('\n');
+  } catch (error) {
+    reportInternalError(options, error);
+    return REDACTED;
+  }
+}
+
 function reportInternalError(options, error) {
   try {
     options?.onInternalError?.(error);

@@ -213,6 +213,25 @@ describe('createTelemetryGateway — sanitizes before dispatch', () => {
     });
   });
 
+  it('captureException() redacts only the stack frame that carries a secret', async () => {
+    const { adapter, calls } = mockAdapter('test');
+    const gw = createTelemetryGateway({ adapters: [adapter], allowedKeys: [] });
+    const error = new Error('save failed');
+    error.stack = [
+      'Error: save failed',
+      `    at login (${SECRET_EMAIL})`,
+      '    at f (https://go.etendo.cloud/go/assets/index-B3kd9Fq2.js:12:345)',
+    ].join('\n');
+
+    await gw.captureException(error);
+
+    assertNoLeak(calls, SECRET_EMAIL);
+    assert.equal(
+      calls[0][1].stack,
+      ['Error: save failed', REDACTED, '    at f (https://go.etendo.cloud/go/assets/index-B3kd9Fq2.js:12:345)'].join('\n'),
+    );
+  });
+
   it('the shared nested-secret fixture never reaches an adapter through track() (Jira AC #1)', async () => {
     const { adapter, calls } = mockAdapter('test');
     const gw = createTelemetryGateway({ adapters: [adapter], allowedKeys: NESTED_SECRET_FIXTURE_ALLOWED_KEYS });
