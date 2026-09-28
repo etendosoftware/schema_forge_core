@@ -230,9 +230,8 @@ describe('sanitizeSentryEvent — error events', () => {
     assert.deepEqual(out.contexts, { app: { app: 'app-shell' }, trace: { trace_id: 't1', span_id: 's1', op: 'pageload' } });
   });
 
-  it('sanitizes breadcrumbs: no console arguments, URLs without query, routes with ids collapsed', () => {
+  it('sanitizes breadcrumbs: console ones dropped, URLs without query, routes with ids collapsed', () => {
     assert.deepEqual(out.breadcrumbs, [
-      { type: 'default', category: 'console', level: 'log', message: REDACTED, data: {} },
       { type: 'http', category: 'fetch', data: { method: 'GET', url: 'https://core.etendo.cloud/sws/neo/session', status_code: 401 } },
       { category: 'navigation', data: { from: '/login', to: '/reset/:id' } },
     ]);
@@ -316,8 +315,8 @@ describe('createSentryAdapter — hooks never send raw data', () => {
 
   it('beforeBreadcrumb returns the sanitized breadcrumb', async () => {
     const { options } = await hooksOf();
-    const crumb = options.beforeBreadcrumb({ category: 'console', message: `token ${SECRET_TOKEN}`, data: { arguments: [SECRET_TOKEN] } }, {});
-    assert.deepEqual(findLeakedFixtureSecrets(crumb), []);
+    const crumb = options.beforeBreadcrumb({ category: 'ui.click', message: `token ${SECRET_TOKEN}`, data: { arguments: [SECRET_TOKEN] } }, {});
+    assert.deepEqual(crumb, { category: 'ui.click', message: REDACTED, data: {} });
   });
 
   it('drops the event rather than sending it raw when sanitization fails', async () => {
@@ -332,6 +331,120 @@ describe('createSentryAdapter — hooks never send raw data', () => {
     const { options } = await hooksOf();
     const hostile = { span_id: 'sp1', trace_id: 't1', start_timestamp: 1, get description() { throw new Error('boom'); } };
     assert.deepEqual(options.beforeSendSpan(hostile), { span_id: 'sp1', trace_id: 't1', start_timestamp: 1, data: {} });
+  });
+});
+
+describe('createSentryAdapter — hot kill against a slow SDK close()', () => {
+  // Models Sentry v10: client.close(timeout) awaits flush(timeout) BEFORE it sets
+  // options.enabled = false, so with a slow or hung endpoint the client keeps capturing
+  // (global handlers, breadcrumbs) for as long as close() is pending.
+  function slowClosingSentry(closeMs) {
+    const calls = [];
+    const clientOptions = {};
+    let releaseClose;
+    const sdk = {
+      init: (options) => { calls.push(['init', options]); Object.assign(clientOptions, { enabled: undefined }); },
+      getClient: () => ({ getOptions: () => clientOptions }),
+      close: (timeout) => {
+        calls.push(['close', timeout, clientOptions.enabled]);
+        return new Promise((resolve) => {
+          releaseClose = () => { clientOptions.enabled = false; resolve(true); };
+          if (Number.isFinite(closeMs)) setTimeout(releaseClose, closeMs);
+        });
+      },
+      flush: async (timeout) => { calls.push(['flush', timeout]); return true; },
+      setContext: () => {},
+      addBreadcrumb: (crumb) => calls.push(['addBreadcrumb', crumb]),
+      captureException: (error) => calls.push(['captureException', error]),
+      setUser: () => {},
+    };
+    return { sdk, calls, clientOptions, options: () => calls.find(([n]) => n === 'init')?.[1], release: () => releaseClose?.() };
+  }
+
+  it('drops every event and breadcrumb from the moment shutdown() is called, while close() is still pending', async () => {
+    const fake = slowClosingSentry(Infinity);
+    const adapter = createSentryAdapter({ sdk: fake.sdk, dsn: 'https://k@glitchtip.example/1', ...POLICY });
+    await adapter.init({ context: {} });
+    const { beforeSend, beforeSendTransaction, beforeBreadcrumb } = fake.options();
+
+    const shuttingDown = adapter.shutdown();
+    // What the SDK's global handlers would do while close() waits on a hung flush:
+    assert.equal(beforeSend(buildErrorEvent(), {}), null);
+    assert.equal(beforeSendTransaction(buildTransactionEvent(), {}), null);
+    assert.equal(beforeBreadcrumb({ category: 'ui.click', message: 'after kill' }, {}), null);
+
+    fake.release();
+    await shuttingDown;
+    assert.equal(beforeSend(buildErrorEvent(), {}), null);
+  });
+
+  it('disables the client before closing it, and bounds close() with its own timeout', async () => {
+    const fake = slowClosingSentry(1);
+    const adapter = createSentryAdapter({ sdk: fake.sdk, dsn: 'https://k@glitchtip.example/1', closeTimeoutMs: 500, ...POLICY });
+    await adapter.init({ context: {} });
+
+    await adapter.shutdown();
+
+    const [, timeout, enabledWhenCloseStarted] = fake.calls.find(([n]) => n === 'close');
+    assert.equal(timeout, 500);
+    assert.equal(enabledWhenCloseStarted, false);
+  });
+
+  it('bounds flush() with a timeout too', async () => {
+    const fake = slowClosingSentry(1);
+    const adapter = createSentryAdapter({ sdk: fake.sdk, dsn: 'https://k@glitchtip.example/1', closeTimeoutMs: 300, ...POLICY });
+    await adapter.flush();
+    assert.deepEqual(fake.calls.find(([n]) => n === 'flush'), ['flush', 300]);
+  });
+
+  it('re-enabling after a kill initializes again and payloads flow', async () => {
+    const fake = slowClosingSentry(1);
+    const adapter = createSentryAdapter({ sdk: fake.sdk, dsn: 'https://k@glitchtip.example/1', ...POLICY });
+    await adapter.init({ context: {} });
+    await adapter.shutdown();
+    await adapter.init({ context: {} });
+
+    const inits = fake.calls.filter(([n]) => n === 'init');
+    assert.equal(inits.length, 2);
+    assert.notEqual(inits[1][1].beforeSend(buildErrorEvent(), {}), null);
+  });
+
+  it('a second init without a kill in between does not initialize the SDK twice', async () => {
+    const fake = slowClosingSentry(1);
+    const adapter = createSentryAdapter({ sdk: fake.sdk, dsn: 'https://k@glitchtip.example/1', ...POLICY });
+    await adapter.init({ context: {} });
+    await adapter.init({ context: {} });
+    assert.equal(fake.calls.filter(([n]) => n === 'init').length, 1);
+  });
+
+  it('gateway operations after the kill never reach the SDK', async () => {
+    const fake = slowClosingSentry(1);
+    const adapter = createSentryAdapter({ sdk: fake.sdk, dsn: 'https://k@glitchtip.example/1', ...POLICY });
+    await adapter.init({ context: {} });
+    await adapter.shutdown();
+
+    await adapter.captureException({ name: 'Error', message: 'late' });
+    await adapter.breadcrumb({ category: 'nav', message: 'late' });
+
+    assert.equal(fake.calls.some(([n]) => n === 'captureException' || n === 'addBreadcrumb'), false);
+  });
+});
+
+describe('createSentryAdapter — console breadcrumbs (N5)', () => {
+  it('drops console breadcrumbs by default: a name logged to the console would ride along every later error', async () => {
+    const fake = fakeSentry();
+    await createSentryAdapter({ sdk: fake.sdk, dsn: 'https://k@glitchtip.example/1', ...POLICY }).init({ context: {} });
+    assert.equal(fake.initOptions().beforeBreadcrumb({ category: 'console', message: 'Customer Juan Pérez' }, {}), null);
+    assert.deepEqual(
+      sanitizeSentryEvent({ breadcrumbs: [{ category: 'console', message: 'Customer Juan Pérez' }, { category: 'nav', message: 'x' }] }, POLICY).breadcrumbs,
+      [{ category: 'nav', message: 'x' }],
+    );
+  });
+
+  it('the host can keep console breadcrumbs', async () => {
+    const fake = fakeSentry();
+    await createSentryAdapter({ sdk: fake.sdk, dsn: 'https://k@glitchtip.example/1', keepConsoleBreadcrumbs: true, ...POLICY }).init({ context: {} });
+    assert.notEqual(fake.initOptions().beforeBreadcrumb({ category: 'console', message: 'ok' }, {}), null);
   });
 });
 

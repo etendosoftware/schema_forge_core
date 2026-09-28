@@ -19,6 +19,8 @@ import { normalizeRoute, sanitizeStack, sanitizeValue } from '../sanitize.js';
 import { compact, pickMeasurements, pickScalars, safeWarn, sanitizeText } from './shared.js';
 
 export const DEFAULT_TRACES_SAMPLE_RATE = 0.1;
+// Below the gateway's DEFAULT_ADAPTER_TIMEOUT_MS (2000), so close()/flush() give up first.
+export const DEFAULT_CLOSE_TIMEOUT_MS = 1000;
 
 /** Span `data` keys an HTTP or navigation span may keep; everything else is dropped. */
 export const DEFAULT_APPROVED_SPAN_DATA_KEYS = [
@@ -66,7 +68,14 @@ function resolvePolicy(policy = {}) {
       ...(policy.limits ?? {}),
       allowedKeys: [...allowedKeys, ...(policy.approvedBreadcrumbDataKeys ?? DEFAULT_APPROVED_BREADCRUMB_DATA_KEYS)],
     },
+    keepConsoleBreadcrumbs: policy.keepConsoleBreadcrumbs === true,
   };
+}
+
+// Console output is free text the secret scrub cannot judge: a customer name logged with
+// console.error would travel attached to every later error. Off unless the host opts in.
+function isDroppedBreadcrumb(crumb, resolved) {
+  return !resolved.keepConsoleBreadcrumbs && crumb?.category === 'console';
 }
 
 function sanitizeFrame(frame, resolved) {
@@ -161,7 +170,9 @@ export function sanitizeSentryEvent(event, policy = {}) {
     transaction_info: event?.transaction_info ? pickScalars(event.transaction_info, ['source']) : undefined,
     exception: Array.isArray(values) ? { values: values.map((value) => sanitizeException(value, resolved)) } : undefined,
     breadcrumbs: Array.isArray(event?.breadcrumbs)
-      ? event.breadcrumbs.map((crumb) => sanitizeBreadcrumbWith(crumb, resolved))
+      ? event.breadcrumbs
+        .filter((crumb) => !isDroppedBreadcrumb(crumb, resolved))
+        .map((crumb) => sanitizeBreadcrumbWith(crumb, resolved))
       : undefined,
     request: sanitizeRequest(event?.request, resolved),
     tags: event?.tags ? sanitizeValue(event.tags, resolved.options) : undefined,
@@ -176,8 +187,10 @@ export function sanitizeSentryEvent(event, policy = {}) {
   });
 }
 
+/** A sanitized breadcrumb, or null for one that is dropped outright (console, by default). */
 export function sanitizeSentryBreadcrumb(crumb, policy = {}) {
-  return sanitizeBreadcrumbWith(crumb, resolvePolicy(policy));
+  const resolved = resolvePolicy(policy);
+  return isDroppedBreadcrumb(crumb, resolved) ? null : sanitizeBreadcrumbWith(crumb, resolved);
 }
 
 export function sanitizeSentrySpan(span, policy = {}) {
@@ -197,6 +210,9 @@ export function sanitizeSentrySpan(span, policy = {}) {
  * @param {Iterable<string>} [options.approvedRequestHeaders] Default none (D7).
  * @param {Iterable<string>} [options.approvedSpanDataKeys]
  * @param {Iterable<string>} [options.approvedBreadcrumbDataKeys]
+ * @param {boolean} [options.keepConsoleBreadcrumbs] Off by default.
+ * @param {number} [options.closeTimeoutMs] Bound on the SDK's close()/flush(); keep it below
+ *   the gateway's adapterTimeoutMs.
  * @param {object} [options.limits] Forwarded to `sanitizeValue()` (maxStringLength, …).
  * @param {{warn?: Function}} [options.logger]
  */
@@ -211,15 +227,26 @@ export function createSentryAdapter({
   approvedRequestHeaders,
   approvedSpanDataKeys,
   approvedBreadcrumbDataKeys,
+  keepConsoleBreadcrumbs = false,
+  closeTimeoutMs = DEFAULT_CLOSE_TIMEOUT_MS,
   limits,
   logger = console,
 } = {}) {
-  const policy = { allowedKeys, approvedRequestHeaders, approvedSpanDataKeys, approvedBreadcrumbDataKeys, limits };
+  const policy = {
+    allowedKeys, approvedRequestHeaders, approvedSpanDataKeys, approvedBreadcrumbDataKeys, keepConsoleBreadcrumbs, limits,
+  };
+  // Set synchronously the moment the kill switch fires. Sentry v10's close() awaits a
+  // flush BEFORE it disables the client, so without this flag the global handlers keep
+  // capturing — and sending — for as long as a slow or hung endpoint holds close() up.
+  let stopped = false;
+  // Initialized and not closed since: a second init() (a retried start) is a no-op.
+  let live = false;
 
   // A hook that throws would make the SDK send the original payload or crash its
   // pipeline; a failure here drops the payload instead of letting it out unsanitized.
   function guardedHook(name, sanitize, fallback = () => null) {
     return (payload) => {
+      if (stopped) return fallback(payload);
       try {
         return sanitize(payload, policy);
       } catch (error) {
@@ -229,16 +256,32 @@ export function createSentryAdapter({
     };
   }
 
-  // beforeSendSpan cannot drop a span, so a failed one is reduced to its ids.
+  // beforeSendSpan cannot drop a span, so a failed (or post-kill) one is reduced to its
+  // ids; the transaction carrying it is dropped by beforeSendTransaction anyway.
   const spanFallback = (span) => ({ ...pickScalars(span, SPAN_ID_SCALARS), data: {} });
 
   const call = (method, ...args) => (typeof sdk?.[method] === 'function' ? sdk[method](...args) : undefined);
+
+  function disableClient() {
+    try {
+      const options = sdk?.getClient?.()?.getOptions?.();
+      if (options) options.enabled = false;
+    } catch {
+      // Best effort: the stopped flag already drops everything.
+    }
+  }
 
   return {
     name: 'sentry',
     enabled: Boolean(dsn),
 
     init({ context } = {}) {
+      stopped = false;
+      if (live) {
+        if (context) call('setContext', 'app', context);
+        return;
+      }
+      live = true;
       call('init', {
         dsn,
         environment,
@@ -256,17 +299,25 @@ export function createSentryAdapter({
       if (context) call('setContext', 'app', context);
     },
 
-    /** Hot kill: closing the client stops its global handlers and automatic breadcrumbs. */
+    /**
+     * Hot kill. The order matters: the stopped flag drops every hook's payload at once,
+     * then the client is disabled (which also stops sessions and client reports), and only
+     * then is close() awaited — bounded, since a hung endpoint would hold it forever.
+     */
     async shutdown() {
-      await call('close');
+      stopped = true;
+      disableClient();
+      live = false;
+      await call('close', closeTimeoutMs);
     },
 
     reset() {
-      call('setUser', null);
+      if (!stopped) call('setUser', null);
     },
 
     /** The gateway hands over an already-sanitized `{ name, message, stack }`, never the raw Error. */
     captureException(summary, details = {}) {
+      if (stopped) return;
       const error = new Error(typeof summary?.message === 'string' ? summary.message : '');
       if (typeof summary?.name === 'string') error.name = summary.name;
       if (typeof summary?.stack === 'string') error.stack = sanitizeStack(summary.stack, policy.limits);
@@ -274,15 +325,15 @@ export function createSentryAdapter({
     },
 
     breadcrumb(crumb) {
-      call('addBreadcrumb', crumb);
+      if (!stopped) call('addBreadcrumb', crumb);
     },
 
     setContext(context) {
-      call('setContext', 'app', context);
+      if (!stopped) call('setContext', 'app', context);
     },
 
     async flush() {
-      await call('flush');
+      await call('flush', closeTimeoutMs);
     },
   };
 }
