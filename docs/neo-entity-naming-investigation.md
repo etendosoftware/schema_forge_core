@@ -121,6 +121,26 @@ const basePath = `/${entity.name}`;
 
 So the contract layer already assumes curated entity names are the public API shape.
 
+### Several contract fields on one AD column (ETP-5399)
+
+`ETGO_SF_FIELD` is unique per `(ETGO_SF_ENTITY_ID, AD_Column_ID)`, so every contract field that
+targets the same column is written into the same row. Two fields can legitimately share a column
+(two AD fields over one column, e.g. `AD_Org_ID` in two field groups), and before ETP-5399 the one
+pushed last simply won. `coalesceDuplicateColumnFields()` (`cli/src/lib/field-visibility.js`) now
+collapses them before any write: the most-exposed visibility wins (`editable` > `readOnly` >
+`system` > `discarded`), ties keep the first field in contract order, and push-to-neo prints a
+warning naming the ignored fields. The offline delta (`lib/neo-delta.js`) applies the same function,
+so both paths write the same row.
+
+The case that exposed it was not a legitimate duplicate: the extractor joined `AD_Model_Object`
+on `AD_Callout_ID` without filtering the action, and core ships a stray `Action = 'P'` row for the
+callout `SE_ElementValue_AccountSign` (etendosoftware/etendo_core#1162). `C_ElementValue.AccountType`
+came out twice, the copy was named `accountType2` and curated `discarded`, and being pushed last it
+closed the real field — NEO then dropped the account type on every write. The same join in
+`extract-rules.js` / `extract-from-db.js` also listed that callout twice in `rules-raw.json`. Every
+extractor now joins only `Action = 'C'` (`extract-fields.js`, `extract-from-db.js`, `extract-rules.js`;
+guarded by `cli/test/extract-callout-join.test.js`).
+
 ## How Runtime Endpoint Resolution Actually Works
 
 The key runtime conclusion is:
