@@ -8,6 +8,7 @@ export { sanitizeValue, sanitizeStack, normalizeRoute } from './sanitize.js';
 // A plain module or a `node --test` file must not import this barrel (it re-exports JSX):
 // use the `/observability/gateway`, `/observability/sanitize` and
 // `/observability/providerImportGuard` subpaths instead.
+export { createSentryAdapter } from './adapters/sentry.js';
 export {
   findBannedProviderImports,
   isBannedProviderSpecifier,

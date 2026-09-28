@@ -21,6 +21,12 @@ describe('app-shell-core plain observability subpaths', () => {
     assert.equal(typeof createTelemetryGateway, 'function');
   });
 
+  it('exposes the Sentry adapter', async () => {
+    const sentry = await import('@etendosoftware/app-shell-core/observability/adapters/sentry');
+    assert.equal(typeof sentry.createSentryAdapter, 'function');
+    assert.equal(typeof sentry.sanitizeSentryEvent, 'function');
+  });
+
   it('exposes the sanitizer', async () => {
     const sanitize = await import('@etendosoftware/app-shell-core/observability/sanitize');
     assert.equal(typeof sanitize.sanitizeValue, 'function');
