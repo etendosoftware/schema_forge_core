@@ -12,6 +12,7 @@ import {
   loadConfig,
   buildDesiredEntitiesMap,
   buildFieldUpdateParams,
+  coalesceDuplicateColumnFields,
 } from '../src/push-to-neo.js';
 
 function updateParams(visibility) {
@@ -696,5 +697,57 @@ describe('buildDesiredEntitiesMap — namedFilters carry-through (ETP-4601)', ()
     };
     const desired = buildDesiredEntitiesMap(schemaRaw, contract);
     assert.equal(desired.get('Header').namedFilters, null);
+  });
+});
+
+describe('coalesceDuplicateColumnFields (ETP-5399)', () => {
+  const field = (fieldName, visibility, column = 'AccountType', entityName = 'elementValue') => ({
+    entityName, fieldName, column, visibility,
+  });
+
+  it('keeps the editable field when a discarded duplicate of the same column comes last', () => {
+    const { fields, collapsed } = coalesceDuplicateColumnFields([
+      field('name', 'editable', 'Name'),
+      field('accountType', 'editable'),
+      field('accountType2', 'discarded'),
+    ]);
+    assert.deepEqual(fields.map((f) => f.fieldName), ['name', 'accountType']);
+    assert.deepEqual(collapsed, [
+      { entityName: 'elementValue', column: 'AccountType', kept: 'accountType', dropped: ['accountType2'] },
+    ]);
+  });
+
+  it('picks the most exposed field regardless of contract order', () => {
+    const { fields } = coalesceDuplicateColumnFields([
+      field('accountType2', 'discarded'),
+      field('accountType', 'readOnly'),
+      field('accountType3', 'editable'),
+    ]);
+    assert.deepEqual(fields.map((f) => f.fieldName), ['accountType3']);
+  });
+
+  it('keeps the first field on a visibility tie', () => {
+    const { fields } = coalesceDuplicateColumnFields([
+      field('accountType', 'discarded'),
+      field('accountType2', 'discarded'),
+    ]);
+    assert.deepEqual(fields.map((f) => f.fieldName), ['accountType']);
+  });
+
+  it('does not merge the same column across different entities', () => {
+    const { fields, collapsed } = coalesceDuplicateColumnFields([
+      field('name', 'editable', 'Name', 'header'),
+      field('name', 'discarded', 'Name', 'lines'),
+    ]);
+    assert.equal(fields.length, 2);
+    assert.deepEqual(collapsed, []);
+  });
+
+  it('ranks an absent visibility like discarded', () => {
+    const { fields } = coalesceDuplicateColumnFields([
+      field('accountType', undefined),
+      field('accountType2', 'system'),
+    ]);
+    assert.deepEqual(fields.map((f) => f.fieldName), ['accountType2']);
   });
 });

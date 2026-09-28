@@ -375,7 +375,9 @@ JOIN AD_Window w ON t.AD_Window_ID = w.AD_Window_ID
 JOIN AD_Column c ON f.AD_Column_ID = c.AD_Column_ID
 JOIN AD_Table tbl ON c.AD_Table_ID = tbl.AD_Table_ID
 JOIN AD_Reference r ON c.AD_Reference_ID = r.AD_Reference_ID
-LEFT JOIN AD_Model_Object mo ON mo.AD_Callout_ID = c.AD_Callout_ID
+-- Only the callout implementation (Action = 'C'): a callout may carry other AD_Model_Object
+-- rows, and an unfiltered join duplicates the field (ETP-5399).
+LEFT JOIN AD_Model_Object mo ON mo.AD_Callout_ID = c.AD_Callout_ID AND mo.Action = 'C'
 WHERE w.AD_Window_ID = ?
   AND f.IsActive = 'Y' AND t.IsActive = 'Y'
 ORDER BY t.SeqNo, f.SeqNo
