@@ -495,6 +495,9 @@ describe('sanitizeValue — bounded cost without the length cap', () => {
     // backtracking path, not the early match.
     'near-JWT candidates': `eyJ${'a'.repeat(30)}.${'b'.repeat(5)}.`.repeat(5_000),
     'path segments': `/${'segment-name'.repeat(3)}`.repeat(5_500),
+    // One segment that is almost all punctuation: guards the trailing-punctuation split,
+    // which a lazy regex would make quadratic.
+    'a punctuation-heavy path segment': `/${'.'.repeat(100_000)}x${';'.repeat(100_000)}`,
   };
 
   for (const [label, value] of Object.entries(inputs)) {
@@ -544,6 +547,15 @@ describe('sanitizeValue — record ids and tokens in embedded paths', () => {
     [`navigated to /portal/tok-abcdef0123456789?x=1`]: 'navigated to /portal/:id',
     '/sales-order/FF8080818A1234567890ABCDEF123456/lines': '/sales-order/:id/lines',
     '/orders/550e8400-e29b-41d4-a716-446655440000': '/orders/:id',
+    // Prose punctuation trailing the URL is split off, the id collapses, the punctuation stays.
+    [`Failed on https://go.etendo.cloud/reset/${HEX32}: 404`]: 'Failed on https://go.etendo.cloud/reset/:id: 404',
+    [`Failed on https://go.etendo.cloud/reset/${HEX32}.`]: 'Failed on https://go.etendo.cloud/reset/:id.',
+    [`See https://go.etendo.cloud/reset/${HEX32}, then retry`]: 'See https://go.etendo.cloud/reset/:id, then retry',
+    'GET /api/portal/tok-abcdef0123456789; status=401': 'GET /api/portal/:id; status=401',
+    [`[https://go.etendo.cloud/reset/${HEX32}]`]: '[https://go.etendo.cloud/reset/:id]',
+    // Interior dots and colons make a filename, not an id.
+    '    at f (https://go.etendo.cloud/go/assets/index-B3kd9Fq2.js:12:345)':
+      '    at f (https://go.etendo.cloud/go/assets/index-B3kd9Fq2.js:12:345)',
   };
 
   for (const [input, expected] of Object.entries(CASES)) {

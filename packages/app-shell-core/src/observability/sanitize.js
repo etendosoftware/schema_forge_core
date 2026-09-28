@@ -148,11 +148,21 @@ function isIdSegment(segment) {
     && /[A-Za-z]/.test(segment) && /\d/.test(segment);
 }
 
+// Prose punctuation that can trail a URL without being part of it ("…/reset/<id>: 404",
+// "…/<id>.", "[…/<id>]"). Only a trailing run is split off: interior dots and colons are
+// what keep `index-B3kd9Fq2.js:12:345` a filename rather than an id.
+const TRAILING_PUNCTUATION = new Set(['.', ',', ';', ':', '!', '?', ']', '}']);
+
+function collapseSegment(segment) {
+  // Scanned by hand rather than with /^(.*?)([.,;:!?\]}]+)$/, which backtracks
+  // quadratically on a long segment full of interior punctuation.
+  let end = segment.length;
+  while (end > 0 && TRAILING_PUNCTUATION.has(segment[end - 1])) end -= 1;
+  return isIdSegment(segment.slice(0, end)) ? `:id${segment.slice(end)}` : segment;
+}
+
 function collapseIdSegments(path) {
-  return path
-    .split('/')
-    .map((segment) => (isIdSegment(segment) ? ':id' : segment))
-    .join('/');
+  return path.split('/').map(collapseSegment).join('/');
 }
 
 /**
