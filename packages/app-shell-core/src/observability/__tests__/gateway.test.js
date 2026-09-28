@@ -416,20 +416,36 @@ describe('createTelemetryGateway — lifecycle (init / reset)', () => {
   });
 
   it('init() and reset() never reject when an adapter throws, and still reach the others', async () => {
-    const broken = {
-      name: 'broken',
-      init: () => { throw new Error('init down'); },
+    const brokenReset = {
+      name: 'broken-reset',
       reset: async () => { throw new Error('reset down'); },
     };
     const healthy = lifecycleAdapter('healthy');
     const { logger, warnings } = recordingLogger();
-    const gw = createTelemetryGateway({ adapters: [broken, healthy.adapter], allowedKeys: [], logger });
+    const gw = createTelemetryGateway({ adapters: [brokenReset, healthy.adapter], allowedKeys: [], logger });
 
     await assert.doesNotReject(() => gw.init());
     await assert.doesNotReject(() => gw.reset());
 
     assert.deepEqual(healthy.calls.map(([method]) => method), ['init', 'reset']);
-    assert.deepEqual(warnings, ['[observability] broken.init failed', '[observability] broken.reset failed']);
+    assert.deepEqual(warnings, ['[observability] broken-reset.reset failed']);
+  });
+
+  it('an adapter whose init() throws receives no later call; its init is retried instead', async () => {
+    const received = [];
+    const brokenInit = {
+      name: 'broken-init',
+      init: () => { throw new Error('init down'); },
+      reset: () => { received.push('reset'); },
+    };
+    const { logger, warnings } = recordingLogger();
+    const gw = createTelemetryGateway({ adapters: [brokenInit], allowedKeys: [], logger });
+
+    await assert.doesNotReject(() => gw.init());
+    await assert.doesNotReject(() => gw.reset());
+
+    assert.deepEqual(received, []);
+    assert.deepEqual(warnings, ['[observability] broken-init.init failed', '[observability] broken-init.init failed']);
   });
 
   it('an adapter without init/reset is skipped silently', async () => {
@@ -627,6 +643,97 @@ describe('createTelemetryGateway — kill switch', () => {
 
     assert.deepEqual(calls.map(([method]) => method), ['init']);
     assert.deepEqual(warnings, ['[observability] broken.shutdown failed']);
+  });
+});
+
+describe('createTelemetryGateway — kill switch under concurrency', () => {
+  const sleep = (ms) => new Promise((resolve) => { setTimeout(resolve, ms); });
+
+  /** An adapter whose init takes time or fails, logging the state each call sees. */
+  function slowAdapter(name, { initMs = 0, initRejects = false } = {}) {
+    const log = [];
+    let state = 'new';
+    return {
+      log,
+      adapter: {
+        name,
+        async init() {
+          log.push('init:start');
+          await sleep(initMs);
+          if (initRejects) throw new Error('init failed');
+          state = 'ready';
+          log.push('init:done');
+        },
+        shutdown() { state = 'closed'; log.push('shutdown'); },
+        track(event) { log.push(`track(${event})@${state}`); },
+        identify(id) { log.push(`identify(${id})@${state}`); },
+      },
+    };
+  }
+  const silent = { warn() {} };
+
+  it('a call in flight when disable() lands in the same tick never reaches the adapter', async () => {
+    const { adapter, log } = slowAdapter('x');
+    const gw = createTelemetryGateway({ adapters: [adapter], allowedKeys: [], logger: silent });
+    await gw.init();
+
+    await Promise.all([gw.identify('user-1'), gw.disable('x')]);
+    await Promise.all([gw.track('evt'), gw.disable('x')]);
+
+    assert.deepEqual(log, ['init:start', 'init:done', 'shutdown']);
+  });
+
+  it('calls racing a late start() wait for init to finish (never reach a half-initialized adapter)', async () => {
+    const { adapter, log } = slowAdapter('x', { initMs: 60 });
+    const gw = createTelemetryGateway({ adapters: [adapter], allowedKeys: [], logger: silent, disabled: ['x'] });
+    await gw.init();
+
+    await Promise.all([gw.enable('x'), gw.identify('user-1'), gw.track('second')]);
+
+    assert.deepEqual(log, ['init:start', 'init:done', 'identify(user-1)@ready', 'track(second)@ready']);
+  });
+
+  it('an init that times out leaves the adapter not running, so calls skip it', async () => {
+    const { adapter, log } = slowAdapter('x', { initMs: 200 });
+    const gw = createTelemetryGateway({ adapters: [adapter], allowedKeys: [], logger: silent, adapterTimeoutMs: 20 });
+
+    await gw.init();
+    await gw.track('after-timeout');
+
+    assert.equal(log.some((entry) => entry.startsWith('track(after-timeout)@new')), false, log.join(' -> '));
+    await sleep(220);
+  });
+
+  it('an init that rejects is retried on the next call instead of leaving a dead adapter "running"', async () => {
+    let attempts = 0;
+    const calls = [];
+    const flaky = {
+      name: 'flaky',
+      async init() { attempts += 1; if (attempts === 1) throw new Error('first init fails'); },
+      track(event) { calls.push(event); },
+    };
+    const gw = createTelemetryGateway({ adapters: [flaky], allowedKeys: [], logger: silent });
+
+    await gw.init();
+    await gw.track('a');
+
+    assert.equal(attempts, 2);
+    assert.deepEqual(calls, ['a']);
+  });
+
+  it('disable() during a pending init shuts the adapter down once init settles, and later calls skip it', async () => {
+    const { adapter, log } = slowAdapter('x', { initMs: 40 });
+    const gw = createTelemetryGateway({ adapters: [adapter], allowedKeys: [], logger: silent });
+
+    const initializing = gw.init();
+    await sleep(5);
+    await gw.disable('x');
+    await initializing;
+    await gw.track('after-kill');
+
+    assert.equal(log.includes('track(after-kill)@ready'), false);
+    assert.equal(log.at(-1), 'shutdown');
+    assert.ok(log.lastIndexOf('shutdown') > log.indexOf('init:done'), 'the adapter must end shut down, after its init');
   });
 });
 

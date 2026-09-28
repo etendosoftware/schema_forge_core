@@ -69,21 +69,26 @@ function withTimeout(promise, timeoutMs) {
   return Promise.race([promise, timeout]).finally(() => clearTimeout(timer));
 }
 
-async function callAdapter(adapter, methodName, args, logger, timeoutMs) {
+/** `{ ok }` tells a call that completed apart from one that threw or timed out. */
+async function invokeAdapter(adapter, methodName, args, logger, timeoutMs) {
   try {
     const method = adapter?.[methodName];
-    if (typeof method !== 'function') return undefined;
+    if (typeof method !== 'function') return { ok: true, value: undefined };
     // Called synchronously, as before: a synchronous throw lands in the catch below.
     const result = await withTimeout(Promise.resolve(method.apply(adapter, args)), timeoutMs);
     if (result === TIMED_OUT) {
       safeWarn(logger, `[observability] ${adapterName(adapter)}.${methodName} timed out after ${timeoutMs}ms`);
-      return undefined;
+      return { ok: false, value: undefined };
     }
-    return result;
+    return { ok: true, value: result };
   } catch (error) {
     safeWarn(logger, `[observability] ${adapterName(adapter)}.${methodName} failed`, error);
-    return undefined;
+    return { ok: false, value: undefined };
   }
+}
+
+async function callAdapter(adapter, methodName, args, logger, timeoutMs) {
+  return (await invokeAdapter(adapter, methodName, args, logger, timeoutMs)).value;
 }
 
 function safeRead(target, key) {
@@ -189,9 +194,11 @@ export function createTelemetryGateway({
     disabled && disabled !== true && typeof disabled !== 'string' ? Array.from(disabled) : [],
   );
   if (typeof disabled === 'string') killedNames.add(disabled);
-  // Adapters whose init() has run and no shutdown() since. A kill only needs to shut an
-  // adapter down if it was actually started.
+  // Adapters started and not shut down since, and the promise of each start. A call waits
+  // on the start promise, so it never reaches an adapter whose init() is still running; a
+  // kill only shuts down an adapter that was actually started.
   const running = new Set();
+  const starts = new Map();
   let initialized = false;
   const sanitizeOptions = {
     allowedKeys,
@@ -212,22 +219,49 @@ export function createTelemetryGateway({
   const isActive = (adapter) =>
     isAdapterConfiguredOn(adapter) && !killedAll && !killedNames.has(adapterName(adapter));
 
-  async function start(adapter) {
-    running.add(adapter);
-    await callAdapter(adapter, 'init', [envelope()], logger, adapterTimeoutMs);
-  }
-
   async function stop(adapter) {
     running.delete(adapter);
+    starts.delete(adapter);
     await callAdapter(adapter, 'shutdown', [envelope()], logger, adapterTimeoutMs);
+  }
+
+  /**
+   * Starts an adapter once, sharing the in-flight start with every concurrent caller.
+   * Resolves true when the adapter is running and still active. An init that throws or
+   * times out leaves the adapter NOT running, so no call reaches a half-initialized SDK
+   * and the next call retries; an adapter killed while its init was in flight is shut
+   * down as soon as the init settles.
+   */
+  function start(adapter) {
+    if (starts.has(adapter)) return starts.get(adapter);
+    running.add(adapter);
+    const starting = invokeAdapter(adapter, 'init', [envelope()], logger, adapterTimeoutMs).then(async ({ ok }) => {
+      if (starts.get(adapter) !== starting) {
+        // stop() ran while init was in flight; the SDK may have finished starting after
+        // that shutdown, so shut it down again.
+        await callAdapter(adapter, 'shutdown', [envelope()], logger, adapterTimeoutMs);
+        return false;
+      }
+      if (!ok) {
+        running.delete(adapter);
+        starts.delete(adapter);
+        return false;
+      }
+      return true;
+    });
+    starts.set(adapter, starting);
+    return starting;
   }
 
   // An adapter that turned active after init() (a late opt-in, a lifted kill) is started
   // before its first call, so an SDK never receives events without having been set up.
+  // Activity is checked again right before each call, after every await: a disable()
+  // landing while the call was waiting must still stop it.
   async function dispatch(methodName, args) {
-    const active = adapters.filter(isActive);
-    if (initialized) await Promise.all(active.filter((a) => !running.has(a)).map(start));
-    await Promise.all(active.map((adapter) => callAdapter(adapter, methodName, args, logger, adapterTimeoutMs)));
+    const candidates = adapters.filter(isActive);
+    const started = initialized ? await Promise.all(candidates.map(start)) : candidates.map(() => true);
+    const ready = candidates.filter((adapter, i) => started[i] && isActive(adapter));
+    await Promise.all(ready.map((adapter) => callAdapter(adapter, methodName, args, logger, adapterTimeoutMs)));
   }
 
   function setKilled(name, killed) {
@@ -271,7 +305,7 @@ export function createTelemetryGateway({
     init: guarded('init', async (initialContext = {}) => {
       mergeContext(initialContext);
       initialized = true;
-      await Promise.all(adapters.filter((a) => isActive(a) && !running.has(a)).map(start));
+      await Promise.all(adapters.filter(isActive).map(start));
     }),
 
     /**
@@ -292,7 +326,7 @@ export function createTelemetryGateway({
     enable: guarded('enable', async (name) => {
       setKilled(name, false);
       if (!initialized) return;
-      await Promise.all(adapters.filter((a) => isActive(a) && !running.has(a)).map(start));
+      await Promise.all(adapters.filter(isActive).map(start));
     }),
 
     isEnabled(name) {
