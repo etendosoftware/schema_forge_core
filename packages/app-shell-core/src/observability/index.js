@@ -4,4 +4,4 @@ export { ObservabilityProvider, useObservability } from './ObservabilityContext.
 // is ETP-4578's scope; this export is what makes the gateway "reusable from
 // app-shell-core" per that ticket's acceptance criterion.
 export { createTelemetryGateway } from './gateway.js';
-export { sanitizeValue } from './sanitize.js';
+export { sanitizeValue, normalizeRoute } from './sanitize.js';

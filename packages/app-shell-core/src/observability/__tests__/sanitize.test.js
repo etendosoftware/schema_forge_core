@@ -1,6 +1,13 @@
 import { describe, it } from 'node:test';
 import assert from 'node:assert/strict';
-import { sanitizeValue, REDACTED, DEPTH_LIMIT_MARKER, SIZE_LIMIT_MARKER, CIRCULAR_MARKER } from '../sanitize.js';
+import {
+  sanitizeValue,
+  normalizeRoute,
+  REDACTED,
+  DEPTH_LIMIT_MARKER,
+  SIZE_LIMIT_MARKER,
+  CIRCULAR_MARKER,
+} from '../sanitize.js';
 import {
   SECRET_TOKEN,
   SECRET_EMAIL,
@@ -378,5 +385,141 @@ describe('sanitizeValue — end-to-end abuse fixture', () => {
       allowedKeys: NESTED_SECRET_FIXTURE_ALLOWED_KEYS,
     });
     assert.deepEqual(findLeakedFixtureSecrets(out), []);
+  });
+});
+
+describe('sanitizeValue — legitimate routes and stacks are not over-redacted', () => {
+  const KEPT = [
+    '/purchase-order-lines/configuration-settings',
+    '/settings/organization/fiscal-configuration/new',
+    '/sales-order/FF8080818A1234567890ABCDEF123456/lines',
+    '/orders/550e8400-e29b-41d4-a716-446655440000',
+    '    at https://go.etendo.cloud/go/assets/SalesOrderEditor-DkP09aZq.js:1:2',
+    '    at render (webpack-internal:///./node_modules/react-dom/cjs/react-dom.development.js:1:1)',
+    'Error in com.etendoerp.salesorderhandler.headervalidation.checkfields',
+    'The bearer of bad news',
+  ];
+
+  for (const value of KEPT) {
+    it(`keeps ${JSON.stringify(value.trim())}`, () => {
+      assert.equal(sanitizeValue({ m: value }, { allowedKeys: ['m'] }).m, value);
+    });
+  }
+
+  it('keeps every frame of a stack whose chunk names mix case and digits', () => {
+    const stack = [
+      'Error: save failed',
+      '    at OrderGrid (https://go.etendo.cloud/go/assets/index-B3kd9Fq2.js:12:345)',
+      '    at https://go.etendo.cloud/go/assets/SalesOrderEditor-DkP09aZq.js:1:2',
+    ].join('\n');
+    assert.equal(sanitizeValue({ stack }, { allowedKeys: ['stack'] }).stack, stack);
+  });
+
+  it('still redacts a long mixed token living in a URL path segment', () => {
+    const url = 'https://go.etendo.cloud/reset/Ab3dEf9hIjKlMnOpQrStUvWxYz0123456789abcd';
+    assert.equal(sanitizeValue({ url }, { allowedKeys: ['url'] }).url, REDACTED);
+  });
+
+  it('still redacts a long hex digest in free text', () => {
+    const digest = '9f86d081884c7d659a2feaa0c55ad0159f86d081884c7d659a2feaa0c55ad015';
+    assert.equal(sanitizeValue({ m: `sha ${digest}` }, { allowedKeys: ['m'] }).m, REDACTED);
+  });
+});
+
+describe('normalizeRoute', () => {
+  const CASES = {
+    '/sales-order/FF8080818A1234567890ABCDEF123456': '/sales-order/:id',
+    '/sales-order/FF8080818A1234567890ABCDEF123456/lines': '/sales-order/:id/lines',
+    '/orders/550e8400-e29b-41d4-a716-446655440000': '/orders/:id',
+    '/orders/123': '/orders/:id',
+    '/reset/Ab3dEf9hIjKl': '/reset/:id',
+    '/purchase-order-lines/configuration-settings': '/purchase-order-lines/configuration-settings',
+    '/reports/q3-2024-summary': '/reports/q3-2024-summary',
+    '/orders/123?tab=lines#panel': '/orders/:id',
+    '/#/sales-order/123?tab=lines': '/#/sales-order/:id',
+    '/': '/',
+  };
+
+  for (const [input, expected] of Object.entries(CASES)) {
+    it(`${input} -> ${expected}`, () => {
+      assert.equal(normalizeRoute(input), expected);
+    });
+  }
+});
+
+describe('sanitizeValue — query and fragment edge cases', () => {
+  it('strips a bare query with no path in front of it', () => {
+    const out = sanitizeValue({ m: `search?q=term and ?code=${SECRET_QUERY_CODE}` }, { allowedKeys: ['m'] });
+    assertNoLeak(out, SECRET_QUERY_CODE);
+    assert.equal(out.m, 'search and ');
+  });
+
+  it('keeps a trailing question mark and a fragment that is not key=value in prose', () => {
+    const out = sanitizeValue({ m: 'Is it 50/50? See issue #123' }, { allowedKeys: ['m'] });
+    assert.equal(out.m, 'Is it 50/50? See issue #123');
+  });
+
+  it('keeps a hash-router path but strips its query', () => {
+    const out = sanitizeValue(
+      { url: `https://go.etendo.cloud/go/#/sales-order/123?code=${SECRET_QUERY_CODE}` },
+      { allowedKeys: ['url'] },
+    );
+    assert.equal(out.url, 'https://go.etendo.cloud/go/#/sales-order/123');
+  });
+
+  it('still strips an OAuth-style fragment carrying a credential', () => {
+    const out = sanitizeValue(
+      { url: `https://go.etendo.cloud/callback#access_token=${SECRET_QUERY_CODE}` },
+      { allowedKeys: ['url'] },
+    );
+    assert.equal(out.url, 'https://go.etendo.cloud/callback');
+  });
+});
+
+describe('sanitizeValue — bounded cost without the length cap', () => {
+  // With maxStringLength: Infinity the whole input is scanned, so these catch a pattern
+  // that turns quadratic again even though the default cap would hide it.
+  const UNCAPPED_BUDGET_MS = 500;
+  const inputs = {
+    'a run of one character': 'x'.repeat(200_000),
+    'dots and letters': 'a.'.repeat(100_000),
+    'a long local part before an @': `${'a'.repeat(100_000)}@${'a.'.repeat(50_000)}`,
+    // Each candidate has a valid header and then fails on a short second segment: the
+    // backtracking path, not the early match.
+    'near-JWT candidates': `eyJ${'a'.repeat(30)}.${'b'.repeat(5)}.`.repeat(5_000),
+    'path segments': `/${'segment-name'.repeat(3)}`.repeat(5_500),
+  };
+
+  for (const [label, value] of Object.entries(inputs)) {
+    it(`scans 200KB of ${label} in under ${UNCAPPED_BUDGET_MS}ms`, () => {
+      assert.ok(value.length >= 190_000, `fixture too short: ${value.length}`);
+      const ms = elapsedMs(() => sanitizeValue({ m: value }, { allowedKeys: ['m'], maxStringLength: Infinity }));
+      assert.ok(ms < UNCAPPED_BUDGET_MS, `took ${ms.toFixed(1)}ms`);
+    });
+  }
+});
+
+describe('sanitizeValue — onInternalError', () => {
+  it('reports a failure of the sanitizer as a whole and still returns a marker', () => {
+    const errors = [];
+    const options = { allowedKeys: ['a'], onInternalError: (error) => errors.push(error) };
+    Object.defineProperty(options, 'maxDepth', { get() { throw new Error('bad option'); }, enumerable: true });
+
+    assert.equal(sanitizeValue({ a: 1 }, options), REDACTED);
+    assert.equal(errors.length, 1);
+    assert.equal(errors[0].message, 'bad option');
+  });
+
+  it('does not report a hostile value that is contained per key', () => {
+    const errors = [];
+    const input = { get a() { throw new Error('boom'); } };
+    sanitizeValue(input, { allowedKeys: ['a'], onInternalError: (error) => errors.push(error) });
+    assert.equal(errors.length, 0);
+  });
+
+  it('survives a reporter that throws', () => {
+    const options = { onInternalError: () => { throw new Error('reporter down'); } };
+    Object.defineProperty(options, 'maxDepth', { get() { throw new Error('bad option'); } });
+    assert.equal(sanitizeValue({}, options), REDACTED);
   });
 });

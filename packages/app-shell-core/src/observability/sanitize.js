@@ -57,39 +57,97 @@ const SENSITIVE_KEY_WORDS = new Set(['pwd', 'otp', 'totp', 'jwt', 'ssn', 'iban',
 // run (`^` or a non-token character), so no pattern backtracks quadratically — an 80KB
 // string used to take ~20s. The run anchor is written without lookbehind on purpose:
 // nothing else shipped in this package uses it, and older Safari fails to parse it.
-const BEARER_RE = /\bbearer\s{1,32}\S/i;
-const JWT_RE = /(?:^|[^\w-])[\w-]{10,2048}\.[\w-]{10,2048}\.[\w-]{10,2048}/;
+// A bearer credential is a long token, so prose ("the bearer of bad news") is not one.
+const BEARER_RE = /\bbearer\s{1,32}[\w.~+/=-]{16,}/i;
+// Every JWT header is base64url JSON, so it starts with `eyJ` (`{"`); without that a
+// dotted package name such as `com.etendoerp.salesorderhandler.headervalidation` matched.
+const JWT_RE = /(?:^|[^\w-])eyJ[\w-]{7,2048}\.[\w-]{10,2048}\.[\w-]{10,2048}/;
 const EMAIL_RE = /[\w.%+-]{1,64}@[\w.-]{1,253}\.[a-z]{2,24}/i;
 // A long run of base64/hex-ish characters reads as an opaque secret (API key, session id)
 // even without a recognizable prefix. Trade-off: a long-enough high-entropy identifier
 // (e.g. a 64-char hash) is redacted too — acceptable for a deny-by-default boundary.
-const OPAQUE_TOKEN_RE = /[A-Za-z0-9+/_=-]{40,512}/g;
-// Real tokens mix case and digits; a low-variety run ('aaaa…', a repeated word) is far
-// more likely to be padding than a secret.
+const OPAQUE_RUN_RE = /[A-Za-z0-9+/_=-]{40,512}/g;
+// Inside a URL or a path, '/' separates segments instead of being base64 alphabet, so the
+// run is measured per segment: otherwise any route with a few kebab-case segments, or a
+// stack frame such as `…/go/assets/SalesOrderEditor-DkP09aZq.js`, reads as one token.
+const OPAQUE_SEGMENT_RUN_RE = /[A-Za-z0-9+_=-]{40,512}/g;
+// Real tokens mix letters and digits with high variety; English words (kebab-case or
+// not) have no digits, and a low-variety run ('aaaa…') is padding, not a secret.
 const MIN_DISTINCT_CHARS_FOR_OPAQUE_TOKEN = 10;
-// A URL or path candidate: anything between whitespace, quotes, parentheses or angle
-// brackets — the delimiters around a URL in prose, JSON, HTML and stack frames.
-const PATH_LIKE_TOKEN_RE = /[^\s'"()<>]+/g;
+// A token: anything between whitespace, quotes, parentheses or angle brackets — the
+// delimiters around a URL in prose, JSON, HTML and stack frames.
+const TOKEN_RE = /[^\s'"()<>]+/g;
+// '?' always opens a query; '#' opens a fragment unless it starts a hash-router path
+// (`#/sales-order/123`), which is route, not payload.
+const QUERY_OR_FRAGMENT_RE = /\?|#(?!\/)/;
+// A query with no path in front of it (`?password=x`, a bare `location.search`).
+const BARE_QUERY_RE = /^[?#][^\s=&]+=/;
 // Characters scanned past the output cut, so a secret straddling it is still detected.
 const SCAN_MARGIN = 128;
 
-function hasOpaqueTokenRun(value) {
-  for (const match of value.matchAll(OPAQUE_TOKEN_RE)) {
-    if (new Set(match[0]).size >= MIN_DISTINCT_CHARS_FOR_OPAQUE_TOKEN) return true;
+function isPathToken(token) {
+  return token.startsWith('/') || token.includes('://');
+}
+
+function isOpaqueRun(run) {
+  return /[A-Za-z]/.test(run) && /\d/.test(run) && new Set(run).size >= MIN_DISTINCT_CHARS_FOR_OPAQUE_TOKEN;
+}
+
+function hasOpaqueToken(text) {
+  for (const [token] of text.matchAll(TOKEN_RE)) {
+    for (const [run] of token.matchAll(isPathToken(token) ? OPAQUE_SEGMENT_RUN_RE : OPAQUE_RUN_RE)) {
+      if (isOpaqueRun(run)) return true;
+    }
   }
   return false;
 }
 
 function containsSecret(value) {
-  return BEARER_RE.test(value) || JWT_RE.test(value) || EMAIL_RE.test(value) || hasOpaqueTokenRun(value);
+  return BEARER_RE.test(value) || JWT_RE.test(value) || EMAIL_RE.test(value) || hasOpaqueToken(value);
 }
 
-/** `https://x/p?token=a`, `/api?password=b` and `(https://x/app.js?sid=c:1:1)` lose everything from `?`/`#`. */
+/**
+ * `https://x/p?token=a`, `/api?password=b`, `(https://x/app.js?sid=c:1:1)` and a bare
+ * `?code=d` lose everything from the query or fragment. A trailing `?` or `#` carries
+ * nothing and is kept, so prose like "50/50?" survives.
+ */
 function stripQueryFromPathLike(token) {
-  const queryStart = token.search(/[?#]/);
-  if (queryStart === -1) return token;
+  const queryStart = token.search(QUERY_OR_FRAGMENT_RE);
+  if (queryStart === -1 || queryStart === token.length - 1) return token;
   const slash = token.indexOf('/');
-  return slash !== -1 && slash < queryStart ? token.slice(0, queryStart) : token;
+  const followsPath = slash !== -1 && slash < queryStart;
+  return followsPath || BARE_QUERY_RE.test(token.slice(queryStart)) ? token.slice(0, queryStart) : token;
+}
+
+// Route segments that identify a record rather than name a screen, collapsed to ':id' so
+// page analytics group by screen: numeric ids, hex ids of 12+ characters (Etendo's
+// 32-char ids, UUIDs) and mixed-case opaque ids. Unlike the host's `normalizeRoute`, a
+// long kebab-case slug is NOT an id — only a segment mixing upper, lower and digits is.
+const ID_SEGMENT_MIN_LENGTH = 12;
+
+function isIdSegment(segment) {
+  if (/^\d+$/.test(segment)) return true;
+  const compact = segment.replaceAll('-', '');
+  if (compact.length >= ID_SEGMENT_MIN_LENGTH && /^[\da-f]+$/i.test(compact) && /\d/.test(compact)) return true;
+  return segment.length >= ID_SEGMENT_MIN_LENGTH && /^[\w-]+$/.test(segment)
+    && /[a-z]/.test(segment) && /[A-Z]/.test(segment) && /\d/.test(segment);
+}
+
+/**
+ * Turns a raw route into a page-analytics key: drops the query and fragment (keeping a
+ * hash-router path) and collapses record-id segments to ':id'. It does not scrub — run the
+ * result through `sanitizeValue()` as well.
+ *
+ * @param {string} path
+ * @returns {string}
+ */
+export function normalizeRoute(path) {
+  const queryStart = path.search(QUERY_OR_FRAGMENT_RE);
+  const pathOnly = queryStart === -1 ? path : path.slice(0, queryStart);
+  return pathOnly
+    .split('/')
+    .map((segment) => (isIdSegment(segment) ? ':id' : segment))
+    .join('/');
 }
 
 function scrubString(value, maxStringLength) {
@@ -99,7 +157,7 @@ function scrubString(value, maxStringLength) {
   const scanned = value.length > scanLength ? value.slice(0, scanLength) : value;
   // Query strings go FIRST: a secret living only in one is gone once it is stripped, so
   // the remainder does not need to be redacted wholesale.
-  const stripped = scanned.replace(PATH_LIKE_TOKEN_RE, stripQueryFromPathLike);
+  const stripped = scanned.replace(TOKEN_RE, stripQueryFromPathLike);
 
   if (containsSecret(stripped)) return REDACTED;
 
@@ -301,6 +359,9 @@ function exceedsSerializedBudget(result, maxSerializedBytes) {
  * @param {number} [options.maxSerializedBytes] UTF-8 size cap on the WHOLE result, checked
  *   once after sanitization.
  * @param {number} [options.maxNodes] Cap on values visited, including repeated references.
+ * @param {(error: unknown) => void} [options.onInternalError] Called when sanitization
+ *   itself fails as a whole and the value degrades to `[REDACTED]` — a bug in this module,
+ *   not a hostile value (those are contained per key, silently, by design).
  */
 export function sanitizeValue(value, options = {}) {
   try {
@@ -309,7 +370,16 @@ export function sanitizeValue(value, options = {}) {
     if (!exceedsSerializedBudget(result, state.maxSerializedBytes)) return result;
     // A fresh object every time: a provider SDK may mutate the payload it receives.
     return typeof result === 'object' && result !== null ? { [OVERSIZED_KEY]: SIZE_LIMIT_MARKER } : SIZE_LIMIT_MARKER;
-  } catch {
+  } catch (error) {
+    reportInternalError(options, error);
     return REDACTED;
+  }
+}
+
+function reportInternalError(options, error) {
+  try {
+    options?.onInternalError?.(error);
+  } catch {
+    // The report is best effort: it must not break the never-throws contract it serves.
   }
 }

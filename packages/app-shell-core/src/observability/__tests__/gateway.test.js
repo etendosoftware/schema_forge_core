@@ -33,7 +33,17 @@ function mockAdapter(name) {
 
 function recordingLogger() {
   const warnings = [];
-  return { logger: { warn: (message) => warnings.push(message) }, warnings };
+  const calls = [];
+  return {
+    logger: {
+      warn: (...args) => {
+        calls.push(args);
+        warnings.push(args[0]);
+      },
+    },
+    warnings,
+    calls,
+  };
 }
 
 function assertNoLeak(calls, ...secrets) {
@@ -64,8 +74,27 @@ describe('createTelemetryGateway — sanitizes before dispatch', () => {
     await gw.page(`/orders/123?token=${SECRET_TOKEN}#panel`);
 
     assertNoLeak(calls, SECRET_TOKEN);
-    assert.equal(calls[0][1], '/orders/123');
+    assert.equal(calls[0][1], '/orders/:id');
   });
+
+  const ROUTES = {
+    '/sales-order/FF8080818A1234567890ABCDEF123456': '/sales-order/:id',
+    '/sales-order/FF8080818A1234567890ABCDEF123456?tab=lines': '/sales-order/:id',
+    '/purchase-order-lines/configuration-settings': '/purchase-order-lines/configuration-settings',
+    '/settings/organization/fiscal-configuration/new': '/settings/organization/fiscal-configuration/new',
+    '/#/sales-order/123': '/#/sales-order/:id',
+  };
+
+  for (const [route, expected] of Object.entries(ROUTES)) {
+    it(`page(${route}) reaches the adapter as ${expected}`, async () => {
+      const { adapter, calls } = mockAdapter('test');
+      const gw = createTelemetryGateway({ adapters: [adapter], allowedKeys: [] });
+
+      await gw.page(route);
+
+      assert.deepEqual(calls, [['page', expected, {}, EMPTY_ENVELOPE]]);
+    });
+  }
 
   it('identify() sanitizes traits and never forwards a raw traits object', async () => {
     const { adapter, calls } = mockAdapter('test');
@@ -120,6 +149,21 @@ describe('createTelemetryGateway — sanitizes before dispatch', () => {
       message: 'GET https://go.etendo.cloud/sws/login failed',
       stack: 'Error: x\n    at f (https://go.etendo.cloud/app.js)',
     });
+  });
+
+  it('captureException() keeps every frame of a stack whose chunk names mix case and digits', async () => {
+    const { adapter, calls } = mockAdapter('test');
+    const gw = createTelemetryGateway({ adapters: [adapter], allowedKeys: [] });
+    const error = new Error('save failed');
+    error.stack = [
+      'Error: save failed',
+      '    at OrderGrid (https://go.etendo.cloud/go/assets/index-B3kd9Fq2.js:12:345)',
+      '    at https://go.etendo.cloud/go/assets/SalesOrderEditor-DkP09aZq.js:1:2',
+    ].join('\n');
+
+    await gw.captureException(error);
+
+    assert.equal(calls[0][1].stack, error.stack);
   });
 
   it('the shared nested-secret fixture never reaches an adapter through track() (Jira AC #1)', async () => {
@@ -202,6 +246,17 @@ describe('createTelemetryGateway — positional arguments', () => {
       assert.equal(calls.length, 0);
       assert.equal(warnings.length, 1);
       assertNoLeak(warnings, secret);
+    });
+
+    it(`identify() warns about a dropped ${kind} id with the message alone`, async () => {
+      const { adapter } = mockAdapter('test');
+      const recorder = recordingLogger();
+      const gw = createTelemetryGateway({ adapters: [adapter], allowedKeys: [], logger: recorder.logger });
+
+      await gw.identify(secret);
+
+      assert.equal(recorder.calls.length, 1);
+      assert.equal(recorder.calls[0].length, 1);
     });
 
     for (const method of ['group', 'groupSet']) {
@@ -321,6 +376,23 @@ describe('createTelemetryGateway — never rejects', () => {
 
     await assert.doesNotReject(() => gw.track(unprintable));
     assert.deepEqual(calls, [['track', REDACTED, {}, EMPTY_ENVELOPE]]);
+  });
+
+  it('warns when sanitization itself fails as a whole, instead of degrading in silence', async () => {
+    const { adapter, calls } = mockAdapter('test');
+    const { logger, warnings } = recordingLogger();
+    // An option that throws when read is the one input that reaches sanitizeValue's
+    // global guard rather than a per-key one.
+    const gw = createTelemetryGateway({
+      adapters: [adapter],
+      allowedKeys: [],
+      logger,
+      maxNodes: { valueOf() { throw new Error('bad option'); } },
+    });
+
+    await assert.doesNotReject(() => gw.track('e', {}));
+    assert.equal(calls.length, 1);
+    assert.ok(warnings.some((w) => w.includes('sanitizeValue failed')), JSON.stringify(warnings));
   });
 
   it('captureException() resolves when the error message getter throws', async () => {

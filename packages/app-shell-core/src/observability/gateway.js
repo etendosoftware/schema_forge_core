@@ -19,11 +19,11 @@
  * inventory are ETP-4578's scope, not this one. `provider-import-guard.test.js`
  * enforces that nothing outside this module talks to a provider SDK directly.
  */
-import { sanitizeValue, REDACTED } from './sanitize.js';
+import { sanitizeValue, normalizeRoute, REDACTED } from './sanitize.js';
 
-function safeWarn(logger, message, error) {
+function safeWarn(logger, ...args) {
   try {
-    if (typeof logger?.warn === 'function') logger.warn(message, error);
+    if (typeof logger?.warn === 'function') logger.warn(...args);
   } catch {
     // A broken logger must not turn a swallowed telemetry failure back into a thrown one.
   }
@@ -88,11 +88,11 @@ function sanitizeIdentifier(value, options) {
   return sanitizeValue(raw, options) === raw ? raw : null;
 }
 
+/** Record ids become ':id' BEFORE the scrub, so a detail view is a page, not a redaction. */
 function sanitizeRoute(path, options) {
   const raw = toStringOrNull(path ?? '/');
   if (raw === null) return REDACTED;
-  const queryStart = raw.search(/[?#]/);
-  return sanitizeValue(queryStart === -1 ? raw : raw.slice(0, queryStart), options);
+  return sanitizeValue(normalizeRoute(raw), options);
 }
 
 function sanitizeOptionalText(value, options) {
@@ -150,6 +150,8 @@ export function createTelemetryGateway({
     maxStringLength,
     maxSerializedBytes,
     maxNodes,
+    onInternalError: (error) =>
+      safeWarn(logger, '[observability] sanitizeValue failed; the value was sent as [REDACTED]', error),
   };
   let context = {};
 
