@@ -51,11 +51,35 @@ function adapterName(adapter) {
   }
 }
 
-async function callAdapter(adapter, methodName, args, logger) {
+// Long enough for a real network round trip, short enough that one stuck provider cannot
+// hold up the caller — telemetry is awaited on paths like app start and logout.
+export const DEFAULT_ADAPTER_TIMEOUT_MS = 2000;
+
+const TIMED_OUT = Symbol('timed-out');
+
+/** Resolves with the call's value, or TIMED_OUT; a non-finite or non-positive limit disables it. */
+function withTimeout(promise, timeoutMs) {
+  if (!Number.isFinite(timeoutMs) || timeoutMs <= 0) return promise;
+  let timer;
+  const timeout = new Promise((resolve) => {
+    timer = setTimeout(() => resolve(TIMED_OUT), timeoutMs);
+  });
+  // race() subscribes to both, so a rejection arriving after the timeout is already
+  // handled; the timer is cleared either way so it never outlives the call.
+  return Promise.race([promise, timeout]).finally(() => clearTimeout(timer));
+}
+
+async function callAdapter(adapter, methodName, args, logger, timeoutMs) {
   try {
     const method = adapter?.[methodName];
     if (typeof method !== 'function') return undefined;
-    return await method.apply(adapter, args);
+    // Called synchronously, as before: a synchronous throw lands in the catch below.
+    const result = await withTimeout(Promise.resolve(method.apply(adapter, args)), timeoutMs);
+    if (result === TIMED_OUT) {
+      safeWarn(logger, `[observability] ${adapterName(adapter)}.${methodName} timed out after ${timeoutMs}ms`);
+      return undefined;
+    }
+    return result;
   } catch (error) {
     safeWarn(logger, `[observability] ${adapterName(adapter)}.${methodName} failed`, error);
     return undefined;
@@ -130,6 +154,9 @@ function isRecord(value) {
  * @param {boolean|Iterable<string>} [options.disabled] Initial kill-switch state: `true`
  *   kills every adapter, a list of adapter names kills those. Same as calling `disable()`
  *   before `init()`, so a killed adapter's SDK is never started.
+ * @param {number} [options.adapterTimeoutMs] Upper bound on every adapter call (default
+ *   `DEFAULT_ADAPTER_TIMEOUT_MS`); a stuck provider is logged and skipped. A non-finite or
+ *   non-positive value disables it.
  * @param {Iterable<string>} [options.allowedKeys] Forwarded to every `sanitizeValue`
  *   call — see `./sanitize.js` for the deny-by-default contract.
  * @param {{warn?: Function}} [options.logger]
@@ -151,6 +178,7 @@ export function createTelemetryGateway({
   maxSerializedBytes,
   maxNodes,
   disabled = false,
+  adapterTimeoutMs = DEFAULT_ADAPTER_TIMEOUT_MS,
 } = {}) {
   const adapters = Array.isArray(initialAdapters) ? initialAdapters.filter(Boolean) : [];
   // Kill switch: a global flag plus a set of killed adapter names. It is the gateway's
@@ -186,12 +214,12 @@ export function createTelemetryGateway({
 
   async function start(adapter) {
     running.add(adapter);
-    await callAdapter(adapter, 'init', [envelope()], logger);
+    await callAdapter(adapter, 'init', [envelope()], logger, adapterTimeoutMs);
   }
 
   async function stop(adapter) {
     running.delete(adapter);
-    await callAdapter(adapter, 'shutdown', [envelope()], logger);
+    await callAdapter(adapter, 'shutdown', [envelope()], logger, adapterTimeoutMs);
   }
 
   // An adapter that turned active after init() (a late opt-in, a lifted kill) is started
@@ -199,7 +227,7 @@ export function createTelemetryGateway({
   async function dispatch(methodName, args) {
     const active = adapters.filter(isActive);
     if (initialized) await Promise.all(active.filter((a) => !running.has(a)).map(start));
-    await Promise.all(active.map((adapter) => callAdapter(adapter, methodName, args, logger)));
+    await Promise.all(active.map((adapter) => callAdapter(adapter, methodName, args, logger, adapterTimeoutMs)));
   }
 
   function setKilled(name, killed) {

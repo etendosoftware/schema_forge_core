@@ -1,6 +1,6 @@
 import { describe, it } from 'node:test';
 import assert from 'node:assert/strict';
-import { createTelemetryGateway } from '../gateway.js';
+import { createTelemetryGateway, DEFAULT_ADAPTER_TIMEOUT_MS } from '../gateway.js';
 import { REDACTED } from '../sanitize.js';
 import {
   SECRET_TOKEN,
@@ -608,6 +608,77 @@ describe('createTelemetryGateway — kill switch', () => {
 
     assert.deepEqual(calls.map(([method]) => method), ['init']);
     assert.deepEqual(warnings, ['[observability] broken.shutdown failed']);
+  });
+});
+
+describe('createTelemetryGateway — per-adapter timeout', () => {
+  const never = () => new Promise(() => {});
+  const wait = (ms) => new Promise((resolve) => { setTimeout(resolve, ms); });
+
+  it('an adapter that never settles does not hang the caller, and the others still receive', async () => {
+    const hanging = { name: 'hanging', track: never };
+    const { adapter: healthy, calls } = mockAdapter('healthy');
+    const { logger, warnings } = recordingLogger();
+    const gw = createTelemetryGateway({ adapters: [hanging, healthy], allowedKeys: [], logger, adapterTimeoutMs: 20 });
+
+    const started = performance.now();
+    await gw.track('event');
+
+    assert.ok(performance.now() - started < 1000, 'track waited far longer than the timeout');
+    assert.equal(calls.length, 1);
+    assert.deepEqual(warnings, ['[observability] hanging.track timed out after 20ms']);
+  });
+
+  it('applies to lifecycle calls too, so a stuck init() cannot block the app start', async () => {
+    const hanging = { name: 'hanging', init: never };
+    const { logger, warnings } = recordingLogger();
+    const gw = createTelemetryGateway({ adapters: [hanging], allowedKeys: [], logger, adapterTimeoutMs: 20 });
+
+    await gw.init();
+
+    assert.deepEqual(warnings, ['[observability] hanging.init timed out after 20ms']);
+  });
+
+  it('does not warn when the adapter settles in time', async () => {
+    const quick = { name: 'quick', track: async () => { await wait(1); } };
+    const { logger, warnings } = recordingLogger();
+    const gw = createTelemetryGateway({ adapters: [quick], allowedKeys: [], logger, adapterTimeoutMs: 50 });
+
+    await gw.track('event');
+    await wait(80);
+
+    assert.deepEqual(warnings, []);
+  });
+
+  it('a rejection arriving after the timeout is swallowed, not left unhandled', async () => {
+    const unhandled = [];
+    const onUnhandled = (reason) => unhandled.push(reason);
+    process.on('unhandledRejection', onUnhandled);
+    try {
+      const late = {
+        name: 'late',
+        track: () => new Promise((_, reject) => { setTimeout(() => reject(new Error('too late')), 40); }),
+      };
+      const gw = createTelemetryGateway({ adapters: [late], allowedKeys: [], logger: { warn() {} }, adapterTimeoutMs: 10 });
+
+      await gw.track('event');
+      await wait(80);
+    } finally {
+      process.off('unhandledRejection', onUnhandled);
+    }
+    assert.deepEqual(unhandled, []);
+  });
+
+  it('defaults to a bounded timeout and can be turned off with a non-finite value', async () => {
+    assert.ok(Number.isFinite(DEFAULT_ADAPTER_TIMEOUT_MS) && DEFAULT_ADAPTER_TIMEOUT_MS > 0);
+
+    const slow = { name: 'slow', track: () => wait(40) };
+    const { logger, warnings } = recordingLogger();
+    const gw = createTelemetryGateway({ adapters: [slow], allowedKeys: [], logger, adapterTimeoutMs: Infinity });
+
+    await gw.track('event');
+
+    assert.deepEqual(warnings, []);
   });
 });
 
