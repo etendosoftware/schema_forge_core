@@ -3,8 +3,8 @@
  * governance"). The single deny-by-default boundary between application code and any
  * observability provider (Sentry/GlitchTip, AWS RUM, Mixpanel, …).
  *
- * Every outbound operation — track, page, identify, group, groupSet, captureException,
- * breadcrumb, setContext — is sanitized here (see `./sanitize.js`) before it ever
+ * Every outbound operation — init, reset, track, page, identify, group, groupSet,
+ * captureException, breadcrumb, setContext — is sanitized here (see `./sanitize.js`) before it ever
  * reaches an adapter, positional arguments included: an event name, a route or an id is
  * as capable of carrying an email or a token as a properties object is.
  *
@@ -118,8 +118,8 @@ function isRecord(value) {
 /**
  * @param {object} options
  * @param {Array<object>} [options.adapters] Provider adapters. Each may implement any
- *   subset of track/page/identify/group/groupSet/captureException/breadcrumb/setContext/
- *   flush; missing methods are silently skipped. `{ enabled: false }` disables one.
+ *   subset of init/reset/track/page/identify/group/groupSet/captureException/breadcrumb/
+ *   setContext/flush; missing methods are silently skipped. `{ enabled: false }` disables one.
  * @param {Iterable<string>} [options.allowedKeys] Forwarded to every `sanitizeValue`
  *   call — see `./sanitize.js` for the deny-by-default contract.
  * @param {{warn?: Function}} [options.logger]
@@ -185,7 +185,23 @@ export function createTelemetryGateway({
     await dispatch(methodName, [key, id, sanitize(payload), envelope()]);
   }
 
+  function mergeContext(nextContext) {
+    const safe = sanitize(nextContext);
+    if (isRecord(safe)) context = { ...context, ...safe };
+  }
+
   return {
+    /** Starts every enabled adapter, handing it the sanitized initial context. */
+    init: guarded('init', async (initialContext = {}) => {
+      mergeContext(initialContext);
+      await dispatch('init', [envelope()]);
+    }),
+
+    /** Clears provider-side identity (logout). The gateway's own context is app-level and kept. */
+    reset: guarded('reset', async () => {
+      await dispatch('reset', [envelope()]);
+    }),
+
     track: guarded('track', async (eventName, properties = {}) => {
       if (!eventName) return;
       await dispatch('track', [sanitizeText(eventName, sanitizeOptions), sanitize(properties), envelope()]);
@@ -220,8 +236,7 @@ export function createTelemetryGateway({
     }),
 
     setContext: guarded('setContext', async (nextContext = {}) => {
-      const safe = sanitize(nextContext);
-      if (isRecord(safe)) context = { ...context, ...safe };
+      mergeContext(nextContext);
       await dispatch('setContext', [sanitize(context)]);
     }),
 

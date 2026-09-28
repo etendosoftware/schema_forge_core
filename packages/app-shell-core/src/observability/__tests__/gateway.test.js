@@ -337,6 +337,95 @@ describe('createTelemetryGateway — positional arguments', () => {
   });
 });
 
+describe('createTelemetryGateway — lifecycle (init / reset)', () => {
+  function lifecycleAdapter(name) {
+    const calls = [];
+    return {
+      adapter: {
+        name,
+        init: (...args) => calls.push(['init', ...args]),
+        reset: (...args) => calls.push(['reset', ...args]),
+        track: (...args) => calls.push(['track', ...args]),
+      },
+      calls,
+    };
+  }
+
+  it('init() dispatches to every enabled adapter with the sanitized initial context', async () => {
+    const first = lifecycleAdapter('first');
+    const disabled = lifecycleAdapter('disabled');
+    disabled.adapter.enabled = false;
+    const gw = createTelemetryGateway({
+      adapters: [first.adapter, disabled.adapter],
+      allowedKeys: ['app', 'environment'],
+    });
+
+    await gw.init({ app: 'app-shell', environment: 'staging', apiToken: SECRET_TOKEN });
+
+    assert.deepEqual(first.calls, [['init', { context: { app: 'app-shell', environment: 'staging' } }]]);
+    assert.equal(disabled.calls.length, 0);
+    assertNoLeak(first.calls, SECRET_TOKEN);
+  });
+
+  it('the context given to init() travels with later calls', async () => {
+    const { adapter, calls } = lifecycleAdapter('test');
+    const gw = createTelemetryGateway({ adapters: [adapter], allowedKeys: ['app'] });
+
+    await gw.init({ app: 'app-shell' });
+    await gw.track('ping');
+
+    assert.deepEqual(calls.at(-1), ['track', 'ping', {}, { context: { app: 'app-shell' } }]);
+  });
+
+  it('init() works with no initial context', async () => {
+    const { adapter, calls } = lifecycleAdapter('test');
+    const gw = createTelemetryGateway({ adapters: [adapter], allowedKeys: [] });
+
+    await gw.init();
+
+    assert.deepEqual(calls, [['init', EMPTY_ENVELOPE]]);
+  });
+
+  it('reset() dispatches to every enabled adapter', async () => {
+    const { adapter, calls } = lifecycleAdapter('test');
+    const gw = createTelemetryGateway({ adapters: [adapter], allowedKeys: ['app'] });
+
+    await gw.init({ app: 'app-shell' });
+    await gw.reset();
+
+    assert.deepEqual(calls.at(-1), ['reset', { context: { app: 'app-shell' } }]);
+  });
+
+  it('init() and reset() never reject when an adapter throws, and still reach the others', async () => {
+    const broken = {
+      name: 'broken',
+      init: () => { throw new Error('init down'); },
+      reset: async () => { throw new Error('reset down'); },
+    };
+    const healthy = lifecycleAdapter('healthy');
+    const { logger, warnings } = recordingLogger();
+    const gw = createTelemetryGateway({ adapters: [broken, healthy.adapter], allowedKeys: [], logger });
+
+    await assert.doesNotReject(() => gw.init());
+    await assert.doesNotReject(() => gw.reset());
+
+    assert.deepEqual(healthy.calls.map(([method]) => method), ['init', 'reset']);
+    assert.deepEqual(warnings, ['[observability] broken.init failed', '[observability] broken.reset failed']);
+  });
+
+  it('an adapter without init/reset is skipped silently', async () => {
+    const { adapter, calls } = mockAdapter('no-lifecycle');
+    const { logger, warnings } = recordingLogger();
+    const gw = createTelemetryGateway({ adapters: [adapter], allowedKeys: [], logger });
+
+    await gw.init();
+    await gw.reset();
+
+    assert.equal(calls.length, 0);
+    assert.deepEqual(warnings, []);
+  });
+});
+
 describe('createTelemetryGateway — resilience', () => {
   it('never calls a disabled adapter', async () => {
     const { adapter, calls } = mockAdapter('disabled');
