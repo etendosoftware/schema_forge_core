@@ -392,8 +392,7 @@ describe('sanitizeValue — legitimate routes and stacks are not over-redacted',
   const KEPT = [
     '/purchase-order-lines/configuration-settings',
     '/settings/organization/fiscal-configuration/new',
-    '/sales-order/FF8080818A1234567890ABCDEF123456/lines',
-    '/orders/550e8400-e29b-41d4-a716-446655440000',
+    '/portal/invoices',
     '    at https://go.etendo.cloud/go/assets/SalesOrderEditor-DkP09aZq.js:1:2',
     '    at render (webpack-internal:///./node_modules/react-dom/cjs/react-dom.development.js:1:1)',
     'Error in com.etendoerp.salesorderhandler.headervalidation.checkfields',
@@ -415,9 +414,9 @@ describe('sanitizeValue — legitimate routes and stacks are not over-redacted',
     assert.equal(sanitizeValue({ stack }, { allowedKeys: ['stack'] }).stack, stack);
   });
 
-  it('still redacts a long mixed token living in a URL path segment', () => {
+  it('collapses a long mixed token living in a URL path segment to :id', () => {
     const url = 'https://go.etendo.cloud/reset/Ab3dEf9hIjKlMnOpQrStUvWxYz0123456789abcd';
-    assert.equal(sanitizeValue({ url }, { allowedKeys: ['url'] }).url, REDACTED);
+    assert.equal(sanitizeValue({ url }, { allowedKeys: ['url'] }).url, 'https://go.etendo.cloud/reset/:id');
   });
 
   it('still redacts a long hex digest in free text', () => {
@@ -433,8 +432,14 @@ describe('normalizeRoute', () => {
     '/orders/550e8400-e29b-41d4-a716-446655440000': '/orders/:id',
     '/orders/123': '/orders/:id',
     '/reset/Ab3dEf9hIjKl': '/reset/:id',
+    '/portal/tok-abcdef0123456789': '/portal/:id',
+    '/portal/k3j4h5g6f7d8s9a0q1w2e3r4': '/portal/:id',
+    '/portal/invoices': '/portal/invoices',
     '/purchase-order-lines/configuration-settings': '/purchase-order-lines/configuration-settings',
-    '/reports/q3-2024-summary': '/reports/q3-2024-summary',
+    // Accepted cost of catching lowercase tokens: a slug that mixes words and digits collapses too.
+    '/reports/q3-2024-summary': '/reports/:id',
+    // Hex made only of a–f letters has no digit, so it reads as a word and stays.
+    '/x/deadbeefcafe': '/x/deadbeefcafe',
     '/orders/123?tab=lines#panel': '/orders/:id',
     '/#/sales-order/123?tab=lines': '/#/sales-order/:id',
     '/': '/',
@@ -464,7 +469,7 @@ describe('sanitizeValue — query and fragment edge cases', () => {
       { url: `https://go.etendo.cloud/go/#/sales-order/123?code=${SECRET_QUERY_CODE}` },
       { allowedKeys: ['url'] },
     );
-    assert.equal(out.url, 'https://go.etendo.cloud/go/#/sales-order/123');
+    assert.equal(out.url, 'https://go.etendo.cloud/go/#/sales-order/:id');
   });
 
   it('still strips an OAuth-style fragment carrying a credential', () => {
@@ -479,7 +484,9 @@ describe('sanitizeValue — query and fragment edge cases', () => {
 describe('sanitizeValue — bounded cost without the length cap', () => {
   // With maxStringLength: Infinity the whole input is scanned, so these catch a pattern
   // that turns quadratic again even though the default cap would hide it.
-  const UNCAPPED_BUDGET_MS = 500;
+  // Generous for a throttled 2-vCPU runner (measured well under 100ms); the quadratic
+  // regressions these guard against took ~20s.
+  const UNCAPPED_BUDGET_MS = 2000;
   const inputs = {
     'a run of one character': 'x'.repeat(200_000),
     'dots and letters': 'a.'.repeat(100_000),
@@ -521,5 +528,61 @@ describe('sanitizeValue — onInternalError', () => {
     const options = { onInternalError: () => { throw new Error('reporter down'); } };
     Object.defineProperty(options, 'maxDepth', { get() { throw new Error('bad option'); } });
     assert.equal(sanitizeValue({}, options), REDACTED);
+  });
+});
+
+describe('sanitizeValue — record ids and tokens in embedded paths', () => {
+  // Under 40 characters, so the opaque-token heuristic alone never caught these.
+  const HEX32 = 'a1b2c3d4e5f60718293a4b5c6d7e8f90';
+  const MIXED32 = 'Ab3dEf9hIjKlMnOpQrStUvWxYz012345';
+  const LOWER24 = 'k3j4h5g6f7d8s9a0q1w2e3r4';
+
+  const CASES = {
+    [`GET https://go.etendo.cloud/reset/${HEX32} 404`]: 'GET https://go.etendo.cloud/reset/:id 404',
+    [`/reset/${MIXED32}`]: '/reset/:id',
+    [`https://go.etendo.cloud/invite/${LOWER24}`]: 'https://go.etendo.cloud/invite/:id',
+    [`navigated to /portal/tok-abcdef0123456789?x=1`]: 'navigated to /portal/:id',
+    '/sales-order/FF8080818A1234567890ABCDEF123456/lines': '/sales-order/:id/lines',
+    '/orders/550e8400-e29b-41d4-a716-446655440000': '/orders/:id',
+  };
+
+  for (const [input, expected] of Object.entries(CASES)) {
+    it(`${JSON.stringify(input)} -> ${JSON.stringify(expected)}`, () => {
+      assert.equal(sanitizeValue({ m: input }, { allowedKeys: ['m'] }).m, expected);
+    });
+  }
+
+  it('collapses a token in a stack frame URL but keeps the frame', () => {
+    const stack = `Error: Failed on https://go.etendo.cloud/reset/${HEX32}\n    at f (https://go.etendo.cloud/go/assets/index-B3kd9Fq2.js:1:2)`;
+    const out = sanitizeValue({ stack }, { allowedKeys: ['stack'] });
+    assertNoLeak(out, HEX32);
+    assert.equal(
+      out.stack,
+      'Error: Failed on https://go.etendo.cloud/reset/:id\n    at f (https://go.etendo.cloud/go/assets/index-B3kd9Fq2.js:1:2)',
+    );
+  });
+
+  it('leaves a bare hex id outside any path alone', () => {
+    // An Etendo record id in prose is not a secret, and there is no path to collapse.
+    assert.equal(sanitizeValue({ m: `record ${HEX32}` }, { allowedKeys: ['m'] }).m, `record ${HEX32}`);
+  });
+});
+
+describe('sanitizeValue — Basic credentials', () => {
+  it('redacts an Authorization: Basic header value', () => {
+    const out = sanitizeValue({ m: 'Authorization: Basic dXNlcjpwYXNzd29yZA==' }, { allowedKeys: ['m'] });
+    assert.equal(out.m, REDACTED);
+  });
+
+  it('redacts a Basic credential with no digits or padding', () => {
+    // base64("user:pass") has neither, only case changes.
+    const out = sanitizeValue({ m: 'basic dXNlcjpwYXNz' }, { allowedKeys: ['m'] });
+    assert.equal(out.m, REDACTED);
+  });
+
+  it('keeps prose that merely follows the word "basic"', () => {
+    for (const m of ['Basic information required', 'Plan: basic INFORMATION', 'basic settings']) {
+      assert.equal(sanitizeValue({ m }, { allowedKeys: ['m'] }).m, m);
+    }
   });
 });

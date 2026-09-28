@@ -59,6 +59,10 @@ const SENSITIVE_KEY_WORDS = new Set(['pwd', 'otp', 'totp', 'jwt', 'ssn', 'iban',
 // nothing else shipped in this package uses it, and older Safari fails to parse it.
 // A bearer credential is a long token, so prose ("the bearer of bad news") is not one.
 const BEARER_RE = /\bbearer\s{1,32}[\w.~+/=-]{16,}/i;
+// `Basic <base64(user:password)>`. The candidate must look like base64 — a digit, `+`,
+// `/`, `=`, or case changes after the first letter — so prose ("Basic information") is
+// not a credential.
+const BASIC_RE = /\bbasic\s{1,32}([A-Za-z0-9+/=]{8,})/gi;
 // Every JWT header is base64url JSON, so it starts with `eyJ` (`{"`); without that a
 // dotted package name such as `com.etendoerp.salesorderhandler.headervalidation` matched.
 const JWT_RE = /(?:^|[^\w-])eyJ[\w-]{7,2048}\.[\w-]{10,2048}\.[\w-]{10,2048}/;
@@ -102,8 +106,20 @@ function hasOpaqueToken(text) {
   return false;
 }
 
+function looksLikeBase64(candidate) {
+  return /[\d+/=]/.test(candidate) || (/[A-Z]/.test(candidate.slice(1)) && /[a-z]/.test(candidate));
+}
+
+function hasBasicCredential(value) {
+  for (const [, candidate] of value.matchAll(BASIC_RE)) {
+    if (looksLikeBase64(candidate)) return true;
+  }
+  return false;
+}
+
 function containsSecret(value) {
-  return BEARER_RE.test(value) || JWT_RE.test(value) || EMAIL_RE.test(value) || hasOpaqueToken(value);
+  return BEARER_RE.test(value) || hasBasicCredential(value) || JWT_RE.test(value)
+    || EMAIL_RE.test(value) || hasOpaqueToken(value);
 }
 
 /**
@@ -119,18 +135,34 @@ function stripQueryFromPathLike(token) {
   return followsPath || BARE_QUERY_RE.test(token.slice(queryStart)) ? token.slice(0, queryStart) : token;
 }
 
-// Route segments that identify a record rather than name a screen, collapsed to ':id' so
-// page analytics group by screen: numeric ids, hex ids of 12+ characters (Etendo's
-// 32-char ids, UUIDs) and mixed-case opaque ids. Unlike the host's `normalizeRoute`, a
-// long kebab-case slug is NOT an id — only a segment mixing upper, lower and digits is.
+// Path segments that identify a record, or carry a token, rather than name a screen:
+// numeric ids, and any 12+ character [\w-] segment mixing letters and digits (Etendo's
+// 32-char hex ids, UUIDs, and tokens such as the invoice portal's `portal/:token`). A
+// kebab-case slug made only of words is NOT one. Accepted cost: a slug with digits,
+// such as `report-2024-v2-final`, collapses too.
 const ID_SEGMENT_MIN_LENGTH = 12;
 
 function isIdSegment(segment) {
   if (/^\d+$/.test(segment)) return true;
-  const compact = segment.replaceAll('-', '');
-  if (compact.length >= ID_SEGMENT_MIN_LENGTH && /^[\da-f]+$/i.test(compact) && /\d/.test(compact)) return true;
   return segment.length >= ID_SEGMENT_MIN_LENGTH && /^[\w-]+$/.test(segment)
-    && /[a-z]/.test(segment) && /[A-Z]/.test(segment) && /\d/.test(segment);
+    && /[A-Za-z]/.test(segment) && /\d/.test(segment);
+}
+
+function collapseIdSegments(path) {
+  return path
+    .split('/')
+    .map((segment) => (isIdSegment(segment) ? ':id' : segment))
+    .join('/');
+}
+
+/**
+ * The same collapse `page()` applies, for a URL or path embedded in any other string (an
+ * error message, a stack frame, a breadcrumb): a reset or invite token in a path segment
+ * must not leave through a channel other than the route.
+ */
+function sanitizePathLikeToken(token) {
+  const stripped = stripQueryFromPathLike(token);
+  return isPathToken(stripped) ? collapseIdSegments(stripped) : stripped;
 }
 
 /**
@@ -143,11 +175,7 @@ function isIdSegment(segment) {
  */
 export function normalizeRoute(path) {
   const queryStart = path.search(QUERY_OR_FRAGMENT_RE);
-  const pathOnly = queryStart === -1 ? path : path.slice(0, queryStart);
-  return pathOnly
-    .split('/')
-    .map((segment) => (isIdSegment(segment) ? ':id' : segment))
-    .join('/');
+  return collapseIdSegments(queryStart === -1 ? path : path.slice(0, queryStart));
 }
 
 function scrubString(value, maxStringLength) {
@@ -157,7 +185,7 @@ function scrubString(value, maxStringLength) {
   const scanned = value.length > scanLength ? value.slice(0, scanLength) : value;
   // Query strings go FIRST: a secret living only in one is gone once it is stripped, so
   // the remainder does not need to be redacted wholesale.
-  const stripped = scanned.replace(TOKEN_RE, stripQueryFromPathLike);
+  const stripped = scanned.replace(TOKEN_RE, sanitizePathLikeToken);
 
   if (containsSecret(stripped)) return REDACTED;
 

@@ -83,6 +83,8 @@ describe('createTelemetryGateway — sanitizes before dispatch', () => {
     '/purchase-order-lines/configuration-settings': '/purchase-order-lines/configuration-settings',
     '/settings/organization/fiscal-configuration/new': '/settings/organization/fiscal-configuration/new',
     '/#/sales-order/123': '/#/sales-order/:id',
+    // The host's public invoice portal route is portal/:token.
+    '/portal/tok-abcdef0123456789': '/portal/:id',
   };
 
   for (const [route, expected] of Object.entries(ROUTES)) {
@@ -164,6 +166,51 @@ describe('createTelemetryGateway — sanitizes before dispatch', () => {
     await gw.captureException(error);
 
     assert.equal(calls[0][1].stack, error.stack);
+  });
+
+  describe('a token in a path segment is collapsed on every channel, not only page()', () => {
+    const HEX32 = 'a1b2c3d4e5f60718293a4b5c6d7e8f90';
+    const MIXED32 = 'Ab3dEf9hIjKlMnOpQrStUvWxYz012345';
+
+    it('captureException() collapses it in the message and in the stack', async () => {
+      const { adapter, calls } = mockAdapter('test');
+      const gw = createTelemetryGateway({ adapters: [adapter], allowedKeys: [] });
+      const error = new Error(`Failed on https://go.etendo.cloud/reset/${HEX32}`);
+      error.stack = `Error: Failed on https://go.etendo.cloud/reset/${HEX32}\n    at f (https://go.etendo.cloud/go/assets/index-B3kd9Fq2.js:1:2)`;
+
+      await gw.captureException(error);
+
+      assertNoLeak(calls, HEX32);
+      assert.equal(calls[0][1].message, 'Failed on https://go.etendo.cloud/reset/:id');
+      assert.equal(
+        calls[0][1].stack,
+        'Error: Failed on https://go.etendo.cloud/reset/:id\n    at f (https://go.etendo.cloud/go/assets/index-B3kd9Fq2.js:1:2)',
+      );
+    });
+
+    it('track() collapses it in a route property', async () => {
+      const { adapter, calls } = mockAdapter('test');
+      const gw = createTelemetryGateway({ adapters: [adapter], allowedKeys: ['route'] });
+
+      await gw.track('x', { route: `/reset/${MIXED32}` });
+
+      assert.deepEqual(calls, [['track', 'x', { route: '/reset/:id' }, EMPTY_ENVELOPE]]);
+    });
+
+    it('breadcrumb() collapses it in a message and a nested URL', async () => {
+      const { adapter, calls } = mockAdapter('test');
+      const gw = createTelemetryGateway({ adapters: [adapter], allowedKeys: ['message', 'data', 'url'] });
+
+      await gw.breadcrumb({
+        message: 'navigated to /portal/tok-abcdef0123456789',
+        data: { url: 'https://go.etendo.cloud/invite/k3j4h5g6f7d8s9a0q1w2e3r4' },
+      });
+
+      assert.deepEqual(calls, [['breadcrumb', {
+        message: 'navigated to /portal/:id',
+        data: { url: 'https://go.etendo.cloud/invite/:id' },
+      }]]);
+    });
   });
 
   it('the shared nested-secret fixture never reaches an adapter through track() (Jira AC #1)', async () => {
