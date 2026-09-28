@@ -33,6 +33,12 @@ describe('app-shell-core plain observability subpaths', () => {
     assert.equal(typeof mixpanel.sanitizeMixpanelEvent, 'function');
   });
 
+  it('exposes the RUM adapter', async () => {
+    const rum = await import('@etendosoftware/app-shell-core/observability/adapters/rum');
+    assert.equal(typeof rum.createRumAdapter, 'function');
+    assert.equal(typeof rum.sanitizeRumRequest, 'function');
+  });
+
   it('exposes the sanitizer', async () => {
     const sanitize = await import('@etendosoftware/app-shell-core/observability/sanitize');
     assert.equal(typeof sanitize.sanitizeValue, 'function');
