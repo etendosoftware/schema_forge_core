@@ -35,7 +35,7 @@ egress hooks, which the adapters install.
 |---|---|---|---|
 | Purpose | Error capture, tracing | Browser performance, errors, HTTP timing | Product analytics |
 | Default | Mandatory when a DSN is configured | **Off**; needs an explicit opt-in plus its IDs | **Off**; needs an explicit opt-in plus a token |
-| Destination | The configured DSN host | `dataplane.rum.eu-west-3.amazonaws.com` | The configured API host (EU) |
+| Destination | The configured DSN host | `dataplane.rum.eu-west-3.amazonaws.com` | The configured API host (host setting `VITE_MIXPANEL_API_HOST`) |
 | Owner / DPA | TBD(owner) | TBD(owner) | TBD(owner) |
 | Interception point | `beforeSend`, `beforeSendTransaction`, `beforeSendSpan`, `beforeBreadcrumb` | `clientBuilder` wrapper, BEFORE the request is serialized and signed | `property_blacklist`, `before_send_events/people/groups`, `before_register(_once)` |
 | Fixed settings | `sendDefaultPii: false` in every environment (no env override); `sampleRate: 1`; console breadcrumbs dropped | `allowCookies: false`, `enableXRay: false`; telemetries `performance`, `errors`, `http` | `ip: false`, `track_pageview: false`, `autocapture: false`, session recording 0% |
@@ -79,9 +79,8 @@ to fail against the previous provider code.
   when its key is not in the allowlist (NB-4).
 - **Sentry `browserSessionIntegration` (N4).** An SDK default integration; whether its session
   envelopes must be disabled or filtered: `TBD(owner)`.
-- **Re-enabling Sentry** after a kill restarts the SDK; behavior across a page lifetime is
-  covered by the adapter tests, and the decision on whether a remote flag may re-enable it
-  is `TBD(owner)`.
+- **Re-enabling Sentry** after a kill restarts the SDK (`init()` clears its stopped state).
+  Whether a remote flag may re-enable it within a page lifetime: `TBD(owner)`.
 - **N6 and N7:** from the ETP-4578 review notes; to be written up here by the reviewer.
 - **Rate limits and the 7-day observation window** in the ticket depend on the providers'
   own configuration and are outside this repository.
