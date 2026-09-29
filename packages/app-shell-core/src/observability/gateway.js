@@ -202,6 +202,9 @@ export function createTelemetryGateway({
   // kill only shuts down an adapter that was actually started.
   const running = new Set();
   const starts = new Map();
+  // Adapters already shut down and not started since: a kill reaches an adapter the gateway
+  // never started (its SDK may have been initialized elsewhere) exactly once, not on every call.
+  const shutDown = new Set();
   let initialized = false;
   const sanitizeOptions = {
     allowedKeys,
@@ -220,12 +223,13 @@ export function createTelemetryGateway({
   const sanitize = (value) => sanitizeValue(value, sanitizeOptions);
   const envelope = () => ({ context: sanitize(context) });
 
-  const isActive = (adapter) =>
-    isAdapterConfiguredOn(adapter) && !killedAll && !killedNames.has(adapterName(adapter));
+  const isKilled = (adapter) => killedAll || killedNames.has(adapterName(adapter));
+  const isActive = (adapter) => isAdapterConfiguredOn(adapter) && !isKilled(adapter);
 
   async function stop(adapter) {
     running.delete(adapter);
     starts.delete(adapter);
+    shutDown.add(adapter);
     await callAdapter(adapter, 'shutdown', [envelope()], logger, adapterTimeoutMs);
   }
 
@@ -239,6 +243,7 @@ export function createTelemetryGateway({
   function start(adapter) {
     if (starts.has(adapter)) return starts.get(adapter);
     running.add(adapter);
+    shutDown.delete(adapter);
     const starting = invokeAdapter(adapter, 'init', [envelope()], logger, adapterTimeoutMs).then(async ({ ok }) => {
       if (starts.get(adapter) !== starting) {
         // stop() ran while init was in flight; the SDK may have finished starting after
@@ -319,7 +324,13 @@ export function createTelemetryGateway({
      */
     disable: guarded('disable', async (name) => {
       setKilled(name, true);
-      await Promise.all([...running].filter((a) => !isActive(a)).map(stop));
+      // Every killed adapter is stopped: a running one, and — once init() has run — one that
+      // is not running (its init failed or timed out, so its SDK may be half started). Before
+      // init() nothing is called: a kill followed by init() must mean zero calls, and an
+      // adapter the gateway never initialized cannot be told apart from one it will not.
+      const toStop = new Set([...running].filter((a) => !isActive(a)));
+      if (initialized) for (const adapter of adapters) if (isKilled(adapter) && !shutDown.has(adapter)) toStop.add(adapter);
+      await Promise.all([...toStop].map(stop));
     }),
 
     /**
