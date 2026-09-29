@@ -3,7 +3,7 @@ import { ArrowRight } from 'lucide-react';
 import { Button } from '@etendosoftware/app-shell-core/components/ui/button';
 import { Label } from '@etendosoftware/app-shell-core/components/ui/label';
 import { useUI } from '@etendosoftware/app-shell-core/i18n';
-import { isCompanyStepValid } from '../state.js';
+import { isCompanyStepValid, isSampleDataOffered } from '../state.js';
 import { ONBOARDING_FIELD_LIMITS } from '../fieldLimits.js';
 import { trackOnboarding } from '../tracking.js';
 import { SetupShell } from '../components/SetupShell.jsx';
@@ -17,6 +17,8 @@ export function CompanyStep({ config, stepData, onNext, onBack, goToStep, onChan
   // Freelancers have no company: their personal full name (captured in the
   // profile step) is used as the invoicing name instead.
   const isFreelancer = stepData.businessType === 'freelancer';
+  // ETP-5426: the sample-data opt-in only exists where the backend can honour it (ES/EUR).
+  const sampleDataOffered = isSampleDataOffered(stepData, config);
 
   const [form, setForm] = useState(() => ({
     // Freelancer clientName always derives from fullName — never from a stale
@@ -27,6 +29,10 @@ export function CompanyStep({ config, stepData, onNext, onBack, goToStep, onChan
     fiscalIdValue: stepData.fiscalIdValue ?? config.defaultForm?.fiscalIdValue ?? '',
     address: stepData.address ?? config.defaultForm?.address ?? '',
     sector: stepData.sector ?? config.defaultForm?.sector ?? 'technology',
+    // ETP-5426: unticked by default, without exception — a tenant meant for real use must never
+    // receive fictitious data nobody asked for. Restored from the draft when the user ticked it.
+    includeSampleData: sampleDataOffered
+      && (stepData.includeSampleData ?? config.defaultForm?.includeSampleData) === true,
   }));
 
   useEffect(() => {
@@ -146,6 +152,33 @@ export function CompanyStep({ config, stepData, onNext, onBack, goToStep, onChan
               <option key={sector.value} value={sector.value}>{sector.label}</option>
             ))}
           </SetupSelect>
+
+          {sampleDataOffered && (
+            <div className="flex items-start gap-3 rounded-lg border border-[#D1D4DB] bg-white px-4 py-3 shadow-[0_1px_2px_rgba(18,18,23,0.05)]">
+              {/* A sibling label with htmlFor, never a label wrapping the input: a wrapping label
+                  re-dispatches the click and would toggle the value twice. */}
+              <input
+                id="includeSampleData"
+                type="checkbox"
+                checked={form.includeSampleData}
+                onChange={e => updateField('includeSampleData', e.target.checked)}
+                aria-describedby="includeSampleData-help"
+                className="mt-1 h-4 w-4 shrink-0 cursor-pointer accent-[#121217]"
+                data-testid="includeSampleData__checkbox"
+              />
+              <div>
+                <label
+                  htmlFor="includeSampleData"
+                  className="block cursor-pointer text-sm font-medium leading-6 text-slate-900"
+                >
+                  {ui('onboardingSampleDataLabel')}
+                </label>
+                <p id="includeSampleData-help" className="text-sm text-slate-500">
+                  {ui('onboardingSampleDataHelp')}
+                </p>
+              </div>
+            </div>
+          )}
         </div>
 
         <div className="mt-8 flex items-center justify-between gap-4">
