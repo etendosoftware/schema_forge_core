@@ -35,6 +35,19 @@ describe('core primitives use the semantic accessibility contract (ETP-4554)', (
     }
   });
 
+  it('defines the field hover / disabled-border tokens in both themes (ETP-5479)', async () => {
+    const css = await readFile(new URL('../../../styles.css', import.meta.url), 'utf8');
+    const rootBlock = css.slice(css.indexOf(':root {'), css.indexOf('.dark {'));
+    const darkBlock = css.slice(css.indexOf('.dark {'));
+    for (const block of [rootBlock, darkBlock]) {
+      assert.match(block, /--field-hover:\s*[^;]+;/);
+      assert.match(block, /--field-disabled-border:\s*[^;]+;/);
+    }
+    // Light values come from the design: #F5F7F9 fill, #D1D4DB disabled border.
+    assert.match(rootBlock, /--field-hover:\s*210 25% 96\.9%;/);
+    assert.match(rootBlock, /--field-disabled-border:\s*222 12\.2% 83\.9%;/);
+  });
+
   it('uses structural boundaries without opacity dilution', async () => {
     const [table, shell] = await Promise.all([
       readFile(componentUrls.Table, 'utf8'),
