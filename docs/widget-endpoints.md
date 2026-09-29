@@ -297,25 +297,25 @@ Each task uses either `filter` (quick-filter preset) or `params` (column-filter 
       },
       {
         "type": "info",
-        "text": "4 goods receipts pending",
+        "text": "4 purchase orders pending reception",
         "navigation": {
           "type": "list",
-          "window": "goods-receipt",
-          "params": { "DocStatus": "DR" }
+          "window": "purchase-order",
+          "filter": "pendingReception"
         },
-        "link": "/goods-receipt?DocStatus=DR",
+        "link": "/purchase-order?filter=pendingReception",
         "count": 4,
         "taskKey": "pendingReceptions_plural"
       },
       {
         "type": "info",
-        "text": "9 goods shipments pending",
+        "text": "9 sales orders pending delivery",
         "navigation": {
           "type": "list",
-          "window": "goods-shipment",
-          "params": { "DocStatus": "DR" }
+          "window": "sales-order",
+          "filter": "pendingDelivery"
         },
-        "link": "/goods-shipment?DocStatus=DR",
+        "link": "/sales-order?filter=pendingDelivery",
         "count": 9,
         "taskKey": "pendingSalesDeliveries_plural"
       }
@@ -327,16 +327,21 @@ Each task uses either `filter` (quick-filter preset) or `params` (column-filter 
 
 Fields: `type` (`warning`|`info`), `text` (description), `navigation` (preferred semantic target — uses `filter` for quick-filter presets or `params` for column-filter pre-population), `link` (legacy route path during migration), `count` (numeric), `taskKey` (i18n key used by `PendingTasksRail`), `amount` (optional formatted string), `detail` (optional extra text).
 
-**Task inventory** (as of ETP-4004):
+**Task inventory** (as of ETP-5487):
 
 | taskKey | Window | Navigation type | Target |
 |---------|--------|----------------|--------|
 | `overdueInvoices` | `sales-invoice` | `filter` | `overdue` |
 | `collectionsDueToday` | `sales-invoice` | `filter` | `collectionsDueToday` |
 | `paymentsDueToday` | `purchase-invoice` | `filter` | `paymentsDueToday` |
-| `pendingReceptions` | `goods-receipt` | `params` | `DocStatus=DR` |
-| `pendingSalesDeliveries` | `goods-shipment` | `params` | `DocStatus=DR` |
+| `pendingReceptions` | `purchase-order` | `filter` | `pendingReception` |
+| `pendingSalesDeliveries` | `sales-order` | `filter` | `pendingDelivery` |
 | `lowStockAlerts` | `physical-inventory` | — | direct link |
+
+ETP-5487 moved these two cards' source from draft (`DocStatus=DR`) `M_InOut` records
+(`goods-receipt`/`goods-shipment`) to completed (`DocStatus=CO`) `C_Order` rows whose
+delivery/reception status is still below 100% — `purchase-order`/`sales-order` filtered
+by `?filter=pendingReception`/`?filter=pendingDelivery` respectively.
 
 ### widget-activity
 
