@@ -88,15 +88,54 @@ function resolvePolicy(policy = {}) {
   };
 }
 
-/** A URL reduced to its normalized path (query, fragment and record ids gone), or undefined. */
-function toNormalizedPath(readUrl, resolved) {
+/**
+ * A URL reduced to its normalized path (query, fragment and record ids gone), or undefined.
+ * With `sameOriginAs`, a URL from another origin yields undefined: even its bare path would
+ * tell Mixpanel where a person came from (a mail client, a search engine).
+ */
+function toNormalizedPath(readUrl, resolved, sameOriginAs) {
   try {
     const raw = typeof readUrl === 'function' ? readUrl() : undefined;
     if (typeof raw !== 'string' || raw.length === 0) return undefined;
-    return sanitizeText(normalizeRoute(new URL(raw).pathname), resolved.options);
+    const url = new URL(raw);
+    if (sameOriginAs) {
+      const own = typeof sameOriginAs === 'function' ? sameOriginAs() : undefined;
+      if (typeof own !== 'string' || new URL(own).origin !== url.origin) return undefined;
+    }
+    return sanitizeText(normalizeRoute(url.pathname), resolved.options);
   } catch {
     return undefined;
   }
+}
+
+/** Keys the SDK manages itself (`$device_id`, `__mps`, …); never removed or filtered as data. */
+const isSdkInternalKey = (key) => key.startsWith('$') || key.startsWith('__');
+
+/**
+ * Filters a super-property object (what `register`/`register_once` persist and attach to
+ * every later event and to `$identify`, which skips the send hooks): approved host keys,
+ * SDK identity and approved SDK defaults survive; the SDK's own `$`/`__` keys too, except
+ * the ones the property blacklist exists to remove.
+ */
+export function sanitizeMixpanelSuperProperties(props, policy = {}) {
+  const resolved = resolvePolicy(policy);
+  const approved = new Set(resolved.eventOptions.allowedKeys);
+  const out = {};
+  for (const [key, value] of Object.entries(props && typeof props === 'object' ? props : {})) {
+    if (MIXPANEL_PROPERTY_BLACKLIST.includes(key)) continue;
+    if (approved.has(key) || EVENT_IDENTITY.includes(key) || PEOPLE_IDENTITY.includes(key) || isSdkInternalKey(key)) {
+      out[key] = value;
+    }
+  }
+  return sanitizeValue(out, { ...resolved.eventOptions, allowedKeys: Object.keys(out) });
+}
+
+/** Persisted super-property keys an earlier build (or an earlier policy) left behind. */
+function staleSuperPropertyKeys(client, policy) {
+  const persisted = client?.persistence?.properties?.();
+  if (!persisted || typeof persisted !== 'object') return [];
+  const keep = sanitizeMixpanelSuperProperties(persisted, policy);
+  return Object.keys(persisted).filter((key) => !(key in keep));
 }
 
 function sanitizeOperations(data, resolved, options) {
@@ -114,7 +153,7 @@ export function sanitizeMixpanelEvent(data, policy = {}) {
   const resolved = resolvePolicy(policy);
   const properties = data?.properties ?? {};
   const urls = resolved.urlPropertyMode === 'path'
-    ? { $current_url: toNormalizedPath(resolved.currentUrl, resolved), $referrer: toNormalizedPath(resolved.referrer, resolved) }
+    ? { $current_url: toNormalizedPath(resolved.currentUrl, resolved), $referrer: toNormalizedPath(resolved.referrer, resolved, resolved.currentUrl) }
     : {};
   return {
     event: sanitizeText(data?.event, resolved.options),
@@ -146,6 +185,9 @@ export function sanitizeMixpanelGroup(data, policy = {}) {
  * @param {string} [options.apiHost]
  * @param {boolean|string} [options.debug]
  * @param {boolean} [options.trackIp] IP geolocation; off by default (D7).
+ * @param {'cookie'|'localStorage'} [options.persistence] Where the SDK keeps its identity and
+ *   super-properties. `cookie` is the SDK default and is not governed by cookie consent; the
+ *   host may choose `localStorage`.
  * @param {Iterable<string>} [options.allowedKeys] The gateway allowlist.
  * @param {Iterable<string>} [options.approvedSdkProperties]
  * @param {Iterable<string>} [options.approvedPeopleProperties]
@@ -163,6 +205,7 @@ export function createMixpanelAdapter({
   apiHost,
   debug = false,
   trackIp = false,
+  persistence = 'cookie',
   allowedKeys,
   approvedSdkProperties,
   approvedPeopleProperties,
@@ -186,14 +229,14 @@ export function createMixpanelAdapter({
   let stopped = false;
   let clientPromise;
 
-  function hook(name, sanitize) {
+  function hook(name, sanitize, fallback = () => null) {
     return (payload) => {
-      if (stopped) return null;
+      if (stopped) return fallback();
       try {
         return sanitize(payload, policy);
       } catch (error) {
         safeWarn(logger, `[observability] mixpanel.${name} dropped a payload it could not sanitize`, error);
-        return null;
+        return fallback();
       }
     };
   }
@@ -210,11 +253,16 @@ export function createMixpanelAdapter({
       record_heatmap_data: false,
       track_marketing: false,
       save_referrer: false,
+      persistence,
       property_blacklist: MIXPANEL_PROPERTY_BLACKLIST,
       hooks: {
         before_send_events: hook('before_send_events', sanitizeMixpanelEvent),
         before_send_people: hook('before_send_people', sanitizeMixpanelPeople),
         before_send_groups: hook('before_send_groups', sanitizeMixpanelGroup),
+        // register() persists properties that ride on EVERY later event and on `$identify`,
+        // which skips the send hooks entirely: they are filtered here, when they are stored.
+        before_register: hook('before_register', sanitizeMixpanelSuperProperties, () => ({})),
+        before_register_once: hook('before_register_once', sanitizeMixpanelSuperProperties, () => ({})),
       },
     });
   }
@@ -242,10 +290,24 @@ export function createMixpanelAdapter({
         .then((client) => {
           client.init(token, sdkConfig());
           resetStaleIdentityOnce(client);
+          for (const key of staleSuperPropertyKeys(client, policy)) client.unregister?.(key);
           return client;
         });
+      // A failed load (a chunk that did not download, a bad init) must not be cached, or
+      // every later call would fail for the rest of the session.
+      clientPromise.catch(() => { clientPromise = undefined; });
     }
     return clientPromise;
+  }
+
+  /**
+   * The client, or undefined when the adapter is off. Checked after the await on purpose: a
+   * kill landing while the SDK was loading must still stop the call, and `$identify` skips
+   * the hooks, so the hooks alone cannot.
+   */
+  async function liveClient() {
+    const client = await getClient();
+    return stopped ? undefined : client;
   }
 
   return {
@@ -262,7 +324,7 @@ export function createMixpanelAdapter({
     },
 
     async track(eventName, properties = {}, { context } = {}) {
-      const client = await getClient();
+      const client = await liveClient();
       if (typeof client?.track !== 'function') return;
       await new Promise((resolve) => {
         const queued = client.track(eventName, { ...(context ?? {}), ...properties }, {}, resolve);
@@ -272,19 +334,19 @@ export function createMixpanelAdapter({
     },
 
     async page(route, properties = {}, { context } = {}) {
-      const client = await getClient();
+      const client = await liveClient();
       if (typeof client?.track !== 'function') return;
       client.track('page_view', { ...(context ?? {}), ...properties, route, routePattern: route });
     },
 
     async identify(userId, traits = {}) {
-      const client = await getClient();
+      const client = await liveClient();
       if (typeof client?.identify === 'function') client.identify(userId);
       if (typeof client?.people?.set === 'function') client.people.set(traits);
     },
 
     async group(groupKey, groupId) {
-      const client = await getClient();
+      const client = await liveClient();
       if (typeof client?.set_group !== 'function') return;
       client.set_group(groupKey, groupId);
       // set_group() registers group_ids as an array super-property; membership is 1:1 by
@@ -293,18 +355,18 @@ export function createMixpanelAdapter({
     },
 
     async groupSet(groupKey, groupId, properties = {}) {
-      const client = await getClient();
+      const client = await liveClient();
       const group = client?.get_group?.(groupKey, groupId);
       if (typeof group?.set === 'function') group.set(properties);
     },
 
     async reset() {
-      const client = await getClient();
+      const client = await liveClient();
       if (typeof client?.reset === 'function') client.reset();
     },
 
     async flush() {
-      const client = await getClient();
+      const client = await liveClient();
       if (typeof client?.flush === 'function') await client.flush();
     },
   };

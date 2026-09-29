@@ -21,11 +21,14 @@ import {
 const HEX32 = 'a1b2c3d4e5f60718293a4b5c6d7e8f90';
 const PROJECT_TOKEN = 'fake-mixpanel-project-token';
 
-function fakeMixpanel({ trackReturns = { queued: true } } = {}) {
+function fakeMixpanel({ trackReturns = { queued: true }, persisted = {}, loadDelayMs = 0, failFirstLoad = false } = {}) {
   const calls = [];
   const state = { config: undefined };
+  const superProps = { ...persisted };
   const client = {
     init: (token, config) => { calls.push(['init', token]); state.config = config; },
+    persistence: { properties: () => ({ ...superProps }) },
+    unregister: (key) => { calls.push(['unregister', key]); delete superProps[key]; },
     track: (name, props, options, callback) => {
       calls.push(['track', name, props]);
       if (trackReturns) callback?.(1);
@@ -41,7 +44,12 @@ function fakeMixpanel({ trackReturns = { queued: true } } = {}) {
   };
   let loads = 0;
   return {
-    loadSdk: async () => { loads += 1; return { default: client }; },
+    loadSdk: async () => {
+      loads += 1;
+      if (loadDelayMs) await new Promise((resolve) => { setTimeout(resolve, loadDelayMs); });
+      if (failFirstLoad && loads === 1) throw new Error('chunk failed to load');
+      return { default: client };
+    },
     calls,
     loads: () => loads,
     config: () => state.config,
@@ -203,8 +211,8 @@ describe('sanitizeMixpanelEvent', () => {
       $screen_height: 1080,
       $screen_width: 1920,
       $current_url: '/go/sales-order/:id',
-      $referrer: '/search',
     });
+    // The policy's referrer is external (a search engine), so it is not sent at all.
   });
 
   it('sends URL properties as a normalized path only, or not at all (D7, configurable)', () => {
@@ -329,6 +337,89 @@ describe('createMixpanelAdapter — gateway operations', () => {
     const adapter = createMixpanelAdapter({ loadSdk: fake.loadSdk, token: PROJECT_TOKEN });
     await adapter.track('x', {}, { context: {} });
     assert.equal(fake.loads(), 0);
+  });
+});
+
+describe('createMixpanelAdapter — kill switch races and load failures (Crisol B2, N2)', () => {
+  it('an identify in flight when the kill lands never reaches the SDK ($identify skips the hooks)', async () => {
+    const { adapter, fake } = adapterWith({ fake: { loadDelayMs: 30 } });
+
+    const identifying = adapter.identify('user-2', { plan: 'pro' });
+    await adapter.shutdown();
+    await identifying;
+
+    assert.equal(fake.calls.some(([n]) => n === 'identify' || n === 'people.set'), false);
+  });
+
+  it('no gateway operation reaches the SDK after a kill, whatever was in flight', async () => {
+    const { adapter, fake } = adapterWith({ fake: { loadDelayMs: 30 } });
+
+    const inFlight = [
+      adapter.track('a', {}, { context: {} }),
+      adapter.page('/x', {}, { context: {} }),
+      adapter.group('account_id', HEX32),
+      adapter.groupSet('account_id', HEX32, {}),
+      adapter.reset(),
+    ];
+    await adapter.shutdown();
+    await Promise.all(inFlight);
+
+    assert.deepEqual(fake.calls.filter(([n]) => n !== 'init').map(([n]) => n), []);
+  });
+
+  it('a failed SDK load is not cached: the next use loads it again', async () => {
+    const { adapter, fake } = adapterWith({ fake: { failFirstLoad: true } });
+
+    await assert.rejects(() => adapter.init({ context: {} }));
+    await adapter.track('after-retry', {}, { context: {} });
+
+    assert.equal(fake.loads(), 2);
+    assert.ok(fake.calls.some(([n, name]) => n === 'track' && name === 'after-retry'));
+  });
+});
+
+describe('createMixpanelAdapter — super-properties (Crisol N3)', () => {
+  it('drops persisted super-properties that are not approved when it initializes', async () => {
+    const { adapter, fake } = adapterWith({
+      fake: { persisted: { legacy_email: SECRET_EMAIL, account_id: HEX32, distinct_id: 'd1', $device_id: 'dev1' } },
+    });
+
+    await adapter.init({ context: {} });
+
+    assert.deepEqual(fake.calls.filter(([n]) => n === 'unregister'), [['unregister', 'legacy_email']]);
+  });
+
+  it('filters every register/register_once through the allowlist, keeping SDK identity', async () => {
+    const { adapter, fake } = adapterWith();
+    await adapter.init({ context: {} });
+    const { before_register: beforeRegister, before_register_once: beforeRegisterOnce } = fake.config().hooks;
+
+    assert.deepEqual(beforeRegister({ account_id: HEX32, legacy_email: SECRET_EMAIL }), { account_id: HEX32 });
+    assert.deepEqual(
+      beforeRegisterOnce({ $device_id: 'dev1', $had_persisted_distinct_id: true, $initial_referrer: `https://mail.example.com/?u=${SECRET_EMAIL}` }),
+      { $device_id: 'dev1', $had_persisted_distinct_id: true },
+    );
+  });
+});
+
+describe('createMixpanelAdapter — referrer and persistence', () => {
+  it('sends the referrer path only when the referrer is the app itself', () => {
+    const base = { allowedKeys: [], currentUrl: () => LOCATION };
+    const sameOrigin = sanitizeMixpanelEvent(buildEventData(), { ...base, referrer: () => `https://go.etendo.cloud/go/portal/tok-abcdef0123456789?code=${SECRET_QUERY_CODE}` });
+    const external = sanitizeMixpanelEvent(buildEventData(), { ...base, referrer: () => 'https://mail.example.com/inbox' });
+
+    assert.equal(sameOrigin.properties.$referrer, '/go/portal/:id');
+    assert.equal(external.properties.$referrer, undefined);
+  });
+
+  it('keeps the SDK persistence (cookie) unless the host chooses another', async () => {
+    const byDefault = adapterWith();
+    await byDefault.adapter.init({ context: {} });
+    assert.equal(byDefault.fake.config().persistence, 'cookie');
+
+    const local = adapterWith({ adapter: { persistence: 'localStorage' } });
+    await local.adapter.init({ context: {} });
+    assert.equal(local.fake.config().persistence, 'localStorage');
   });
 });
 
