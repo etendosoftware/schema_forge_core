@@ -7,6 +7,9 @@
  *     at ANY nesting depth. There is no per-path schema (yet, see ETP-4578): the same
  *     allowlist governs the whole payload, so a nested `password` under an approved
  *     container key is dropped exactly like a top-level one would be.
+ *     A key whose NAME looks sensitive (`session_id`, `tokenCount`) is redacted even when
+ *     allowed, unless the caller also lists it in `trustedKeys` — an explicit, reviewed
+ *     exemption that never widens the allowlist and never skips the value scrub (layer 2).
  *  2. Value scrub — even an ALLOWED key's string value is pattern-checked for secrets
  *     (bearer tokens, JWTs, opaque high-entropy blobs, emails), and the query string
  *     and fragment of every URL or path embedded in it are stripped. This catches a
@@ -253,6 +256,7 @@ function toAllowedKeySet(allowedKeys) {
 function createState(options) {
   const {
     allowedKeys,
+    trustedKeys,
     maxDepth = DEFAULT_MAX_DEPTH,
     maxKeys = DEFAULT_MAX_KEYS,
     maxArrayLength = DEFAULT_MAX_ARRAY_LENGTH,
@@ -263,6 +267,7 @@ function createState(options) {
 
   return {
     allowed: toAllowedKeySet(allowedKeys),
+    trusted: toAllowedKeySet(trustedKeys),
     maxDepth,
     maxKeys,
     maxArrayLength,
@@ -329,7 +334,9 @@ function walkObject(input, depth, state) {
     }
     kept += 1;
 
-    if (isSensitiveKey(key)) {
+    // A trusted key is exempt from the key-NAME rule only (e.g. an approved `session_id`
+    // analytics dimension); its value is scrubbed like any other, and it must still be allowed.
+    if (isSensitiveKey(key) && !state.trusted.has(key)) {
       out[key] = REDACTED;
       continue;
     }

@@ -57,8 +57,9 @@ const BREADCRUMB_SCALARS = ['type', 'category', 'level', 'timestamp', 'event_id'
 
 function resolvePolicy(policy = {}) {
   const allowedKeys = Array.from(policy.allowedKeys ?? []);
+  const trustedKeys = Array.from(policy.trustedKeys ?? []);
   return {
-    options: { ...(policy.limits ?? {}), allowedKeys },
+    options: { ...(policy.limits ?? {}), allowedKeys, trustedKeys },
     approvedRequestHeaders: Array.from(policy.approvedRequestHeaders ?? []),
     spanOptions: {
       ...(policy.limits ?? {}),
@@ -67,6 +68,7 @@ function resolvePolicy(policy = {}) {
     breadcrumbOptions: {
       ...(policy.limits ?? {}),
       allowedKeys: [...allowedKeys, ...(policy.approvedBreadcrumbDataKeys ?? DEFAULT_APPROVED_BREADCRUMB_DATA_KEYS)],
+      trustedKeys,
     },
     keepConsoleBreadcrumbs: policy.keepConsoleBreadcrumbs === true,
   };
@@ -207,6 +209,8 @@ export function sanitizeSentrySpan(span, policy = {}) {
  * @param {number} [options.tracesSampleRate]
  * @param {Iterable<string>} [options.allowedKeys] The gateway allowlist, applied to tags,
  *   extra, `contexts.app` and breadcrumb data.
+ * @param {Iterable<string>} [options.trustedKeys] Subset of `allowedKeys` exempt from the
+ *   sensitive-key-name rule.
  * @param {Iterable<string>} [options.approvedRequestHeaders] Default none (D7).
  * @param {Iterable<string>} [options.approvedSpanDataKeys]
  * @param {Iterable<string>} [options.approvedBreadcrumbDataKeys]
@@ -224,6 +228,7 @@ export function createSentryAdapter({
   tracePropagationTargets,
   tracesSampleRate = DEFAULT_TRACES_SAMPLE_RATE,
   allowedKeys,
+  trustedKeys,
   approvedRequestHeaders,
   approvedSpanDataKeys,
   approvedBreadcrumbDataKeys,
@@ -233,7 +238,7 @@ export function createSentryAdapter({
   logger = console,
 } = {}) {
   const policy = {
-    allowedKeys, approvedRequestHeaders, approvedSpanDataKeys, approvedBreadcrumbDataKeys, keepConsoleBreadcrumbs, limits,
+    allowedKeys, trustedKeys, approvedRequestHeaders, approvedSpanDataKeys, approvedBreadcrumbDataKeys, keepConsoleBreadcrumbs, limits,
   };
   // Set synchronously the moment the kill switch fires. Sentry v10's close() awaits a
   // flush BEFORE it disables the client, so without this flag the global handlers keep

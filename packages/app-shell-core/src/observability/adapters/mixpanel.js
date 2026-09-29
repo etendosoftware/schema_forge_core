@@ -77,11 +77,12 @@ function writeResetFlag(storage) {
 
 function resolvePolicy(policy = {}) {
   const allowedKeys = Array.from(policy.allowedKeys ?? []);
+  const trustedKeys = Array.from(policy.trustedKeys ?? []);
   const limits = policy.limits ?? {};
   return {
-    options: { ...limits, allowedKeys },
-    eventOptions: { ...limits, allowedKeys: [...allowedKeys, ...(policy.approvedSdkProperties ?? DEFAULT_APPROVED_SDK_PROPERTIES)] },
-    peopleOptions: { ...limits, allowedKeys: [...allowedKeys, ...(policy.approvedPeopleProperties ?? DEFAULT_APPROVED_PEOPLE_PROPERTIES)] },
+    options: { ...limits, allowedKeys, trustedKeys },
+    eventOptions: { ...limits, allowedKeys: [...allowedKeys, ...(policy.approvedSdkProperties ?? DEFAULT_APPROVED_SDK_PROPERTIES)], trustedKeys },
+    peopleOptions: { ...limits, allowedKeys: [...allowedKeys, ...(policy.approvedPeopleProperties ?? DEFAULT_APPROVED_PEOPLE_PROPERTIES)], trustedKeys },
     urlPropertyMode: policy.urlPropertyMode ?? 'path',
     currentUrl: policy.currentUrl,
     referrer: policy.referrer,
@@ -189,6 +190,8 @@ export function sanitizeMixpanelGroup(data, policy = {}) {
  *   super-properties. `cookie` is the SDK default and is not governed by cookie consent; the
  *   host may choose `localStorage`.
  * @param {Iterable<string>} [options.allowedKeys] The gateway allowlist.
+ * @param {Iterable<string>} [options.trustedKeys] Subset of `allowedKeys` exempt from the
+ *   sensitive-key-name rule.
  * @param {Iterable<string>} [options.approvedSdkProperties]
  * @param {Iterable<string>} [options.approvedPeopleProperties]
  * @param {'path'|'drop'} [options.urlPropertyMode] URLs as a normalized path, or not at all.
@@ -207,6 +210,7 @@ export function createMixpanelAdapter({
   trackIp = false,
   persistence = 'cookie',
   allowedKeys,
+  trustedKeys,
   approvedSdkProperties,
   approvedPeopleProperties,
   urlPropertyMode,
@@ -222,7 +226,7 @@ export function createMixpanelAdapter({
     safeWarn(logger, '[observability] Mixpanel is enabled but VITE_MIXPANEL_TOKEN is missing');
   }
 
-  const policy = { allowedKeys, approvedSdkProperties, approvedPeopleProperties, urlPropertyMode, currentUrl, referrer, limits };
+  const policy = { allowedKeys, trustedKeys, approvedSdkProperties, approvedPeopleProperties, urlPropertyMode, currentUrl, referrer, limits };
   // After a hot kill every hook drops its payload: nothing leaves, including requests the
   // SDK already queued. (opt_out_tracking() is not used: it persists across sessions and
   // opting back in sends an `$opt_in` event.)

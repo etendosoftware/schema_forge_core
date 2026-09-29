@@ -162,6 +162,8 @@ function isRecord(value) {
  * @param {number} [options.adapterTimeoutMs] Upper bound on every adapter call (default
  *   `DEFAULT_ADAPTER_TIMEOUT_MS`); a stuck provider is logged and skipped. A non-finite or
  *   non-positive value disables it.
+ * @param {Iterable<string>} [options.trustedKeys] Approved keys exempt from the sensitive-key-NAME
+ *   rule (see `./sanitize.js`); never widens `allowedKeys`, never skips the value scrub.
  * @param {Iterable<string>} [options.allowedKeys] Forwarded to every `sanitizeValue`
  *   call — see `./sanitize.js` for the deny-by-default contract.
  * @param {{warn?: Function}} [options.logger]
@@ -175,6 +177,7 @@ function isRecord(value) {
 export function createTelemetryGateway({
   adapters: initialAdapters = [],
   allowedKeys = [],
+  trustedKeys = [],
   logger = console,
   maxDepth,
   maxKeys,
@@ -202,6 +205,7 @@ export function createTelemetryGateway({
   let initialized = false;
   const sanitizeOptions = {
     allowedKeys,
+    trustedKeys,
     maxDepth,
     maxKeys,
     maxArrayLength,
