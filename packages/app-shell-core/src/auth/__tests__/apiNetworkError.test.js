@@ -374,3 +374,147 @@ describe('serialized write queue (ETP-5255) and a network failure', () => {
     assert.match(bodies[1], /"name":"b"/);
   });
 });
+
+/**
+ * Wraps `signal.addEventListener` / `removeEventListener` on the instance and keeps the net
+ * count of 'abort' listeners still attached — a long-lived caller signal must end every
+ * settled request with the same count it started with.
+ */
+function trackAbortListeners(signal) {
+  const live = new Set();
+  const add = signal.addEventListener.bind(signal);
+  const remove = signal.removeEventListener.bind(signal);
+  signal.addEventListener = (type, listener, options) => {
+    if (type === 'abort') live.add(listener);
+    return add(type, listener, options);
+  };
+  signal.removeEventListener = (type, listener, options) => {
+    if (type === 'abort') live.delete(listener);
+    return remove(type, listener, options);
+  };
+  return { get count() { return live.size; } };
+}
+
+describe('combineSignals fallback without AbortSignal.any (review W4)', () => {
+  const originalAny = AbortSignal.any;
+
+  beforeEach(() => {
+    AbortSignal.any = undefined;
+  });
+
+  afterEach(() => {
+    AbortSignal.any = originalAny;
+  });
+
+  it('does not pile up abort listeners on a long-lived caller signal across successful requests', async () => {
+    const controller = new AbortController();
+    const listeners = trackAbortListeners(controller.signal);
+    globalThis.fetch = async () => okResponse();
+    const request = client();
+    for (let i = 0; i < 5; i += 1) {
+      const res = await request('/x', { timeout: 5000, signal: controller.signal });
+      assert.equal(res.status, 200);
+    }
+    assert.equal(listeners.count, 0, `${listeners.count} abort listener(s) left on the caller signal after 5 settled requests`);
+  });
+
+  it('does not leave an abort listener behind after a request that failed offline', async () => {
+    const controller = new AbortController();
+    const listeners = trackAbortListeners(controller.signal);
+    globalThis.fetch = async () => { throw new TypeError('Failed to fetch'); };
+    const err = await rejectionOf(client()('/x', { timeout: 5000, signal: controller.signal }));
+    assertNetworkError(err, 'offline');
+    assert.equal(listeners.count, 0);
+  });
+
+  it('a caller abort still rejects with the caller\'s AbortError', async () => {
+    const controller = new AbortController();
+    globalThis.fetch = hangingFetch();
+    const pending = client()('/x', { timeout: 1000, signal: controller.signal });
+    setTimeout(() => controller.abort(), 5);
+    const err = await rejectionWithin(pending);
+    assert.equal(err, controller.signal.reason);
+    assert.equal(err.name, 'AbortError');
+    assert.notEqual(err.code, 'NETWORK');
+  });
+
+  it('an already-aborted caller signal rejects with the caller\'s AbortError', async () => {
+    const controller = new AbortController();
+    controller.abort();
+    globalThis.fetch = hangingFetch();
+    const err = await rejectionWithin(client()('/x', { timeout: 1000, signal: controller.signal }));
+    assert.equal(err, controller.signal.reason);
+  });
+
+  it('a timeout still becomes NetworkError reason timeout', async () => {
+    const controller = new AbortController();
+    globalThis.fetch = hangingFetch();
+    const err = await rejectionWithin(client()('/x', { timeout: 20, signal: controller.signal }));
+    assertNetworkError(err, 'timeout');
+  });
+});
+
+/**
+ * A fetch that, when its signal aborts, does NOT reject right away: it resolves `aborted` and
+ * waits for the test to call `rejectNow()`, which rejects with the signal's reason as it stood
+ * at abort time — the window in which a caller abort can land after the timer already fired.
+ */
+function deferredAbortFetch() {
+  let rejectNow;
+  let markAborted;
+  const aborted = new Promise((resolve) => { markAborted = resolve; });
+  const fetchImpl = (url, options = {}) => new Promise((_, reject) => {
+    const { signal } = options;
+    const onAbort = () => {
+      const reason = signal.reason;
+      rejectNow = () => reject(reason);
+      markAborted(reason);
+    };
+    if (signal.aborted) onAbort();
+    else signal.addEventListener('abort', onAbort, { once: true });
+  });
+  return { fetchImpl, aborted, rejectNow: () => rejectNow() };
+}
+
+describe('timeout fires, then the caller aborts before the rejection is handled (review N1)', () => {
+  const originalAny = AbortSignal.any;
+
+  afterEach(() => {
+    AbortSignal.any = originalAny;
+  });
+
+  for (const variant of ['AbortSignal.any', 'fallback']) {
+    it(`[${variant}] rejects with the caller's abort reason, not TimeoutError nor NetworkError`, async () => {
+      if (variant === 'fallback') AbortSignal.any = undefined;
+      const controller = new AbortController();
+      const mock = deferredAbortFetch();
+      globalThis.fetch = mock.fetchImpl;
+      const pending = client()('/x', { timeout: 10, signal: controller.signal });
+      pending.catch(() => {});
+      const timerReason = await mock.aborted;
+      assert.equal(timerReason?.name, 'TimeoutError', 'precondition: the timer fired first');
+      controller.abort();
+      mock.rejectNow();
+      const err = await rejectionWithin(pending);
+      assert.equal(err, controller.signal.reason, `expected the caller's reason, got ${err?.name}: ${err?.message}`);
+      assert.equal(err.name, 'AbortError');
+      assert.notEqual(err.name, 'TimeoutError');
+      assert.notEqual(err.code, 'NETWORK');
+    });
+
+    it(`[${variant}] keeps a custom caller abort reason as-is`, async () => {
+      if (variant === 'fallback') AbortSignal.any = undefined;
+      const controller = new AbortController();
+      const reason = new Error('user navigated away');
+      const mock = deferredAbortFetch();
+      globalThis.fetch = mock.fetchImpl;
+      const pending = client()('/x', { timeout: 10, signal: controller.signal });
+      pending.catch(() => {});
+      await mock.aborted;
+      controller.abort(reason);
+      mock.rejectNow();
+      const err = await rejectionWithin(pending);
+      assert.equal(err, reason);
+    });
+  }
+});

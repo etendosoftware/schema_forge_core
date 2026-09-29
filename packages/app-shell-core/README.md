@@ -100,6 +100,11 @@ site that shows `err.message` needs no change:
 | The caller's own `signal` aborts | the caller's `AbortError`, unchanged — a cancellation is not a failure |
 | Anything else (`SyntaxError` from bad JSON, a plain `Error`) | passed through unchanged |
 
+Any `TypeError` from a body reader maps to `NetworkError('offline')`, with the
+original kept on `cause` — engines word a cut stream differently, so the mapping keys on the
+type, not the prose. Reads that bypass the readers, straight from `res.body.getReader()`
+(streaming), are **not** mapped: such a call site handles the stream's `TypeError` itself.
+
 `NetworkError` carries `name: 'NetworkError'`, `code: 'NETWORK'`,
 `messageKey: 'networkErrorRetry'` (`NETWORK_ERROR_KEY`), `reason` and `cause`. Detect it
 with `isNetworkError(err)`, which also matches on `code`, so an error from a duplicated

@@ -53,7 +53,7 @@ Analysis of failure modes, resilience patterns, and recovery objectives for Sche
 | Failure | Impact | Detection | Recovery |
 |---------|--------|-----------|----------|
 | **SPA crash (unhandled JS exception)** | White screen, user cannot proceed | Browser console shows unhandled error | Refresh the page. **Root cause:** no React ErrorBoundary in generated window code. This is the highest-priority frontend reliability gap |
-| **API timeout** | Loading spinner shown indefinitely | Network tab shows pending request | Frontend should implement request timeouts (30s default) and show a retry prompt. Currently no timeout handling exists |
+| **API timeout** | Request rejected after 60 s instead of a spinner shown indefinitely | Network tab shows the request cancelled; the call site receives a `NetworkError` with `reason: 'timeout'` | `apiFetch` applies a 60 s default (`DEFAULT_API_TIMEOUT_MS`, ETP-5424); a call can pass its own `timeout` (ms), `0` disables it. The error's `message` is the localized "Could not complete the action. Try again.", so the call site shows it without mapping. See `packages/app-shell-core/README.md` → *Network failures* |
 | **PWA cache corruption** | App loads stale version, features missing or broken | User sees old UI after deployment | Clear service worker cache (`navigator.serviceWorker.getRegistrations()` then `unregister()`). Prevent with cache-busting version in service worker |
 | **Dynamic import failure** | Specific window will not load | Browser console: `Failed to fetch dynamically imported module` | Usually caused by cache serving old chunk references after deployment. Force refresh or clear PWA cache. Mitigate with proper cache-busting hashes in filenames |
 | **Auth token expired** | Silent 401 errors, confusing UX | API calls return 401, no user-visible indication | Frontend should intercept 401 responses globally and redirect to login. Currently no centralized auth error handling |
@@ -78,7 +78,7 @@ Analysis of failure modes, resilience patterns, and recovery objectives for Sche
 |---------|--------------|----------|----------------|
 | **Health checks** | None | CRITICAL | Implement `GET /health` endpoint (see [10-observability.md](10-observability.md)) |
 | **React ErrorBoundary** | None in generated code | CRITICAL | Add ErrorBoundary wrapper per window. Catch JS exceptions, show "something went wrong" with retry button instead of white screen |
-| **Request timeout** | None in frontend | CRITICAL | Set 30-second timeout on all API calls. Show retry prompt on timeout |
+| **Request timeout** | Implemented in `apiFetch` (ETP-5424): 60 s default, per-call `timeout`, `0` disables it; rejects with a localized `NetworkError` (`reason: 'timeout'`) | DONE | Long calls (synchronous batches, server-side exports) pass a larger `timeout` or `0`. A dedicated retry prompt is still open |
 | **Auth error handling** | None (silent 401s) | CRITICAL | Global HTTP interceptor: on 401, redirect to login with return URL |
 | **Circuit breaker** | None | WARNING | Frontend: after 3 consecutive failures to same endpoint, stop retrying for 30 seconds, show "service unavailable" |
 | **Retry with backoff** | None | WARNING | Frontend: retry transient failures (5xx, network error) up to 3 times with exponential backoff (1s, 2s, 4s) |
@@ -94,7 +94,7 @@ Analysis of failure modes, resilience patterns, and recovery objectives for Sche
 **Phase 1 (Week 1-2): Stop the bleeding**
 - React ErrorBoundary per generated window
 - Global 401 interceptor with login redirect
-- Request timeout on all API calls (30s)
+- ~~Request timeout on all API calls~~ — done in ETP-5424: `apiFetch` defaults to 60 s, per-call `timeout`, `0` disables it, `NetworkError` on expiry
 - `GET /health` endpoint checking DB connectivity
 
 **Phase 2 (Week 3-4): Reduce blast radius**

@@ -120,6 +120,29 @@ describe('NetworkError message resolution', () => {
     registerErrorTranslator(() => 'segundo');
     assert.equal(new NetworkError({ reason: 'offline' }).message, 'segundo');
   });
+
+  it('the returned unregister drops its own translator, back to the fallback (review N4)', () => {
+    const unregister = registerErrorTranslator(() => 'traducido');
+    assert.equal(typeof unregister, 'function');
+    assert.equal(new NetworkError({ reason: 'offline' }).message, 'traducido');
+    unregister();
+    assert.equal(new NetworkError({ reason: 'offline' }).message, NETWORK_ERROR_FALLBACK);
+  });
+
+  it('a stale unregister does nothing once a newer translator was registered (review N4)', () => {
+    const unregisterOld = registerErrorTranslator(() => 'primero');
+    registerErrorTranslator(() => 'segundo');
+    unregisterOld();
+    assert.equal(new NetworkError({ reason: 'offline' }).message, 'segundo');
+  });
+
+  it('calling unregister twice is harmless and does not drop a newer translator (review N4)', () => {
+    const unregister = registerErrorTranslator(() => 'primero');
+    unregister();
+    registerErrorTranslator(() => 'segundo');
+    unregister();
+    assert.equal(new NetworkError({ reason: 'offline' }).message, 'segundo');
+  });
 });
 
 describe('isNetworkError', () => {

@@ -821,35 +821,50 @@ async function fetchWithTimeout(url, init, timeout) {
     timedOut = true;
     timer.abort(new DOMException('The request timed out.', 'TimeoutError'));
   }, timeout);
+  const { signal, cleanup } = combineSignals(callerSignal, timer.signal);
   try {
-    return await fetch(url, { ...init, signal: combineSignals(callerSignal, timer.signal) });
+    return await fetch(url, { ...init, signal });
   } catch (err) {
-    // The caller's abort wins even if the timer fired in the same tick: they asked to stop.
-    if (timedOut && !callerSignal?.aborted) throw new NetworkError({ reason: 'timeout', cause: err });
+    // The caller's abort wins even when the timer fired first and fetch rejected with the
+    // timer's reason: they asked to stop, so they get their own reason back.
+    if (callerSignal?.aborted) throw callerSignal.reason;
+    if (timedOut) throw new NetworkError({ reason: 'timeout', cause: err });
     throw toNetworkError(err);
   } finally {
     clearTimeout(id);
+    cleanup();
   }
 }
 
 /**
  * One signal that aborts when either does, carrying the reason of whichever fired first — so a
  * caller's abort still reaches `fetch` as the caller's `AbortError`.
+ *
+ * Returns `{ signal, cleanup }`. `cleanup` matters only for the manual fallback (no
+ * `AbortSignal.any`): it removes the listeners added to the caller's signal, which may be
+ * long-lived and reused across many requests — left in place, every request would pin one more
+ * closure on it.
  */
 function combineSignals(callerSignal, timeoutSignal) {
-  if (!callerSignal) return timeoutSignal;
-  if (typeof AbortSignal.any === 'function') return AbortSignal.any([callerSignal, timeoutSignal]);
+  const noop = () => {};
+  if (!callerSignal) return { signal: timeoutSignal, cleanup: noop };
+  if (typeof AbortSignal.any === 'function') {
+    return { signal: AbortSignal.any([callerSignal, timeoutSignal]), cleanup: noop };
+  }
   const combined = new AbortController();
+  const removers = [];
   const forward = (source) => {
     if (source.aborted) {
       combined.abort(source.reason);
       return;
     }
-    source.addEventListener('abort', () => combined.abort(source.reason), { once: true });
+    const onAbort = () => combined.abort(source.reason);
+    source.addEventListener('abort', onAbort, { once: true });
+    removers.push(() => source.removeEventListener('abort', onAbort));
   };
   forward(callerSignal);
   forward(timeoutSignal);
-  return combined.signal;
+  return { signal: combined.signal, cleanup: () => removers.forEach((remove) => remove()) };
 }
 
 /** A `TypeError` is the transport failing; everything else is not ours to reinterpret. */
