@@ -35,7 +35,7 @@ egress hooks, which the adapters install.
 |---|---|---|---|
 | Purpose | Error capture, tracing | Browser performance, errors, HTTP timing | Product analytics |
 | Default | Mandatory when a DSN is configured | **Off**; needs an explicit opt-in plus its IDs | **Off**; needs an explicit opt-in plus a token |
-| Destination | The configured DSN host | `dataplane.rum.eu-west-3.amazonaws.com` | The configured API host (host setting `VITE_MIXPANEL_API_HOST`) |
+| Destination | The configured DSN host | `dataplane.rum.eu-west-3.amazonaws.com`, plus `cognito-identity` for credentials (N7) | The configured API host (host setting `VITE_MIXPANEL_API_HOST`) |
 | Owner / DPA | TBD(owner) | TBD(owner) | TBD(owner) |
 | Interception point | `beforeSend`, `beforeSendTransaction`, `beforeSendSpan`, `beforeBreadcrumb` | `clientBuilder` wrapper, BEFORE the request is serialized and signed | `property_blacklist`, `before_send_events/people/groups`, `before_register(_once)` |
 | Fixed settings | `sendDefaultPii: false` in every environment (no env override); `sampleRate: 1`; console breadcrumbs dropped | `allowCookies: false`, `enableXRay: false`; telemetries `performance`, `errors`, `http` | `ip: false`, `track_pageview: false`, `autocapture: false`, session recording 0% |
@@ -81,6 +81,17 @@ to fail against the previous provider code.
   envelopes must be disabled or filtered: `TBD(owner)`.
 - **Re-enabling Sentry** after a kill restarts the SDK (`init()` clears its stopped state).
   Whether a remote flag may re-enable it within a page lifetime: `TBD(owner)`.
-- **N6 and N7:** from the ETP-4578 review notes; to be written up here by the reviewer.
+- **N6 (RUM): an orphan SDK after a failed construction.** If `new AwsRum(...)` throws part
+  way through, the SDK is left half built and `shutdown()` cannot reach it, because the
+  adapter's `rum` variable stays undefined. Verified with the real SDK in jsdom: after an
+  "init failed" warning, 2 calls to Cognito and 1 PUT still went out. Known limit. Possible
+  mitigation: mark the adapter permanently failed and document it. `TBD(owner)`.
+- **N7 (RUM): an extra endpoint and local storage.** On init the SDK makes 2 calls to
+  `cognito-identity` before any event (measured with a session sample rate of 1; sessions
+  that are not sampled were not verified). The Cognito identity id and the temporary
+  credentials are kept in `localStorage` even when `allowCookies` is false
+  (`CognitoIdentityClient.js:78` and `EnhancedAuthentication.js:87` in `aws-rum-web`). They
+  are not telemetry data, but they belong in this inventory as local storage and as an
+  additional endpoint (`cognito-identity`).
 - **Rate limits and the 7-day observation window** in the ticket depend on the providers'
   own configuration and are outside this repository.
