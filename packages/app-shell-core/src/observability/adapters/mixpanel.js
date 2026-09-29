@@ -22,7 +22,7 @@
  * geolocation (off). The organization name (`$name` on a group) only goes out if the host
  * adds it to the allowlist (D6).
  */
-import { normalizeRoute, sanitizeValue } from '../sanitize.js';
+import { normalizeRoute, resolveTrustedKeys, sanitizeValue } from '../sanitize.js';
 import { compact, pickScalars, safeWarn, sanitizeText } from './shared.js';
 
 /** SDK-generated identifiers the endpoint needs; copied as-is (the project token is public). */
@@ -226,7 +226,7 @@ export function createMixpanelAdapter({
     safeWarn(logger, '[observability] Mixpanel is enabled but VITE_MIXPANEL_TOKEN is missing');
   }
 
-  const policy = { allowedKeys, trustedKeys, approvedSdkProperties, approvedPeopleProperties, urlPropertyMode, currentUrl, referrer, limits };
+  const policy = { allowedKeys, trustedKeys: resolveTrustedKeys(trustedKeys, logger), approvedSdkProperties, approvedPeopleProperties, urlPropertyMode, currentUrl, referrer, limits };
   // After a hot kill every hook drops its payload: nothing leaves, including requests the
   // SDK already queued. (opt_out_tracking() is not used: it persists across sessions and
   // opting back in sends an `$opt_in` event.)

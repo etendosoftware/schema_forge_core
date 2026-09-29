@@ -10,6 +10,8 @@
  *     A key whose NAME looks sensitive (`session_id`, `tokenCount`) is redacted even when
  *     allowed, unless the caller also lists it in `trustedKeys` — an explicit, reviewed
  *     exemption that never widens the allowlist and never skips the value scrub (layer 2).
+ *     Names that can carry credentials (password, secret, cookie, authorization, …) are
+ *     never trustable: `resolveTrustedKeys()` drops them with a warning.
  *  2. Value scrub — even an ALLOWED key's string value is pattern-checked for secrets
  *     (bearer tokens, JWTs, opaque high-entropy blobs, emails), and the query string
  *     and fragment of every URL or path embedded in it are stripped. This catches a
@@ -242,6 +244,46 @@ function isSensitiveKey(key) {
   return SENSITIVE_KEY_FRAGMENTS.test(words.join('')) || words.some((word) => SENSITIVE_KEY_WORDS.has(word));
 }
 
+// Names that can never be trusted, however carefully reviewed: the value scrub only catches
+// LONG or token-shaped secrets, so a short value under one of these ('hunter2', 'Basic abc',
+// 'sid=abc123') would leave as-is. `token`, `session`, `body` and `payload` stay trustable
+// (an approved `session_id` or `token_count` dimension), because their values are ids or counts.
+const UNTRUSTABLE_KEY_FRAGMENTS =
+  /passw|passphrase|secret|cookie|authoriz|apikey|accesskey|credential|privatekey|creditcard|cardnumber|bearer/;
+
+/** True when a key NAME may not be exempted from the sensitive-key rule. */
+export function isUntrustableKey(key) {
+  const words = keyWords(key);
+  return UNTRUSTABLE_KEY_FRAGMENTS.test(words.join('')) || words.some((word) => SENSITIVE_KEY_WORDS.has(word));
+}
+
+function toTrustedKeySet(trustedKeys) {
+  return new Set([...toAllowedKeySet(trustedKeys)].filter((key) => !isUntrustableKey(key)));
+}
+
+/**
+ * The trusted keys a caller may actually use: the untrustable names are dropped and reported
+ * ONCE, here, so `sanitizeValue()` (which runs per value) stays quiet. `sanitizeValue()` filters
+ * the same names itself, so skipping this only loses the warning, never the protection.
+ *
+ * @param {Iterable<string>|string} [trustedKeys]
+ * @param {{warn?: Function}} [logger]
+ * @returns {Array<string>}
+ */
+export function resolveTrustedKeys(trustedKeys, logger = console) {
+  const requested = [...toAllowedKeySet(trustedKeys)];
+  const kept = requested.filter((key) => !isUntrustableKey(key));
+  const ignored = requested.filter((key) => isUntrustableKey(key));
+  if (ignored.length > 0) {
+    try {
+      logger?.warn?.(`[observability] trustedKeys ignores names that can carry credentials: ${ignored.join(', ')}`);
+    } catch {
+      // A failing logger must not break startup.
+    }
+  }
+  return kept;
+}
+
 function toAllowedKeySet(allowedKeys) {
   if (allowedKeys == null) return new Set();
   if (typeof allowedKeys === 'string') return new Set([allowedKeys]);
@@ -267,7 +309,7 @@ function createState(options) {
 
   return {
     allowed: toAllowedKeySet(allowedKeys),
-    trusted: toAllowedKeySet(trustedKeys),
+    trusted: toTrustedKeySet(trustedKeys),
     maxDepth,
     maxKeys,
     maxArrayLength,

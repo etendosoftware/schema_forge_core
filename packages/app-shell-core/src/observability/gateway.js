@@ -19,7 +19,7 @@
  * inventory are ETP-4578's scope, not this one. `provider-import-guard.test.js`
  * enforces that nothing outside this module talks to a provider SDK directly.
  */
-import { sanitizeValue, sanitizeStack, normalizeRoute, REDACTED } from './sanitize.js';
+import { sanitizeValue, sanitizeStack, normalizeRoute, resolveTrustedKeys, REDACTED } from './sanitize.js';
 
 function safeWarn(logger, ...args) {
   try {
@@ -208,7 +208,7 @@ export function createTelemetryGateway({
   let initialized = false;
   const sanitizeOptions = {
     allowedKeys,
-    trustedKeys,
+    trustedKeys: resolveTrustedKeys(trustedKeys, logger),
     maxDepth,
     maxKeys,
     maxArrayLength,

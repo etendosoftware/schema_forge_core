@@ -15,7 +15,7 @@
  * fields, with conservative defaults: request headers (none), span data keys and
  * breadcrumb data keys (below).
  */
-import { normalizeRoute, sanitizeStack, sanitizeValue } from '../sanitize.js';
+import { normalizeRoute, resolveTrustedKeys, sanitizeStack, sanitizeValue } from '../sanitize.js';
 import { compact, pickMeasurements, pickScalars, safeWarn, sanitizeText } from './shared.js';
 
 export const DEFAULT_TRACES_SAMPLE_RATE = 0.1;
@@ -238,7 +238,7 @@ export function createSentryAdapter({
   logger = console,
 } = {}) {
   const policy = {
-    allowedKeys, trustedKeys, approvedRequestHeaders, approvedSpanDataKeys, approvedBreadcrumbDataKeys, keepConsoleBreadcrumbs, limits,
+    allowedKeys, trustedKeys: resolveTrustedKeys(trustedKeys, logger), approvedRequestHeaders, approvedSpanDataKeys, approvedBreadcrumbDataKeys, keepConsoleBreadcrumbs, limits,
   };
   // Set synchronously the moment the kill switch fires. Sentry v10's close() awaits a
   // flush BEFORE it disables the client, so without this flag the global handlers keep

@@ -448,3 +448,36 @@ describe('createMixpanelAdapter — one-time stale identity reset (GDPR, ETP-435
     assert.equal(fake.calls.filter(([n]) => n === 'reset').length, 1);
   });
 });
+
+// ETP-4578 NB-B: trustedKeys must reach event, people and group sanitizing and the adapter's
+// own policy. Each assertion has an untrusted control, so unwiring any option turns one red.
+describe('trustedKeys in the Mixpanel adapter', () => {
+  const trusted = { allowedKeys: ['session_id'], trustedKeys: ['session_id'], currentUrl: () => LOCATION, referrer: () => '' };
+  const untrusted = { allowedKeys: ['session_id'], currentUrl: () => LOCATION, referrer: () => '' };
+
+  it('lets a trusted key through in event properties, and only then', () => {
+    const data = { event: 'x', properties: { session_id: 'abc' } };
+    assert.equal(sanitizeMixpanelEvent(data, trusted).properties.session_id, 'abc');
+    assert.equal(sanitizeMixpanelEvent(data, untrusted).properties.session_id, '[REDACTED]');
+  });
+
+  it('lets a trusted key through in a people update, and only then', () => {
+    const data = { $token: PROJECT_TOKEN, $distinct_id: 'd1', $set: { session_id: 'abc' } };
+    assert.equal(sanitizeMixpanelPeople(data, trusted).$set.session_id, 'abc');
+    assert.equal(sanitizeMixpanelPeople(data, untrusted).$set.session_id, '[REDACTED]');
+  });
+
+  it('lets a trusted key through in a group update, and only then', () => {
+    const data = { $token: PROJECT_TOKEN, $group_key: 'account_id', $group_id: HEX32, $set: { session_id: 'abc' } };
+    assert.equal(sanitizeMixpanelGroup(data, trusted).$set.session_id, 'abc');
+    assert.equal(sanitizeMixpanelGroup(data, untrusted).$set.session_id, '[REDACTED]');
+  });
+
+  it('is wired from createMixpanelAdapter into the SDK hooks', async () => {
+    for (const [adapter, expected] of [[{ trustedKeys: ['session_id'] }, 'abc'], [{}, '[REDACTED]']]) {
+      const { adapter: instance, fake } = adapterWith({ adapter: { allowedKeys: ['session_id'], ...adapter } });
+      await instance.init({ context: {} });
+      assert.equal(fake.hook('before_send_events', { event: 'x', properties: { session_id: 'abc' } }).properties.session_id, expected);
+    }
+  });
+});

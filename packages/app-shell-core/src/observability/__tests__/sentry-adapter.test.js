@@ -489,3 +489,32 @@ describe('createSentryAdapter — gateway operations', () => {
     assert.equal(adapter.page, undefined);
   });
 });
+
+// ETP-4578 NB-B: trustedKeys must reach every place the adapter sanitizes a key set. Each
+// assertion has an untrusted control, so unwiring any option turns one of them red.
+describe('trustedKeys in the Sentry adapter', () => {
+  const trusted = { allowedKeys: ['session_id'], trustedKeys: ['session_id'], approvedBreadcrumbDataKeys: ['session_id'] };
+  const untrusted = { allowedKeys: ['session_id'], approvedBreadcrumbDataKeys: ['session_id'] };
+  const event = { tags: { session_id: 'abc' }, breadcrumbs: [{ category: 'ui.click', data: { session_id: 'abc' } }] };
+
+  it('lets a trusted key through in tags, and only then', () => {
+    assert.equal(sanitizeSentryEvent(event, trusted).tags.session_id, 'abc');
+    assert.equal(sanitizeSentryEvent(event, untrusted).tags.session_id, '[REDACTED]');
+  });
+
+  it('lets a trusted key through in breadcrumb data, and only then', () => {
+    assert.equal(sanitizeSentryEvent(event, trusted).breadcrumbs[0].data.session_id, 'abc');
+    assert.equal(sanitizeSentryEvent(event, untrusted).breadcrumbs[0].data.session_id, '[REDACTED]');
+  });
+
+  it('is wired from createSentryAdapter into the SDK hooks', async () => {
+    for (const [config, expected] of [[{ trustedKeys: ['session_id'] }, 'abc'], [{}, '[REDACTED]']]) {
+      const fake = fakeSentry();
+      await createSentryAdapter({
+        sdk: fake.sdk, dsn: 'https://k@glitchtip.example/1', allowedKeys: ['session_id'], approvedBreadcrumbDataKeys: ['session_id'], ...config,
+      }).init({ context: {} });
+      assert.equal(fake.initOptions().beforeSend(structuredClone(event), {}).tags.session_id, expected);
+      assert.equal(fake.initOptions().beforeBreadcrumb(structuredClone(event.breadcrumbs[0]), {}).data.session_id, expected);
+    }
+  });
+});
