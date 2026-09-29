@@ -518,3 +518,150 @@ describe('timeout fires, then the caller aborts before the rejection is handled 
     });
   }
 });
+
+/**
+ * Runs `fn` with `setTimeout`/`clearTimeout` spied: every timer armed with exactly
+ * DEFAULT_API_TIMEOUT_MS is recorded and, so no case waits 60 s, really scheduled after
+ * `compressTo` ms instead. Any other delay (the test guards, an explicit `timeout`) is left
+ * alone. `armed` counts default timers ever armed; `live` those not yet cleared or fired.
+ */
+async function withDefaultTimerSpy(fn, compressTo = 10) {
+  const { DEFAULT_API_TIMEOUT_MS } = await loadNetworkError();
+  const realSetTimeout = globalThis.setTimeout;
+  const realClearTimeout = globalThis.clearTimeout;
+  const spy = { armed: 0, live: new Set() };
+  globalThis.setTimeout = (callback, ms, ...args) => {
+    if (ms !== DEFAULT_API_TIMEOUT_MS) return realSetTimeout(callback, ms, ...args);
+    spy.armed += 1;
+    const id = realSetTimeout((...a) => { spy.live.delete(id); callback(...a); }, compressTo, ...args);
+    spy.live.add(id);
+    return id;
+  };
+  globalThis.clearTimeout = (id) => { spy.live.delete(id); return realClearTimeout(id); };
+  try {
+    return await fn(spy);
+  } finally {
+    globalThis.setTimeout = realSetTimeout;
+    globalThis.clearTimeout = realClearTimeout;
+  }
+}
+
+describe('default timeout applies only to safe methods (ETP-5424)', () => {
+  const SAFE = [undefined, 'GET', 'get', 'HEAD', 'OPTIONS'];
+  const UNSAFE = ['POST', 'PUT', 'PATCH', 'DELETE', 'post'];
+  const label = (method) => (method === undefined ? 'no method (GET)' : method);
+  const withMethod = (method, extra = {}) => (method === undefined ? { ...extra } : { method, ...extra });
+
+  for (const method of SAFE) {
+    it(`${label(method)} without \`timeout\` times out at DEFAULT_API_TIMEOUT_MS`, async () => {
+      await withDefaultTimerSpy(async (spy) => {
+        globalThis.fetch = hangingFetch();
+        const err = await rejectionWithin(client()('/x', withMethod(method)));
+        assertNetworkError(err, 'timeout');
+        assert.equal(spy.armed, 1, 'expected exactly one timer armed at the default timeout');
+        assert.equal(spy.live.size, 0, 'the default timer was left pending');
+      });
+    });
+  }
+
+  for (const method of UNSAFE) {
+    it(`${method} without \`timeout\` gets no default timeout: stays pending, no timer armed`, async () => {
+      await withDefaultTimerSpy(async (spy) => {
+        const controller = new AbortController();
+        globalThis.fetch = hangingFetch();
+        const pending = client()('/x', { method, body: '{}', signal: controller.signal });
+        // Well past the compressed default (10 ms): a default timer would have fired by now.
+        assert.equal(await settleWithin(pending, 80), 'pending', `${method} timed out with no \`timeout\` given`);
+        assert.equal(spy.armed, 0, `a DEFAULT_API_TIMEOUT_MS timer was armed for ${method}`);
+        controller.abort();
+        await pending.catch(() => {});
+        assert.equal(spy.live.size, 0, 'a default timer was left pending');
+      });
+    });
+
+    it(`${method} without \`timeout\`: the caller's abort still rejects with the caller's AbortError`, async () => {
+      const controller = new AbortController();
+      globalThis.fetch = hangingFetch();
+      const pending = client()('/x', { method, body: '{}', signal: controller.signal });
+      setTimeout(() => controller.abort(), 5);
+      const err = await rejectionWithin(pending);
+      assert.equal(err, controller.signal.reason);
+      assert.equal(err.name, 'AbortError');
+      assert.notEqual(err.code, 'NETWORK');
+    });
+  }
+
+  it('POST with an explicit `timeout: 20` is still honoured → NetworkError reason timeout', async () => {
+    globalThis.fetch = hangingFetch();
+    const err = await rejectionWithin(client()('/x', { method: 'POST', body: '{}', timeout: 20 }));
+    assertNetworkError(err, 'timeout');
+  });
+
+  it('DELETE with an explicit `timeout: 20` is still honoured → NetworkError reason timeout', async () => {
+    globalThis.fetch = hangingFetch();
+    const err = await rejectionWithin(client()('/x', { method: 'DELETE', timeout: 20 }));
+    assertNetworkError(err, 'timeout');
+  });
+
+  it('POST with `timeout: 0` stays pending', async () => {
+    await withDefaultTimerSpy(async (spy) => {
+      const controller = new AbortController();
+      globalThis.fetch = hangingFetch();
+      const pending = client()('/x', { method: 'POST', body: '{}', timeout: 0, signal: controller.signal });
+      assert.equal(await settleWithin(pending, 60), 'pending');
+      assert.equal(spy.armed, 0);
+      controller.abort();
+      await pending.catch(() => {});
+    });
+  });
+
+  it('the ambient apiFetch applies the same rule: POST without `timeout` stays pending', async () => {
+    registerApiSession({ getToken: () => 'tok', baseUrl: '' });
+    await withDefaultTimerSpy(async (spy) => {
+      const controller = new AbortController();
+      globalThis.fetch = hangingFetch();
+      const pending = apiFetch('/x', { method: 'POST', body: '{}', signal: controller.signal });
+      assert.equal(await settleWithin(pending, 80), 'pending');
+      assert.equal(spy.armed, 0);
+      controller.abort();
+      await pending.catch(() => {});
+    });
+  });
+
+  it('the ambient apiFetch applies the same rule: GET without `timeout` times out', async () => {
+    registerApiSession({ getToken: () => 'tok', baseUrl: '' });
+    await withDefaultTimerSpy(async () => {
+      globalThis.fetch = hangingFetch();
+      const err = await rejectionWithin(apiFetch('/x'));
+      assertNetworkError(err, 'timeout');
+    });
+  });
+
+  it('a queued PATCH in the serialized write queue gets no default timeout either', async () => {
+    await withDefaultTimerSpy(async (spy) => {
+      const request = client();
+      const controller = new AbortController();
+      const hang = hangingFetch();
+      let call = 0;
+      globalThis.fetch = (url, options) => {
+        call += 1;
+        if (call === 1) {
+          return Promise.resolve(okResponse({
+            json: async () => ({ response: { data: [{ id: 'r1', updated: 'v2' }] } }),
+          }));
+        }
+        return hang(url, options);
+      };
+      const first = request('/spec/records/r1', { method: 'PATCH', body: JSON.stringify({ id: 'r1', name: 'a' }) });
+      const second = request('/spec/records/r1', {
+        method: 'PATCH', body: JSON.stringify({ id: 'r1', name: 'b' }), signal: controller.signal,
+      });
+      assert.equal((await first).status, 200);
+      assert.equal(await settleWithin(second, 80), 'pending', 'the queued PATCH timed out with no `timeout` given');
+      assert.equal(call, 2, 'precondition: the queued PATCH reached fetch');
+      assert.equal(spy.armed, 0, 'a DEFAULT_API_TIMEOUT_MS timer was armed for a queued PATCH');
+      controller.abort();
+      await second.catch(() => {});
+    });
+  });
+});

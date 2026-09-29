@@ -77,6 +77,13 @@ export function buildWriteHeaders() {
 // ETP-4576 — the methods the backend treats as state-changing, and therefore the ones
 // that must carry the scheme's write proof.
 const UNSAFE_METHODS = new Set(['POST', 'PUT', 'PATCH', 'DELETE']);
+/**
+ * The methods that get {@link DEFAULT_API_TIMEOUT_MS} when the caller passes no `timeout`
+ * (ETP-5424). A read that is cut off can simply be retried. A write that is cut off may still
+ * commit on the server, and the user's retry is then a double submit, so every other method —
+ * including one this list does not know — waits for its answer unless the caller sets a timeout.
+ */
+const TIMEOUT_BY_DEFAULT_METHODS = new Set(['GET', 'HEAD', 'OPTIONS']);
 
 /**
  * Resolves a request URL against the client's base URL.
@@ -390,8 +397,10 @@ function harvestReadVersions(res, path, isOurs = () => true) {
  *   stale with nothing to refresh it. The caller opting in owns that verification; this flag
  *   does not and cannot check it.
  * - `timeout` — ms to wait for a response before rejecting with `NetworkError('timeout')`.
- *   Default {@link DEFAULT_API_TIMEOUT_MS}; `0` disables it. Never forwarded to `fetch`.
- *   See {@link fetchWithTimeout}.
+ *   Default {@link DEFAULT_API_TIMEOUT_MS} for a safe method (GET, HEAD, OPTIONS; no method
+ *   means GET) and none for any other method — see `TIMEOUT_BY_DEFAULT_METHODS`. `0` disables
+ *   it; an explicit value applies to any method. Never forwarded to `fetch`. A long READ (a big
+ *   export, a render served as GET) passes `timeout: 0`. See {@link fetchWithTimeout}.
  *
  * A request that gets no HTTP answer at all rejects with a {@link NetworkError} whose message
  * is already localized, never the browser's `TypeError('Failed to fetch')` (ETP-5424). The
@@ -532,7 +541,7 @@ export function createApiFetch(baseUrl, getToken, onUnauthorized, scope) {
   return async function apiFetch(path, options = {}) {
     const {
       on401, credentials, baseUrl: baseUrlOverride, token: tokenOverride,
-      headers: extraHeaders, refreshVersion = true, timeout = DEFAULT_API_TIMEOUT_MS, ...rest
+      headers: extraHeaders, refreshVersion = true, timeout, ...rest
     } = options;
     // Legacy three-argument clients inherit the registered scope, including host wrappers
     // with a captured token. Explicit null opts out (bootstrap refresh owns its guard).
@@ -734,7 +743,7 @@ export function createApiFetch(baseUrl, getToken, onUnauthorized, scope) {
         ...withVersion,
         credentials: credentials || 'include',
         headers,
-      }, timeout);
+      }, timeout ?? (TIMEOUT_BY_DEFAULT_METHODS.has(method) ? DEFAULT_API_TIMEOUT_MS : 0));
       // ETP-5195: the session went away while this was in flight. The response is not ours.
       if (!isOurs()) throw staleSessionError();
       // ETP-5255: a process action mutates the row, so the token this client holds for it is

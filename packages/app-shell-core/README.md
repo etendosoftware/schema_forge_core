@@ -96,7 +96,7 @@ site that shows `err.message` needs no change:
 |-----------|--------|
 | `fetch` rejects with a `TypeError` (offline, DNS, CORS, reset) | `NetworkError`, `reason: 'offline'`, original on `cause` |
 | A body reader (`json`, `text`, `blob`, `arrayBuffer`, `formData`, `bytes`) rejects with a `TypeError` | `NetworkError`, `reason: 'offline'` |
-| No response within `timeout` ms | `NetworkError`, `reason: 'timeout'` |
+| No response within `timeout` ms (60 s by default for `GET`/`HEAD`/`OPTIONS`; no default for other methods) | `NetworkError`, `reason: 'timeout'` |
 | The caller's own `signal` aborts | the caller's `AbortError`, unchanged — a cancellation is not a failure |
 | Anything else (`SyntaxError` from bad JSON, a plain `Error`) | passed through unchanged |
 
@@ -126,12 +126,16 @@ an empty string, nothing, or throwing all fall back to the English text. The mes
 resolved when the error is built, so register it before the first request. Tests reset it
 with `resetErrorTranslatorForTests()`.
 
-**Timeout.** Every request gets `timeout: DEFAULT_API_TIMEOUT_MS` (60 000 ms) unless it
-passes its own. `timeout: 0` disables it. The option is not forwarded to `fetch`; apiFetch
-combines its own timer with the caller's `signal`, and the timer covers only until `fetch`
-settles — reading a large body, or a serialized write's wait behind the write ahead of it,
-does not count. A call that legitimately waits longer than a minute for its response
-headers (a long synchronous batch, a server-side export) must pass a larger `timeout` or `0`.
+**Timeout.** A safe method — `GET`, `HEAD`, `OPTIONS`, or no method at all — gets
+`timeout: DEFAULT_API_TIMEOUT_MS` (60 000 ms) unless it passes its own. Every other method
+(`POST`, `PUT`, `PATCH`, `DELETE`, anything unknown) gets **no** default: a write that is cut
+off may still commit on the server, and the user's retry would then be a double submit. An
+explicit `timeout` applies to any method, and `timeout: 0` disables it. The method is compared
+case-insensitively. The option is not forwarded to `fetch`; apiFetch combines its own timer
+with the caller's `signal`, and the timer covers only until `fetch` settles — reading a large
+body, or a serialized write's wait behind the write ahead of it, does not count. A long READ
+(a big export, a render served as `GET`, a paged walk over thousands of rows) must pass
+`timeout: 0` or a larger value.
 
 Raw `fetch` call sites that show an error to the user map a `TypeError` the same way,
 e.g. `new NetworkError({ reason: 'offline', cause: err }).message` (see `AuthorizePage`).

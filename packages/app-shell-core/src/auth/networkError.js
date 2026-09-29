@@ -18,7 +18,10 @@
 
 export const NETWORK_ERROR_FALLBACK = 'Could not complete the action. Try again.';
 export const NETWORK_ERROR_KEY = 'networkErrorRetry';
-/** Applied to every apiFetch request that does not pass its own `timeout`. `0` disables it. */
+/**
+ * Applied to an apiFetch READ (GET, HEAD, OPTIONS) that passes no `timeout` of its own. Writes get
+ * no default — a cut-off write may still commit, and the retry would double-submit. `0` disables it.
+ */
 export const DEFAULT_API_TIMEOUT_MS = 60000;
 
 let errorTranslator = null;

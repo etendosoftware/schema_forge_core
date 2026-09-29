@@ -377,9 +377,10 @@ describe('createApiFetch', () => {
   });
 
   it('forwards method and body unchanged, and the caller\'s signal still aborts the request', async () => {
-    // ETP-5424: fetch no longer receives the caller's signal itself — it gets a signal that
-    // combines it with apiFetch's own timeout. What must survive is the caller's control:
-    // aborting its controller aborts what fetch was handed, with the caller's reason.
+    // ETP-5424: a POST gets no default timeout (only safe methods do), so fetch may be handed
+    // the caller's signal itself or a combined one — that is an implementation detail. What
+    // must survive is the caller's control: aborting its controller aborts what fetch was
+    // handed, with the caller's reason.
     const f = stubFetch();
     const controller = new AbortController();
     try {
@@ -390,7 +391,6 @@ describe('createApiFetch', () => {
       assert.equal(f.calls[0].options.body, '{}');
       const { signal } = f.calls[0].options;
       assert.ok(signal instanceof AbortSignal, 'expected fetch to be handed an AbortSignal');
-      assert.notEqual(signal, controller.signal, 'expected the caller signal to be combined with the timeout');
       assert.equal(signal.aborted, false);
       controller.abort();
       assert.equal(signal.aborted, true);
