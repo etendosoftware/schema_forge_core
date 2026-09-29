@@ -74,17 +74,17 @@ describe('createTelemetryGateway — sanitizes before dispatch', () => {
     await gw.page(`/orders/123?token=${SECRET_TOKEN}#panel`);
 
     assertNoLeak(calls, SECRET_TOKEN);
-    assert.equal(calls[0][1], '/orders/:id');
+    assert.equal(calls[0][1], '/orders/:recordId');
   });
 
   const ROUTES = {
-    '/sales-order/FF8080818A1234567890ABCDEF123456': '/sales-order/:id',
-    '/sales-order/FF8080818A1234567890ABCDEF123456?tab=lines': '/sales-order/:id',
+    '/sales-order/FF8080818A1234567890ABCDEF123456': '/sales-order/:recordId',
+    '/sales-order/FF8080818A1234567890ABCDEF123456?tab=lines': '/sales-order/:recordId',
     '/purchase-order-lines/configuration-settings': '/purchase-order-lines/configuration-settings',
     '/settings/organization/fiscal-configuration/new': '/settings/organization/fiscal-configuration/new',
     '/#/sales-order/123': '/#/sales-order/:id',
     // The host's public invoice portal route is portal/:token.
-    '/portal/tok-abcdef0123456789': '/portal/:id',
+    '/portal/tok-abcdef0123456789': '/portal/:recordId',
   };
 
   for (const [route, expected] of Object.entries(ROUTES)) {

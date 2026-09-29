@@ -175,17 +175,38 @@ function sanitizePathLikeToken(token) {
   return isPathToken(stripped) ? collapseIdSegments(stripped) : stripped;
 }
 
+// The host's page-analytics convention (D5): a record's own page, `/<screen>/<id>`, is named
+// `:recordId`; an id anywhere else is `:id`. The NAME is kept so a dashboard grouped on the
+// route pattern keeps its series. The DETECTION is not the host's old one (any two-segment
+// route, any 12+ character word), which turned `/x/configuration-settings` into an id: an id
+// is still a numeric segment or a letters-and-digits one.
+const RECORD_PLACEHOLDER = ':recordId';
+// `/artifacts/<id>` is a generated-artifact path, not a record page (the host never named it so).
+const NOT_RECORD_SCREENS = new Set(['artifacts']);
+
+function nameRecordDetail(path) {
+  const parts = path.split('/');
+  const named = parts.map((part, index) => [part, index]).filter(([part]) => part !== '');
+  if (named.length !== 2 || NOT_RECORD_SCREENS.has(named[0][0]) || named[1][0] !== ':id') return path;
+  parts[named[1][1]] = RECORD_PLACEHOLDER;
+  return parts.join('/');
+}
+
 /**
  * Turns a raw route into a page-analytics key: drops the query and fragment (keeping a
- * hash-router path) and collapses record-id segments to ':id'. It does not scrub — run the
- * result through `sanitizeValue()` as well.
+ * hash-router path) and collapses record-id segments — to `:recordId` for a record's own
+ * page (`/<screen>/<id>`, two segments), to `:id` anywhere else. It does not scrub — run
+ * the result through `sanitizeValue()` as well.
+ *
+ * A route as the browser reports it carries the app's base path (`/go/<screen>/<id>` is
+ * three segments, so `:id`); one from the router does not (`/<screen>/<id>`, `:recordId`).
  *
  * @param {string} path
  * @returns {string}
  */
 export function normalizeRoute(path) {
   const queryStart = path.search(QUERY_OR_FRAGMENT_RE);
-  return collapseIdSegments(queryStart === -1 ? path : path.slice(0, queryStart));
+  return nameRecordDetail(collapseIdSegments(queryStart === -1 ? path : path.slice(0, queryStart)));
 }
 
 function scrubString(value, maxStringLength) {

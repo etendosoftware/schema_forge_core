@@ -256,7 +256,7 @@ describe('sanitizeSentryEvent — transaction events', () => {
   });
 
   it('normalizes the transaction name like a page route', () => {
-    assert.equal(out.transaction, '/sales-order/:id');
+    assert.equal(out.transaction, '/sales-order/:recordId');
     assert.deepEqual(out.transaction_info, { source: 'url' });
   });
 
@@ -310,7 +310,7 @@ describe('createSentryAdapter — hooks never send raw data', () => {
   it('beforeSend and beforeSendTransaction return the sanitized event', async () => {
     const { options } = await hooksOf();
     assert.deepEqual(findLeakedFixtureSecrets(options.beforeSend(buildErrorEvent(), {})), []);
-    assert.equal(options.beforeSendTransaction(buildTransactionEvent(), {}).transaction, '/sales-order/:id');
+    assert.equal(options.beforeSendTransaction(buildTransactionEvent(), {}).transaction, '/sales-order/:recordId');
   });
 
   it('beforeBreadcrumb returns the sanitized breadcrumb', async () => {

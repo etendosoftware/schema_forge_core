@@ -311,8 +311,8 @@ describe('createMixpanelAdapter — gateway operations', () => {
 
   it('page is tracked as page_view with the route', async () => {
     const { adapter, fake } = adapterWith();
-    await adapter.page('/sales-order/:id', {}, { context: {} });
-    assert.deepEqual(fake.calls.find(([n]) => n === 'track'), ['track', 'page_view', { route: '/sales-order/:id', routePattern: '/sales-order/:id' }]);
+    await adapter.page('/sales-order/:recordId', {}, { context: {} });
+    assert.deepEqual(fake.calls.find(([n]) => n === 'track'), ['track', 'page_view', { route: '/sales-order/:recordId', routePattern: '/sales-order/:recordId' }]);
   });
 
   it('identify, group, groupSet and reset map to the SDK calls the host provider used', async () => {

@@ -428,20 +428,20 @@ describe('sanitizeValue — legitimate routes and stacks are not over-redacted',
 
 describe('normalizeRoute', () => {
   const CASES = {
-    '/sales-order/FF8080818A1234567890ABCDEF123456': '/sales-order/:id',
+    '/sales-order/FF8080818A1234567890ABCDEF123456': '/sales-order/:recordId',
     '/sales-order/FF8080818A1234567890ABCDEF123456/lines': '/sales-order/:id/lines',
-    '/orders/550e8400-e29b-41d4-a716-446655440000': '/orders/:id',
-    '/orders/123': '/orders/:id',
-    '/reset/Ab3dEf9hIjKl': '/reset/:id',
-    '/portal/tok-abcdef0123456789': '/portal/:id',
-    '/portal/k3j4h5g6f7d8s9a0q1w2e3r4': '/portal/:id',
+    '/orders/550e8400-e29b-41d4-a716-446655440000': '/orders/:recordId',
+    '/orders/123': '/orders/:recordId',
+    '/reset/Ab3dEf9hIjKl': '/reset/:recordId',
+    '/portal/tok-abcdef0123456789': '/portal/:recordId',
+    '/portal/k3j4h5g6f7d8s9a0q1w2e3r4': '/portal/:recordId',
     '/portal/invoices': '/portal/invoices',
     '/purchase-order-lines/configuration-settings': '/purchase-order-lines/configuration-settings',
     // Accepted cost of catching lowercase tokens: a slug that mixes words and digits collapses too.
-    '/reports/q3-2024-summary': '/reports/:id',
+    '/reports/q3-2024-summary': '/reports/:recordId',
     // Hex made only of a–f letters has no digit, so it reads as a word and stays.
     '/x/deadbeefcafe': '/x/deadbeefcafe',
-    '/orders/123?tab=lines#panel': '/orders/:id',
+    '/orders/123?tab=lines#panel': '/orders/:recordId',
     '/#/sales-order/123?tab=lines': '/#/sales-order/:id',
     '/': '/',
   };

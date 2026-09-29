@@ -138,7 +138,7 @@ describe('sanitizeRumRequest', () => {
       deviceType: 'desktop',
       platformType: 'web',
       domain: 'go.etendo.cloud',
-      pageId: '/sales-order/:id',
+      pageId: '/sales-order/:recordId',
       'aws:client': 'arw-module',
       'aws:clientVersion': '1.25.0',
     });
@@ -146,7 +146,7 @@ describe('sanitizeRumRequest', () => {
 
   it('normalizes page-view ids and drops the referrer', () => {
     assert.deepEqual(events[1].details, {
-      version: '1.0.0', pageId: '/sales-order/:id', interaction: 1, pageInteractionId: '/sales-order/:id-1',
+      version: '1.0.0', pageId: '/sales-order/:recordId', interaction: 1, pageInteractionId: '/sales-order/:recordId-1',
     });
   });
 
