@@ -10,8 +10,9 @@ and what is still an open decision. Owners and legal data are **not** filled in 
 app code ──▶ host facade ──▶ gateway (sanitize: allowlist + value scrub) ──▶ adapter ──▶ SDK ──▶ provider
                                                                                 ▲
 SDK-native traffic (global error handlers, automatic breadcrumbs, tracing, ─────┘
-page views, HTTP timing) ── never touches the gateway, so it is sanitized by the SDK's own
-egress hooks, which the adapters install.
+page views, HTTP timing) ── never touches the gateway. Where the SDK offers an egress hook,
+the adapter installs one. Some SDK traffic has no hook at all: Sentry's sessions and client
+reports pass through none and are stopped only by the kill switch (see N4 below).
 ```
 
 - **Deny by default.** A payload key survives only if it is in the caller's `allowedKeys`,
@@ -21,7 +22,13 @@ egress hooks, which the adapters install.
   in any string are stripped; id-like path segments collapse.
 - **Key names.** An allowed key whose NAME looks sensitive (`session_id`, `token_count`) is
   `[REDACTED]` unless it is also listed in `trustedKeys` (a reviewed, explicit exemption that
-  never widens the allowlist and never skips the value scrub).
+  never widens the allowlist and never skips the value scrub). Names that can carry credentials
+  (`password`, `secret`, `cookie`, `authorization`, `credential`, `apiKey`, `accessKey`,
+  `privateKey`, `creditCard`, `cardNumber`, `bearer`, `pwd`, `jwt`, …) are never trustable:
+  they are ignored with one warning, because the value scrub only catches long or token-shaped
+  secrets and would let `hunter2` or `sid=abc123` through. **The host must pass the same
+  `trustedKeys` to the gateway and to each adapter separately.** If they differ, the adapter
+  redacts what the gateway let through (it fails closed, but the data is lost).
 - **Routes.** `normalizeRoute()` drops query and fragment. An id segment (numeric, or 12+
   characters mixing letters and digits) becomes `:id`; a record's own page, `/<screen>/<id>`,
   becomes `/<screen>/:recordId`. **Visible change (C6):** the two-segment form used to be
@@ -38,8 +45,9 @@ egress hooks, which the adapters install.
 | Destination | The configured DSN host | `dataplane.rum.eu-west-3.amazonaws.com`, plus `cognito-identity` for credentials (N7) | The configured API host (host setting `VITE_MIXPANEL_API_HOST`) |
 | Owner / DPA | TBD(owner) | TBD(owner) | TBD(owner) |
 | Interception point | `beforeSend`, `beforeSendTransaction`, `beforeSendSpan`, `beforeBreadcrumb` | `clientBuilder` wrapper, BEFORE the request is serialized and signed | `property_blacklist`, `before_send_events/people/groups`, `before_register(_once)` |
-| Fixed settings | `sendDefaultPii: false` in every environment (no env override); `sampleRate: 1`; console breadcrumbs dropped | `allowCookies: false`, `enableXRay: false`; telemetries `performance`, `errors`, `http` | `ip: false`, `track_pageview: false`, `autocapture: false`, session recording 0% |
-| What is rebuilt | Every event, field by field: user, request headers, cookies and query never sent; URLs and stacks scrubbed per frame | Every batch: identity, then each event's metadata and details through allowlists; `document.title` never sent | Event and people properties through allowlists; `$current_url` as a normalized path, `$referrer` dropped when external |
+| Fixed settings (not configurable) | `sendDefaultPii: false` in every environment (no env override); `sampleRate: 1` | `enableXRay: false` | `track_pageview: false`, `autocapture: false`, session recording 0% |
+| Defaults (configurable by the host) | `tracesSampleRate: 0.1`; console breadcrumbs dropped (`keepConsoleBreadcrumbs`); no request headers (`approvedRequestHeaders`) | `allowCookies: false`; telemetries `performance`, `errors`, `http`; session sample rate 0.1 | `ip: false` (`trackIp`); persistence `cookie` (`persistence`); URLs as a normalized path (`urlPropertyMode`) |
+| What is rebuilt | Every event, field by field: no request headers unless approved (none by default); user, cookies and query never sent; URLs and stacks scrubbed per frame | Every batch: identity, then each event's metadata and details through allowlists; `document.title` never sent | Event and people properties through allowlists; `$current_url` as a normalized path, `$referrer` dropped when external |
 | Fails closed | An event the hook cannot rebuild is dropped | A batch that cannot be sanitized is dropped; if the SDK loses `defaultClientBuilder` nothing is sent | A payload a hook drops is never sent |
 
 Everything an SDK appends AFTER its hooks (Sentry's `sdk` block: integration and package names
@@ -53,10 +61,16 @@ provider. A provider disabled BEFORE `init()` is never started (zero calls, its 
 imported); one disabled after is shut down in place. After `init()`, a killed adapter the
 gateway is not running (its init failed or timed out) is shut down too, once.
 
-Contract for hosts: **call `init()` before anything else.** It is what starts adapters, and
-before it a kill has nothing to stop. The host does this inside `initObservability()` and has
-a test for it. The host drives the switch from a build default and from runtime flags (see the
+Contract for hosts: **call `init()` before anything else.** It is what starts adapters. Calls
+made before it are dispatched to adapters that have not been started: Mixpanel loads its SDK
+on the first call, and a kill that lands during that load is not respected (3 requests went
+out in the `firstload2` probe). A kill before `init()` only helps when `init()` follows it.
+The host does this inside `initObservability()` and has a test for it. The host drives the switch from a build default and from runtime flags (see the
 host's `docs/ops/app-shell-observability.md`).
+
+Note (NB-E): after `init()`, a kill also shuts down an adapter whose `enabled` is `false` and
+that never started. For Sentry that means `getClient()` and `close()` on the global client.
+It is harmless when Sentry was never initialized, and is left as is on purpose.
 
 ## Tests that prove it
 
@@ -83,14 +97,17 @@ to fail against the previous provider code.
   Whether a remote flag may re-enable it within a page lifetime: `TBD(owner)`.
 - **N6 (RUM): an orphan SDK after a failed construction.** If `new AwsRum(...)` throws part
   way through, the SDK is left half built and `shutdown()` cannot reach it, because the
-  adapter's `rum` variable stays undefined. Verified with the real SDK in jsdom: after an
-  "init failed" warning, 2 calls to Cognito and 1 PUT still went out. Known limit. Possible
+  adapter's `rum` variable stays undefined. Observed with the real SDK in jsdom: after an
+  "init failed" warning, 2 calls to Cognito and 1 PUT still went out. The throw was provoked
+  by APIs jsdom lacks (`History`, `performance.getEntriesByType`, `self`), so this is a limit
+  of a half-finished construction, not a failure observed in a real browser. Possible
   mitigation: mark the adapter permanently failed and document it. `TBD(owner)`.
 - **N7 (RUM): an extra endpoint and local storage.** On init the SDK makes 2 calls to
   `cognito-identity` before any event (measured with a session sample rate of 1; sessions
   that are not sampled were not verified). The Cognito identity id and the temporary
   credentials are kept in `localStorage` even when `allowCookies` is false
-  (`CognitoIdentityClient.js:78` and `EnhancedAuthentication.js:87` in `aws-rum-web`). They
+  (`CognitoIdentityClient.js:78`, `EnhancedAuthentication.js:87` and, in the basic
+  authentication flow, `BasicAuthentication.js:96` in `aws-rum-web`). They
   are not telemetry data, but they belong in this inventory as local storage and as an
   additional endpoint (`cognito-identity`).
 - **Rate limits and the 7-day observation window** in the ticket depend on the providers'
