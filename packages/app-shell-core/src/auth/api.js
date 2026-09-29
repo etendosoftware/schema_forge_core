@@ -7,6 +7,7 @@ import {
   readCredentialHeaders,
   writeHeaders,
 } from './sessionCredentials.js';
+import { DEFAULT_API_TIMEOUT_MS, NetworkError } from './networkError.js';
 
 export function detectBaseUrl() {
   // Guarded so this module can be imported outside a browser. `plain node --test` runs
@@ -388,6 +389,13 @@ function harvestReadVersions(res, path, isOurs = () => true) {
  *   `stale_record` ETP-5255 exists to prevent, because the client's cached token then goes
  *   stale with nothing to refresh it. The caller opting in owns that verification; this flag
  *   does not and cannot check it.
+ * - `timeout` — ms to wait for a response before rejecting with `NetworkError('timeout')`.
+ *   Default {@link DEFAULT_API_TIMEOUT_MS}; `0` disables it. Never forwarded to `fetch`.
+ *   See {@link fetchWithTimeout}.
+ *
+ * A request that gets no HTTP answer at all rejects with a {@link NetworkError} whose message
+ * is already localized, never the browser's `TypeError('Failed to fetch')` (ETP-5424). The
+ * caller's own abort still rejects with its `AbortError`.
  *
  * @param {string|null|undefined} baseUrl prefix for relative paths; `null`/`undefined`
  *   falls back to the base detected from the page location
@@ -524,7 +532,7 @@ export function createApiFetch(baseUrl, getToken, onUnauthorized, scope) {
   return async function apiFetch(path, options = {}) {
     const {
       on401, credentials, baseUrl: baseUrlOverride, token: tokenOverride,
-      headers: extraHeaders, refreshVersion = true, ...rest
+      headers: extraHeaders, refreshVersion = true, timeout = DEFAULT_API_TIMEOUT_MS, ...rest
     } = options;
     // Legacy three-argument clients inherit the registered scope, including host wrappers
     // with a captured token. Explicit null opts out (bootstrap refresh owns its guard).
@@ -607,7 +615,9 @@ export function createApiFetch(baseUrl, getToken, onUnauthorized, scope) {
         if (token === live) onUnauthorized?.();
         throw new Error('Unauthorized');
       }
-      return requestScope ? guardResponse(res, isOurs) : res;
+      // Wrapped even without a scope: the body readers must turn a cut stream into a
+      // NetworkError for a plain module exactly as for a component (ETP-5424).
+      return guardResponse(res, requestScope ? isOurs : () => true);
     };
 
     const verb = String(rest.method || 'GET').toUpperCase();
@@ -720,11 +730,11 @@ export function createApiFetch(baseUrl, getToken, onUnauthorized, scope) {
       // Read INSIDE the dispatch, never before the queue wait — a write that resolved its token
       // while waiting its turn would carry the value the write ahead of it already consumed.
       const withVersion = withRecordVersion(path, rest);
-      const res = await fetch(resolveApiUrl(base, path), {
+      const res = await fetchWithTimeout(resolveApiUrl(base, path), {
         ...withVersion,
         credentials: credentials || 'include',
         headers,
-      });
+      }, timeout);
       // ETP-5195: the session went away while this was in flight. The response is not ours.
       if (!isOurs()) throw staleSessionError();
       // ETP-5255: a process action mutates the row, so the token this client holds for it is
@@ -782,11 +792,79 @@ export function createApiFetch(baseUrl, getToken, onUnauthorized, scope) {
   };
 }
 
+/**
+ * `fetch`, with apiFetch's transport failures turned into a {@link NetworkError} (ETP-5424).
+ *
+ * - A `TypeError` is the only thing `fetch` rejects with when the network itself failed (no
+ *   connection, DNS, CORS, reset). It becomes `NetworkError('offline')`, the original kept on
+ *   `cause`.
+ * - `timeout` ms without a response becomes `NetworkError('timeout')`. The timer is apiFetch's
+ *   own `AbortController` — never `AbortSignal.timeout()`, whose `TimeoutError` could not be
+ *   told apart from a caller's cancellation downstream — combined with the caller's signal, and
+ *   it covers only until `fetch` settles: reading a large body is not cut short by it, and a
+ *   serialized write's wait in the queue does not count against it. `0` disables it.
+ * - Anything else passes through untouched. In particular the caller's own abort is still the
+ *   caller's `AbortError`: a cancellation is not a failure and must not show an error.
+ */
+async function fetchWithTimeout(url, init, timeout) {
+  const callerSignal = init.signal;
+  if (!(timeout > 0)) {
+    try {
+      return await fetch(url, init);
+    } catch (err) {
+      throw toNetworkError(err);
+    }
+  }
+  const timer = new AbortController();
+  let timedOut = false;
+  const id = setTimeout(() => {
+    timedOut = true;
+    timer.abort(new DOMException('The request timed out.', 'TimeoutError'));
+  }, timeout);
+  try {
+    return await fetch(url, { ...init, signal: combineSignals(callerSignal, timer.signal) });
+  } catch (err) {
+    // The caller's abort wins even if the timer fired in the same tick: they asked to stop.
+    if (timedOut && !callerSignal?.aborted) throw new NetworkError({ reason: 'timeout', cause: err });
+    throw toNetworkError(err);
+  } finally {
+    clearTimeout(id);
+  }
+}
+
+/**
+ * One signal that aborts when either does, carrying the reason of whichever fired first — so a
+ * caller's abort still reaches `fetch` as the caller's `AbortError`.
+ */
+function combineSignals(callerSignal, timeoutSignal) {
+  if (!callerSignal) return timeoutSignal;
+  if (typeof AbortSignal.any === 'function') return AbortSignal.any([callerSignal, timeoutSignal]);
+  const combined = new AbortController();
+  const forward = (source) => {
+    if (source.aborted) {
+      combined.abort(source.reason);
+      return;
+    }
+    source.addEventListener('abort', () => combined.abort(source.reason), { once: true });
+  };
+  forward(callerSignal);
+  forward(timeoutSignal);
+  return combined.signal;
+}
+
+/** A `TypeError` is the transport failing; everything else is not ours to reinterpret. */
+function toNetworkError(err) {
+  return err instanceof TypeError ? new NetworkError({ reason: 'offline', cause: err }) : err;
+}
+
 function staleSessionError() {
   return new DOMException('The request belongs to a superseded session.', 'AbortError');
 }
 
 // Guard body consumption too: fetch can finish before a logout while json() is pending.
+// And a body stream the network cuts mid-read rejects with the same `TypeError` as a failed
+// fetch, so it becomes the same NetworkError (ETP-5424). A `SyntaxError` — the body arrived,
+// it just is not JSON — is not a network failure and passes through.
 function guardResponse(response, isOurs) {
   return new Proxy(response, {
     get(target, key) {
@@ -795,7 +873,12 @@ function guardResponse(response, isOurs) {
       if (['json', 'text', 'blob', 'arrayBuffer', 'formData', 'bytes'].includes(key) && typeof value === 'function') {
         return async (...args) => {
           if (!isOurs()) throw staleSessionError();
-          const result = await value.apply(target, args);
+          let result;
+          try {
+            result = await value.apply(target, args);
+          } catch (err) {
+            throw toNetworkError(err);
+          }
           if (!isOurs()) throw staleSessionError();
           return result;
         };

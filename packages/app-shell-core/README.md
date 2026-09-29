@@ -85,6 +85,52 @@ The package still expects the host app to provide React, React Router, Radix UI,
 Lucide, Tailwind/PostCSS, and the peer dependencies listed in `package.json`.
 Generated contracts and generated windows remain outside this package by design.
 
+## Network failures (ETP-5424)
+
+`apiFetch` / `createApiFetch` never let the browser's `TypeError('Failed to fetch')`
+escape. A request that got no HTTP answer rejects with a `NetworkError` (exported from
+`@etendosoftware/app-shell-core/auth`) whose `message` is already user-facing, so a call
+site that shows `err.message` needs no change:
+
+| Situation | Result |
+|-----------|--------|
+| `fetch` rejects with a `TypeError` (offline, DNS, CORS, reset) | `NetworkError`, `reason: 'offline'`, original on `cause` |
+| A body reader (`json`, `text`, `blob`, `arrayBuffer`, `formData`, `bytes`) rejects with a `TypeError` | `NetworkError`, `reason: 'offline'` |
+| No response within `timeout` ms | `NetworkError`, `reason: 'timeout'` |
+| The caller's own `signal` aborts | the caller's `AbortError`, unchanged — a cancellation is not a failure |
+| Anything else (`SyntaxError` from bad JSON, a plain `Error`) | passed through unchanged |
+
+`NetworkError` carries `name: 'NetworkError'`, `code: 'NETWORK'`,
+`messageKey: 'networkErrorRetry'` (`NETWORK_ERROR_KEY`), `reason` and `cause`. Detect it
+with `isNetworkError(err)`, which also matches on `code`, so an error from a duplicated
+bundle is still recognized. A caller with more specific wording checks it before any
+generic `messageKey` handling, as `classifyTransportError` in `lib/import` does.
+
+**Localizing the message.** Core ships only the English fallback
+(`NETWORK_ERROR_FALLBACK`, `'Could not complete the action. Try again.'`). The host app
+registers its translator once, and again on a locale switch:
+
+```js
+import { registerErrorTranslator } from '@etendosoftware/app-shell-core/auth';
+
+const unregister = registerErrorTranslator((key, params) => translate(key, params));
+```
+
+The translator follows the usual `translate` contract: returning the key unchanged,
+an empty string, nothing, or throwing all fall back to the English text. The message is
+resolved when the error is built, so register it before the first request. Tests reset it
+with `resetErrorTranslatorForTests()`.
+
+**Timeout.** Every request gets `timeout: DEFAULT_API_TIMEOUT_MS` (60 000 ms) unless it
+passes its own. `timeout: 0` disables it. The option is not forwarded to `fetch`; apiFetch
+combines its own timer with the caller's `signal`, and the timer covers only until `fetch`
+settles — reading a large body, or a serialized write's wait behind the write ahead of it,
+does not count. A call that legitimately waits longer than a minute for its response
+headers (a long synchronous batch, a server-side export) must pass a larger `timeout` or `0`.
+
+Raw `fetch` call sites that show an error to the user map a `TypeError` the same way,
+e.g. `new NetworkError({ reason: 'offline', cause: err }).message` (see `AuthorizePage`).
+
 ## Session refresh
 
 See [the session refresh contract](../../docs/auth-session-refresh.md) for the
