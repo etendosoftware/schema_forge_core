@@ -1065,6 +1065,11 @@ export function isSessionUnavailable(error) {
 // progress — and rejects with sessionUnavailableError, so the caller can wait
 // for it instead of signing the user out of a session that is still alive.
 export async function readCookieSession(baseUrl = defaultBaseUrl()) {
+  await whenSessionRevokeSettles();
+  return readCookieSessionNow(baseUrl);
+}
+
+async function readCookieSessionNow(baseUrl) {
   let res;
   try {
     res = await fetch(`${baseUrl}/sws/go/session`, {
@@ -1111,7 +1116,18 @@ export async function fetchCookieSession(baseUrl = defaultBaseUrl()) {
 // revoke then answers 403 and the session outlives the logout. So a stale-proof
 // refusal re-reads the live proof and retries once. No environment check here, unlike
 // apiFetch's recovery: the cookie is the browser's, and revoking it is the logout.
-export async function deleteCookieSession(csrfToken = getSessionCsrfToken(), baseUrl = defaultBaseUrl()) {
+//
+// The revoke is published while in flight (whenSessionRevokeSettles), so a session
+// read issued meanwhile — the onboarding mounting on /login right after logout —
+// waits for it instead of finding the session still alive and entering it again.
+export function deleteCookieSession(csrfToken = getSessionCsrfToken(), baseUrl = defaultBaseUrl()) {
+  const run = revokeCookieSession(csrfToken, baseUrl);
+  pendingRevoke = run;
+  run.then(() => { if (pendingRevoke === run) pendingRevoke = null; });
+  return run;
+}
+
+async function revokeCookieSession(csrfToken, baseUrl) {
   const revoke = (proof) => fetch(`${baseUrl}/sws/go/session`, {
     method: 'DELETE',
     credentials: 'include',
@@ -1120,10 +1136,22 @@ export async function deleteCookieSession(csrfToken = getSessionCsrfToken(), bas
   try {
     const res = await revoke(csrfToken);
     if (res.status !== 403 || !(await isStaleCsrfRefusal(res))) return res.ok;
-    const live = (await fetchCookieSession(baseUrl))?.csrfToken;
+    // Not readCookieSession: that one waits for this very revoke.
+    const live = (await readCookieSessionNow(baseUrl))?.csrfToken;
     if (!live || live === csrfToken) return false;
     return (await revoke(live)).ok;
   } catch {
     return false;
   }
+}
+
+/** The revoke in flight, if any. It never rejects: revokeCookieSession resolves false instead. */
+let pendingRevoke = null;
+
+/**
+ * ETP-5550 — resolves once no session revoke is in flight. Anything about to read the session
+ * right after a logout (the default restore, the onboarding bootstrap) waits on it first.
+ */
+export function whenSessionRevokeSettles() {
+  return pendingRevoke ? pendingRevoke.then(() => undefined) : Promise.resolve();
 }

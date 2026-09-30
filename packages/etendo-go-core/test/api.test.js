@@ -1,6 +1,6 @@
 import { describe, it } from 'node:test';
 import assert from 'node:assert/strict';
-import { isSessionUnavailable } from '@etendosoftware/app-shell-core/auth/api';
+import { deleteCookieSession, isSessionUnavailable } from '@etendosoftware/app-shell-core/auth/api';
 import {
   ONBOARDING_ERROR_CODES,
   buildAuthHeaders,
@@ -359,6 +359,36 @@ describe('onboarding session API — resource-access cluster (ETP-4576)', () => 
         await assert.rejects(() => fetchSession(fetchImpl, '/etendo'), (error) => isSessionUnavailable(error));
       });
     }
+
+    // ETP-5550 — logout moves the SPA to /login at once, and this probe is the first thing the
+    // onboarding reads. Against a revoke that is still retrying, it found the session alive and
+    // entered it again, so it waits for a revoke in flight to settle.
+    it('waits for a session revoke in flight before probing', async () => {
+      const originalFetch = globalThis.fetch;
+      let releaseDelete;
+      globalThis.fetch = () => new Promise((resolve) => {
+        releaseDelete = () => resolve(new Response(null, { status: 204 }));
+      });
+      try {
+        const probes = [];
+        const fetchImpl = async (url) => {
+          probes.push(url);
+          return jsonResponse({ error: { message: 'no session' } }, { ok: false, status: 401 });
+        };
+
+        const revoke = deleteCookieSession('csrf-live', '');
+        const probe = fetchSession(fetchImpl, '/etendo').catch((error) => error);
+        await new Promise((resolve) => { setTimeout(resolve, 0); });
+        assert.equal(probes.length, 0);
+
+        releaseDelete();
+        await revoke;
+        assert.equal((await probe).status, 401);
+        assert.equal(probes.length, 1);
+      } finally {
+        globalThis.fetch = originalFetch;
+      }
+    });
 
     it('rejects as unavailable on a 200 that is not the session (a proxy maintenance page)', async () => {
       const { fetchImpl } = recordingFetch({

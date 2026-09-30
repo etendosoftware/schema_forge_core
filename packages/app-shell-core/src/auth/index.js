@@ -6,7 +6,7 @@ export { AuthProvider, useAuth, useAuthOptional } from './AuthContext.jsx';
 export {
   apiFetch, authHeaders, buildHeaders, buildWriteHeaders, createApiFetch, detectBaseUrl,
   deleteCookieSession, fetchCookieSession, readCookieSession, isSessionUnavailable,
-  sessionUnavailableError, getAmbientToken, notifyAmbientUnauthorized,
+  sessionUnavailableError, whenSessionRevokeSettles, getAmbientToken, notifyAmbientUnauthorized,
   registerApiSession, resetApiSessionForTests, resolveApiUrl,
   replaceAmbientSession,
 } from './api.js';
