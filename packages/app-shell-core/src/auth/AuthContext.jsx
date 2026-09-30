@@ -4,7 +4,7 @@ import {
   normalizeAuthSession, purgeLegacyAuthStorage,
 } from './session.js';
 import {
-  createApiFetch, deleteCookieSession, fetchCookieSession, registerApiSession,
+  createApiFetch, deleteCookieSession, isSessionUnavailable, readCookieSession, registerApiSession,
 } from './api.js';
 import { CREDENTIAL_MODES, setSessionCredentials } from './sessionCredentials.js';
 import { createSessionController } from './sessionController.js';
@@ -14,6 +14,9 @@ const AuthContext = createContext(null);
 const useBrowserLayoutEffect = typeof window === 'undefined' ? useEffect : useLayoutEffect;
 // [ETP-5195] Fallback cadence for the periodic-poll refresh trigger below.
 const SILENT_REFRESH_POLL_INTERVAL_MS = 5 * 60 * 1000;
+// ETP-5550 — restore retries while the backend is not answering: 1s, 2s, 4s… capped at 30s.
+const RESTORE_RETRY_BASE_MS = 1000;
+const RESTORE_RETRY_MAX_MS = 30 * 1000;
 
 // [ETP-5195] `/sws/neo/refreshtoken` goes through the NEO webhook bridge, which wraps every
 // response in `{"result": "<json-string>"}` (see com.etendoerp.go's docs/neo-headless.md
@@ -62,7 +65,7 @@ export function AuthProvider({
   // ETP-4576 — DERIVED from `credentialMode`, so one switch governs the whole thing.
   // An explicit `null` opts out; passing `undefined` re-arms this default.
   restoreSession = credentialMode === CREDENTIAL_MODES.cookie
-    || credentialMode === CREDENTIAL_MODES.auto ? fetchCookieSession : null,
+    || credentialMode === CREDENTIAL_MODES.auto ? readCookieSession : null,
 }) {
   // ETP-4576 — under the cookie scheme the default storage is MEMORY, not localStorage:
   // the server response is authoritative and `purgeLegacyAuthStorage` deletes the sf_auth_*
@@ -97,6 +100,17 @@ export function AuthProvider({
   // Guards the mount-only restore against a host passing an inline arrow as `restoreSession`,
   // which would otherwise change identity every render.
   const hasRestoredRef = useRef(false);
+  // ETP-5550 — true while the restore waits for a backend that is not answering (a deploy).
+  const [isReconnecting, setIsReconnecting] = useState(false);
+  const mountedRef = useRef(true);
+  const restoreRetryTimer = useRef(undefined);
+  useEffect(() => {
+    mountedRef.current = true;
+    return () => {
+      mountedRef.current = false;
+      clearTimeout(restoreRetryTimer.current);
+    };
+  }, []);
 
   useBrowserLayoutEffect(() => {
     controller.configure({ storage: authStorage, onSessionChange, apiBaseUrl });
@@ -120,6 +134,11 @@ export function AuthProvider({
   // failure (no active session, network error) clears locally — deliberately NOT the
   // exposed logout(), which revokes server-side: the server just told us there is no
   // session, so there is nothing to revoke.
+  //
+  // ETP-5550 — except a backend that is not answering (isSessionUnavailable): a tab
+  // reloaded during a deploy used to land on the login screen with its session still
+  // alive. It now stays 'booting', flags isReconnecting and retries with backoff until
+  // the backend answers either way.
   useEffect(() => {
     if (typeof restoreSession !== 'function') return;
     if (hasRestoredRef.current) return;
@@ -127,19 +146,32 @@ export function AuthProvider({
 
     purgeLegacyAuthStorage();
 
-    Promise.resolve()
-      .then(() => restoreSession())
-      .then((result) => {
-        if (!result) throw new Error('No active session');
-        setCsrfToken(result.csrfToken ?? null);
-        controller.replace(normalizeAuthSession(mapRestoredSession(result)), { refresh: false, persist: false });
-        setStatus('authenticated');
-      })
-      .catch(() => {
-        setCsrfToken(null);
-        controller.logout();
-        setStatus('anonymous');
-      });
+    const attempt = (retry) => {
+      Promise.resolve()
+        .then(() => restoreSession())
+        .then((result) => {
+          if (!mountedRef.current) return;
+          if (!result) throw new Error('No active session');
+          setIsReconnecting(false);
+          setCsrfToken(result.csrfToken ?? null);
+          controller.replace(normalizeAuthSession(mapRestoredSession(result)), { refresh: false, persist: false });
+          setStatus('authenticated');
+        })
+        .catch((error) => {
+          if (!mountedRef.current) return;
+          if (isSessionUnavailable(error)) {
+            setIsReconnecting(true);
+            const delay = Math.min(RESTORE_RETRY_BASE_MS * 2 ** retry, RESTORE_RETRY_MAX_MS);
+            restoreRetryTimer.current = setTimeout(() => attempt(retry + 1), delay);
+            return;
+          }
+          setIsReconnecting(false);
+          setCsrfToken(null);
+          controller.logout();
+          setStatus('anonymous');
+        });
+    };
+    attempt(0);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -469,6 +501,9 @@ export function AuthProvider({
     isAuthenticated: !!state.session.token || status === 'authenticated',
     csrfToken,
     status,
+    // ETP-5550 — the restore is waiting for a backend that is not answering (status stays
+    // 'booting'), so a host can say "reconnecting" instead of showing nothing.
+    isReconnecting,
     setCsrfToken,
     isSessionReady: state.isSessionReady,
     isRefreshingSession: state.isRefreshingSession,
@@ -485,7 +520,7 @@ export function AuthProvider({
     capabilities: state.capabilities,
     menuAccess: state.menuAccess,
     ...actions,
-  }), [state, actions, csrfToken, status]);
+  }), [state, actions, csrfToken, status, isReconnecting]);
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 }

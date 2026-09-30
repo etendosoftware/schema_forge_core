@@ -5,7 +5,8 @@ export { AuthProvider, useAuth, useAuthOptional } from './AuthContext.jsx';
 // native ESM.
 export {
   apiFetch, authHeaders, buildHeaders, buildWriteHeaders, createApiFetch, detectBaseUrl,
-  deleteCookieSession, fetchCookieSession, getAmbientToken, notifyAmbientUnauthorized,
+  deleteCookieSession, fetchCookieSession, readCookieSession, isSessionUnavailable,
+  sessionUnavailableError, getAmbientToken, notifyAmbientUnauthorized,
   registerApiSession, resetApiSessionForTests, resolveApiUrl,
   replaceAmbientSession,
 } from './api.js';

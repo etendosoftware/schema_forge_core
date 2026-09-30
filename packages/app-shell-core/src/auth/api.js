@@ -932,21 +932,57 @@ export function apiFetch(path, options = {}) {
   )(path, options);
 }
 
+const SESSION_UNAVAILABLE = 'SessionUnavailableError';
+
+/** ETP-5550 — the error {@link readCookieSession} rejects with when the backend is not answering. */
+export function sessionUnavailableError(cause) {
+  const error = new Error('The session backend is not answering.', cause ? { cause } : undefined);
+  error.name = SESSION_UNAVAILABLE;
+  return error;
+}
+
+/** Whether `error` means "the backend is not answering", as opposed to "there is no session". */
+export function isSessionUnavailable(error) {
+  return error?.name === SESSION_UNAVAILABLE;
+}
+
 // ETP-4576 — restores the backend-managed session (ADR-0001). This is the
 // platform default for AuthProvider's `restoreSession`, so a host gets the
 // cookie session without wiring anything; passing the prop overrides it.
 // Authenticates purely with the `__Host-` cookie: `credentials: 'include'` and
 // no Authorization header, since the browser never holds a bearer token.
-// Fails closed with null on the 401 for "no session", a network error, or an
-// unparsable body — every one of those means "not authenticated".
-export async function fetchCookieSession(baseUrl = defaultBaseUrl()) {
+//
+// ETP-5550 — resolves null only when the backend SAYS there is no session (a
+// 4xx). A request that fails, a 5xx or a body that is not the session (a proxy
+// error or maintenance page) is the backend not answering — a deploy in
+// progress — and rejects with sessionUnavailableError, so the caller can wait
+// for it instead of signing the user out of a session that is still alive.
+export async function readCookieSession(baseUrl = defaultBaseUrl()) {
+  let res;
   try {
-    const res = await fetch(`${baseUrl}/sws/go/session`, {
+    res = await fetch(`${baseUrl}/sws/go/session`, {
       method: 'GET',
       credentials: 'include',
     });
-    if (!res.ok) return null;
+  } catch (cause) {
+    throw sessionUnavailableError(cause);
+  }
+  if (!res) return null;
+  if (res.status >= 500) throw sessionUnavailableError();
+  if (!res.ok) return null;
+  try {
     return await res.json();
+  } catch (cause) {
+    throw sessionUnavailableError(cause);
+  }
+}
+
+// The fail-closed reading of the same request: null for "no session" and for an
+// unavailable backend alike, and never throws. For callers that only need to know
+// whether a session is usable right now.
+export async function fetchCookieSession(baseUrl = defaultBaseUrl()) {
+  try {
+    return await readCookieSession(baseUrl);
   } catch {
     return null;
   }

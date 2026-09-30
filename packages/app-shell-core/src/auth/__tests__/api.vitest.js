@@ -1,5 +1,7 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { fetchCookieSession, deleteCookieSession } from '../api.js';
+import {
+  fetchCookieSession, deleteCookieSession, readCookieSession, isSessionUnavailable,
+} from '../api.js';
 
 // ETP-4576 cycle 4a — behavioral coverage for the session fetcher that moves
 // into the platform (app-shell-core) and becomes AuthProvider's DEFAULT
@@ -334,5 +336,53 @@ describe('deleteCookieSession — revokes even with a proof another tab rotated 
     await expect(deleteCookieSession('csrf-stale', '')).resolves.toBe(false);
 
     expect(fetchStub).toHaveBeenCalledTimes(2);
+  });
+});
+
+// ETP-5550 — the restore must tell "there is no session" (the 401) from "the backend is not
+// answering" (a deploy in progress: network error, 5xx from the proxy, a maintenance page).
+// Treating both as "no session" signed out every tab reloaded during a deploy.
+describe('readCookieSession — tells no session from an unavailable backend (ETP-5550)', () => {
+  it('resolves the payload when the session is there', async () => {
+    fetchStub.mockResolvedValue(new Response(JSON.stringify({ csrfToken: 'c' }), { status: 200 }));
+
+    await expect(readCookieSession('')).resolves.toEqual({ csrfToken: 'c' });
+  });
+
+  it.each([401, 403])('resolves null on a %s: there is no session', async (status) => {
+    fetchStub.mockResolvedValue(new Response('{}', { status }));
+
+    await expect(readCookieSession('')).resolves.toBeNull();
+  });
+
+  it.each([500, 502, 503, 504])('rejects as unavailable on a %s', async (status) => {
+    fetchStub.mockResolvedValue(new Response('<html>Bad Gateway</html>', { status }));
+
+    const error = await readCookieSession('').catch((e) => e);
+
+    expect(isSessionUnavailable(error)).toBe(true);
+  });
+
+  it('rejects as unavailable when the request itself fails', async () => {
+    fetchStub.mockRejectedValue(new TypeError('Failed to fetch'));
+
+    expect(isSessionUnavailable(await readCookieSession('').catch((e) => e))).toBe(true);
+  });
+
+  it('rejects as unavailable on a 200 that is not the session (a proxy maintenance page)', async () => {
+    fetchStub.mockResolvedValue(new Response('<html>Maintenance</html>', { status: 200 }));
+
+    expect(isSessionUnavailable(await readCookieSession('').catch((e) => e))).toBe(true);
+  });
+
+  it('keeps fetchCookieSession fail-closed: it still resolves null when unavailable', async () => {
+    fetchStub.mockRejectedValue(new TypeError('Failed to fetch'));
+
+    await expect(fetchCookieSession('')).resolves.toBeNull();
+  });
+
+  it('does not take an ordinary error for an unavailable backend', () => {
+    expect(isSessionUnavailable(new Error('boom'))).toBe(false);
+    expect(isSessionUnavailable(null)).toBe(false);
   });
 });

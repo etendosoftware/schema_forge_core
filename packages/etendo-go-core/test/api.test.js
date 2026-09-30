@@ -1,5 +1,6 @@
 import { describe, it } from 'node:test';
 import assert from 'node:assert/strict';
+import { isSessionUnavailable } from '@etendosoftware/app-shell-core/auth/api';
 import {
   ONBOARDING_ERROR_CODES,
   buildAuthHeaders,
@@ -334,9 +335,37 @@ describe('onboarding session API — resource-access cluster (ETP-4576)', () => 
         (error) => {
           assert.equal(error.code, ONBOARDING_ERROR_CODES.invalidSession);
           assert.equal(error.status, 401);
+          assert.equal(isSessionUnavailable(error), false);
           return true;
         },
       );
+    });
+
+    // ETP-5550 — /login and /onboarding reloaded during a deploy showed the login form over a
+    // session that was still alive. The bootstrap can only wait for the backend if the probe says
+    // "not answering" apart from "no session".
+    it('rejects as unavailable when the request itself fails', async () => {
+      const fetchImpl = async () => { throw new TypeError('Failed to fetch'); };
+
+      await assert.rejects(() => fetchSession(fetchImpl, '/etendo'), (error) => isSessionUnavailable(error));
+    });
+
+    for (const status of [500, 502, 503]) {
+      it(`rejects as unavailable on a ${status}`, async () => {
+        const { fetchImpl } = recordingFetch({
+          ok: false, status, json: async () => { throw new SyntaxError('Unexpected token <'); },
+        });
+
+        await assert.rejects(() => fetchSession(fetchImpl, '/etendo'), (error) => isSessionUnavailable(error));
+      });
+    }
+
+    it('rejects as unavailable on a 200 that is not the session (a proxy maintenance page)', async () => {
+      const { fetchImpl } = recordingFetch({
+        ok: true, status: 200, json: async () => { throw new SyntaxError('Unexpected token <'); },
+      });
+
+      await assert.rejects(() => fetchSession(fetchImpl, '/etendo'), (error) => isSessionUnavailable(error));
     });
   });
 

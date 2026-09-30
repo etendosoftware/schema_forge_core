@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { Loader2 } from 'lucide-react';
 import { useUI } from '@etendosoftware/app-shell-core/i18n';
-import { purgeLegacyAuthStorage } from '@etendosoftware/app-shell-core/auth';
+import { isSessionUnavailable, purgeLegacyAuthStorage } from '@etendosoftware/app-shell-core/auth';
 import { fetchSession, fetchAccount, fetchEnvironments, loginEnvironment, fetchOnboardingDraft, saveOnboardingDraft, verifyEmail } from './api.js';
 import { rememberEnvironment } from './state.js';
 import { buildAppReturnToHref, getSafeReturnTo } from './oauthReturnTo.js';
@@ -280,25 +280,40 @@ export function OnboardingFlow({ steps = [], config = {} }) {
     // ETP-4798: every mount re-asks the server, which is what makes a plain browser refresh the
     // way out of the wall — including when the mail was opened on another device. The decision
     // itself lives in routeByEnvironments, which reads /me for it.
-    const bootstrap = () => {
+    //
+    // ETP-5550: a backend that is not answering (a deploy) is not "no session". The bootstrap
+    // stays on the loading view and asks again with backoff (1s, 2s, 4s… capped at 30s).
+    let retryTimer;
+    let unmounted = false;
+    const bootstrap = (retry = 0) => {
       fetchSession(fetch, apiBase)
         .then(data => {
           setCsrfToken(data.csrfToken ?? null);
           setAccountName(data.account?.name || data.account?.email || null);
           routeByEnvironments(data.csrfToken);
         })
-        .catch(() => {
+        .catch((err) => {
+          if (isSessionUnavailable(err)) return retryBootstrap(retry);
           purgeLegacyAuthStorage();
           // Login is the default entry view; register is only shown when explicitly requested.
           goToStep(initialView === 'register' ? 'register' : 'login');
         });
     };
 
+    const retryBootstrap = (retry) => {
+      if (unmounted) return;
+      retryTimer = setTimeout(() => bootstrap(retry + 1), Math.min(1000 * 2 ** retry, 30000));
+    };
+
     if (confirmEmailFirst) {
-      confirmEmailFirst.then(bootstrap);
+      confirmEmailFirst.then(() => bootstrap());
     } else {
       bootstrap();
     }
+    return () => {
+      unmounted = true;
+      clearTimeout(retryTimer);
+    };
   }, []);
 
   // Every persistable step follows the same debounce policy; no field names
