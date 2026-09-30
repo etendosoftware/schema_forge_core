@@ -1,3 +1,5 @@
+import { isNetworkError } from '../../auth/networkError.js';
+
 export class BatchTimeoutError extends Error {
   constructor(message = 'batch request timed out') {
     super(message);
@@ -114,6 +116,11 @@ export function classifyImportError(rawMessage) {
  * always wins over parsing prose.
  */
 export function classifyTransportError(error) {
+  // ETP-5424 — apiFetch's NetworkError carries its own generic `messageKey`, so it is matched
+  // BEFORE the thrower-declared key: the importer keeps its own, more specific wording.
+  if (isNetworkError(error)) {
+    return { key: error.reason === 'timeout' ? 'importErrorTimeout' : 'importErrorConnection', params: {} };
+  }
   if (error?.messageKey) return { key: error.messageKey, params: error.params ?? {} };
   const name = String(error?.name || '');
   const msg = String(error?.message || '');

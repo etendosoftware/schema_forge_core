@@ -61,4 +61,10 @@ describe('SelectTrigger — semantic form-input dimensions (ETP-4554)', () => {
     assert.doesNotMatch(triggerClass, /disabled:opacity-/);
     assert.match(triggerClass, /focus:ring-focus-ring/);
   });
+
+  it('shares the unified field hover and disabled fill/border tokens (ETP-5479)', () => {
+    assert.match(triggerClass, /(^|\s)hover:bg-\[hsl\(var\(--field-hover\)\)\]/);
+    assert.match(triggerClass, /disabled:bg-\[hsl\(var\(--field-hover\)\)\]/);
+    assert.match(triggerClass, /disabled:border-\[hsl\(var\(--field-disabled-border\)\)\]/);
+  });
 });
