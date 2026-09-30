@@ -6,6 +6,8 @@ import { fileURLToPath } from 'node:url';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const src = readFileSync(join(__dirname, '..', 'date-field.jsx'), 'utf8');
+// The field-control box's class list (`const wrapperClass = cn(...)`).
+const wrapperSrc = src.slice(src.indexOf('const wrapperClass = cn('), src.indexOf('const inputPlaceholder'));
 
 describe('DateField — exports and dependencies', () => {
   it('exports a named function component', () => {
@@ -70,13 +72,28 @@ describe('DateField — input (trigger button) Figma styling', () => {
   it('drives the field-control height from the shared FIELD_HEIGHT token (ETP-4321) so it lines up with Input/Select', () => {
     // The control wrapper interpolates the density token; it must not hardcode a height.
     assert.match(src, /import \{ FIELD_HEIGHT \} from '\.\/formDensity\.js'/);
-    assert.match(src, /\$\{FIELD_HEIGHT\} w-full rounded-lg border border-\[#D1D4DB\] bg-white px-2/);
+    assert.match(src, /\$\{FIELD_HEIGHT\} w-full rounded-lg border border-\[hsl\(var\(--border-control\)\)\] bg-card px-2/);
   });
 
-  it('field-control wrapper keeps the rounded-lg / #D1D4DB / bg-white card styling', () => {
+  it('field-control wrapper uses the same semantic border and card fill as the other fields (ETP-5479)', () => {
     assert.match(src, /rounded-lg/);
-    assert.match(src, /border-\[#D1D4DB\]/);
-    assert.match(src, /bg-white/);
+    assert.match(src, /border-\[hsl\(var\(--border-control\)\)\]/);
+    assert.match(src, /bg-card/);
+    // The hardcoded #D1D4DB border rendered darker than every Input/Select, and the
+    // literal white fill ignored the dark theme.
+    // (Scoped to the wrapper: the calendar popover chrome keeps its own literals.)
+    assert.doesNotMatch(wrapperSrc, /#D1D4DB/);
+    assert.doesNotMatch(wrapperSrc, /bg-white/);
+  });
+
+  it('hovers with the shared --field-hover fill instead of darkening the border (ETP-5479)', () => {
+    assert.match(wrapperSrc, /hover:bg-\[hsl\(var\(--field-hover\)\)\]/);
+    assert.doesNotMatch(wrapperSrc, /hover:border-/);
+  });
+
+  it('uses the shared disabled treatment instead of dimming with opacity (ETP-5479)', () => {
+    assert.match(wrapperSrc, /bg-\[hsl\(var\(--field-hover\)\)\] border-\[hsl\(var\(--field-disabled-border\)\)\] text-text-disabled/);
+    assert.doesNotMatch(wrapperSrc, /opacity-/);
   });
 
   it('applies the Figma shadow (rgba(18,18,23,0.05) — shadow-xs)', () => {
@@ -87,8 +104,9 @@ describe('DateField — input (trigger button) Figma styling', () => {
     assert.match(src, /<CalendarIcon[^>]*className="h-6 w-6[^"]*text-\[#A9A9BC\]/);
   });
 
-  it('renders the text in Inter 14/24 with color #121217', () => {
-    assert.match(src, /text-sm leading-6 font-normal text-\[#121217\]/);
+  it('renders the text in Inter 14/24 with the semantic text tokens so it stays legible in dark theme (ETP-5479)', () => {
+    assert.match(src, /text-sm leading-6 font-normal text-text-primary placeholder:text-text-secondary/);
+    assert.match(src, /disabled:text-text-disabled/);
   });
 });
 
