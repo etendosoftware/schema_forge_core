@@ -324,6 +324,10 @@
     --text-disabled: 225 12% 38%;
     --icon-secondary: 215 16% 47%;
     --focus-ring: 222 47% 11%;
+    /* Text-field hover fill from the design (#F5F7F9). */
+    --field-hover: 210 25% 96.9%;
+    /* Disabled field border from the design (#D1D4DB); the disabled fill reuses --field-hover. */
+    --field-disabled-border: 222 12.2% 83.9%;
     --border: var(--border-subtle);
     --input: var(--border-control);
     --ring: var(--focus-ring);
@@ -409,6 +413,8 @@
     --text-disabled: 215 16% 65%;
     --icon-secondary: 215 16% 70%;
     --focus-ring: 0 0% 100%;
+    --field-hover: var(--muted);
+    --field-disabled-border: var(--border-subtle);
     --border: var(--border-subtle);
     --input: var(--border-control);
     --ring: var(--focus-ring);

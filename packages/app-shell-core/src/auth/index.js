@@ -10,6 +10,12 @@ export {
   registerApiSession, resetApiSessionForTests, resolveApiUrl,
   replaceAmbientSession,
 } from './api.js';
+// ETP-5424 — the error apiFetch throws for a transport failure, and the one-time hook the host
+// app uses to localize its message.
+export {
+  DEFAULT_API_TIMEOUT_MS, NETWORK_ERROR_FALLBACK, NETWORK_ERROR_KEY, NetworkError,
+  isNetworkError, registerErrorTranslator, resetErrorTranslatorForTests,
+} from './networkError.js';
 export {
   createLocalAuthStorage,
   createMemoryAuthStorage,

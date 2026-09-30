@@ -35,6 +35,41 @@ describe('core primitives use the semantic accessibility contract (ETP-4554)', (
     }
   });
 
+  it('defines the field hover / disabled-border tokens in both themes (ETP-5479)', async () => {
+    const css = await readFile(new URL('../../../styles.css', import.meta.url), 'utf8');
+    const rootBlock = css.slice(css.indexOf(':root {'), css.indexOf('.dark {'));
+    const darkBlock = css.slice(css.indexOf('.dark {'));
+    for (const block of [rootBlock, darkBlock]) {
+      assert.match(block, /--field-hover:\s*[^;]+;/);
+      assert.match(block, /--field-disabled-border:\s*[^;]+;/);
+    }
+    // Light values come from the design: #F5F7F9 fill, #D1D4DB disabled border.
+    assert.match(rootBlock, /--field-hover:\s*210 25% 96\.9%;/);
+    assert.match(rootBlock, /--field-disabled-border:\s*222 12\.2% 83\.9%;/);
+  });
+
+  it('dark theme overrides the field tokens inside the .dark block with resolvable dark values (ETP-5479)', async () => {
+    const css = await readFile(new URL('../../../styles.css', import.meta.url), 'utf8');
+    const block = (selector) => {
+      const start = css.indexOf(`${selector} {`);
+      assert.notEqual(start, -1, `${selector} block not found`);
+      return css.slice(start, css.indexOf('\n  }', start));
+    };
+    const tokenValue = (body, name) => body.match(new RegExp(`--${name}:\\s*([^;]+);`))?.[1].trim();
+    const rootBlock = block(':root');
+    const darkBlock = block('.dark');
+
+    for (const name of ['field-hover', 'field-disabled-border']) {
+      const dark = tokenValue(darkBlock, name);
+      assert.ok(dark, `--${name} must be declared inside the .dark block itself`);
+      // Inheriting the light literals would paint a near-white fill on the dark card.
+      assert.notEqual(dark, tokenValue(rootBlock, name), `--${name} dark value must differ from light`);
+      // A var() alias must point at a token the dark theme actually defines.
+      const alias = dark.match(/^var\(--([\w-]+)\)$/)?.[1];
+      if (alias) assert.ok(tokenValue(darkBlock, alias), `--${name} aliases undefined dark token --${alias}`);
+    }
+  });
+
   it('uses structural boundaries without opacity dilution', async () => {
     const [table, shell] = await Promise.all([
       readFile(componentUrls.Table, 'utf8'),
