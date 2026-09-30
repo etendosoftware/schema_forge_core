@@ -231,12 +231,16 @@ export function DateField({
     });
   }, [yearPageAnchor]);
 
+  // Same field shell as Input / SelectTrigger (ETP-5479): semantic --border-control
+  // border, card fill, --field-hover fill on hover (no border darkening), and the
+  // shared disabled treatment (--field-hover fill + --field-disabled-border). Hardcoded
+  // #D1D4DB / bg-white made this border darker than every other field and broke dark theme.
   const wrapperClass = cn(
-    `flex items-center gap-2 ${FIELD_HEIGHT} w-full rounded-lg border border-[#D1D4DB] bg-white px-2`,
+    `flex items-center gap-2 ${FIELD_HEIGHT} w-full rounded-lg border border-[hsl(var(--border-control))] bg-card px-2`,
     'shadow-[0px_1px_2px_rgba(18,18,23,0.05)]',
     disabled
-      ? 'opacity-60 cursor-not-allowed bg-muted/50'
-      : 'hover:border-[rgba(18,18,23,0.3)] focus-within:outline-none focus-within:ring-2 focus-within:ring-ring',
+      ? 'cursor-not-allowed bg-[hsl(var(--field-hover))] border-[hsl(var(--field-disabled-border))] text-text-disabled'
+      : 'hover:bg-[hsl(var(--field-hover))] focus-within:outline-none focus-within:ring-2 focus-within:ring-focus-ring',
     className,
   );
 
@@ -279,7 +283,7 @@ export function DateField({
           onFocus={() => setIsFocused(true)}
           onBlur={handleInputBlur}
           onKeyDown={handleInputKeyDown}
-          className="flex-1 min-w-0 bg-transparent border-0 outline-none text-sm leading-6 font-normal text-[#121217] placeholder:text-[#A9A9BC] disabled:cursor-not-allowed"
+          className="flex-1 min-w-0 bg-transparent border-0 outline-none text-sm leading-6 font-normal text-text-primary placeholder:text-text-secondary disabled:cursor-not-allowed disabled:text-text-disabled"
         />
       </div>
       {!disabled && (
