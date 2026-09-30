@@ -186,11 +186,12 @@ describe('OnboardingFlow consumes the confirmation link (ETP-4798)', () => {
       onboardingFlow.indexOf("const verifyToken = search.get('verifyToken')"),
       onboardingFlow.indexOf('// Every persistable step'),
     );
-    assert.match(block, /confirmEmailFirst\.then\(bootstrap\)/);
+    // ETP-5550: wrapped, so the confirmation's result is not taken for bootstrap's retry count.
+    assert.match(block, /confirmEmailFirst\.then\(\(\) => bootstrap\(\)\)/);
     // ETP-4576: the mount reads the session (for the CSRF proof) rather than /me directly, and
     // the account state is read downstream of it in routeByEnvironments. Both must still sit
     // inside bootstrap(), which is what the confirmation gates.
-    const bootstrapAt = block.indexOf('const bootstrap = ()');
+    const bootstrapAt = block.indexOf('const bootstrap = (');
     const sessionAt = block.indexOf('fetchSession(fetch, apiBase)');
     const routeAt = block.indexOf('routeByEnvironments(data.csrfToken)');
     assert.ok(bootstrapAt > -1, 'the bootstrap must be a named function the confirmation can gate');

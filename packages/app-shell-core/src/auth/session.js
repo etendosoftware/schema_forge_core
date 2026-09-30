@@ -90,6 +90,17 @@ export function mapRestoredSession(restored = {}) {
   };
 }
 
+// ETP-5550 — whether two sessions stand in the same environment: the same account, company, role
+// and organization, compared by id (the names are display data). Deciding this is what lets a tab
+// adopt a CSRF proof another tab rotated in: the proof is only its own if the session behind it is
+// still the one the tab is showing.
+export function isSameEnvironment(a = {}, b = {}) {
+  return (a.username || null) === (b.username || null)
+    && (a.clientId || null) === (b.clientId || null)
+    && (a.selectedRole?.id ?? null) === (b.selectedRole?.id ?? null)
+    && (a.selectedOrg?.id ?? null) === (b.selectedOrg?.id ?? null);
+}
+
 export function normalizeAuthSession(session = {}) {
   return {
     token: session.token || null,
