@@ -739,13 +739,23 @@ export function createApiFetch(baseUrl, getToken, onUnauthorized, scope) {
       // Read INSIDE the dispatch, never before the queue wait — a write that resolved its token
       // while waiting its turn would carry the value the write ahead of it already consumed.
       const withVersion = withRecordVersion(path, rest);
-      const res = await fetchWithTimeout(resolveApiUrl(base, path), {
+      const send = () => fetchWithTimeout(resolveApiUrl(base, path), {
         ...withVersion,
         credentials: credentials || 'include',
         headers,
       }, timeout ?? (TIMEOUT_BY_DEFAULT_METHODS.has(method) ? DEFAULT_API_TIMEOUT_MS : 0));
+      let res = await send();
       // ETP-5195: the session went away while this was in flight. The response is not ours.
       if (!isOurs()) throw staleSessionError();
+      // ETP-5550: another tab rotated the session, so the proof this tab holds is revoked.
+      // Resend once with the live one. The refused request never reached a handler, so the
+      // record version it carries is still the right one to resend.
+      const recoveredProof = unsafe ? await recoverStaleCsrf(owner, res, headers['X-Go-CSRF']) : null;
+      if (recoveredProof) {
+        headers['X-Go-CSRF'] = recoveredProof;
+        res = await send();
+        if (!isOurs()) throw staleSessionError();
+      }
       // ETP-5255: a process action mutates the row, so the token this client holds for it is
       // superseded the moment the action succeeds. Two ways to learn the new one, in this order:
       // harvest it from the action's response if the backend echoes the record (the proper fix,
@@ -799,6 +809,52 @@ export function createApiFetch(baseUrl, getToken, onUnauthorized, scope) {
     });
     return mine;
   };
+}
+
+/**
+ * The backend's refusal for a missing or stale CSRF proof (`GoSessionSecurity.MSG_CSRF_TOKEN_INVALID`).
+ * Matched as text because the refusal comes wrapped in a different envelope depending on the
+ * servlet that answers it. A disallowed origin answers another message and is never retried; an
+ * older backend answers this one for both, which costs one wasted retry and nothing else.
+ */
+const STALE_CSRF_MESSAGE = 'CSRF validation failed';
+
+/** owner → the recovery in flight, so writes refused together share one GET /sws/go/session. */
+const csrfRecoveries = new WeakMap();
+
+async function isStaleCsrfRefusal(res) {
+  try {
+    return (await res.clone().text()).includes(STALE_CSRF_MESSAGE);
+  } catch {
+    return false;
+  }
+}
+
+function recoverCsrfOnce(owner) {
+  let pending = csrfRecoveries.get(owner);
+  if (!pending) {
+    pending = Promise.resolve()
+      .then(() => owner.recoverCsrfToken())
+      .catch(() => null)
+      .finally(() => { csrfRecoveries.delete(owner); });
+    csrfRecoveries.set(owner, pending);
+  }
+  return pending;
+}
+
+/**
+ * ETP-5550 — the CSRF proof lives in memory per tab while the session cookie is shared by the
+ * whole browser, so a session rotated in one tab leaves every other tab sending a revoked proof.
+ * Asks the session owner for the live one (it re-reads the session, which never rotates, and
+ * refuses when the session now belongs to another environment).
+ *
+ * @returns {Promise<string|null>} the proof to resend with, or null to keep the refusal
+ */
+async function recoverStaleCsrf(owner, res, sentProof) {
+  if (res.status !== 403 || typeof owner?.recoverCsrfToken !== 'function') return null;
+  if (!(await isStaleCsrfRefusal(res))) return null;
+  const recovered = await recoverCsrfOnce(owner);
+  return recovered && recovered !== sentProof ? recovered : null;
 }
 
 /**
@@ -925,13 +981,19 @@ function guardResponse(response, isOurs) {
  */
 let ambientSession = null;
 
-export function registerApiSession({ getToken, onUnauthorized, baseUrl, scope, replaceSession } = {}) {
+export function registerApiSession({
+  getToken, onUnauthorized, baseUrl, scope, replaceSession, recoverCsrfToken,
+} = {}) {
   const registration = {
     getToken: typeof getToken === 'function' ? getToken : () => null,
     onUnauthorized: typeof onUnauthorized === 'function' ? onUnauthorized : () => {},
     baseUrl,
     scope,
     replaceSession,
+    // ETP-5550 — `() => Promise<string|null>`: publishes and returns the live CSRF proof after
+    // a stale-proof refusal, or null when this tab must not adopt it. Optional; without it a
+    // refusal is returned to the caller as before.
+    recoverCsrfToken: typeof recoverCsrfToken === 'function' ? recoverCsrfToken : null,
   };
   ambientSession = registration;
   return function unregister() {
@@ -977,21 +1039,62 @@ export function apiFetch(path, options = {}) {
   )(path, options);
 }
 
+const SESSION_UNAVAILABLE = 'SessionUnavailableError';
+
+/** ETP-5550 — the error {@link readCookieSession} rejects with when the backend is not answering. */
+export function sessionUnavailableError(cause) {
+  const error = new Error('The session backend is not answering.', cause ? { cause } : undefined);
+  error.name = SESSION_UNAVAILABLE;
+  return error;
+}
+
+/** Whether `error` means "the backend is not answering", as opposed to "there is no session". */
+export function isSessionUnavailable(error) {
+  return error?.name === SESSION_UNAVAILABLE;
+}
+
 // ETP-4576 — restores the backend-managed session (ADR-0001). This is the
 // platform default for AuthProvider's `restoreSession`, so a host gets the
 // cookie session without wiring anything; passing the prop overrides it.
 // Authenticates purely with the `__Host-` cookie: `credentials: 'include'` and
 // no Authorization header, since the browser never holds a bearer token.
-// Fails closed with null on the 401 for "no session", a network error, or an
-// unparsable body — every one of those means "not authenticated".
-export async function fetchCookieSession(baseUrl = defaultBaseUrl()) {
+//
+// ETP-5550 — resolves null only when the backend SAYS there is no session (a
+// 4xx). A request that fails, a 5xx or a body that is not the session (a proxy
+// error or maintenance page) is the backend not answering — a deploy in
+// progress — and rejects with sessionUnavailableError, so the caller can wait
+// for it instead of signing the user out of a session that is still alive.
+export async function readCookieSession(baseUrl = defaultBaseUrl()) {
+  await whenSessionRevokeSettles();
+  return readCookieSessionNow(baseUrl);
+}
+
+async function readCookieSessionNow(baseUrl) {
+  let res;
   try {
-    const res = await fetch(`${baseUrl}/sws/go/session`, {
+    res = await fetch(`${baseUrl}/sws/go/session`, {
       method: 'GET',
       credentials: 'include',
     });
-    if (!res.ok) return null;
+  } catch (cause) {
+    throw sessionUnavailableError(cause);
+  }
+  if (!res) return null;
+  if (res.status >= 500) throw sessionUnavailableError();
+  if (!res.ok) return null;
+  try {
     return await res.json();
+  } catch (cause) {
+    throw sessionUnavailableError(cause);
+  }
+}
+
+// The fail-closed reading of the same request: null for "no session" and for an
+// unavailable backend alike, and never throws. For callers that only need to know
+// whether a session is usable right now.
+export async function fetchCookieSession(baseUrl = defaultBaseUrl()) {
+  try {
+    return await readCookieSession(baseUrl);
   } catch {
     return null;
   }
@@ -1008,17 +1111,47 @@ export async function fetchCookieSession(baseUrl = defaultBaseUrl()) {
 // Never throws: the local logout has to proceed even if the network call fails,
 // or a user who asked to log out would stay stuck in the session. Returns
 // whether the server confirmed the revoke.
-export async function deleteCookieSession(csrfToken = getSessionCsrfToken(), baseUrl = defaultBaseUrl()) {
+//
+// ETP-5550 — a tab may hold the proof of a session another tab rotated away; the
+// revoke then answers 403 and the session outlives the logout. So a stale-proof
+// refusal re-reads the live proof and retries once. No environment check here, unlike
+// apiFetch's recovery: the cookie is the browser's, and revoking it is the logout.
+//
+// The revoke is published while in flight (whenSessionRevokeSettles), so a session
+// read issued meanwhile — the onboarding mounting on /login right after logout —
+// waits for it instead of finding the session still alive and entering it again.
+export function deleteCookieSession(csrfToken = getSessionCsrfToken(), baseUrl = defaultBaseUrl()) {
+  const run = revokeCookieSession(csrfToken, baseUrl);
+  pendingRevoke = run;
+  run.then(() => { if (pendingRevoke === run) pendingRevoke = null; });
+  return run;
+}
+
+async function revokeCookieSession(csrfToken, baseUrl) {
+  const revoke = (proof) => fetch(`${baseUrl}/sws/go/session`, {
+    method: 'DELETE',
+    credentials: 'include',
+    headers: proof ? { 'X-Go-CSRF': proof } : {},
+  });
   try {
-    const headers = {};
-    if (csrfToken) headers['X-Go-CSRF'] = csrfToken;
-    const res = await fetch(`${baseUrl}/sws/go/session`, {
-      method: 'DELETE',
-      credentials: 'include',
-      headers,
-    });
-    return res.ok;
+    const res = await revoke(csrfToken);
+    if (res.status !== 403 || !(await isStaleCsrfRefusal(res))) return res.ok;
+    // Not readCookieSession: that one waits for this very revoke.
+    const live = (await readCookieSessionNow(baseUrl))?.csrfToken;
+    if (!live || live === csrfToken) return false;
+    return (await revoke(live)).ok;
   } catch {
     return false;
   }
+}
+
+/** The revoke in flight, if any. It never rejects: revokeCookieSession resolves false instead. */
+let pendingRevoke = null;
+
+/**
+ * ETP-5550 — resolves once no session revoke is in flight. Anything about to read the session
+ * right after a logout (the default restore, the onboarding bootstrap) waits on it first.
+ */
+export function whenSessionRevokeSettles() {
+  return pendingRevoke ? pendingRevoke.then(() => undefined) : Promise.resolve();
 }

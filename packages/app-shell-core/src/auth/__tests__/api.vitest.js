@@ -1,5 +1,8 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { fetchCookieSession, deleteCookieSession } from '../api.js';
+import {
+  fetchCookieSession, deleteCookieSession, readCookieSession, isSessionUnavailable,
+  whenSessionRevokeSettles,
+} from '../api.js';
 
 // ETP-4576 cycle 4a — behavioral coverage for the session fetcher that moves
 // into the platform (app-shell-core) and becomes AuthProvider's DEFAULT
@@ -272,5 +275,158 @@ describe('deleteCookieSession — DELETE /sws/go/session with the CSRF proof (ET
     }
     expect(thrown).toBeNull();
     return expect(returned).resolves.toBe(false);
+  });
+});
+
+// ETP-5550 — a logout from a tab still holding the proof of a session another tab rotated away
+// used to answer 403 and leave the session alive on the server while the user saw the login
+// screen. The revoke re-reads the live proof (GET /sws/go/session never rotates) and retries once.
+describe('deleteCookieSession — revokes even with a proof another tab rotated away (ETP-5550)', () => {
+  const staleRefusal = () => new Response(
+    JSON.stringify({ error: { message: 'CSRF validation failed', status: 403 } }), { status: 403 },
+  );
+  const liveSession = () => new Response(JSON.stringify({ csrfToken: 'csrf-live' }), { status: 200 });
+
+  function requests() {
+    return fetchStub.mock.calls.map(([url, init = {}]) => ({
+      url: String(url), method: (init.method || 'GET').toUpperCase(), csrf: init.headers?.['X-Go-CSRF'],
+    }));
+  }
+
+  it('re-reads the live proof and retries the revoke with it', async () => {
+    fetchStub
+      .mockResolvedValueOnce(staleRefusal())
+      .mockResolvedValueOnce(liveSession())
+      .mockResolvedValueOnce(new Response(null, { status: 204 }));
+
+    await expect(deleteCookieSession('csrf-stale', '/etendo')).resolves.toBe(true);
+
+    expect(requests()).toEqual([
+      { url: `/etendo${SESSION_PATH}`, method: 'DELETE', csrf: 'csrf-stale' },
+      { url: `/etendo${SESSION_PATH}`, method: 'GET', csrf: undefined },
+      { url: `/etendo${SESSION_PATH}`, method: 'DELETE', csrf: 'csrf-live' },
+    ]);
+  });
+
+  it('retries once at most', async () => {
+    fetchStub
+      .mockResolvedValueOnce(staleRefusal())
+      .mockResolvedValueOnce(liveSession())
+      .mockResolvedValueOnce(staleRefusal());
+
+    await expect(deleteCookieSession('csrf-stale', '')).resolves.toBe(false);
+
+    expect(fetchStub).toHaveBeenCalledTimes(3);
+  });
+
+  it('does not retry an origin refusal', async () => {
+    fetchStub.mockResolvedValueOnce(new Response(
+      JSON.stringify({ error: { message: 'Origin not allowed', status: 403 } }), { status: 403 },
+    ));
+
+    await expect(deleteCookieSession('csrf-stale', '')).resolves.toBe(false);
+
+    expect(fetchStub).toHaveBeenCalledTimes(1);
+  });
+
+  it('stops when the re-read finds no session left to revoke', async () => {
+    fetchStub
+      .mockResolvedValueOnce(staleRefusal())
+      .mockResolvedValueOnce(new Response(null, { status: 401 }));
+
+    await expect(deleteCookieSession('csrf-stale', '')).resolves.toBe(false);
+
+    expect(fetchStub).toHaveBeenCalledTimes(2);
+  });
+});
+
+// ETP-5550 — the restore must tell "there is no session" (the 401) from "the backend is not
+// answering" (a deploy in progress: network error, 5xx from the proxy, a maintenance page).
+// Treating both as "no session" signed out every tab reloaded during a deploy.
+describe('readCookieSession — tells no session from an unavailable backend (ETP-5550)', () => {
+  it('resolves the payload when the session is there', async () => {
+    fetchStub.mockResolvedValue(new Response(JSON.stringify({ csrfToken: 'c' }), { status: 200 }));
+
+    await expect(readCookieSession('')).resolves.toEqual({ csrfToken: 'c' });
+  });
+
+  it.each([401, 403])('resolves null on a %s: there is no session', async (status) => {
+    fetchStub.mockResolvedValue(new Response('{}', { status }));
+
+    await expect(readCookieSession('')).resolves.toBeNull();
+  });
+
+  it.each([500, 502, 503, 504])('rejects as unavailable on a %s', async (status) => {
+    fetchStub.mockResolvedValue(new Response('<html>Bad Gateway</html>', { status }));
+
+    const error = await readCookieSession('').catch((e) => e);
+
+    expect(isSessionUnavailable(error)).toBe(true);
+  });
+
+  it('rejects as unavailable when the request itself fails', async () => {
+    fetchStub.mockRejectedValue(new TypeError('Failed to fetch'));
+
+    expect(isSessionUnavailable(await readCookieSession('').catch((e) => e))).toBe(true);
+  });
+
+  it('rejects as unavailable on a 200 that is not the session (a proxy maintenance page)', async () => {
+    fetchStub.mockResolvedValue(new Response('<html>Maintenance</html>', { status: 200 }));
+
+    expect(isSessionUnavailable(await readCookieSession('').catch((e) => e))).toBe(true);
+  });
+
+  it('keeps fetchCookieSession fail-closed: it still resolves null when unavailable', async () => {
+    fetchStub.mockRejectedValue(new TypeError('Failed to fetch'));
+
+    await expect(fetchCookieSession('')).resolves.toBeNull();
+  });
+
+  it('does not take an ordinary error for an unavailable backend', () => {
+    expect(isSessionUnavailable(new Error('boom'))).toBe(false);
+    expect(isSessionUnavailable(null)).toBe(false);
+  });
+});
+
+// ETP-5550 — logout is fire-and-forget and the SPA moves to /login at once, whose onboarding reads
+// the session straight away. Against a revoke that needs a retry (stale proof: DELETE 403, GET,
+// DELETE), that read landed first, found the session still alive and entered it again. A session
+// read issued while a revoke is in flight waits for the revoke to settle.
+describe('session reads wait for a revoke in flight (ETP-5550)', () => {
+  it('holds GET /sws/go/session until the DELETE settles', async () => {
+    let releaseDelete;
+    fetchStub.mockImplementation((url, init = {}) => {
+      if ((init.method || 'GET').toUpperCase() === 'DELETE') {
+        return new Promise((resolve) => { releaseDelete = () => resolve(new Response(null, { status: 204 })); });
+      }
+      return Promise.resolve(new Response('{}', { status: 401 }));
+    });
+
+    const revoke = deleteCookieSession('csrf-live', '');
+    const read = readCookieSession('');
+    await new Promise((resolve) => { setTimeout(resolve, 0); });
+
+    expect(fetchStub.mock.calls.map(([, init = {}]) => (init.method || 'GET').toUpperCase())).toEqual(['DELETE']);
+    releaseDelete();
+    await expect(revoke).resolves.toBe(true);
+    await expect(read).resolves.toBeNull();
+    expect(fetchStub).toHaveBeenCalledTimes(2);
+  });
+
+  it('does not wait when no revoke is in flight', async () => {
+    fetchStub.mockResolvedValue(new Response(JSON.stringify({ csrfToken: 'c' }), { status: 200 }));
+
+    await expect(readCookieSession('')).resolves.toEqual({ csrfToken: 'c' });
+    await expect(whenSessionRevokeSettles()).resolves.toBeUndefined();
+  });
+
+  it('lets a failed revoke release the read too', async () => {
+    fetchStub
+      .mockRejectedValueOnce(new TypeError('Failed to fetch'))
+      .mockResolvedValueOnce(new Response('{}', { status: 401 }));
+
+    const revoke = deleteCookieSession('csrf-live', '');
+    await expect(readCookieSession('')).resolves.toBeNull();
+    await expect(revoke).resolves.toBe(false);
   });
 });
