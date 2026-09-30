@@ -1,6 +1,7 @@
 import { useState, useMemo } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { useAuth } from '../auth/index.js';
+import { NetworkError } from '../auth/networkError.js';
 import { Card, CardContent } from '../components/ui/card.jsx';
 import { Button } from '../components/ui/button.jsx';
 import { Badge } from '../components/ui/badge.jsx';
@@ -79,7 +80,9 @@ export default function AuthorizePage() {
       }
     } catch (err) {
       setStatus('error');
-      setErrorMessage(err.message);
+      // ETP-5424 — a raw `fetch` rejects a dropped connection with the browser's English
+      // `TypeError('Failed to fetch')`; show the same localized text apiFetch gives it.
+      setErrorMessage(err instanceof TypeError ? new NetworkError({ reason: 'offline', cause: err }).message : err.message);
     }
   }
 
