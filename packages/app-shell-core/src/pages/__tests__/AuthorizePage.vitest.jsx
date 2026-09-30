@@ -56,6 +56,7 @@ import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { ObservabilityProvider } from '../../observability/index.js';
 import AuthorizePage from '../AuthorizePage.jsx';
+import { registerErrorTranslator, resetErrorTranslatorForTests } from '../../auth/networkError.js';
 
 // The functional test mocked the telemetry wrapper module directly. Core has no
 // such module — telemetry arrives through the observability seam — so we inject a
@@ -315,6 +316,45 @@ describe('AuthorizePage', () => {
 
       await waitFor(() => {
         expect(screen.getByText('Network error')).toBeInTheDocument();
+      });
+    });
+
+    // ETP-5424 — this page calls `fetch` directly, so a dropped connection rejects with the
+    // browser's English `TypeError('Failed to fetch')`. It must show the same localized text
+    // apiFetch's NetworkError carries, never the browser prose.
+    describe('dropped connection (TypeError from fetch)', () => {
+      afterEach(() => {
+        resetErrorTranslatorForTests();
+      });
+
+      it('shows the NetworkError fallback, never "Failed to fetch", with no translator', async () => {
+        const user = userEvent.setup();
+        globalThis.fetch = vi.fn().mockRejectedValue(new TypeError('Failed to fetch'));
+
+        renderPage();
+        await user.click(screen.getByTestId('oauth-authorize-submit'));
+
+        await waitFor(() => {
+          expect(screen.getByText('Could not complete the action. Try again.')).toBeInTheDocument();
+        });
+        expect(screen.queryByText(/Failed to fetch/)).not.toBeInTheDocument();
+      });
+
+      it('shows the translated text when a translator is registered', async () => {
+        const user = userEvent.setup();
+        registerErrorTranslator((key) => (key === 'networkErrorRetry'
+          ? 'No se pudo completar la acción. Inténtalo de nuevo.'
+          : key));
+        globalThis.fetch = vi.fn().mockRejectedValue(new TypeError('Failed to fetch'));
+
+        renderPage();
+        await user.click(screen.getByTestId('oauth-authorize-submit'));
+
+        await waitFor(() => {
+          expect(screen.getByText('No se pudo completar la acción. Inténtalo de nuevo.')).toBeInTheDocument();
+        });
+        expect(screen.queryByText(/Failed to fetch/)).not.toBeInTheDocument();
+        expect(screen.queryByText('Could not complete the action. Try again.')).not.toBeInTheDocument();
       });
     });
 

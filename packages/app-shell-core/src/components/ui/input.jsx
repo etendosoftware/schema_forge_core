@@ -8,7 +8,7 @@ const Input = React.forwardRef(({ className, type, ...props }, ref) => {
     <input
       type={type}
       className={cn(
-        `flex ${FIELD_HEIGHT} w-full rounded-lg border border-border-control bg-muted ${FIELD_PADDING} text-sm text-text-primary transition-colors file:border-0 file:bg-transparent file:text-sm file:font-medium file:text-foreground placeholder:text-text-secondary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring disabled:cursor-not-allowed disabled:bg-muted disabled:text-text-disabled`,
+        `flex ${FIELD_HEIGHT} w-full rounded-lg border border-border-control bg-muted ${FIELD_PADDING} text-sm text-text-primary transition-colors file:border-0 file:bg-transparent file:text-sm file:font-medium file:text-foreground placeholder:text-text-secondary hover:bg-[hsl(var(--field-hover))] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring disabled:cursor-not-allowed disabled:bg-[hsl(var(--field-hover))] disabled:hover:bg-[hsl(var(--field-hover))] disabled:border-[hsl(var(--field-disabled-border))] disabled:text-text-disabled`,
         type === "number" &&
           "[appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none",
         className
