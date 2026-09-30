@@ -1,7 +1,7 @@
 import { createContext, useContext, useState, useCallback, useMemo, useRef, useEffect, useLayoutEffect, useSyncExternalStore } from 'react';
 import {
-  createLocalAuthStorage, createMemoryAuthStorage, mapRestoredSession, normalizeAuthSession,
-  purgeLegacyAuthStorage,
+  createLocalAuthStorage, createMemoryAuthStorage, isSameEnvironment, mapRestoredSession,
+  normalizeAuthSession, purgeLegacyAuthStorage,
 } from './session.js';
 import {
   createApiFetch, deleteCookieSession, fetchCookieSession, registerApiSession,
@@ -79,7 +79,7 @@ export function AuthProvider({
     ...authStorage.read(), ...initialSession,
   }), authStorage, onSessionChange, apiBaseUrl));
   const state = useSyncExternalStore(controller.subscribe, controller.getSnapshot, controller.getSnapshot);
-  const options = useRef({ fetchWindowAccess, apiBaseUrl });
+  const options = useRef({ fetchWindowAccess, apiBaseUrl, restoreSession, credentialMode });
   const operation = useRef(null);
   // ETP-4576 — the X-Go-CSRF proof issued by the backend in session responses. In memory
   // only, never persisted: it is bound to the httpOnly session cookie, not a value the
@@ -100,8 +100,9 @@ export function AuthProvider({
 
   useBrowserLayoutEffect(() => {
     controller.configure({ storage: authStorage, onSessionChange, apiBaseUrl });
-    options.current = { fetchWindowAccess, apiBaseUrl };
-  }, [controller, authStorage, onSessionChange, fetchWindowAccess, apiBaseUrl]);
+    options.current = { fetchWindowAccess, apiBaseUrl, restoreSession, credentialMode };
+  }, [controller, authStorage, onSessionChange, fetchWindowAccess, apiBaseUrl, restoreSession,
+    credentialMode]);
 
   // A changed storage adapter or server is a session boundary, even with the same JWT.
   const environment = useRef({ storage: authStorage, apiBaseUrl });
@@ -143,7 +144,8 @@ export function AuthProvider({
   }, []);
 
   // ETP-4576 — hands the active scheme and both credentials to ./sessionCredentials.js,
-  // which every request builder in the core and the host reads. This is the ONLY writer.
+  // which every request builder in the core and the host reads. The only writer besides the
+  // CSRF recovery registered with apiFetch below (ETP-5550), which publishes the same values.
   useEffect(() => {
     setSessionCredentials({ mode: credentialMode, token: state.session.token, csrfToken });
   }, [credentialMode, state.session.token, csrfToken]);
@@ -343,6 +345,24 @@ export function AuthProvider({
       baseUrl: apiBaseUrl,
       scope: controller,
       replaceSession: controller.replace,
+      // ETP-5550 — apiFetch asks for this after a stale-proof 403: another tab rotated the
+      // session, and the proof this tab loaded at boot belongs to the revoked one. Re-reads the
+      // session (GET /sws/go/session never rotates) and adopts its proof only while it is still
+      // the environment this tab shows; a tab left on company X must not start writing into the
+      // company another tab switched to. Null keeps the refusal and leaves the tab signed in.
+      recoverCsrfToken: async () => {
+        const { restoreSession: reread, credentialMode: mode } = options.current;
+        if (typeof reread !== 'function') return null;
+        const live = await reread();
+        const proof = live?.csrfToken;
+        const current = controller.getSnapshot().session;
+        if (!proof || !isSameEnvironment(current, mapRestoredSession(live))) return null;
+        // Published here and not only through the effect below: the retry goes out before React
+        // renders again, and until then the effect would still be holding the revoked proof.
+        setSessionCredentials({ mode, token: current.token, csrfToken: proof });
+        setCsrfToken(proof);
+        return proof;
+      },
     });
     return () => { controller.dispose(); unregister(); };
   }, [controller, apiBaseUrl]);

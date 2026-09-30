@@ -720,13 +720,23 @@ export function createApiFetch(baseUrl, getToken, onUnauthorized, scope) {
       // Read INSIDE the dispatch, never before the queue wait — a write that resolved its token
       // while waiting its turn would carry the value the write ahead of it already consumed.
       const withVersion = withRecordVersion(path, rest);
-      const res = await fetch(resolveApiUrl(base, path), {
+      const send = () => fetch(resolveApiUrl(base, path), {
         ...withVersion,
         credentials: credentials || 'include',
         headers,
       });
+      let res = await send();
       // ETP-5195: the session went away while this was in flight. The response is not ours.
       if (!isOurs()) throw staleSessionError();
+      // ETP-5550: another tab rotated the session, so the proof this tab holds is revoked.
+      // Resend once with the live one. The refused request never reached a handler, so the
+      // record version it carries is still the right one to resend.
+      const recoveredProof = unsafe ? await recoverStaleCsrf(owner, res, headers['X-Go-CSRF']) : null;
+      if (recoveredProof) {
+        headers['X-Go-CSRF'] = recoveredProof;
+        res = await send();
+        if (!isOurs()) throw staleSessionError();
+      }
       // ETP-5255: a process action mutates the row, so the token this client holds for it is
       // superseded the moment the action succeeds. Two ways to learn the new one, in this order:
       // harvest it from the action's response if the backend echoes the record (the proper fix,
@@ -782,6 +792,52 @@ export function createApiFetch(baseUrl, getToken, onUnauthorized, scope) {
   };
 }
 
+/**
+ * The backend's refusal for a missing or stale CSRF proof (`GoSessionSecurity.MSG_CSRF_TOKEN_INVALID`).
+ * Matched as text because the refusal comes wrapped in a different envelope depending on the
+ * servlet that answers it. A disallowed origin answers another message and is never retried; an
+ * older backend answers this one for both, which costs one wasted retry and nothing else.
+ */
+const STALE_CSRF_MESSAGE = 'CSRF validation failed';
+
+/** owner → the recovery in flight, so writes refused together share one GET /sws/go/session. */
+const csrfRecoveries = new WeakMap();
+
+async function isStaleCsrfRefusal(res) {
+  try {
+    return (await res.clone().text()).includes(STALE_CSRF_MESSAGE);
+  } catch {
+    return false;
+  }
+}
+
+function recoverCsrfOnce(owner) {
+  let pending = csrfRecoveries.get(owner);
+  if (!pending) {
+    pending = Promise.resolve()
+      .then(() => owner.recoverCsrfToken())
+      .catch(() => null)
+      .finally(() => { csrfRecoveries.delete(owner); });
+    csrfRecoveries.set(owner, pending);
+  }
+  return pending;
+}
+
+/**
+ * ETP-5550 — the CSRF proof lives in memory per tab while the session cookie is shared by the
+ * whole browser, so a session rotated in one tab leaves every other tab sending a revoked proof.
+ * Asks the session owner for the live one (it re-reads the session, which never rotates, and
+ * refuses when the session now belongs to another environment).
+ *
+ * @returns {Promise<string|null>} the proof to resend with, or null to keep the refusal
+ */
+async function recoverStaleCsrf(owner, res, sentProof) {
+  if (res.status !== 403 || typeof owner?.recoverCsrfToken !== 'function') return null;
+  if (!(await isStaleCsrfRefusal(res))) return null;
+  const recovered = await recoverCsrfOnce(owner);
+  return recovered && recovered !== sentProof ? recovered : null;
+}
+
 function staleSessionError() {
   return new DOMException('The request belongs to a superseded session.', 'AbortError');
 }
@@ -818,13 +874,19 @@ function guardResponse(response, isOurs) {
  */
 let ambientSession = null;
 
-export function registerApiSession({ getToken, onUnauthorized, baseUrl, scope, replaceSession } = {}) {
+export function registerApiSession({
+  getToken, onUnauthorized, baseUrl, scope, replaceSession, recoverCsrfToken,
+} = {}) {
   const registration = {
     getToken: typeof getToken === 'function' ? getToken : () => null,
     onUnauthorized: typeof onUnauthorized === 'function' ? onUnauthorized : () => {},
     baseUrl,
     scope,
     replaceSession,
+    // ETP-5550 — `() => Promise<string|null>`: publishes and returns the live CSRF proof after
+    // a stale-proof refusal, or null when this tab must not adopt it. Optional; without it a
+    // refusal is returned to the caller as before.
+    recoverCsrfToken: typeof recoverCsrfToken === 'function' ? recoverCsrfToken : null,
   };
   ambientSession = registration;
   return function unregister() {
