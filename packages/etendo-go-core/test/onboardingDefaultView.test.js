@@ -35,9 +35,20 @@ describe('Onboarding default view (ETP-4443)', () => {
     // confirmation link), so slicing from the first `.catch(` in the file would silently assert
     // against verifyEmail's instead of the bootstrap's.
     const bootstrap = flow.slice(flow.indexOf('fetchSession(fetch, apiBase)'));
-    const catchBlock = bootstrap.slice(bootstrap.indexOf('.catch('), bootstrap.indexOf('.catch(') + 260);
+    const catchBlock = bootstrap.slice(bootstrap.indexOf('.catch('), bootstrap.indexOf('.catch(') + 400);
     assert.match(catchBlock, /goToStep\(initialView === 'register' \? 'register' : 'login'\)/);
     assert.doesNotMatch(catchBlock, /goToStep\('register'\)/);
+  });
+
+  // ETP-5550 — a probe that fails because the backend is not answering (a deploy) must not show
+  // the login form over a live session: the bootstrap waits on the loading view and asks again.
+  it('retries the session probe while the backend is unavailable, before routing to login', () => {
+    const bootstrap = flow.slice(flow.indexOf('fetchSession(fetch, apiBase)'));
+    const catchBlock = bootstrap.slice(bootstrap.indexOf('.catch('), bootstrap.indexOf('.catch(') + 400);
+    const unavailable = catchBlock.indexOf('isSessionUnavailable(');
+    assert.ok(unavailable > -1, 'the bootstrap catch checks for an unavailable backend');
+    assert.ok(unavailable < catchBlock.indexOf('goToStep('), 'and does so before routing to login');
+    assert.match(flow, /import \{[^}]*isSessionUnavailable[^}]*\} from '@etendosoftware\/app-shell-core\/auth'/);
   });
 
   it('does not fall back to register anywhere in the mount routing', () => {
