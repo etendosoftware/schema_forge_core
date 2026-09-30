@@ -274,3 +274,65 @@ describe('deleteCookieSession — DELETE /sws/go/session with the CSRF proof (ET
     return expect(returned).resolves.toBe(false);
   });
 });
+
+// ETP-5550 — a logout from a tab still holding the proof of a session another tab rotated away
+// used to answer 403 and leave the session alive on the server while the user saw the login
+// screen. The revoke re-reads the live proof (GET /sws/go/session never rotates) and retries once.
+describe('deleteCookieSession — revokes even with a proof another tab rotated away (ETP-5550)', () => {
+  const staleRefusal = () => new Response(
+    JSON.stringify({ error: { message: 'CSRF validation failed', status: 403 } }), { status: 403 },
+  );
+  const liveSession = () => new Response(JSON.stringify({ csrfToken: 'csrf-live' }), { status: 200 });
+
+  function requests() {
+    return fetchStub.mock.calls.map(([url, init = {}]) => ({
+      url: String(url), method: (init.method || 'GET').toUpperCase(), csrf: init.headers?.['X-Go-CSRF'],
+    }));
+  }
+
+  it('re-reads the live proof and retries the revoke with it', async () => {
+    fetchStub
+      .mockResolvedValueOnce(staleRefusal())
+      .mockResolvedValueOnce(liveSession())
+      .mockResolvedValueOnce(new Response(null, { status: 204 }));
+
+    await expect(deleteCookieSession('csrf-stale', '/etendo')).resolves.toBe(true);
+
+    expect(requests()).toEqual([
+      { url: `/etendo${SESSION_PATH}`, method: 'DELETE', csrf: 'csrf-stale' },
+      { url: `/etendo${SESSION_PATH}`, method: 'GET', csrf: undefined },
+      { url: `/etendo${SESSION_PATH}`, method: 'DELETE', csrf: 'csrf-live' },
+    ]);
+  });
+
+  it('retries once at most', async () => {
+    fetchStub
+      .mockResolvedValueOnce(staleRefusal())
+      .mockResolvedValueOnce(liveSession())
+      .mockResolvedValueOnce(staleRefusal());
+
+    await expect(deleteCookieSession('csrf-stale', '')).resolves.toBe(false);
+
+    expect(fetchStub).toHaveBeenCalledTimes(3);
+  });
+
+  it('does not retry an origin refusal', async () => {
+    fetchStub.mockResolvedValueOnce(new Response(
+      JSON.stringify({ error: { message: 'Origin not allowed', status: 403 } }), { status: 403 },
+    ));
+
+    await expect(deleteCookieSession('csrf-stale', '')).resolves.toBe(false);
+
+    expect(fetchStub).toHaveBeenCalledTimes(1);
+  });
+
+  it('stops when the re-read finds no session left to revoke', async () => {
+    fetchStub
+      .mockResolvedValueOnce(staleRefusal())
+      .mockResolvedValueOnce(new Response(null, { status: 401 }));
+
+    await expect(deleteCookieSession('csrf-stale', '')).resolves.toBe(false);
+
+    expect(fetchStub).toHaveBeenCalledTimes(2);
+  });
+});

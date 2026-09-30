@@ -963,16 +963,23 @@ export async function fetchCookieSession(baseUrl = defaultBaseUrl()) {
 // Never throws: the local logout has to proceed even if the network call fails,
 // or a user who asked to log out would stay stuck in the session. Returns
 // whether the server confirmed the revoke.
+//
+// ETP-5550 — a tab may hold the proof of a session another tab rotated away; the
+// revoke then answers 403 and the session outlives the logout. So a stale-proof
+// refusal re-reads the live proof and retries once. No environment check here, unlike
+// apiFetch's recovery: the cookie is the browser's, and revoking it is the logout.
 export async function deleteCookieSession(csrfToken = getSessionCsrfToken(), baseUrl = defaultBaseUrl()) {
+  const revoke = (proof) => fetch(`${baseUrl}/sws/go/session`, {
+    method: 'DELETE',
+    credentials: 'include',
+    headers: proof ? { 'X-Go-CSRF': proof } : {},
+  });
   try {
-    const headers = {};
-    if (csrfToken) headers['X-Go-CSRF'] = csrfToken;
-    const res = await fetch(`${baseUrl}/sws/go/session`, {
-      method: 'DELETE',
-      credentials: 'include',
-      headers,
-    });
-    return res.ok;
+    const res = await revoke(csrfToken);
+    if (res.status !== 403 || !(await isStaleCsrfRefusal(res))) return res.ok;
+    const live = (await fetchCookieSession(baseUrl))?.csrfToken;
+    if (!live || live === csrfToken) return false;
+    return (await revoke(live)).ok;
   } catch {
     return false;
   }
