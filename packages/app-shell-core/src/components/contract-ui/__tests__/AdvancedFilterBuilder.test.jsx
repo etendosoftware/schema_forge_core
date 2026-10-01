@@ -1268,9 +1268,10 @@ describe('AdvancedFilterBuilder — content-based sizing (ETP-4705)', () => {
       expect(call.options.enabled).toBe(true);
     });
 
-    it('does not fetch eagerly for a fresh, empty condition (no selection yet)', () => {
-      // A brand new row (nothing selected) should stay lazy until the user
-      // opens the picker — no wasted network call.
+    it('fetches eagerly for a fresh, empty condition too (no selection yet)', () => {
+      // ETP-5009: a brand new row (nothing selected) also fetches on mount, so
+      // the option list is complete before the popover opens instead of
+      // growing / reordering under the user's cursor.
       const value = {
         rowOperator: 'and',
         conditions: [{ field: 'bp', operator: 'equals', value: [] }],
@@ -1286,7 +1287,7 @@ describe('AdvancedFilterBuilder — content-based sizing (ETP-4705)', () => {
       );
       const call = distinctCalls.find((c) => c.field === 'bp');
       expect(call).toBeDefined();
-      expect(call.options.enabled).toBe(false);
+      expect(call.options.enabled).toBe(true);
     });
 
     it('opening the popover after re-editing "equals" surfaces other contacts, not just the grid-visible one', async () => {
