@@ -31,6 +31,26 @@ pass `validateThemeContract`; window schemas and `decisions.json` must not
 provide theme colors. A disabled control needs its explicit semantic state,
 not a low opacity applied to already-muted content.
 
+## Field state tokens
+
+Form fields (`Input`, `SelectTrigger`, `DateField` and the functional repo's
+selector/picker shells) share one set of state styles so no field reads
+differently from its neighbour:
+
+| Token | Purpose | Light | Dark |
+| --- | --- | --- | --- |
+| `--field-hover` | Hover fill of an enabled field; also the disabled fill | `#F5F7F9` | `var(--muted)` |
+| `--field-disabled-border` | Border of a disabled field | `#D1D4DB` | `var(--border-subtle)` |
+
+- **Resting:** `border-[hsl(var(--border-control))]` over a card fill.
+- **Hover:** `hover:bg-[hsl(var(--field-hover))]` — a fill, never a darker border.
+- **Disabled:** `bg-[hsl(var(--field-hover))]`, `border-[hsl(var(--field-disabled-border))]`
+  and `text-text-disabled` — no opacity, no hover.
+- **Focus:** a 2px ring on focus (`focus-within` for composite fields).
+
+These are not part of the contrast-audited `SEMANTIC_THEME_TOKENS` list: they
+are fills layered under text that is already audited.
+
 The core defaults and consumer themes must be tested against every actual
 surface they use, including card and page backgrounds. Brand, chart, and
 print-only colors remain outside this contract; status presentation must use

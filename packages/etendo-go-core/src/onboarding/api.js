@@ -1,3 +1,5 @@
+import { sessionUnavailableError, whenSessionRevokeSettles } from '@etendosoftware/app-shell-core/auth/api';
+
 export const ONBOARDING_ERROR_CODES = {
   registerFailed: 'onboardingRegisterFailed',
   invalidCredentials: 'onboardingInvalidCredentials',
@@ -98,11 +100,30 @@ async function readJsonResponse(response, fallbackCode) {
   return data;
 }
 
+// ETP-5550 — rejects with the core's sessionUnavailableError when the backend is not answering
+// (the request fails, a 5xx, or a 200 whose body is not the session: a proxy maintenance page),
+// so the bootstrap can wait for it instead of showing the login form over a live session. A 4xx
+// is the backend saying there is no session and keeps the invalidSession error.
+//
+// It first waits for a session revoke in flight: logout moves the SPA to /login at once, and a
+// probe that beat a still-retrying revoke found the session alive and entered it again.
 export async function fetchSession(fetchImpl, baseUrl) {
-  const response = await fetchImpl(`${baseUrl}/sws/go/session`, {
-    credentials: 'include',
-  });
-  return readJsonResponse(response, ONBOARDING_ERROR_CODES.invalidSession);
+  await whenSessionRevokeSettles();
+  let response;
+  try {
+    response = await fetchImpl(`${baseUrl}/sws/go/session`, {
+      credentials: 'include',
+    });
+  } catch (cause) {
+    throw sessionUnavailableError(cause);
+  }
+  if (response.status >= 500) throw sessionUnavailableError();
+  if (!response.ok) return readJsonResponse(response, ONBOARDING_ERROR_CODES.invalidSession);
+  try {
+    return await response.json();
+  } catch (cause) {
+    throw sessionUnavailableError(cause);
+  }
 }
 
 export async function registerAccount(fetchImpl, baseUrl, form) {
