@@ -5,10 +5,17 @@ export { AuthProvider, useAuth, useAuthOptional } from './AuthContext.jsx';
 // native ESM.
 export {
   apiFetch, authHeaders, buildHeaders, buildWriteHeaders, createApiFetch, detectBaseUrl,
-  deleteCookieSession, fetchCookieSession, getAmbientToken, notifyAmbientUnauthorized,
+  deleteCookieSession, fetchCookieSession, readCookieSession, isSessionUnavailable,
+  sessionUnavailableError, whenSessionRevokeSettles, getAmbientToken, notifyAmbientUnauthorized,
   registerApiSession, resetApiSessionForTests, resolveApiUrl,
   replaceAmbientSession,
 } from './api.js';
+// ETP-5424 — the error apiFetch throws for a transport failure, and the one-time hook the host
+// app uses to localize its message.
+export {
+  DEFAULT_API_TIMEOUT_MS, NETWORK_ERROR_FALLBACK, NETWORK_ERROR_KEY, NetworkError,
+  isNetworkError, registerErrorTranslator, resetErrorTranslatorForTests,
+} from './networkError.js';
 export {
   createLocalAuthStorage,
   createMemoryAuthStorage,

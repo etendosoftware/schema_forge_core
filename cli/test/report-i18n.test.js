@@ -9,6 +9,7 @@ import { strict as assert } from 'node:assert';
 // end.
 import {
   REPORT_UI_STRINGS,
+  DOC_TYPE_LABEL_OVERRIDES,
   pickLabel,
   pickUiStrings,
   buildContractLabels,
@@ -173,5 +174,30 @@ describe('buildContractLabels', () => {
 
   it('tolerates a contract with no translatable sections', () => {
     assert.deepEqual(buildContractLabels({}, 'es_ES'), {});
+  });
+});
+
+describe('DOC_TYPE_LABEL_OVERRIDES (ETP-5273)', () => {
+  it('labels Goods Movements (MMM) in both locales', () => {
+    assert.equal(DOC_TYPE_LABEL_OVERRIDES.en_US.MMM, 'Goods Movement');
+    assert.equal(DOC_TYPE_LABEL_OVERRIDES.es_ES.MMM, 'Movimiento entre almacenes');
+  });
+
+  it('labels Internal Consumption (MIC) in both locales', () => {
+    assert.equal(DOC_TYPE_LABEL_OVERRIDES.en_US.MIC, 'Internal Consumption');
+    assert.equal(DOC_TYPE_LABEL_OVERRIDES.es_ES.MIC, 'Consumo interno');
+  });
+
+  it('ships the same docbasetype key set for every locale', () => {
+    assert.deepEqual(
+      Object.keys(DOC_TYPE_LABEL_OVERRIDES.en_US).sort(),
+      Object.keys(DOC_TYPE_LABEL_OVERRIDES.es_ES).sort(),
+    );
+  });
+
+  it('never uses a comma in a label (CSV quoting is not exercised by the report templates)', () => {
+    for (const dict of Object.values(DOC_TYPE_LABEL_OVERRIDES)) {
+      for (const v of Object.values(dict)) assert.doesNotMatch(v, /,/);
+    }
   });
 });
