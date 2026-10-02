@@ -7,6 +7,8 @@ export const SETUP_STEP_DEFINITIONS = [
   { name: 'organization', estimate: '1 min' },
   { name: 'dataset', estimate: '1 min' },
   { name: 'sequences', estimate: '1s' },
+  // ETP-5426: only reported when the signup opted into sample data.
+  { name: 'sampleData', estimate: '10s' },
   { name: 'finalize', estimate: '1s' },
 ];
 
@@ -23,7 +25,22 @@ export function mapBackendStepStatus(status) {
   if (status === 'in_progress') return 'running';
   if (status === 'done') return 'done';
   if (status === 'error') return 'failed';
+  // ETP-5426: 'warning' (the sample data could not be loaded) passes through unchanged. It is not
+  // a failure: the environment is created and the final result is still a success.
   return status;
+}
+
+// ETP-5426 — the sample data the backend can load is Spanish (taxes, tax ids) and in euros, and
+// the backend refuses it for any other tenant. Offering the checkbox anywhere else would promise
+// something the backend is guaranteed to ignore.
+export const SAMPLE_DATA_COUNTRY_CODE = 'ES';
+export const SAMPLE_DATA_CURRENCY = 'EUR';
+
+export function isSampleDataOffered(stepData, config) {
+  const countryCode = stepData?.countryCode || config?.defaultForm?.countryCode || '';
+  const currency = config?.defaultForm?.currency || '';
+  return countryCode.toUpperCase() === SAMPLE_DATA_COUNTRY_CODE
+    && currency.toUpperCase() === SAMPLE_DATA_CURRENCY;
 }
 
 export function applyProgressMessage(steps, message) {
@@ -49,6 +66,8 @@ export function buildOnboardingPayload(form) {
     // (ETP-4749; previously dropped here, matching the old api.js/SetupProgressStep.jsx
     // behavior that this same fix reverses).
     fiscalIdValue: form.fiscalIdValue,
+    // ETP-5426: opt-in, strictly boolean — anything but true means "no sample data".
+    includeSampleData: form.includeSampleData === true,
   };
 }
 

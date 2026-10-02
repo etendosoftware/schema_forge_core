@@ -1,3 +1,4 @@
+#!/usr/bin/env node
 /**
  * resolve-curated.js
  *
@@ -10,16 +11,14 @@
  */
 
 import { readFile, writeFile } from 'node:fs/promises';
-import { fileURLToPath } from 'node:url';
-import { dirname, join } from 'node:path';
+import { join } from 'node:path';
 import { classifyRule } from './pre-classify.js';
 import { toCamelCase, isMainModule } from './utils.js';
 import { migrateDecisions, needsMigration, getVersion } from './migrations/index.js';
 import { buildFieldValidation } from './lib/field-validation.js';
 import { normalizeMethodList } from './lib/entity-methods.js';
+import { resolveRepoRoot } from './lib/repo-root.js';
 
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = dirname(__filename);
 // SF_ROOT (exported by the Makefile / cli/sf-local — see docs/repo-topology.md)
 // lets LOCAL_CORE dev mode run this core script's CODE against the FUNCTIONAL
 // repo's DATA (artifacts/). Every other extractor/generator in cli/src/ already
@@ -27,7 +26,7 @@ const __dirname = dirname(__filename);
 // regen-all.js, pipeline.js, …) — this one was missing it, so `./cli/sf-local
 // sf-resolve-curated --window <w> --write` silently read/wrote schema_forge_core's
 // OWN artifacts/ dir instead of the caller's.
-const ROOT = process.env.SF_ROOT || join(__dirname, '..', '..');
+const ROOT = resolveRepoRoot();
 
 // ---------------------------------------------------------------------------
 // Entity name helpers

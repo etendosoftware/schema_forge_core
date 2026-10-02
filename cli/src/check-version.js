@@ -1,12 +1,10 @@
 #!/usr/bin/env node
 import { readFile, writeFile } from 'node:fs/promises';
-import { fileURLToPath } from 'node:url';
-import { dirname, join } from 'node:path';
-import { isMainModule } from './utils.js';
+import { join } from 'node:path';
+import { exitOnHelp, isMainModule } from './utils.js';
+import { resolveRepoRoot } from './lib/repo-root.js';
 
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = dirname(__filename);
-const ROOT = process.env.SF_ROOT || join(__dirname, '..', '..');
+const ROOT = resolveRepoRoot();
 
 // Properties whose changes are considered breaking (structural contract changes)
 const BREAKING_PROPERTIES = new Set(['name', 'type', 'tsType', 'column']);
@@ -366,11 +364,13 @@ export async function checkVersion(windowName, author, prevMcpContract = null) {
 // CLI entry point
 const isCLI = isMainModule(import.meta.url);
 if (isCLI) {
+  const usage = 'Usage: node check-version.js <windowName> [author]';
+  exitOnHelp(usage);
   const windowName = process.argv[2];
   const author = process.argv[3] || 'system';
 
   if (!windowName) {
-    console.error('Usage: node check-version.js <windowName> [author]');
+    console.error(usage);
     process.exit(1);
   }
 
