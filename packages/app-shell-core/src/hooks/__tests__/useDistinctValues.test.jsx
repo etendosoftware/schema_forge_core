@@ -263,3 +263,156 @@ describe('useDistinctValues', () => {
     await waitFor(() => expect(callCount).toBeGreaterThanOrEqual(2));
   });
 });
+
+// ETP-5009: `initialLoading` is the "page 1 of the current query key has not
+// settled yet" flag a picker uses to show a loader instead of an in-memory
+// seed that would reorder once the backend page lands.
+describe('useDistinctValues — initialLoading (ETP-5009)', () => {
+  beforeEach(() => {
+    vi.restoreAllMocks();
+  });
+
+  // fetch whose responses resolve/reject only when the test says so.
+  function deferredFetch() {
+    const pending = [];
+    const spy = vi.spyOn(globalThis, 'fetch').mockImplementation((url) => new Promise((resolve, reject) => {
+      pending.push({ url, resolve, reject });
+    }));
+    const ok = (data) => ({ ok: true, json: () => Promise.resolve({ response: { data, hasMore: false } }) });
+    return {
+      spy,
+      pending,
+      resolveAt: (i, data) => pending[i].resolve(ok(data)),
+      rejectAt: (i, err) => pending[i].reject(err),
+    };
+  }
+
+  it('is true on the very first render, before the fetch effect runs', () => {
+    deferredFetch();
+    const seen = [];
+    renderHook(() => {
+      const r = useDistinctValues('entity', 'field', { apiBaseUrl: '/api' });
+      seen.push(r.initialLoading);
+      return r;
+    });
+    expect(seen[0]).toBe(true);
+  });
+
+  it('stays true while page 1 is pending and clears once it resolves', async () => {
+    const f = deferredFetch();
+    const { result } = renderHook(() =>
+      useDistinctValues('entity', 'field', { apiBaseUrl: '/api' }),
+    );
+    await waitFor(() => expect(f.pending).toHaveLength(1));
+    expect(result.current.initialLoading).toBe(true);
+    await act(async () => { f.resolveAt(0, ['A', 'B']); });
+    await waitFor(() => expect(result.current.initialLoading).toBe(false));
+    expect(result.current.values.map((v) => v.id)).toEqual(['A', 'B']);
+  });
+
+  it('clears on fetch error', async () => {
+    const f = deferredFetch();
+    const { result } = renderHook(() =>
+      useDistinctValues('entity', 'field', { apiBaseUrl: '/api' }),
+    );
+    await waitFor(() => expect(f.pending).toHaveLength(1));
+    expect(result.current.initialLoading).toBe(true);
+    await act(async () => { f.rejectAt(0, new Error('boom')); });
+    await waitFor(() => expect(result.current.initialLoading).toBe(false));
+    expect(result.current.error).toBeTruthy();
+  });
+
+  it('clears on an HTTP error response', async () => {
+    vi.spyOn(globalThis, 'fetch').mockResolvedValue({ ok: false, status: 500 });
+    const { result } = renderHook(() =>
+      useDistinctValues('entity', 'field', { apiBaseUrl: '/api' }),
+    );
+    await waitFor(() => expect(result.current.error).toBeTruthy());
+    expect(result.current.initialLoading).toBe(false);
+  });
+
+  it('is not raised again by a search refetch', async () => {
+    const f = deferredFetch();
+    const seen = [];
+    const { result } = renderHook(() => {
+      const r = useDistinctValues('entity', 'field', { apiBaseUrl: '/api', debounceMs: 0 });
+      seen.push(r.initialLoading);
+      return r;
+    });
+    await waitFor(() => expect(f.pending).toHaveLength(1));
+    await act(async () => { f.resolveAt(0, ['A']); });
+    await waitFor(() => expect(result.current.initialLoading).toBe(false));
+    const settledAt = seen.length;
+
+    act(() => { result.current.setSearch('x'); });
+    await waitFor(() => expect(f.pending).toHaveLength(2));
+    expect(f.pending[1].url).toContain('_distinctSearch=x');
+    expect(result.current.loading).toBe(true);
+    expect(result.current.initialLoading).toBe(false);
+    await act(async () => { f.resolveAt(1, ['X']); });
+    await waitFor(() => expect(result.current.loading).toBe(false));
+    expect(seen.slice(settledAt)).not.toContain(true);
+  });
+
+  it('is raised again when the query key (field) changes', async () => {
+    const f = deferredFetch();
+    const { result, rerender } = renderHook(
+      ({ field }) => useDistinctValues('entity', field, { apiBaseUrl: '/api' }),
+      { initialProps: { field: 'a' } },
+    );
+    await waitFor(() => expect(f.pending).toHaveLength(1));
+    await act(async () => { f.resolveAt(0, ['A']); });
+    await waitFor(() => expect(result.current.initialLoading).toBe(false));
+
+    rerender({ field: 'b' });
+    expect(result.current.initialLoading).toBe(true);
+    await waitFor(() => expect(f.pending).toHaveLength(2));
+    await act(async () => { f.resolveAt(1, ['B']); });
+    await waitFor(() => expect(result.current.initialLoading).toBe(false));
+  });
+
+  it('becomes true on the render that flips enabled from false to true', async () => {
+    const f = deferredFetch();
+    const { result, rerender } = renderHook(
+      ({ enabled }) => useDistinctValues('entity', 'field', { apiBaseUrl: '/api', enabled }),
+      { initialProps: { enabled: false } },
+    );
+    expect(result.current.initialLoading).toBe(false);
+    rerender({ enabled: true });
+    expect(result.current.initialLoading).toBe(true);
+    await waitFor(() => expect(f.pending).toHaveLength(1));
+    await act(async () => { f.resolveAt(0, []); });
+    await waitFor(() => expect(result.current.initialLoading).toBe(false));
+  });
+
+  it('is false when disabled', () => {
+    deferredFetch();
+    const { result } = renderHook(() =>
+      useDistinctValues('entity', 'field', { apiBaseUrl: '/api', enabled: false }),
+    );
+    expect(result.current.initialLoading).toBe(false);
+  });
+
+  it.each([
+    ['entity', ['', 'field', '/api']],
+    ['field', ['entity', '', '/api']],
+    ['apiBaseUrl', ['entity', 'field', '']],
+  ])('is false when %s is missing', (_, [entity, field, apiBaseUrl]) => {
+    deferredFetch();
+    const { result } = renderHook(() => useDistinctValues(entity, field, { apiBaseUrl }));
+    expect(result.current.initialLoading).toBe(false);
+  });
+
+  it('is false when unauthenticated', () => {
+    mockUseAuth.mockReturnValue({ isAuthenticated: false });
+    try {
+      deferredFetch();
+      const { result } = renderHook(() =>
+        useDistinctValues('entity', 'field', { apiBaseUrl: '/api' }),
+      );
+      expect(result.current.initialLoading).toBe(false);
+    } finally {
+      mockUseAuth.mockReturnValue({ isAuthenticated: true });
+    }
+  });
+});

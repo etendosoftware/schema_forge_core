@@ -992,9 +992,12 @@ function IdentifierMultiPicker({ col, entity, apiBaseUrl, rows, value, onChange,
   // currently-loaded rows. Falls back silently to in-memory rows when the
   // backend is unavailable (entity / apiBaseUrl missing).
   //
-  // ETP-4770: also fetch eagerly when re-editing an existing condition (i.e.
-  // `selected` is already populated on mount), not only once the popover is
-  // opened. `rows` is the grid's CURRENT rows, already filtered by the very
+  // ETP-5009: fetch as soon as the picker mounts (a row with field + operator
+  // chosen), with or without a selection, and render a loader in the list
+  // until the first page settles — see `awaitingFirstPage` below.
+  //
+  // ETP-4770 (why a selection alone already had to fetch eagerly before the
+  // popover opened): `rows` is the grid's CURRENT rows, already filtered by the very
   // condition being edited — for "equals" it only contains the selected
   // value(s) (no other option to pick from until the backend fetch lands),
   // and for "notEqual" it EXCLUDES the selected value(s) (no in-memory label
@@ -1002,13 +1005,19 @@ function IdentifierMultiPicker({ col, entity, apiBaseUrl, rows, value, onChange,
   // id). Gating solely on `open` meant the trigger rendered with an
   // incomplete/wrong label before the user ever touched the picker, and a
   // remount (popover reopen) reset `distinct.values` back to `[]`. Fetching
-  // whenever there is a pre-existing selection makes the picker resolve
-  // full labels and full searchable options independent of the grid.
+  // on mount makes the picker resolve full labels and full searchable
+  // options independent of the grid.
   const willFetch = !!(entity && apiBaseUrl && col?.key);
   const distinct = useDistinctValues(entity, col?.key, {
-    enabled: !!(willFetch && (open || selected.length > 0)),
+    enabled: willFetch,
     apiBaseUrl,
   });
+  // ETP-5009: while page 1 is in flight the LIST shows a loader instead of the
+  // in-memory seed, so options never appear late or move under the cursor.
+  // The trigger keeps using `mergedOptions` (seed labels + ETP-4770 pending
+  // placeholders). False when there is no source or the fetch errored, which
+  // falls back to the seed.
+  const awaitingFirstPage = willFetch && !!distinct.initialLoading;
 
   // ETP-4770: tracks whether the FIRST distinct fetch for this mount has
   // ever completed (settled), independent of the exact instant `distinct.
@@ -1124,6 +1133,9 @@ function IdentifierMultiPicker({ col, entity, apiBaseUrl, rows, value, onChange,
 
   const colLabelKey = labelOf(col.column) ?? col.label ?? col.key;
 
+  const listOptions = awaitingFirstPage ? [] : mergedOptions;
+  const listLoading = distinct.loading || awaitingFirstPage;
+
   return (
     <Popover open={open} onOpenChange={setOpen} data-testid="Popover__4eedf1">
       <PopoverTrigger asChild data-testid="PopoverTrigger__4eedf1">
@@ -1162,10 +1174,10 @@ function IdentifierMultiPicker({ col, entity, apiBaseUrl, rows, value, onChange,
             data-testid="Input__4eedf1" />
         </div>
         <div className="max-h-60 overflow-auto pb-2">
-          {mergedOptions.length === 0 && !distinct.loading && (
+          {listOptions.length === 0 && !listLoading && (
             <div className="px-3 py-2 text-xs text-muted-foreground">—</div>
           )}
-          {mergedOptions.map((opt) => {
+          {listOptions.map((opt) => {
             const isSelected = selected.includes(opt.id);
             return (
               <button
@@ -1190,7 +1202,7 @@ function IdentifierMultiPicker({ col, entity, apiBaseUrl, rows, value, onChange,
               </button>
             );
           })}
-          {distinct.loading && mergedOptions.length === 0 && (
+          {listLoading && listOptions.length === 0 && (
             <div className="flex items-center justify-center py-4 text-muted-foreground">
               <Loader2 className="h-4 w-4 animate-spin" data-testid="Loader2__4eedf1" />
             </div>
@@ -1277,11 +1289,16 @@ function fillFallbackCodes(out, ownEnumLabels, seen, query, labelFor) {
 /**
  * Popover picker for enum columns in the advanced filter builder.
  *
- * Mirrors the status dropdown's UX: in-memory rows seed the list for instant
- * feedback, the backend distinct endpoint fills in values that live on
- * unloaded pages, and the user can scroll / search within the popover.
+ * The backend distinct endpoint is the option source: it is fetched as soon as
+ * the picker mounts (a row with field + operator chosen), not when the popover
+ * opens, and until its FIRST page settles the list renders a loader instead of
+ * the in-memory seed. Seeding from the grid rows and then merging the distinct
+ * page in made the list reorder and grow while the user was clicking on it
+ * (ETP-5009). Once the page lands, in-memory codes still fill in values the
+ * backend has not paginated to yet, and the user can scroll / search.
  *
- * Falls back silently to the in-memory set when `entity` is not provided.
+ * Falls back to the in-memory set (plus fillFallbackCodes) when there is no
+ * distinct source (`entity` / `apiBaseUrl` missing) or the fetch errored.
  */
 function DistinctEnumPicker({ col, entity, apiBaseUrl, rows, value, onChange, ui, dictionary }) {
   const [open, setOpen] = useState(false);
@@ -1337,11 +1354,18 @@ function DistinctEnumPicker({ col, entity, apiBaseUrl, rows, value, onChange, ui
   }, [rows, col]);
 
   const distinct = useDistinctValues(entity, col.key, {
-    enabled: !!(entity && apiBaseUrl && open),
+    enabled: !!(entity && apiBaseUrl),
     apiBaseUrl,
   });
+  // The hook reports `initialLoading` only while a fetch is really possible
+  // and clears it on error, so this is false for "no source" and "fetch
+  // failed" — the two cases that fall back to the in-memory seed.
+  const awaitingFirstPage = !!distinct.initialLoading;
 
   const mergedCodes = useMemo(() => {
+    // ETP-5009: no seed while the first distinct page is in flight — the list
+    // would otherwise change shape under the user once it lands.
+    if (awaitingFirstPage) return [];
     const seen = new Set();
     const out = [];
     // Boolean-valued columns surface the same value in two shapes: the distinct
@@ -1381,7 +1405,7 @@ function DistinctEnumPicker({ col, entity, apiBaseUrl, rows, value, onChange, ui
     fillFallbackCodes(out, hasDeclaredLabels ? labelMap : null, seen, q, labelFor);
     for (const code of selected) add(code);
     return out;
-  }, [distinct.values, distinct.search, inMemoryCodes, selected, labelMap, hasDeclaredLabels, dictionary]);
+  }, [awaitingFirstPage, distinct.values, distinct.search, inMemoryCodes, selected, labelMap, hasDeclaredLabels, dictionary]);
 
   // Status columns get the fixed business-flow order; every other enum column
   // keeps the merge order untouched. See orderCodesForColumn (ETP-4913).
@@ -1441,6 +1465,7 @@ function DistinctEnumPicker({ col, entity, apiBaseUrl, rows, value, onChange, ui
           onSelect={toggle}
           searchPlaceholder={ui('searchValues')}
           emptyLabel={ui('noResults')}
+          loading={distinct.loading || awaitingFirstPage}
           data-testid="DistinctValuesList__4eedf1" />
       </PopoverContent>
     </Popover>
