@@ -138,7 +138,11 @@ describe('Core-owned onboarding state and SSO helpers', () => {
     // ETP-4749: fiscalIdValue is now a provisioning contract field (previously stripped).
     assert.deepEqual(buildOnboardingPayload({ clientName: 'Core', currency: 'EUR', language: 'en_US', countryCode: 'ES', fiscalIdValue: '1234' }), {
       clientName: 'Core', currency: 'EUR', language: 'en_US', countryCode: 'ES', address: undefined, fiscalIdValue: '1234',
+      // ETP-5426: the sample-data opt-in is a contract field too, false unless explicitly true.
+      includeSampleData: false,
     });
+    assert.equal(buildOnboardingPayload({ clientName: 'Core', includeSampleData: true }).includeSampleData, true);
+    assert.equal(buildOnboardingPayload({ clientName: 'Core', includeSampleData: 'true' }).includeSampleData, false);
     assert.equal(isProfileStepValid({ fullName: 'Ada', countryCode: 'ES' }), true);
     assert.equal(isCompanyStepValid({ clientName: 'Core' }), true);
   });

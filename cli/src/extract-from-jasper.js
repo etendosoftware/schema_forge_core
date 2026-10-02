@@ -13,14 +13,12 @@
  */
 
 import { readFile, writeFile, mkdir } from 'node:fs/promises';
-import { fileURLToPath } from 'node:url';
-import { dirname, join, basename } from 'node:path';
+import { join } from 'node:path';
 import { existsSync } from 'node:fs';
 import { isMainModule } from './utils.js';
+import { resolveRepoRoot } from './lib/repo-root.js';
 
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = dirname(__filename);
-const ROOT = process.env.SF_ROOT || join(__dirname, '..', '..');
+const ROOT = resolveRepoRoot();
 
 // ---------------------------------------------------------------------------
 // XML parsing (minimal, no dependencies)

@@ -1,6 +1,9 @@
+#!/usr/bin/env node
 import { readFileSync, writeFileSync, mkdirSync, readdirSync, existsSync } from 'node:fs';
 import { resolve, dirname } from 'node:path';
 import { execSync } from 'node:child_process';
+import { exitOnHelp, isMainModule } from './utils.js';
+import { resolveRepoRoot } from './lib/repo-root.js';
 
 /**
  * Parse a columns or fields array from a JSX source string.
@@ -416,17 +419,18 @@ export function readFromDisk(windowName, repoRoot) {
 }
 
 // CLI entry point
-const isDirectRun = process.argv[1] && import.meta.url.endsWith(process.argv[1].replace(/.*\//, ''));
-if (isDirectRun) {
+if (isMainModule(import.meta.url)) {
+  const usage = 'Usage: node cli/src/generation-log.js <window-name> <trigger-description>';
+  exitOnHelp(usage);
   const windowName = process.argv[2];
   const trigger = process.argv[3] || 'manual run';
 
   if (!windowName) {
-    console.error('Usage: node cli/src/generation-log.js <window-name> <trigger-description>');
+    console.error(usage);
     process.exit(1);
   }
 
-  const repoRoot = process.env.SF_ROOT || resolve(dirname(import.meta.url.replace('file://', '')), '..', '..');
+  const repoRoot = resolveRepoRoot();
   const logPath = resolve(repoRoot, 'artifacts/generation-log.json');
 
   // Read before (git) and after (disk)

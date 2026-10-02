@@ -3,7 +3,6 @@ import { execFileSync } from 'node:child_process';
 import { createHash } from 'node:crypto';
 import { existsSync, mkdirSync, readdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
-import { fileURLToPath } from 'node:url';
 import { resolveBaseline } from './quality-gate/baseline.js';
 import { loadQualityGateConfig, QualityGateConfigError } from './quality-gate/config.js';
 import { collectDecisionWindows, detectAffectedWindows, detectAffectedWindowsDetailed, getChangedFiles, resolveGitRef } from './quality-gate/detect.js';
@@ -11,10 +10,9 @@ import { runQualityGate } from './quality-gate/runner.js';
 import { buildQualityGateAnalysisBundle, buildQualityGateReport } from './quality-gate/report.js';
 import { QUALITY_GATE_CHECKS } from './quality-gate/checks/index.js';
 import { isMainModule } from './utils.js';
+import { resolveRepoRoot } from './lib/repo-root.js';
 
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = dirname(__filename);
-const ROOT = process.env.SF_ROOT || join(__dirname, '..', '..');
+const ROOT = resolveRepoRoot();
 
 function collectRuntimeFiles(dir) {
   if (!existsSync(dir)) {

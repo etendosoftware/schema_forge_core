@@ -62,7 +62,7 @@ describe('CompanyStep freelancer clientName handling (ETP-4673)', () => {
   });
 
   it('does not touch isCompanyStepValid — required-ness for non-freelancers still comes from validation', () => {
-    assert.match(step, /import \{ isCompanyStepValid \} from '\.\.\/state\.js'/);
+    assert.match(step, /import \{[^}]*\bisCompanyStepValid\b[^}]*\} from '\.\.\/state\.js'/);
     assert.match(step, /const isValid = isCompanyStepValid\(form\)/);
   });
 });

@@ -27,7 +27,7 @@ push: ## Push contract to NEO Headless. Usage: make push ONLY=purchase-order
 	npx sf-push-neo $(ONLY)
 
 validate: ## Run pipeline validator across all AR artifacts
-	npx sf-validate
+	npx sf-validate-pipeline
 
 local: ## Run pipeline locally using cache snapshot without DB. Usage: make local ONLY=purchase-order
 	@[ -n "$(ONLY)" ] || (echo "Error: ONLY is required. Usage: make local ONLY=window-name"; exit 1)

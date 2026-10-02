@@ -426,13 +426,29 @@ All tools live in `cli/src/`. Available as `sf-*` commands after `npm install`:
 | `sf-extract-db` | Extract fields + rules from Etendo DB |
 | `sf-extract` | Field extraction with FK resolution |
 | `sf-extract-rules` | Rule + callout extraction |
-| `sf-classify` | Pre-classify rules (deterministic + AI) |
-| `sf-validate` | 4-level schema validation |
-| `sf-contract` | Generate frontend/backend contracts |
 | `sf-push-neo` | Configure NEO Headless via DB writes |
-| `sf-test` | Run contract tests |
+| `sf-resolve-curated` | Merge schema-raw + decisions, regenerate contract + frontend (`--write`) |
+| `sf-validate-pipeline` | Pipeline consistency validator (decisions → contract → generated) |
 | `sf-lock` | Window lock management (via GitHub Issues) |
 | `sf-check-version` | Check contract version and classify changes |
+
+Every published `sf-*` bin runs through `npx` / `node_modules/.bin`. Bins that take a
+positional argument (`sf-generate-frontend`, `sf-test-report`,
+`sf-generate-public-api-schema`, `sf-check-version`, `sf-gen-log`) answer `--help` / `-h`
+with their usage and exit 0.
+
+**Which repo a bin operates on** is decided by `resolveRepoRoot()`
+(`cli/src/lib/repo-root.js`), first match wins:
+
+1. `SF_ROOT`, when set (the Makefile and `cli/sf-local` export it).
+2. Running from this source checkout: the checkout root.
+3. Installed under `node_modules`: the nearest directory at or above the cwd that holds
+   `artifacts/`.
+4. Otherwise the cwd.
+
+So an installed bin run from the functional repo's root, or any subdirectory of it,
+finds that repo without `SF_ROOT`. Keep `SF_ROOT` for running from outside the target
+repo; note a nested `artifacts/` directory shadows the root (step 3 stops at the nearest).
 
 ## Make Targets
 
