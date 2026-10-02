@@ -7,6 +7,11 @@
  *     at ANY nesting depth. There is no per-path schema (yet, see ETP-4578): the same
  *     allowlist governs the whole payload, so a nested `password` under an approved
  *     container key is dropped exactly like a top-level one would be.
+ *     A key whose NAME looks sensitive (`session_id`, `tokenCount`) is redacted even when
+ *     allowed, unless the caller also lists it in `trustedKeys` — an explicit, reviewed
+ *     exemption that never widens the allowlist and never skips the value scrub (layer 2).
+ *     Names that can carry credentials (password, secret, cookie, authorization, …) are
+ *     never trustable: `resolveTrustedKeys()` drops them with a warning.
  *  2. Value scrub — even an ALLOWED key's string value is pattern-checked for secrets
  *     (bearer tokens, JWTs, opaque high-entropy blobs, emails), and the query string
  *     and fragment of every URL or path embedded in it are stripped. This catches a
@@ -175,17 +180,38 @@ function sanitizePathLikeToken(token) {
   return isPathToken(stripped) ? collapseIdSegments(stripped) : stripped;
 }
 
+// The host's page-analytics convention (D5): a record's own page, `/<screen>/<id>`, is named
+// `:recordId`; an id anywhere else is `:id`. The NAME is kept so a dashboard grouped on the
+// route pattern keeps its series. The DETECTION is not the host's old one (any two-segment
+// route, any 12+ character word), which turned `/x/configuration-settings` into an id: an id
+// is still a numeric segment or a letters-and-digits one.
+const RECORD_PLACEHOLDER = ':recordId';
+// `/artifacts/<id>` is a generated-artifact path, not a record page (the host never named it so).
+const NOT_RECORD_SCREENS = new Set(['artifacts']);
+
+function nameRecordDetail(path) {
+  const parts = path.split('/');
+  const named = parts.map((part, index) => [part, index]).filter(([part]) => part !== '');
+  if (named.length !== 2 || NOT_RECORD_SCREENS.has(named[0][0]) || named[1][0] !== ':id') return path;
+  parts[named[1][1]] = RECORD_PLACEHOLDER;
+  return parts.join('/');
+}
+
 /**
  * Turns a raw route into a page-analytics key: drops the query and fragment (keeping a
- * hash-router path) and collapses record-id segments to ':id'. It does not scrub — run the
- * result through `sanitizeValue()` as well.
+ * hash-router path) and collapses record-id segments — to `:recordId` for a record's own
+ * page (`/<screen>/<id>`, two segments), to `:id` anywhere else. It does not scrub — run
+ * the result through `sanitizeValue()` as well.
+ *
+ * A route as the browser reports it carries the app's base path (`/go/<screen>/<id>` is
+ * three segments, so `:id`); one from the router does not (`/<screen>/<id>`, `:recordId`).
  *
  * @param {string} path
  * @returns {string}
  */
 export function normalizeRoute(path) {
   const queryStart = path.search(QUERY_OR_FRAGMENT_RE);
-  return collapseIdSegments(queryStart === -1 ? path : path.slice(0, queryStart));
+  return nameRecordDetail(collapseIdSegments(queryStart === -1 ? path : path.slice(0, queryStart)));
 }
 
 function scrubString(value, maxStringLength) {
@@ -218,6 +244,46 @@ function isSensitiveKey(key) {
   return SENSITIVE_KEY_FRAGMENTS.test(words.join('')) || words.some((word) => SENSITIVE_KEY_WORDS.has(word));
 }
 
+// Names that can never be trusted, however carefully reviewed: the value scrub only catches
+// LONG or token-shaped secrets, so a short value under one of these ('hunter2', 'Basic abc',
+// 'sid=abc123') would leave as-is. `token`, `session`, `body` and `payload` stay trustable
+// (an approved `session_id` or `token_count` dimension), because their values are ids or counts.
+const UNTRUSTABLE_KEY_FRAGMENTS =
+  /passw|passphrase|secret|cookie|authoriz|apikey|accesskey|credential|privatekey|creditcard|cardnumber|bearer/;
+
+/** True when a key NAME may not be exempted from the sensitive-key rule. */
+export function isUntrustableKey(key) {
+  const words = keyWords(key);
+  return UNTRUSTABLE_KEY_FRAGMENTS.test(words.join('')) || words.some((word) => SENSITIVE_KEY_WORDS.has(word));
+}
+
+function toTrustedKeySet(trustedKeys) {
+  return new Set([...toAllowedKeySet(trustedKeys)].filter((key) => !isUntrustableKey(key)));
+}
+
+/**
+ * The trusted keys a caller may actually use: the untrustable names are dropped and reported
+ * ONCE, here, so `sanitizeValue()` (which runs per value) stays quiet. `sanitizeValue()` filters
+ * the same names itself, so skipping this only loses the warning, never the protection.
+ *
+ * @param {Iterable<string>|string} [trustedKeys]
+ * @param {{warn?: Function}} [logger]
+ * @returns {Array<string>}
+ */
+export function resolveTrustedKeys(trustedKeys, logger = console) {
+  const requested = [...toAllowedKeySet(trustedKeys)];
+  const kept = requested.filter((key) => !isUntrustableKey(key));
+  const ignored = requested.filter((key) => isUntrustableKey(key));
+  if (ignored.length > 0) {
+    try {
+      logger?.warn?.(`[observability] trustedKeys ignores names that can carry credentials: ${ignored.join(', ')}`);
+    } catch {
+      // A failing logger must not break startup.
+    }
+  }
+  return kept;
+}
+
 function toAllowedKeySet(allowedKeys) {
   if (allowedKeys == null) return new Set();
   if (typeof allowedKeys === 'string') return new Set([allowedKeys]);
@@ -232,6 +298,7 @@ function toAllowedKeySet(allowedKeys) {
 function createState(options) {
   const {
     allowedKeys,
+    trustedKeys,
     maxDepth = DEFAULT_MAX_DEPTH,
     maxKeys = DEFAULT_MAX_KEYS,
     maxArrayLength = DEFAULT_MAX_ARRAY_LENGTH,
@@ -242,6 +309,7 @@ function createState(options) {
 
   return {
     allowed: toAllowedKeySet(allowedKeys),
+    trusted: toTrustedKeySet(trustedKeys),
     maxDepth,
     maxKeys,
     maxArrayLength,
@@ -308,7 +376,9 @@ function walkObject(input, depth, state) {
     }
     kept += 1;
 
-    if (isSensitiveKey(key)) {
+    // A trusted key is exempt from the key-NAME rule only (e.g. an approved `session_id`
+    // analytics dimension); its value is scrubbed like any other, and it must still be allowed.
+    if (isSensitiveKey(key) && !state.trusted.has(key)) {
       out[key] = REDACTED;
       continue;
     }
@@ -408,6 +478,33 @@ export function sanitizeValue(value, options = {}) {
     if (!exceedsSerializedBudget(result, state.maxSerializedBytes)) return result;
     // A fresh object every time: a provider SDK may mutate the payload it receives.
     return typeof result === 'object' && result !== null ? { [OVERSIZED_KEY]: SIZE_LIMIT_MARKER } : SIZE_LIMIT_MARKER;
+  } catch (error) {
+    reportInternalError(options, error);
+    return REDACTED;
+  }
+}
+
+/**
+ * Sanitizes a stack trace one frame (line) at a time, so a single frame that carries a
+ * secret is redacted on its own instead of taking every other frame with it. Each frame
+ * is scrubbed like any string (queries stripped, path ids collapsed, maxStringLength cap);
+ * at most `maxArrayLength` frames are kept, with a marker for the rest. Never throws.
+ *
+ * @param {unknown} stack
+ * @param {object} [options] Same options as `sanitizeValue()`.
+ * @returns {string|undefined} `undefined` for a missing or non-string stack.
+ */
+export function sanitizeStack(stack, options = {}) {
+  if (typeof stack !== 'string') return undefined;
+  try {
+    const { maxArrayLength = DEFAULT_MAX_ARRAY_LENGTH } = options ?? {};
+    const frames = stack.split('\n');
+    const kept = frames.slice(0, maxArrayLength).map((frame) => {
+      const clean = sanitizeValue(frame, options);
+      return typeof clean === 'string' ? clean : REDACTED;
+    });
+    if (frames.length > maxArrayLength) kept.push(SIZE_LIMIT_MARKER);
+    return kept.join('\n');
   } catch (error) {
     reportInternalError(options, error);
     return REDACTED;

@@ -13,17 +13,17 @@ import { findBannedProviderImports, BANNED_PROVIDER_PREFIXES } from '../provider
  * the hole SEC-14 described: a component reaching for `@sentry/react` or
  * `mixpanel-browser` itself bypasses sanitization entirely, silently.
  *
- * There is no `observability/adapters/` directory yet — ETP-4578 introduces the real
- * provider adapters and MUST add its own directory to `ALLOWED_DIRS` below when it
- * does, the same deliberate, visible way `no-raw-fetch.test.js` (schema_forge host)
- * lists its exceptions. Until then, the allowlist is empty on purpose.
+ * The provider adapters in `observability/adapters/` (ETP-4578) receive their SDK as a
+ * parameter from the host, so even they never import one: the allowlist below stays
+ * empty on purpose. Adding an entry is a deliberate, visible exception, the same way
+ * `no-raw-fetch.test.js` (schema_forge host) lists its own.
  */
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const SRC = join(__dirname, '..', '..');
 
-// Directories (relative to `src/`) allowed to import a provider SDK directly.
-// Empty today — ETP-4578 adds `observability/adapters` here when it lands the adapters.
+// Directories (relative to `src/`) allowed to import a provider SDK directly. Empty:
+// the adapters get their SDK injected by the host.
 const ALLOWED_DIRS = [];
 
 function collectSourceFiles(dir, acc = []) {
