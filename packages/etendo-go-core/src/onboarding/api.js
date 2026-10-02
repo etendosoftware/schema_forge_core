@@ -343,6 +343,9 @@ export async function runOnboardingStream(fetchImpl, baseUrl, csrfToken, form, o
       // com.etendoerp.go's EtendoGoJwtServlet, which reads this same JSON key
       // ("fiscalIdValue") and persists it onto AD_OrgInfo.TaxID when non-blank.
       ...(form.fiscalIdValue ? { fiscalIdValue: form.fiscalIdValue } : {}),
+      // ETP-5426: sent only when the user ticked "include sample data"; the backend defaults the
+      // absent key to false.
+      ...(form.includeSampleData === true ? { includeSampleData: true } : {}),
     }),
   });
 

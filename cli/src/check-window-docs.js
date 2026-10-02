@@ -1,11 +1,11 @@
 #!/usr/bin/env node
 import { execFileSync } from 'node:child_process';
 import { existsSync } from 'node:fs';
-import { dirname, join } from 'node:path';
-import { fileURLToPath } from 'node:url';
+import { join } from 'node:path';
 import { isMainModule } from './utils.js';
+import { resolveRepoRoot } from './lib/repo-root.js';
 
-const ROOT = process.env.SF_ROOT || join(dirname(fileURLToPath(import.meta.url)), '..', '..');
+const ROOT = resolveRepoRoot();
 const SHARED_DOC_FILES = new Set(['INDEX', 'app-shell-functional-flows']);
 const NON_WINDOW_CUSTOM_DIRS = new Set(['shared']);
 

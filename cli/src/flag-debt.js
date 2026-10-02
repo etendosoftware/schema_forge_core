@@ -23,22 +23,19 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import { spawnSync } from 'node:child_process';
-import { fileURLToPath } from 'node:url';
 import { isMainModule } from './utils.js';
+import { resolveRepoRoot } from './lib/repo-root.js';
 
-const HERE = path.dirname(fileURLToPath(import.meta.url));
 /**
  * The repo being scored — the functional repo, not this one.
  *
  * `SF_ROOT` is how the consuming repo says "score my registry": the Makefile and
  * `cli/sf-local` both export it. Without it, a CLI running from core source would
  * resolve core's own directory and silently score the wrong repo, which for a tool
- * whose whole job is honest numbers is the worst available failure. The
- * `__dirname` fallback keeps this script runnable in place inside core.
+ * whose whole job is honest numbers is the worst available failure. See resolveRepoRoot()
+ * for the fallback when it is unset.
  */
-export const DEFAULT_REPO_ROOT = process.env.SF_ROOT
-  ? path.resolve(process.env.SF_ROOT)
-  : path.resolve(HERE, '..', '..');
+export const DEFAULT_REPO_ROOT = resolveRepoRoot();
 export const REGISTRY_FILENAME = 'flags-registry.json';
 
 /** Every points rule in one place, so the scale is tunable and greppable. */

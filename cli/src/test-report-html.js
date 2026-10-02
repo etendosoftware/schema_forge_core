@@ -4,6 +4,7 @@
 
 import { readFileSync, writeFileSync } from 'node:fs';
 import { resolve } from 'node:path';
+import { exitOnHelp, isMainModule } from './utils.js';
 
 // --- Parse JUnit XML ---
 
@@ -283,11 +284,9 @@ function generateReport(xml) {
 export { parseTestSuites, parseTestCases, parseAttrs, escapeHtml, renderSuite, generateReport };
 
 // CLI entry point — only runs when executed directly
-const isCLI =
-  process.argv[1] &&
-  import.meta.url.endsWith(process.argv[1].replace(/\\/g, '/'));
-
-if (isCLI) {
+if (isMainModule(import.meta.url)) {
+  exitOnHelp('Usage: node cli/src/test-report-html.js [input.xml] [output.html]\n'
+    + '  defaults: artifacts/test-report.xml -> artifacts/test-report.html');
   const inputPath = resolve(process.argv[2] || 'artifacts/test-report.xml');
   const outputPath = resolve(process.argv[3] || 'artifacts/test-report.html');
   const xml = readFileSync(inputPath, 'utf8');

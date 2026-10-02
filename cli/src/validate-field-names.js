@@ -2,12 +2,10 @@
 
 import { readFile } from 'node:fs/promises';
 import { execSync } from 'node:child_process';
-import { resolve, dirname } from 'node:path';
-import { fileURLToPath } from 'node:url';
+import { resolve } from 'node:path';
+import { resolveRepoRoot } from './lib/repo-root.js';
 
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = dirname(__filename);
-const ROOT = process.env.SF_ROOT || resolve(__dirname, '../..');
+const ROOT = resolveRepoRoot();
 
 export function checkMatchings(contractFields, apiKeySet, apiKeys) {
   const matched = [];
