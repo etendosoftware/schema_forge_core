@@ -25,13 +25,11 @@
  * Config: cli/window-leak-budget.json (committed).
  */
 import { existsSync, readFileSync, readdirSync, writeFileSync, statSync } from 'node:fs';
-import { dirname, extname, join } from 'node:path';
-import { fileURLToPath } from 'node:url';
+import { extname, join } from 'node:path';
 import { isMainModule } from './utils.js';
+import { resolveRepoRoot } from './lib/repo-root.js';
 
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = dirname(__filename);
-const ROOT = process.env.SF_ROOT || join(__dirname, '..', '..');
+const ROOT = resolveRepoRoot();
 const CONFIG_PATH = join(ROOT, 'cli', 'window-leak-budget.json');
 
 /**

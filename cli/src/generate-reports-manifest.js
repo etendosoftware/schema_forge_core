@@ -13,9 +13,10 @@ import { fileURLToPath } from 'node:url';
 // The descriptor shape lives in ONE place — see report-descriptor.js for why
 // (this script used to keep its own copy and silently dropped `sections`).
 import { listReportDescriptors } from './report-descriptor.js';
+import { resolveRepoRoot } from './lib/repo-root.js';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
-const ROOT = process.env.SF_ROOT || join(__dirname, '..', '..');
+const ROOT = resolveRepoRoot();
 const ARTIFACTS_DIR = join(ROOT, 'artifacts');
 const OUT_DIR = join(ROOT, 'tools/app-shell/dist/api');
 const OUT_FILE = join(OUT_DIR, 'reports');
