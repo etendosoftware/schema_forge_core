@@ -20,6 +20,12 @@
     "./i18n/resolveLabel": "./src/i18n/resolveLabel.js",
     "./layout": "./src/layout/index.js",
     "./observability": "./src/observability/index.js",
+    "./observability/gateway": "./src/observability/gateway.js",
+    "./observability/sanitize": "./src/observability/sanitize.js",
+    "./observability/providerImportGuard": "./src/observability/providerImportGuard.js",
+    "./observability/adapters/sentry": "./src/observability/adapters/sentry.js",
+    "./observability/adapters/mixpanel": "./src/observability/adapters/mixpanel.js",
+    "./observability/adapters/rum": "./src/observability/adapters/rum.js",
     "./reports": "./src/reports/index.js",
     "./runtime": "./src/runtime/index.js",
     "./theme": "./src/theme/index.js",
@@ -44,7 +50,7 @@
     "!src/**/__tests__/**"
   ],
   "scripts": {
-    "test": "node --test test/*.test.js src/auth/__tests__/*.test.js src/i18n/__tests__/*.test.js src/runtime/__tests__/*.test.js src/theme/__tests__/*.test.js src/walkthrough/__tests__/*.test.js src/components/ui/__tests__/*.test.js src/lib/__tests__/*.test.js src/lib/validation/__tests__/*.test.js src/lib/import/__tests__/*.test.js src/lib/csv/__tests__/*.test.js",
+    "test": "node --test test/*.test.js src/auth/__tests__/*.test.js src/i18n/__tests__/*.test.js src/runtime/__tests__/*.test.js src/theme/__tests__/*.test.js src/walkthrough/__tests__/*.test.js src/components/ui/__tests__/*.test.js src/lib/__tests__/*.test.js src/lib/validation/__tests__/*.test.js src/lib/import/__tests__/*.test.js src/lib/csv/__tests__/*.test.js src/observability/__tests__/*.test.js",
     "test:vitest": "vitest run",
     "test:consumer": "node scripts/package-consumer-smoke.mjs"
   },
