@@ -1,10 +1,10 @@
 import { createContext, useContext, useState, useCallback, useMemo, useRef, useEffect, useLayoutEffect, useSyncExternalStore } from 'react';
 import {
-  createLocalAuthStorage, createMemoryAuthStorage, mapRestoredSession, normalizeAuthSession,
-  purgeLegacyAuthStorage,
+  createLocalAuthStorage, createMemoryAuthStorage, isSameEnvironment, mapRestoredSession,
+  normalizeAuthSession, purgeLegacyAuthStorage,
 } from './session.js';
 import {
-  createApiFetch, deleteCookieSession, fetchCookieSession, registerApiSession,
+  createApiFetch, deleteCookieSession, isSessionUnavailable, readCookieSession, registerApiSession,
 } from './api.js';
 import { CREDENTIAL_MODES, setSessionCredentials } from './sessionCredentials.js';
 import { createSessionController } from './sessionController.js';
@@ -14,6 +14,9 @@ const AuthContext = createContext(null);
 const useBrowserLayoutEffect = typeof window === 'undefined' ? useEffect : useLayoutEffect;
 // [ETP-5195] Fallback cadence for the periodic-poll refresh trigger below.
 const SILENT_REFRESH_POLL_INTERVAL_MS = 5 * 60 * 1000;
+// ETP-5550 — restore retries while the backend is not answering: 1s, 2s, 4s… capped at 30s.
+const RESTORE_RETRY_BASE_MS = 1000;
+const RESTORE_RETRY_MAX_MS = 30 * 1000;
 
 // [ETP-5195] `/sws/neo/refreshtoken` goes through the NEO webhook bridge, which wraps every
 // response in `{"result": "<json-string>"}` (see com.etendoerp.go's docs/neo-headless.md
@@ -62,7 +65,7 @@ export function AuthProvider({
   // ETP-4576 — DERIVED from `credentialMode`, so one switch governs the whole thing.
   // An explicit `null` opts out; passing `undefined` re-arms this default.
   restoreSession = credentialMode === CREDENTIAL_MODES.cookie
-    || credentialMode === CREDENTIAL_MODES.auto ? fetchCookieSession : null,
+    || credentialMode === CREDENTIAL_MODES.auto ? readCookieSession : null,
 }) {
   // ETP-4576 — under the cookie scheme the default storage is MEMORY, not localStorage:
   // the server response is authoritative and `purgeLegacyAuthStorage` deletes the sf_auth_*
@@ -79,7 +82,7 @@ export function AuthProvider({
     ...authStorage.read(), ...initialSession,
   }), authStorage, onSessionChange, apiBaseUrl));
   const state = useSyncExternalStore(controller.subscribe, controller.getSnapshot, controller.getSnapshot);
-  const options = useRef({ fetchWindowAccess, apiBaseUrl });
+  const options = useRef({ fetchWindowAccess, apiBaseUrl, restoreSession, credentialMode });
   const operation = useRef(null);
   // ETP-4576 — the X-Go-CSRF proof issued by the backend in session responses. In memory
   // only, never persisted: it is bound to the httpOnly session cookie, not a value the
@@ -97,11 +100,23 @@ export function AuthProvider({
   // Guards the mount-only restore against a host passing an inline arrow as `restoreSession`,
   // which would otherwise change identity every render.
   const hasRestoredRef = useRef(false);
+  // ETP-5550 — true while the restore waits for a backend that is not answering (a deploy).
+  const [isReconnecting, setIsReconnecting] = useState(false);
+  const mountedRef = useRef(true);
+  const restoreRetryTimer = useRef(undefined);
+  useEffect(() => {
+    mountedRef.current = true;
+    return () => {
+      mountedRef.current = false;
+      clearTimeout(restoreRetryTimer.current);
+    };
+  }, []);
 
   useBrowserLayoutEffect(() => {
     controller.configure({ storage: authStorage, onSessionChange, apiBaseUrl });
-    options.current = { fetchWindowAccess, apiBaseUrl };
-  }, [controller, authStorage, onSessionChange, fetchWindowAccess, apiBaseUrl]);
+    options.current = { fetchWindowAccess, apiBaseUrl, restoreSession, credentialMode };
+  }, [controller, authStorage, onSessionChange, fetchWindowAccess, apiBaseUrl, restoreSession,
+    credentialMode]);
 
   // A changed storage adapter or server is a session boundary, even with the same JWT.
   const environment = useRef({ storage: authStorage, apiBaseUrl });
@@ -119,6 +134,11 @@ export function AuthProvider({
   // failure (no active session, network error) clears locally — deliberately NOT the
   // exposed logout(), which revokes server-side: the server just told us there is no
   // session, so there is nothing to revoke.
+  //
+  // ETP-5550 — except a backend that is not answering (isSessionUnavailable): a tab
+  // reloaded during a deploy used to land on the login screen with its session still
+  // alive. It now stays 'booting', flags isReconnecting and retries with backoff until
+  // the backend answers either way.
   useEffect(() => {
     if (typeof restoreSession !== 'function') return;
     if (hasRestoredRef.current) return;
@@ -126,24 +146,38 @@ export function AuthProvider({
 
     purgeLegacyAuthStorage();
 
-    Promise.resolve()
-      .then(() => restoreSession())
-      .then((result) => {
-        if (!result) throw new Error('No active session');
-        setCsrfToken(result.csrfToken ?? null);
-        controller.replace(normalizeAuthSession(mapRestoredSession(result)), { refresh: false, persist: false });
-        setStatus('authenticated');
-      })
-      .catch(() => {
-        setCsrfToken(null);
-        controller.logout();
-        setStatus('anonymous');
-      });
+    const attempt = (retry) => {
+      Promise.resolve()
+        .then(() => restoreSession())
+        .then((result) => {
+          if (!mountedRef.current) return;
+          if (!result) throw new Error('No active session');
+          setIsReconnecting(false);
+          setCsrfToken(result.csrfToken ?? null);
+          controller.replace(normalizeAuthSession(mapRestoredSession(result)), { refresh: false, persist: false });
+          setStatus('authenticated');
+        })
+        .catch((error) => {
+          if (!mountedRef.current) return;
+          if (isSessionUnavailable(error)) {
+            setIsReconnecting(true);
+            const delay = Math.min(RESTORE_RETRY_BASE_MS * 2 ** retry, RESTORE_RETRY_MAX_MS);
+            restoreRetryTimer.current = setTimeout(() => attempt(retry + 1), delay);
+            return;
+          }
+          setIsReconnecting(false);
+          setCsrfToken(null);
+          controller.logout();
+          setStatus('anonymous');
+        });
+    };
+    attempt(0);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   // ETP-4576 — hands the active scheme and both credentials to ./sessionCredentials.js,
-  // which every request builder in the core and the host reads. This is the ONLY writer.
+  // which every request builder in the core and the host reads. The only writer besides the
+  // CSRF recovery registered with apiFetch below (ETP-5550), which publishes the same values.
   useEffect(() => {
     setSessionCredentials({ mode: credentialMode, token: state.session.token, csrfToken });
   }, [credentialMode, state.session.token, csrfToken]);
@@ -343,6 +377,24 @@ export function AuthProvider({
       baseUrl: apiBaseUrl,
       scope: controller,
       replaceSession: controller.replace,
+      // ETP-5550 — apiFetch asks for this after a stale-proof 403: another tab rotated the
+      // session, and the proof this tab loaded at boot belongs to the revoked one. Re-reads the
+      // session (GET /sws/go/session never rotates) and adopts its proof only while it is still
+      // the environment this tab shows; a tab left on company X must not start writing into the
+      // company another tab switched to. Null keeps the refusal and leaves the tab signed in.
+      recoverCsrfToken: async () => {
+        const { restoreSession: reread, credentialMode: mode } = options.current;
+        if (typeof reread !== 'function') return null;
+        const live = await reread();
+        const proof = live?.csrfToken;
+        const current = controller.getSnapshot().session;
+        if (!proof || !isSameEnvironment(current, mapRestoredSession(live))) return null;
+        // Published here and not only through the effect below: the retry goes out before React
+        // renders again, and until then the effect would still be holding the revoked proof.
+        setSessionCredentials({ mode, token: current.token, csrfToken: proof });
+        setCsrfToken(proof);
+        return proof;
+      },
     });
     return () => { controller.dispose(); unregister(); };
   }, [controller, apiBaseUrl]);
@@ -449,6 +501,9 @@ export function AuthProvider({
     isAuthenticated: !!state.session.token || status === 'authenticated',
     csrfToken,
     status,
+    // ETP-5550 — the restore is waiting for a backend that is not answering (status stays
+    // 'booting'), so a host can say "reconnecting" instead of showing nothing.
+    isReconnecting,
     setCsrfToken,
     isSessionReady: state.isSessionReady,
     isRefreshingSession: state.isRefreshingSession,
@@ -465,7 +520,7 @@ export function AuthProvider({
     capabilities: state.capabilities,
     menuAccess: state.menuAccess,
     ...actions,
-  }), [state, actions, csrfToken, status]);
+  }), [state, actions, csrfToken, status, isReconnecting]);
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 }

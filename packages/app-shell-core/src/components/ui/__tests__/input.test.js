@@ -77,4 +77,10 @@ describe('Input — semantic form-input tokens (ETP-4554)', () => {
     assert.doesNotMatch(inputClass, /disabled:opacity-/);
     assert.match(inputClass, /focus-visible:ring-focus-ring/);
   });
+
+  it('shares the unified field hover and disabled fill/border tokens (ETP-5479)', () => {
+    assert.match(inputClass, /(^|\s)hover:bg-\[hsl\(var\(--field-hover\)\)\]/);
+    assert.match(inputClass, /disabled:bg-\[hsl\(var\(--field-hover\)\)\]/);
+    assert.match(inputClass, /disabled:border-\[hsl\(var\(--field-disabled-border\)\)\]/);
+  });
 });
