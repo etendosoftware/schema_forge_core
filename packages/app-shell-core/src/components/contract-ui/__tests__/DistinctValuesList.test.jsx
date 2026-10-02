@@ -240,3 +240,54 @@ describe('DistinctValuesList — empty state', () => {
     expect(screen.queryByText('Sin resultados')).not.toBeInTheDocument();
   });
 });
+
+// ETP-5591 — opt-in props for the not-posted-documents filters. Every case
+// also guards the default: without the prop, the list renders as before.
+describe('DistinctValuesList — heading / searchable / renderLabel / indicator (ETP-5591)', () => {
+  it('renders the heading only when one is given', () => {
+    const { unmount } = renderList({ heading: 'Estado' });
+    expect(screen.getByText('Estado')).toBeInTheDocument();
+    unmount();
+    renderList();
+    expect(screen.queryByText('Estado')).not.toBeInTheDocument();
+  });
+
+  it('hides the search box when searchable is false, shows it by default', () => {
+    const { unmount } = renderList({ searchable: false });
+    expect(screen.queryByPlaceholderText('searchValues')).not.toBeInTheDocument();
+    unmount();
+    renderList();
+    expect(screen.getByPlaceholderText('searchValues')).toBeInTheDocument();
+  });
+
+  it('renders renderLabel nodes instead of the labelFor text', () => {
+    renderList({
+      renderLabel: (code) => <span data-testid={`tag-${code}`}>{`[${LABELS[code]}]`}</span>,
+    });
+    expect(screen.getByTestId('tag-DRAFT')).toHaveTextContent('[Borrador]');
+    expect(screen.queryByText('Borrador')).not.toBeInTheDocument();
+  });
+
+  it('checkbox indicator exposes role=checkbox with aria-checked per row', () => {
+    renderList({ activeCodes: ['DRAFT'], allLabel: 'Todos', indicator: 'checkbox' });
+    const boxes = screen.getAllByRole('checkbox');
+    expect(boxes).toHaveLength(4);
+    const byLabel = (label) => boxes.find((b) => b.textContent === label);
+    expect(byLabel('Todos')).toHaveAttribute('aria-checked', 'false');
+    expect(byLabel('Borrador')).toHaveAttribute('aria-checked', 'true');
+    expect(byLabel('Conciliado')).toHaveAttribute('aria-checked', 'false');
+    expect(screen.queryAllByTestId('Check__55c679')).toHaveLength(0);
+  });
+
+  it('the "all" checkbox is checked when nothing is selected', () => {
+    renderList({ activeCodes: [], allLabel: 'Todos', indicator: 'checkbox' });
+    const all = screen.getAllByRole('checkbox').find((b) => b.textContent === 'Todos');
+    expect(all).toHaveAttribute('aria-checked', 'true');
+  });
+
+  it('default indicator keeps button rows and check marks', () => {
+    renderList({ activeCodes: ['DRAFT'] });
+    expect(screen.queryAllByRole('checkbox')).toHaveLength(0);
+    expect(isTicked('Borrador')).toBe(true);
+  });
+});
