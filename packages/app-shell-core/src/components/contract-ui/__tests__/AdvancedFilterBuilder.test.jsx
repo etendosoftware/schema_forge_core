@@ -12,6 +12,8 @@ beforeEach(() => {
   distinctCalls.length = 0;
   distinctState.loading = false;
   distinctState.search = '';
+  distinctState.initialLoading = false;
+  distinctState.error = null;
   localeState.statuses = {};
 });
 
@@ -67,7 +69,12 @@ vi.mock('../../../lib/gridQuery.js', () => ({
 // `search` is mutable so a test can put the picker in the "user typed a term"
 // state: the fallback catalogue must honour it (ETP-5119). The real hook owns
 // this string; here the test drives it directly.
-const distinctState = { values: [], loading: false, search: '' };
+//
+// `initialLoading` / `error` (ETP-5009) model the real hook's first-page
+// lifecycle. The mock only reports `initialLoading` while the caller ENABLED
+// the fetch, exactly like the real hook (null query key -> false), so a picker
+// with no entity / apiBaseUrl can never be stuck behind the loader here either.
+const distinctState = { values: [], loading: false, search: '', initialLoading: false, error: null };
 
 // Records every call's (entity, field, options) so tests can assert on the
 // `enabled` flag the component computed — the mocked hook always returns
@@ -81,6 +88,8 @@ vi.mock('../../../hooks/useDistinctValues.js', () => ({
     return {
       values: distinctState.values,
       loading: distinctState.loading,
+      initialLoading: !!(options?.enabled && distinctState.initialLoading),
+      error: distinctState.error,
       loadingMore: false,
       hasMore: false,
       search: distinctState.search,
@@ -91,10 +100,12 @@ vi.mock('../../../hooks/useDistinctValues.js', () => ({
 }));
 
 // Render one option per code so tests can count duplicate labels. Mirrors the
-// real DistinctValuesList contract: it receives { codes, labelFor, onSelect }.
+// real DistinctValuesList contract: it receives { codes, labelFor, onSelect },
+// and renders a spinner while the list is empty and `loading` (ETP-5009).
 vi.mock('../DistinctValuesList.jsx', () => ({
-  DistinctValuesList: ({ codes = [], labelFor, onSelect }) => (
+  DistinctValuesList: ({ codes = [], labelFor, onSelect, loading }) => (
     <div data-testid="distinct-values-list">
+      {loading && codes.length === 0 && <div data-testid="distinct-loading" />}
       {codes.map((code, i) => (
         <button
           key={`${String(code)}-${i}`}
@@ -1268,9 +1279,10 @@ describe('AdvancedFilterBuilder — content-based sizing (ETP-4705)', () => {
       expect(call.options.enabled).toBe(true);
     });
 
-    it('does not fetch eagerly for a fresh, empty condition (no selection yet)', () => {
-      // A brand new row (nothing selected) should stay lazy until the user
-      // opens the picker — no wasted network call.
+    it('fetches eagerly for a fresh, empty condition too (no selection yet)', () => {
+      // ETP-5009: a brand new row (nothing selected) also fetches on mount, so
+      // the option list is complete before the popover opens instead of
+      // growing / reordering under the user's cursor.
       const value = {
         rowOperator: 'and',
         conditions: [{ field: 'bp', operator: 'equals', value: [] }],
@@ -1286,7 +1298,7 @@ describe('AdvancedFilterBuilder — content-based sizing (ETP-4705)', () => {
       );
       const call = distinctCalls.find((c) => c.field === 'bp');
       expect(call).toBeDefined();
-      expect(call.options.enabled).toBe(false);
+      expect(call.options.enabled).toBe(true);
     });
 
     it('opening the popover after re-editing "equals" surfaces other contacts, not just the grid-visible one', async () => {
@@ -2769,5 +2781,210 @@ describe('field select stays controlled (ETP-5009)', () => {
     expect(source).toMatch(/value=\{row\.field \?\? ''\}/);
     expect(source).toMatch(/value=\{row\.operator \?\? ''\}/);
     expect(source).not.toMatch(/value=\{row\.(field|operator) \|\| undefined\}/);
+  });
+});
+
+// ================================================================
+// ETP-5009 — pickers load eagerly and never reorder under the cursor
+// ================================================================
+// The distinct page is fetched on MOUNT (field + operator chosen), not when the
+// popover opens, and until its first page settles the option list shows a
+// spinner instead of the in-memory seed from the grid rows. Seeding first and
+// merging the backend page in afterwards made the options appear and then move
+// while the user was clicking. After a fetch error, or with no distinct source
+// (entity / apiBaseUrl missing), the seed is the fallback.
+describe('ETP-5009 — pickers wait for the first distinct page', () => {
+  afterEach(() => {
+    distinctState.values = [];
+  });
+
+  // Plain enum (no enumLabels, not `status`): labels are the raw codes and the
+  // merge order is not re-sorted, so "backend order" is directly observable.
+  const KIND_COL = { key: 'kind', label: 'Kind', type: 'enum', column: 'Kind' };
+  const KIND_ROWS = [{ kind: 'AA' }, { kind: 'BB' }];
+  const bpCol = { key: 'bp', label: 'Partner', type: 'selector', column: 'C_BPartner_ID' };
+  const BP_ROWS = [{ bp: 'BP9', 'bp$_identifier': 'Seed Partner' }];
+
+  function renderPicker({ col, rows, entity = 'some-entity', apiBaseUrl = '/api', operator = 'equals', value = [] }) {
+    // Same `columns` / `value` references on every render: a fresh `value`
+    // object re-seeds the rows, which remounts the picker and closes the popover.
+    const columns = [col];
+    const filterValue = { rowOperator: 'and', conditions: [{ field: col.key, operator, value }] };
+    const el = () => (
+      <AdvancedFilterBuilder
+        columns={columns}
+        value={filterValue}
+        rows={rows}
+        entity={entity}
+        apiBaseUrl={apiBaseUrl}
+      />
+    );
+    const utils = render(el());
+    return { ...utils, rerenderSame: () => utils.rerender(el()) };
+  }
+
+  const openPicker = async (user) => {
+    await user.click(screen.getByTestId('ChevronDown__4eedf1').closest('button'));
+  };
+
+  const enumOptions = () =>
+    screen.queryAllByTestId('distinct-option').map((o) => o.textContent);
+
+  describe('DistinctEnumPicker', () => {
+    it('enables the distinct fetch on mount, before the popover is opened', () => {
+      renderPicker({ col: KIND_COL, rows: KIND_ROWS });
+      const call = distinctCalls.find((c) => c.field === 'kind');
+      expect(call).toBeDefined();
+      expect(call.options.enabled).toBe(true);
+    });
+
+    it('shows the spinner and NOT the row seed while the first page is pending', async () => {
+      const user = userEvent.setup();
+      distinctState.initialLoading = true;
+      renderPicker({ col: KIND_COL, rows: KIND_ROWS });
+      await openPicker(user);
+      await screen.findByTestId('distinct-values-list');
+      expect(screen.getByTestId('distinct-loading')).toBeInTheDocument();
+      expect(enumOptions()).toEqual([]);
+      expect(screen.queryByText('AA')).not.toBeInTheDocument();
+      expect(screen.queryByText('BB')).not.toBeInTheDocument();
+    });
+
+    it('lists the backend page in backend order once it lands, then the row fill-ins', async () => {
+      const user = userEvent.setup();
+      distinctState.initialLoading = true;
+      const { rerenderSame } = renderPicker({ col: KIND_COL, rows: KIND_ROWS });
+      await openPicker(user);
+      await screen.findByTestId('distinct-loading');
+
+      distinctState.initialLoading = false;
+      distinctState.values = [
+        { id: 'ZZ', _identifier: 'ZZ' },
+        { id: 'AA', _identifier: 'AA' },
+        { id: 'MM', _identifier: 'MM' },
+      ];
+      rerenderSame();
+
+      expect(screen.queryByTestId('distinct-loading')).not.toBeInTheDocument();
+      expect(enumOptions()).toEqual(['ZZ', 'AA', 'MM', 'BB']);
+    });
+
+    it('falls back to the row seed after the fetch errored', async () => {
+      const user = userEvent.setup();
+      // The real hook clears initialLoading and empties values on error.
+      distinctState.error = new Error('boom');
+      renderPicker({ col: KIND_COL, rows: KIND_ROWS });
+      await openPicker(user);
+      await screen.findByTestId('distinct-values-list');
+      expect(screen.queryByTestId('distinct-loading')).not.toBeInTheDocument();
+      expect(enumOptions()).toEqual(['AA', 'BB']);
+    });
+
+    it('falls back to the enumLabels catalogue after an error when there are no rows', async () => {
+      const user = userEvent.setup();
+      distinctState.error = new Error('boom');
+      const col = { ...KIND_COL, enumLabels: { X: 'Equis', Y: 'Ye' } };
+      renderPicker({ col, rows: [] });
+      await openPicker(user);
+      await screen.findByTestId('distinct-values-list');
+      expect(enumOptions().sort()).toEqual(['Equis', 'Ye']);
+    });
+
+    it('shows the row seed immediately when there is no entity (no distinct source)', async () => {
+      const user = userEvent.setup();
+      // Even a stray "pending" upstream cannot hide the seed: with no entity the
+      // fetch is disabled, so the hook never reports initialLoading.
+      distinctState.initialLoading = true;
+      renderPicker({ col: KIND_COL, rows: KIND_ROWS, entity: null });
+      const call = distinctCalls.find((c) => c.field === 'kind');
+      expect(call.options.enabled).toBe(false);
+      await openPicker(user);
+      await screen.findByTestId('distinct-values-list');
+      expect(screen.queryByTestId('distinct-loading')).not.toBeInTheDocument();
+      expect(enumOptions()).toEqual(['AA', 'BB']);
+    });
+
+    it('shows the row seed immediately when there is no apiBaseUrl', async () => {
+      const user = userEvent.setup();
+      distinctState.initialLoading = true;
+      renderPicker({ col: KIND_COL, rows: KIND_ROWS, apiBaseUrl: null });
+      await openPicker(user);
+      await screen.findByTestId('distinct-values-list');
+      expect(enumOptions()).toEqual(['AA', 'BB']);
+    });
+  });
+
+  describe('IdentifierMultiPicker', () => {
+    const popover = () => screen.getByTestId('PopoverContent__4eedf1');
+
+    it('enables the distinct fetch on mount for a fresh condition', () => {
+      renderPicker({ col: bpCol, rows: BP_ROWS });
+      const call = distinctCalls.find((c) => c.field === 'bp');
+      expect(call.options.enabled).toBe(true);
+    });
+
+    it('shows the spinner and NOT the row seed while the first page is pending', async () => {
+      const user = userEvent.setup();
+      distinctState.initialLoading = true;
+      renderPicker({ col: bpCol, rows: BP_ROWS });
+      await openPicker(user);
+      const content = popover();
+      expect(within(content).getByTestId('Loader2__4eedf1')).toBeInTheDocument();
+      expect(within(content).queryByText('Seed Partner')).not.toBeInTheDocument();
+      expect(within(content).queryByText('—')).not.toBeInTheDocument();
+    });
+
+    it('lists the options once the first page lands', async () => {
+      const user = userEvent.setup();
+      distinctState.initialLoading = true;
+      const { rerenderSame } = renderPicker({ col: bpCol, rows: BP_ROWS });
+      await openPicker(user);
+      expect(within(popover()).getByTestId('Loader2__4eedf1')).toBeInTheDocument();
+
+      distinctState.initialLoading = false;
+      distinctState.values = [
+        { id: 'BP2', _identifier: 'Globex Inc' },
+        { id: 'BP1', _identifier: 'Acme Corp' },
+      ];
+      rerenderSame();
+
+      const content = popover();
+      expect(within(content).queryByTestId('Loader2__4eedf1')).not.toBeInTheDocument();
+      const labels = within(content).getAllByRole('button').map((b) => b.textContent.trim());
+      // IdentifierMultiPicker sorts by label; the in-memory row fills in.
+      expect(labels).toEqual(['Acme Corp', 'Globex Inc', 'Seed Partner']);
+    });
+
+    it('falls back to the row seed after the fetch errored', async () => {
+      const user = userEvent.setup();
+      distinctState.error = new Error('boom');
+      renderPicker({ col: bpCol, rows: BP_ROWS });
+      await openPicker(user);
+      const content = popover();
+      expect(within(content).queryByTestId('Loader2__4eedf1')).not.toBeInTheDocument();
+      expect(within(content).getByText('Seed Partner')).toBeInTheDocument();
+    });
+
+    it('shows the row seed immediately when there is no entity', async () => {
+      const user = userEvent.setup();
+      distinctState.initialLoading = true;
+      renderPicker({ col: bpCol, rows: BP_ROWS, entity: null });
+      await openPicker(user);
+      const content = popover();
+      expect(within(content).queryByTestId('Loader2__4eedf1')).not.toBeInTheDocument();
+      expect(within(content).getByText('Seed Partner')).toBeInTheDocument();
+    });
+
+    it('shows the row seed immediately when there is no apiBaseUrl', async () => {
+      const user = userEvent.setup();
+      distinctState.initialLoading = true;
+      renderPicker({ col: bpCol, rows: BP_ROWS, apiBaseUrl: null });
+      const call = distinctCalls.find((c) => c.field === 'bp');
+      expect(call.options.enabled).toBe(false);
+      await openPicker(user);
+      const content = popover();
+      expect(within(content).queryByTestId('Loader2__4eedf1')).not.toBeInTheDocument();
+      expect(within(content).getByText('Seed Partner')).toBeInTheDocument();
+    });
   });
 });

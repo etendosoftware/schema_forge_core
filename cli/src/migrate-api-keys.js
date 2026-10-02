@@ -15,13 +15,11 @@
  */
 
 import { readFile, writeFile, readdir, stat } from 'node:fs/promises';
-import { resolve, dirname, join } from 'node:path';
-import { fileURLToPath } from 'node:url';
+import { resolve, join } from 'node:path';
 import { isMainModule } from './utils.js';
+import { resolveRepoRoot } from './lib/repo-root.js';
 
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = dirname(__filename);
-const ROOT = process.env.SF_ROOT || resolve(__dirname, '../..');
+const ROOT = resolveRepoRoot();
 const ARTIFACTS_DIR = resolve(ROOT, 'artifacts');
 
 const dryRun = process.argv.includes('--dry-run');

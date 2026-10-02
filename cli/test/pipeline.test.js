@@ -292,6 +292,6 @@ describe('package.json bin entries', () => {
     assert.ok(existingBins.includes('sf-pipeline'), 'sf-pipeline bin entry must point to existing file');
     assert.ok(existingBins.includes('sf-extract'), 'sf-extract bin entry must point to existing file');
     assert.ok(existingBins.includes('sf-extract-rules'), 'sf-extract-rules bin entry must point to existing file');
-    assert.ok(existingBins.includes('sf-validate'), 'sf-validate bin entry must point to existing file');
+    assert.ok(existingBins.includes('sf-validate-pipeline'), 'sf-validate-pipeline bin entry must point to existing file');
   });
 });
