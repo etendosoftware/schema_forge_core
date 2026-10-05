@@ -294,7 +294,7 @@ export function LoginStep({ config, stepData, onNext, onBack, goToStep, setToken
   if (view === 'reset-password') {
     return (
       <AuthShell
-        brandLabel={config.brandLabel || 'Etendo GO'}
+        brandLabel={config.brandLabel || 'Etendo'}
         headerContent={localeControl}
         marketingTitle={ui('onboardingMarketingTitle')}
         marketingDescription={ui('onboardingMarketingDescription')}
@@ -389,7 +389,7 @@ export function LoginStep({ config, stepData, onNext, onBack, goToStep, setToken
   if (view === 'forgot-password') {
     return (
       <AuthShell
-        brandLabel={config.brandLabel || 'Etendo GO'}
+        brandLabel={config.brandLabel || 'Etendo'}
         headerContent={localeControl}
         marketingTitle={ui('onboardingMarketingTitle')}
         marketingDescription={ui('onboardingMarketingDescription')}
@@ -516,7 +516,7 @@ export function LoginStep({ config, stepData, onNext, onBack, goToStep, setToken
         setShowLoginPassword(false);
         if (goToStep) goToStep('register');
       }}
-      brandLabel={config.brandLabel || 'Etendo GO'}
+      brandLabel={config.brandLabel || 'Etendo'}
       headerContent={localeControl}
       marketingTitle={ui('onboardingMarketingTitle')}
       marketingDescription={ui('onboardingMarketingDescription')}

@@ -11,7 +11,7 @@ function RegisteredMcpTool({ enabled, definition, endpoint, accessToken, fetcher
     enabled,
     name: definition.name,
     title: definition.title || definition.name,
-    description: definition.description || `Etendo Go MCP tool ${definition.name}`,
+    description: definition.description || `Etendo MCP tool ${definition.name}`,
     inputSchema: definition.inputSchema || { type: 'object' },
     annotations: definition.annotations,
     execute,
