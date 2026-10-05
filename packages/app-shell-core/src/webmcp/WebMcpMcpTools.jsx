@@ -20,7 +20,7 @@ function RegisteredMcpTool({ enabled, definition, endpoint, accessToken, fetcher
 }
 
 /**
- * Mirrors Etendo Go's authenticated MCP catalog in the browser's WebMCP
+ * Mirrors Etendo's authenticated MCP catalog in the browser's WebMCP
  * context. The server remains authoritative for tool discovery, RBAC, OAuth
  * scopes, validation, and execution.
  */
@@ -36,7 +36,7 @@ export function WebMcpMcpTools({ enabled = false, endpoint, accessToken, fetcher
     listMcpTools({ fetcher, endpoint, accessToken })
       .then((tools) => { if (!cancelled) setDefinitions(tools); })
       .catch((error) => {
-        console.warn('[webmcp] could not load Etendo Go MCP tools', error);
+        console.warn('[webmcp] could not load Etendo MCP tools', error);
         if (!cancelled) setDefinitions([]);
       });
     return () => { cancelled = true; };

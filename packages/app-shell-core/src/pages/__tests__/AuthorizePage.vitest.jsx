@@ -1,3 +1,4 @@
+// @covers packages/app-shell-core/src/pages/AuthorizePage.jsx
 import { vi, describe, it, expect, beforeEach, afterEach } from 'vitest';
 
 // Mock dependencies BEFORE imports. Paths are core-relative (this test lives in

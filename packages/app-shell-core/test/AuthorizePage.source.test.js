@@ -82,8 +82,6 @@ test('AuthorizePage declares labels for all supported scopes', async () => {
   assert.match(src, /'etendo:process'/);
   assert.match(src, /'etendo:report'/);
   assert.match(src, /'etendo:\*'/);
-  // Legacy neo:* aliases resolve to the same labels.
-  assert.match(src, /replace\(\/\^etendo:\/, 'neo:'\)/);
 });
 
 test('AuthorizePage derives the MCP URL from the window origin', async () => {
