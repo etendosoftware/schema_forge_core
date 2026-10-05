@@ -32,12 +32,14 @@ import {
 } from './lib/entity-methods.js';
 import { parseEtgoXmlFile } from './lib/etgo-xml-parser.js';
 import { visibilityMatchesFlags } from './lib/field-visibility.js';
+import { isMainModule } from './utils.js';
+import { resolveRepoRoot } from './lib/repo-root.js';
 
 const execFileAsync = promisify(execFile);
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
-const ROOT = process.env.SF_ROOT || join(__dirname, '..', '..');
+const ROOT = resolveRepoRoot();
 
 // Artifact dirs that are intentionally custom-only: they have decisions.json
 // but no contract pipeline (no contract.json, report-contract.json, etc.).
@@ -2304,10 +2306,6 @@ async function main() {
 }
 
 // Only run main when executed directly
-const isMainModule = process.argv[1] && (
-  process.argv[1].endsWith('validate-pipeline.js') ||
-  process.argv[1].endsWith('validate-pipeline')
-);
-if (isMainModule) {
+if (isMainModule(import.meta.url)) {
   main().catch(err => { process.stderr.write(`${err.stack}\n`); process.exit(1); });
 }

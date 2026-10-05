@@ -291,3 +291,49 @@ describe('DistinctValuesList — heading / searchable / renderLabel / indicator 
     expect(isTicked('Borrador')).toBe(true);
   });
 });
+
+// ETP-5009 — a caller that withholds its codes until the first distinct page
+// settles passes `loading` so the spinner covers the render before the fetch
+// has flipped `distinct.loading`. When passed, it overrides `distinct.loading`.
+describe('DistinctValuesList — loading prop override (ETP-5009)', () => {
+  it('shows the spinner when loading=true even though distinct.loading is false', () => {
+    renderList({ codes: [], distinct: makeDistinct({ loading: false }), loading: true });
+    expect(screen.getAllByTestId('Loader2__55c679').length).toBeGreaterThan(0);
+  });
+
+  it('hides the spinner when loading=false even though distinct.loading is true', () => {
+    renderList({ codes: [], distinct: makeDistinct({ loading: true }), loading: false });
+    expect(screen.queryByTestId('Loader2__55c679')).not.toBeInTheDocument();
+  });
+
+  it('suppresses the empty label while loading=true overrides an idle distinct', () => {
+    renderList({
+      codes: [],
+      distinct: makeDistinct({ search: '4', loading: false }),
+      loading: true,
+      emptyLabel: 'Sin resultados',
+    });
+    expect(screen.queryByText('Sin resultados')).not.toBeInTheDocument();
+  });
+
+  it('shows the empty label when loading=false overrides a busy distinct', () => {
+    renderList({
+      codes: [],
+      distinct: makeDistinct({ search: '4', loading: true }),
+      loading: false,
+      emptyLabel: 'Sin resultados',
+    });
+    expect(screen.getByText('Sin resultados')).toBeInTheDocument();
+  });
+
+  it('falls back to distinct.loading when the prop is omitted (null)', () => {
+    renderList({ codes: [], distinct: makeDistinct({ loading: true }), loading: null });
+    expect(screen.getAllByTestId('Loader2__55c679').length).toBeGreaterThan(0);
+  });
+
+  it('renders the codes (no spinner) when there are rows, even with loading=true', () => {
+    renderList({ loading: true });
+    expect(screen.queryByTestId('Loader2__55c679')).not.toBeInTheDocument();
+    expect(optionRow('Borrador')).toBeTruthy();
+  });
+});

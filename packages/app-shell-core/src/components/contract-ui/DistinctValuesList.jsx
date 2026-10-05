@@ -18,6 +18,10 @@ import { Check, Loader2 } from 'lucide-react';
  *     `labelFor` text; `labelFor` must stay a string because callers search on
  *     it), and `indicator="checkbox"` (a checkbox box instead of the check mark,
  *     the multi-select look; rows then expose `role="checkbox"` + `aria-checked`).
+ *   - A centred spinner while the list is empty and loading. `loading`
+ *     overrides `distinct.loading` for that decision — a caller that withholds
+ *     its codes until the first page settles (ETP-5009) passes it so the
+ *     spinner also covers the render before the fetch has flipped `loading`.
  *   - An IntersectionObserver sentinel that invokes `distinct.loadMore()` as
  *     the user scrolls near the bottom, so the dropdown behaves like an
  *     infinite list instead of a single large page.
@@ -39,7 +43,9 @@ export function DistinctValuesList({
   searchable = true,
   renderLabel = null,
   indicator = 'check',
+  loading = null,
 }) {
+  const isLoading = loading ?? distinct.loading;
   const sentinelRef = useRef(null);
   // Multi-select mode is opt-in via `activeCodes`; single-select consumers keep
   // passing `activeCode` and behave exactly as before.
@@ -107,7 +113,7 @@ export function DistinctValuesList({
             <span className="flex-1 min-w-0 truncate">{renderLabel ? renderLabel(code) : labelFor(code)}</span>
           </button>
         ))}
-        {distinct.loading && codes.length === 0 && (
+        {isLoading && codes.length === 0 && (
           <div className="flex items-center justify-center py-4 text-muted-foreground">
             <Loader2 className="h-4 w-4 animate-spin" data-testid="Loader2__55c679" />
           </div>
@@ -117,7 +123,7 @@ export function DistinctValuesList({
             that it correctly renders nothing, a bare "—" reads as a broken
             dropdown. `emptyLabel` is the translated "No results" from the
             caller — the fallback keeps older callers rendering as before. */}
-        {!distinct.loading && codes.length === 0 && (
+        {!isLoading && codes.length === 0 && (
           <div className="px-3 py-3 text-sm text-muted-foreground text-center">
             {distinct.search ? (emptyLabel || '—') : ''}
           </div>

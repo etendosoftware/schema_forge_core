@@ -20,9 +20,10 @@ import { readFileSync, existsSync } from 'node:fs';
 import { join, dirname} from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { isMainModule } from './utils.js';
+import { resolveRepoRoot } from './lib/repo-root.js';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
-const ROOT = process.env.SF_ROOT || join(__dirname, '..', '..');
+const ROOT = resolveRepoRoot();
 
 const RESET  = '\x1b[0m';
 const GREEN  = '\x1b[32m';

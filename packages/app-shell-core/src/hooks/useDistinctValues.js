@@ -5,6 +5,8 @@ import { buildHeaders } from '../auth/api.js';
 const DEFAULT_PAGE_SIZE = 50;
 const DEFAULT_DEBOUNCE_MS = 250;
 
+const queryKeyOf = (entity, field, apiBaseUrl) => `${entity}\u0000${field}\u0000${apiBaseUrl}`;
+
 /**
  * Paginated distinct-value fetcher for a single field of a NEO Headless list
  * entity. Backed by `GET /sws/neo/{entity}?_distinct=<field>&_distinctSearch=…
@@ -14,6 +16,12 @@ const DEFAULT_DEBOUNCE_MS = 250;
  *   1. Caller shows whatever values it already has in memory for instant feedback.
  *   2. On mount / when `enabled` flips true, this hook fetches page 1 in the
  *      background. `loading` stays true until the first page resolves.
+ *      `initialLoading` is the narrower "page 1 of this query key has not
+ *      settled yet" flag: it is already true on the very render that enables
+ *      the fetch (before the effect has had a chance to flip `loading`), it
+ *      clears on success OR error, and a later search refetch does not raise
+ *      it again. A picker that must not change shape under the user renders a
+ *      loader while it is true instead of an in-memory seed (ETP-5009).
  *   3. As the user scrolls to the bottom of the dropdown, the caller invokes
  *      `loadMore()` to append the next page.
  *   4. Typing in the search box updates `search`; it is debounced internally
@@ -37,6 +45,21 @@ export function useDistinctValues(entity, field, {
   const [error, setError] = useState(null);
   const [rawSearch, setRawSearch] = useState('');
   const [debouncedSearch, setDebouncedSearch] = useState('');
+
+  // Identity of the query whose first page `initialLoading` tracks. Null when
+  // no fetch can happen (disabled, signed out, missing entity/field/base URL).
+  const queryKey = (enabled && isAuthenticated && entity && field && apiBaseUrl)
+    ? queryKeyOf(entity, field, apiBaseUrl)
+    : null;
+  const [pendingKey, setPendingKey] = useState(queryKey);
+  const [trackedKey, setTrackedKey] = useState(queryKey);
+  // Adjust-state-on-change during render (not in an effect) so the very render
+  // that enables a new key already reports `initialLoading`.
+  if (queryKey !== trackedKey) {
+    setTrackedKey(queryKey);
+    setPendingKey(queryKey);
+  }
+  const initialLoading = queryKey !== null && pendingKey === queryKey;
 
   const startRowRef = useRef(0);
   // Each fetch owns a monotonic sequence number; stale responses are dropped.
@@ -95,9 +118,15 @@ export function useDistinctValues(entity, field, {
       if (!append) setValues([]);
       setHasMore(false);
     } finally {
-      if (reqId === requestIdRef.current) setBusy(false);
+      if (reqId === requestIdRef.current) {
+        setBusy(false);
+        if (!append) {
+          const settledKey = queryKeyOf(entity, field, apiBaseUrl);
+          setPendingKey((k) => (k === settledKey ? null : k));
+        }
+      }
     }
-  }, [isAuthenticated, entity, field, pageSize, buildUrl]);
+  }, [isAuthenticated, entity, field, apiBaseUrl, pageSize, buildUrl]);
 
   // Reset + fetch page 1 whenever the query key changes.
   useEffect(() => {
@@ -124,6 +153,7 @@ export function useDistinctValues(entity, field, {
   return useMemo(() => ({
     values,
     loading,
+    initialLoading,
     loadingMore,
     hasMore,
     error,
@@ -131,7 +161,7 @@ export function useDistinctValues(entity, field, {
     setSearch: setRawSearch,
     loadMore,
     refresh,
-  }), [values, loading, loadingMore, hasMore, error, rawSearch, loadMore, refresh]);
+  }), [values, loading, initialLoading, loadingMore, hasMore, error, rawSearch, loadMore, refresh]);
 }
 
 export default useDistinctValues;

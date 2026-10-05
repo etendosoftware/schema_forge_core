@@ -12,14 +12,12 @@
  */
 
 import { readFile, writeFile, readdir, stat } from 'node:fs/promises';
-import { fileURLToPath } from 'node:url';
-import { dirname, join } from 'node:path';
+import { join } from 'node:path';
 import { CURRENT_VERSION, getVersion, needsMigration, migrateDecisions } from './index.js';
 import { isMainModule } from '../utils.js';
+import { resolveRepoRoot } from '../lib/repo-root.js';
 
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = dirname(__filename);
-const ROOT = process.env.SF_ROOT || join(__dirname, '..', '..', '..');
+const ROOT = resolveRepoRoot();
 const ARTIFACTS_DIR = join(ROOT, 'artifacts');
 
 async function findDecisionsFiles(specificWindows) {

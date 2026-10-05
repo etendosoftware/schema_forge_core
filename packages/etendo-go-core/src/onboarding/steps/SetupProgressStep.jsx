@@ -30,6 +30,11 @@ const TRICKLE_LOOKAHEAD = 15;
 const TRICKLE_MAX = 95;
 const TRICKLE_EASE = 0.005;
 const TRICKLE_INTERVAL_MS = 200;
+// ETP-5426: how long the success card stays up when the sample data could not be loaded, so the
+// notice can actually be read before the auto-login navigates away (the normal wait is 2s).
+const DEFAULT_LOGIN_DELAY_MS = 2000;
+const SAMPLE_DATA_WARNING_LOGIN_DELAY_MS = 6000;
+const SAMPLE_DATA_STEP = 'sampleData';
 
 export function SetupProgressStep({ config, stepData, onNext, onBack, goToStep, token, routeByEnvironments, onLogout }) {
   const ui = useUI();
@@ -44,6 +49,7 @@ export function SetupProgressStep({ config, stepData, onNext, onBack, goToStep, 
   const reducedMotionRef = useRef(false);
   const hasStartedRef = useRef(false);
   const isMountedRef = useRef(true);
+  const sampleDataWarnedRef = useRef(false);
 
   const apiBase = config.apiBase || '';
 
@@ -133,6 +139,7 @@ export function SetupProgressStep({ config, stepData, onNext, onBack, goToStep, 
     setResult(null);
     setSteps(initialSetupSteps());
     maxSetupProgressRef.current = 0;
+    sampleDataWarnedRef.current = false;
 
     const formPayload = {
       clientName: stepData.clientName,
@@ -144,6 +151,8 @@ export function SetupProgressStep({ config, stepData, onNext, onBack, goToStep, 
       countryCode: stepData.countryCode || config.defaultForm?.countryCode || '',
       language: stepData.language || config.defaultForm?.language || '',
       currency: config.defaultForm?.currency || '',
+      // ETP-5426: the Company step's opt-in; only a literal true asks for sample data.
+      includeSampleData: stepData.includeSampleData === true,
     };
 
     let succeeded = false;
@@ -172,6 +181,9 @@ export function SetupProgressStep({ config, stepData, onNext, onBack, goToStep, 
             });
           }
         } else if (msg.type === 'progress' && msg.step) {
+          if (msg.step === SAMPLE_DATA_STEP && msg.status === 'warning') {
+            sampleDataWarnedRef.current = true;
+          }
           setSteps(prev => applyProgressMessage(prev, msg));
         }
       });
@@ -187,7 +199,7 @@ export function SetupProgressStep({ config, stepData, onNext, onBack, goToStep, 
       setRunning(false);
       if (succeeded && isMountedRef.current) {
         // Fetch environments and auto-login to the newly created one
-        const retryLogin = async (attempts = 3, delay = 2000) => {
+        const retryLogin = async (attempts = 3, delay = DEFAULT_LOGIN_DELAY_MS) => {
           for (let i = 0; i < attempts; i++) {
             if (!isMountedRef.current) return;
             await new Promise(r => setTimeout(r, delay));
@@ -209,7 +221,9 @@ export function SetupProgressStep({ config, stepData, onNext, onBack, goToStep, 
             goToStep('env-select');
           }
         };
-        retryLogin();
+        retryLogin(3, sampleDataWarnedRef.current
+          ? SAMPLE_DATA_WARNING_LOGIN_DELAY_MS
+          : DEFAULT_LOGIN_DELAY_MS);
       }
     }
   }, [apiBase, config, stepData, token, ui, loginToEnvironment, goToStep, routeByEnvironments]);
@@ -266,6 +280,8 @@ export function SetupProgressStep({ config, stepData, onNext, onBack, goToStep, 
   }, [result]);
 
   const activeSetupStep = steps.find((step) => step.status === 'running')?.name;
+  const sampleDataWarned = steps.some(
+    (step) => step.name === SAMPLE_DATA_STEP && step.status === 'warning');
   const readinessFailures = result?.readinessFailures || [];
   const readinessFailureText = readinessFailures.map((failure) => ui(failure.key)).join(' ');
 
@@ -274,7 +290,10 @@ export function SetupProgressStep({ config, stepData, onNext, onBack, goToStep, 
     setupProgressState = {
       progress: 100,
       title: ui('onboardingSuccessTitle'),
-      description: ui('onboardingSuccessDescription'),
+      // ETP-5426: the environment is ready either way; say so when the sample data is missing.
+      description: sampleDataWarned
+        ? ui('onboardingSampleDataWarning')
+        : ui('onboardingSuccessDescription'),
       leading: <Check
         className="h-8 w-8 text-[#54b56a]"
         strokeWidth={3}
@@ -325,6 +344,15 @@ export function SetupProgressStep({ config, stepData, onNext, onBack, goToStep, 
       title: ui('onboardingPreparingTitle'),
       description: ui('onboardingPreparingSequencesDescription'),
       leading: <Settings className="h-8 w-8 text-slate-400" data-testid="Settings__79cf84" />,
+      statusLabel: ui('loading'),
+      success: false,
+    };
+  } else if (activeSetupStep === SAMPLE_DATA_STEP) {
+    setupProgressState = {
+      progress: 90,
+      title: ui('onboardingPreparingTitle'),
+      description: ui('onboardingPreparingSampleDataDescription'),
+      leading: <Building2 className="h-8 w-8 text-slate-400" data-testid="Building2__79cf84" />,
       statusLabel: ui('loading'),
       success: false,
     };

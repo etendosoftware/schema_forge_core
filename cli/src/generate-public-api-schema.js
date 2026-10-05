@@ -1,5 +1,7 @@
+#!/usr/bin/env node
 import { writeFileSync, mkdirSync, readFileSync } from 'node:fs';
 import { dirname } from 'node:path';
+import { exitOnHelp, isMainModule } from './utils.js';
 
 export function resolvePublicApiSchema({ apiVersion, windows }) {
   const entities = {};
@@ -47,7 +49,9 @@ export function loadContractsForWindows(entries, artifactsRoot) {
   }));
 }
 
-if (import.meta.url === `file://${process.argv[1]}`) {
+if (isMainModule(import.meta.url)) {
+  exitOnHelp('Usage: node cli/src/generate-public-api-schema.js [--artifacts-root <dir>]\n'
+    + '  writes <artifacts-root>/_public-api/allowlist.v1.json (default root: artifacts)');
   const artifactsRoot = process.argv.includes('--artifacts-root')
     ? process.argv[process.argv.indexOf('--artifacts-root') + 1]
     : 'artifacts';
