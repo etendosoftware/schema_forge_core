@@ -1,7 +1,7 @@
 // @covers cli/sonar-check.sh
 import { describe, it, before, after } from 'node:test';
 import assert from 'node:assert/strict';
-import { mkdtempSync, mkdirSync, writeFileSync, rmSync, chmodSync, realpathSync } from 'node:fs';
+import { mkdtempSync, mkdirSync, writeFileSync, rmSync, chmodSync, realpathSync, symlinkSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { spawnSync } from 'node:child_process';
@@ -19,6 +19,9 @@ function runScript(files, { cwd, binDir }) {
     timeout: 10_000,
     env: {
       ...process.env,
+      // bash trusts PWD for its logical path; without it every run would
+      // already see the physical path and the symlink case could not fail.
+      PWD: cwd,
       PATH: `${binDir}:${process.env.PATH}`,
       SONAR_TOKEN: 'test-token',
       SONAR_HOST_URL: 'http://sonar.invalid',
@@ -28,9 +31,10 @@ function runScript(files, { cwd, binDir }) {
 
 describe('sonar-check.sh base-dir detection', () => {
   let root;
+  let realRepo;
 
   before(() => {
-    root = realpathSync(mkdtempSync(join(tmpdir(), 'sonar-check-')));
+    root = mkdtempSync(join(tmpdir(), 'sonar-check-'));
     mkdirSync(join(root, 'bin'));
     writeFileSync(join(root, 'bin', 'sonar-scanner'), '#!/usr/bin/env bash\necho "SCANNER $*"\n');
     chmodSync(join(root, 'bin', 'sonar-scanner'), 0o755);
@@ -39,6 +43,9 @@ describe('sonar-check.sh base-dir detection', () => {
     for (const file of ['src/a/deep/One.java', 'src/b/Two.java', 'srcx/Three.java']) {
       writeFileSync(join(root, 'repo', file), 'class X {}\n');
     }
+    symlinkSync(join(root, 'repo'), join(root, 'link'));
+    // git reports the physical path, so every expectation is in that form.
+    realRepo = realpathSync(join(root, 'repo'));
   });
 
   after(() => rmSync(root, { recursive: true, force: true }));
@@ -48,7 +55,7 @@ describe('sonar-check.sh base-dir detection', () => {
     const result = runScript(['src/a/deep/One.java', 'src/b/Two.java'], { cwd: repo, binDir: join(root, 'bin') });
     assert.equal(result.error, undefined, `script did not terminate: ${result.error}`);
     assert.equal(result.status, 0, `${result.stderr}\n${result.stdout}`);
-    assert.match(result.stdout, new RegExp(`Base dir: ${join(repo, 'src')}\\n`));
+    assert.match(result.stdout, new RegExp(`Base dir: ${join(realRepo, 'src')}\\n`));
     assert.match(result.stdout, /sonar\.inclusions=a\/deep\/One\.java,b\/Two\.java/);
   });
 
@@ -57,7 +64,15 @@ describe('sonar-check.sh base-dir detection', () => {
     const result = runScript(['src/b/Two.java', 'srcx/Three.java'], { cwd: repo, binDir: join(root, 'bin') });
     assert.equal(result.error, undefined, `script did not terminate: ${result.error}`);
     assert.equal(result.status, 0, `${result.stderr}\n${result.stdout}`);
-    assert.match(result.stdout, new RegExp(`Base dir: ${repo}\\n`));
+    assert.match(result.stdout, new RegExp(`Base dir: ${realRepo}\\n`));
     assert.match(result.stdout, /sonar\.inclusions=src\/b\/Two\.java,srcx\/Three\.java/);
+  });
+
+  it('resolves files through a symlinked checkout path to relative inclusions', () => {
+    const result = runScript(['src/a/deep/One.java', 'src/b/Two.java'], { cwd: join(root, 'link'), binDir: join(root, 'bin') });
+    assert.equal(result.error, undefined, `script did not terminate: ${result.error}`);
+    assert.equal(result.status, 0, `${result.stderr}\n${result.stdout}`);
+    assert.match(result.stdout, new RegExp(`Base dir: ${join(realRepo, 'src')}\\n`));
+    assert.match(result.stdout, /sonar\.inclusions=a\/deep\/One\.java,b\/Two\.java/);
   });
 });

@@ -95,8 +95,14 @@ for f in "${FILES[@]}"; do
     echo "Error: File not found: $f" >&2
     exit 1
   fi
-  RESOLVED_FILES+=("$(cd "$(dirname "$f")" && pwd)/$(basename "$f")")
+  # pwd -P resolves symlinks so the paths compare with `git rev-parse
+  # --show-toplevel`, which always reports the physical path.
+  RESOLVED_FILES+=("$(cd "$(dirname "$f")" && pwd -P)/$(basename "$f")")
 done
+
+if [[ -n "$BASE_DIR" ]]; then
+  BASE_DIR="$(cd "$BASE_DIR" && pwd -P)"
+fi
 
 # ── Detect base directory (common ancestor of all files) ─────────────────────
 if [[ -z "$BASE_DIR" ]]; then
