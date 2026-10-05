@@ -11,7 +11,7 @@ test('exchanges an API key for a JWT using the OAuth2 client_credentials grant',
         access_token: 'jwt-abc123',
         token_type: 'Bearer',
         expires_in: 300,
-        scope: 'neo:read',
+        scope: 'etendo:read',
       }),
       { status: 200 }
     );

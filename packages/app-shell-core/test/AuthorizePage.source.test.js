@@ -26,7 +26,7 @@ test('AuthorizePage reads OAuth params from useSearchParams', async () => {
 
 test('AuthorizePage falls back to default scopes when scope param is absent', async () => {
   const src = await readSource();
-  assert.match(src, /searchParams\.get\('scope'\)\s*\|\|\s*'neo:read neo:write'/);
+  assert.match(src, /searchParams\.get\('scope'\)\s*\|\|\s*'etendo:read etendo:write'/);
 });
 
 test('AuthorizePage gates the OAuth flow on required PKCE params and response_type=code', async () => {
@@ -77,11 +77,13 @@ test('AuthorizePage tracks status through the authorization lifecycle', async ()
 
 test('AuthorizePage declares labels for all supported scopes', async () => {
   const src = await readSource();
-  assert.match(src, /'neo:read'/);
-  assert.match(src, /'neo:write'/);
-  assert.match(src, /'neo:process'/);
-  assert.match(src, /'neo:report'/);
-  assert.match(src, /'neo:\*'/);
+  assert.match(src, /'etendo:read'/);
+  assert.match(src, /'etendo:write'/);
+  assert.match(src, /'etendo:process'/);
+  assert.match(src, /'etendo:report'/);
+  assert.match(src, /'etendo:\*'/);
+  // Legacy neo:* aliases resolve to the same labels.
+  assert.match(src, /replace\(\/\^etendo:\/, 'neo:'\)/);
 });
 
 test('AuthorizePage derives the MCP URL from the window origin', async () => {

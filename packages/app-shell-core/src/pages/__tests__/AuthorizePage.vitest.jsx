@@ -155,7 +155,7 @@ describe('AuthorizePage', () => {
         redirect_uri: 'https://example.com/callback',
         code_challenge: 'challenge123',
         response_type: 'code',
-        scope: 'neo:read neo:write',
+        scope: 'etendo:read etendo:write',
         state: 'state123',
       });
     });
@@ -412,9 +412,59 @@ describe('AuthorizePage', () => {
         response_type: 'code',
       });
       renderPage();
-      // Should render with default scope 'neo:read neo:write' -> 2 badges
+      // Should render with default scope 'etendo:read etendo:write' -> 2 badges
       const badges = screen.getAllByTestId('badge');
       expect(badges.length).toBe(2);
+    });
+
+    it('labels every etendo:* scope on the consent screen', () => {
+      mockSearchParams = new URLSearchParams({
+        client_id: 'test-client',
+        redirect_uri: 'https://example.com/callback',
+        code_challenge: 'challenge123',
+        response_type: 'code',
+        scope: 'etendo:read etendo:write etendo:process etendo:report etendo:*',
+      });
+      renderPage();
+      for (const key of ['oauthReadData', 'oauthWriteData', 'oauthRunProcesses', 'oauthGenerateReports', 'oauthFullAccess']) {
+        expect(screen.getByText(key)).toBeInTheDocument();
+      }
+      expect(screen.queryByText(/^etendo:/)).not.toBeInTheDocument();
+    });
+
+    it('still labels legacy neo:* scopes so old clients get a readable consent screen', () => {
+      mockSearchParams = new URLSearchParams({
+        client_id: 'test-client',
+        redirect_uri: 'https://example.com/callback',
+        code_challenge: 'challenge123',
+        response_type: 'code',
+        scope: 'neo:read neo:write neo:process neo:report neo:*',
+      });
+      renderPage();
+      for (const key of ['oauthReadData', 'oauthWriteData', 'oauthRunProcesses', 'oauthGenerateReports', 'oauthFullAccess']) {
+        expect(screen.getByText(key)).toBeInTheDocument();
+      }
+      expect(screen.queryByText(/^neo:/)).not.toBeInTheDocument();
+    });
+
+    it('requests etendo:read etendo:write when the scope param is missing', async () => {
+      const user = userEvent.setup();
+      mockSearchParams = new URLSearchParams({
+        client_id: 'test-client',
+        redirect_uri: 'https://example.com/callback',
+        code_challenge: 'challenge123',
+        response_type: 'code',
+      });
+      globalThis.fetch = vi.fn().mockResolvedValue({
+        ok: true,
+        status: 200,
+        json: async () => ({ redirect_url: 'https://example.com/callback?code=abc' }),
+      });
+      renderPage();
+      await user.click(screen.getByTestId('oauth-authorize-submit'));
+      await waitFor(() => expect(globalThis.fetch).toHaveBeenCalled());
+      const body = JSON.parse(globalThis.fetch.mock.calls[0][1].body);
+      expect(body.scope).toBe('etendo:read etendo:write');
     });
 
     it('renders unknown scope as raw text', () => {
