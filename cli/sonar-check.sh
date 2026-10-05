@@ -107,13 +107,16 @@ if [[ -z "$BASE_DIR" ]]; then
   COMMON_DIR="$(dirname "${RESOLVED_FILES[0]}")"
   for f in "${RESOLVED_FILES[@]:1}"; do
     dir="$(dirname "$f")"
-    while [[ "$dir" != "/" && "$COMMON_DIR" != "$dir"* ]]; do
+    # Shrink COMMON_DIR until it is an ancestor of (or equal to) dir. The
+    # trailing slashes keep the match on path boundaries (src vs srcx); "/"
+    # is the ancestor of everything, so the loop always terminates.
+    while [[ "$COMMON_DIR" != "/" && "$dir/" != "$COMMON_DIR/"* ]]; do
       COMMON_DIR="$(dirname "$COMMON_DIR")"
     done
   done
 
   # Don't go above the git root
-  if [[ "$COMMON_DIR" == "$BASE_DIR"* ]]; then
+  if [[ "$COMMON_DIR/" == "$BASE_DIR/"* ]]; then
     BASE_DIR="$COMMON_DIR"
   fi
 fi
