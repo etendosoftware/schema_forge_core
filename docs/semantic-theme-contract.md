@@ -56,3 +56,14 @@ surface they use, including card and page backgrounds. Brand, chart, and
 print-only colors remain outside this contract; status presentation must use
 the status roles above whenever it provides a meaningful text, icon, or
 functional boundary.
+
+## Font families
+
+| Tailwind class | Face | Use |
+| --- | --- | --- |
+| `font-sans` (body default) | Inter | All UI text. |
+| `font-code` | Space Mono (`styles.css` loads 400/700) | Codes shown for occasional uses, e.g. account codes in the chart-of-accounts tree (ETP-5593). |
+| `font-mono` | Tailwind's system monospace stack | Unchanged; already used by input fields such as `AccountCodeField`. |
+
+`font-code` is a separate token on purpose: redefining `font-mono` would change
+every existing monospace surface at once.
