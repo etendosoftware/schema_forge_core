@@ -100,3 +100,87 @@ describe('DistinctValuesFilter', () => {
     expect(screen.queryByText('Ejecutado')).not.toBeInTheDocument();
   });
 });
+
+// ETP-5591 — opt-in multi-select mode.
+describe('DistinctValuesFilter — multiple (ETP-5591)', () => {
+  function setupMulti(props = {}) {
+    const onChange = vi.fn();
+    render(
+      <DistinctValuesFilter
+        multiple
+        value={props.value ?? []}
+        onChange={onChange}
+        codes={CODES}
+        labelFor={labelFor}
+        allLabel="Todos los estados"
+        searchPlaceholder="Buscar..."
+        multipleLabel={(n) => `${n} Estados`}
+        triggerTestId="status-trigger"
+        {...props}
+      />,
+    );
+    return { onChange };
+  }
+
+  it('trigger shows allLabel when nothing is selected', () => {
+    setupMulti({ value: [] });
+    expect(screen.getByTestId('status-trigger')).toHaveTextContent('Todos los estados');
+  });
+
+  it('trigger shows the label when exactly one code is selected', () => {
+    setupMulti({ value: ['RPAP'] });
+    expect(screen.getByTestId('status-trigger')).toHaveTextContent('Pendiente');
+  });
+
+  it('trigger shows multipleLabel(count) for two or more', () => {
+    setupMulti({ value: ['RPAP', 'RPR'] });
+    expect(screen.getByTestId('status-trigger')).toHaveTextContent('2 Estados');
+  });
+
+  it('falls back to the joined labels when no multipleLabel is given', () => {
+    setupMulti({ value: ['RPAP', 'RPR'], multipleLabel: null });
+    expect(screen.getByTestId('status-trigger')).toHaveTextContent('Pendiente, Ejecutado');
+  });
+
+  it('toggles a code on and off, keeps the popover open', async () => {
+    const user = userEvent.setup();
+    const { onChange } = setupMulti({ value: ['RPR'] });
+    await user.click(screen.getByTestId('status-trigger'));
+
+    fireEvent.click(screen.getByText('Pendiente'));
+    expect(onChange).toHaveBeenLastCalledWith(['RPR', 'RPAP']);
+    fireEvent.click(screen.getAllByText('Ejecutado').at(-1));
+    expect(onChange).toHaveBeenLastCalledWith([]);
+    // Still open: the rows are still rendered.
+    expect(screen.getByText('Anulado')).toBeInTheDocument();
+  });
+
+  it('the "all" row reports an empty array', async () => {
+    const user = userEvent.setup();
+    const { onChange } = setupMulti({ value: ['RPR'] });
+    await user.click(screen.getByTestId('status-trigger'));
+    fireEvent.click(screen.getByRole('checkbox', { name: 'Todos los estados' }));
+    expect(onChange).toHaveBeenCalledWith([]);
+  });
+
+  it('rows render as checkboxes with the selection ticked', async () => {
+    const user = userEvent.setup();
+    setupMulti({ value: ['RPVOID'] });
+    await user.click(screen.getByTestId('status-trigger'));
+    expect(screen.getByRole('checkbox', { name: 'Anulado' })).toHaveAttribute('aria-checked', 'true');
+    expect(screen.getByRole('checkbox', { name: 'Pendiente' })).toHaveAttribute('aria-checked', 'false');
+  });
+
+  it('passes heading / searchable={false} / renderLabel through to the list', async () => {
+    const user = userEvent.setup();
+    setupMulti({
+      heading: 'Estado',
+      searchable: false,
+      renderLabel: (code) => <b>{`tag:${labelFor(code)}`}</b>,
+    });
+    await user.click(screen.getByTestId('status-trigger'));
+    expect(screen.getByText('Estado')).toBeInTheDocument();
+    expect(screen.queryByPlaceholderText('Buscar...')).not.toBeInTheDocument();
+    expect(screen.getByText('tag:Pendiente')).toBeInTheDocument();
+  });
+});
