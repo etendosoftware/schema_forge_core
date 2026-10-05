@@ -98,6 +98,20 @@ The **current selection is folded in last**, after the fallback and exempt from 
 
 An empty list says so: `DistinctValuesList` takes an optional `emptyLabel` (the picker passes `ui('noResults')`) and renders it whenever a search matched nothing and no fetch is in flight. Callers that pass none keep the previous bare dash.
 
+#### Opt-in presentation props (ETP-5591)
+
+For hand-built toolbars (pages that compose the list building blocks themselves, like Documentos no contabilizados) both components take extra props. All of them are opt-in, so a caller that passes none renders exactly as before.
+
+| Prop | On | Effect |
+|---|---|---|
+| `heading` | both | Small caption above the list (e.g. "Estado"). |
+| `searchable={false}` | both | Hides the search box, for short fixed lists. |
+| `renderLabel(code)` | both | A node rendered instead of the `labelFor` text, e.g. a status `Tag`. `labelFor` must keep returning a **string**, because the filter's search lowercases it. |
+| `indicator="checkbox"` | `DistinctValuesList` | A checkbox box instead of the check mark. Rows then expose `role="checkbox"` + `aria-checked`. |
+| `multiple` | `DistinctValuesFilter` | `value` becomes an array (empty = all). Rows toggle, the "all" row reports `[]`, the popover stays open while picking, and rows use the checkbox indicator. |
+| `multipleLabel(count)` | `DistinctValuesFilter` | Trigger text when two or more codes are picked (e.g. "2 Estados"). With one pick the trigger shows that label; without `multipleLabel` it falls back to the joined labels. |
+| `triggerTestId` | `DistinctValuesFilter` | `data-testid` for the trigger button. |
+
 > **Caveat — the declared catalogue is the AD reference, not the window's reachable states.** The generator emits `enumLabels` from the full `DocStatus` reference (17 codes), and hand-written custom windows copy that list. So in a window with **zero rows**, the fallback legitimately offers codes that window can never reach. With data present the fallback never fires and the list is exactly what the rows contain. Narrowing the declared catalogue per window is a pipeline-level concern (the generator), not a `DistinctEnumPicker` one.
 
 ### Re-editing an identifier filter (`Es` / `No es` / `Es cualquiera de` on selector columns)
