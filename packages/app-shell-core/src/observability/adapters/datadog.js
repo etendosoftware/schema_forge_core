@@ -269,11 +269,15 @@ export function createDatadogAdapter({
 
   const call = (method, ...args) => (typeof rum?.[method] === 'function' ? rum[method](...args) : undefined);
 
+  const active = optedIn && configured;
+
   return {
     name: 'datadog',
-    enabled: optedIn && configured,
+    enabled: active,
 
     async init() {
+      // The gateway never starts a disabled adapter; a direct call must not load the SDK either.
+      if (!active) return;
       stopped = false;
       if (rum) {
         // Revived after a kill: the SDK is still loaded, only consent was withdrawn.
@@ -331,12 +335,13 @@ export function createDatadogAdapter({
       call('setGlobalContext', context);
     },
 
+    // The last tenant is kept on purpose: whoever signs in next under another tenant gets a new
+    // view, so no flag context from the previous one is attached to their events.
     reset() {
       call('stopSession');
       call('clearUser');
       call('clearAccount');
       call('setGlobalContext', {});
-      lastAccountId = undefined;
     },
 
     addFeatureFlagEvaluation(flagKey, value) {

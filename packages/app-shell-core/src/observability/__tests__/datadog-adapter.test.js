@@ -121,6 +121,13 @@ describe('createDatadogAdapter — opt-in and configuration', () => {
     assert.deepEqual(view[1], { name: '/go/sales-order/:id' });
   });
 
+  it('does not load the SDK when init() is called on a disabled adapter', async () => {
+    const { adapter, loads } = configured({ enabled: false });
+    await adapter.init();
+    adapter.track('x');
+    assert.equal(loads(), 0);
+  });
+
   it('loads the SDK once across retried and revived starts', async () => {
     const { adapter, loads } = configured();
     await Promise.all([adapter.init(), adapter.init()]);
@@ -275,6 +282,17 @@ describe('createDatadogAdapter — what the gateway hands over', () => {
     adapter.group('account_id', 'C2');
     adapter.group('other_key', 'X');
     assert.deepEqual(sdk.calls.map(([m]) => m), ['setAccount', 'setAccount', 'setAccount', 'startView']);
+  });
+
+  it('starts a new view for the next tenant after a logout, not on the logout itself', async () => {
+    const { adapter, sdk } = configured();
+    await adapter.init();
+    sdk.calls.length = 0;
+    adapter.group('account_id', 'C1');
+    adapter.reset();
+    adapter.group('account_id', 'C2');
+    assert.deepEqual(sdk.calls.map(([m]) => m),
+      ['setAccount', 'stopSession', 'clearUser', 'clearAccount', 'setGlobalContext', 'setAccount', 'startView']);
   });
 
   it('clears identity and context on reset', async () => {
