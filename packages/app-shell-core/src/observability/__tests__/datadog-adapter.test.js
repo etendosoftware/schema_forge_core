@@ -305,11 +305,14 @@ describe('createDatadogAdapter — beforeSend closes what the SDK collects on it
       resource: {
         url: 'https://app.etendo.software/graphql',
         graphql: { variables: JSON.stringify({ email: SECRET_EMAIL }) },
-        websocket: { close_reason: `token ${SECRET_TOKEN} expired`, protocol: 'json' },
+        websocket: { close_reason: `token ${SECRET_TOKEN} expired`, protocol: `bearer.${FAKE_JWT}` },
       },
     });
     assert.equal(resource.event.resource.graphql.variables, '[REDACTED]');
     assert.equal(resource.event.resource.websocket.close_reason, '[REDACTED]');
+    assert.equal(resource.event.resource.websocket.protocol, '[REDACTED]');
+    const plain = runBeforeSend(beforeSend, { type: 'resource', resource: { url: 'wss://a.example.com/ws', websocket: { protocol: 'json' } } });
+    assert.equal(plain.event.resource.websocket.protocol, 'json');
     const error = runBeforeSend(beforeSend, { type: 'error', error: { message: 'x', fingerprint: `user-${SECRET_EMAIL}` } });
     assert.equal(error.event.error.fingerprint, '[REDACTED]');
   });
@@ -387,9 +390,20 @@ describe('createDatadogAdapter — beforeSend closes what the SDK collects on it
       referrer: `https://app.etendo.software/go/reset?token=${SECRET_TOKEN}`,
       name: '/reset',
     };
-    const hostile = { type: 'view', view, get context() { throw new Error('boom'); } };
+    view.performance = { lcp: { resource_url: `https://cdn.example.com/a.png?sig=${SECRET_TOKEN}` } };
+    let context = { email: SECRET_EMAIL };
+    const hostile = {
+      type: 'view',
+      view,
+      get context() {
+        if (context.email) throw new Error('boom');
+        return context;
+      },
+      set context(value) { context = value; },
+    };
     assert.equal(beforeSend(hostile), false);
-    assert.deepEqual(view, { url: '', referrer: '', name: '' });
+    assert.deepEqual(view, { url: '', referrer: '', name: '', performance: { lcp: { resource_url: '' } } });
+    assert.deepEqual(context, {});
   });
 
   it('sanitizeDatadogEvent leaves fields it does not know untouched', () => {
@@ -455,6 +469,29 @@ describe('createDatadogAdapter — what the gateway hands over', () => {
     adapter.addFeatureFlagEvaluation('public-api-keys', true);
     const flags = sdk.calls.filter(([m]) => m === 'addFeatureFlagEvaluation').map(([, k, v]) => [k, v]);
     assert.deepEqual(flags, [['page_help_suggestions', true], ['public_api_keys', true]]);
+  });
+
+  it('calls nothing on the SDK while killed, even directly (it would buffer and replay it)', async () => {
+    const sdk = fakeSdk();
+    let release;
+    const adapter = createDatadogAdapter({
+      ...{ enabled: true, applicationId: 'a', clientToken: 't', site: 's', env: 'e', logger: silent },
+      loadSdk: () => new Promise((resolve) => { release = () => resolve({ datadogRum: sdk.datadogRum }); }),
+    });
+    const starting = adapter.init();
+    adapter.shutdown();
+    release();
+    await starting;
+    sdk.calls.length = 0;
+    adapter.track('x');
+    adapter.identify('u');
+    adapter.group('account_id', 'C1');
+    adapter.group('account_id', 'C2');
+    adapter.captureException({ message: 'x' });
+    adapter.setContext({ app: 'a' });
+    adapter.reset();
+    adapter.page('/b');
+    assert.deepEqual(sdk.calls, []);
   });
 
   it('does not queue flag evaluations after a kill', async () => {

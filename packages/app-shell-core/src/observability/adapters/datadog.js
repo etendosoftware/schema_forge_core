@@ -171,6 +171,8 @@ export function sanitizeDatadogEvent(event, policy = {}) {
     }
     if (event.resource.websocket && typeof event.resource.websocket === 'object') {
       event.resource.websocket.close_reason = scrubString(event.resource.websocket.close_reason, options);
+      // Some auth libraries pass a token as a WebSocket subprotocol.
+      event.resource.websocket.protocol = scrubString(event.resource.websocket.protocol, options);
     }
   }
   if (event.error && typeof event.error === 'object') {
@@ -275,10 +277,13 @@ export function createDatadogAdapter({
   // Last resort for a view the sanitizers failed on: it is sent anyway, so it goes out empty.
   function blankView(event) {
     try {
+      event.context = {};
       if (event?.view && typeof event.view === 'object') {
         event.view.url = '';
         event.view.referrer = '';
         event.view.name = '';
+        const lcp = event.view.performance?.lcp;
+        if (lcp && typeof lcp === 'object') lcp.resource_url = '';
       }
     } catch {
       // Nothing more can be done from here; the event type decides whether the SDK sends it.
@@ -333,7 +338,10 @@ export function createDatadogAdapter({
     rum.startView({ name: route });
   }
 
-  const call = (method, ...args) => (typeof rum?.[method] === 'function' ? rum[method](...args) : undefined);
+  // Nothing reaches the SDK while killed: without consent it would buffer the call and replay it,
+  // with its old timestamp, on the next grant. (The gateway does not dispatch to a killed adapter
+  // either; this holds for a direct call too.)
+  const call = (method, ...args) => (!stopped && typeof rum?.[method] === 'function' ? rum[method](...args) : undefined);
 
   const active = optedIn && configured;
 
@@ -348,7 +356,7 @@ export function createDatadogAdapter({
       if (rum) {
         // Revived after a kill: the SDK is still loaded, only consent was withdrawn. Granting it
         // starts a new session; its first view is the current route, wherever the user went.
-        call('setTrackingConsent', 'granted');
+        rum.setTrackingConsent?.('granted');
         showView(routeOf(currentPath()));
         return;
       }
@@ -364,7 +372,7 @@ export function createDatadogAdapter({
     shutdown() {
       stopped = true;
       pendingFlags.clear();
-      call('setTrackingConsent', 'not-granted');
+      rum?.setTrackingConsent?.('not-granted');
     },
 
     track(eventName, properties) {
@@ -380,7 +388,7 @@ export function createDatadogAdapter({
     },
 
     group(groupKey, groupId) {
-      if (groupKey !== 'account_id' || !rum) return;
+      if (groupKey !== 'account_id' || !rum || stopped) return;
       const next = String(groupId);
       rum.setAccount({ id: next });
       // A tenant switch starts a new view, so the previous tenant's flag context is not
@@ -390,7 +398,7 @@ export function createDatadogAdapter({
     },
 
     captureException(summary, details) {
-      if (typeof rum?.addError !== 'function') return;
+      if (stopped || typeof rum?.addError !== 'function') return;
       const error = new Error(typeof summary?.message === 'string' ? summary.message : '');
       if (typeof summary?.name === 'string') error.name = summary.name;
       error.stack = typeof summary?.stack === 'string' ? summary.stack : '';
