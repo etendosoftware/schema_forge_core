@@ -1,5 +1,6 @@
-import { useCallback, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { toast } from 'sonner';
+import { Loader2 } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '../ui/dialog.jsx';
 import { Button } from '../ui/button.jsx';
 import { ImportDropzone } from './ImportDropzone.jsx';
@@ -29,7 +30,7 @@ import { findExistingKeys, buildLookupKey } from '../../lib/import/existingRecor
 // Root-level labels for ImportDialog's own chrome. `importButton` is a function of the
 // valid-row count, mirroring the (n) => string labels the confirm step already uses, so the
 // whole flow's button text is translatable rather than the hardcoded `Import ${n}` it was.
-const DEFAULT_LABELS = { title: 'Import', revalidating: 'Revalidating rows…', downloadTemplate: 'Download CSV template', downloadTemplateCsv: 'Download CSV template', downloadTemplateXlsx: 'Download Excel template', importButton: (n) => `Import ${n}` };
+const DEFAULT_LABELS = { title: 'Import', revalidating: 'Revalidating rows…', processing: 'Processing…', downloadTemplate: 'Download CSV template', downloadTemplateCsv: 'Download CSV template', downloadTemplateXlsx: 'Download Excel template', importButton: (n) => `Import ${n}` };
 
 /**
  * Why a row was skipped. Skipping is not an error — nothing is wrong with the file and
@@ -49,7 +50,7 @@ const SKIP_MESSAGES = {
  * builds this object from its useUI() dictionary and MUST match this shape exactly.
  *
  *   {
- *     title, revalidating, downloadTemplate, importButton: (n) => string,   // this dialog
+ *     title, revalidating, processing, downloadTemplate, importButton: (n) => string,   // this dialog
  *     dropzone:     { dropHere, dropHint },                                  // ImportDropzone
  *     progress:     { title, subtitle },                                     // ImportProgressStep
  *     mapping:      { notImported, mappedSummary, editMatch, editTitle, save, cancel }, // ImportColumnMapping
@@ -112,8 +113,14 @@ function renameRowKeys(row, mapping) {
  *   Queries the entity for records matching the dedupe key, so rows that already exist are
  *   marked Saltada in the review queue instead of being discovered as duplicates after the
  *   send. Only used when `config.dedupe.scope` is `"database"`.
+ * @param {File} [initialFile] A file the caller already has (e.g. dropped on a zone outside
+ *   the dialog). When the dialog opens with one, it is processed exactly as if the user had
+ *   picked it in the dialog's own dropzone — same format/size checks, same parsing, same
+ *   error step — so the dialog lands on the column-mapping/review step, or on the file-error
+ *   step from which the user can retry with another file. Processed once per open and per
+ *   File instance; omit it and the dialog opens on its dropzone as before.
  */
-export function ImportDialog({ open, onOpenChange, config, token, postBatch, simSearchFn, onImported, labels, translate, fieldLabelFn, existingKeyFetchFn }) {
+export function ImportDialog({ open, onOpenChange, config, token, postBatch, simSearchFn, onImported, labels, translate, fieldLabelFn, existingKeyFetchFn, initialFile }) {
   const text = { ...DEFAULT_LABELS, ...labels };
   const [step, setStep] = useState(STEP.DROPZONE);
   const [fileErrorMessage, setFileErrorMessage] = useState(null);
@@ -122,6 +129,11 @@ export function ImportDialog({ open, onOpenChange, config, token, postBatch, sim
   const [rawRows, setRawRows] = useState([]);
   const [entries, setEntries] = useState([]);
   const [isRevalidating, setIsRevalidating] = useState(false);
+  // A selected file is being parsed and validated (which can hit the network). The state drives
+  // the indicator that replaces the dropzone; the ref is the synchronous guard that drops any
+  // further selection meanwhile, so a second drop cannot start a concurrent run.
+  const [isProcessingFile, setIsProcessingFile] = useState(false);
+  const processingFileRef = useRef(false);
   // Two independent filters, not one shared value — the design spec is explicit that
   // the preview (pre-send) and result (post-send) review queues each remember their own
   // filter state. 'ok' is the default so a newly loaded file opens on the happy
@@ -375,6 +387,9 @@ export function ImportDialog({ open, onOpenChange, config, token, postBatch, sim
   }, [dedupeKeyTargets, dedupesAgainstDatabase, fkColumns, revalidate, simSearchFn, token, config, existingKeyFetchFn, labelFor]);
 
   const handleFileSelected = useCallback(async (file) => {
+    if (processingFileRef.current) return;
+    processingFileRef.current = true;
+    setIsProcessingFile(true);
     try {
       // A new file starts a fresh review session. Do not carry a previous
       // Errors/All selection into the next upload.
@@ -422,8 +437,27 @@ export function ImportDialog({ open, onOpenChange, config, token, postBatch, sim
     } catch (error) {
       setFileErrorMessage(localizeError(error));
       setStep(STEP.FILE_ERROR);
+    } finally {
+      processingFileRef.current = false;
+      setIsProcessingFile(false);
     }
   }, [localizedFields, runValidation, localizeError, config.formats, maxRows]);
+
+  /**
+   * The `initialFile` already handed to `handleFileSelected` during the current open. A ref so
+   * a re-render (new callback identities, new labels) never re-processes the same file; reset
+   * on close so the next open processes whatever file it is given, even the same one again.
+   */
+  const processedInitialFileRef = useRef(null);
+  useEffect(() => {
+    if (!open) {
+      processedInitialFileRef.current = null;
+      return;
+    }
+    if (!initialFile || processedInitialFileRef.current === initialFile) return;
+    processedInitialFileRef.current = initialFile;
+    handleFileSelected(initialFile);
+  }, [open, initialFile, handleFileSelected]);
 
   const handleApplyMapping = useCallback(async (newMapping) => {
     setMapping(newMapping);
@@ -770,11 +804,23 @@ export function ImportDialog({ open, onOpenChange, config, token, postBatch, sim
 
           {step === STEP.DROPZONE && (
             <div className="flex flex-col gap-2">
-              <ImportDropzone
-                onFileSelected={handleFileSelected}
-                formats={config.formats}
-                labels={labels?.dropzone}
-                data-testid="ImportDropzone__38a6c3" />
+              {isProcessingFile ? (
+                <div
+                  className="flex flex-col items-center justify-center gap-2 rounded-lg border-2 border-dashed border-border p-8"
+                  role="status"
+                  aria-live="polite"
+                  data-testid="ImportDialog__processingFile"
+                >
+                  <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" data-testid="Loader2__ImportDialog" />
+                  <span className="text-sm text-muted-foreground">{text.processing}</span>
+                </div>
+              ) : (
+                <ImportDropzone
+                  onFileSelected={handleFileSelected}
+                  formats={config.formats}
+                  labels={labels?.dropzone}
+                  data-testid="ImportDropzone__38a6c3" />
+              )}
               <div className="flex flex-wrap items-center justify-center gap-3">
                 {templateFormats.map((format) => (
                   <button
