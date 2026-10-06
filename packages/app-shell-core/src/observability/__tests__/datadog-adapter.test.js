@@ -11,50 +11,61 @@ import { SECRET_TOKEN, SECRET_EMAIL, SECRET_QUERY_CODE, FAKE_JWT } from '../nest
 
 // ETP-4578 (Datadog RUM, from ETP-5605). The RUM SDK collects views, resources, actions, long
 // tasks and errors on its own, so its only pre-send hook — beforeSend — is where that egress
-// is closed. The SDK applies a beforeSend change only to a fixed list of fields per event type
-// (MODIFIABLE_FIELD_PATHS_BY_EVENT, rum-core 7.15) and cannot drop a view event; the fake
-// below applies the same two rules, so a test cannot pass by editing a field the real SDK
-// would revert.
+// is closed. The SDK applies a beforeSend change only to a fixed list of fields per event type,
+// and only when the new value keeps the field's type (MODIFIABLE_FIELD_PATHS_BY_EVENT and
+// limitModification, rum-core 7.15), and it cannot drop a view event; the fake below ports
+// those rules, so a test cannot pass by editing a field the real SDK would revert.
 
 const silent = { warn() {} };
 const HEX32 = 'a1b2c3d4e5f60718293a4b5c6d7e8f90';
 
-const COMMON = ['view.name', 'view.url', 'view.referrer', 'context', 'service', 'version'];
+const COMMON = { 'view.name': 'string', 'view.url': 'string', 'view.referrer': 'string', context: 'object', service: 'string', version: 'string' };
 const MODIFIABLE = {
-  view: [...COMMON, 'view.performance.lcp.resource_url'],
-  error: [...COMMON, 'error.message', 'error.stack', 'error.handling_stack', 'error.resource.url', 'error.fingerprint'],
-  resource: [...COMMON, 'resource.url', 'resource.graphql.variables', 'resource.request.headers', 'resource.response.headers'],
-  action: [...COMMON, 'action.target.name'],
-  long_task: [...COMMON, 'long_task.scripts[].source_url', 'long_task.scripts[].invoker'],
+  view: { ...COMMON, 'view.performance.lcp.resource_url': 'string' },
+  error: {
+    ...COMMON, 'error.message': 'string', 'error.stack': 'string', 'error.handling_stack': 'string',
+    'error.resource.url': 'string', 'error.fingerprint': 'string', '_dd.debug_ids': 'array',
+  },
+  resource: {
+    ...COMMON, 'resource.url': 'string', 'resource.graphql.variables': 'string', 'resource.request.headers': 'object',
+    'resource.response.headers': 'object', 'resource.websocket.close_reason': 'string', 'resource.websocket.protocol': 'string',
+  },
+  action: { ...COMMON, 'action.target.name': 'string' },
+  long_task: { ...COMMON, 'long_task.scripts[].source_url': 'string', 'long_task.scripts[].invoker': 'string', '_dd.debug_ids': 'array' },
   vital: COMMON,
 };
 
-function getPath(object, path) {
-  return path.split('.').reduce((node, key) => (node == null ? undefined : node[key]), object);
+function typeOf(value) {
+  if (value === null) return 'null';
+  return Array.isArray(value) ? 'array' : typeof value;
 }
 
-function setPath(object, path, value) {
-  const keys = path.split('.');
-  const last = keys.pop();
-  const parent = keys.reduce((node, key) => (node == null ? undefined : node[key]), object);
-  if (parent && typeof parent === 'object') parent[last] = value;
+function setValueAtPath(object, clone, segments, fieldType) {
+  const [field, ...rest] = segments;
+  if (field === '[]') {
+    if (Array.isArray(object) && Array.isArray(clone)) object.forEach((item, i) => setValueAtPath(item, clone[i], rest, fieldType));
+    return;
+  }
+  if (typeOf(object) !== 'object' || typeOf(clone) !== 'object') return;
+  if (rest.length > 0) {
+    setValueAtPath(object[field], clone[field], rest, fieldType);
+    return;
+  }
+  const value = clone[field];
+  if (object[field] === value) return;
+  const newType = typeOf(value);
+  if (newType === fieldType) object[field] = value;
+  else if (fieldType === 'object' && (newType === 'undefined' || newType === 'null')) object[field] = {};
+  else if (fieldType === 'array' && (newType === 'undefined' || newType === 'null')) object[field] = [];
 }
 
-/** Runs beforeSend the way rum-core's limitModification does: only modifiable fields stick. */
+/** Port of rum-core's shouldSend + limitModification: only modifiable, same-type changes stick. */
 function runBeforeSend(beforeSend, event) {
-  const original = structuredClone(event);
+  const out = structuredClone(event);
   const clone = structuredClone(event);
   const result = beforeSend(clone);
-  const out = structuredClone(original);
-  for (const path of MODIFIABLE[event.type] ?? []) {
-    if (path.includes('[]')) {
-      const [arrayPath, field] = path.split('[].');
-      const items = getPath(clone, arrayPath);
-      const target = getPath(out, arrayPath);
-      if (Array.isArray(items) && Array.isArray(target)) items.forEach((item, i) => { target[i][field] = item?.[field]; });
-    } else if (getPath(clone, path) !== getPath(original, path)) {
-      setPath(out, path, getPath(clone, path));
-    }
+  for (const [path, fieldType] of Object.entries(MODIFIABLE[event.type] ?? {})) {
+    setValueAtPath(out, clone, path.split(/\.|(?=\[\])/), fieldType);
   }
   const dropped = result === false && event.type !== 'view';
   return { dropped, event: out };
@@ -106,6 +117,7 @@ describe('createDatadogAdapter — opt-in and configuration', () => {
     assert.equal(options.enablePrivacyForActionName, true);
     assert.equal(options.trackViewsManually, true);
     assert.equal(options.trackingConsent, 'granted');
+    assert.equal(options.telemetrySampleRate, 0, "the SDK's own telemetry skips beforeSend, so it is off");
     assert.equal(options.trackResourceHeaders, undefined);
     assert.equal(options.remoteConfigurationId, undefined, 'remote configuration is off unless configured');
     assert.equal(options.sessionSampleRate, 100, 'sample rates are bounded to 0–100');
@@ -126,6 +138,49 @@ describe('createDatadogAdapter — opt-in and configuration', () => {
     await adapter.init();
     adapter.track('x');
     assert.equal(loads(), 0);
+  });
+
+  it('starts without consent, and without a view, when killed while the SDK was loading', async () => {
+    const sdk = fakeSdk();
+    let release;
+    const adapter = createDatadogAdapter({
+      ...{ enabled: true, applicationId: 'a', clientToken: 't', site: 's', env: 'e', logger: silent },
+      currentPath: () => '/go/contacts',
+      loadSdk: () => new Promise((resolve) => { release = () => resolve({ datadogRum: sdk.datadogRum }); }),
+    });
+    adapter.addFeatureFlagEvaluation('x', true);
+    const starting = adapter.init();
+    adapter.shutdown();
+    release();
+    await starting;
+    assert.equal(sdk.initOptions().trackingConsent, 'not-granted');
+    assert.deepEqual(sdk.calls.map(([m]) => m), ['init'], 'no view or flag is buffered for a later grant');
+    adapter.page('/go/sales-order');
+    await adapter.init();
+    assert.deepEqual(sdk.calls.slice(1), [['setTrackingConsent', 'granted'], ['startView', { name: '/go/contacts' }]]);
+  });
+
+  it('records navigation while killed and opens the current route on revive', async () => {
+    let path = '/go/contacts';
+    const { adapter, sdk } = configured({ currentPath: () => path });
+    await adapter.init();
+    adapter.shutdown();
+    sdk.calls.length = 0;
+    path = `/go/sales-order/${HEX32}`;
+    adapter.page('/go/sales-order/:id');
+    assert.deepEqual(sdk.calls, [], 'the SDK would buffer it and replay it on the next grant');
+    await adapter.init();
+    assert.deepEqual(sdk.calls, [['setTrackingConsent', 'granted'], ['startView', { name: '/go/sales-order/:id' }]]);
+  });
+
+  it('leaves the revived session on its renewal view when the route did not change', async () => {
+    const { adapter, sdk } = configured({ currentPath: () => '/go/contacts' });
+    await adapter.init();
+    adapter.shutdown();
+    sdk.calls.length = 0;
+    await adapter.init();
+    // The SDK opens a renewal view under the last name on its own; another one would be empty.
+    assert.deepEqual(sdk.calls, [['setTrackingConsent', 'granted']]);
   });
 
   it('loads the SDK once across retried and revived starts', async () => {
@@ -210,15 +265,58 @@ describe('createDatadogAdapter — beforeSend closes what the SDK collects on it
     assert.deepEqual(event.resource.response.headers, {});
   });
 
-  it('scrubs action names and long-task script URLs', async () => {
+  it('scrubs action names and long-task script URLs and invokers', async () => {
     const { beforeSend } = await hook();
     const action = runBeforeSend(beforeSend, { type: 'action', action: { target: { name: `Enviar a ${SECRET_EMAIL}` } } });
-    assert.ok(!JSON.stringify(action.event).includes(SECRET_EMAIL));
+    assert.equal(action.event.action.target.name, '[REDACTED]');
     const task = runBeforeSend(beforeSend, {
       type: 'long_task',
-      long_task: { scripts: [{ source_url: `https://app.etendo.software/x.js?token=${SECRET_TOKEN}`, invoker: 'click' }] },
+      long_task: {
+        scripts: [
+          { source_url: `https://app.etendo.software/x.js?token=${SECRET_TOKEN}`, invoker: 'BUTTON#save.onclick' },
+          { source_url: 'https://app.etendo.software/y.js', invoker: `https://app.etendo.software/z.js?token=${SECRET_TOKEN}` },
+        ],
+      },
     });
     assert.equal(task.event.long_task.scripts[0].source_url, 'https://app.etendo.software/x.js');
+    assert.equal(task.event.long_task.scripts[0].invoker, 'BUTTON#save.onclick');
+    assert.equal(task.event.long_task.scripts[1].invoker, 'https://app.etendo.software/z.js');
+  });
+
+  it('scrubs GraphQL variables, WebSocket close reasons and error fingerprints', async () => {
+    const { beforeSend } = await hook();
+    const resource = runBeforeSend(beforeSend, {
+      type: 'resource',
+      resource: {
+        url: 'https://app.etendo.software/graphql',
+        graphql: { variables: JSON.stringify({ email: SECRET_EMAIL }) },
+        websocket: { close_reason: `token ${SECRET_TOKEN} expired`, protocol: 'json' },
+      },
+    });
+    assert.equal(resource.event.resource.graphql.variables, '[REDACTED]');
+    assert.equal(resource.event.resource.websocket.close_reason, '[REDACTED]');
+    const error = runBeforeSend(beforeSend, { type: 'error', error: { message: 'x', fingerprint: `user-${SECRET_EMAIL}` } });
+    assert.equal(error.event.error.fingerprint, '[REDACTED]');
+  });
+
+  it('drops an error whose causes carry data it cannot rewrite', async () => {
+    const { beforeSend } = await hook();
+    const unsafe = runBeforeSend(beforeSend, {
+      type: 'error',
+      error: { message: 'Save failed', causes: [{ message: `rejected for ${SECRET_EMAIL}`, source: 'source' }] },
+    });
+    assert.equal(unsafe.dropped, true);
+    const unsafeStack = runBeforeSend(beforeSend, {
+      type: 'error',
+      error: { message: 'Save failed', causes: [{ message: 'timeout', stack: `Error\n    at f (https://a.example.com/x.js?token=${SECRET_TOKEN}:1:2)` }] },
+    });
+    assert.equal(unsafeStack.dropped, true);
+    const safe = runBeforeSend(beforeSend, {
+      type: 'error',
+      error: { message: 'Save failed', causes: [{ message: 'timeout', stack: 'Error: timeout\n    at f (https://a.example.com/x.js:1:2)' }] },
+    });
+    assert.equal(safe.dropped, false);
+    assert.equal(safe.event.error.causes[0].message, 'timeout');
   });
 
   it('keeps only approved context keys, whoever set them', async () => {
@@ -242,10 +340,41 @@ describe('createDatadogAdapter — beforeSend closes what the SDK collects on it
     assert.equal(runBeforeSend(beforeSend, { type: 'error', error: { message: 'x' } }).dropped, false);
   });
 
+  it('still sanitizes the view that ends with a kill (the SDK sends it anyway)', async () => {
+    const { adapter, sdk } = configured();
+    await adapter.init();
+    const { beforeSend } = sdk.initOptions();
+    adapter.shutdown();
+    const { event } = runBeforeSend(beforeSend, {
+      type: 'view',
+      view: {
+        url: `https://app.etendo.software/go/contacts/${HEX32}?code=${SECRET_QUERY_CODE}`,
+        referrer: `https://app.etendo.software/go/reset?token=${SECRET_TOKEN}`,
+        name: '/contacts/:recordId',
+      },
+      context: { email: SECRET_EMAIL },
+    });
+    assert.equal(event.view.url, 'https://app.etendo.software/go/contacts/:id');
+    assert.equal(event.view.referrer, 'https://app.etendo.software/go/reset');
+    assert.deepEqual(event.context, {});
+  });
+
   it('drops an event it cannot sanitize instead of sending it as is', async () => {
     const { beforeSend } = await hook();
     const hostile = { type: 'error', get error() { throw new Error('boom'); } };
     assert.equal(beforeSend(hostile), false);
+  });
+
+  it('sends a view it cannot sanitize with its URLs emptied', async () => {
+    const { beforeSend } = await hook();
+    const view = {
+      url: `https://app.etendo.software/go/reset?token=${SECRET_TOKEN}`,
+      referrer: `https://app.etendo.software/go/reset?token=${SECRET_TOKEN}`,
+      name: '/reset',
+    };
+    const hostile = { type: 'view', view, get context() { throw new Error('boom'); } };
+    assert.equal(beforeSend(hostile), false);
+    assert.deepEqual(view, { url: '', referrer: '', name: '' });
   });
 
   it('sanitizeDatadogEvent leaves fields it does not know untouched', () => {

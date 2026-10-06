@@ -18,11 +18,16 @@
  *    (`identify`, `group`), never a name or an email;
  *  - request/response headers are not collected (`trackResourceHeaders` stays off);
  *  - user-action names are masked by the SDK (`enablePrivacyForActionName`, on by default
- *    in v7, and `defaultPrivacyLevel: 'mask'`), and scrubbed again here.
+ *    in v7, and `defaultPrivacyLevel: 'mask'`), and scrubbed again here;
+ *  - `error.causes` is not modifiable either: an error whose causes the sanitizers would
+ *    change is dropped;
+ *  - the SDK's own telemetry (its internal errors, sent to Datadog without `beforeSend`) is
+ *    off (`telemetrySampleRate: 0`).
  *
- * View events cannot be dropped from `beforeSend` (the SDK ignores `false` for them), so the
- * kill switch does not rely on it: `shutdown()` withdraws tracking consent, which stops
- * collection and sending, and `beforeSend` drops whatever else is still in flight.
+ * View events cannot be dropped from `beforeSend` (the SDK ignores `false` for them), so every
+ * event is sanitized first, even after a kill. `shutdown()` withdraws tracking consent, which
+ * ends the session: the SDK still sends the end of the current view (sanitized) and stops
+ * collecting; `beforeSend` drops every other event still in flight.
  *
  * Remote configuration (`remoteConfigurationId`) is off unless the host passes an id: from
  * the Datadog UI it can change the privacy level, the tracing URLs and the user/global
@@ -117,6 +122,15 @@ function scrubStack(value, options) {
   return typeof value === 'string' ? (sanitizeStack(value, options) ?? '') : value;
 }
 
+/** True when a cause's message or stack would change under the sanitizers (`causes` is read-only). */
+function hasUnsafeCauses(event, options) {
+  const causes = event.error?.causes;
+  if (!Array.isArray(causes)) return false;
+  return causes.some((cause) => !cause || typeof cause !== 'object' ||
+    scrubString(cause.message, options) !== cause.message ||
+    scrubStack(cause.stack, options) !== cause.stack);
+}
+
 /**
  * Rewrites, in place, every field of a RUM event that the SDK lets `beforeSend` modify and
  * that can carry user data. Fields outside that list would be reverted by the SDK anyway.
@@ -135,11 +149,18 @@ export function sanitizeDatadogEvent(event, policy = {}) {
     // Never collected (`trackResourceHeaders` is off); emptied in case a future default changes.
     if (event.resource.request && typeof event.resource.request === 'object') event.resource.request.headers = {};
     if (event.resource.response && typeof event.resource.response === 'object') event.resource.response.headers = {};
+    if (event.resource.graphql && typeof event.resource.graphql === 'object') {
+      event.resource.graphql.variables = scrubString(event.resource.graphql.variables, options);
+    }
+    if (event.resource.websocket && typeof event.resource.websocket === 'object') {
+      event.resource.websocket.close_reason = scrubString(event.resource.websocket.close_reason, options);
+    }
   }
   if (event.error && typeof event.error === 'object') {
     event.error.message = scrubString(event.error.message, options);
     event.error.stack = scrubStack(event.error.stack, options);
     event.error.handling_stack = scrubStack(event.error.handling_stack, options);
+    event.error.fingerprint = scrubString(event.error.fingerprint, options);
     if (event.error.resource && typeof event.error.resource === 'object') {
       event.error.resource.url = scrubUrl(event.error.resource.url, options);
     }
@@ -215,18 +236,35 @@ export function createDatadogAdapter({
   let rum;
   let starting;
   let currentRoute;
+  // The name of the last view handed to the SDK.
+  let viewName;
   let lastAccountId;
   const pendingFlags = new Map();
 
+  // Sanitizes before deciding: a view is sent even when this returns false (the SDK cannot
+  // drop views), so the one that ends with a kill must be clean too.
   function beforeSend(event) {
-    if (stopped) return false;
     try {
       sanitizeDatadogEvent(event, policy);
-      return true;
+      if (event.type === 'error' && hasUnsafeCauses(event, options)) return false;
+      return !stopped;
     } catch (error) {
-      // A view cannot be dropped; every other event type is, rather than sent unsanitized.
+      blankView(event);
       safeWarn(logger, '[observability] datadog dropped an event it could not sanitize', error);
       return false;
+    }
+  }
+
+  // Last resort for a view the sanitizers failed on: it is sent anyway, so it goes out empty.
+  function blankView(event) {
+    try {
+      if (event?.view && typeof event.view === 'object') {
+        event.view.url = '';
+        event.view.referrer = '';
+        event.view.name = '';
+      }
+    } catch {
+      // Nothing more can be done from here; the event type decides whether the SDK sends it.
     }
   }
 
@@ -236,6 +274,8 @@ export function createDatadogAdapter({
 
   async function start() {
     const { datadogRum, reactPlugin } = await loadSdk();
+    // A kill can land while the SDK loads (the gateway's init timeout gives up waiting first):
+    // the SDK then starts without consent, and a later init() grants it.
     datadogRum.init({
       applicationId,
       clientToken,
@@ -246,7 +286,8 @@ export function createDatadogAdapter({
       sessionSampleRate: boundedSampleRate(sessionSampleRate, DEFAULT_DATADOG_SESSION_SAMPLE_RATE),
       sessionReplaySampleRate: boundedSampleRate(sessionReplaySampleRate, DEFAULT_DATADOG_SESSION_REPLAY_SAMPLE_RATE),
       ...(remoteConfigurationId ? { remoteConfigurationId } : {}),
-      trackingConsent: 'granted',
+      trackingConsent: stopped ? 'not-granted' : 'granted',
+      telemetrySampleRate: 0,
       trackFeatureFlagsForEvents: DATADOG_FEATURE_FLAG_EVENTS,
       allowedTracingUrls: resolveTracingUrls(traceApiBases, logger),
       traceSampleRate: boundedSampleRate(traceSampleRate, DEFAULT_DATADOG_TRACE_SAMPLE_RATE),
@@ -260,11 +301,19 @@ export function createDatadogAdapter({
       ...(typeof reactPlugin === 'function' ? { plugins: [reactPlugin({ router: false })] } : {}),
       beforeSend,
     });
-    currentRoute = routeOf(currentPath());
-    datadogRum.startView({ name: currentRoute });
     rum = datadogRum;
+    showView(routeOf(currentPath()));
     for (const [key, value] of pendingFlags) rum.addFeatureFlagEvaluation(key, value);
     pendingFlags.clear();
+  }
+
+  // Without consent the SDK buffers startView() calls and replays them, with their old start
+  // times, once consent is granted; so a killed adapter only records where the user is.
+  function showView(route, { force = false } = {}) {
+    currentRoute = route;
+    if (stopped || !rum || (route === viewName && !force)) return;
+    viewName = route;
+    rum.startView({ name: route });
   }
 
   const call = (method, ...args) => (typeof rum?.[method] === 'function' ? rum[method](...args) : undefined);
@@ -280,8 +329,10 @@ export function createDatadogAdapter({
       if (!active) return;
       stopped = false;
       if (rum) {
-        // Revived after a kill: the SDK is still loaded, only consent was withdrawn.
+        // Revived after a kill: the SDK is still loaded, only consent was withdrawn. Granting it
+        // starts a new session; its first view is the current route, wherever the user went.
         call('setTrackingConsent', 'granted');
+        showView(routeOf(currentPath()));
         return;
       }
       // A retried start (the gateway retries a failed or timed-out init) reuses the same load.
@@ -292,7 +343,7 @@ export function createDatadogAdapter({
       await starting;
     },
 
-    /** Hot kill: withdraws consent (stops collection and sending) and drops what is in flight. */
+    /** Hot kill: withdraws consent (ends the session and collection) and drops what is in flight. */
     shutdown() {
       stopped = true;
       pendingFlags.clear();
@@ -304,9 +355,7 @@ export function createDatadogAdapter({
     },
 
     page(route) {
-      if (!rum || route === currentRoute) return;
-      currentRoute = route;
-      rum.startView({ name: route });
+      showView(route);
     },
 
     identify(userId) {
@@ -319,7 +368,7 @@ export function createDatadogAdapter({
       rum.setAccount({ id: next });
       // A tenant switch starts a new view, so the previous tenant's flag context is not
       // attached to later events. The first assignment stays in the current view.
-      if (lastAccountId && lastAccountId !== next) rum.startView({ name: currentRoute });
+      if (lastAccountId && lastAccountId !== next) showView(currentRoute, { force: true });
       lastAccountId = next;
     },
 
