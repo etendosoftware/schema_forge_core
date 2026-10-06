@@ -11,6 +11,7 @@ export { sanitizeValue, sanitizeStack, normalizeRoute } from './sanitize.js';
 export { createSentryAdapter } from './adapters/sentry.js';
 export { createMixpanelAdapter } from './adapters/mixpanel.js';
 export { createRumAdapter } from './adapters/rum.js';
+export { createDatadogAdapter } from './adapters/datadog.js';
 export {
   findBannedProviderImports,
   isBannedProviderSpecifier,

@@ -39,6 +39,12 @@ describe('app-shell-core plain observability subpaths', () => {
     assert.equal(typeof rum.sanitizeRumRequest, 'function');
   });
 
+  it('exposes the Datadog adapter', async () => {
+    const datadog = await import('@etendosoftware/app-shell-core/observability/adapters/datadog');
+    assert.equal(typeof datadog.createDatadogAdapter, 'function');
+    assert.equal(typeof datadog.sanitizeDatadogEvent, 'function');
+  });
+
   it('exposes the sanitizer', async () => {
     const sanitize = await import('@etendosoftware/app-shell-core/observability/sanitize');
     assert.equal(typeof sanitize.sanitizeValue, 'function');

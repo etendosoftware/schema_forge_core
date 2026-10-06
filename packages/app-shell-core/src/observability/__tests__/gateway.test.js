@@ -921,3 +921,52 @@ describe('createTelemetryGateway — never rejects', () => {
     assert.deepEqual(calls, [['captureException', { name: undefined, message: undefined, stack: undefined }, {}, EMPTY_ENVELOPE]]);
   });
 });
+
+describe('addFeatureFlagEvaluation', () => {
+  const silent = { warn() {} };
+
+  function flagAdapter(name = 'flags') {
+    const calls = [];
+    return { calls, adapter: { name, addFeatureFlagEvaluation: (...args) => calls.push(args) } };
+  }
+
+  it('hands a clean key and a scalar value to the adapters that implement it', async () => {
+    const { adapter, calls } = flagAdapter();
+    const other = mockAdapter('no-flags');
+    const gw = createTelemetryGateway({ adapters: [adapter, other.adapter], logger: silent });
+    await gw.init({});
+    await gw.addFeatureFlagEvaluation('page-help-suggestions', true);
+    await gw.addFeatureFlagEvaluation('rollout', 25);
+    await gw.addFeatureFlagEvaluation('variant', 'blue');
+    assert.deepEqual(calls, [['page-help-suggestions', true], ['rollout', 25], ['variant', 'blue']]);
+    assert.deepEqual(other.calls, []);
+  });
+
+  it('drops a key that does not survive sanitization, and non-scalar values', async () => {
+    const { adapter, calls } = flagAdapter();
+    const gw = createTelemetryGateway({ adapters: [adapter], logger: silent });
+    await gw.init({});
+    await gw.addFeatureFlagEvaluation(SECRET_EMAIL, true);
+    await gw.addFeatureFlagEvaluation('', true);
+    await gw.addFeatureFlagEvaluation('obj', { email: SECRET_EMAIL });
+    await gw.addFeatureFlagEvaluation('nan', Number.NaN);
+    assert.deepEqual(calls, []);
+  });
+
+  it('scrubs a string value', async () => {
+    const { adapter, calls } = flagAdapter();
+    const gw = createTelemetryGateway({ adapters: [adapter], logger: silent });
+    await gw.init({});
+    await gw.addFeatureFlagEvaluation('variant', `x ${SECRET_TOKEN}`);
+    assert.equal(calls.length, 1);
+    assert.ok(!String(calls[0][1]).includes(SECRET_TOKEN));
+  });
+
+  it('skips a killed adapter', async () => {
+    const { adapter, calls } = flagAdapter('datadog');
+    const gw = createTelemetryGateway({ adapters: [adapter], disabled: ['datadog'], logger: silent });
+    await gw.init({});
+    await gw.addFeatureFlagEvaluation('x', true);
+    assert.deepEqual(calls, []);
+  });
+});

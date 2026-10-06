@@ -38,17 +38,20 @@ reports pass through none and are stopped only by the kill switch (see N4 below)
 
 ## Inventory by provider
 
-| | Sentry / GlitchTip | AWS CloudWatch RUM | Mixpanel |
-|---|---|---|---|
-| Purpose | Error capture, tracing | Browser performance, errors, HTTP timing | Product analytics |
-| Default | Mandatory when a DSN is configured | **Off**; needs an explicit opt-in plus its IDs | **Off**; needs an explicit opt-in plus a token |
-| Destination | The configured DSN host | `dataplane.rum.eu-west-3.amazonaws.com`, plus `cognito-identity` for credentials (N7) | The configured API host (host setting `VITE_MIXPANEL_API_HOST`) |
-| Owner / DPA | TBD(owner) | TBD(owner) | TBD(owner) |
-| Interception point | `beforeSend`, `beforeSendTransaction`, `beforeSendSpan`, `beforeBreadcrumb` | `clientBuilder` wrapper, BEFORE the request is serialized and signed | `property_blacklist`, `before_send_events/people/groups`, `before_register(_once)` |
-| Fixed settings (not configurable) | `sendDefaultPii: false` in every environment (no env override); `sampleRate: 1` | `enableXRay: false` | `track_pageview: false`, `autocapture: false`, session recording 0% |
-| Defaults (configurable by the host) | `tracesSampleRate: 0.1`; console breadcrumbs dropped (`keepConsoleBreadcrumbs`); no request headers (`approvedRequestHeaders`) | `allowCookies: false`; telemetries `performance`, `errors`, `http`; session sample rate 0.1 | `ip: false` (`trackIp`); persistence `cookie` (`persistence`); URLs as a normalized path (`urlPropertyMode`) |
-| What is rebuilt | Every event, field by field: no request headers unless approved (none by default); user, cookies and query never sent; URLs and stacks scrubbed per frame | Every batch: identity, then each event's metadata and details through allowlists; `document.title` never sent | Event and people properties through allowlists; `$current_url` as a normalized path, `$referrer` dropped when external |
-| Fails closed | An event the hook cannot rebuild is dropped | A batch that cannot be sanitized is dropped; if the SDK loses `defaultClientBuilder` nothing is sent | A payload a hook drops is never sent |
+| | Datadog Browser RUM | Sentry / GlitchTip | AWS CloudWatch RUM | Mixpanel |
+|---|---|---|---|---|
+| Purpose | Sessions, views, errors, HTTP timing, user actions, web vitals, session replay, backend trace correlation | Error capture, tracing | Browser performance, errors, HTTP timing | Product analytics |
+| Default | **Off**; needs an explicit opt-in plus application id, client token, site and env | Mandatory when a DSN is configured | **Off**; needs an explicit opt-in plus its IDs | **Off**; needs an explicit opt-in plus a token |
+| Destination | The configured Datadog site (`datadoghq.eu`); trace headers to the configured API origins, `/sws/neo` only | The configured DSN host | `dataplane.rum.eu-west-3.amazonaws.com`, plus `cognito-identity` for credentials (N7) | The configured API host (host setting `VITE_MIXPANEL_API_HOST`) |
+| Owner / DPA | TBD(owner) | TBD(owner) | TBD(owner) | TBD(owner) |
+| Interception point | `beforeSend` (the SDK applies only changes to its list of modifiable fields per event type) | `beforeSend`, `beforeSendTransaction`, `beforeSendSpan`, `beforeBreadcrumb` | `clientBuilder` wrapper, BEFORE the request is serialized and signed | `property_blacklist`, `before_send_events/people/groups`, `before_register(_once)` |
+| Fixed settings (not configurable) | `defaultPrivacyLevel: 'mask'`, `enablePrivacyForActionName: true`, manual views, no resource headers, `traceContextInjection: 'sampled'` | `sendDefaultPii: false` in every environment (no env override); `sampleRate: 1` | `enableXRay: false` | `track_pageview: false`, `autocapture: false`, session recording 0% |
+| Defaults (configurable by the host) | sessions 100%, session replay 20%, traces 20%; no trace propagation and no remote configuration unless configured | `tracesSampleRate: 0.1`; console breadcrumbs dropped (`keepConsoleBreadcrumbs`); no request headers (`approvedRequestHeaders`) | `allowCookies: false`; telemetries `performance`, `errors`, `http`; session sample rate 0.1 | `ip: false` (`trackIp`); persistence `cookie` (`persistence`); URLs as a normalized path (`urlPropertyMode`) |
+| What is rewritten | Each modifiable field that can carry user data: view, referrer, resource, LCP and long-task URLs normalized and scrubbed; error message, stack and handling stack scrubbed; action names scrubbed; context through the allowlist; headers emptied. `usr`/`account` are not modifiable, so only their `id` is ever set | Every event, field by field: no request headers unless approved (none by default); user, cookies and query never sent; URLs and stacks scrubbed per frame | Every batch: identity, then each event's metadata and details through allowlists; `document.title` never sent | Event and people properties through allowlists; `$current_url` as a normalized path, `$referrer` dropped when external |
+| Fails closed | An event the hook cannot sanitize is dropped (views cannot be dropped by the SDK; see the kill switch) | An event the hook cannot rebuild is dropped | A batch that cannot be sanitized is dropped; if the SDK loses `defaultClientBuilder` nothing is sent | A payload a hook drops is never sent |
+
+Sentry is no longer wired by the host since ETP-5605 replaced it with Datadog; its adapter stays
+here, inert without a DSN.
 
 Everything an SDK appends AFTER its hooks (Sentry's `sdk` block: integration and package names
 and versions, the `infer_ip` setting) is library identification, not user data, and is pinned
@@ -68,6 +71,10 @@ out in the `firstload2` probe). A kill before `init()` only helps when `init()` 
 The host does this inside `initObservability()` and has a test for it. The host drives the switch from a build default and from runtime flags (see the
 host's `docs/ops/app-shell-observability.md`).
 
+Datadog cannot drop a view event from `beforeSend`, so its kill withdraws tracking consent
+(`setTrackingConsent('not-granted')`, which stops collection and sending) and `beforeSend` drops
+every other event still in flight; reviving it grants consent again, which starts a new session.
+
 Note (NB-E): after `init()`, a kill also shuts down an adapter whose `enabled` is `false` and
 that never started. For Sentry that means `getClient()` and `close()` on the global client.
 It is harmless when Sentry was never initialized, and is left as is on purpose.
@@ -80,7 +87,7 @@ to fail against the previous provider code.
 
 ## Open items
 
-- **Owners and legal data** for all three providers: `TBD(owner)`. Retention, DPA, region and
+- **Owners and legal data** for all four providers: `TBD(owner)`. Retention, DPA, region and
   sub-processors per provider: `TBD(owner)`.
 - **RUM cookies.** `allowCookies` is off by default. Turning it on needs a consent decision:
   `TBD(owner)` (Privacy).
@@ -110,5 +117,14 @@ to fail against the previous provider code.
   authentication flow, `BasicAuthentication.js:96` in `aws-rum-web`). They
   are not telemetry data, but they belong in this inventory as local storage and as an
   additional endpoint (`cognito-identity`).
+- **Datadog session cookie.** The SDK keeps its session in a first-party cookie (`_dd_s`); with
+  session replay at 20% it also records the DOM, masked (`defaultPrivacyLevel: 'mask'`).
+  Consent decision for both: `TBD(owner)` (Privacy).
+- **Datadog remote configuration.** Off unless the host passes `remoteConfigurationId`. When on,
+  the Datadog UI can change the privacy level, the tracing URLs and the user and global context,
+  outside code review; `beforeSend` still applies to the context, but not to `usr`.
+- **Datadog error causes.** `error.causes` is not in the SDK's modifiable list, so a cause
+  message cannot be scrubbed in `beforeSend`. Errors reported through the gateway carry no
+  causes; an unhandled error with a `cause` chain can. `TBD(owner)`.
 - **Rate limits and the 7-day observation window** in the ticket depend on the providers'
   own configuration and are outside this repository.

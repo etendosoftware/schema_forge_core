@@ -1,10 +1,10 @@
 /**
  * Provider-independent telemetry egress gateway (ETP-4577, PRD WS-3 "Telemetry egress
  * governance"). The single deny-by-default boundary between application code and any
- * observability provider (Sentry/GlitchTip, AWS RUM, Mixpanel, …).
+ * observability provider (Datadog RUM, Sentry/GlitchTip, AWS RUM, Mixpanel, …).
  *
  * Every outbound operation — init, reset, track, page, identify, group, groupSet,
- * captureException, breadcrumb, setContext — is sanitized here (see `./sanitize.js`) before it ever
+ * captureException, breadcrumb, setContext, addFeatureFlagEvaluation — is sanitized here (see `./sanitize.js`) before it ever
  * reaches an adapter, positional arguments included: an event name, a route or an id is
  * as capable of carrying an email or a token as a properties object is.
  *
@@ -154,7 +154,7 @@ function isRecord(value) {
  * @param {object} options
  * @param {Array<object>} [options.adapters] Provider adapters. Each may implement any
  *   subset of init/shutdown/reset/track/page/identify/group/groupSet/captureException/
- *   breadcrumb/setContext/flush; missing methods are silently skipped. `enabled` (a value
+ *   breadcrumb/setContext/addFeatureFlagEvaluation/flush; missing methods are silently skipped. `enabled` (a value
  *   or a function, read on every dispatch) is the adapter's own configuration gate.
  * @param {boolean|Iterable<string>} [options.disabled] Initial kill-switch state: `true`
  *   kills every adapter, a list of adapter names kills those. Same as calling `disable()`
@@ -384,6 +384,25 @@ export function createTelemetryGateway({
 
     breadcrumb: guarded('breadcrumb', async (crumb = {}) => {
       await dispatch('breadcrumb', [sanitize(crumb)]);
+    }),
+
+    /**
+     * A feature-flag evaluation, for providers that attach flag state to their events (Datadog
+     * RUM). The key is an identifier — sent exactly as given or not at all; the value must be
+     * a scalar, and a string value is scrubbed like any other.
+     */
+    addFeatureFlagEvaluation: guarded('addFeatureFlagEvaluation', async (flagKey, value) => {
+      if (!flagKey) return;
+      const key = sanitizeIdentifier(flagKey, sanitizeOptions);
+      if (key === null) {
+        drop('addFeatureFlagEvaluation');
+        return;
+      }
+      let safeValue;
+      if (typeof value === 'boolean' || (typeof value === 'number' && Number.isFinite(value))) safeValue = value;
+      else if (typeof value === 'string') safeValue = sanitizeValue(value, sanitizeOptions);
+      else return;
+      await dispatch('addFeatureFlagEvaluation', [key, safeValue]);
     }),
 
     setContext: guarded('setContext', async (nextContext = {}) => {
