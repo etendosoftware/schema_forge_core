@@ -25,13 +25,13 @@ async function callRpc({ fetcher, endpoint, accessToken, method, params }) {
   return body?.result ?? {};
 }
 
-/** Fetches the same RBAC/scope-filtered catalog exposed by Etendo Go MCP. */
+/** Fetches the same RBAC/scope-filtered catalog exposed by Etendo MCP. */
 export async function listMcpTools({ fetcher = fetch, endpoint, accessToken }) {
   const result = await callRpc({ fetcher, endpoint, accessToken, method: 'tools/list' });
   return Array.isArray(result.tools) ? result.tools : [];
 }
 
-/** Delegates a WebMCP invocation to Etendo Go's existing MCP tools/call route. */
+/** Delegates a WebMCP invocation to Etendo's existing MCP tools/call route. */
 export async function callMcpTool({ fetcher = fetch, endpoint, accessToken, name, arguments: toolArguments = {} }) {
   return callRpc({
     fetcher,

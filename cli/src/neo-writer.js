@@ -35,7 +35,7 @@ const SYSTEM_COLUMNS = [
 /**
  * The four field visibility values of the curated schema, as stored in
  * ETGO_SF_FIELD.VISIBILITY (VARCHAR(20)) and read back by the MCP layer
- * (McpSchemaFieldBuilder) to emit `visibility` / `userRequired` on neo_schema.
+ * (McpSchemaFieldBuilder) to emit `visibility` / `userRequired` on etendo_schema.
  *
  * Kept as data rather than validated inline so the set has exactly one
  * definition on the writer side. NULL is also legal and means "not classified":
@@ -103,7 +103,7 @@ export function auditDefaults(opts = {}) {
  * @param {string} [params.processId] - AD_Process_ID (required for type P)
  * @param {string} [params.specType='W'] - 'W' (window) or 'P' (process)
  * @param {string} [params.description]
- * @param {string} [params.agentPrompt] - Agent guidance returned by neo_discover
+ * @param {string} [params.agentPrompt] - Agent guidance returned by etendo_discover
  * @param {boolean} [params.showInMcp] - Opt-out flag: only `false` hides the spec
  *   from the MCP (discover + tools). Absent/true keeps it visible (default 'Y').
  * @param {string} [params.specId] - If provided, UPDATE instead of INSERT
@@ -281,7 +281,7 @@ export async function upsertEntity(client, params) {
  *   column is agent-facing metadata only, and preserves the distinction those two
  *   booleans collapse (`system` and `readOnly` share the same Y/Y pair).
  * @param {string} [params.defaultValue]
- * @param {string} [params.agentPrompt] - Per-field agent guidance for neo_schema
+ * @param {string} [params.agentPrompt] - Per-field agent guidance for etendo_schema
  * @param {string} [params.javaQualifier]
  * @param {number} [params.seqNo]
  * @param {object} [params.audit] - Override audit defaults

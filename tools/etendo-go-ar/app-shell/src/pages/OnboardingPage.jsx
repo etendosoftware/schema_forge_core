@@ -3,7 +3,7 @@ import { OnboardingFlow, coreSteps } from '@etendosoftware/etendo-go-core/onboar
 
 const AR_CONFIG = {
   apiBase: '',
-  brandLabel: 'Etendo GO',
+  brandLabel: 'Etendo',
   localeCodes: ['es_AR', 'en_US'],
   countryCodes: ['AR'],
   sectorCodes: ['technology', 'services', 'commerce', 'manufacturing'],

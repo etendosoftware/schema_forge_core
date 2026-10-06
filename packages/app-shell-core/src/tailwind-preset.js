@@ -94,6 +94,12 @@ const appShellCoreTailwindPreset = {
         'focus-ring': 'hsl(var(--focus-ring))',
         'search-placeholder': 'hsl(var(--search-placeholder))',
       },
+      fontFamily: {
+        // Dedicated face for codes shown "for occasional uses" (e.g. account codes in the
+        // chart-of-accounts tree, ETP-5593). Deliberately NOT `font-mono`, which other
+        // components use with the system monospace stack.
+        code: ['"Space Mono"', 'ui-monospace', 'SFMono-Regular', 'Menlo', 'monospace'],
+      },
       borderRadius: {
         lg: 'var(--radius)',
         md: 'calc(var(--radius) - 2px)',

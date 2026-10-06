@@ -82,7 +82,7 @@ This is not a decisions.json opt-in; it applies automatically to every generated
 |----------|------|---------|--------|---------|
 | `category` | string | Inferred | `"sales"`, `"purchases"`, `"inventory"`, `"finance"`, `"accounting"`, `"master"`, `"project"`, `"general"` | UI routing and navigation grouping. |
 | `name` | string | From AD | — | Display name for breadcrumbs and titles. |
-| `agentPrompt` | string | `null` | Free text | Spec-level guidance for AI agents that consume the NEO Headless MCP server. Surfaced in `agentProfile.agentPrompt` (contract) and persisted to `ETGO_SF_SPEC.AGENT_PROMPT`, from where `neo_discover` returns it per spec. Empty or whitespace-only values clear the persisted prompt and are omitted from the MCP response. |
+| `agentPrompt` | string | `null` | Free text | Spec-level guidance for AI agents that consume the NEO Headless MCP server. Surfaced in `agentProfile.agentPrompt` (contract) and persisted to `ETGO_SF_SPEC.AGENT_PROMPT`, from where `etendo_discover` returns it per spec. Empty or whitespace-only values clear the persisted prompt and are omitted from the MCP response. |
 | `vectorSearch` | object | _absent_ (does not participate) | `{ "target": "product" }` | Opts this window into the global semantic search. The generator copies the descriptor to `frontendContract.window.vectorSearch`; the app aggregates only declared targets. Do not add `enabled: false` to every other window: omission is the default. The target must match an active DB Extended Search Target and use `[A-Za-z][A-Za-z0-9_.-]{0,127}`. |
 | `searchSuggestions` | array | _absent_ | `[{ "label": "overdueSalesInvoices", "path": "/sales-invoice?filter=overdue" }]` | Window-owned global-search navigation shortcuts. `label` is an i18n key and `path` must be a local route for that window. Suggestions are displayed only while their window is within the selected search scope. |
 | `layoutType` | string | `"default"` | `"default"`, `"kanban"`, `"calendar"`, `"list-modal"`, `"custom"` | Frontend rendering mode. See `docs/window-templates.md`. |
@@ -95,7 +95,7 @@ This is not a decisions.json opt-in; it applies automatically to every generated
 | `breadcrumb` | string | `"{category} / {name}"` | Any string | Overrides the auto-generated breadcrumb path shown in the topbar. Useful when the default category/name combination is too verbose (e.g., `"Product"` instead of `"Reference / Product"`). |
 | `hideCreate` | boolean | `false` | — | Hides the generic Create/New button in the list toolbar. Use this when creation is handled by a window-specific action or custom component. |
 | `hideDelete` | boolean | `false` | — | Disables the CRUD delete capability at the API level for every entity in the window — sets `apiPrediction.crud.<entity>.delete: false` on the contract, and (since ETP-4745) `ETGO_SF_ENTITY.ISDELETE = 'N'` server-side, so NEO Headless answers `405` for `DELETE` on the affected entities. Before ETP-4745 this flag only affected `contract.json`/the UI-derived delete affordance; a raw API `DELETE` call still succeeded regardless. Override one entity with `entities.{name}.hideDelete: false`. See [Entity HTTP Methods](#entity-http-methods-entitiesnamereadonly--entitiesnamemethods) for the full precedence with `readOnly`/`methods`. |
-| `readOnly` | boolean | `false` | — | **View-only window, UI *and* API.** Derives `hideCreate: true` + `hideDelete: true`, makes `DetailView` block edit/save, and — since ETP-4254 — restricts **every entity of the window to `GET` + `GETBYID`** on `ETGO_SF_ENTITY`, so NEO Headless answers `405 "<METHOD> not enabled for <entity>"` and MCP's `neo_discover` reports `readOnly: true`. Use it for monitor/log windows. Override one entity with `entities.{name}.readOnly: false`. See [Entity HTTP Methods](#entity-http-methods-entitiesnamereadonly--entitiesnamemethods). |
+| `readOnly` | boolean | `false` | — | **View-only window, UI *and* API.** Derives `hideCreate: true` + `hideDelete: true`, makes `DetailView` block edit/save, and — since ETP-4254 — restricts **every entity of the window to `GET` + `GETBYID`** on `ETGO_SF_ENTITY`, so NEO Headless answers `405 "<METHOD> not enabled for <entity>"` and MCP's `etendo_discover` reports `readOnly: true`. Use it for monitor/log windows. Override one entity with `entities.{name}.readOnly: false`. See [Entity HTTP Methods](#entity-http-methods-entitiesnamereadonly--entitiesnamemethods). |
 | `hidePrint` | boolean | `false` | — | Hides the print button in the detail view action bar. |
 | `hideMoreMenu` | boolean | `false` | — | Hides the triple-dot "more" menu in the detail view action bar. |
 | `hideStatusFilter` | boolean | `false` | — | Hides the status-filter dropdown ("All statuses") in the list toolbar, even when a `status`-typed column exists. The rest of the filter bar (date filter, Filters) is unaffected. |
@@ -545,7 +545,7 @@ Entity keys use **camelCase from tabName** (e.g., `"header"`, `"lines"`, `"basic
 Controls the per-entity HTTP method flags on `ETGO_SF_ENTITY`
 (`ISGET`, `ISGETBYID`, `ISPOST`, `ISPUT`, `ISPATCH`, `ISDELETE`). NEO Headless
 **enforces** them: a disabled method answers `405 "<METHOD> not enabled for
-<entity>"`, and MCP's `neo_discover` reports the remaining set as
+<entity>"`, and MCP's `etendo_discover` reports the remaining set as
 `{"methods":[…],"readOnly":true}`. This is the lever that makes a monitor/log
 window genuinely read-only for MCP agents (ETP-4254).
 
@@ -1065,8 +1065,8 @@ instead of the default input when it detects this property.
 | `max` | number \| `false` | `undefined` | Maximum allowed value for numeric fields. On blur the UI autocorrects values above this limit to `max`. Travels through the full pipeline (`decisions.json` → contract → generated FieldDefs). Example: `"max": 100` on a discount (%) field prevents values above 100. `false` disables the bound entirely, even if raw AD defines one (see ETP-4556 precedence below). |
 | `readOnlyLogic` | string \| null | `null` | Expression for conditional read-only. Set `null` to omit. |
 | `displayLogic` | string \| null | `null` | Expression for conditional visibility. Set `null` to omit. |
-| `businessCritical` | boolean | `false` | Advisory-only metadata flag. When `true`, marks the field as business-critical data. This flag does **not** change any functional behavior (validation, read-only logic, visibility, etc.). It travels through the pipeline (`decisions.json` → `resolve-curated` → `contract.json` → `push-to-neo` → `ETGO_SF_FIELD.ISBUSINESSCRITICAL`) so that downstream consumers (e.g., AI agents reading `neo_schema`) know they must confirm with the user before creating or updating records that include this field. |
-| `agentPrompt` | string | `null` | Per-field guidance for AI agents. Carried into the curated field and persisted to `ETGO_SF_FIELD.AGENT_PROMPT`, from where `neo_schema` returns it inside each field object. Empty or whitespace-only values clear the persisted prompt and are omitted from the MCP response. |
+| `businessCritical` | boolean | `false` | Advisory-only metadata flag. When `true`, marks the field as business-critical data. This flag does **not** change any functional behavior (validation, read-only logic, visibility, etc.). It travels through the pipeline (`decisions.json` → `resolve-curated` → `contract.json` → `push-to-neo` → `ETGO_SF_FIELD.ISBUSINESSCRITICAL`) so that downstream consumers (e.g., AI agents reading `etendo_schema`) know they must confirm with the user before creating or updating records that include this field. |
+| `agentPrompt` | string | `null` | Per-field guidance for AI agents. Carried into the curated field and persisted to `ETGO_SF_FIELD.AGENT_PROMPT`, from where `etendo_schema` returns it inside each field object. Empty or whitespace-only values clear the persisted prompt and are omitted from the MCP response. |
 
 ### Validation Constraints (`validation` object) — ETP-4555
 
@@ -1241,7 +1241,7 @@ from `contract.json`. Both write paths then close it in NEO:
 
 `ISINCLUDED = 'N'` on the entity is what actually removes it from the served
 surface — every REST and MCP reader filters on it before resolving an entity, so
-neither `GET /{entity}` nor an MCP `neo_list` can reach it. The field rows are
+neither `GET /{entity}` nor an MCP `etendo_list` can reach it. The field rows are
 closed too: it is redundant for behaviour, but a closed entity whose 15 field rows
 still claim `ISINCLUDED = 'Y'` misreports the size of the agent surface, which is
 exactly how the gap went unnoticed for 90 entities / 386 fields.

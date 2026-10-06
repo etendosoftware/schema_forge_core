@@ -71,7 +71,7 @@ npm run test:mcp-oauth-smoke
 
 For DCR, provide `E2E_MCP_OAUTH_SMOKE=1`, `E2E_MCP_SMOKE_USER`, `E2E_MCP_SMOKE_PASSWORD`, and `E2E_MCP_OAUTH_ENABLE_DCR=1` in the shell or CI environment.
 
-If DCR creates the client but `/etendo/oauth2/authorize` returns `invalid_scope`, the environment is not granting the requested MCP scopes to dynamically registered clients. In that case, create a client from the OAuth2 Clients administration page with a System Administrator role, enable `neo:read`, `neo:write`, `neo:process`, `neo:report`, and `neo:*`, then pass its id through `E2E_MCP_OAUTH_CLIENT_ID`.
+If DCR creates the client but `/etendo/oauth2/authorize` returns `invalid_scope`, the environment is not granting the requested MCP scopes to dynamically registered clients. In that case, create a client from the OAuth2 Clients administration page with a System Administrator role, enable `etendo:read`, `etendo:write`, `etendo:process`, `etendo:report`, and `etendo:*` (the server still accepts the legacy `neo:*` names), then pass its id through `E2E_MCP_OAUTH_CLIENT_ID`.
 
 Configuration variables:
 
@@ -83,7 +83,7 @@ Configuration variables:
 | `E2E_MCP_OAUTH_AUTHORIZE_URL` | `${E2E_MCP_PUBLIC_BASE_URL}/etendo/oauth2/authorize` | Backend authorization endpoint |
 | `E2E_MCP_OAUTH_TOKEN_URL` | `${E2E_MCP_PUBLIC_BASE_URL}/etendo/oauth2/token` | Token endpoint for the PKCE exchange |
 | `E2E_MCP_OAUTH_REGISTRATION_URL` | `${E2E_MCP_PUBLIC_BASE_URL}/etendo/oauth2/register` | DCR endpoint |
-| `E2E_MCP_OAUTH_SCOPES` | `neo:read neo:write neo:process neo:report neo:*` | Requested MCP scopes |
+| `E2E_MCP_OAUTH_SCOPES` | `etendo:read etendo:write etendo:process etendo:report etendo:*` | Requested MCP scopes (legacy `neo:*` names are still accepted) |
 | `E2E_MCP_OAUTH_CLIENT_ID` | none | Existing OAuth client ID |
 | `E2E_MCP_OAUTH_CLIENT_SECRET` | none | Optional client secret |
 | `E2E_MCP_OAUTH_TOKEN_AUTH_METHOD` | `client_secret_post` | Use `client_secret_basic`, `client_secret_post`, or `none` |
