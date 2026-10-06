@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { AUTH_ERROR_UI_KEYS } from '../src/onboarding/api.js';
+import { AUTH_ERROR_UI_KEYS, resolveAuthErrorMessage } from '../src/onboarding/api.js';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const registerStep = readFileSync(
@@ -41,6 +41,8 @@ describe('AUTH_ERROR_UI_KEYS (ETP-4664)', () => {
       CHANGE_PASSWORD_MISSING_CREDENTIALS: 'onboardingChangePasswordMissingCredentials',
       NO_LOCAL_PASSWORD: 'onboardingNoLocalPassword',
       INVALID_CURRENT_PASSWORD: 'onboardingInvalidCurrentPassword',
+      // ETP-5258 — unknown, used or expired reset/set-password link.
+      PASSWORD_RESET_INVALID: 'onboardingCredentialResetFailed',
     };
     assert.deepEqual(AUTH_ERROR_UI_KEYS, expected);
   });
@@ -91,5 +93,57 @@ describe('LoginStep resolves login errors by code (ETP-4664)', () => {
       loginStep.indexOf('const handleForgotPassword ='),
     );
     assert.doesNotMatch(handleLoginBlock, /err\.userMessage/);
+  });
+});
+
+// ETP-5258 — the reset/forgot views (also the SSO "set a password" link) used to prefer the
+// backend's fixed English userMessage, so the error stayed in English under a Spanish UI.
+describe('resolveAuthErrorMessage (ETP-5258)', () => {
+  const ui = (key) => `t:${key}`;
+
+  it('translates a mapped code', () => {
+    assert.equal(
+      resolveAuthErrorMessage(ui, { code: 'WEAK_PASSWORD', userMessage: 'English text' }, 'fallbackKey'),
+      't:onboardingWeakPassword',
+    );
+  });
+
+  it('falls back to the given key for an unmapped code, never the English userMessage', () => {
+    assert.equal(
+      resolveAuthErrorMessage(ui, { code: 'SOMETHING_NEW', userMessage: 'English text' }, 'fallbackKey'),
+      't:fallbackKey',
+    );
+  });
+
+  it('falls back for an error without a code (network failure) or no error at all', () => {
+    assert.equal(resolveAuthErrorMessage(ui, new TypeError('Failed to fetch'), 'fallbackKey'), 't:fallbackKey');
+    assert.equal(resolveAuthErrorMessage(ui, undefined, 'fallbackKey'), 't:fallbackKey');
+  });
+});
+
+describe('LoginStep reset and forgot views resolve errors by code (ETP-5258)', () => {
+  const recoveryBlock = loginStep.slice(
+    loginStep.indexOf('const handleForgotPassword ='),
+    loginStep.indexOf('const setOnboardingLocale ='),
+  );
+
+  it('routes both failures through resolveAuthErrorMessage', () => {
+    assert.match(recoveryBlock, /setForgotError\(resolveAuthErrorMessage\(ui, err, 'onboardingCredentialResetFailed'\)\)/);
+    assert.match(recoveryBlock, /setResetError\(resolveAuthErrorMessage\(ui, err, 'onboardingCredentialResetFailed'\)\)/);
+  });
+
+  it('never shows the raw err.userMessage', () => {
+    assert.doesNotMatch(recoveryBlock, /err\.userMessage/);
+  });
+});
+
+describe('every new-password screen in core shares the strength checklist (ETP-5258)', () => {
+  it('RegisterStep and the LoginStep reset view render PasswordStrengthChecklist', () => {
+    assert.match(registerStep, /<PasswordStrengthChecklist[\s\S]*?testIdPrefix="register-password"/);
+    assert.match(loginStep, /<PasswordStrengthChecklist[\s\S]*?testIdPrefix="reset-password"/);
+  });
+
+  it('the reset submit is gated on isStrongPassword', () => {
+    assert.match(loginStep, /disabled=\{resetLoading \|\| !resetForm\.token \|\| !isStrongPassword\(resetForm\.password\)\}/);
   });
 });

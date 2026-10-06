@@ -55,7 +55,7 @@ async function fetchNeoReportData(contract, { session, params = {}, locale } = {
   });
   if (!neoRes.ok) {
     const text = await neoRes.text().catch(() => '');
-    throw new Error(`NEO ${neoRes.status}: ${text.slice(0, 200)}`);
+    throw new Error(`Report data request failed (${neoRes.status}): ${text.slice(0, 200)}`);
   }
   return neoRes.json();
 }

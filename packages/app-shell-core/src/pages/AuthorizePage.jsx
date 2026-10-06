@@ -17,12 +17,18 @@ function detectMcpUrl() {
 }
 
 const SCOPE_LABELS = {
-  'neo:read': { labelKey: 'oauthReadData', descriptionKey: 'oauthReadDataDesc' },
-  'neo:write': { labelKey: 'oauthWriteData', descriptionKey: 'oauthWriteDataDesc' },
-  'neo:process': { labelKey: 'oauthRunProcesses', descriptionKey: 'oauthRunProcessesDesc' },
-  'neo:report': { labelKey: 'oauthGenerateReports', descriptionKey: 'oauthGenerateReportsDesc' },
-  'neo:*': { labelKey: 'oauthFullAccess', descriptionKey: 'oauthFullAccessDesc' },
+  'etendo:read': { labelKey: 'oauthReadData', descriptionKey: 'oauthReadDataDesc' },
+  'etendo:write': { labelKey: 'oauthWriteData', descriptionKey: 'oauthWriteDataDesc' },
+  'etendo:process': { labelKey: 'oauthRunProcesses', descriptionKey: 'oauthRunProcessesDesc' },
+  'etendo:report': { labelKey: 'oauthGenerateReports', descriptionKey: 'oauthGenerateReportsDesc' },
+  'etendo:*': { labelKey: 'oauthFullAccess', descriptionKey: 'oauthFullAccessDesc' },
 };
+
+// Legacy neo:* scopes are still accepted by the server; old clients that
+// request them must get the same readable consent screen.
+for (const [name, info] of Object.entries({ ...SCOPE_LABELS })) {
+  SCOPE_LABELS[name.replace(/^etendo:/, 'neo:')] = info;
+}
 
 export default function AuthorizePage() {
   const { username, csrfToken } = useAuth();
@@ -36,7 +42,7 @@ export default function AuthorizePage() {
   const redirectUri = searchParams.get('redirect_uri');
   const codeChallenge = searchParams.get('code_challenge');
   const state = searchParams.get('state');
-  const scope = searchParams.get('scope') || 'neo:read neo:write';
+  const scope = searchParams.get('scope') || 'etendo:read etendo:write';
   const responseType = searchParams.get('response_type');
 
   const scopes = scope.split(/\s+/).filter(Boolean);

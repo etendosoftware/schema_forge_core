@@ -2,7 +2,8 @@ import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { Lock, Mail, Eye, EyeOff, Loader2, ArrowLeft, Check } from 'lucide-react';
 import { Button } from '@etendosoftware/app-shell-core/components/ui/button';
 import { useUI, useLocaleSwitch } from '@etendosoftware/app-shell-core/i18n';
-import { loginAccount, loginWithSsoProvider, requestPasswordReset, confirmPasswordReset, fetchAccount, fetchEnvironments, AUTH_ERROR_UI_KEYS } from '../api.js';
+import { loginAccount, loginWithSsoProvider, requestPasswordReset, confirmPasswordReset, fetchAccount, fetchEnvironments, AUTH_ERROR_UI_KEYS, resolveAuthErrorMessage } from '../api.js';
+import { isStrongPassword } from '../passwordPolicy.js';
 import { getConfiguredSsoProviders, renderSsoProviderButton } from '../sso.js';
 import {
   completeAuthentication,
@@ -13,6 +14,7 @@ import { trackOnboarding } from '../tracking.js';
 import { AuthShell } from '../components/AuthShell.jsx';
 import { AuthField } from '../components/AuthField.jsx';
 import { AuthSsoOptions } from '../components/AuthSsoOptions.jsx';
+import { PasswordStrengthChecklist } from '../components/PasswordStrengthChecklist.jsx';
 import { DraftSaveWarning } from '../components/DraftSaveWarning.jsx';
 import { OnboardingLanguageSelect } from '../components/OnboardingLanguageSelect.jsx';
 
@@ -244,7 +246,7 @@ export function LoginStep({ config, stepData, onNext, onBack, goToStep, setToken
       await requestPasswordReset(fetch, apiBase, forgotEmail);
       setForgotSent(true);
     } catch (err) {
-      setForgotError(err.userMessage || ui(err.code || 'onboardingCredentialResetFailed'));
+      setForgotError(resolveAuthErrorMessage(ui, err, 'onboardingCredentialResetFailed'));
     } finally {
       setForgotLoading(false);
     }
@@ -265,7 +267,8 @@ export function LoginStep({ config, stepData, onNext, onBack, goToStep, setToken
       setResetSuccess(true);
       window.history.replaceState({}, document.title, window.location.pathname);
     } catch (err) {
-      setResetError(err.userMessage || ui(err.code || 'onboardingCredentialResetFailed'));
+      // ETP-5258 — by code only: the backend's userMessage is fixed English text.
+      setResetError(resolveAuthErrorMessage(ui, err, 'onboardingCredentialResetFailed'));
     } finally {
       setResetLoading(false);
     }
@@ -294,7 +297,7 @@ export function LoginStep({ config, stepData, onNext, onBack, goToStep, setToken
   if (view === 'reset-password') {
     return (
       <AuthShell
-        brandLabel={config.brandLabel || 'Etendo GO'}
+        brandLabel={config.brandLabel || 'Etendo'}
         headerContent={localeControl}
         marketingTitle={ui('onboardingMarketingTitle')}
         marketingDescription={ui('onboardingMarketingDescription')}
@@ -352,6 +355,10 @@ export function LoginStep({ config, stepData, onNext, onBack, goToStep, setToken
                 </button>
               )}
               data-testid="AuthField__79cf84" />
+            <PasswordStrengthChecklist
+              password={resetForm.password}
+              testIdPrefix="reset-password"
+              data-testid="PasswordStrengthChecklist__79cf84" />
             <AuthField
               id="reset-password-confirm"
               type={showResetPassword ? 'text' : 'password'}
@@ -372,7 +379,7 @@ export function LoginStep({ config, stepData, onNext, onBack, goToStep, setToken
             <Button
               type="submit"
               data-testid="action-reset-password-submit"
-              disabled={resetLoading || !resetForm.token}
+              disabled={resetLoading || !resetForm.token || !isStrongPassword(resetForm.password)}
               className="h-10 w-full rounded-lg bg-[#121217] text-sm font-medium leading-6 text-white hover:bg-accent-highlight hover:text-accent-highlight-foreground"
             >
               {resetLoading
@@ -389,7 +396,7 @@ export function LoginStep({ config, stepData, onNext, onBack, goToStep, setToken
   if (view === 'forgot-password') {
     return (
       <AuthShell
-        brandLabel={config.brandLabel || 'Etendo GO'}
+        brandLabel={config.brandLabel || 'Etendo'}
         headerContent={localeControl}
         marketingTitle={ui('onboardingMarketingTitle')}
         marketingDescription={ui('onboardingMarketingDescription')}
@@ -516,7 +523,7 @@ export function LoginStep({ config, stepData, onNext, onBack, goToStep, setToken
         setShowLoginPassword(false);
         if (goToStep) goToStep('register');
       }}
-      brandLabel={config.brandLabel || 'Etendo GO'}
+      brandLabel={config.brandLabel || 'Etendo'}
       headerContent={localeControl}
       marketingTitle={ui('onboardingMarketingTitle')}
       marketingDescription={ui('onboardingMarketingDescription')}

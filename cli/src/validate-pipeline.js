@@ -814,7 +814,7 @@ async function ruleF22(artifactDir, artifactName) {
 // ─── F23 — ETGO_SF_FIELD visibility vs the flags it projects to ─────────────
 // ETP-4793 / IMP-26 §5.3. `populateSpec` writes ISINCLUDED/ISREADONLY on every
 // push but VISIBILITY only on some paths, so the same decision — stored twice
-// on purpose, because neo_schema needs the curated word and the runtime needs
+// on purpose, because etendo_schema needs the curated word and the runtime needs
 // the booleans — can drift apart silently. This rule reads the exported
 // sourcedata and re-runs the projection over it.
 
@@ -904,10 +904,10 @@ function f23FieldLabel({ row, entityName }) {
  * Two failure modes, deliberately scored differently:
  *   - BLOCK `contradiction` — VISIBILITY holds a curated value that projects to
  *     a different pair than the one stored. Only a writer bug or a hand-edit
- *     gets you here, and it means the runtime and `neo_schema` disagree about
+ *     gets you here, and it means the runtime and `etendo_schema` disagree about
  *     the same field.
  *   - WARN `unwritten` — VISIBILITY is absent while the flags say the field is
- *     included. Harmless to the runtime, but `neo_schema` reports no visibility
+ *     included. Harmless to the runtime, but `etendo_schema` reports no visibility
  *     for that field, so an agent cannot tell `readOnly` from `system`.
  *     Pre-existing backfill debt; a warning so it is counted, not so it blocks.
  *
@@ -950,7 +950,7 @@ async function ruleF23(artifactDir, artifactName, sourcedataDir, root = ROOT) {
       'F23', artifactName, 'BLOCK',
       `${contradictions.length} pushed ETGO_SF_FIELD row(s) store a VISIBILITY that contradicts their `
       + `ISINCLUDED/ISREADONLY flags: ${shown.join('; ')}${more}. The runtime enforces the flags while `
-      + `neo_schema reports the visibility, so the two now describe the field differently.`,
+      + `etendo_schema reports the visibility, so the two now describe the field differently.`,
       `Re-push the window (make regen ONLY=${artifactName} PUSH_TO_NEO=1) and re-run `
       + `./gradlew export.database in Etendo root. If the drift survives a clean push, the writer is `
       + `at fault — fix cli/src/neo-writer.js populateSpec, not the XML.`,
@@ -964,7 +964,7 @@ async function ruleF23(artifactDir, artifactName, sourcedataDir, root = ROOT) {
     return violation(
       'F23', artifactName, 'WARN',
       `${unwritten.length} pushed ETGO_SF_FIELD row(s) are included (ISINCLUDED=Y) but carry no `
-      + `VISIBILITY value: ${shown.join(', ')}${more}. neo_schema reports these fields with no `
+      + `VISIBILITY value: ${shown.join(', ')}${more}. etendo_schema reports these fields with no `
       + `visibility, so an agent cannot distinguish readOnly from system.`,
       `Re-push the window (make regen ONLY=${artifactName} PUSH_TO_NEO=1) then `
       + `./gradlew export.database — populateSpec writes VISIBILITY on the fields it revisits.`,
