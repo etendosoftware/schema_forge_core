@@ -4,7 +4,7 @@
  * `ISPATCH`, `ISDELETE`).
  *
  * NEO Headless enforces those flags on the REST path: a disabled method answers
- * `405 "<METHOD> not enabled for <entity>"`, and MCP's `neo_discover` reports the
+ * `405 "<METHOD> not enabled for <entity>"`, and MCP's `etendo_discover` reports the
  * remaining set as `{"methods":[...],"readOnly":true}`. Before ETP-4254 the
  * pipeline could not express them — `populateWindowSpec` took a single
  * `includeAllMethods` boolean that meant either "all Y" or "all N" (the latter

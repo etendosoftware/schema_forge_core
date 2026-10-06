@@ -35,7 +35,7 @@ describe('buildFieldUpdateParams (visibility passthrough)', () => {
 
     // The booleans are deliberately identical — that collapse is what NEO's
     // runtime wants, and it is also why the curated value must travel
-    // separately: neo_schema tells agents to skip system fields and display
+    // separately: etendo_schema tells agents to skip system fields and display
     // readOnly ones, a distinction Y/Y cannot express.
     assert.equal(system.isIncluded, readOnly.isIncluded);
     assert.equal(system.isReadOnly, readOnly.isReadOnly);

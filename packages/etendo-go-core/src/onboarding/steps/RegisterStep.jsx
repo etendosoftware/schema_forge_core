@@ -219,7 +219,7 @@ export function RegisterStep({ config, stepData, onNext, onBack, goToStep, setTo
         setShowRegisterPassword(false);
         if (goToStep) goToStep('login');
       }}
-      brandLabel={config.brandLabel || 'Etendo GO'}
+      brandLabel={config.brandLabel || 'Etendo'}
       headerContent={localeControl}
       marketingTitle={ui('onboardingMarketingTitle')}
       marketingDescription={ui('onboardingMarketingDescription')}

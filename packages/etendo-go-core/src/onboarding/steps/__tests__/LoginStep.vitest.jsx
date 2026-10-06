@@ -55,7 +55,7 @@ function renderLoginStep(props = {}) {
   const setToken = vi.fn();
   const utils = render(
     <LoginStep
-      config={{ apiBase: '', brandLabel: 'Etendo Go' }}
+      config={{ apiBase: '', brandLabel: 'Etendo' }}
       stepData={{}}
       routeByEnvironments={routeByEnvironments}
       setToken={setToken}

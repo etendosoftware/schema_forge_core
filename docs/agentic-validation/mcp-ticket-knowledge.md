@@ -24,9 +24,9 @@ How a reported symptom usually maps to a real cause. The point: **not every "fai
 - **2026-06-23 — Evidenced baseline (ETP-3938 / JuanCarlos Round 1):** of 15 reported findings, **5 were NOT code bugs** — `bp-location` access denied (RBAC), `verifactu-config` / `tbai-facturas-enviadas` entity not found (modules not installed), dashboard widgets + report specs not agent-accessible (API not exposed). → When triaging, *always* rule out RBAC / missing-module / un-exposed-API before reading MCP code.
 
 - **2026-06-23 — Round 3 (Juan Carlos, 2026-06-19, 15 tickets, label `validacion-agentica`) categorized (analysis only — NOT resolved):**
-  - **code-bug (MCP/NEO Java):** ETP-4274 (neo_create ignores non-mandatory defaults — defaults/create asymmetry, `NeoDefaultsService.injectMandatoryDefaults:824-825`), ETP-4275 (no generic process-precondition validation), ETP-4285 (document actions not semantically exposed), ETP-4286 (neo_selectors lacks recordContext passthrough), ETP-4287 (GET-only entities not flagged in discovery), ETP-4284 (widgets not wrapped as `neo_widget`; were misrouted through CRUD), ETP-4255 (Jasper runtime must be removed; report callability metadata).
+  - **code-bug (MCP/NEO Java):** ETP-4274 (etendo_create ignores non-mandatory defaults — defaults/create asymmetry, `NeoDefaultsService.injectMandatoryDefaults:824-825`), ETP-4275 (no generic process-precondition validation), ETP-4285 (document actions not semantically exposed), ETP-4286 (etendo_selectors lacks recordContext passthrough), ETP-4287 (GET-only entities not flagged in discovery), ETP-4284 (widgets not wrapped as `etendo_widget`; were misrouted through CRUD), ETP-4255 (Jasper runtime must be removed; report callability metadata).
   - **upstream-config (schema_forge decisions/generators):** ETP-4278 (empty `prompt` field on contacts/financial-account), ETP-4276 (assets conditional userRequired not declared), ETP-4254 (W-vs-R spec misclassification), ETP-4288 (`defaultExpression="0"` surfaced in schema).
-  - **validator-side / agent-knowledge:** **ETP-4279** — the validating agent claimed FIN_Financial_Account has 2 types (read from `SeedReferenceDataStep.java`) instead of querying `neo_selectors` (3 types: B/C/CA). Pure bot defect, no product fix. Pattern: agents assuming enum/list cardinality from source/docs instead of runtime selectors.
+  - **validator-side / agent-knowledge:** **ETP-4279** — the validating agent claimed FIN_Financial_Account has 2 types (read from `SeedReferenceDataStep.java`) instead of querying `etendo_selectors` (3 types: B/C/CA). Pure bot defect, no product fix. Pattern: agents assuming enum/list cardinality from source/docs instead of runtime selectors.
   - **test-data / environment gap:** ETP-4289 — 6 specs (`return-from-customer`, `return-to-vendor`, `sii-config`, `sii-monitor`, `simple-g-l-journal`, `tbai-config`) unevaluable for lack of records.
   - **opaque / diagnostic gap:** ETP-4280 — Card financial-account create failed but the validator captured NO error message/HTTP status/body. The ticket is itself about the missing diagnostic. Canonical evidence for rubric #3/#4.
   - **under-specified:** ETP-4242 — "no W spec for ERP entities" with no entity/tool/repro named.
@@ -40,7 +40,7 @@ How a reported symptom usually maps to a real cause. The point: **not every "fai
 ### RECIPE — adding a new MCP tool (the "expose a new tool" code-bug) — verified 2026-06-30 (ETP-4284 investigation)
 
 A new tool touches the **same 4-5 files** every time. Use an existing tool as the template:
-- **CRUD-style / static tool** (no per-spec name) → copy `neo_selectors` or `docs`.
+- **CRUD-style / static tool** (no per-spec name) → copy `etendo_selectors` or `docs`.
 - **Per-spec tool** (one tool per spec) → copy the process (`buildProcessTool`) or report (`buildReportTool`) path.
 
 End-to-end wiring (all in `src/com/etendoerp/go/mcp/`):

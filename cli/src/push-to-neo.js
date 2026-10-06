@@ -371,7 +371,7 @@ function buildFieldDefaultExprMap(decisionsData) {
 /**
  * Build a `entityName.fieldName` -> agentPrompt map from decisions.json.
  * Mirrors buildFieldDefaultExprMap so the per-field agent guidance flows to
- * neo_schema the same way default expressions flow to the contract.
+ * etendo_schema the same way default expressions flow to the contract.
  */
 export function buildFieldAgentPromptMap(decisionsData) {
   const map = {};
@@ -415,7 +415,7 @@ export function buildEntityPreconditionsMap(decisionsData) {
  * entities that declare an `agentPrompt` key are included; the value is the
  * normalized string (or null to clear a stale DB value). Serialized into
  * ETGO_SF_ENTITY.agent_prompt by push-to-neo so NEO Headless can surface
- * entity-level agent guidance in neo_discover, additive to the spec-level and
+ * entity-level agent guidance in etendo_discover, additive to the spec-level and
  * per-field prompts (ETP-4278).
  */
 export function buildEntityAgentPromptMap(decisionsData) {
@@ -454,7 +454,7 @@ export function buildFieldUpdateParams(f, ctx, fieldId, entityId) {
     // Stored alongside — not instead of — the two booleans above. mapVisibility
     // collapses four curated values into two flags, which is what NEO's runtime
     // needs but loses the distinction agents are told to act on (`system` and
-    // `readOnly` both map to Y/Y). neo_schema reads this column verbatim.
+    // `readOnly` both map to Y/Y). etendo_schema reads this column verbatim.
     visibility: f.visibility ?? null,
     isBusinessCritical: f.businessCritical ? 'Y' : 'N',
     audit: ctx.auditOpts,
@@ -774,7 +774,7 @@ async function renameEntitiesToContractNames(client, ctx, entityMaps) {
     const preconditionsJson = preconditions ? JSON.stringify(preconditions) : null;
     // Serialize the declared entity-level agentPrompt the same way (ETP-4278):
     // written unconditionally so an undeclared/cleared prompt resets the DB
-    // value, and surfaced additively by neo_discover's entity summary.
+    // value, and surfaced additively by etendo_discover's entity summary.
     const entityAgentPrompt = ctx.entityAgentPrompts?.[ent.name] ?? null;
     // Serialize the declared entity-level named filters (ETP-4601). Written
     // unconditionally (null when undeclared) so a stale DB value is cleared,

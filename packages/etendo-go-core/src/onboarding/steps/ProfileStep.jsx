@@ -82,7 +82,7 @@ export function ProfileStep({ config, stepData, onNext, onBack, goToStep, accoun
     <SetupShell
       progressLabel={ui('onboardingProgressAlmostReady')}
       progressValue={50}
-      brandLabel={config.brandLabel || 'Etendo GO'}
+      brandLabel={config.brandLabel || 'Etendo'}
       headerContent={sessionAction}
       data-testid="SetupShell__79cf84">
       {draftNotice && (
