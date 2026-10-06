@@ -146,7 +146,7 @@ export function EnvSelectStep({ config, stepData, onNext, onBack, goToStep, toke
         accountName={accountName}
         onLogout={onLogout}
         logoutLabel={ui('logout')}
-        brandLabel={config.brandLabel || 'Etendo GO'}
+        brandLabel={config.brandLabel || 'Etendo'}
         data-testid="PageHeader__79cf84" />
       {/* Extra header actions row */}
       <div className="bg-white border-b border-gray-100">

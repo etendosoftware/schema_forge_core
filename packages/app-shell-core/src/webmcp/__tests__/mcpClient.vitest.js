@@ -9,11 +9,11 @@ describe('Etendo Go MCP WebMCP bridge', () => {
     const fetcher = vi.fn(async (_url, init) => {
       expect(init.headers.Authorization).toBe('Bearer token');
       expect(JSON.parse(init.body).method).toBe('tools/list');
-      return response({ result: { tools: [{ name: 'neo_list', inputSchema: { type: 'object' } }] } });
+      return response({ result: { tools: [{ name: 'etendo_list', inputSchema: { type: 'object' } }] } });
     });
 
     await expect(listMcpTools({ fetcher, endpoint: '/mcp', accessToken: 'token' })).resolves.toEqual([
-      { name: 'neo_list', inputSchema: { type: 'object' } },
+      { name: 'etendo_list', inputSchema: { type: 'object' } },
     ]);
   });
 
@@ -21,11 +21,11 @@ describe('Etendo Go MCP WebMCP bridge', () => {
     const fetcher = vi.fn(async (_url, init) => {
       const request = JSON.parse(init.body);
       expect(request.method).toBe('tools/call');
-      expect(request.params).toEqual({ name: 'neo_create', arguments: { spec: 'sales-order' } });
+      expect(request.params).toEqual({ name: 'etendo_create', arguments: { spec: 'sales-order' } });
       return response({ result: { content: [{ type: 'text', text: 'created' }] } });
     });
 
-    await expect(callMcpTool({ fetcher, endpoint: '/mcp', accessToken: 'token', name: 'neo_create', arguments: { spec: 'sales-order' } })).resolves.toEqual({
+    await expect(callMcpTool({ fetcher, endpoint: '/mcp', accessToken: 'token', name: 'etendo_create', arguments: { spec: 'sales-order' } })).resolves.toEqual({
       content: [{ type: 'text', text: 'created' }],
     });
   });

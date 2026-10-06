@@ -9,7 +9,7 @@ describe('WebMcpMcpTools', () => {
       const request = JSON.parse(init.body);
       if (request.method === 'tools/list') {
         return { ok: true, status: 200, json: async () => ({ result: {
-          tools: [{ name: 'neo_list', description: 'List records', inputSchema: { type: 'object' } }],
+          tools: [{ name: 'etendo_list', description: 'List records', inputSchema: { type: 'object' } }],
         } }) };
       }
       return { ok: true, status: 200, json: async () => ({ result: { records: [] } }) };
@@ -19,7 +19,7 @@ describe('WebMcpMcpTools', () => {
       render(<WebMcpMcpTools enabled endpoint="/mcp" accessToken="token" fetcher={fetcher} />);
       await waitFor(() => expect(registerTool).toHaveBeenCalledTimes(1));
       const [tool] = registerTool.mock.calls[0];
-      expect(tool.name).toBe('neo_list');
+      expect(tool.name).toBe('etendo_list');
       await expect(tool.execute({ spec: 'sales-order' })).resolves.toEqual({ records: [] });
       expect(fetcher).toHaveBeenCalledTimes(2);
     } finally {

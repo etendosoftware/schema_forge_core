@@ -32,7 +32,7 @@ function AuthGuard({ children }) {
 function MainApp() {
   return (
     <div style={{ padding: '2rem', fontFamily: 'sans-serif' }}>
-      <h1>Etendo GO — Argentina</h1>
+      <h1>Etendo — Argentina</h1>
       <p>Has ingresado al sistema. Esta es la página principal (Dashboard).</p>
     </div>
   );
