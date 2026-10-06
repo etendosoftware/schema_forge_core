@@ -112,7 +112,7 @@ export function VerifyEmailStep({ config, accountName, accountEmail, token, onLo
 
   return (
     <AuthShell
-      brandLabel={config.brandLabel || 'Etendo GO'}
+      brandLabel={config.brandLabel || 'Etendo'}
       headerContent={onLogout && (
         <OnboardingSessionAction onLogout={onLogout} label={ui('logout')} />
       )}

@@ -1792,7 +1792,7 @@ function generateAgentProfile(schema, apiPrediction, formState, windowConfig) {
     dangerousOperations,
   };
 
-  // Author-provided agent guidance for the whole spec (returned by neo_discover).
+  // Author-provided agent guidance for the whole spec (returned by etendo_discover).
   // Omit when empty/blank to match the documented "omit when empty" behavior
   // (the runtime MCP layer trims and omits blank prompts too).
   if (windowConfig?.agentPrompt && windowConfig.agentPrompt.trim() !== '') {

@@ -40,7 +40,22 @@ export const AUTH_ERROR_UI_KEYS = {
   CHANGE_PASSWORD_MISSING_CREDENTIALS: 'onboardingChangePasswordMissingCredentials',
   NO_LOCAL_PASSWORD: 'onboardingNoLocalPassword',
   INVALID_CURRENT_PASSWORD: 'onboardingInvalidCurrentPassword',
+  // ETP-5258 — the reset/set-password link is unknown, already used or expired.
+  PASSWORD_RESET_INVALID: 'onboardingCredentialResetFailed',
 };
+
+/**
+ * ETP-5258 — the localized message for a failed auth call, resolved ONLY from the backend's
+ * stable code. `err.userMessage` is deliberately never shown: it is the backend's fixed English
+ * text, so preferring it left the reset screen in English while the UI was in Spanish.
+ *
+ * @param ui          the `useUI()` translator
+ * @param err         an Error thrown by this module (or a network failure, which has no code)
+ * @param fallbackKey i18n key for codes the table does not know
+ */
+export function resolveAuthErrorMessage(ui, err, fallbackKey) {
+  return ui(AUTH_ERROR_UI_KEYS[err?.code] || fallbackKey);
+}
 
 const SSO_PAYLOAD_BUILDERS = {
   google: (payload = {}) => ({

@@ -4,7 +4,7 @@
  *
  * `ETGO_SF_FIELD` stores the same decision twice, on purpose:
  *   - `ISINCLUDED` / `ISREADONLY` — the two booleans NEO's runtime enforces.
- *   - `VISIBILITY`               — the curated value verbatim, which `neo_schema`
+ *   - `VISIBILITY`               — the curated value verbatim, which `etendo_schema`
  *                                  hands to agents (`system` and `readOnly` both
  *                                  collapse to Y/Y, so the flags cannot recover it).
  *

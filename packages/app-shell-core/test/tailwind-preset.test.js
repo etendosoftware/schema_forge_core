@@ -22,3 +22,15 @@ describe('semantic Tailwind theme API (ETP-4554)', () => {
     assert.equal(colors.status.neutral.foreground, 'var(--status-neutral-fg)');
   });
 });
+
+describe('font family tokens (ETP-5593)', () => {
+  it('exposes Space Mono as the dedicated `font-code` family', () => {
+    const { code } = preset.theme.extend.fontFamily;
+    assert.equal(code[0], '"Space Mono"');
+    assert.ok(code.includes('monospace'));
+  });
+
+  it('does not redefine `font-mono`', () => {
+    assert.equal(preset.theme.extend.fontFamily.mono, undefined);
+  });
+});

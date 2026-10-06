@@ -4,13 +4,14 @@ import { Button } from '@etendosoftware/app-shell-core/components/ui/button';
 import { useUI, useLocaleSwitch } from '@etendosoftware/app-shell-core/i18n';
 import { registerAccount, loginWithSsoProvider, AUTH_ERROR_UI_KEYS } from '../api.js';
 import { getConfiguredSsoProviders, renderSsoProviderButton } from '../sso.js';
-import { getPasswordChecks, isStrongPassword, PASSWORD_RULES } from '../passwordPolicy.js';
+import { isStrongPassword } from '../passwordPolicy.js';
 import { ONBOARDING_FIELD_LIMITS } from '../fieldLimits.js';
 import { isValidEmailFormat } from '../emailPolicy.js';
 import { trackOnboarding } from '../tracking.js';
 import { AuthShell } from '../components/AuthShell.jsx';
 import { AuthField } from '../components/AuthField.jsx';
 import { AuthSsoOptions } from '../components/AuthSsoOptions.jsx';
+import { PasswordStrengthChecklist } from '../components/PasswordStrengthChecklist.jsx';
 import { OnboardingLanguageSelect } from '../components/OnboardingLanguageSelect.jsx';
 import { persistAuthMethod } from '../postAuth.js';
 
@@ -32,17 +33,9 @@ export function RegisterStep({ config, stepData, onNext, onBack, goToStep, setTo
   const SSO_PROVIDERS = getConfiguredSsoProviders();
   const apiBase = config.apiBase || '';
 
-  const registerPasswordChecks = getPasswordChecks(registerForm.password);
   const registerPasswordStrong = isStrongPassword(registerForm.password);
   const registerEmailTouched = registerForm.email.trim().length > 0;
   const registerEmailValid = isValidEmailFormat(registerForm.email);
-  const passwordRuleLabels = {
-    minLength: 'onboardingPasswordReqMinLength',
-    uppercase: 'onboardingPasswordReqUppercase',
-    lowercase: 'onboardingPasswordReqLowercase',
-    number: 'onboardingPasswordReqNumber',
-    special: 'onboardingPasswordReqSpecial',
-  };
 
   const handleAuthSuccess = useCallback((csrfToken, account, { route = true, authMethod = 'password' } = {}) => {
     persistAuthMethod(authMethod);
@@ -226,7 +219,7 @@ export function RegisterStep({ config, stepData, onNext, onBack, goToStep, setTo
         setShowRegisterPassword(false);
         if (goToStep) goToStep('login');
       }}
-      brandLabel={config.brandLabel || 'Etendo GO'}
+      brandLabel={config.brandLabel || 'Etendo'}
       headerContent={localeControl}
       marketingTitle={ui('onboardingMarketingTitle')}
       marketingDescription={ui('onboardingMarketingDescription')}
@@ -306,32 +299,10 @@ export function RegisterStep({ config, stepData, onNext, onBack, goToStep, setTo
           )}
           data-testid="AuthField__79cf84" />
 
-        {registerForm.password && (
-          <ul
-            data-testid="register-password-requirements"
-            className="space-y-1 rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm"
-          >
-            <li className="mb-1 font-medium text-slate-600">
-              {ui('onboardingPasswordRequirementsTitle')}
-            </li>
-            {PASSWORD_RULES.map(rule => {
-              const met = registerPasswordChecks[rule];
-              return (
-                <li
-                  key={rule}
-                  data-testid={`register-password-rule-${rule}`}
-                  data-met={met ? 'true' : 'false'}
-                  className={`flex items-center gap-2 ${met ? 'text-emerald-600' : 'text-slate-400'}`}
-                >
-                  {met
-                    ? <Check className="h-4 w-4 shrink-0" data-testid="Check__79cf84" />
-                    : <span className="h-1.5 w-1.5 shrink-0 rounded-full bg-slate-300" aria-hidden="true" />}
-                  <span>{ui(passwordRuleLabels[rule])}</span>
-                </li>
-              );
-            })}
-          </ul>
-        )}
+        <PasswordStrengthChecklist
+          password={registerForm.password}
+          testIdPrefix="register-password"
+          data-testid="PasswordStrengthChecklist__79cf84" />
 
         {registerError && (
           <div className="rounded-2xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm font-medium text-rose-600">
