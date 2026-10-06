@@ -12,7 +12,8 @@
  * event: the SDK applies only the changes made to a fixed list of fields per event type
  * (`MODIFIABLE_FIELD_PATHS_BY_EVENT` in rum-core 7.15) and silently reverts the rest. So
  * every modifiable field that can carry user data is rewritten through the gateway's
- * sanitizers, and what cannot be modified is kept out at the source instead:
+ * sanitizers (a referrer from another site is dropped), and what cannot be modified is kept
+ * out at the source instead:
  *
  *  - `usr` and `account` are NOT modifiable: the adapter only ever sets their `id`
  *    (`identify`, `group`), never a name or an email;
@@ -122,6 +123,22 @@ function scrubStack(value, options) {
   return typeof value === 'string' ? (sanitizeStack(value, options) ?? '') : value;
 }
 
+/**
+ * A referrer from another site is dropped, as the Mixpanel adapter does (it names where the user
+ * came from: a mail provider, a customer's intranet); one from this app is kept, scrubbed.
+ */
+function scrubReferrer(referrer, pageUrl, options) {
+  if (typeof referrer !== 'string' || referrer === '') return referrer;
+  try {
+    // Relative URLs (same origin by definition) resolve against a placeholder origin.
+    const page = new URL(String(pageUrl), 'https://relative.invalid');
+    if (new URL(referrer, page).origin !== page.origin) return '';
+  } catch {
+    return '';
+  }
+  return scrubUrl(referrer, options);
+}
+
 /** True when a cause's message or stack would change under the sanitizers (`causes` is read-only). */
 function hasUnsafeCauses(event, options) {
   const causes = event.error?.causes;
@@ -138,8 +155,8 @@ function hasUnsafeCauses(event, options) {
 export function sanitizeDatadogEvent(event, policy = {}) {
   const options = resolvePolicy(policy);
   if (event.view && typeof event.view === 'object') {
+    event.view.referrer = scrubReferrer(event.view.referrer, event.view.url, options);
     event.view.url = scrubUrl(event.view.url, options);
-    event.view.referrer = scrubUrl(event.view.referrer, options);
     event.view.name = scrubUrl(event.view.name, options);
     const lcp = event.view.performance?.lcp;
     if (lcp && typeof lcp === 'object') lcp.resource_url = scrubUrl(lcp.resource_url, options);

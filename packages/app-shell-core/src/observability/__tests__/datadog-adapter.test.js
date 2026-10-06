@@ -233,6 +233,21 @@ describe('createDatadogAdapter — beforeSend closes what the SDK collects on it
     assert.equal(event.view.performance.lcp.resource_url, 'https://cdn.example.com/a.png');
   });
 
+  it('drops a referrer from another site, on every event type that carries one', async () => {
+    const { beforeSend } = await hook();
+    for (const type of ['view', 'action', 'error']) {
+      const { event } = runBeforeSend(beforeSend, {
+        type,
+        view: { url: 'https://app.etendo.software/go/contacts', referrer: `https://mail.example.com/inbox?u=${SECRET_EMAIL}`, name: '/contacts' },
+      });
+      assert.equal(event.view.referrer, '', type);
+    }
+    const relative = runBeforeSend(beforeSend, { type: 'view', view: { url: '/go/contacts', referrer: `/go/contacts/${HEX32}?code=x` } });
+    assert.equal(relative.event.view.referrer, '/go/contacts/:id', 'a relative referrer is this app');
+    const unparseable = runBeforeSend(beforeSend, { type: 'view', view: { url: 'not a url', referrer: 'https://app.etendo.software/go' } });
+    assert.equal(unparseable.event.view.referrer, '');
+  });
+
   it('scrubs error messages and stacks, including the handling stack', async () => {
     const { beforeSend } = await hook();
     const { event, dropped } = runBeforeSend(beforeSend, {
