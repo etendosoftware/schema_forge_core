@@ -219,12 +219,37 @@ export function createTelemetryGateway({
       safeWarn(logger, '[observability] sanitizeValue failed; the value was sent as [REDACTED]', error),
   };
   let context = {};
+  // The current identity, as sanitized and dispatched (`[id, traits]` and, per group key,
+  // `[key, id, traits]`), and the identity each adapter last received. A killed adapter is
+  // skipped, so a logout or a new sign-in during the kill would never reach it: when it starts
+  // again it is brought up to date (see `syncIdentity`).
+  let currentUser = null;
+  const currentGroups = new Map();
+  const delivered = new Map();
 
   const sanitize = (value) => sanitizeValue(value, sanitizeOptions);
+  const identityKey = () => JSON.stringify([currentUser?.[0] ?? null, [...currentGroups.values()].map(([key, id]) => [key, id])]);
+  const NO_IDENTITY = JSON.stringify([null, []]);
   const envelope = () => ({ context: sanitize(context) });
 
   const isKilled = (adapter) => killedAll || killedNames.has(adapterName(adapter));
   const isActive = (adapter) => isAdapterConfiguredOn(adapter) && !isKilled(adapter);
+
+  /**
+   * Brings a (re)started adapter to the current identity, only when it differs from what the
+   * adapter last received: a reset first if it still holds someone, then the user and groups.
+   */
+  async function syncIdentity(adapter) {
+    const want = identityKey();
+    const had = delivered.get(adapter) ?? NO_IDENTITY;
+    if (had === want) return;
+    if (had !== NO_IDENTITY) await callAdapter(adapter, 'reset', [envelope()], logger, adapterTimeoutMs);
+    if (currentUser) await callAdapter(adapter, 'identify', [...currentUser, envelope()], logger, adapterTimeoutMs);
+    for (const group of currentGroups.values()) {
+      await callAdapter(adapter, 'group', [...group, envelope()], logger, adapterTimeoutMs);
+    }
+    delivered.set(adapter, want);
+  }
 
   async function stop(adapter) {
     running.delete(adapter);
@@ -256,6 +281,7 @@ export function createTelemetryGateway({
         starts.delete(adapter);
         return false;
       }
+      await syncIdentity(adapter);
       return true;
     });
     starts.set(adapter, starting);
@@ -266,11 +292,22 @@ export function createTelemetryGateway({
   // before its first call, so an SDK never receives events without having been set up.
   // Activity is checked again right before each call, after every await: a disable()
   // landing while the call was waiting must still stop it.
-  async function dispatch(methodName, args) {
+  async function dispatch(methodName, args, skip = () => false) {
     const candidates = adapters.filter(isActive);
     const started = initialized ? await Promise.all(candidates.map(start)) : candidates.map(() => true);
-    const ready = candidates.filter((adapter, i) => started[i] && isActive(adapter));
+    const ready = candidates.filter((adapter, i) => started[i] && isActive(adapter) && !skip(adapter));
     await Promise.all(ready.map((adapter) => callAdapter(adapter, methodName, args, logger, adapterTimeoutMs)));
+    return ready;
+  }
+
+  // An identity change reaches the adapters that are up; the rest catch up when they start. An
+  // adapter whose start, awaited here, already delivered this identity is not sent it twice.
+  async function dispatchIdentity(methodName, args) {
+    const key = identityKey();
+    const before = new Map(adapters.map((adapter) => [adapter, delivered.get(adapter)]));
+    const syncedNow = (adapter) => before.get(adapter) !== key && delivered.get(adapter) === key;
+    const ready = await dispatch(methodName, args, syncedNow);
+    for (const adapter of ready) delivered.set(adapter, key);
   }
 
   function setKilled(name, killed) {
@@ -301,7 +338,13 @@ export function createTelemetryGateway({
       drop(methodName);
       return;
     }
-    await dispatch(methodName, [key, id, sanitize(payload), envelope()]);
+    const safePayload = sanitize(payload);
+    if (methodName === 'group') {
+      currentGroups.set(key, [key, id, safePayload]);
+      await dispatchIdentity(methodName, [key, id, safePayload, envelope()]);
+      return;
+    }
+    await dispatch(methodName, [key, id, safePayload, envelope()]);
   }
 
   function mergeContext(nextContext) {
@@ -350,7 +393,9 @@ export function createTelemetryGateway({
 
     /** Clears provider-side identity (logout). The gateway's own context is app-level and kept. */
     reset: guarded('reset', async () => {
-      await dispatch('reset', [envelope()]);
+      currentUser = null;
+      currentGroups.clear();
+      await dispatchIdentity('reset', [envelope()]);
     }),
 
     track: guarded('track', async (eventName, properties = {}) => {
@@ -369,7 +414,8 @@ export function createTelemetryGateway({
         drop('identify');
         return;
       }
-      await dispatch('identify', [id, sanitize(traits), envelope()]);
+      currentUser = [id, sanitize(traits)];
+      await dispatchIdentity('identify', [...currentUser, envelope()]);
     }),
 
     group: guarded('group', (groupKey, groupId, traits = {}) => dispatchGroup('group', groupKey, groupId, traits)),

@@ -71,6 +71,12 @@ out in the `firstload2` probe). A kill before `init()` only helps when `init()` 
 The host does this inside `initObservability()` and has a test for it. The host drives the switch from a build default and from runtime flags (see the
 host's `docs/ops/app-shell-observability.md`).
 
+A killed adapter receives nothing, including a logout (`reset`) or a new sign-in (`identify`,
+`group`). The gateway keeps the current identity (sanitized, as dispatched) and what each
+adapter last received, so an adapter that starts again (a lifted kill, a late opt-in) is
+brought up to date: a `reset` if it still holds a previous user, then the current user and
+groups. Nothing is replayed when the identity did not change.
+
 Datadog cannot drop a view event from `beforeSend`, so its kill withdraws tracking consent
 (`setTrackingConsent('not-granted')`). That ends the session: the SDK still sends the end of the
 current view, sanitized like any other, and then stops collecting; `beforeSend` drops every other

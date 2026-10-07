@@ -970,3 +970,109 @@ describe('addFeatureFlagEvaluation', () => {
     assert.deepEqual(calls, []);
   });
 });
+
+describe('createTelemetryGateway — identity across a kill', () => {
+  function identityAdapter(name, extra = {}) {
+    const calls = [];
+    const record = (method) => (...args) => calls.push([method, ...args.slice(0, -1)]);
+    return {
+      adapter: {
+        name,
+        init: () => calls.push(['init']),
+        shutdown: () => calls.push(['shutdown']),
+        reset: () => calls.push(['reset']),
+        identify: record('identify'),
+        group: record('group'),
+        track: record('track'),
+        ...extra,
+      },
+      calls,
+    };
+  }
+
+  async function signedIn(adapters) {
+    const gw = createTelemetryGateway({ adapters, allowedKeys: ['plan'] });
+    await gw.init();
+    await gw.identify('user-a', { plan: 'pro' });
+    await gw.group('account_id', 'tenant-a');
+    return gw;
+  }
+
+  it('a revived adapter gets the sign-in that happened while it was killed, after a reset', async () => {
+    const rum = identityAdapter('rum');
+    const gw = await signedIn([rum.adapter]);
+    await gw.disable('rum');
+    await gw.reset();
+    await gw.identify('user-b', { plan: 'free' });
+    await gw.group('account_id', 'tenant-b');
+    rum.calls.length = 0;
+
+    await gw.enable('rum');
+
+    assert.deepEqual(rum.calls, [
+      ['init'], ['reset'], ['identify', 'user-b', { plan: 'free' }], ['group', 'account_id', 'tenant-b', {}],
+    ]);
+  });
+
+  it('a logout while killed reaches the adapter as a reset when it comes back', async () => {
+    const rum = identityAdapter('rum');
+    const gw = await signedIn([rum.adapter]);
+    await gw.disable('rum');
+    await gw.reset();
+    rum.calls.length = 0;
+
+    await gw.enable('rum');
+
+    assert.deepEqual(rum.calls, [['init'], ['reset']]);
+  });
+
+  it('nothing is replayed when the identity did not change during the kill', async () => {
+    const rum = identityAdapter('rum');
+    const gw = await signedIn([rum.adapter]);
+    await gw.disable('rum');
+    await gw.track('while-killed');
+    rum.calls.length = 0;
+
+    await gw.enable('rum');
+    await gw.track('after');
+
+    assert.deepEqual(rum.calls, [['init'], ['track', 'after', {}]]);
+  });
+
+  it('an adapter switched on late gets the current identity without a reset', async () => {
+    let on = false;
+    const late = identityAdapter('late', { enabled: () => on });
+    const gw = await signedIn([late.adapter]);
+    on = true;
+
+    await gw.track('first');
+
+    assert.deepEqual(late.calls, [
+      ['init'], ['identify', 'user-a', { plan: 'pro' }], ['group', 'account_id', 'tenant-a', {}], ['track', 'first', {}],
+    ]);
+  });
+
+  it('an identity dispatched before init() is not sent again by the start', async () => {
+    const rum = identityAdapter('rum');
+    const gw = createTelemetryGateway({ adapters: [rum.adapter], allowedKeys: [] });
+    await gw.identify('user-a');
+    await gw.init();
+
+    assert.deepEqual(rum.calls, [['identify', 'user-a', {}], ['init']]);
+  });
+
+  it('only sanitized identifiers are remembered and replayed', async () => {
+    const rum = identityAdapter('rum');
+    const gw = await signedIn([rum.adapter]);
+    await gw.disable('rum');
+    await gw.reset();
+    await gw.identify(SECRET_EMAIL);
+    await gw.identify('user-c', { email: SECRET_EMAIL, plan: 'pro' });
+    rum.calls.length = 0;
+
+    await gw.enable('rum');
+
+    assertNoLeak(rum.calls, SECRET_EMAIL);
+    assert.deepEqual(rum.calls, [['init'], ['reset'], ['identify', 'user-c', { plan: 'pro' }]]);
+  });
+});

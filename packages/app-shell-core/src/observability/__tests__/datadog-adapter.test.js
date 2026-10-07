@@ -494,6 +494,24 @@ describe('createDatadogAdapter — what the gateway hands over', () => {
     assert.deepEqual(sdk.calls, []);
   });
 
+  it('applies an identity set before the SDK loaded, unless a logout cleared it', async () => {
+    const { adapter, sdk } = configured();
+    adapter.identify('user-1');
+    adapter.group('account_id', 'C1');
+    await adapter.init();
+    assert.deepEqual(sdk.calls.filter(([m]) => m === 'setUser' || m === 'setAccount'),
+      [['setUser', { id: 'user-1' }], ['setAccount', { id: 'C1' }]]);
+    adapter.group('account_id', 'C2');
+    assert.equal(sdk.calls.filter(([m]) => m === 'startView').length, 2, 'moving on from the replayed tenant is a tenant switch');
+
+    const loggedOut = configured();
+    loggedOut.adapter.identify('user-1');
+    loggedOut.adapter.group('account_id', 'C1');
+    loggedOut.adapter.reset();
+    await loggedOut.adapter.init();
+    assert.equal(loggedOut.sdk.calls.some(([m]) => m === 'setUser' || m === 'setAccount'), false);
+  });
+
   it('does not queue flag evaluations after a kill', async () => {
     const { adapter, sdk } = configured();
     await adapter.init();

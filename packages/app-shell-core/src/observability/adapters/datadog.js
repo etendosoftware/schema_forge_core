@@ -259,6 +259,9 @@ export function createDatadogAdapter({
   let viewName;
   let lastAccountId;
   const pendingFlags = new Map();
+  // Identity set before the SDK loaded (the gateway counts it as delivered), applied on start.
+  let pendingUser;
+  let pendingAccount;
 
   // Sanitizes before deciding: a view is sent even when this returns false (the SDK cannot
   // drop views), so the one that ends with a kill must be clean too.
@@ -325,6 +328,15 @@ export function createDatadogAdapter({
     });
     rum = datadogRum;
     showView(routeOf(currentPath()));
+    if (!stopped) {
+      if (pendingUser !== undefined) rum.setUser({ id: pendingUser });
+      if (pendingAccount !== undefined) {
+        rum.setAccount({ id: pendingAccount });
+        lastAccountId = pendingAccount;
+      }
+    }
+    pendingUser = undefined;
+    pendingAccount = undefined;
     for (const [key, value] of pendingFlags) rum.addFeatureFlagEvaluation(key, value);
     pendingFlags.clear();
   }
@@ -372,6 +384,8 @@ export function createDatadogAdapter({
     shutdown() {
       stopped = true;
       pendingFlags.clear();
+      pendingUser = undefined;
+      pendingAccount = undefined;
       rum?.setTrackingConsent?.('not-granted');
     },
 
@@ -384,12 +398,17 @@ export function createDatadogAdapter({
     },
 
     identify(userId) {
+      if (!rum && !stopped) pendingUser = userId;
       call('setUser', { id: userId });
     },
 
     group(groupKey, groupId) {
-      if (groupKey !== 'account_id' || !rum || stopped) return;
+      if (groupKey !== 'account_id' || stopped) return;
       const next = String(groupId);
+      if (!rum) {
+        pendingAccount = next;
+        return;
+      }
       rum.setAccount({ id: next });
       // A tenant switch starts a new view, so the previous tenant's flag context is not
       // attached to later events. The first assignment stays in the current view.
@@ -412,6 +431,8 @@ export function createDatadogAdapter({
     // The last tenant is kept on purpose: whoever signs in next under another tenant gets a new
     // view, so no flag context from the previous one is attached to their events.
     reset() {
+      pendingUser = undefined;
+      pendingAccount = undefined;
       call('stopSession');
       call('clearUser');
       call('clearAccount');
