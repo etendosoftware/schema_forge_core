@@ -524,3 +524,88 @@ describe('buildAccountReportTree — regression: roll-up and formula sums are no
     assert.equal(rows.F.amount, 30638.56);
   });
 });
+
+describe('buildAccountReportTree — ShowValueCond (ETP-5662)', () => {
+  const n = (id, parent, path, group, value, level, sign, own, extra = {}) => ({
+    node_id: id, parent_id: parent, sort_path: path, group_name: group, value, name: value,
+    elementlevel: level, isalwaysshown: 'N', accountsign: sign, own_amt: own, own_amt_ref: 0,
+    showvaluecond: null, issummary: 'Y', ...extra,
+  });
+  // Mini PGC balance sheet: Activo (D) A.B > 551(P) > 5510(P) > 55100000; A.TOTAL = A.B.
+  // Pasivo (C): (551)(P) > (5510)(P formula, -1 x 5510); 555 leaf.
+  const mirrorTree = (dr, dr555) => [
+    n('A', null, '1', 'A', 'A', 'E', 'D', 0),
+    n('AB', 'A', '1.1', 'A', 'A.B', 'E', 'D', 0),
+    n('551', 'AB', '1.1.1', 'A', '551', 'C', 'D', 0, { showvaluecond: 'P' }),
+    n('5510', '551', '1.1.1.1', 'A', '5510', 'D', 'D', 0, { showvaluecond: 'P' }),
+    n('55100000', '5510', '1.1.1.1.1', 'A', '55100000', 'S', 'D', dr, { issummary: 'N' }),
+    n('ATOT', 'A', '1.2', 'A', 'A.TOTAL', 'E', 'D', 0),
+    n('P', null, '2', 'P', 'P', 'E', 'C', 0),
+    n('M551', 'P', '2.1', 'P', '(551)', 'C', 'C', 0, { showvaluecond: 'P' }),
+    n('M5510', 'M551', '2.1.1', 'P', '(5510)', 'D', 'C', 0, { showvaluecond: 'P' }),
+    n('555', 'P', '2.2', 'P', '555', 'C', 'C', dr555, { issummary: 'N' }),
+  ];
+  const operands = [
+    { owner_id: 'M5510', operand_id: '5510', sign: -1 },
+    { owner_id: 'ATOT', operand_id: 'AB', sign: 1 },
+  ];
+  const ids = (rows) => rows.map((r) => r.node_id);
+  const amt = (rows, id) => rows.find((r) => r.node_id === id)?.amount;
+
+  it('oracle case 1: credit balance on 551 hides Activo, the mirror shows it', () => {
+    const rows = buildAccountReportTree(mirrorTree(-1, 1), operands, { showOnlyWithValue: true });
+    for (const id of ['AB', '551', '5510', '55100000', 'ATOT']) {
+      assert.ok(!ids(rows).includes(id), id);
+    }
+    assert.equal(amt(rows, 'M5510'), 1);
+    assert.equal(amt(rows, 'M551'), 1);
+    assert.equal(amt(rows, '555'), -1);
+  });
+
+  it('oracle case 2: debit balance on 551 shows Activo, the mirror is hidden', () => {
+    const rows = buildAccountReportTree(mirrorTree(5, -5), operands, { showOnlyWithValue: true });
+    for (const id of ['AB', '551', '5510', '55100000', 'ATOT']) assert.equal(amt(rows, id), 5, id);
+    assert.ok(!ids(rows).includes('M551'));
+    assert.ok(!ids(rows).includes('M5510'));
+  });
+
+  it('N keeps only negatives; non-summary and null/A svc pass through', () => {
+    const rows = buildAccountReportTree([
+      n('R', null, '1', 'G', 'R', 'E', 'D', 0),
+      n('N1', 'R', '1.1', 'G', 'N1', 'C', 'D', 5, { showvaluecond: 'N' }),
+      n('N2', 'R', '1.2', 'G', 'N2', 'C', 'D', -5, { showvaluecond: 'N' }),
+      n('L', 'R', '1.3', 'G', 'L', 'C', 'D', 5, { showvaluecond: 'P', issummary: 'N' }),
+      n('X', 'R', '1.4', 'G', 'X', 'C', 'D', -5),
+      n('A', 'R', '1.5', 'G', 'A', 'C', 'D', -5, { showvaluecond: 'A' }),
+    ], []);
+    assert.deepEqual(['N1', 'N2', 'L', 'X', 'A'].map((id) => amt(rows, id)), [0, -5, 5, -5, -5]);
+  });
+
+  it('a clamped child contributes 0 to its parent', () => {
+    const rows = buildAccountReportTree([
+      n('R', null, '1', 'G', 'R', 'E', 'D', 0),
+      n('H', 'R', '1.1', 'G', 'H', 'E', 'D', 0),
+      n('C1', 'H', '1.1.1', 'G', 'C1', 'C', 'D', -3, { showvaluecond: 'P' }),
+      n('C2', 'H', '1.1.2', 'G', 'C2', 'C', 'D', 4, { issummary: 'N' }),
+    ], [], { showOnlyWithValue: true });
+    assert.equal(amt(rows, 'H'), 4);
+    assert.ok(!ids(rows).includes('C1'));
+  });
+
+  it('reference-period reset is independent of the main period', () => {
+    const rows = buildAccountReportTree([
+      n('R', null, '1', 'G', 'R', 'E', 'D', 0),
+      n('S', 'R', '1.1', 'G', 'S', 'C', 'D', 0, { showvaluecond: 'P' }),
+      n('K', 'S', '1.1.1', 'G', 'K', 'S', 'D', 7, { issummary: 'N', own_amt_ref: -2 }),
+    ], []);
+    const k = rows.find((r) => r.node_id === 'K');
+    assert.equal(k.amount, 7);
+    assert.equal(k.amount_ref, 0);
+  });
+
+  it('with no operand rows the mirror stays empty (R39 precondition)', () => {
+    const rows = buildAccountReportTree(mirrorTree(-1, 1), [], { showOnlyWithValue: true });
+    assert.ok(!ids(rows).includes('551'));
+    assert.ok(!ids(rows).includes('M551'));
+  });
+});
