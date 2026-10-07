@@ -437,6 +437,7 @@ export function buildAccountReportTree(nodeRows, operandRows, options = {}) {
       node.raw = cleanAmount(own);
       node.raw_ref = cleanAmount(ownRef);
     }
+    // raw is cleaned before the clamp: vs Java's BigDecimal, only sub-cent values differ (epsilon hides).
     node.amount = applyShowValueCond(node, node.raw);
     node.amount_ref = applyShowValueCond(node, node.raw_ref);
     node.reset = node.amount !== node.raw;
