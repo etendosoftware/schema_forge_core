@@ -332,6 +332,10 @@ export function accountSignMultiplier(sign) {
  *    account such as `(551)` shows the balance on the side where it is
  *    positive. Main and reference periods reset independently. MUST stay in
  *    sync with the Java twin `AccountReportTree` (com.etendoerp.go).
+ *    Deliberate deviation: `reset` = "the clamp changed the value", so a KEPT
+ *    P/N node's descendants stay visible. Classic resets on any failed
+ *    condition (0 too) with the ref period overwriting the main flag, so with
+ *    Compare To off it hides them. Totals are identical.
  *
  * Returns the flattened, document-ordered rows the template renders, with
  * `indent`/`indentClass`/`isHeading`/`group`/`isGroupStart` precomputed here
