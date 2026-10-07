@@ -560,6 +560,7 @@ describe('buildAccountReportTree — ShowValueCond (ETP-5662)', () => {
     assert.equal(amt(rows, 'M5510'), 1);
     assert.equal(amt(rows, 'M551'), 1);
     assert.equal(amt(rows, '555'), -1);
+    assert.equal(rows[0].isGroupStart, true, 'a lone visible group still gets its header');
   });
 
   it('oracle case 2: debit balance on 551 shows Activo, the mirror is hidden', () => {

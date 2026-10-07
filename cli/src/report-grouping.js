@@ -498,7 +498,11 @@ export function buildAccountReportTree(nodeRows, operandRows, options = {}) {
   // group's header rendered, so force it on iff the report actually has more
   // than one group. A single-group report (Profit & Loss) never has more than
   // one distinct `group` value here, so this is a no-op for it.
-  if (out.length && new Set(out.map((r) => r.group)).size > 1) {
+  // ETP-5662: counted over the report's ROOTS, not the visible rows — when
+  // ShowValueCond/only-with-value leaves a single group visible (e.g. only
+  // Pasivo), its header must still say which side the rows belong to. Differs
+  // from Classic (which prints those rows headerless) on purpose; display only.
+  if (out.length && new Set(roots.map((r) => r.group_name)).size > 1) {
     out[0].isGroupStart = true;
   }
   return out;
