@@ -69,6 +69,30 @@ describe('registered resolvers — reuse of previewed and in-flight resolutions'
     assert.equal(calls, 3);
   });
 
+  it('does not replay a settled needs-review or not-found answer', async () => {
+    let calls = 0;
+    registerFkResolver('memo-negative', async () => {
+      calls += 1;
+      return calls === 1 ? { status: 'needs-review', candidates: [] } : resolved('CREATED');
+    });
+    const fn = getFkResolver('memo-negative');
+    assert.equal((await fn('x', { token: 't' })).status, 'needs-review');
+    assert.equal((await fn('x', { token: 't' })).id, 'CREATED');
+    assert.equal(calls, 2);
+  });
+
+  it('still shares one request between concurrent calls that get a negative answer', async () => {
+    let calls = 0;
+    registerFkResolver('memo-negative-flight', async () => {
+      calls += 1;
+      await new Promise((r) => setTimeout(r, 5));
+      return { status: 'needs-review', candidates: [] };
+    });
+    const fn = getFkResolver('memo-negative-flight');
+    await Promise.all([fn('x', { token: 't' }), fn('x', { token: 't' }), fn('X', { token: 't' })]);
+    assert.equal(calls, 1);
+  });
+
   it('evicts a rejected resolution so the next call retries', async () => {
     let calls = 0;
     registerFkResolver('memo-reject', async () => {

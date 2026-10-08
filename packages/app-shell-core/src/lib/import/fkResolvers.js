@@ -24,11 +24,13 @@ function memoised(name, fn, value, context) {
   if (memo.has(key)) return memo.get(key);
   const pending = Promise.resolve(fn(value, context));
   memo.set(key, pending);
-  // A failure is not a result worth remembering: evict it so a retry is a real retry. The
-  // identity check keeps a newer promise stored under the same key after a reset.
-  pending.catch(() => {
-    if (memo.get(key) === pending) memo.delete(key);
-  });
+  // Only a definitive match is worth remembering. A failure, and equally a settled
+  // needs-review / not-found, is evicted so the next call asks again — the user may have created
+  // the record elsewhere before re-sending the same file. Concurrent workers still share the
+  // promise while it is in flight. The identity check keeps a newer promise stored under the
+  // same key after a reset.
+  const evict = () => { if (memo.get(key) === pending) memo.delete(key); };
+  pending.then((result) => { if (result?.status !== 'auto-resolved') evict(); }, evict);
   return pending;
 }
 
@@ -46,6 +48,9 @@ function memoised(name, fn, value, context) {
  *     (the dialog's `Map<target, Map<rawValue, resolution>>`, popover picks included) and the
  *     value is in it — no network. `target` comes from `options.target` or `context.target`;
  *  2. otherwise is memoised per run, so N rows sharing one unpreviewed value cost one call.
+ *
+ * The memo key assumes the result depends only on (resolver, normalised value, token): a resolver
+ * that also depends on other row context (e.g. a region that needs its country) must not use it.
  *
  * @param {string} name
  * @param {Function} fn `(value, context) => Promise<resolution>`
