@@ -37,6 +37,8 @@ const DEFAULT_LABELS = { title: 'Import', revalidating: 'Revalidating rows…', 
  * there is nothing for the user to fix — so these carry their own wording, separate from
  * the validation messages in `validateRows.js`.
  */
+const PROGRESS_THROTTLE_MS = 150;
+
 const SKIP_MESSAGES = {
   duplicateInFile: { key: 'importSkipDuplicateInFile', fallback: 'Duplicate row (already in file).' },
   alreadyExists: { key: 'importSkipAlreadyExists', fallback: 'This record already exists and will not be imported again.' },
@@ -52,7 +54,7 @@ const SKIP_MESSAGES = {
  *   {
  *     title, revalidating, downloadTemplate, importButton: (n) => string,   // this dialog
  *     dropzone:     { dropHere, dropHint },                                  // ImportDropzone
- *     progress:     { title, subtitle },                                     // ImportProgressStep
+ *     progress:     { title, subtitle, counter },// ImportProgressStep
  *     mapping:      { notImported, mappedSummary, editMatch, editTitle, save, cancel }, // ImportColumnMapping
  *     confirm:      { title, willImport: (n) => string, willSkip: (n) => string, cancel, confirm }, // ImportConfirmStep
  *     fileError:    { title, cancel, retry },                                // ImportFileErrorDialog
@@ -131,7 +133,11 @@ export function ImportDialog({ open, onOpenChange, config, token, postBatch, sim
   // row validation state.
   const [statusFilterPreSend, setStatusFilterPreSend] = useState('ok');
   const [statusFilterPostSend, setStatusFilterPostSend] = useState('error');
-  const [progress, setProgress] = useState(0);
+  // { done, total } of the running send. Percent and counter both derive from it. The engine
+  // reports once per row; handleSend throttles the updates so a 2,000-row file re-renders the
+  // dialog a few times a second, not 2,000 times.
+  const [progress, setProgress] = useState({ done: 0, total: 0 });
+  const lastProgressTickRef = useRef(0);
   // Debug-phase aid (per explicit request while the backend integration is still being
   // stabilized, one error at a time): the last uncontrolled/system-level failure of a
   // send, shown in its own blocking dialog with the full raw trace on top of the normal
@@ -583,11 +589,14 @@ export function ImportDialog({ open, onOpenChange, config, token, postBatch, sim
 
   const handleSend = useCallback(async () => {
     setStep(STEP.SENDING);
-    setProgress(0);
     // A previous run's unanswered question must not resurface over this one.
     setPendingCloseWhileSending(false);
     closedWhileSendingRef.current = false;
     const toSend = entries.filter((e) => e.status === 'pending' && e.errors.length === 0);
+    // Every send — the first one and a resend of fixed rows from the result step — starts its
+    // counter at zero over ITS OWN rows. (The engine caps a run at `maxRows`.)
+    setProgress({ done: 0, total: Math.min(toSend.length, maxRows) });
+    lastProgressTickRef.current = 0;
     // runImport isolates per-row build/send failures on its own (a bad row surfaces as
     // that row's FAILED result, not a thrown exception) — this catch is a last-resort
     // safety net for anything genuinely unexpected escaping that isolation, so the dialog
@@ -602,7 +611,13 @@ export function ImportDialog({ open, onOpenChange, config, token, postBatch, sim
         translate,
         concurrency,
         maxRows,
-        onProgress: (completed, total) => setProgress(Math.round((completed / total) * 100)),
+        onProgress: (completed, total) => {
+          const now = Date.now();
+          // Always publish the final tick; in between, at most ~6 updates a second.
+          if (completed !== total && now - lastProgressTickRef.current < PROGRESS_THROTTLE_MS) return;
+          lastProgressTickRef.current = now;
+          setProgress({ done: completed, total });
+        },
       }));
     } catch (error) {
       setFileErrorMessage(localizeError(error));
@@ -868,7 +883,7 @@ export function ImportDialog({ open, onOpenChange, config, token, postBatch, sim
               data-testid="ImportConfirmStep__38a6c3" />
           )}
 
-          {step === STEP.SENDING && <ImportProgressStep percent={progress} labels={labels?.progress} data-testid="ImportProgressStep__38a6c3" />}
+          {step === STEP.SENDING && <ImportProgressStep percent={progress.total > 0 ? Math.round((progress.done / progress.total) * 100) : 0} processed={progress.done} total={progress.total} labels={labels?.progress} data-testid="ImportProgressStep__38a6c3" />}
 
           {step === STEP.RESULT && (
             <div className="flex min-h-0 max-h-[70vh] min-w-0 flex-col gap-4">

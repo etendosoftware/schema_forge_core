@@ -1035,3 +1035,49 @@ describe('ImportDialog — previewed FK resolutions reach the send phase', () =>
     }
   });
 });
+
+// ETP-5676 — the send step shows how many records were processed, not only a percentage.
+describe('ImportDialog — processed counter while sending', () => {
+  const rows = (n) => `Name,Email\n${Array.from({ length: n }, (_, i) => `P${i},p${i}@x.com`).join('\n')}`;
+  const okResponse = { committed: true, operations: [{ id: 'row', ok: true, recordId: 'R' }] };
+
+  function deferredPostBatch() {
+    const pending = [];
+    const postBatch = vi.fn(() => new Promise((resolve) => { pending.push(resolve); }));
+    return { postBatch, pending };
+  }
+
+  async function startSend(postBatch, n) {
+    render(<ImportDialog open config={config} token="t" postBatch={postBatch} simSearchFn={vi.fn()} onImported={() => {}} />);
+    await uploadFile(rows(n));
+    fireEvent.click(screen.getByTestId('ImportDialog__importButton'));
+    fireEvent.click(screen.getByTestId('ImportConfirmStep__confirm'));
+    await waitFor(() => screen.getByTestId('ImportProgressStep__counter'));
+  }
+
+  it('counts processed records against the total as the engine progresses', async () => {
+    const { postBatch, pending } = deferredPostBatch();
+    await startSend(postBatch, 3);
+    expect(screen.getByTestId('ImportProgressStep__counter').textContent).toBe('0 / 3 processed');
+    await waitFor(() => expect(pending).toHaveLength(3));
+    pending[0](okResponse);
+    await waitFor(() => expect(screen.getByTestId('ImportProgressStep__counter').textContent).toBe('1 / 3 processed'));
+    expect(screen.getByTestId('ImportProgressStep__percent').textContent).toBe('33%');
+    pending[1](okResponse);
+    pending[2](okResponse);
+  });
+
+  it('restarts the counter from zero when failed rows are resent from the result step', async () => {
+    const failure = { committed: false, failedAt: { index: 0 }, error: { message: 'Rejected by server' } };
+    const { postBatch, pending } = deferredPostBatch();
+    await startSend(postBatch, 1);
+    await waitFor(() => expect(pending).toHaveLength(1));
+    pending[0](failure);
+    await waitFor(() => screen.getByTestId('ImportReviewQueue__rowError-0'));
+    fireEvent.change(screen.getByTestId('ImportReviewQueue__input-0-name'), { target: { value: 'Fixed' } });
+    fireEvent.click(screen.getByTestId('ImportDialog__importButton'));
+    await waitFor(() => screen.getByTestId('ImportProgressStep__counter'));
+    expect(screen.getByTestId('ImportProgressStep__counter').textContent).toBe('0 / 1 processed');
+    pending[1]?.(okResponse);
+  });
+});
