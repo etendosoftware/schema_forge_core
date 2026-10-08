@@ -25,6 +25,8 @@ import {
   isXlsxFileName, outputFormats, isAcceptedFileName, formatNames,
 } from '../../lib/import/importFormats.js';
 import { resetImportRun } from '../../lib/import/importRunState.js';
+import { getCreatedEntityCount } from '../../lib/import/resolveDependentEntity.js';
+import { countColumns, countAutoResolvedFks, countResults } from '../../lib/import/importSummary.js';
 import { runImportRowValidator } from '../../lib/import/rowValidators.js';
 import { findExistingKeys, buildLookupKey } from '../../lib/import/existingRecordLookup.js';
 
@@ -117,7 +119,7 @@ function renameRowKeys(row, mapping) {
  *   marked Saltada in the review queue instead of being discovered as duplicates after the
  *   send. Only used when `config.dedupe.scope` is `"database"`.
  */
-export function ImportDialog({ open, onOpenChange, config, token, postBatch, simSearchFn, onImported, labels, translate, fieldLabelFn, existingKeyFetchFn, batchSize: batchSizeOverride }) {
+export function ImportDialog({ open, onOpenChange, config, token, postBatch, simSearchFn, onImported, labels, translate, fieldLabelFn, existingKeyFetchFn, batchSize: batchSizeOverride, onImportFinished }) {
   const text = { ...DEFAULT_LABELS, ...labels };
   const [step, setStep] = useState(STEP.DROPZONE);
   // True from the moment a file is attached until the preview (or the error) is ready: parsing,
@@ -125,6 +127,10 @@ export function ImportDialog({ open, onOpenChange, config, token, postBatch, sim
   // sitting there looking frozen. While true the dropzone is replaced, so nothing can be
   // attached on top of the file being read.
   const [isReadingFile, setIsReadingFile] = useState(false);
+  // Run summary for `onImportFinished` (ETP-5676): quantities only, collected as the run goes.
+  // `finished` guards against reporting one run twice (e.g. a send's own report and the dialog
+  // unmounting afterwards); it re-arms whenever a new file is attached.
+  const runStatsRef = useRef({ attached: false, finished: false, readMs: 0, validateMs: 0, rowsInFile: 0, headers: [], autoMapping: {} });
   const [fileErrorMessage, setFileErrorMessage] = useState(null);
   const [mapping, setMapping] = useState({});
   const [headers, setHeaders] = useState([]);
@@ -317,6 +323,54 @@ export function ImportDialog({ open, onOpenChange, config, token, postBatch, sim
   // does not know where it comes from.
   const batchSize = batchSizeOverride ?? config.limit?.batchSize ?? 1;
 
+  // Latest values for the summary below, read through a ref so reporting never forces the send
+  // and close callbacks to re-create on every mapping or progress change.
+  const liveRef = useRef({});
+  liveRef.current = { headers, mapping, fkResolutions, step, config, concurrency, batchSize, onImportFinished };
+
+  /**
+   * ETP-5676: hands the caller a summary of the run — counts, timings and the settings used,
+   * NEVER a row, a header or a cell — so it can be sent to telemetry without core knowing about
+   * any telemetry. `outcome` is 'completed' (a send finished, whatever its row failures),
+   * 'failed' (the file could not be read, or the send itself blew up) or 'cancelled' (a file
+   * was loaded and the dialog was left before sending). `durationMs` is the processing time
+   * (read + validate + send); the time the user spends reviewing is deliberately not in it.
+   * One report per run: later calls are ignored until the next file or send re-arms it.
+   */
+  const reportImportFinished = useCallback((outcome, { sendMs = 0, results = [] } = {}) => {
+    const stats = runStatsRef.current;
+    const live = liveRef.current;
+    if (!stats.attached || stats.finished || typeof live.onImportFinished !== 'function') return;
+    stats.finished = true;
+    const counts = results.length > 0
+      ? countResults(results)
+      : { rowsTotal: outcome === 'cancelled' ? stats.rowsInFile : 0, rowsCreated: 0, rowsFailed: 0, rowsDuplicate: 0, rowsUnknown: 0 };
+    const summary = {
+      outcome,
+      entity: live.config.spec ?? live.config.entity,
+      ...counts,
+      durationMs: stats.readMs + stats.validateMs + sendMs,
+      readMs: stats.readMs,
+      validateMs: stats.validateMs,
+      sendMs,
+      batchSize: live.batchSize,
+      concurrency: live.concurrency,
+      ...countColumns(stats.headers, stats.autoMapping, live.mapping),
+      fkAutoResolved: countAutoResolvedFks(live.fkResolutions),
+      fkCreated: getCreatedEntityCount(),
+    };
+    try {
+      live.onImportFinished(summary);
+    } catch {
+      // Reporting is best-effort; it must never break an import.
+    }
+  }, []);
+
+  // The dialog going away with a loaded file and no send in flight is an abandoned import.
+  useEffect(() => () => {
+    if (liveRef.current.step !== STEP.SENDING) reportImportFinished('cancelled');
+  }, [reportImportFinished]);
+
   // The two reasons a row is skipped rather than failed. Both are shown verbatim in the
   // review queue, so both go through `translate` — they were hardcoded English strings
   // sitting in the middle of an app used primarily in Spanish.
@@ -411,6 +465,8 @@ export function ImportDialog({ open, onOpenChange, config, token, postBatch, sim
     // snapshot of the backend.
     resetImportRun();
     setIsReadingFile(true);
+    const readStartedAt = Date.now();
+    runStatsRef.current = { attached: true, finished: false, readMs: 0, validateMs: 0, rowsInFile: 0, headers: [], autoMapping: {} };
     try {
       // A new file starts a fresh review session. Do not carry a previous
       // Errors/All selection into the next upload.
@@ -453,15 +509,23 @@ export function ImportDialog({ open, onOpenChange, config, token, postBatch, sim
       setHeaders(parsedHeaders);
       setRawRows(rows);
       setMapping(autoMapping);
+      const validateStartedAt = Date.now();
+      runStatsRef.current.readMs = validateStartedAt - readStartedAt;
+      runStatsRef.current.headers = parsedHeaders;
+      runStatsRef.current.autoMapping = autoMapping;
+      runStatsRef.current.rowsInFile = rows.length;
       await runValidation(rows.map((row) => renameRowKeys(row, autoMapping)));
+      runStatsRef.current.validateMs = Date.now() - validateStartedAt;
       setStep(STEP.MAPPING);
     } catch (error) {
+      runStatsRef.current.readMs = runStatsRef.current.readMs || Date.now() - readStartedAt;
       setFileErrorMessage(localizeError(error));
       setStep(STEP.FILE_ERROR);
+      reportImportFinished('failed');
     } finally {
       setIsReadingFile(false);
     }
-  }, [localizedFields, runValidation, localizeError, config.formats, maxRows]);
+  }, [localizedFields, runValidation, localizeError, config.formats, maxRows, reportImportFinished]);
 
   const handleApplyMapping = useCallback(async (newMapping) => {
     setMapping(newMapping);
@@ -621,6 +685,9 @@ export function ImportDialog({ open, onOpenChange, config, token, postBatch, sim
     setProgress({ done: 0, total: Math.min(toSend.length, maxRows) });
     lastProgressTickRef.current = 0;
     cancelProgressFlush();
+    // A new send is a new report (a resend of fixed rows reports again, about its own rows).
+    runStatsRef.current.finished = false;
+    const sendStartedAt = Date.now();
     // runImport isolates per-row build/send failures on its own (a bad row surfaces as
     // that row's FAILED result, not a thrown exception) — this catch is a last-resort
     // safety net for anything genuinely unexpected escaping that isolation, so the dialog
@@ -659,8 +726,10 @@ export function ImportDialog({ open, onOpenChange, config, token, postBatch, sim
     } catch (error) {
       setFileErrorMessage(localizeError(error));
       setStep(STEP.FILE_ERROR);
+      reportImportFinished('failed', { sendMs: Date.now() - sendStartedAt });
       return;
     }
+    reportImportFinished('completed', { sendMs: Date.now() - sendStartedAt, results });
     const okCount = results.filter((r) => r.status === 'ok').length;
     // A DUPLICATE result (the row's record already exists server-side, a unique-constraint
     // rejection — see importEngine.js's classifyImportError) is not an actionable failure:
@@ -733,7 +802,7 @@ export function ImportDialog({ open, onOpenChange, config, token, postBatch, sim
         { count: trueFailures.length },
       ));
     }
-  }, [entries, operationsConfig, concurrency, maxRows, batchSize, postBatch, onImported, translate, localize, labelFor, localizeError, cancelProgressFlush]);
+  }, [entries, operationsConfig, concurrency, maxRows, batchSize, postBatch, onImported, translate, localize, labelFor, localizeError, cancelProgressFlush, reportImportFinished]);
 
   const handleRetryEntryPostSend = useCallback(async (index) => {
     const entry = entries[index];
@@ -813,8 +882,9 @@ export function ImportDialog({ open, onOpenChange, config, token, postBatch, sim
       setPendingCloseWhileSending(true);
       return;
     }
+    if (!next) reportImportFinished('cancelled');
     onOpenChange(next);
-  }, [step, onOpenChange]);
+  }, [step, onOpenChange, reportImportFinished]);
 
   const closeAnyway = useCallback(() => {
     setPendingCloseWhileSending(false);

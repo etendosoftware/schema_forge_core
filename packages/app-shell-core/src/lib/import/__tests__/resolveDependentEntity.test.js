@@ -7,6 +7,7 @@ import {
   resolveOrAutoCreateDependentEntity,
   getResolutionCache,
   clearResolutionCache,
+  getCreatedEntityCount,
 } from '../resolveDependentEntity.js';
 
 describe('resolveDependentEntity', () => {
@@ -235,5 +236,15 @@ describe('resolveDependentEntity — in-run cache key is normalised', () => {
     )));
     assert.equal(low.id, 'LOW');
     assert.equal(up.id, 'UP');
+  });
+
+  it('counts a creation shared by concurrent rows once, and resets on a full clear', async () => {
+    clearResolutionCache();
+    const cache = getResolutionCache('etp-5676-count');
+    const createFn = async ({ searchKey, name }) => ({ id: 'N', searchKey, name });
+    await Promise.all(['Nueva', 'NUEVA'].map((name) => resolveOrAutoCreateDependentEntity({ name, existingRecords: [], createFn, cache })));
+    assert.equal(getCreatedEntityCount(), 1);
+    clearResolutionCache();
+    assert.equal(getCreatedEntityCount(), 0);
   });
 });

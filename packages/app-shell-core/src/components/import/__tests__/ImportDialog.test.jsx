@@ -1215,3 +1215,62 @@ describe('ImportDialog — reading state between attach and preview', () => {
   });
 });
 
+// ETP-5676 — the dialog hands the caller a run summary (quantities only) when an import ends.
+describe('ImportDialog — onImportFinished summary', () => {
+  const csv = 'Name,Email\nLucia,lucia@x.com\nAndres,andres@x.com\nSofia,sofia@x.com';
+
+  it('reports a completed run with row counts, timings, settings and column counts', async () => {
+    const onImportFinished = vi.fn();
+    const postBatch = vi.fn()
+      .mockResolvedValueOnce({ committed: true, operations: [{ id: 'row', ok: true, recordId: 'R1' }] })
+      .mockResolvedValueOnce({ committed: false, atomic: true, persisted: [], error: { message: 'Rejected' } })
+      .mockResolvedValueOnce({ committed: true, operations: [{ id: 'row', ok: true, recordId: 'R3' }] });
+    render(<ImportDialog open config={{ ...config, dedupe: undefined, limit: { concurrency: 1 } }} token="t" postBatch={postBatch}
+      simSearchFn={vi.fn()} onImported={() => {}} onImportFinished={onImportFinished} />);
+    await uploadFile(csv);
+    fireEvent.click(screen.getByTestId('ImportDialog__importButton'));
+    fireEvent.click(screen.getByTestId('ImportConfirmStep__confirm'));
+    await waitFor(() => expect(onImportFinished).toHaveBeenCalledTimes(1));
+    const summary = onImportFinished.mock.calls[0][0];
+    expect(summary).toMatchObject({
+      outcome: 'completed', entity: 'contacts',
+      rowsTotal: 3, rowsCreated: 2, rowsFailed: 1, rowsDuplicate: 0, rowsUnknown: 0,
+      batchSize: 1, concurrency: 1,
+      columnsInFile: 2, columnsAutoMapped: 2, columnsManuallyMapped: 0,
+      fkAutoResolved: 0, fkCreated: 0,
+    });
+    for (const key of ['durationMs', 'readMs', 'validateMs', 'sendMs']) {
+      expect(summary[key], key).toBeGreaterThanOrEqual(0);
+    }
+    // quantities, names of settings and an entity name — never a row, header or cell
+    const serialized = JSON.stringify(summary);
+    for (const secret of ['Lucia', 'Andres', 'lucia@x.com', 'Email']) expect(serialized).not.toContain(secret);
+    expect(Object.values(summary).every((v) => typeof v === 'number' || ['completed', 'contacts'].includes(v))).toBe(true);
+  });
+
+  it('reports a file that could not be read as failed, with no rows', async () => {
+    const onImportFinished = vi.fn();
+    render(<ImportDialog open config={config} token="t" postBatch={vi.fn()} simSearchFn={vi.fn()} onImported={() => {}} onImportFinished={onImportFinished} />);
+    fireEvent.change(screen.getByTestId('ImportDropzone__fileInput'), { target: { files: [makeFile('x', 'notes.docx')] } });
+    await waitFor(() => expect(onImportFinished).toHaveBeenCalledTimes(1));
+    expect(onImportFinished.mock.calls[0][0]).toMatchObject({ outcome: 'failed', rowsTotal: 0, rowsCreated: 0 });
+  });
+
+  it('reports a file abandoned before sending as cancelled, once', async () => {
+    const onImportFinished = vi.fn();
+    const onOpenChange = vi.fn();
+    render(<ImportDialog open onOpenChange={onOpenChange} config={config} token="t" postBatch={vi.fn()} simSearchFn={vi.fn()} onImported={() => {}} onImportFinished={onImportFinished} />);
+    await uploadFile(csv);
+    fireEvent.keyDown(screen.getByTestId('DialogContent__38a6c3'), { key: 'Escape' });
+    await waitFor(() => expect(onImportFinished).toHaveBeenCalledTimes(1));
+    expect(onImportFinished.mock.calls[0][0]).toMatchObject({ outcome: 'cancelled', rowsCreated: 0, columnsInFile: 2 });
+  });
+
+  it('does not report when the dialog is closed without a file', () => {
+    const onImportFinished = vi.fn();
+    const view = render(<ImportDialog open config={config} token="t" postBatch={vi.fn()} simSearchFn={vi.fn()} onImported={() => {}} onImportFinished={onImportFinished} />);
+    view.unmount();
+    expect(onImportFinished).not.toHaveBeenCalled();
+  });
+});
+
