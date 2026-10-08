@@ -1,3 +1,4 @@
+// @covers packages/app-shell-core/src/components/import/ImportDialog.jsx
 import { describe, it, expect, vi, afterEach } from 'vitest';
 
 // ETP-5225 — after "close anyway" the dialog is unmounted by its caller, so the outcome of the
@@ -962,5 +963,109 @@ describe('ImportDialog — ETP-5350 dedupe re-check after editing the key', () =
 
     await waitFor(() => screen.getByTestId('ImportConfirmStep__title'));
     expect(screen.getByTestId('ImportConfirmStep__importCount').textContent).toContain('1');
+  });
+});
+
+/**
+ * `initialFile` — a file the caller already holds (dropped outside the dialog) is processed on
+ * open exactly as a file picked in the dialog's own dropzone — and the processing state that
+ * replaces the dropzone while a file is parsed and validated, dropping any further selection.
+ */
+describe('ImportDialog — initialFile and the processing state', () => {
+  // `dedupe.scope: 'database'` makes validation await `existingKeyFetchFn`, the one seam where a
+  // test can hold the processing run open.
+  const dbConfig = { ...config, dedupe: { scope: 'database', key: ['email'] } };
+
+  function deferred() {
+    let resolve;
+    const promise = new Promise((r) => { resolve = r; });
+    return { promise, resolve };
+  }
+
+  /** A CSV File whose parse is observable: every processing run reads its bytes exactly once. */
+  function spiedFile(content = 'Name,Email\nLucia,lucia@x.com', name = 'contacts.csv') {
+    const file = makeFile(content, name);
+    const parse = vi.spyOn(file, 'arrayBuffer');
+    return { file, parse };
+  }
+
+  function dialog(props) {
+    return <ImportDialog open config={config} token="t" postBatch={vi.fn()} simSearchFn={vi.fn()} onImported={() => {}} {...props} />;
+  }
+
+  it('lands on the mapping step for a valid initialFile with no user interaction', async () => {
+    const { file } = spiedFile();
+    render(dialog({ initialFile: file }));
+    await waitFor(() => screen.getByTestId('ImportColumnMapping__chip-Name'));
+    expect(screen.queryByTestId('ImportDropzone__fileInput')).toBeNull();
+  });
+
+  it('shows the file error for an initialFile of an unsupported format, and Retry returns to the dropzone', async () => {
+    const { file, parse } = spiedFile('irrelevant', 'contacts.docx');
+    render(dialog({ initialFile: file }));
+    await waitFor(() => screen.getByTestId('ImportFileErrorDialog__title'));
+    expect(screen.getByTestId('ImportFileErrorDialog__message').textContent).toContain('CSV, TXT');
+    // Refused by the format gate, before any parse — the same path a dropzone pick takes.
+    expect(parse).not.toHaveBeenCalled();
+    fireEvent.click(screen.getByTestId('ImportFileErrorDialog__retry'));
+    await waitFor(() => screen.getByTestId('ImportDropzone__fileInput'));
+  });
+
+  it('does not process the same initialFile again when the dialog re-renders', async () => {
+    const { file, parse } = spiedFile();
+    const { rerender } = render(dialog({ initialFile: file }));
+    await waitFor(() => screen.getByTestId('ImportColumnMapping__chip-Name'));
+    // A new config object gives handleFileSelected a new identity, so the effect re-runs.
+    rerender(dialog({ initialFile: file, config: { ...config }, labels: { title: 'Importar' } }));
+    await waitFor(() => screen.getByTestId('ImportColumnMapping__chip-Name'));
+    expect(parse).toHaveBeenCalledTimes(1);
+  });
+
+  it('processes the same initialFile again after the dialog is closed and reopened', async () => {
+    const { file, parse } = spiedFile();
+    const { rerender } = render(dialog({ initialFile: file }));
+    await waitFor(() => expect(parse).toHaveBeenCalledTimes(1));
+    rerender(dialog({ initialFile: file, open: false }));
+    rerender(dialog({ initialFile: file }));
+    await waitFor(() => expect(parse).toHaveBeenCalledTimes(2));
+    await waitFor(() => screen.getByTestId('ImportColumnMapping__chip-Name'));
+  });
+
+  // "No initialFile opens on the dropzone" is not repeated here: every dropzone test above
+  // (`uploadFile`, `dropFile`) renders without one and starts by reading ImportDropzone__fileInput.
+
+  it('replaces the dropzone with the processing indicator while a file is processed, and ignores a second selection meanwhile', async () => {
+    const held = deferred();
+    const existingKeyFetchFn = vi.fn(() => held.promise);
+    const first = spiedFile('Name,Email\nLucia,lucia@x.com');
+    const second = spiedFile('Name,Email\nAndres,andres@x.com');
+    const props = { config: dbConfig, existingKeyFetchFn, labels: { processing: 'Procesando archivo' } };
+    const { rerender } = render(dialog({ ...props, initialFile: first.file }));
+
+    const indicator = await screen.findByTestId('ImportDialog__processingFile');
+    expect(indicator.textContent).toContain('Procesando archivo');
+    expect(screen.queryByTestId('ImportDropzone__fileInput')).toBeNull();
+
+    // The dropzone is gone, so the only way a second file can arrive mid-run is the prop.
+    rerender(dialog({ ...props, initialFile: second.file }));
+    held.resolve([]);
+
+    await waitFor(() => screen.getByTestId('ImportReviewQueue__value-0-name'));
+    expect(screen.queryByTestId('ImportDialog__processingFile')).toBeNull();
+    expect(screen.getByTestId('ImportReviewQueue__value-0-name').textContent).toContain('Lucia');
+    expect(second.parse).not.toHaveBeenCalled();
+    expect(existingKeyFetchFn).toHaveBeenCalledTimes(1);
+  });
+
+  it('clears the processing state after a file error, so the next selection is processed', async () => {
+    render(dialog({}));
+    fireEvent.change(screen.getByTestId('ImportDropzone__fileInput'), { target: { files: [makeFile('')] } });
+    await waitFor(() => screen.getByTestId('ImportFileErrorDialog__title'));
+    fireEvent.click(screen.getByTestId('ImportFileErrorDialog__retry'));
+
+    await waitFor(() => screen.getByTestId('ImportDropzone__fileInput'));
+    expect(screen.queryByTestId('ImportDialog__processingFile')).toBeNull();
+    // A guard left set by the failed run would drop this file silently.
+    await uploadFile('Name,Email\nLucia,lucia@x.com');
   });
 });
