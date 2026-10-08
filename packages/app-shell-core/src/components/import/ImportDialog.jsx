@@ -117,7 +117,7 @@ function renameRowKeys(row, mapping) {
  *   marked Saltada in the review queue instead of being discovered as duplicates after the
  *   send. Only used when `config.dedupe.scope` is `"database"`.
  */
-export function ImportDialog({ open, onOpenChange, config, token, postBatch, simSearchFn, onImported, labels, translate, fieldLabelFn, existingKeyFetchFn }) {
+export function ImportDialog({ open, onOpenChange, config, token, postBatch, simSearchFn, onImported, labels, translate, fieldLabelFn, existingKeyFetchFn, batchSize: batchSizeOverride }) {
   const text = { ...DEFAULT_LABELS, ...labels };
   const [step, setStep] = useState(STEP.DROPZONE);
   // True from the moment a file is attached until the preview (or the error) is ready: parsing,
@@ -313,7 +313,9 @@ export function ImportDialog({ open, onOpenChange, config, token, postBatch, sim
   const concurrency = config.limit?.concurrency ?? config.concurrency ?? 4;
   // ETP-5676: rows per `/batch` request. 1 (the default) is the original one-request-per-row
   // behaviour; the engine caps it. Opt-in per window via `window.import.limit.batchSize`.
-  const batchSize = config.limit?.batchSize ?? 1;
+  // `batchSize` (prop) is an override the caller already resolved — e.g. an operational flag; core
+  // does not know where it comes from.
+  const batchSize = batchSizeOverride ?? config.limit?.batchSize ?? 1;
 
   // The two reasons a row is skipped rather than failed. Both are shown verbatim in the
   // review queue, so both go through `translate` — they were hardcoded English strings

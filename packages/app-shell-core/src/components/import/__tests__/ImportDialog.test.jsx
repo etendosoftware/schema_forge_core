@@ -1085,10 +1085,10 @@ describe('ImportDialog — processed counter while sending', () => {
 // ETP-5676 — `window.import.limit.batchSize` reaches the engine; absent, one request per row.
 describe('ImportDialog — rows per request (limit.batchSize)', () => {
   const csv = 'Name,Email\nA,a@x.com\nB,b@x.com\nC,c@x.com';
-  async function sendCount(limit) {
+  async function sendCount(limit, batchSize) {
     const okAll = vi.fn();
     const postBatch = vi.fn(async (ops) => ({ committed: true, operations: ops.map((op) => ({ id: op.id, ok: true, recordId: op.id })) }));
-    render(<ImportDialog open config={{ ...config, dedupe: undefined, limit }} token="t" postBatch={postBatch} simSearchFn={vi.fn()} onImported={okAll} />);
+    render(<ImportDialog open config={{ ...config, dedupe: undefined, limit }} batchSize={batchSize} token="t" postBatch={postBatch} simSearchFn={vi.fn()} onImported={okAll} />);
     await uploadFile(csv);
     fireEvent.click(screen.getByTestId('ImportDialog__importButton'));
     fireEvent.click(screen.getByTestId('ImportConfirmStep__confirm'));
@@ -1098,6 +1098,11 @@ describe('ImportDialog — rows per request (limit.batchSize)', () => {
 
   it('sends one request per row by default', async () => {
     expect((await sendCount(undefined)).mock.calls).toHaveLength(3);
+  });
+
+  it('lets an already-resolved batchSize prop (e.g. a global override) beat the window config', async () => {
+    const postBatch = await sendCount({ batchSize: 2, concurrency: 1 }, 3);
+    expect(postBatch.mock.calls.map(([ops]) => ops.length)).toEqual([3]);
   });
 
   it('groups rows into one request when the window opts in', async () => {
