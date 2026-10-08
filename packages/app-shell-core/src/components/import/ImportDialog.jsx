@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { toast } from 'sonner';
+import { Loader2 } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '../ui/dialog.jsx';
 import { Button } from '../ui/button.jsx';
 import { ImportDropzone } from './ImportDropzone.jsx';
@@ -30,7 +31,7 @@ import { findExistingKeys, buildLookupKey } from '../../lib/import/existingRecor
 // Root-level labels for ImportDialog's own chrome. `importButton` is a function of the
 // valid-row count, mirroring the (n) => string labels the confirm step already uses, so the
 // whole flow's button text is translatable rather than the hardcoded `Import ${n}` it was.
-const DEFAULT_LABELS = { title: 'Import', revalidating: 'Revalidating rows…', downloadTemplate: 'Download CSV template', downloadTemplateCsv: 'Download CSV template', downloadTemplateXlsx: 'Download Excel template', importButton: (n) => `Import ${n}` };
+const DEFAULT_LABELS = { title: 'Import', reading: 'Reading file…', revalidating: 'Revalidating rows…', downloadTemplate: 'Download CSV template', downloadTemplateCsv: 'Download CSV template', downloadTemplateXlsx: 'Download Excel template', importButton: (n) => `Import ${n}` };
 
 /**
  * Why a row was skipped. Skipping is not an error — nothing is wrong with the file and
@@ -52,7 +53,7 @@ const SKIP_MESSAGES = {
  * builds this object from its useUI() dictionary and MUST match this shape exactly.
  *
  *   {
- *     title, revalidating, downloadTemplate, importButton: (n) => string,   // this dialog
+ *     title, reading, revalidating, downloadTemplate, importButton: (n) => string,   // this dialog
  *     dropzone:     { dropHere, dropHint },                                  // ImportDropzone
  *     progress:     { title, subtitle, counter },// ImportProgressStep
  *     mapping:      { notImported, mappedSummary, editMatch, editTitle, save, cancel }, // ImportColumnMapping
@@ -119,6 +120,11 @@ function renameRowKeys(row, mapping) {
 export function ImportDialog({ open, onOpenChange, config, token, postBatch, simSearchFn, onImported, labels, translate, fieldLabelFn, existingKeyFetchFn }) {
   const text = { ...DEFAULT_LABELS, ...labels };
   const [step, setStep] = useState(STEP.DROPZONE);
+  // True from the moment a file is attached until the preview (or the error) is ready: parsing,
+  // FK resolution and the existing-record lookup run in between and used to leave the dropzone
+  // sitting there looking frozen. While true the dropzone is replaced, so nothing can be
+  // attached on top of the file being read.
+  const [isReadingFile, setIsReadingFile] = useState(false);
   const [fileErrorMessage, setFileErrorMessage] = useState(null);
   const [mapping, setMapping] = useState({});
   const [headers, setHeaders] = useState([]);
@@ -402,6 +408,7 @@ export function ImportDialog({ open, onOpenChange, config, token, postBatch, sim
     // and every cache a descriptor registered, so nothing is answered from the previous file's
     // snapshot of the backend.
     resetImportRun();
+    setIsReadingFile(true);
     try {
       // A new file starts a fresh review session. Do not carry a previous
       // Errors/All selection into the next upload.
@@ -449,6 +456,8 @@ export function ImportDialog({ open, onOpenChange, config, token, postBatch, sim
     } catch (error) {
       setFileErrorMessage(localizeError(error));
       setStep(STEP.FILE_ERROR);
+    } finally {
+      setIsReadingFile(false);
     }
   }, [localizedFields, runValidation, localizeError, config.formats, maxRows]);
 
@@ -819,7 +828,19 @@ export function ImportDialog({ open, onOpenChange, config, token, postBatch, sim
             <DialogTitle data-testid="DialogTitle__38a6c3">{text.title}</DialogTitle>
           </DialogHeader>
 
-          {step === STEP.DROPZONE && (
+          {step === STEP.DROPZONE && isReadingFile && (
+            <div
+              role="status"
+              aria-live="polite"
+              className="flex flex-col items-center justify-center gap-3 py-12 text-sm text-muted-foreground"
+              data-testid="ImportDialog__reading"
+            >
+              <Loader2 className="h-6 w-6 animate-spin" aria-hidden="true" data-testid="Loader2__ImportDialogReading" />
+              <span>{text.reading}</span>
+            </div>
+          )}
+
+          {step === STEP.DROPZONE && !isReadingFile && (
             <div className="flex flex-col gap-2">
               <ImportDropzone
                 onFileSelected={handleFileSelected}

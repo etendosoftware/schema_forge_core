@@ -1172,3 +1172,41 @@ describe('ImportDialog — counter after a burst of settles', () => {
     }
   });
 });
+
+// ETP-5676 — between attaching the file and the preview there is real async work (parse, FK
+// resolution, existing-record lookup); the dialog used to look frozen on the dropzone.
+describe('ImportDialog — reading state between attach and preview', () => {
+  const fkConfig = {
+    spec: 'products', entity: 'product',
+    fields: [
+      { target: 'name', label: 'Name', required: true },
+      { target: 'uom', label: 'UoM', matchEntity: 'UOM' },
+    ],
+  };
+  const attach = (content, name = 'p.csv') => fireEvent.change(screen.getByTestId('ImportDropzone__fileInput'), {
+    target: { files: [makeFile(content, name)] },
+  });
+
+  it('replaces the dropzone with a spinner while the file is read, and removes it at the preview', async () => {
+    let release;
+    const simSearchFn = vi.fn(() => new Promise((resolve) => { release = () => resolve([{ candidates: [] }]); }));
+    render(<ImportDialog open config={fkConfig} token="t" postBatch={vi.fn()} simSearchFn={simSearchFn} onImported={() => {}} />);
+    attach('Name,UoM\nA,Kilo');
+    const reading = await screen.findByTestId('ImportDialog__reading');
+    expect(reading.textContent).toContain('Reading file');
+    expect(reading.getAttribute('role')).toBe('status');
+    // nothing to re-attach to while it loads
+    expect(screen.queryByTestId('ImportDropzone__zone')).toBeNull();
+    release();
+    await waitFor(() => screen.getByTestId('ImportColumnMapping__chip-Name'));
+    expect(screen.queryByTestId('ImportDialog__reading')).toBeNull();
+  });
+
+  it('removes the spinner and shows the message when the file is refused', async () => {
+    render(<ImportDialog open config={fkConfig} token="t" postBatch={vi.fn()} simSearchFn={vi.fn()} onImported={() => {}} />);
+    attach('not a spreadsheet', 'notes.docx');
+    await waitFor(() => screen.getByTestId('ImportFileErrorDialog__message'));
+    expect(screen.queryByTestId('ImportDialog__reading')).toBeNull();
+  });
+});
+
