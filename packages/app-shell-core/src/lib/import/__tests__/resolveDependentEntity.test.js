@@ -223,4 +223,17 @@ describe('resolveDependentEntity — in-run cache key is normalised', () => {
     assert.equal(creates, 1);
     assert.deepEqual(results.map((r) => r.id), ['NEW1', 'NEW1', 'NEW1']);
   });
+
+  it('does not share a cache entry between codes that differ only in case', async () => {
+    const cache = getResolutionCache('etp-5676-code-case');
+    const existingRecords = [
+      { id: 'LOW', searchKey: 'abc', name: 'Lower' },
+      { id: 'UP', searchKey: 'ABC', name: 'Upper' },
+    ];
+    const [low, up] = await Promise.all(['abc', 'ABC'].map((code) => (
+      resolveOrAutoCreateDependentEntity({ code, existingRecords, allowCreate: false, cache })
+    )));
+    assert.equal(low.id, 'LOW');
+    assert.equal(up.id, 'UP');
+  });
 });
