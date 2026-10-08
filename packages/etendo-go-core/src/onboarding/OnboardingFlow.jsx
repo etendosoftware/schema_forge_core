@@ -1,14 +1,21 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { Loader2 } from 'lucide-react';
 import { useUI } from '@etendosoftware/app-shell-core/i18n';
-import { isSessionUnavailable, purgeLegacyAuthStorage } from '@etendosoftware/app-shell-core/auth';
-import { fetchSession, fetchAccount, fetchEnvironments, loginEnvironment, fetchOnboardingDraft, saveOnboardingDraft, verifyEmail } from './api.js';
+import {
+  SESSION_RECHECK_INTERVAL_MS, announceSessionAccount, compareLiveSessionAccount, deleteCookieSession,
+  isSessionUnavailable, listenSessionAccount, purgeLegacyAuthStorage,
+} from '@etendosoftware/app-shell-core/auth';
+import {
+  bindOnboardingAccount, fetchSession, fetchAccount, fetchEnvironments, isSessionLostError, loginEnvironment,
+  fetchOnboardingDraft, saveOnboardingDraft, verifyEmail,
+} from './api.js';
 import { rememberEnvironment } from './state.js';
 import { buildAppReturnToHref, getSafeReturnTo } from './oauthReturnTo.js';
 import { trackOnboarding } from './tracking.js';
 import { createOnboardingLogout } from './logout.js';
 import { createOnboardingDraftPersistence, restoreOnboardingDraft as restorePersistedOnboardingDraft } from './draftPersistence.js';
 import { SetupPreviewMockup } from './components/SetupPreviewMockup.jsx';
+import { OnboardingSessionLost } from './components/OnboardingSessionLost.jsx';
 
 export function OnboardingFlow({ steps = [], config = {} }) {
   const ui = useUI();
@@ -23,6 +30,13 @@ export function OnboardingFlow({ steps = [], config = {} }) {
   const [draftSaveWarning, setDraftSaveWarning] = useState(false);
   const [environments, setEnvironments] = useState([]);
   const [loadingEnvs, setLoadingEnvs] = useState(false);
+  // ETP-5675 — this page lost its session: it expired or was closed, or another tab of this
+  // browser signed in as a different account. Replaces the step with OnboardingSessionLost.
+  const [sessionLost, setSessionLost] = useState(false);
+  // ETP-5675 — the account this page is signed in as. The cookie is the browser profile's, so
+  // this id is what tells "my session" apart from "the session another tab opened".
+  const accountIdRef = useRef(null);
+  const lastRecheckRef = useRef(0);
 
   const draftReadyRef = useRef(false);
   const logoutContextRef = useRef(null);
@@ -50,6 +64,9 @@ export function OnboardingFlow({ steps = [], config = {} }) {
       },
       onSaveFailure: (error) => {
         console.warn('Failed to save onboarding draft', error);
+        // ETP-5675 — a lost session is not a transient save failure: warning and carrying on
+        // only postponed the failure to the provisioning step.
+        if (isSessionLostError(error)) setSessionLost(true);
         setDraftSaveWarning(true);
         trackOnboarding(config, 'onboarding_draft_save_failed', {
           action: 'save_draft',
@@ -79,10 +96,35 @@ export function OnboardingFlow({ steps = [], config = {} }) {
     }
   }, [steps]);
 
+  // ETP-5675 — binds the page to an account: requests then carry it as `X-Go-Account` (the
+  // backend refuses them once the cookie is another account's), and every other tab hears that
+  // the browser session now belongs to it.
+  const bindAccount = useCallback((account) => {
+    const id = account?.id || null;
+    if (!id) return;
+    if (account?.email) setAccountEmail(account.email);
+    if (accountIdRef.current === id) return;
+    accountIdRef.current = id;
+    bindOnboardingAccount(id);
+    announceSessionAccount(id);
+  }, []);
+
+  const unbindAccount = useCallback(() => {
+    accountIdRef.current = null;
+    bindOnboardingAccount(null);
+  }, []);
+
+  const markSessionLost = useCallback(() => setSessionLost(true), []);
+
   logoutContextRef.current = {
     resetState: () => {
       setCsrfToken(null);
       setAccountName(null);
+      setSessionLost(false);
+      // ETP-5675 — a save warning belongs to the session that failed to save; left up, it told
+      // the login screen to "try again" about a draft it cannot see.
+      setDraftSaveWarning(false);
+      unbindAccount();
       setEnvironments([]);
       setLoadingEnvs(false);
     },
@@ -93,11 +135,21 @@ export function OnboardingFlow({ steps = [], config = {} }) {
   if (!onLogoutRef.current) {
     onLogoutRef.current = createOnboardingLogout({
       flushDraft: () => draftPersistenceRef.current.flush(draftContextRef.current),
-      cleanupSession: () => {
-        // ETP-4576 — the environment session is the __Host- cookie now (the
-        // server drops it on logout), so there is no client-written channel left
-        // to clear. What remains is purging keys a pre-cookie session may have
-        // left behind; app-shell-core owns that canonical list.
+      cleanupSession: async () => {
+        // ETP-5675 — revoke the session server-side. This used to only purge the legacy keys,
+        // so "Cerrar sesión" left the session alive on the server: the cookie stayed valid for
+        // whoever opened the next tab. The revoke names this page's account, so it can never
+        // take down a session another tab opened as someone else, and only a confirmed revoke
+        // tells the other tabs the browser is signed out. deleteCookieSession never throws.
+        // Unbound first: this page's own listener hears the announcement too, and must not
+        // mistake its own logout for a session lost to another tab.
+        const { apiBase: base, csrfToken: proof } = draftContextRef.current;
+        const accountId = accountIdRef.current;
+        unbindAccount();
+        const revoked = await deleteCookieSession(proof, base, { accountId });
+        if (revoked) announceSessionAccount(null);
+        // ETP-4576 — and purge the keys a pre-cookie session may have left behind;
+        // app-shell-core owns that canonical list.
         purgeLegacyAuthStorage();
       },
       resetState: () => logoutContextRef.current.resetState(),
@@ -155,9 +207,15 @@ export function OnboardingFlow({ steps = [], config = {} }) {
         setAccountEmail(account?.email || null);
       } catch (err) {
         console.warn('Could not read the email verification state before entering', err);
+        // ETP-5675 — no session (or another account's) is not "could not read the state".
+        if (isSessionLostError(err)) {
+          markSessionLost();
+          return;
+        }
         account = null;
       }
     }
+    bindAccount(account);
     if (owesEmailConfirmation(account)) {
       goToStep('verify-email');
       return;
@@ -227,11 +285,13 @@ export function OnboardingFlow({ steps = [], config = {} }) {
       }
     } catch (err) {
       console.error('Failed to load environments', err);
-      goToStep('profile');
+      // ETP-5675 — sending a 401 to the profile step started an onboarding that could only fail.
+      if (isSessionLostError(err)) markSessionLost();
+      else goToStep('profile');
     } finally {
       setLoadingEnvs(false);
     }
-  }, [apiBase, restoreOnboardingDraft, goToStep]);
+  }, [apiBase, restoreOnboardingDraft, goToStep, bindAccount, markSessionLost]);
 
   // Initial token verification on mount
   useEffect(() => {
@@ -290,10 +350,12 @@ export function OnboardingFlow({ steps = [], config = {} }) {
         .then(data => {
           setCsrfToken(data.csrfToken ?? null);
           setAccountName(data.account?.name || data.account?.email || null);
+          bindAccount(data.account);
           routeByEnvironments(data.csrfToken);
         })
         .catch((err) => {
           if (isSessionUnavailable(err)) return retryBootstrap(retry);
+          unbindAccount();
           purgeLegacyAuthStorage();
           // Login is the default entry view; register is only shown when explicitly requested.
           goToStep(initialView === 'register' ? 'register' : 'login');
@@ -324,10 +386,42 @@ export function OnboardingFlow({ steps = [], config = {} }) {
     return () => draftPersistenceRef.current.cancel();
   }, [stepData, currentStep, csrfToken, steps]);
 
+  // ETP-5675 — another tab signed the browser in as a different account, or signed it out: this
+  // page's session is gone, so stop here instead of failing at provisioning.
+  useEffect(() => listenSessionAccount((liveAccountId) => {
+    const mine = accountIdRef.current;
+    if (mine && liveAccountId !== mine) markSessionLost();
+  }), [markSessionLost]);
+
+  // ETP-5675 — a page that was in the background may have missed the broadcast: on its way back
+  // it compares its account with the live session (throttled). An unreadable session (a deploy)
+  // changes nothing.
+  useEffect(() => {
+    if (typeof document === 'undefined' || typeof window === 'undefined') return undefined;
+    const recheck = async () => {
+      const mine = accountIdRef.current;
+      if (!mine || document.visibilityState !== 'visible') return;
+      const now = Date.now();
+      if (now - lastRecheckRef.current < SESSION_RECHECK_INTERVAL_MS) return;
+      lastRecheckRef.current = now;
+      const outcome = await compareLiveSessionAccount(mine, () => fetchSession(fetch, apiBase)
+        .catch((err) => { if (isSessionUnavailable(err)) throw err; return null; }));
+      if (accountIdRef.current !== mine) return;
+      if (outcome.status === 'none' || outcome.status === 'other') markSessionLost();
+    };
+    document.addEventListener('visibilitychange', recheck);
+    window.addEventListener('focus', recheck);
+    return () => {
+      document.removeEventListener('visibilitychange', recheck);
+      window.removeEventListener('focus', recheck);
+    };
+  }, [apiBase, markSessionLost]);
+
   // Handle register success: set up new state, then either wall on the email confirmation or
   // start onboarding.
   const handleRegisterSuccess = async (csrfToken, account) => {
     setCsrfToken(csrfToken);
+    bindAccount(account);
     setAccountName(account?.name || account?.email || null);
     setAccountEmail(account?.email || null);
     setStepData({
@@ -371,6 +465,24 @@ export function OnboardingFlow({ steps = [], config = {} }) {
     setStepIndex(i => Math.max(i - 1, 0));
   };
 
+  // ETP-5675 — signing back in drops this page's state but nothing that was saved: the draft is
+  // server-side and the next login resumes it. Nothing is revoked from here; the session is
+  // either gone or another account's.
+  if (sessionLost) {
+    return (
+      <OnboardingSessionLost
+        config={config}
+        accountEmail={accountEmail}
+        onSignInAgain={() => {
+          draftPersistenceRef.current.cancel();
+          logoutContextRef.current.resetState();
+          purgeLegacyAuthStorage();
+          goToStep('login');
+        }}
+        data-testid="OnboardingSessionLost__79cf84" />
+    );
+  }
+
   if (stepIndex === -1 || !currentStep) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
@@ -408,6 +520,8 @@ export function OnboardingFlow({ steps = [], config = {} }) {
       loadingEnvs={loadingEnvs}
       routeByEnvironments={routeByEnvironments}
       handleRegisterSuccess={handleRegisterSuccess}
+      onAccountChange={bindAccount}
+      onSessionLost={markSessionLost}
       onLogout={onLogout}
       data-testid="StepComponent__5852c2" />
   );
