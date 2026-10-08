@@ -1,4 +1,4 @@
-import { useCallback, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { toast } from 'sonner';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '../ui/dialog.jsx';
 import { Button } from '../ui/button.jsx';
@@ -138,6 +138,15 @@ export function ImportDialog({ open, onOpenChange, config, token, postBatch, sim
   // dialog a few times a second, not 2,000 times.
   const [progress, setProgress] = useState({ done: 0, total: 0 });
   const lastProgressTickRef = useRef(0);
+  const latestProgressRef = useRef({ done: 0, total: 0 });
+  const progressTimerRef = useRef(null);
+  const cancelProgressFlush = useCallback(() => {
+    if (progressTimerRef.current !== null) {
+      clearTimeout(progressTimerRef.current);
+      progressTimerRef.current = null;
+    }
+  }, []);
+  useEffect(() => cancelProgressFlush, [cancelProgressFlush]);
   // Debug-phase aid (per explicit request while the backend integration is still being
   // stabilized, one error at a time): the last uncontrolled/system-level failure of a
   // send, shown in its own blocking dialog with the full raw trace on top of the normal
@@ -600,6 +609,7 @@ export function ImportDialog({ open, onOpenChange, config, token, postBatch, sim
     // counter at zero over ITS OWN rows. (The engine caps a run at `maxRows`.)
     setProgress({ done: 0, total: Math.min(toSend.length, maxRows) });
     lastProgressTickRef.current = 0;
+    cancelProgressFlush();
     // runImport isolates per-row build/send failures on its own (a bad row surfaces as
     // that row's FAILED result, not a thrown exception) — this catch is a last-resort
     // safety net for anything genuinely unexpected escaping that isolation, so the dialog
@@ -616,11 +626,23 @@ export function ImportDialog({ open, onOpenChange, config, token, postBatch, sim
         maxRows,
         batchSize,
         onProgress: (completed, total) => {
-          const now = Date.now();
-          // Always publish the final tick; in between, at most ~6 updates a second.
-          if (completed !== total && now - lastProgressTickRef.current < PROGRESS_THROTTLE_MS) return;
-          lastProgressTickRef.current = now;
-          setProgress({ done: completed, total });
+          // A batched send settles up to `batchSize` rows in the same tick, so a bare throttle
+          // would publish the first and drop the rest until the next chunk. Publish at most every
+          // PROGRESS_THROTTLE_MS, keep the latest value, and flush it on a trailing timer; the
+          // final tick is always published at once and cancels the timer.
+          latestProgressRef.current = { done: completed, total };
+          const publish = () => {
+            progressTimerRef.current = null;
+            lastProgressTickRef.current = Date.now();
+            setProgress(latestProgressRef.current);
+          };
+          const wait = PROGRESS_THROTTLE_MS - (Date.now() - lastProgressTickRef.current);
+          if (completed === total || wait <= 0) {
+            cancelProgressFlush();
+            publish();
+          } else if (progressTimerRef.current === null) {
+            progressTimerRef.current = setTimeout(publish, wait);
+          }
         },
       }));
     } catch (error) {
@@ -700,7 +722,7 @@ export function ImportDialog({ open, onOpenChange, config, token, postBatch, sim
         { count: trueFailures.length },
       ));
     }
-  }, [entries, operationsConfig, concurrency, maxRows, batchSize, postBatch, onImported, translate, localize, labelFor, localizeError]);
+  }, [entries, operationsConfig, concurrency, maxRows, batchSize, postBatch, onImported, translate, localize, labelFor, localizeError, cancelProgressFlush]);
 
   const handleRetryEntryPostSend = useCallback(async (index) => {
     const entry = entries[index];

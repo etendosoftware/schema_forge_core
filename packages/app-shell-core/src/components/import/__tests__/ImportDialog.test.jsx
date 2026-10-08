@@ -7,7 +7,7 @@ import { describe, it, expect, vi, afterEach } from 'vitest';
 const sonnerMocks = vi.hoisted(() => ({ success: vi.fn(), info: vi.fn(), error: vi.fn() }));
 vi.mock('sonner', () => ({ toast: sonnerMocks }));
 
-import { render, screen, fireEvent, waitFor, cleanup } from '@testing-library/react';
+import { render, screen, fireEvent, waitFor, cleanup, act } from '@testing-library/react';
 import { ImportDialog } from '../ImportDialog.jsx';
 import { registerImportDescriptor } from '../../../lib/import/buildOperations.js';
 import { registerImportRowValidator } from '../../../lib/import/rowValidators.js';
@@ -1103,5 +1103,72 @@ describe('ImportDialog — rows per request (limit.batchSize)', () => {
   it('groups rows into one request when the window opts in', async () => {
     const postBatch = await sendCount({ batchSize: 2, concurrency: 1 });
     expect(postBatch.mock.calls.map(([ops]) => ops.length)).toEqual([2, 1]);
+  });
+});
+
+// ETP-5676 (QA BUG-1) — with batched sends a chunk settles all its rows in one tick; the throttle
+// used to publish the first and drop the rest, leaving the counter understated until the NEXT
+// chunk's first row.
+describe('ImportDialog — counter after a burst of settles', () => {
+  const bigConfig = { ...config, dedupe: undefined, limit: { batchSize: 10, concurrency: 1 } };
+  const csv = `Name,Email\n${Array.from({ length: 20 }, (_, i) => `P${i},p${i}@x.com`).join('\n')}`;
+
+  async function startStalledSend({ deferFirst = false } = {}) {
+    const second = [];
+    const first = [];
+    let calls = 0;
+    const postBatch = vi.fn((ops) => {
+      calls += 1;
+      const response = { committed: true, operations: ops.map((op) => ({ id: op.id, ok: true, recordId: op.id })) };
+      if (calls === 1 && !deferFirst) return Promise.resolve(response);
+      const sink = calls === 1 ? first : second;
+      return new Promise((resolve) => { sink.push(() => resolve(response)); });
+    });
+    const view = render(<ImportDialog open config={bigConfig} token="t" postBatch={postBatch} simSearchFn={vi.fn()} onImported={() => {}} />);
+    await uploadFile(csv);
+    fireEvent.click(screen.getByTestId('ImportDialog__importButton'));
+    fireEvent.click(screen.getByTestId('ImportConfirmStep__confirm'));
+    await waitFor(() => screen.getByTestId('ImportProgressStep__counter'));
+    return { view, first, second };
+  }
+
+  it('shows the whole first chunk without waiting for the next one', async () => {
+    const { second } = await startStalledSend();
+    await waitFor(() => expect(screen.getByTestId('ImportProgressStep__counter').textContent).toBe('10 / 20 processed'));
+    second.forEach((resolve) => resolve());
+  });
+
+  it('ends on the exact final count', async () => {
+    const onImported = vi.fn();
+    const postBatch = vi.fn(async (ops) => ({ committed: true, operations: ops.map((op) => ({ id: op.id, ok: true, recordId: op.id })) }));
+    render(<ImportDialog open config={bigConfig} token="t" postBatch={postBatch} simSearchFn={vi.fn()} onImported={onImported} />);
+    await uploadFile(csv);
+    fireEvent.click(screen.getByTestId('ImportDialog__importButton'));
+    fireEvent.click(screen.getByTestId('ImportConfirmStep__confirm'));
+    await waitFor(() => expect(onImported).toHaveBeenCalledWith({ okCount: 20, failedCount: 0 }));
+  });
+
+  it('cancels the pending trailing flush when the dialog unmounts', async () => {
+    const { view, first } = await startStalledSend({ deferFirst: true });
+    await waitFor(() => expect(first).toHaveLength(1));
+    const scheduled = [];
+    const realSetTimeout = globalThis.setTimeout;
+    const setSpy = vi.spyOn(globalThis, 'setTimeout').mockImplementation((fn, ms, ...rest) => {
+      const handle = realSetTimeout(fn, ms, ...rest);
+      scheduled.push(handle);
+      return handle;
+    });
+    const clearSpy = vi.spyOn(globalThis, 'clearTimeout');
+    try {
+      await act(async () => { first[0](); });
+      // the burst's first row published at once; the other nine wait on ONE trailing flush
+      expect(scheduled.length).toBeGreaterThan(0);
+      view.unmount();
+      const cleared = clearSpy.mock.calls.map(([handle]) => handle);
+      expect(scheduled.some((handle) => cleared.includes(handle))).toBe(true);
+    } finally {
+      setSpy.mockRestore();
+      clearSpy.mockRestore();
+    }
   });
 });
