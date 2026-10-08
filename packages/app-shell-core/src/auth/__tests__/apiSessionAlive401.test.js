@@ -122,4 +122,55 @@ describe('401 classification against the session endpoint (ETP-5489)', () => {
     await request('/neo/b').catch(() => {});
     assert.equal(probes(calls), 2);
   });
+
+  it('each distinct logout handler fires once for the same probe', async () => {
+    const calls = stubServer(res(401));
+    let a = 0;
+    let b = 0;
+    const one = createApiFetch('', () => null, () => { a += 1; });
+    const two = createApiFetch('', () => null, () => { b += 1; });
+    await Promise.allSettled([one('/neo/1'), one('/neo/2'), two('/neo/3'), two('/neo/4')]);
+    assert.equal(probes(calls), 1);
+    assert.deepEqual([a, b], [1, 1]);
+  });
+
+  it('a session replaced while the probe is in flight is not logged out by the old 401', async () => {
+    let release;
+    const gate = new Promise((resolve) => { release = resolve; });
+    globalThis.fetch = async (url) => {
+      if (String(url).endsWith(SESSION_URL)) { await gate; return res(401); }
+      return res(401);
+    };
+    let token = 'old';
+    let logouts = 0;
+    const pending = createApiFetch('', () => token, () => { logouts += 1; })('/neo/x').catch((e) => e);
+    await new Promise((resolve) => setTimeout(resolve, 0));
+    token = 'new';
+    release();
+    assert.equal((await pending).name, 'AbortError');
+    assert.equal(logouts, 0);
+  });
+
+  it('the probe is cookie-only: it never carries an Authorization header', async () => {
+    const seen = [];
+    globalThis.fetch = async (url, options) => {
+      if (String(url).endsWith(SESSION_URL)) seen.push(options);
+      return res(String(url).endsWith(SESSION_URL) ? 200 : 401);
+    };
+    await createApiFetch('', () => 'tok', () => {})('/neo/x').catch(() => {});
+    assert.equal(seen.length, 1);
+    assert.equal(seen[0].credentials, 'include');
+    assert.equal(seen[0].headers?.Authorization, undefined);
+  });
+
+  it('a 402 still passes through untouched, with no probe', async () => {
+    const calls = stubServer(res(200));
+    globalThis.fetch = async (url) => {
+      calls.push(String(url));
+      return res(402, { message: 'Environment access is not available: BLOCKED' });
+    };
+    const response = await createApiFetch('', () => null, () => {})('/neo/x');
+    assert.equal(response.status, 402);
+    assert.equal(probes(calls), 0);
+  });
 });

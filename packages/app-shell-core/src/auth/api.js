@@ -561,7 +561,11 @@ async function probeSession(base) {
   await whenSessionRevokeSettles();
   let res;
   try {
-    res = await fetch(`${base}/sws/go/session`, { method: 'GET', credentials: 'include' });
+    // Bounded like every other request: a session endpoint that hangs must not hold every 401'd
+    // call (they share this flight) forever.
+    res = await fetchWithTimeout(
+      `${base}/sws/go/session`, { method: 'GET', credentials: 'include' }, DEFAULT_API_TIMEOUT_MS,
+    );
   } catch {
     return SESSION_UNKNOWN;
   }
@@ -676,6 +680,24 @@ export function createApiFetch(baseUrl, getToken, onUnauthorized, scope) {
     // delays a live one behind it.
     if (!stillOurs()) throw staleSessionError();
 
+    /** A 401 is final only if the session endpoint agrees; see {@link confirmSessionAlive}. */
+    const rejectUnauthorized = async (token, isOurs) => {
+      // ETP-5489: a 401 from a data endpoint is only proof the session is gone if the session
+      // endpoint agrees. A server-side failure behind a live session used to log the user out
+      // without revoking the cookie, and the onboarding re-entered it in a reload loop.
+      const probe = await confirmSessionAlive(base);
+      // The probe took time: the session that earned this 401 may have ended or been replaced
+      // meanwhile, and in cookie mode `token === live` is always null === null.
+      if (!isOurs()) throw staleSessionError();
+      if (probe.state !== SESSION_GONE) throw sessionAliveUnauthorizedError(probe.state);
+      const live = owner ? owner.getToken() : getToken();
+      if (token === live && onUnauthorized && !probe.notified.has(onUnauthorized)) {
+        probe.notified.add(onUnauthorized);
+        onUnauthorized();
+      }
+      throw new Error('Unauthorized');
+    };
+
     /**
      * The single exit for every response, so the ETP-5195 guards cannot be applied on one
      * branch and forgotten on the other — `dispatch` returns from two places (an action, and
@@ -684,20 +706,9 @@ export function createApiFetch(baseUrl, getToken, onUnauthorized, scope) {
      * The 401 only logs out when the bearer that earned it is still the live one. A 401 for a
      * token that has since been rotated away says nothing about the session that replaced it.
      */
-    const finish = async (res, token, isOurs) => {
-      if (res.status === 401 && on401 !== 'ignore') {
-        // ETP-5489: a 401 from a data endpoint is only proof the session is gone if the session
-        // endpoint agrees. A server-side failure behind a live session used to log the user out
-        // without revoking the cookie, and the onboarding re-entered it in a reload loop.
-        const probe = await confirmSessionAlive(base);
-        if (probe.state !== SESSION_GONE) throw sessionAliveUnauthorizedError(probe.state);
-        const live = owner ? owner.getToken() : getToken();
-        if (token === live && onUnauthorized && !probe.notified.has(onUnauthorized)) {
-          probe.notified.add(onUnauthorized);
-          onUnauthorized();
-        }
-        throw new Error('Unauthorized');
-      }
+    const finish = (res, token, isOurs) => {
+      // Only the 401 branch is asynchronous: every other response keeps its synchronous exit.
+      if (res.status === 401 && on401 !== 'ignore') return rejectUnauthorized(token, isOurs);
       // ETP-5642: a 402 "Environment access is not available" is, like a 401, an answer about
       // the whole session, not about this request. Recording it here — the one exit every
       // response takes — shows the blocked-access screen on the first blocked request of any
