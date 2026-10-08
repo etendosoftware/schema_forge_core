@@ -179,7 +179,9 @@ export function AuthProvider({
           setStatus('authenticated');
           // ETP-5675 — tell the other tabs whose session the browser holds now. A tab still
           // showing another account raises its conflict screen before it sends anything.
-          announceSessionAccount(restoredAccount?.id ?? null);
+          // Only with an id: `null` means "signed out", and a session that was just restored is
+          // anything but — announcing it signed every other tab out.
+          if (restoredAccount?.id) announceSessionAccount(restoredAccount.id);
         })
         .catch((error) => {
           if (!mountedRef.current) return;

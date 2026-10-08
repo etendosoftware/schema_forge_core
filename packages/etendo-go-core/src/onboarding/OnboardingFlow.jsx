@@ -121,9 +121,6 @@ export function OnboardingFlow({ steps = [], config = {} }) {
       setCsrfToken(null);
       setAccountName(null);
       setSessionLost(false);
-      // ETP-5675 — a save warning belongs to the session that failed to save; left up, it told
-      // the login screen to "try again" about a draft it cannot see.
-      setDraftSaveWarning(false);
       unbindAccount();
       setEnvironments([]);
       setLoadingEnvs(false);
@@ -476,6 +473,10 @@ export function OnboardingFlow({ steps = [], config = {} }) {
         onSignInAgain={() => {
           draftPersistenceRef.current.cancel();
           logoutContextRef.current.resetState();
+          // A save warning belongs to the session that failed to save; left up, it told the login
+          // screen to "try again" about a draft it cannot see. A plain logout keeps it (ETP-4584):
+          // there it reports the user's own last edit, which did not reach the server.
+          setDraftSaveWarning(false);
           purgeLegacyAuthStorage();
           goToStep('login');
         }}
