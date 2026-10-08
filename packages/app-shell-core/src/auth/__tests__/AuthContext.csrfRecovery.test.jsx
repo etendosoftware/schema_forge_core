@@ -214,6 +214,17 @@ describe('AuthContext detects a session another account opened in another tab (E
       await waitFor(() => { expect(result.current.status).toBe('anonymous'); });
       expect(fetch.mock.calls.slice(before).some(([, init = {}]) => init.method === 'DELETE')).toBe(false);
     });
+
+    // A restore announced `account.id ?? null`, so a session restored without an id told every
+    // other tab the browser had signed out, and they all logged out locally.
+    it('is not signed out by another tab restoring a session without an account id', async () => {
+      const result = await bootWith(vi.fn().mockResolvedValue(restored({ csrfToken: STALE, accountId: 'acc-B' })));
+
+      await bootWith(vi.fn().mockResolvedValue(restored({ csrfToken: STALE })));
+
+      expect(result.current.status).toBe('authenticated');
+      expect(result.current.sessionConflict).toBeNull();
+    });
   });
 
   it('names its own account when it logs out', async () => {
