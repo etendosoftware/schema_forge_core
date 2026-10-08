@@ -530,6 +530,71 @@ function recordWriteKey(path, rest, sessionKey) {
   return `${sessionKey}\u0000${entity ?? ''}\u0000${String(id)}`;
 }
 
+const SESSION_ALIVE = 'alive';
+const SESSION_GONE = 'gone';
+const SESSION_UNKNOWN = 'unknown';
+const SESSION_ALIVE_UNAUTHORIZED = 'SessionAliveUnauthorizedError';
+
+/**
+ * ETP-5489 — the error a 401 turns into when the session endpoint says the session is still
+ * alive (or cannot say). The request was refused, the user was NOT logged out: whoever called
+ * decides what to show. `state` is `alive` or `unknown` (the probe itself failed).
+ */
+function sessionAliveUnauthorizedError(state) {
+  const error = new Error('Unauthorized, but the session is still alive.');
+  error.name = SESSION_ALIVE_UNAUTHORIZED;
+  error.status = 401;
+  error.code = 'session_alive_unauthorized';
+  error.sessionState = state;
+  return error;
+}
+
+/** Whether `error` is a 401 that did not end the session, as opposed to a real expiry. */
+export function isSessionAliveUnauthorized(error) {
+  return error?.name === SESSION_ALIVE_UNAUTHORIZED;
+}
+
+/** base URL → the probe in flight. Every concurrent 401 shares one. */
+const sessionProbes = new Map();
+
+async function probeSession(base) {
+  await whenSessionRevokeSettles();
+  let res;
+  try {
+    res = await fetch(`${base}/sws/go/session`, { method: 'GET', credentials: 'include' });
+  } catch {
+    return SESSION_UNKNOWN;
+  }
+  if (res?.status === 401) return SESSION_GONE;
+  if (!res?.ok) return SESSION_UNKNOWN;
+  try {
+    await res.json();
+    return SESSION_ALIVE;
+  } catch {
+    return SESSION_UNKNOWN;
+  }
+}
+
+/**
+ * ETP-5489 — asks the session endpoint whether the session behind a 401 is really gone.
+ * Single-flight per base URL: N parallel 401s share one answer, and `notified` lets each logout
+ * handler fire at most once for it. Only a 401 from the endpoint itself means "gone"; a 200, a
+ * 5xx, another 4xx or no answer at all never log the user out.
+ *
+ * @returns {Promise<{state: string, notified: Set<Function>}>}
+ */
+function confirmSessionAlive(base) {
+  const key = base ?? '';
+  let flight = sessionProbes.get(key);
+  if (!flight) {
+    flight = probeSession(key)
+      .then((state) => ({ state, notified: new Set() }))
+      .finally(() => { if (sessionProbes.get(key) === flight) sessionProbes.delete(key); });
+    sessionProbes.set(key, flight);
+  }
+  return flight;
+}
+
 /**
  * Test seam: drops every pending write chain, so a suite that leaves a write unresolved cannot
  * make the next suite's write wait on it forever.
@@ -619,10 +684,18 @@ export function createApiFetch(baseUrl, getToken, onUnauthorized, scope) {
      * The 401 only logs out when the bearer that earned it is still the live one. A 401 for a
      * token that has since been rotated away says nothing about the session that replaced it.
      */
-    const finish = (res, token, isOurs) => {
+    const finish = async (res, token, isOurs) => {
       if (res.status === 401 && on401 !== 'ignore') {
+        // ETP-5489: a 401 from a data endpoint is only proof the session is gone if the session
+        // endpoint agrees. A server-side failure behind a live session used to log the user out
+        // without revoking the cookie, and the onboarding re-entered it in a reload loop.
+        const probe = await confirmSessionAlive(base);
+        if (probe.state !== SESSION_GONE) throw sessionAliveUnauthorizedError(probe.state);
         const live = owner ? owner.getToken() : getToken();
-        if (token === live) onUnauthorized?.();
+        if (token === live && onUnauthorized && !probe.notified.has(onUnauthorized)) {
+          probe.notified.add(onUnauthorized);
+          onUnauthorized();
+        }
         throw new Error('Unauthorized');
       }
       // ETP-5642: a 402 "Environment access is not available" is, like a 401, an answer about
