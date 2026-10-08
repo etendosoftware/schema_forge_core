@@ -1,3 +1,4 @@
+// @covers packages/app-shell-core/src/components/import/ImportDialog.jsx
 import { describe, it, expect, vi, afterEach } from 'vitest';
 
 // ETP-5225 — after "close anyway" the dialog is unmounted by its caller, so the outcome of the
@@ -10,6 +11,7 @@ import { render, screen, fireEvent, waitFor, cleanup } from '@testing-library/re
 import { ImportDialog } from '../ImportDialog.jsx';
 import { registerImportDescriptor } from '../../../lib/import/buildOperations.js';
 import { registerImportRowValidator } from '../../../lib/import/rowValidators.js';
+import { registerImportRunReset } from '../../../lib/import/importRunState.js';
 
 // ScrollPane (rendered inside ImportReviewQueue, which this dialog mounts)
 // observes its own size via ResizeObserver — jsdom doesn't implement it.
@@ -962,5 +964,74 @@ describe('ImportDialog — ETP-5350 dedupe re-check after editing the key', () =
 
     await waitFor(() => screen.getByTestId('ImportConfirmStep__title'));
     expect(screen.getByTestId('ImportConfirmStep__importCount').textContent).toContain('1');
+  });
+});
+
+// ETP-5676 — preview resolved each FK column once, but the send phase handed descriptors a
+// config without those answers, so every row resolved its foreign keys again over the network.
+describe('ImportDialog — previewed FK resolutions reach the send phase', () => {
+  const fkConfig = {
+    spec: 'products',
+    entity: 'product',
+    descriptor: 'fk-resolutions-descriptor',
+    fields: [
+      { target: 'name', label: 'Name', required: true },
+      { target: 'uom', label: 'UoM', matchEntity: 'UOM' },
+    ],
+  };
+  const ok = { committed: true, operations: [{ id: 'row', ok: true, recordId: 'R' }] };
+
+  async function sendWith({ candidates, csv, pick }) {
+    const descriptorFn = vi.fn(async () => [{ id: 'row', spec: 'products', entity: 'product', body: {} }]);
+    registerImportDescriptor('fk-resolutions-descriptor', descriptorFn);
+    const simSearchFn = vi.fn(async ({ items }) => items.map(() => ({ candidates })));
+    const postBatch = vi.fn().mockResolvedValue(ok);
+    render(<ImportDialog open config={fkConfig} token="t" postBatch={postBatch} simSearchFn={simSearchFn} onImported={() => {}} />);
+    const input = screen.getByTestId('ImportDropzone__fileInput');
+    fireEvent.change(input, { target: { files: [makeFile(csv)] } });
+    await waitFor(() => screen.getByTestId('ImportColumnMapping__chip-UoM'));
+    await waitFor(() => screen.getByTestId('ImportDialog__importButton'));
+    if (pick) await pick();
+    fireEvent.click(screen.getByTestId('ImportDialog__importButton'));
+    fireEvent.click(screen.getByTestId('ImportConfirmStep__confirm'));
+    await waitFor(() => expect(descriptorFn).toHaveBeenCalled());
+    return { descriptorFn, simSearchFn };
+  }
+
+  it('hands the descriptor the resolutions the preview already produced', async () => {
+    const { descriptorFn, simSearchFn } = await sendWith({
+      candidates: [{ id: 'KG', name: 'Kilogram', similarityPercent: 100 }],
+      csv: 'Name,UoM\nA,Kilo\nB,Kilo',
+    });
+    expect(simSearchFn).toHaveBeenCalledTimes(1);
+    const [, receivedConfig] = descriptorFn.mock.calls[0];
+    expect(receivedConfig.fkResolutions.get('uom').get('Kilo')).toMatchObject({ status: 'auto-resolved', id: 'KG' });
+  });
+
+  it('keeps a candidate picked in the review popover by id', async () => {
+    const { descriptorFn } = await sendWith({
+      candidates: [{ id: 'KG', name: 'Kilogram', similarityPercent: 40 }],
+      csv: 'Name,UoM\nA,Kilo',
+      pick: async () => {
+        fireEvent.click(screen.getByTestId('ImportReviewQueue__statusFilter-error'));
+        fireEvent.click(screen.getByTestId('ImportReviewQueue__fieldError-0-uom'));
+        fireEvent.click(await screen.findByTestId('ImportReviewQueue__fkCandidate-0-uom-KG'));
+        await waitFor(() => expect(screen.getByTestId('ImportDialog__importButton').textContent).toBe('Import 1'));
+      },
+    });
+    const [, receivedConfig] = descriptorFn.mock.calls[0];
+    expect(receivedConfig.fkResolutions.get('uom').get('Kilogram')).toMatchObject({ status: 'auto-resolved', id: 'KG' });
+  });
+
+  it('starts a fresh run (descriptor caches included) whenever a new file is loaded', async () => {
+    const reset = vi.fn();
+    const unregister = registerImportRunReset(reset);
+    try {
+      render(<ImportDialog open config={config} token="t" postBatch={vi.fn()} simSearchFn={vi.fn()} onImported={() => {}} />);
+      await uploadFile('Name,Email\nLucia,lucia@x.com');
+      expect(reset).toHaveBeenCalledTimes(1);
+    } finally {
+      unregister();
+    }
   });
 });

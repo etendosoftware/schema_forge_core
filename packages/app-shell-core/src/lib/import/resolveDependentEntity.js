@@ -86,8 +86,10 @@ export async function resolveOrAutoCreateDependentEntity({
     return { status: 'empty' };
   }
 
-  // Deduplication key for per-run cache
-  const cacheKey = `${effectiveCode}:::${effectiveName}`;
+  // Deduplication key for per-run cache. Normalised exactly like the name matcher below
+  // (case, accents, whitespace), so "Bebidas" and "BEBIDAS" — one record to the matcher —
+  // share one in-flight resolution instead of racing two creations (ETP-5676).
+  const cacheKey = `${normalizeText(effectiveCode)}:::${normalizeText(effectiveName)}`;
   if (cache && cache.has(cacheKey)) {
     return cache.get(cacheKey);
   }

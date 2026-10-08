@@ -23,6 +23,7 @@ import { buildTemplateXlsx } from '../../lib/import/buildTemplateXlsx.js';
 import {
   isXlsxFileName, outputFormats, isAcceptedFileName, formatNames,
 } from '../../lib/import/importFormats.js';
+import { resetImportRun } from '../../lib/import/importRunState.js';
 import { runImportRowValidator } from '../../lib/import/rowValidators.js';
 import { findExistingKeys, buildLookupKey } from '../../lib/import/existingRecordLookup.js';
 
@@ -237,7 +238,11 @@ export function ImportDialog({ open, onOpenChange, config, token, postBatch, sim
     targets: config.fields.map((f) => f.target),
     token,
     translate,
-  }), [config.spec, config.entity, config.descriptor, config.fields, token, translate]);
+    // ETP-5676: the preview's answers (popover picks included, stored by id). Descriptors hand
+    // them to their registered FK resolvers, which answer from them instead of asking the
+    // backend again for every row.
+    fkResolutions,
+  }), [config.spec, config.entity, config.descriptor, config.fields, token, translate, fkResolutions]);
 
   // The real config shape (decisions.json → window.import, verified against
   // artifacts/contacts/decisions.json) is `dedupe: { scope, key: string[] }`, not a flat
@@ -375,6 +380,10 @@ export function ImportDialog({ open, onOpenChange, config, token, postBatch, sim
   }, [dedupeKeyTargets, dedupesAgainstDatabase, fkColumns, revalidate, simSearchFn, token, config, existingKeyFetchFn, labelFor]);
 
   const handleFileSelected = useCallback(async (file) => {
+    // ETP-5676: a new file is a new run — drop the FK memo, the dependent-entity creation cache
+    // and every cache a descriptor registered, so nothing is answered from the previous file's
+    // snapshot of the backend.
+    resetImportRun();
     try {
       // A new file starts a fresh review session. Do not carry a previous
       // Errors/All selection into the next upload.

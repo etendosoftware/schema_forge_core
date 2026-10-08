@@ -1,3 +1,4 @@
+// @covers packages/app-shell-core/src/lib/import/resolveDependentEntity.js
 import { describe, it } from 'node:test';
 import assert from 'node:assert/strict';
 import {
@@ -205,5 +206,21 @@ describe('resolveDependentEntity — a failed creation is not a cached result', 
     assert.equal(created, 1);
     for (const result of results) assert.equal(result.id, 'CAT-ONE');
     clearResolutionCache('etp-5227-concurrent');
+  });
+});
+
+// ETP-5676 — the in-run cache key only trimmed, so "Bebidas" and "BEBIDAS" (same record under
+// the matcher's own normalisation) raced two concurrent creations.
+describe('resolveDependentEntity — in-run cache key is normalised', () => {
+  it('creates one category for concurrent rows differing only in case or accents', async () => {
+    const cache = getResolutionCache('etp-5676-case');
+    let creates = 0;
+    const createFn = async ({ searchKey, name }) => { creates += 1; return { id: `NEW${creates}`, searchKey, name }; };
+    const existingRecords = [];
+    const results = await Promise.all(['Bebidas', 'BEBIDAS', ' bébidas '].map((name) => (
+      resolveOrAutoCreateDependentEntity({ name, existingRecords, createFn, cache })
+    )));
+    assert.equal(creates, 1);
+    assert.deepEqual(results.map((r) => r.id), ['NEW1', 'NEW1', 'NEW1']);
   });
 });
