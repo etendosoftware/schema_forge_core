@@ -338,7 +338,7 @@ export function accountSignMultiplier(sign) {
  *    Compare To off it hides them. Totals are identical.
  *
  * Returns the flattened, document-ordered rows the template renders, with
- * `indent`/`indentClass`/`isHeading`/`group`/`isGroupStart` precomputed here
+ * `indent`/`indentClass`/`isHeading`/`isFormula`/`group`/`isGroupStart` precomputed here
  * rather than in Handlebars (which has no arithmetic, and where every new
  * helper must be hand-duplicated into JSREPORT_HELPER_SOURCES — see
  * report-html-helpers.js). `isGroupStart` only ever flips to true beyond the
@@ -388,6 +388,11 @@ export function buildAccountReportTree(nodeRows, operandRows, options = {}) {
     operandsByOwner.get(o.owner_id).push(o);
   }
 
+  // Classic's hasOperand: no children but operands. Same definition as the Java
+  // twin's formula node. Exposed on the row as `isFormula`: the Excel/CSV
+  // exports label a formula HEADING "Total" (ETP-5663).
+  const isFormulaNode = (node) => !node.children.length && operandsByOwner.has(node.node_id);
+
   // Classic's applyShowValueCond: only a SUMMARY node with 'P' / 'N' is clamped.
   const applyShowValueCond = (node, value) => {
     if (node.issummary !== 'Y') return value;
@@ -410,7 +415,7 @@ export function buildAccountReportTree(nodeRows, operandRows, options = {}) {
     const multiplier = accountSignMultiplier(node.sign);
     const own = (Number(node.own_amt) || 0) * multiplier;
     const ownRef = (Number(node.own_amt_ref) || 0) * multiplier;
-    if (!node.children.length && operandsByOwner.has(node.node_id)) {
+    if (isFormulaNode(node)) {
       // Formula nodes sum their operands' already sign-adjusted values
       // directly — Classic's operandsCalculate never re-flips by the owner's
       // own accountsign, only the operands contribute their own polarity.
@@ -480,6 +485,7 @@ export function buildAccountReportTree(nodeRows, operandRows, options = {}) {
           indent,
           indentClass: `ind-${Math.min(indent, 6)}`,
           isHeading: node.elementlevel === 'E',
+          isFormula: isFormulaNode(node),
           group: node.group_name,
           isGroupStart,
         });
