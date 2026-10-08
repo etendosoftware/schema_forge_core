@@ -524,6 +524,26 @@ describe('buildAccountReportTree — regression: roll-up and formula sums are no
     const rows = byId(buildAccountReportTree(nodes, operands));
     assert.equal(rows.F.amount, 30638.56);
   });
+
+  it('flags formula rows with isFormula: no children and has operands (ETP-5663)', () => {
+    const nodes = [
+      node('root', { sort_path: '000001' }),
+      node('H', { parent_id: 'root', sort_path: '000001.000001', elementlevel: 'E' }),
+      node('A', { parent_id: 'H', sort_path: '000001.000001.000001', own_amt: 10 }),
+      node('F', { parent_id: 'root', sort_path: '000001.000002', elementlevel: 'E' }),
+      // Operands on a node WITH children are ignored (roll-up wins), as in Java.
+      node('G', { parent_id: 'root', sort_path: '000001.000003', elementlevel: 'E' }),
+      node('g1', { parent_id: 'G', sort_path: '000001.000003.000001', own_amt: 5 }),
+    ];
+    const operands = [
+      { owner_id: 'F', operand_id: 'H', sign: 1, seqno: 10 },
+      { owner_id: 'G', operand_id: 'H', sign: 1, seqno: 10 },
+    ];
+    const rows = byId(buildAccountReportTree(nodes, operands));
+    assert.equal(rows.F.isFormula, true);
+    for (const id of ['H', 'A', 'G', 'g1']) assert.equal(rows[id].isFormula, false, id);
+    assert.equal(rows.G.amount, 5);
+  });
 });
 
 describe('buildAccountReportTree — ShowValueCond (ETP-5662)', () => {
