@@ -552,7 +552,7 @@ describe('runImport — multi-row batches (batchSize)', () => {
       failWhen: (ops) => {
         if (ops.length > 2) return rejected();
         return ops[0].body.name === 'P1'
-          ? { committed: false, error: { message: 'x', detail: { error: { message: 'Search Key must be unique.' } } } }
+          ? { committed: false, atomic: true, persisted: [], error: { message: 'x', detail: { error: { message: 'Search Key must be unique.' } } } }
           : null;
       },
     });
@@ -575,6 +575,29 @@ describe('runImport — multi-row batches (batchSize)', () => {
     const { results } = await run(makeRows(4), { postBatch, batchSize: 10 });
     assert.equal(requests.length, 1);
     assert.ok(results.every((r) => r.status === SEND_STATUS.UNKNOWN));
+  });
+
+  for (const [label, body] of [
+    ['a non-BatchService {message} envelope', { message: 'Bad Gateway' }],
+    ['atomic:false with an empty persisted', { committed: false, atomic: false, persisted: [], error: { message: 'x' } }],
+    ['a failure with no persisted key', { committed: false, atomic: true, error: { message: 'x' } }],
+    ['a non-array persisted', { committed: false, atomic: true, persisted: 'none', error: { message: 'x' } }],
+  ]) {
+    it(`never resends a chunk rejected with ${label}`, async () => {
+      const { postBatch, requests } = fakeBatch({ failWhen: (ops) => (ops.length > 2 ? body : null) });
+      const { results } = await run(makeRows(10), { postBatch, batchSize: 10 });
+      assert.equal(requests.length, 1);
+      assert.ok(results.every((r) => r.status === SEND_STATUS.UNKNOWN));
+    });
+  }
+
+  it('resends a proven rollback row by row when the failing row is not the first', async () => {
+    const { postBatch, requests } = fakeBatch({
+      failWhen: (ops) => (ops.length > 2 || ops[0].body.name === 'P5' ? rejected('Value too long') : null),
+    });
+    const { results } = await run(makeRows(10), { postBatch, batchSize: 10 });
+    assert.equal(requests.length, 1 + 10);
+    assert.deepEqual(results.map((r) => r.status), makeRows(10).map((_, i) => (i === 5 ? SEND_STATUS.FAILED : SEND_STATUS.OK)));
   });
 
   it('reports rows whose operations cannot be built on their own and keeps them out of the request', async () => {

@@ -305,11 +305,11 @@ function prefixOperations(operations, prefix) {
  *
  * `/batch` is all-or-nothing, so the outcome of the request decides what is safe to do next:
  *  - committed: every row is OK, its recordId read from its own prefixed first op;
- *  - rolled back (FAILED / DUPLICATE, nothing persisted): no row was created, so each row is
+ *  - proven rollback (`committed:false`, `atomic:true`, empty `persisted`): no row was created, so each row is
  *    resent ON ITS OWN through the ordinary single-row path and gets its own accurate outcome.
  *    No bisecting — the one-by-one resend is what tells the bad row from the good ones;
- *  - UNKNOWN (no definite response), or a failure that reports records which outlived the
- *    rollback (`persisted`): the batch may have committed, and `/batch` has no idempotency key,
+ *  - UNKNOWN (no definite response), or any failure that is not a proven rollback (another body
+ *    shape, `atomic:false`, a missing or non-empty `persisted`): the batch may have committed, and `/batch` has no idempotency key,
  *    so resending could create duplicates. Every row of the chunk is reported UNKNOWN, exactly
  *    as a single row with no response is today.
  * A row whose operations cannot be built is FAILED on its own and never joins the request.
@@ -353,8 +353,15 @@ async function sendChunk(chunk, { buildRowOperations, postBatch, translate, sett
     return;
   }
 
-  const survivors = Array.isArray(response?.persisted) ? response.persisted : [];
-  if (result.status === SEND_STATUS.UNKNOWN || survivors.length > 0) {
+  // Resend only on a rollback BatchService itself vouches for: `committed:false`, `atomic:true`
+  // and an EMPTY `persisted` array. Anything else — a `{message}` gateway/5xx envelope, a missing
+  // or non-array `persisted`, `atomic:false`, records that outlived the rollback — cannot prove
+  // that nothing was created, and `/batch` has no idempotency key, so a resend could duplicate.
+  const provenRollback = response?.committed === false
+    && response?.atomic === true
+    && Array.isArray(response?.persisted)
+    && response.persisted.length === 0;
+  if (result.status === SEND_STATUS.UNKNOWN || !provenRollback) {
     sendable.forEach(({ index, operations }) => {
       settle(index, { status: SEND_STATUS.UNKNOWN, error: result.error, operations });
     });
