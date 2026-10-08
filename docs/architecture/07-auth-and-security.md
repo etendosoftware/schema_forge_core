@@ -146,6 +146,22 @@ Etendo stores active sessions in the `AD_Session` table:
 | **Admin kill** | Admin marks session as inactive in Etendo Classic UI |
 | **Multiple sessions** | Etendo allows multiple concurrent sessions per user (different browsers/devices) |
 
+### One session per browser profile (ETP-5675)
+
+The `__Host-go_session` cookie is shared by every tab and window of a browser profile (incognito vs.
+normal, other profiles and other browsers are isolated), and production serves every customer from
+one domain. Two accounts can therefore not be used at once in one profile: the last login owns every
+tab. The platform makes that explicit instead of silent:
+
+| Layer | What it does |
+|-------|-------------|
+| `sessionCredentials.js` | Publishes the tab's `account.id`; every header builder sends it as `X-Go-Account` (cookie scheme only) |
+| Backend (`GoSessionAuthenticator`) | Refuses a request whose `X-Go-Account` is not the cookie's account: `403 Session belongs to another account` (optional header — absent means unchecked) |
+| `sessionConflict.js` | Records the conflict from that 403, from a `BroadcastChannel` announcement, or from the throttled foreground re-check; never from an unreadable session |
+| `AuthProvider` | Announces its account after the restore, exposes `account` and `sessionConflict`, logs out locally when another tab signed the browser out, never adopts another account's CSRF proof |
+| `deleteCookieSession` | Names the account it revokes; the ETP-5550 stale-proof retry only runs when the live session is still that account's |
+| Host `AppLayout` / onboarding | "Another session is open" screen / "Your session ended" screen |
+
 ### Session Timeout
 
 Configured in Etendo properties (`Openbravo.properties`). Default timeout is typically 30-60 minutes of inactivity. The SPA does not implement its own timeout -- it relies on the backend returning 401 when the session expires.

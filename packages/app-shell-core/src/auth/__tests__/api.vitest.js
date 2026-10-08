@@ -1,3 +1,4 @@
+// @covers packages/app-shell-core/src/auth/api.js
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import {
   fetchCookieSession, deleteCookieSession, readCookieSession, isSessionUnavailable,
@@ -285,7 +286,10 @@ describe('deleteCookieSession — revokes even with a proof another tab rotated 
   const staleRefusal = () => new Response(
     JSON.stringify({ error: { message: 'CSRF validation failed', status: 403 } }), { status: 403 },
   );
-  const liveSession = () => new Response(JSON.stringify({ csrfToken: 'csrf-live' }), { status: 200 });
+  const liveSession = (accountId = 'acc-B') => new Response(
+    JSON.stringify({ csrfToken: 'csrf-live', account: { id: accountId } }), { status: 200 },
+  );
+  const ownAccount = { accountId: 'acc-B' };
 
   function requests() {
     return fetchStub.mock.calls.map(([url, init = {}]) => ({
@@ -299,7 +303,7 @@ describe('deleteCookieSession — revokes even with a proof another tab rotated 
       .mockResolvedValueOnce(liveSession())
       .mockResolvedValueOnce(new Response(null, { status: 204 }));
 
-    await expect(deleteCookieSession('csrf-stale', '/etendo')).resolves.toBe(true);
+    await expect(deleteCookieSession('csrf-stale', '/etendo', ownAccount)).resolves.toBe(true);
 
     expect(requests()).toEqual([
       { url: `/etendo${SESSION_PATH}`, method: 'DELETE', csrf: 'csrf-stale' },
@@ -314,7 +318,7 @@ describe('deleteCookieSession — revokes even with a proof another tab rotated 
       .mockResolvedValueOnce(liveSession())
       .mockResolvedValueOnce(staleRefusal());
 
-    await expect(deleteCookieSession('csrf-stale', '')).resolves.toBe(false);
+    await expect(deleteCookieSession('csrf-stale', '', ownAccount)).resolves.toBe(false);
 
     expect(fetchStub).toHaveBeenCalledTimes(3);
   });
@@ -324,7 +328,7 @@ describe('deleteCookieSession — revokes even with a proof another tab rotated 
       JSON.stringify({ error: { message: 'Origin not allowed', status: 403 } }), { status: 403 },
     ));
 
-    await expect(deleteCookieSession('csrf-stale', '')).resolves.toBe(false);
+    await expect(deleteCookieSession('csrf-stale', '', ownAccount)).resolves.toBe(false);
 
     expect(fetchStub).toHaveBeenCalledTimes(1);
   });
@@ -334,9 +338,59 @@ describe('deleteCookieSession — revokes even with a proof another tab rotated 
       .mockResolvedValueOnce(staleRefusal())
       .mockResolvedValueOnce(new Response(null, { status: 401 }));
 
-    await expect(deleteCookieSession('csrf-stale', '')).resolves.toBe(false);
+    await expect(deleteCookieSession('csrf-stale', '', ownAccount)).resolves.toBe(false);
 
     expect(fetchStub).toHaveBeenCalledTimes(2);
+  });
+});
+
+// ETP-5675 — the cookie belongs to the browser profile and production is one domain for every
+// customer. When another tab signed in as a different account, the live proof is THAT account's,
+// and the ETP-5550 retry used to revoke it: the other tab then failed its onboarding with
+// "Missing or invalid Authorization header".
+describe('deleteCookieSession — never revokes another account\'s session (ETP-5675)', () => {
+  const staleRefusal = () => new Response(
+    JSON.stringify({ error: { message: 'CSRF validation failed', status: 403 } }), { status: 403 },
+  );
+
+  it('names the account being left in X-Go-Account', async () => {
+    fetchStub.mockResolvedValueOnce(new Response(null, { status: 204 }));
+
+    await deleteCookieSession('csrf-own', '', { accountId: 'acc-B' });
+
+    expect(fetchStub.mock.calls[0][1].headers).toEqual({ 'X-Go-CSRF': 'csrf-own', 'X-Go-Account': 'acc-B' });
+  });
+
+  it('does not retry when the live session belongs to another account', async () => {
+    fetchStub
+      .mockResolvedValueOnce(staleRefusal())
+      .mockResolvedValueOnce(new Response(
+        JSON.stringify({ csrfToken: 'csrf-of-C', account: { id: 'acc-C' } }), { status: 200 },
+      ));
+
+    await expect(deleteCookieSession('csrf-stale', '', { accountId: 'acc-B' })).resolves.toBe(false);
+
+    expect(fetchStub).toHaveBeenCalledTimes(2);
+    expect(fetchStub.mock.calls.filter(([, init = {}]) => init.method === 'DELETE')).toHaveLength(1);
+  });
+
+  it('does not retry when it cannot tell whose session it would revoke', async () => {
+    fetchStub.mockResolvedValueOnce(staleRefusal());
+
+    await expect(deleteCookieSession('csrf-stale', '', { accountId: null })).resolves.toBe(false);
+
+    expect(fetchStub).toHaveBeenCalledTimes(1);
+  });
+
+  it('does not retry the backend\'s own account-mismatch refusal', async () => {
+    fetchStub.mockResolvedValueOnce(new Response(
+      JSON.stringify({ error: { message: 'Session belongs to another account', status: 403 } }),
+      { status: 403 },
+    ));
+
+    await expect(deleteCookieSession('csrf-own', '', { accountId: 'acc-B' })).resolves.toBe(false);
+
+    expect(fetchStub).toHaveBeenCalledTimes(1);
   });
 });
 
