@@ -1,3 +1,4 @@
+// @covers packages/app-shell-core/src/lib/import/importEngine.js
 import { describe, it } from 'node:test';
 import assert from 'node:assert/strict';
 import { BatchTimeoutError, SEND_STATUS, sendRow, runImport } from '../importEngine.js';
@@ -454,5 +455,159 @@ describe('runImport', () => {
     const buildRowOperations = () => { throw new Error('country could not be resolved'); };
     const { results } = await runImport(rows, { buildRowOperations, postBatch });
     assert.equal(results[0].operations, null);
+  });
+});
+
+// ETP-5676 — several rows per /batch request. `batchSize` 1 (the default) must stay byte-for-byte
+// the one-request-per-row behaviour.
+describe('runImport — multi-row batches (batchSize)', () => {
+  const productOps = (row) => [
+    { id: 'product', spec: 'p', entity: 'product', body: { name: row.name } },
+    { id: 'salesPrice', spec: 'p', entity: 'price', parentRef: 'product', body: { price: '1', product: '$ref:product' } },
+  ];
+  const makeRows = (n) => Array.from({ length: n }, (_, i) => ({ name: `P${i}` }));
+
+  /** Commits every request, recordId `REC-<opId>` per op; `failWhen(ops)` makes a request fail. */
+  function fakeBatch({ failWhen = () => null } = {}) {
+    const requests = [];
+    const postBatch = async (ops) => {
+      requests.push(ops);
+      const failure = failWhen(ops);
+      if (failure === 'throw') throw new Error('Failed to fetch');
+      if (failure) return failure;
+      return { committed: true, operations: ops.map((op) => ({ id: op.id, ok: true, recordId: `REC-${op.id}` })) };
+    };
+    return { postBatch, requests };
+  }
+  const rejected = (message = 'Rejected') => ({ committed: false, atomic: true, failedAt: { index: 1 }, error: { message }, persisted: [] });
+  const run = (rows, opts) => runImport(rows, { buildRowOperations: async (row) => productOps(row), concurrency: 1, ...opts });
+
+  it('keeps one request per row with untouched op ids when batchSize is not set', async () => {
+    const { postBatch, requests } = fakeBatch();
+    const { results } = await run(makeRows(3), { postBatch });
+    assert.equal(requests.length, 3);
+    assert.deepEqual(requests[0].map((op) => op.id), ['product', 'salesPrice']);
+    assert.equal(requests[0][1].parentRef, 'product');
+    assert.deepEqual(results.map((r) => r.recordId), ['REC-product', 'REC-product', 'REC-product']);
+  });
+
+  it('treats batchSize 1 exactly like the default', async () => {
+    const { postBatch, requests } = fakeBatch();
+    await run(makeRows(2), { postBatch, batchSize: 1 });
+    assert.equal(requests.length, 2);
+    assert.equal(requests[0][0].id, 'product');
+  });
+
+  it('sends 25 rows as 3 requests with unique prefixed ids and rewritten parent references', async () => {
+    const { postBatch, requests } = fakeBatch();
+    const { results } = await run(makeRows(25), { postBatch, batchSize: 10 });
+    assert.deepEqual(requests.map((ops) => ops.length / 2), [10, 10, 5]);
+    for (const ops of requests) {
+      const ids = ops.map((op) => op.id);
+      assert.equal(new Set(ids).size, ids.length, 'op ids must be unique within a request');
+      for (const op of ops.filter((o) => o.parentRef)) {
+        assert.ok(ids.includes(op.parentRef), `parentRef ${op.parentRef} must name an op of the request`);
+        assert.equal(op.parentRef, op.id.replace('salesPrice', 'product'));
+        assert.equal(op.body.product, `$ref:${op.parentRef}`);
+      }
+    }
+    assert.ok(results.every((r) => r.status === SEND_STATUS.OK));
+    // each row gets the recordId of ITS OWN first op, in row order
+    assert.deepEqual(results.map((r) => r.recordId), makeRows(25).map((_, i) => `REC-r${i}.product`));
+    // the diagnostic copy of the operations is the row's own, unprefixed
+    assert.equal(results[0].operations[0].id, 'product');
+  });
+
+  it('sends a chunk left with a single row exactly like a single-row request', async () => {
+    const { postBatch, requests } = fakeBatch();
+    await run(makeRows(11), { postBatch, batchSize: 10 });
+    assert.equal(requests.length, 2);
+    assert.deepEqual(requests[1].map((op) => op.id), ['product', 'salesPrice']);
+  });
+
+  it('caps batchSize defensively at 50 rows per request', async () => {
+    const { postBatch, requests } = fakeBatch();
+    await run(makeRows(120), { postBatch, batchSize: 5000 });
+    assert.deepEqual(requests.map((ops) => ops.length / 2), [50, 50, 20]);
+  });
+
+  it('resends a rolled-back chunk row by row and gives each row its own outcome', async () => {
+    const { postBatch, requests } = fakeBatch({
+      failWhen: (ops) => {
+        if (ops.length > 2) return rejected();
+        // single-row resend: row P3 is the genuinely bad one
+        return ops[0].id === 'product' && ops[0].body.name === 'P3' ? rejected('Value too long') : null;
+      },
+    });
+    const { results } = await run(makeRows(12), { postBatch, batchSize: 10 });
+    assert.equal(results[3].status, SEND_STATUS.FAILED);
+    assert.equal(results.filter((r) => r.status === SEND_STATUS.OK).length, 11);
+    // chunk 1: 1 batch + 10 singles; chunk 2 (2 rows) fails as a batch too: 1 + 2 singles
+    assert.equal(requests.length, 1 + 10 + 1 + 2);
+    assert.equal(results[0].recordId, 'REC-product');
+  });
+
+  it('classifies a duplicate inside a chunk on the resend, without losing the other rows', async () => {
+    const { postBatch } = fakeBatch({
+      failWhen: (ops) => {
+        if (ops.length > 2) return rejected();
+        return ops[0].body.name === 'P1'
+          ? { committed: false, error: { message: 'x', detail: { error: { message: 'Search Key must be unique.' } } } }
+          : null;
+      },
+    });
+    const { results } = await run(makeRows(3), { postBatch, batchSize: 10 });
+    assert.deepEqual(results.map((r) => r.status), [SEND_STATUS.OK, SEND_STATUS.DUPLICATE, SEND_STATUS.OK]);
+  });
+
+  it('never resends the rows of a chunk whose outcome is unknown (the batch may have committed)', async () => {
+    const { postBatch, requests } = fakeBatch({ failWhen: (ops) => (ops.length > 2 ? 'throw' : null) });
+    const { results } = await run(makeRows(13), { postBatch, batchSize: 10 });
+    assert.equal(requests.length, 2);
+    assert.ok(results.slice(0, 10).every((r) => r.status === SEND_STATUS.UNKNOWN));
+    assert.ok(results.slice(10).every((r) => r.status === SEND_STATUS.UNKNOWN));
+  });
+
+  it('does not resend a failed chunk when the server reports records that outlived the rollback', async () => {
+    const { postBatch, requests } = fakeBatch({
+      failWhen: () => ({ committed: false, atomic: false, error: { message: 'x' }, persisted: [{ id: 'r0.product', recordId: 'R' }] }),
+    });
+    const { results } = await run(makeRows(4), { postBatch, batchSize: 10 });
+    assert.equal(requests.length, 1);
+    assert.ok(results.every((r) => r.status === SEND_STATUS.UNKNOWN));
+  });
+
+  it('reports rows whose operations cannot be built on their own and keeps them out of the request', async () => {
+    const { postBatch, requests } = fakeBatch();
+    const { results } = await runImport(makeRows(4), {
+      buildRowOperations: async (row) => {
+        if (row.name === 'P1') throw new Error('country could not be resolved');
+        return productOps(row);
+      },
+      postBatch, concurrency: 1, batchSize: 10,
+    });
+    assert.equal(requests.length, 1);
+    assert.equal(requests[0].length, 3 * 2);
+    assert.equal(results[1].status, SEND_STATUS.FAILED);
+    assert.match(results[1].error.message, /country could not be resolved/);
+    assert.deepEqual(results.map((r) => r.status), [SEND_STATUS.OK, SEND_STATUS.FAILED, SEND_STATUS.OK, SEND_STATUS.OK]);
+  });
+
+  it('counts progress in rows, not requests, ending on the full total', async () => {
+    const { postBatch } = fakeBatch();
+    const ticks = [];
+    await run(makeRows(25), { postBatch, batchSize: 10, onProgress: (done, total) => ticks.push([done, total]) });
+    assert.equal(ticks.length, 25);
+    assert.deepEqual(ticks[24], [25, 25]);
+    assert.ok(ticks.every(([done], i) => done === i + 1));
+  });
+
+  it('honours maxRows and returns results in file order with concurrent workers', async () => {
+    const { postBatch, requests } = fakeBatch();
+    const { results, truncatedCount } = await run(makeRows(30), { postBatch, batchSize: 10, concurrency: 3, maxRows: 25 });
+    assert.equal(truncatedCount, 5);
+    assert.equal(results.length, 25);
+    assert.equal(requests.length, 3);
+    assert.deepEqual(results.map((r) => r.row.name), makeRows(25).map((r) => r.name));
   });
 });

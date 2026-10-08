@@ -1081,3 +1081,27 @@ describe('ImportDialog — processed counter while sending', () => {
     pending[1]?.(okResponse);
   });
 });
+
+// ETP-5676 — `window.import.limit.batchSize` reaches the engine; absent, one request per row.
+describe('ImportDialog — rows per request (limit.batchSize)', () => {
+  const csv = 'Name,Email\nA,a@x.com\nB,b@x.com\nC,c@x.com';
+  async function sendCount(limit) {
+    const okAll = vi.fn();
+    const postBatch = vi.fn(async (ops) => ({ committed: true, operations: ops.map((op) => ({ id: op.id, ok: true, recordId: op.id })) }));
+    render(<ImportDialog open config={{ ...config, dedupe: undefined, limit }} token="t" postBatch={postBatch} simSearchFn={vi.fn()} onImported={okAll} />);
+    await uploadFile(csv);
+    fireEvent.click(screen.getByTestId('ImportDialog__importButton'));
+    fireEvent.click(screen.getByTestId('ImportConfirmStep__confirm'));
+    await waitFor(() => expect(okAll).toHaveBeenCalled());
+    return postBatch;
+  }
+
+  it('sends one request per row by default', async () => {
+    expect((await sendCount(undefined)).mock.calls).toHaveLength(3);
+  });
+
+  it('groups rows into one request when the window opts in', async () => {
+    const postBatch = await sendCount({ batchSize: 2, concurrency: 1 });
+    expect(postBatch.mock.calls.map(([ops]) => ops.length)).toEqual([2, 1]);
+  });
+});

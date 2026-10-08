@@ -296,6 +296,9 @@ export function ImportDialog({ open, onOpenChange, config, token, postBatch, sim
    */
   const maxRows = config.limit?.maxRows ?? config.maxRows ?? 5000;
   const concurrency = config.limit?.concurrency ?? config.concurrency ?? 4;
+  // ETP-5676: rows per `/batch` request. 1 (the default) is the original one-request-per-row
+  // behaviour; the engine caps it. Opt-in per window via `window.import.limit.batchSize`.
+  const batchSize = config.limit?.batchSize ?? 1;
 
   // The two reasons a row is skipped rather than failed. Both are shown verbatim in the
   // review queue, so both go through `translate` — they were hardcoded English strings
@@ -611,6 +614,7 @@ export function ImportDialog({ open, onOpenChange, config, token, postBatch, sim
         translate,
         concurrency,
         maxRows,
+        batchSize,
         onProgress: (completed, total) => {
           const now = Date.now();
           // Always publish the final tick; in between, at most ~6 updates a second.
@@ -696,7 +700,7 @@ export function ImportDialog({ open, onOpenChange, config, token, postBatch, sim
         { count: trueFailures.length },
       ));
     }
-  }, [entries, operationsConfig, concurrency, maxRows, postBatch, onImported, translate, localize, labelFor, localizeError]);
+  }, [entries, operationsConfig, concurrency, maxRows, batchSize, postBatch, onImported, translate, localize, labelFor, localizeError]);
 
   const handleRetryEntryPostSend = useCallback(async (index) => {
     const entry = entries[index];
@@ -765,7 +769,8 @@ export function ImportDialog({ open, onOpenChange, config, token, postBatch, sim
    * closed it to abort a mistaken import found the products there after a reload — the modal
    * read as a cancel button that silently was not one.
    *
-   * The send cannot actually be stopped (each row is its own committed `/batch` call), so the
+   * The send cannot actually be stopped (each row — or, with `limit.batchSize`, each chunk of
+   * rows — is its own committed `/batch` call), so the
    * close is intercepted and the user is told what it does, rather than offered a cancel that
    * would be a lie. Every other step closes as before — this only guards the one window where
    * closing means something different from what it looks like.
