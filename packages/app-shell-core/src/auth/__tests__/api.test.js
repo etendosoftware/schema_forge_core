@@ -1,3 +1,4 @@
+// @covers packages/app-shell-core/src/auth/api.js
 import { describe, it, beforeEach } from 'node:test';
 import { strict as assert } from 'node:assert';
 import {
@@ -8,6 +9,9 @@ import { CREDENTIAL_MODES, resetSessionCredentials, setSessionCredentials } from
 import {
   rememberRecordVersion, getRecordVersion, resetRecordVersionsForTests,
 } from '../../lib/recordVersions.js';
+import {
+  getEnvironmentAccessDecision, resetEnvironmentAccessGateForTest, setEnvironmentAccessDecision,
+} from '../../lib/environmentAccessGate.js';
 import { readFileSync } from 'node:fs';
 import { join, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -346,6 +350,61 @@ describe('createApiFetch', () => {
       assert.equal(res.status, 401);
       assert.equal(loggedOut, 0);
     } finally { f.restore(); }
+  });
+
+  // The transport records a commercial-access block from any response (ETP-5642). The
+  // observation reads a clone asynchronously and is not awaited by apiFetch, so each test
+  // lets that read settle before asserting.
+  const settle = () => new Promise((resolve) => setTimeout(resolve, 0));
+  const blocked = (body) => new Response(JSON.stringify(body), {
+    status: 402, headers: { 'Content-Type': 'application/json' },
+  });
+
+  it('records a blocked environment from any 402 and hands the body back unread', async () => {
+    resetEnvironmentAccessGateForTest();
+    const f = stubFetch(blocked({
+      error: { message: 'Environment access is not available: DEMO_TRIAL_EXPIRED', status: 402 },
+    }));
+    try {
+      const res = await createApiFetch('', () => 'tok', () => {})('/sws/neo/contacts/businessPartner');
+      await settle();
+      assert.equal(getEnvironmentAccessDecision(), 'DEMO_TRIAL_EXPIRED');
+      assert.equal(res.status, 402);
+      assert.equal((await res.json()).error.status, 402);
+    } finally { f.restore(); resetEnvironmentAccessGateForTest(); }
+  });
+
+  it('records the block from a refresh client too (scope null, as the silent refresh uses)', async () => {
+    resetEnvironmentAccessGateForTest();
+    const f = stubFetch(blocked({ error: 'Environment access is not available: SUBSCRIPTION_REQUIRED' }));
+    try {
+      await createApiFetch('', () => 'tok', null, null)('/sws/neo/refreshtoken', { on401: 'ignore' });
+      await settle();
+      assert.equal(getEnvironmentAccessDecision(), 'SUBSCRIPTION_REQUIRED');
+    } finally { f.restore(); resetEnvironmentAccessGateForTest(); }
+  });
+
+  it('does not record a 402 that is not a commercial block', async () => {
+    resetEnvironmentAccessGateForTest();
+    const f = stubFetch(blocked({ error: 'Environment access is not available: MEMBERSHIP_REQUIRED' }));
+    try {
+      await createApiFetch('', () => 'tok', () => {})('/x');
+      await settle();
+      assert.equal(getEnvironmentAccessDecision(), null);
+    } finally { f.restore(); resetEnvironmentAccessGateForTest(); }
+  });
+
+  it('never clears a recorded block on a successful response', async () => {
+    // The account API stays reachable while ERP access is blocked: its 200 says nothing about
+    // the environment. Only windowaccessmap clears the block.
+    resetEnvironmentAccessGateForTest();
+    setEnvironmentAccessDecision('DEMO_TRIAL_EXPIRED');
+    const f = stubFetch(new Response('{}', { status: 200 }));
+    try {
+      await createApiFetch('', () => 'tok', () => {})('/sws/go/environments');
+      await settle();
+      assert.equal(getEnvironmentAccessDecision(), 'DEMO_TRIAL_EXPIRED');
+    } finally { f.restore(); resetEnvironmentAccessGateForTest(); }
   });
 
   it('lets one call opt out of the base URL for an already-complete URL', async () => {

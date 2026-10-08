@@ -1,5 +1,6 @@
 import { getStoredLocale } from '../i18n/useLocaleState.js';
 import { canonicalEntityName, getRecordVersion, rememberRecordVersion } from '../lib/recordVersions.js';
+import { observeEnvironmentAccessResponse } from '../lib/environmentAccessGate.js';
 import {
   credentialHeadersForToken,
   getSessionCsrfToken,
@@ -624,6 +625,12 @@ export function createApiFetch(baseUrl, getToken, onUnauthorized, scope) {
         if (token === live) onUnauthorized?.();
         throw new Error('Unauthorized');
       }
+      // ETP-5642: a 402 "Environment access is not available" is, like a 401, an answer about
+      // the whole session, not about this request. Recording it here — the one exit every
+      // response takes — shows the blocked-access screen on the first blocked request of any
+      // kind, instead of only when a silent refresh happens to reach windowaccessmap. Not
+      // awaited: it reads a clone, and the caller gets its response unchanged and unread.
+      if (res.status === 402) observeEnvironmentAccessResponse(res, isOurs);
       // Wrapped even without a scope: the body readers must turn a cut stream into a
       // NetworkError for a plain module exactly as for a component (ETP-5424).
       return guardResponse(res, requestScope ? isOurs : () => true);
