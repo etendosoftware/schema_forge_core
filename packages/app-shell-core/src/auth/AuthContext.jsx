@@ -397,7 +397,8 @@ export function AuthProvider({
       getToken: () => controller.getSnapshot().session.token,
       // ETP-4576 — a 401 has to move the tri-state status too, or `isAuthenticated` stays
       // true off a stale 'authenticated' and the app never redirects to login. No server
-      // revocation here: a 401 means the session is already gone on the backend.
+      // revocation here: apiFetch only calls this once GET /sws/go/session has itself answered 401
+      // (ETP-5489), so the session is already gone on the backend.
       onUnauthorized: () => {
         setCsrfToken(null);
         setAccount(null);
