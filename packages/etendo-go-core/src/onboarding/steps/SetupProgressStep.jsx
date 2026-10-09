@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { Loader2, Check, Sparkles, Building2, Settings } from 'lucide-react';
 import { useUI } from '@etendosoftware/app-shell-core/i18n';
-import { runOnboardingStream, fetchEnvironments, loginEnvironment } from '../api.js';
+import { runOnboardingStream, fetchEnvironments, isSessionLostError, loginEnvironment } from '../api.js';
 import { initialSetupSteps, applyProgressMessage, rememberEnvironment } from '../state.js';
 import { buildAppReturnToHref, getSafeReturnTo } from '../oauthReturnTo.js';
 import { resolveOnboardingErrorMessage } from '../errorMessages.js';
@@ -36,7 +36,7 @@ const DEFAULT_LOGIN_DELAY_MS = 2000;
 const SAMPLE_DATA_WARNING_LOGIN_DELAY_MS = 6000;
 const SAMPLE_DATA_STEP = 'sampleData';
 
-export function SetupProgressStep({ config, stepData, onNext, onBack, goToStep, token, routeByEnvironments, onLogout }) {
+export function SetupProgressStep({ config, stepData, onNext, onBack, goToStep, token, routeByEnvironments, onLogout, onSessionLost }) {
   const ui = useUI();
   const [steps, setSteps] = useState(() => initialSetupSteps());
   const [result, setResult] = useState(null);
@@ -126,9 +126,14 @@ export function SetupProgressStep({ config, stepData, onNext, onBack, goToStep, 
         action: 'enter_environment',
         status: 'failed',
       });
+      // ETP-5675 — the environment exists; only the session that should enter it is gone.
+      if (isSessionLostError(err) && onSessionLost) {
+        onSessionLost();
+        return;
+      }
       setResult({ status: 'failed', error: err.userMessage || ui(err.code || 'onboardingEnvironmentLoginFailed') });
     }
-  }, [apiBase, config, token, ui]);
+  }, [apiBase, config, token, ui, onSessionLost]);
 
   const runOnboarding = useCallback(async () => {
     trackOnboarding(config, 'onboarding_run_started', {
@@ -193,6 +198,13 @@ export function SetupProgressStep({ config, stepData, onNext, onBack, goToStep, 
         action: 'create_environment',
         status: 'failed',
       });
+      // ETP-5675 — refused before provisioning started: no session, or another account's. The
+      // flow says so and offers to sign back in instead of a failed run quoting the backend's
+      // raw "Missing or invalid Authorization header".
+      if (isSessionLostError(err) && onSessionLost) {
+        onSessionLost();
+        return;
+      }
       setResult({ status: 'failed', error: resolveOnboardingErrorMessage(ui, err) });
     } finally {
       if (!isMountedRef.current) return;
@@ -226,7 +238,7 @@ export function SetupProgressStep({ config, stepData, onNext, onBack, goToStep, 
           : DEFAULT_LOGIN_DELAY_MS);
       }
     }
-  }, [apiBase, config, stepData, token, ui, loginToEnvironment, goToStep, routeByEnvironments]);
+  }, [apiBase, config, stepData, token, ui, loginToEnvironment, goToStep, routeByEnvironments, onSessionLost]);
 
   useEffect(() => {
     if (!hasStartedRef.current) {

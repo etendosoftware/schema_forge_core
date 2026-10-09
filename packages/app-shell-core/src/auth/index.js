@@ -30,9 +30,11 @@ export {
 // header builders from here and never branch on the scheme themselves; the provider
 // owns `setSessionCredentials`.
 export {
+  ACCOUNT_HEADER,
   CREDENTIAL_MODES,
   credentialOptions,
   getCredentialMode,
+  getSessionAccountId,
   getSessionCsrfToken,
   jsonHeaders,
   readCredentialHeaders,
@@ -40,6 +42,21 @@ export {
   setSessionCredentials,
   writeHeaders,
 } from './sessionCredentials.js';
+export {
+  ACCOUNT_MISMATCH_MESSAGE,
+  SESSION_CHANNEL_NAME,
+  SESSION_RECHECK_INTERVAL_MS,
+  announceSessionAccount,
+  clearSessionConflict,
+  compareLiveSessionAccount,
+  getSessionConflict,
+  isAccountMismatchText,
+  listenSessionAccount,
+  observeSessionConflictResponse,
+  reportSessionConflict,
+  resetSessionConflictForTests,
+  subscribeSessionConflict,
+} from './sessionConflict.js';
 export { LogoutRoute } from './LogoutRoute.jsx';
 export { resolveLogoutDestination } from './logoutRoute.js';
 export { useApiFetch } from './useApiFetch.js';

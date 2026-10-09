@@ -304,7 +304,7 @@ export function accountSignMultiplier(sign) {
  * is `sql.operandsQuery`'s output: the formula edges from
  * `C_ELEMENTVALUE_OPERAND` (`owner_id`, `operand_id`, `sign`).
  *
- * Four Classic behaviours this reproduces, all verified against real PDFs:
+ * Five Classic behaviours this reproduces, all verified against real PDFs:
  *  - A node's value is the roll-up of its children; a node with NO children but
  *    WITH operands is a *formula* node instead (Classic's `hasOperand` ->
  *    `operandsCalculate`), e.g. "A) RESULTADO DE EXPLOTACIÓN (1+2+...+12)".
@@ -323,9 +323,22 @@ export function accountSignMultiplier(sign) {
  *    the walk stops there (Classic's `levelFilter` sticky `found` flag).
  *  - `showOnlyWithValue` keeps a node when EITHER period is non-zero (Classic
  *    ORs `qty`/`qtyRef`), and never hides an `isalwaysshown='Y'` node.
+ *  - `ShowValueCond` (ETP-5662, Classic's `applyShowValueCond`/`filterSVC`): a
+ *    SUMMARY node (`issummary='Y'`) with `showvaluecond` 'P' keeps its value only
+ *    when strictly positive ('N': strictly negative), otherwise it becomes 0 and
+ *    that 0 is what rolls up to its parent. Every descendant of such a "reset"
+ *    node displays 0. A formula node reads its operand's RAW value (after the
+ *    operand's descendants' clamp, before its own clamp) — that is how a mirror
+ *    account such as `(551)` shows the balance on the side where it is
+ *    positive. Main and reference periods reset independently. MUST stay in
+ *    sync with the Java twin `AccountReportTree` (com.etendoerp.go).
+ *    Deliberate deviation: `reset` = "the clamp changed the value", so a KEPT
+ *    P/N node's descendants stay visible. Classic resets on any failed
+ *    condition (0 too) with the ref period overwriting the main flag, so with
+ *    Compare To off it hides them. Totals are identical.
  *
  * Returns the flattened, document-ordered rows the template renders, with
- * `indent`/`indentClass`/`isHeading`/`group`/`isGroupStart` precomputed here
+ * `indent`/`indentClass`/`isHeading`/`isFormula`/`group`/`isGroupStart` precomputed here
  * rather than in Handlebars (which has no arithmetic, and where every new
  * helper must be hand-duplicated into JSREPORT_HELPER_SOURCES — see
  * report-html-helpers.js). `isGroupStart` only ever flips to true beyond the
@@ -343,6 +356,10 @@ export function buildAccountReportTree(nodeRows, operandRows, options = {}) {
       children: [],
       amount: null,
       amount_ref: null,
+      raw: null,
+      raw_ref: null,
+      reset: false,
+      reset_ref: false,
       sign: null,
     });
   }
@@ -371,19 +388,34 @@ export function buildAccountReportTree(nodeRows, operandRows, options = {}) {
     operandsByOwner.get(o.owner_id).push(o);
   }
 
+  // Classic's hasOperand: no children but operands. Same definition as the Java
+  // twin's formula node. Exposed on the row as `isFormula`: the Excel/CSV
+  // exports label a formula HEADING "Total" (ETP-5663).
+  const isFormulaNode = (node) => !node.children.length && operandsByOwner.has(node.node_id);
+
+  // Classic's applyShowValueCond: only a SUMMARY node with 'P' / 'N' is clamped.
+  const applyShowValueCond = (node, value) => {
+    if (node.issummary !== 'Y') return value;
+    if (node.showvaluecond === 'P') return value > 0 ? value : 0;
+    if (node.showvaluecond === 'N') return value < 0 ? value : 0;
+    return value;
+  };
+
   const inProgress = new Set();
   const resolve = (node) => {
     if (node.amount !== null) return node;
     if (inProgress.has(node.node_id)) { // malformed data: a formula referencing itself
       node.amount = 0;
       node.amount_ref = 0;
+      node.raw = 0;
+      node.raw_ref = 0;
       return node;
     }
     inProgress.add(node.node_id);
     const multiplier = accountSignMultiplier(node.sign);
     const own = (Number(node.own_amt) || 0) * multiplier;
     const ownRef = (Number(node.own_amt_ref) || 0) * multiplier;
-    if (!node.children.length && operandsByOwner.has(node.node_id)) {
+    if (isFormulaNode(node)) {
       // Formula nodes sum their operands' already sign-adjusted values
       // directly — Classic's operandsCalculate never re-flips by the owner's
       // own accountsign, only the operands contribute their own polarity.
@@ -394,11 +426,12 @@ export function buildAccountReportTree(nodeRows, operandRows, options = {}) {
         if (!target) continue;
         const sign = Number(o.sign) || 0;
         resolve(target);
-        sum += sign * target.amount;
-        sumRef += sign * target.amount_ref;
+        // A formula reads the operand's RAW value (see ShowValueCond above).
+        sum += sign * target.raw;
+        sumRef += sign * target.raw_ref;
       }
-      node.amount = cleanAmount(sum);
-      node.amount_ref = cleanAmount(sumRef);
+      node.raw = cleanAmount(sum);
+      node.raw_ref = cleanAmount(sumRef);
     } else if (node.children.length) {
       let sum = own;
       let sumRef = ownRef;
@@ -407,12 +440,17 @@ export function buildAccountReportTree(nodeRows, operandRows, options = {}) {
         sum += child.amount;
         sumRef += child.amount_ref;
       }
-      node.amount = cleanAmount(sum);
-      node.amount_ref = cleanAmount(sumRef);
+      node.raw = cleanAmount(sum);
+      node.raw_ref = cleanAmount(sumRef);
     } else {
-      node.amount = cleanAmount(own);
-      node.amount_ref = cleanAmount(ownRef);
+      node.raw = cleanAmount(own);
+      node.raw_ref = cleanAmount(ownRef);
     }
+    // raw is cleaned before the clamp: vs Java's BigDecimal, only sub-cent values differ (epsilon hides).
+    node.amount = applyShowValueCond(node, node.raw);
+    node.amount_ref = applyShowValueCond(node, node.raw_ref);
+    node.reset = node.amount !== node.raw;
+    node.reset_ref = node.amount_ref !== node.raw_ref;
     inProgress.delete(node.node_id);
     return node;
   };
@@ -421,13 +459,17 @@ export function buildAccountReportTree(nodeRows, operandRows, options = {}) {
   const cutoffRank = ELEMENT_LEVEL_RANK[accountLevel] ?? ELEMENT_LEVEL_RANK.S;
   const out = [];
   let lastGroup;
-  const visit = (node, indent, isRoot) => {
+  const visit = (node, indent, isRoot, underReset = false, underResetRef = false) => {
     let withinCutoff = true;
     if (!isRoot) {
+      // Display: a descendant of a reset node shows 0 (filterSVC); every row
+      // re-applies its own clamp (filterStructure). Periods reset independently.
+      const amount = underReset ? 0 : applyShowValueCond(node, node.amount);
+      const amountRef = underResetRef ? 0 : applyShowValueCond(node, node.amount_ref);
       // An unknown/blank elementlevel is never a reason to drop a row.
       const rank = ELEMENT_LEVEL_RANK[node.elementlevel];
       withinCutoff = rank === undefined || rank <= cutoffRank;
-      const hasValue = Math.abs(node.amount) > 0.005 || Math.abs(node.amount_ref) > 0.005;
+      const hasValue = Math.abs(amount) > 0.005 || Math.abs(amountRef) > 0.005;
       const alwaysShown = node.isalwaysshown === 'Y';
       if (withinCutoff && (!showOnlyWithValue || hasValue || alwaysShown)) {
         const isGroupStart = out.length > 0 && node.group_name !== lastGroup;
@@ -438,11 +480,12 @@ export function buildAccountReportTree(nodeRows, operandRows, options = {}) {
           name: node.name,
           element: `${node.value} - ${node.name}`,
           elementlevel: node.elementlevel,
-          amount: node.amount,
-          amount_ref: node.amount_ref,
+          amount,
+          amount_ref: amountRef,
           indent,
           indentClass: `ind-${Math.min(indent, 6)}`,
           isHeading: node.elementlevel === 'E',
+          isFormula: isFormulaNode(node),
           group: node.group_name,
           isGroupStart,
         });
@@ -453,7 +496,8 @@ export function buildAccountReportTree(nodeRows, operandRows, options = {}) {
     // never a row — so its children start the visible tree at indent 0.
     const sortedChildren = [...node.children].sort(byPath);
     for (const child of sortedChildren) {
-      visit(child, isRoot ? 0 : indent + 1, false);
+      visit(child, isRoot ? 0 : indent + 1, false, underReset || node.reset,
+        underResetRef || node.reset_ref);
     }
   };
   // toSorted (not sort): `roots` is a view into the caller's node list —
@@ -465,7 +509,11 @@ export function buildAccountReportTree(nodeRows, operandRows, options = {}) {
   // group's header rendered, so force it on iff the report actually has more
   // than one group. A single-group report (Profit & Loss) never has more than
   // one distinct `group` value here, so this is a no-op for it.
-  if (out.length && new Set(out.map((r) => r.group)).size > 1) {
+  // ETP-5662: counted over the report's ROOTS, not the visible rows — when
+  // ShowValueCond/only-with-value leaves a single group visible (e.g. only
+  // Pasivo), its header must still say which side the rows belong to. Differs
+  // from Classic (which prints those rows headerless) on purpose; display only.
+  if (out.length && new Set(roots.map((r) => r.group_name)).size > 1) {
     out[0].isGroupStart = true;
   }
   return out;

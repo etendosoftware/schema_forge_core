@@ -13,6 +13,8 @@
  *    here and never shown as-is.
  */
 
+import { isAccountMismatchText } from '@etendosoftware/app-shell-core/auth/sessionConflict.js';
+
 const AD_MESSAGE_KEY_PATTERN = /^@([A-Za-z0-9_]+)@$/;
 
 /** Stable error codes emitted by the Etendo GO onboarding endpoints. */
@@ -75,6 +77,13 @@ export function resolveOnboardingErrorMessage(ui, source, fallbackKey = 'onboard
       return ui(fallbackKey);
     }
     return ui(codeLabel, params);
+  }
+
+  // ETP-5675 — a refusal for a missing or foreign session is never shown verbatim: the backend's
+  // text ("Missing or invalid Authorization header") is English and means nothing to a user.
+  // OnboardingFlow normally replaces the step with OnboardingSessionLost first; this is the floor.
+  if (source.status === 401 || (source.status === 403 && isAccountMismatchText(rawMessage))) {
+    return ui('onboardingSessionLostError');
   }
 
   const adKey = adMessageKeyOf(rawMessage);
