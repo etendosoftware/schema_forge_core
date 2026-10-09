@@ -1,8 +1,10 @@
+// @covers packages/etendo-go-core/src/onboarding/api.js
 import { describe, it } from 'node:test';
 import assert from 'node:assert/strict';
 import { deleteCookieSession, isSessionUnavailable } from '@etendosoftware/app-shell-core/auth/api';
 import {
   ONBOARDING_ERROR_CODES,
+  bindOnboardingAccount,
   buildAuthHeaders,
   changePassword,
   fetchAccount,
@@ -12,6 +14,7 @@ import {
   loginAccount,
   loginEnvironment,
   loginWithSsoProvider,
+  isSessionLostError,
   registerAccount,
   runOnboardingStream,
   saveOnboardingDraft,
@@ -623,6 +626,57 @@ describe('onboarding session API — resource-access cluster (ETP-4576)', () => 
         assert.doesNotMatch(JSON.stringify(options.headers || {}), /Bearer/);
         assert.equal(options.credentials, 'include');
       }
+    });
+  });
+});
+
+// ETP-5675 — the session cookie belongs to the browser profile and production is one domain for
+// every customer: a second tab signing in as another account left this onboarding provisioning, or
+// entering an environment, on THAT account's session. The page binds its account and sends it as
+// X-Go-Account; the backend refuses a mismatch. Login, register and the session read never send it.
+describe('onboarding account binding (ETP-5675)', () => {
+  it('sends the bound account on authenticated calls and drops it when unbound', () => {
+    try {
+      bindOnboardingAccount('acc-B');
+      assert.equal(buildAuthHeaders('csrf-abc')['X-Go-Account'], 'acc-B');
+      assert.equal(buildAuthHeaders()['X-Go-Account'], 'acc-B');
+
+      bindOnboardingAccount(null);
+      assert.equal('X-Go-Account' in buildAuthHeaders('csrf-abc'), false);
+    } finally {
+      bindOnboardingAccount(null);
+    }
+  });
+
+  it('never sends it on login, register or the session read', async () => {
+    bindOnboardingAccount('acc-B');
+    try {
+      const { calls, fetchImpl } = recordingFetch(jsonResponse({ csrfToken: 'c', account: { id: 'acc-C' } }));
+      await loginAccount(fetchImpl, '', { email: 'c@example.test', password: 'x' });
+      await registerAccount(fetchImpl, '', { email: 'c@example.test', password: 'x' });
+      await fetchSession(fetchImpl, '');
+
+      for (const call of calls) {
+        assert.equal('X-Go-Account' in (call.options.headers || {}), false, call.url);
+      }
+    } finally {
+      bindOnboardingAccount(null);
+    }
+  });
+
+  describe('isSessionLostError', () => {
+    const failure = (status, message) => Object.assign(new Error(message), { status });
+
+    it('treats a 401 and the account-mismatch 403 as a lost session', () => {
+      assert.equal(isSessionLostError(failure(401, 'Missing or invalid Authorization header')), true);
+      assert.equal(isSessionLostError(failure(403, 'Session belongs to another account')), true);
+    });
+
+    it('does not treat other refusals as a lost session', () => {
+      assert.equal(isSessionLostError(failure(403, 'CSRF validation failed')), false);
+      assert.equal(isSessionLostError(failure(402, 'PAYMENT_REQUIRED')), false);
+      assert.equal(isSessionLostError(failure(500, 'boom')), false);
+      assert.equal(isSessionLostError(null), false);
     });
   });
 });
