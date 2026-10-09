@@ -1,3 +1,5 @@
+// @covers packages/etendo-go-core/src/onboarding/OnboardingFlow.jsx
+// @covers packages/etendo-go-core/src/onboarding/logout.js
 import { describe, it } from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
@@ -114,7 +116,7 @@ describe('createOnboardingLogout', () => {
     assert.doesNotMatch(envSelect, /localStorage\.removeItem\('sf_platform_(token|auth_method)'\)/);
   });
 
-  it('reduces cleanupSession to the single legacy key purge', () => {
+  it('revokes the session server-side and purges the legacy keys', () => {
     // ETP-4576: the environment session is now the __Host- cookie — there is no
     // client-written `sf_auth_*` channel left to clear. What remains is purging
     // the LEGACY keys a pre-cookie session may have left behind, which is
@@ -125,11 +127,24 @@ describe('createOnboardingLogout', () => {
     // `authStorageRef.current.clear()` right next to the purge. That pairing was
     // pure redundancy — see the suite below for why the local ref is gone.
     const flow = readFileSync(join(onboardingSrc, 'OnboardingFlow.jsx'), 'utf8');
+    //
+    // ETP-5675: the purge alone left the session alive on the server — "Cerrar sesión" in
+    // onboarding never revoked it. It now revokes, naming this page's account so it can never
+    // take down a session another tab opened as someone else, and unbinds BEFORE announcing:
+    // this page's own listener hears the announcement and must not read its own logout as a
+    // session lost to another tab.
     const cleanupBlock = stripLineComments(flow.slice(
-      flow.indexOf('cleanupSession: () =>'),
+      flow.indexOf('cleanupSession: async () =>'),
       flow.indexOf('resetState: () => logoutContextRef'),
     ));
 
+    assert.ok(cleanupBlock.length > 0, 'cleanupSession block not found');
+    assert.match(cleanupBlock, /deleteCookieSession\(proof, base, \{ accountId \}\)/);
+    assert.ok(
+      cleanupBlock.indexOf('unbindAccount()') < cleanupBlock.indexOf('announceSessionAccount(null)'),
+      'the page must unbind before it announces the logout',
+    );
+    assert.match(cleanupBlock, /if \(revoked\) announceSessionAccount\(null\)/);
     assert.match(cleanupBlock, /purgeLegacyAuthStorage\(\)/);
     assert.doesNotMatch(cleanupBlock, /authStorageRef/);
     assert.doesNotMatch(cleanupBlock, /clearEnvironmentSession\(\)/);
@@ -174,7 +189,7 @@ describe('OnboardingFlow drops its own local auth storage (ETP-4576 cycle 4b)', 
     );
   });
 
-  it('keeps purgeLegacyAuthStorage as its only import from the app-shell-core auth entry point', () => {
+  it('keeps purgeLegacyAuthStorage among its imports from the app-shell-core auth entry point', () => {
     const authImport = flowCode.match(
       /import \{([^}]*)\} from '@etendosoftware\/app-shell-core\/auth';/,
     );
@@ -199,13 +214,13 @@ describe('OnboardingFlow drops its own local auth storage (ETP-4576 cycle 4b)', 
     assert.doesNotMatch(bootstrapBlock, /\.clear\(\)/);
   });
 
-  it('calls purgeLegacyAuthStorage at exactly the two cleanup sites', () => {
-    // Pins both replacements at once: the logout cleanup and the bootstrap
-    // catch. A partial migration (one site converted, the other silently left
-    // without any cleanup) fails here.
+  it('calls purgeLegacyAuthStorage at exactly the three cleanup sites', () => {
+    // Pins every site at once: the logout cleanup, the bootstrap catch and (ETP-5675) the
+    // "sign in again" of the session-lost screen. A partial migration (one site converted, the
+    // other silently left without any cleanup) fails here.
     const callSites = flowCode.match(/purgeLegacyAuthStorage\(\)/g) || [];
 
-    assert.equal(callSites.length, 2, `expected 2 purge call sites, found ${callSites.length}`);
+    assert.equal(callSites.length, 3, `expected 3 purge call sites, found ${callSites.length}`);
   });
 });
 

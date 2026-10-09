@@ -1,4 +1,6 @@
 import { sessionUnavailableError, whenSessionRevokeSettles } from '@etendosoftware/app-shell-core/auth/api';
+import { ACCOUNT_HEADER } from '@etendosoftware/app-shell-core/auth/sessionCredentials.js';
+import { isAccountMismatchText } from '@etendosoftware/app-shell-core/auth/sessionConflict.js';
 
 export const ONBOARDING_ERROR_CODES = {
   registerFailed: 'onboardingRegisterFailed',
@@ -77,6 +79,37 @@ function storedLocale() {
   }
 }
 
+/**
+ * ETP-5675 — the account this onboarding page is signed in as. The session cookie is shared by
+ * every tab of the browser profile, so a second tab signing in as another account used to leave
+ * this one provisioning — or entering an environment — on THAT account's session. Bound by
+ * OnboardingFlow whenever it learns the account (bootstrap, login, register) and cleared on logout;
+ * buildAuthHeaders sends it as `X-Go-Account` and the backend refuses a mismatch with 403.
+ * Login, register and the session read deliberately do not send it: they are how an account is
+ * chosen, not requests made on behalf of one.
+ */
+let boundAccountId = null;
+
+export function bindOnboardingAccount(accountId) {
+  boundAccountId = accountId || null;
+}
+
+export function getBoundOnboardingAccount() {
+  return boundAccountId;
+}
+
+/**
+ * ETP-5675 — whether a failed call means this page no longer holds its session: it expired or
+ * was closed (401), or another tab signed the browser in as a different account (403 account
+ * mismatch). The flow must stop and say so instead of carrying on until provisioning fails with
+ * the backend's raw "Missing or invalid Authorization header".
+ */
+export function isSessionLostError(err) {
+  if (!err) return false;
+  if (err.status === 401) return true;
+  return err.status === 403 && (isAccountMismatchText(err.message) || isAccountMismatchText(err.userMessage));
+}
+
 export function buildAuthHeaders(csrfToken) {
   return {
     'Content-Type': 'application/json',
@@ -86,6 +119,7 @@ export function buildAuthHeaders(csrfToken) {
     // ETP-4576: the session is the `__Host-` cookie the browser sends on its own, so
     // what travels here is the proof of intent, never a credential.
     ...(csrfToken ? { 'X-Go-CSRF': csrfToken } : {}),
+    ...(boundAccountId ? { [ACCOUNT_HEADER]: boundAccountId } : {}),
   };
 }
 

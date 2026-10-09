@@ -35,11 +35,21 @@ export function getResolutionCache(cacheKey = 'default') {
   return resolutionCaches.get(cacheKey);
 }
 
+// Records actually created through `createFn` since the last full clear — a count for the import
+// run summary (ETP-5676). Counted here, inside the one place that creates, so a creation shared by
+// concurrent rows through the cache is counted once.
+let createdEntityCount = 0;
+
+export function getCreatedEntityCount() {
+  return createdEntityCount;
+}
+
 export function clearResolutionCache(cacheKey) {
   if (cacheKey) {
     resolutionCaches.delete(cacheKey);
   } else {
     resolutionCaches.clear();
+    createdEntityCount = 0;
   }
 }
 
@@ -86,8 +96,11 @@ export async function resolveOrAutoCreateDependentEntity({
     return { status: 'empty' };
   }
 
-  // Deduplication key for per-run cache
-  const cacheKey = `${effectiveCode}:::${effectiveName}`;
+  // Deduplication key for per-run cache. The NAME is normalised like the name matcher below
+  // (case, accents, whitespace), so "Bebidas" and "BEBIDAS" share one in-flight resolution
+  // instead of racing two creations (ETP-5676). The CODE stays as typed (trimmed): the code
+  // matcher compares exactly, so "abc" and "ABC" are different codes and must not share an entry.
+  const cacheKey = `${effectiveCode}:::${normalizeText(effectiveName)}`;
   if (cache && cache.has(cacheKey)) {
     return cache.get(cacheKey);
   }
@@ -172,6 +185,7 @@ export async function resolveOrAutoCreateDependentEntity({
 
     if (typeof createFn === 'function') {
       const created = await createFn({ searchKey: searchKeyToCreate, name: nameToCreate });
+      createdEntityCount += 1;
       return {
         status: 'created',
         id: created.id,

@@ -26,7 +26,7 @@ function maskEmail(email) {
   return `${email[0]}******${email.slice(at)}`;
 }
 
-export function LoginStep({ config, stepData, onNext, onBack, goToStep, setToken, setAccountName, routeByEnvironments, draftSaveWarning, initialEmail, emailReadOnly = false, onAuthenticated }) {
+export function LoginStep({ config, stepData, onNext, onBack, goToStep, setToken, setAccountName, routeByEnvironments, draftSaveWarning, initialEmail, emailReadOnly = false, onAuthenticated, onAccountChange }) {
   const ui = useUI();
   const { locale, setLocale } = useLocaleSwitch();
 
@@ -76,13 +76,15 @@ export function LoginStep({ config, stepData, onNext, onBack, goToStep, setToken
     persistAuthMethod(authMethod);
     if (setToken) setToken(csrfToken);
     if (setAccountName) setAccountName(account?.name || account?.email || null);
+    // ETP-5675 — bind the onboarding to the account that just signed in before routing.
+    if (onAccountChange) onAccountChange(account);
     setShowLoginPassword(false);
     setSsoError(null);
     setSsoLoadingProvider(null);
     if (route && routeByEnvironments) {
       return routeByEnvironments(csrfToken);
     }
-  }, [setToken, setAccountName, routeByEnvironments]);
+  }, [setToken, setAccountName, routeByEnvironments, onAccountChange]);
 
   const handleSsoProviderLogin = useCallback(async (provider, payload) => {
     trackOnboarding(config, 'onboarding_auth_submitted', {
