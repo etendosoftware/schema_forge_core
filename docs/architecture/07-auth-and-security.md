@@ -30,12 +30,13 @@ User  -->  OnboardingPage.jsx  -->  POST /sws/go/onboarding  (new environment)
                                   AuthContext restores token from localStorage
                                   Subsequent API calls include:
                                     Authorization: Bearer <token>
-                                  401 response  -->  onUnauthorized() clears auth state and throws
-                                                      Protected routes redirect to /onboarding on the next render
+                                  Data 401  -->  GET /sws/go/session confirms expiry
+                                    Session 401  -->  onUnauthorized() clears auth state and throws
+                                    Alive/unknown --> SessionAliveUnauthorizedError; session stays signed in
 ```
 
 **Key files:**
-- `src/auth/api.js` -- `createApiFetch()` with auto-401 handling, `buildHeaders()`
+- `src/auth/api.js` -- `createApiFetch()` with session-confirmed 401 handling, `buildHeaders()`
 - `src/auth/AuthContext.jsx` -- React context providing `token`, `username`, `isAuthenticated`, `logout()`
 - `src/pages/OnboardingPage.jsx` -- Onboarding and environment login UI
 - `src/pages/onboarding/onboardingApi.js` -- API helpers for platform login, environment login, and onboarding stream
@@ -99,7 +100,21 @@ Google requires a public Web OAuth client id in `VITE_GOOGLE_CLIENT_ID`. This is
 
 `createApiFetch()` wraps `fetch()` with:
 1. Automatic `Authorization: Bearer <token>` header injection
-2. Automatic 401 detection -- calls `onUnauthorized()` callback (typically triggers logout + redirect)
+2. Session-confirmed 401 detection: a data endpoint's 401 triggers a cookie-only
+   `GET /sws/go/session` probe with a bounded timeout. Only a 401 from that endpoint calls
+   `onUnauthorized()` (typically logout + redirect). A readable 200 keeps the session alive;
+   an unreadable body, other status or transport failure leaves its state unknown. Both alive
+   and unknown throw `SessionAliveUnauthorizedError` (`code: session_alive_unauthorized`),
+   detectable through `isSessionAliveUnauthorized()`, without clearing auth state.
+
+Concurrent 401s share one pending probe per base URL and session identity/generation. A new
+registration or identity/generation gets its own probe, even while an older session's probe is
+pending; the older result cannot log out the new session. Silent bearer rotation within a scoped
+identity keeps sharing its probe. Each logout callback runs at most once per identity/generation,
+even across later probes if the callback has not transitioned the session. Probe answers expire
+when their flight settles; they are not cached as an ongoing claim that the session is alive.
+Legacy clients without a session scope use registration and token equality as the available
+boundary. `on401: 'ignore'` bypasses classification and returns the original 401 response.
 
 React components should access it through `useApiFetch(baseUrl)`, which reads the token from `AuthContext` and wires unauthorized responses to `logout()`. New or migrated custom components should not construct `Authorization` headers locally. Some generated contracts still forward `token` to legacy contract-ui and custom component surfaces for compatibility; remove those props only when the receiving component is migrated to `useApiFetch`.
 
@@ -164,7 +179,7 @@ tab. The platform makes that explicit instead of silent:
 
 ### Session Timeout
 
-Configured in Etendo properties (`Openbravo.properties`). Default timeout is typically 30-60 minutes of inactivity. The SPA does not implement its own timeout -- it relies on the backend returning 401 when the session expires.
+Configured in Etendo properties (`Openbravo.properties`). Default timeout is typically 30-60 minutes of inactivity. The SPA does not implement its own idle timeout. It confirms a data endpoint's 401 against `GET /sws/go/session` before treating the session as expired.
 
 ### Cache Clearing on Login
 

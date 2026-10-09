@@ -5,6 +5,7 @@ import assert from 'node:assert/strict';
 import {
   apiFetch, createApiFetch, isSessionAliveUnauthorized, registerApiSession, resetApiSessionForTests,
 } from '../api.js';
+import { createSessionController } from '../sessionController.js';
 import { readFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -148,6 +149,78 @@ describe('401 classification against the session endpoint (ETP-5489)', () => {
     token = 'new';
     release();
     assert.equal((await pending).name, 'AbortError');
+    assert.equal(logouts, 0);
+  });
+
+  for (const boundary of ['registration', 'generation']) {
+    it(`a new ${boundary} does not consume the previous session's pending probe`, async () => {
+      let release;
+      const gate = new Promise((resolve) => { release = resolve; });
+      let probeCount = 0;
+      globalThis.fetch = async (url) => {
+        if (!String(url).endsWith(SESSION_URL)) return res(401);
+        probeCount += 1;
+        if (probeCount === 1) { await gate; return res(401); }
+        return res(200, { account: { id: 'b' } });
+      };
+      let logouts = 0;
+      const scope = createSessionController({ clientId: 'a' });
+      const session = { getToken: () => null, onUnauthorized: () => { logouts += 1; }, baseUrl: '', scope };
+      registerApiSession(session);
+      const a = apiFetch('/neo/a').catch((error) => error);
+      await new Promise(setImmediate);
+      if (boundary === 'registration') registerApiSession(session);
+      else scope.replace({ clientId: 'b' });
+      const b = apiFetch('/neo/b').catch((error) => error);
+      await new Promise(setImmediate);
+      release();
+      const [oldError, currentError] = await Promise.all([a, b]);
+      assert.equal(probeCount, 2);
+      assert.equal(oldError.name, 'AbortError');
+      assert.equal(isSessionAliveUnauthorized(currentError), true);
+      assert.equal(logouts, 0);
+    });
+  }
+
+  it('deduplicates logout across settled probes until the generation changes', async () => {
+    const calls = stubServer(res(401));
+    let logouts = 0;
+    const scope = createSessionController({ clientId: 'a' });
+    registerApiSession({ getToken: () => null, onUnauthorized: () => { logouts += 1; }, baseUrl: '', scope });
+    await apiFetch('/neo/first').catch(() => {});
+    await apiFetch('/neo/second').catch(() => {});
+    assert.equal(probes(calls), 2);
+    assert.equal(logouts, 1);
+    scope.invalidate();
+    await apiFetch('/neo/new-generation').catch(() => {});
+    assert.equal(logouts, 2);
+  });
+
+  it('a silent bearer rotation shares the probe within the same identity', async () => {
+    let release;
+    const gate = new Promise((resolve) => { release = resolve; });
+    let probeCount = 0;
+    globalThis.fetch = async (url) => {
+      if (!String(url).endsWith(SESSION_URL)) return res(401);
+      probeCount += 1;
+      await gate;
+      return res(200);
+    };
+    const scope = createSessionController({ token: 'old', clientId: 'a' });
+    let logouts = 0;
+    registerApiSession({
+      getToken: () => scope.getSnapshot().session.token,
+      onUnauthorized: () => { logouts += 1; }, baseUrl: '', scope,
+    });
+    const a = apiFetch('/neo/a').catch((error) => error);
+    await new Promise(setImmediate);
+    scope.replace({ token: 'new', clientId: 'a' }, { bump: false });
+    const b = apiFetch('/neo/b').catch((error) => error);
+    await new Promise(setImmediate);
+    release();
+    const errors = await Promise.all([a, b]);
+    assert.equal(probeCount, 1);
+    assert.equal(errors.every(isSessionAliveUnauthorized), true);
     assert.equal(logouts, 0);
   });
 

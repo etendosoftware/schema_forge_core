@@ -373,8 +373,8 @@ function harvestReadVersions(res, path, isOurs = () => true) {
  * On top of `fetch` it guarantees the four things every hand-rolled call site had to
  * remember on its own: the canonical headers (so `Accept-Language` is never missing —
  * see {@link authHeaders}), the base URL, `credentials: 'include'`, dropping
- * `Content-Type` for `FormData`, and routing a 401 to the logout handler instead of
- * letting each call site invent its own expired-session behaviour.
+ * `Content-Type` for `FormData`, and routing session-confirmed expiry to the logout handler
+ * once per identity/generation. Alive or unknown sessions throw a typed error without logout.
  *
  * Recognised extra options (everything else is forwarded to `fetch` untouched):
  *
@@ -413,7 +413,7 @@ function harvestReadVersions(res, path, isOurs = () => true) {
  * @param {string|null|undefined} baseUrl prefix for relative paths; `null`/`undefined`
  *   falls back to the base detected from the page location
  * @param {() => (string|null)} getToken reads the current bearer token
- * @param {() => void} onUnauthorized invoked once when a 401 is not ignored
+ * @param {() => void} onUnauthorized invoked once per identity/generation on confirmed expiry
  */
 /**
  * record key → the last versioned write dispatched to that record.
@@ -557,7 +557,7 @@ export function isSessionAliveUnauthorized(error) {
   return error?.name === SESSION_ALIVE_UNAUTHORIZED;
 }
 
-/** base URL → the probe in flight. Every concurrent 401 shares one. */
+/** Base URL → current identity bucket; only its pending flight is shared. */
 const sessionProbes = new Map();
 
 async function probeSession(base) {
@@ -584,22 +584,35 @@ async function probeSession(base) {
 
 /**
  * ETP-5489 — asks the session endpoint whether the session behind a 401 is really gone.
- * Single-flight per base URL: N parallel 401s share one answer, and `notified` lets each logout
- * handler fire at most once for it. Only a 401 from the endpoint itself means "gone"; a 200, a
- * 5xx, another 4xx or no answer at all never log the user out.
+ * Single-flight per base URL AND session identity/generation: a new session must never consume
+ * the previous one's answer. Scoped identities exclude silent bearer rotations. Legacy clients
+ * without a scope use the registration and token as their available identity boundary.
+ *
+ * Keep the notified handlers across flights within that identity, even if a handler did not
+ * synchronously transition the session. Only the pending answer expires after a flight. A 200,
+ * 5xx, another 4xx or no answer at all never logs the user out.
  *
  * @returns {Promise<{state: string, notified: Set<Function>}>}
  */
-function confirmSessionAlive(base) {
+function confirmSessionAlive(base, owner, requestScope, token) {
   const key = base ?? '';
-  let flight = sessionProbes.get(key);
-  if (!flight) {
-    flight = probeSession(key)
-      .then((state) => ({ state, notified: new Set() }))
-      .finally(() => { if (sessionProbes.get(key) === flight) sessionProbes.delete(key); });
-    sessionProbes.set(key, flight);
+  let bucket = sessionProbes.get(key);
+  const sameIdentity = bucket && bucket.owner === owner && bucket.scope === requestScope
+    && (requestScope ? requestScope.isSameIdentity(bucket.snapshot) : bucket.token === token);
+  if (!sameIdentity) {
+    bucket = {
+      owner, scope: requestScope, snapshot: requestScope?.capture(),
+      token: requestScope ? undefined : token, notified: new Set(), flight: null,
+    };
+    sessionProbes.set(key, bucket);
   }
-  return flight;
+  if (!bucket.flight) {
+    const flight = probeSession(key)
+      .then((state) => ({ state, notified: bucket.notified }))
+      .finally(() => { if (bucket.flight === flight) bucket.flight = null; });
+    bucket.flight = flight;
+  }
+  return bucket.flight;
 }
 
 /**
@@ -688,7 +701,8 @@ export function createApiFetch(baseUrl, getToken, onUnauthorized, scope) {
       // ETP-5489: a 401 from a data endpoint is only proof the session is gone if the session
       // endpoint agrees. A server-side failure behind a live session used to log the user out
       // without revoking the cookie, and the onboarding re-entered it in a reload loop.
-      const probe = await confirmSessionAlive(base);
+      if (!isOurs()) throw staleSessionError();
+      const probe = await confirmSessionAlive(base, owner, requestScope, token);
       // The probe took time: the session that earned this 401 may have ended or been replaced
       // meanwhile, and in cookie mode `token === live` is always null === null.
       if (!isOurs()) throw staleSessionError();
@@ -706,8 +720,8 @@ export function createApiFetch(baseUrl, getToken, onUnauthorized, scope) {
      * branch and forgotten on the other — `dispatch` returns from two places (an action, and
      * everything else) and ETP-5255 had copied the 401 block into both.
      *
-     * The 401 only logs out when the bearer that earned it is still the live one. A 401 for a
-     * token that has since been rotated away says nothing about the session that replaced it.
+     * A data 401 only logs out once the cookie-session endpoint confirms expiry for this
+     * identity, and only while the bearer that earned it is still the live one.
      */
     const finish = (res, token, isOurs) => {
       // Only the 401 branch is asynchronous: every other response keeps its synchronous exit.
@@ -1121,6 +1135,7 @@ export function replaceAmbientSession(session) {
 /** Test seam: drops the ambient session so suites do not leak one into the next. */
 export function resetApiSessionForTests() {
   ambientSession = null;
+  sessionProbes.clear();
 }
 
 /**
