@@ -1,7 +1,32 @@
-const DEFAULT_LABELS = { title: 'Importing…', subtitle: 'Processing rows' };
+import { getStoredLocale } from '../../i18n/useLocaleState.js';
 
-export function ImportProgressStep({ percent, labels }) {
+const DEFAULT_LABELS = {
+  title: 'Importing…',
+  subtitle: 'Processing rows',
+  counter: '{processed} / {total} processed',
+};
+
+// 'always': es-ES drops the separator on four-digit numbers by default ("1234"), which would
+// make "1.234 / 2.000" read inconsistently as the count crosses a thousand.
+function formatCount(value) {
+  const locale = getStoredLocale().replace('_', '-');
+  try {
+    return new Intl.NumberFormat(locale, { useGrouping: 'always' }).format(value);
+  } catch {
+    return String(value);
+  }
+}
+
+/**
+ * `processed` / `total` (ETP-5676) are optional: the counter renders only when the caller reports
+ * a total. The live region is polite and the caller throttles its updates, so a screen reader is
+ * not read every row of a 2,000-row file.
+ */
+export function ImportProgressStep({ percent, processed, total, labels }) {
   const text = { ...DEFAULT_LABELS, ...labels };
+  const counter = total > 0
+    ? text.counter.replace('{processed}', formatCount(processed ?? 0)).replace('{total}', formatCount(total))
+    : null;
   return (
     <div className="flex flex-col gap-2 py-6">
       <div className="flex justify-between text-sm font-medium">
@@ -15,7 +40,19 @@ export function ImportProgressStep({ percent, labels }) {
           style={{ width: `${percent}%` }}
         />
       </div>
-      <span className="text-xs text-muted-foreground">{text.subtitle}</span>
+      <div className="flex justify-between text-xs text-muted-foreground">
+        <span>{text.subtitle}</span>
+        {counter && (
+          <span
+            className="tabular-nums"
+            role="status"
+            aria-live="polite"
+            data-testid="ImportProgressStep__counter"
+          >
+            {counter}
+          </span>
+        )}
+      </div>
     </div>
   );
 }

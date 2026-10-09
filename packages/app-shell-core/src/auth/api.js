@@ -2,13 +2,16 @@ import { getStoredLocale } from '../i18n/useLocaleState.js';
 import { canonicalEntityName, getRecordVersion, rememberRecordVersion } from '../lib/recordVersions.js';
 import { observeEnvironmentAccessResponse } from '../lib/environmentAccessGate.js';
 import {
+  ACCOUNT_HEADER,
   credentialHeadersForToken,
+  getSessionAccountId,
   getSessionCsrfToken,
   jsonHeaders,
   readCredentialHeaders,
   writeHeaders,
 } from './sessionCredentials.js';
 import { DEFAULT_API_TIMEOUT_MS, NetworkError } from './networkError.js';
+import { observeSessionConflictResponse } from './sessionConflict.js';
 
 export function detectBaseUrl() {
   // Guarded so this module can be imported outside a browser. `plain node --test` runs
@@ -715,6 +718,10 @@ export function createApiFetch(baseUrl, getToken, onUnauthorized, scope) {
       // kind, instead of only when a silent refresh happens to reach windowaccessmap. Not
       // awaited: it reads a clone, and the caller gets its response unchanged and unread.
       if (res.status === 402) observeEnvironmentAccessResponse(res, isOurs);
+      // ETP-5675: a 403 "Session belongs to another account" means another tab signed this
+      // browser in as a different account. Like the 402, it is about the whole tab, not this
+      // request, so it is recorded at the one exit every response takes. Not awaited either.
+      if (res.status === 403) observeSessionConflictResponse(res, isOurs);
       // Wrapped even without a scope: the body readers must turn a cut stream into a
       // NetworkError for a plain module exactly as for a component (ETP-5424).
       return guardResponse(res, requestScope ? isOurs : () => true);
@@ -1205,32 +1212,51 @@ export async function fetchCookieSession(baseUrl = defaultBaseUrl()) {
 //
 // ETP-5550 — a tab may hold the proof of a session another tab rotated away; the
 // revoke then answers 403 and the session outlives the logout. So a stale-proof
-// refusal re-reads the live proof and retries once. No environment check here, unlike
-// apiFetch's recovery: the cookie is the browser's, and revoking it is the logout.
+// refusal re-reads the live proof and retries once.
+//
+// ETP-5675 — but only when the live session is still THIS account's. The cookie is the
+// browser profile's, and production is one domain for every customer: when another tab
+// signed in as a different account, the live proof is that account's, and the retry used
+// to revoke it — the other tab then failed with "Missing or invalid Authorization header".
+// The account travels as `X-Go-Account` too, so the backend refuses the first DELETE on its
+// own; the check before the retry covers a backend that predates the header. With no known
+// account there is no retry at all: a revoke we cannot attribute is not ours to make.
 //
 // The revoke is published while in flight (whenSessionRevokeSettles), so a session
 // read issued meanwhile — the onboarding mounting on /login right after logout —
 // waits for it instead of finding the session still alive and entering it again.
-export function deleteCookieSession(csrfToken = getSessionCsrfToken(), baseUrl = defaultBaseUrl()) {
-  const run = revokeCookieSession(csrfToken, baseUrl);
+//
+// @param {string|null} [csrfToken] the proof of the session being left
+// @param {string} [baseUrl]
+// @param {{ accountId?: string|null }} [options] the account being signed out; defaults to the
+//   one sessionCredentials holds
+export function deleteCookieSession(csrfToken = getSessionCsrfToken(), baseUrl = defaultBaseUrl(),
+  { accountId = getSessionAccountId() } = {}) {
+  const run = revokeCookieSession(csrfToken, baseUrl, accountId);
   pendingRevoke = run;
   run.then(() => { if (pendingRevoke === run) pendingRevoke = null; });
   return run;
 }
 
-async function revokeCookieSession(csrfToken, baseUrl) {
+async function revokeCookieSession(csrfToken, baseUrl, accountId) {
   const revoke = (proof) => fetch(`${baseUrl}/sws/go/session`, {
     method: 'DELETE',
     credentials: 'include',
-    headers: proof ? { 'X-Go-CSRF': proof } : {},
+    headers: {
+      ...(proof ? { 'X-Go-CSRF': proof } : {}),
+      ...(accountId ? { [ACCOUNT_HEADER]: accountId } : {}),
+    },
   });
   try {
     const res = await revoke(csrfToken);
     if (res.status !== 403 || !(await isStaleCsrfRefusal(res))) return res.ok;
+    if (!accountId) return false;
     // Not readCookieSession: that one waits for this very revoke.
-    const live = (await readCookieSessionNow(baseUrl))?.csrfToken;
-    if (!live || live === csrfToken) return false;
-    return (await revoke(live)).ok;
+    const live = await readCookieSessionNow(baseUrl);
+    if ((live?.account?.id ?? null) !== accountId) return false;
+    const proof = live?.csrfToken;
+    if (!proof || proof === csrfToken) return false;
+    return (await revoke(proof)).ok;
   } catch {
     return false;
   }

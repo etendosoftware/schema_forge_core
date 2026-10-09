@@ -7,6 +7,11 @@ import {
   createApiFetch, deleteCookieSession, isSessionUnavailable, readCookieSession, registerApiSession,
 } from './api.js';
 import { CREDENTIAL_MODES, setSessionCredentials } from './sessionCredentials.js';
+import {
+  SESSION_RECHECK_INTERVAL_MS, announceSessionAccount, clearSessionConflict,
+  compareLiveSessionAccount, getSessionConflict, listenSessionAccount, reportSessionConflict,
+  subscribeSessionConflict,
+} from './sessionConflict.js';
 import { createSessionController } from './sessionController.js';
 import { reconcileSessionRefresh } from './sessionRefresh.js';
 
@@ -53,6 +58,12 @@ function sameFlatMap(a, b) {
   return keysA.every((key) => a[key] === b[key]);
 }
 
+// ETP-5675 — the identity part of GET /sws/go/session's `account`, or null when it carries none.
+function toAccount(raw) {
+  if (!raw?.id) return null;
+  return { id: raw.id, email: raw.email ?? null, name: raw.name ?? null };
+}
+
 export function AuthProvider({
   children, storage, initialSession, onSessionChange, fetchWindowAccess, apiBaseUrl,
   // ETP-4576 — which credential scheme requests use: 'bearer', 'cookie' or 'auto'.
@@ -88,6 +99,14 @@ export function AuthProvider({
   // only, never persisted: it is bound to the httpOnly session cookie, not a value the
   // client should carry across reloads on its own.
   const [csrfToken, setCsrfToken] = useState(null);
+  // ETP-5675 — the account this document is signed in as, from GET /sws/go/session. The cookie is
+  // shared by every tab of the browser profile, so this is what tells "still my session" apart
+  // from "another tab signed the browser in as someone else". In memory only, like the proof.
+  const [account, setAccount] = useState(null);
+  const accountRef = useRef(null);
+  accountRef.current = account;
+  const sessionConflict = useSyncExternalStore(subscribeSessionConflict, getSessionConflict,
+    getSessionConflict);
   // ETP-4576 — tri-state auth status. Hosts that opt out of the restore (`restoreSession:
   // null`) resolve synchronously from whatever session was read, exactly as before, and
   // never see 'booting'. Hosts that opt in start 'booting' until GET /sws/go/session settles,
@@ -154,8 +173,15 @@ export function AuthProvider({
           if (!result) throw new Error('No active session');
           setIsReconnecting(false);
           setCsrfToken(result.csrfToken ?? null);
+          const restoredAccount = toAccount(result.account);
+          setAccount(restoredAccount);
           controller.replace(normalizeAuthSession(mapRestoredSession(result)), { refresh: false, persist: false });
           setStatus('authenticated');
+          // ETP-5675 — tell the other tabs whose session the browser holds now. A tab still
+          // showing another account raises its conflict screen before it sends anything.
+          // Only with an id: `null` means "signed out", and a session that was just restored is
+          // anything but — announcing it signed every other tab out.
+          if (restoredAccount?.id) announceSessionAccount(restoredAccount.id);
         })
         .catch((error) => {
           if (!mountedRef.current) return;
@@ -167,6 +193,7 @@ export function AuthProvider({
           }
           setIsReconnecting(false);
           setCsrfToken(null);
+          setAccount(null);
           controller.logout();
           setStatus('anonymous');
         });
@@ -179,8 +206,10 @@ export function AuthProvider({
   // which every request builder in the core and the host reads. The only writer besides the
   // CSRF recovery registered with apiFetch below (ETP-5550), which publishes the same values.
   useEffect(() => {
-    setSessionCredentials({ mode: credentialMode, token: state.session.token, csrfToken });
-  }, [credentialMode, state.session.token, csrfToken]);
+    setSessionCredentials({
+      mode: credentialMode, token: state.session.token, csrfToken, accountId: account?.id ?? null,
+    });
+  }, [credentialMode, state.session.token, csrfToken, account]);
 
   const loadAccess = useCallback(async (session, snapshot) => {
     try {
@@ -372,6 +401,7 @@ export function AuthProvider({
       // (ETP-5489), so the session is already gone on the backend.
       onUnauthorized: () => {
         setCsrfToken(null);
+        setAccount(null);
         setStatus('anonymous');
         controller.logout();
       },
@@ -389,6 +419,14 @@ export function AuthProvider({
         const live = await reread();
         const proof = live?.csrfToken;
         const current = controller.getSnapshot().session;
+        // ETP-5675 — another account's proof is never adopted, and it is the conflict, not a
+        // rotation: say so instead of leaving the write to fail silently.
+        const mine = accountRef.current?.id;
+        const liveAccountId = live?.account?.id ?? null;
+        if (mine && liveAccountId && liveAccountId !== mine) {
+          reportSessionConflict({ reason: 'csrf-recovery', accountId: liveAccountId });
+          return null;
+        }
         if (!proof || !isSameEnvironment(current, mapRestoredSession(live))) return null;
         // Published here and not only through the effect below: the retry goes out before React
         // renders again, and until then the effect would still be holding the revoked proof.
@@ -429,12 +467,48 @@ export function AuthProvider({
   }, [controller, state.generation, state.isSessionReady, state.needsRefresh, state.accessLoaded,
     state.isRefreshingSession, state.session, loadAccess]);
 
+  // ETP-5675 — signs this tab out locally when another tab ended the shared session, and
+  // raises the conflict screen when another tab signed the browser in as a different account.
+  // Local only: the session is already gone, or it is someone else's, so there is nothing of
+  // ours to revoke.
+  const settleAccountChange = useCallback((liveAccountId) => {
+    const mine = accountRef.current?.id;
+    if (!mine || status !== 'authenticated') return;
+    if (liveAccountId === null) {
+      setCsrfToken(null);
+      setAccount(null);
+      setStatus('anonymous');
+      controller.logout();
+    } else if (liveAccountId !== mine) {
+      reportSessionConflict({ reason: 'broadcast', accountId: liveAccountId });
+    }
+  }, [controller, status]);
+
+  useEffect(() => listenSessionAccount(settleAccountChange), [settleAccountChange]);
+
+  // ETP-5675 — a tab that was frozen or discarded missed the broadcast, so on its way back to
+  // the foreground it compares its account with the live session. Throttled: production is one
+  // server for every customer, and alt-tab is frequent. A session that cannot be read changes
+  // nothing — a deploy must not sign anyone out.
+  const lastRecheck = useRef(0);
+  const recheckAccount = useCallback(async () => {
+    const reread = options.current.restoreSession;
+    if (typeof reread !== 'function' || !accountRef.current?.id || status !== 'authenticated') return;
+    const now = Date.now();
+    if (now - lastRecheck.current < SESSION_RECHECK_INTERVAL_MS) return;
+    lastRecheck.current = now;
+    const outcome = await compareLiveSessionAccount(accountRef.current.id, reread);
+    if (!mountedRef.current) return;
+    if (outcome.status === 'none') settleAccountChange(null);
+    else if (outcome.status === 'other') settleAccountChange(outcome.accountId);
+  }, [settleAccountChange, status]);
+
   useEffect(() => {
     if (typeof document === 'undefined' || typeof window === 'undefined') return undefined;
     let timer;
     const schedule = () => {
       if (document.visibilityState !== 'visible' || timer !== undefined) return;
-      timer = setTimeout(() => { timer = undefined; refresh(); }, 50);
+      timer = setTimeout(() => { timer = undefined; recheckAccount(); refresh(); }, 50);
     };
     document.addEventListener('visibilitychange', schedule);
     window.addEventListener('focus', schedule);
@@ -443,7 +517,7 @@ export function AuthProvider({
       document.removeEventListener('visibilitychange', schedule);
       window.removeEventListener('focus', schedule);
     };
-  }, [refresh]);
+  }, [refresh, recheckAccount]);
 
   // [ETP-5195] Interim mitigation, not the full fix: a user demoted/promoted elsewhere
   // who never blurs/refocuses the tab (and never reloads) hits none of the triggers
@@ -474,7 +548,13 @@ export function AuthProvider({
     // never throws, so nothing here can trap the user in a session they asked to leave.
     // The proof is passed explicitly because the next line discards it.
     logout: () => {
-      if (typeof restoreSession === 'function') deleteCookieSession(csrfToken);
+      // ETP-5675 — the revoke names the account being left, so it can never take down a session
+      // another tab opened as someone else; only a confirmed revoke tells the other tabs the
+      // browser is signed out (a refused one left a session that is not ours alive).
+      if (typeof restoreSession === 'function') {
+        deleteCookieSession(csrfToken, undefined, { accountId: account?.id ?? null })
+          .then((revoked) => { if (revoked) announceSessionAccount(null); });
+      }
       // ETP-4576 — purge the legacy sf_auth_*/sf_platform_* keys too, in BOTH schemes.
       // controller.logout() clears only the storage adapter the host injected, which under
       // the default (memory) is not where those keys live, so a credential left by an
@@ -483,14 +563,16 @@ export function AuthProvider({
       // scheme never schedules. Logout is exactly the moment when nothing may survive.
       purgeLegacyAuthStorage();
       setCsrfToken(null);
+      setAccount(null);
       setStatus('anonymous');
       controller.logout();
     },
+    clearSessionConflict,
     captureSession: controller.capture,
     isCurrentSession: controller.isCurrent,
     apiSessionScope: controller,
     refreshToken: () => refresh(true),
-  }), [controller, refresh, restoreSession, csrfToken]);
+  }), [controller, refresh, restoreSession, csrfToken, account]);
 
   const value = useMemo(() => ({
     ...state.session,
@@ -506,6 +588,10 @@ export function AuthProvider({
     // 'booting'), so a host can say "reconnecting" instead of showing nothing.
     isReconnecting,
     setCsrfToken,
+    // ETP-5675 — `{ id, email, name }` of the account this tab is signed in as, and the recorded
+    // cross-tab conflict (`{ reason, accountId }` or null) a host renders its conflict screen from.
+    account,
+    sessionConflict,
     isSessionReady: state.isSessionReady,
     isRefreshingSession: state.isRefreshingSession,
     sessionRefreshStatus: state.sessionRefreshStatus,
@@ -521,7 +607,7 @@ export function AuthProvider({
     capabilities: state.capabilities,
     menuAccess: state.menuAccess,
     ...actions,
-  }), [state, actions, csrfToken, status, isReconnecting]);
+  }), [state, actions, csrfToken, status, isReconnecting, account, sessionConflict]);
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 }
