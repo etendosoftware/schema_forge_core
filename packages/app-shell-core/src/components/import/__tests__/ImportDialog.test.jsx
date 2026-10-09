@@ -7,10 +7,11 @@ import { describe, it, expect, vi, afterEach } from 'vitest';
 const sonnerMocks = vi.hoisted(() => ({ success: vi.fn(), info: vi.fn(), error: vi.fn() }));
 vi.mock('sonner', () => ({ toast: sonnerMocks }));
 
-import { render, screen, fireEvent, waitFor, cleanup } from '@testing-library/react';
+import { render, screen, fireEvent, waitFor, cleanup, act } from '@testing-library/react';
 import { ImportDialog } from '../ImportDialog.jsx';
 import { registerImportDescriptor } from '../../../lib/import/buildOperations.js';
 import { registerImportRowValidator } from '../../../lib/import/rowValidators.js';
+import { registerImportRunReset } from '../../../lib/import/importRunState.js';
 
 // ScrollPane (rendered inside ImportReviewQueue, which this dialog mounts)
 // observes its own size via ResizeObserver — jsdom doesn't implement it.
@@ -968,7 +969,7 @@ describe('ImportDialog — ETP-5350 dedupe re-check after editing the key', () =
 
 /**
  * `initialFile` — a file the caller already holds (dropped outside the dialog) is processed on
- * open exactly as a file picked in the dialog's own dropzone — and the processing state that
+ * open exactly as a file picked in the dialog's own dropzone — and the reading state that
  * replaces the dropzone while a file is parsed and validated, dropping any further selection.
  */
 describe('ImportDialog — initialFile and the processing state', () => {
@@ -1034,16 +1035,16 @@ describe('ImportDialog — initialFile and the processing state', () => {
   // "No initialFile opens on the dropzone" is not repeated here: every dropzone test above
   // (`uploadFile`, `dropFile`) renders without one and starts by reading ImportDropzone__fileInput.
 
-  it('replaces the dropzone with the processing indicator while a file is processed, and ignores a second selection meanwhile', async () => {
+  it('replaces the dropzone with the reading indicator while a file is processed, and ignores a second selection meanwhile', async () => {
     const held = deferred();
     const existingKeyFetchFn = vi.fn(() => held.promise);
     const first = spiedFile('Name,Email\nLucia,lucia@x.com');
     const second = spiedFile('Name,Email\nAndres,andres@x.com');
-    const props = { config: dbConfig, existingKeyFetchFn, labels: { processing: 'Procesando archivo' } };
+    const props = { config: dbConfig, existingKeyFetchFn, labels: { reading: 'Leyendo archivo' } };
     const { rerender } = render(dialog({ ...props, initialFile: first.file }));
 
-    const indicator = await screen.findByTestId('ImportDialog__processingFile');
-    expect(indicator.textContent).toContain('Procesando archivo');
+    const indicator = await screen.findByTestId('ImportDialog__reading');
+    expect(indicator.textContent).toContain('Leyendo archivo');
     expect(screen.queryByTestId('ImportDropzone__fileInput')).toBeNull();
 
     // The dropzone is gone, so the only way a second file can arrive mid-run is the prop.
@@ -1051,7 +1052,7 @@ describe('ImportDialog — initialFile and the processing state', () => {
     held.resolve([]);
 
     await waitFor(() => screen.getByTestId('ImportReviewQueue__value-0-name'));
-    expect(screen.queryByTestId('ImportDialog__processingFile')).toBeNull();
+    expect(screen.queryByTestId('ImportDialog__reading')).toBeNull();
     expect(screen.getByTestId('ImportReviewQueue__value-0-name').textContent).toContain('Lucia');
     expect(second.parse).not.toHaveBeenCalled();
     expect(existingKeyFetchFn).toHaveBeenCalledTimes(1);
@@ -1064,8 +1065,316 @@ describe('ImportDialog — initialFile and the processing state', () => {
     fireEvent.click(screen.getByTestId('ImportFileErrorDialog__retry'));
 
     await waitFor(() => screen.getByTestId('ImportDropzone__fileInput'));
-    expect(screen.queryByTestId('ImportDialog__processingFile')).toBeNull();
+    expect(screen.queryByTestId('ImportDialog__reading')).toBeNull();
     // A guard left set by the failed run would drop this file silently.
     await uploadFile('Name,Email\nLucia,lucia@x.com');
   });
 });
+
+// ETP-5676 — preview resolved each FK column once, but the send phase handed descriptors a
+// config without those answers, so every row resolved its foreign keys again over the network.
+describe('ImportDialog — previewed FK resolutions reach the send phase', () => {
+  const fkConfig = {
+    spec: 'products',
+    entity: 'product',
+    descriptor: 'fk-resolutions-descriptor',
+    fields: [
+      { target: 'name', label: 'Name', required: true },
+      { target: 'uom', label: 'UoM', matchEntity: 'UOM' },
+    ],
+  };
+  const ok = { committed: true, operations: [{ id: 'row', ok: true, recordId: 'R' }] };
+
+  async function sendWith({ candidates, csv, pick }) {
+    const descriptorFn = vi.fn(async () => [{ id: 'row', spec: 'products', entity: 'product', body: {} }]);
+    registerImportDescriptor('fk-resolutions-descriptor', descriptorFn);
+    const simSearchFn = vi.fn(async ({ items }) => items.map(() => ({ candidates })));
+    const postBatch = vi.fn().mockResolvedValue(ok);
+    render(<ImportDialog open config={fkConfig} token="t" postBatch={postBatch} simSearchFn={simSearchFn} onImported={() => {}} />);
+    const input = screen.getByTestId('ImportDropzone__fileInput');
+    fireEvent.change(input, { target: { files: [makeFile(csv)] } });
+    await waitFor(() => screen.getByTestId('ImportColumnMapping__chip-UoM'));
+    await waitFor(() => screen.getByTestId('ImportDialog__importButton'));
+    if (pick) await pick();
+    fireEvent.click(screen.getByTestId('ImportDialog__importButton'));
+    fireEvent.click(screen.getByTestId('ImportConfirmStep__confirm'));
+    await waitFor(() => expect(descriptorFn).toHaveBeenCalled());
+    return { descriptorFn, simSearchFn };
+  }
+
+  it('hands the descriptor the resolutions the preview already produced', async () => {
+    const { descriptorFn, simSearchFn } = await sendWith({
+      candidates: [{ id: 'KG', name: 'Kilogram', similarityPercent: 100 }],
+      csv: 'Name,UoM\nA,Kilo\nB,Kilo',
+    });
+    expect(simSearchFn).toHaveBeenCalledTimes(1);
+    const [, receivedConfig] = descriptorFn.mock.calls[0];
+    expect(receivedConfig.fkResolutions.get('uom').get('Kilo')).toMatchObject({ status: 'auto-resolved', id: 'KG' });
+  });
+
+  it('keeps a candidate picked in the review popover by id', async () => {
+    const { descriptorFn } = await sendWith({
+      candidates: [{ id: 'KG', name: 'Kilogram', similarityPercent: 40 }],
+      csv: 'Name,UoM\nA,Kilo',
+      pick: async () => {
+        fireEvent.click(screen.getByTestId('ImportReviewQueue__statusFilter-error'));
+        fireEvent.click(screen.getByTestId('ImportReviewQueue__fieldError-0-uom'));
+        fireEvent.click(await screen.findByTestId('ImportReviewQueue__fkCandidate-0-uom-KG'));
+        await waitFor(() => expect(screen.getByTestId('ImportDialog__importButton').textContent).toBe('Import 1'));
+      },
+    });
+    const [, receivedConfig] = descriptorFn.mock.calls[0];
+    expect(receivedConfig.fkResolutions.get('uom').get('Kilogram')).toMatchObject({ status: 'auto-resolved', id: 'KG' });
+  });
+
+  it('starts a fresh run (descriptor caches included) whenever a new file is loaded', async () => {
+    const reset = vi.fn();
+    const unregister = registerImportRunReset(reset);
+    try {
+      render(<ImportDialog open config={config} token="t" postBatch={vi.fn()} simSearchFn={vi.fn()} onImported={() => {}} />);
+      await uploadFile('Name,Email\nLucia,lucia@x.com');
+      expect(reset).toHaveBeenCalledTimes(1);
+    } finally {
+      unregister();
+    }
+  });
+});
+
+// ETP-5676 — the send step shows how many records were processed, not only a percentage.
+describe('ImportDialog — processed counter while sending', () => {
+  const rows = (n) => `Name,Email\n${Array.from({ length: n }, (_, i) => `P${i},p${i}@x.com`).join('\n')}`;
+  const okResponse = { committed: true, operations: [{ id: 'row', ok: true, recordId: 'R' }] };
+
+  function deferredPostBatch() {
+    const pending = [];
+    const postBatch = vi.fn(() => new Promise((resolve) => { pending.push(resolve); }));
+    return { postBatch, pending };
+  }
+
+  async function startSend(postBatch, n) {
+    render(<ImportDialog open config={config} token="t" postBatch={postBatch} simSearchFn={vi.fn()} onImported={() => {}} />);
+    await uploadFile(rows(n));
+    fireEvent.click(screen.getByTestId('ImportDialog__importButton'));
+    fireEvent.click(screen.getByTestId('ImportConfirmStep__confirm'));
+    await waitFor(() => screen.getByTestId('ImportProgressStep__counter'));
+  }
+
+  it('counts processed records against the total as the engine progresses', async () => {
+    const { postBatch, pending } = deferredPostBatch();
+    await startSend(postBatch, 3);
+    expect(screen.getByTestId('ImportProgressStep__counter').textContent).toBe('0 / 3 processed');
+    await waitFor(() => expect(pending).toHaveLength(3));
+    pending[0](okResponse);
+    await waitFor(() => expect(screen.getByTestId('ImportProgressStep__counter').textContent).toBe('1 / 3 processed'));
+    expect(screen.getByTestId('ImportProgressStep__percent').textContent).toBe('33%');
+    pending[1](okResponse);
+    pending[2](okResponse);
+  });
+
+  it('restarts the counter from zero when failed rows are resent from the result step', async () => {
+    const failure = { committed: false, failedAt: { index: 0 }, error: { message: 'Rejected by server' } };
+    const { postBatch, pending } = deferredPostBatch();
+    await startSend(postBatch, 1);
+    await waitFor(() => expect(pending).toHaveLength(1));
+    pending[0](failure);
+    await waitFor(() => screen.getByTestId('ImportReviewQueue__rowError-0'));
+    fireEvent.change(screen.getByTestId('ImportReviewQueue__input-0-name'), { target: { value: 'Fixed' } });
+    fireEvent.click(screen.getByTestId('ImportDialog__importButton'));
+    await waitFor(() => screen.getByTestId('ImportProgressStep__counter'));
+    expect(screen.getByTestId('ImportProgressStep__counter').textContent).toBe('0 / 1 processed');
+    pending[1]?.(okResponse);
+  });
+});
+
+// ETP-5676 — `window.import.limit.batchSize` reaches the engine; absent, one request per row.
+describe('ImportDialog — rows per request (limit.batchSize)', () => {
+  const csv = 'Name,Email\nA,a@x.com\nB,b@x.com\nC,c@x.com';
+  async function sendCount(limit, batchSize) {
+    const okAll = vi.fn();
+    const postBatch = vi.fn(async (ops) => ({ committed: true, operations: ops.map((op) => ({ id: op.id, ok: true, recordId: op.id })) }));
+    render(<ImportDialog open config={{ ...config, dedupe: undefined, limit }} batchSize={batchSize} token="t" postBatch={postBatch} simSearchFn={vi.fn()} onImported={okAll} />);
+    await uploadFile(csv);
+    fireEvent.click(screen.getByTestId('ImportDialog__importButton'));
+    fireEvent.click(screen.getByTestId('ImportConfirmStep__confirm'));
+    await waitFor(() => expect(okAll).toHaveBeenCalled());
+    return postBatch;
+  }
+
+  it('sends one request per row by default', async () => {
+    expect((await sendCount(undefined)).mock.calls).toHaveLength(3);
+  });
+
+  it('lets an already-resolved batchSize prop (e.g. a global override) beat the window config', async () => {
+    const postBatch = await sendCount({ batchSize: 2, concurrency: 1 }, 3);
+    expect(postBatch.mock.calls.map(([ops]) => ops.length)).toEqual([3]);
+  });
+
+  it('groups rows into one request when the window opts in', async () => {
+    const postBatch = await sendCount({ batchSize: 2, concurrency: 1 });
+    expect(postBatch.mock.calls.map(([ops]) => ops.length)).toEqual([2, 1]);
+  });
+});
+
+// ETP-5676 (QA BUG-1) — with batched sends a chunk settles all its rows in one tick; the throttle
+// used to publish the first and drop the rest, leaving the counter understated until the NEXT
+// chunk's first row.
+describe('ImportDialog — counter after a burst of settles', () => {
+  const bigConfig = { ...config, dedupe: undefined, limit: { batchSize: 10, concurrency: 1 } };
+  const csv = `Name,Email\n${Array.from({ length: 20 }, (_, i) => `P${i},p${i}@x.com`).join('\n')}`;
+
+  async function startStalledSend({ deferFirst = false } = {}) {
+    const second = [];
+    const first = [];
+    let calls = 0;
+    const postBatch = vi.fn((ops) => {
+      calls += 1;
+      const response = { committed: true, operations: ops.map((op) => ({ id: op.id, ok: true, recordId: op.id })) };
+      if (calls === 1 && !deferFirst) return Promise.resolve(response);
+      const sink = calls === 1 ? first : second;
+      return new Promise((resolve) => { sink.push(() => resolve(response)); });
+    });
+    const view = render(<ImportDialog open config={bigConfig} token="t" postBatch={postBatch} simSearchFn={vi.fn()} onImported={() => {}} />);
+    await uploadFile(csv);
+    fireEvent.click(screen.getByTestId('ImportDialog__importButton'));
+    fireEvent.click(screen.getByTestId('ImportConfirmStep__confirm'));
+    await waitFor(() => screen.getByTestId('ImportProgressStep__counter'));
+    return { view, first, second };
+  }
+
+  it('shows the whole first chunk without waiting for the next one', async () => {
+    const { second } = await startStalledSend();
+    await waitFor(() => expect(screen.getByTestId('ImportProgressStep__counter').textContent).toBe('10 / 20 processed'));
+    second.forEach((resolve) => resolve());
+  });
+
+  it('ends on the exact final count', async () => {
+    const onImported = vi.fn();
+    const postBatch = vi.fn(async (ops) => ({ committed: true, operations: ops.map((op) => ({ id: op.id, ok: true, recordId: op.id })) }));
+    render(<ImportDialog open config={bigConfig} token="t" postBatch={postBatch} simSearchFn={vi.fn()} onImported={onImported} />);
+    await uploadFile(csv);
+    fireEvent.click(screen.getByTestId('ImportDialog__importButton'));
+    fireEvent.click(screen.getByTestId('ImportConfirmStep__confirm'));
+    await waitFor(() => expect(onImported).toHaveBeenCalledWith({ okCount: 20, failedCount: 0 }));
+  });
+
+  it('cancels the pending trailing flush when the dialog unmounts', async () => {
+    const { view, first } = await startStalledSend({ deferFirst: true });
+    await waitFor(() => expect(first).toHaveLength(1));
+    const scheduled = [];
+    const realSetTimeout = globalThis.setTimeout;
+    const setSpy = vi.spyOn(globalThis, 'setTimeout').mockImplementation((fn, ms, ...rest) => {
+      const handle = realSetTimeout(fn, ms, ...rest);
+      scheduled.push(handle);
+      return handle;
+    });
+    const clearSpy = vi.spyOn(globalThis, 'clearTimeout');
+    try {
+      await act(async () => { first[0](); });
+      // the burst's first row published at once; the other nine wait on ONE trailing flush
+      expect(scheduled.length).toBeGreaterThan(0);
+      view.unmount();
+      const cleared = clearSpy.mock.calls.map(([handle]) => handle);
+      expect(scheduled.some((handle) => cleared.includes(handle))).toBe(true);
+    } finally {
+      setSpy.mockRestore();
+      clearSpy.mockRestore();
+    }
+  });
+});
+
+// ETP-5676 — between attaching the file and the preview there is real async work (parse, FK
+// resolution, existing-record lookup); the dialog used to look frozen on the dropzone.
+describe('ImportDialog — reading state between attach and preview', () => {
+  const fkConfig = {
+    spec: 'products', entity: 'product',
+    fields: [
+      { target: 'name', label: 'Name', required: true },
+      { target: 'uom', label: 'UoM', matchEntity: 'UOM' },
+    ],
+  };
+  const attach = (content, name = 'p.csv') => fireEvent.change(screen.getByTestId('ImportDropzone__fileInput'), {
+    target: { files: [makeFile(content, name)] },
+  });
+
+  it('replaces the dropzone with a spinner while the file is read, and removes it at the preview', async () => {
+    let release;
+    const simSearchFn = vi.fn(() => new Promise((resolve) => { release = () => resolve([{ candidates: [] }]); }));
+    render(<ImportDialog open config={fkConfig} token="t" postBatch={vi.fn()} simSearchFn={simSearchFn} onImported={() => {}} />);
+    attach('Name,UoM\nA,Kilo');
+    const reading = await screen.findByTestId('ImportDialog__reading');
+    expect(reading.textContent).toContain('Reading file');
+    expect(reading.getAttribute('role')).toBe('status');
+    // nothing to re-attach to while it loads
+    expect(screen.queryByTestId('ImportDropzone__zone')).toBeNull();
+    release();
+    await waitFor(() => screen.getByTestId('ImportColumnMapping__chip-Name'));
+    expect(screen.queryByTestId('ImportDialog__reading')).toBeNull();
+  });
+
+  it('removes the spinner and shows the message when the file is refused', async () => {
+    render(<ImportDialog open config={fkConfig} token="t" postBatch={vi.fn()} simSearchFn={vi.fn()} onImported={() => {}} />);
+    attach('not a spreadsheet', 'notes.docx');
+    await waitFor(() => screen.getByTestId('ImportFileErrorDialog__message'));
+    expect(screen.queryByTestId('ImportDialog__reading')).toBeNull();
+  });
+});
+
+// ETP-5676 — the dialog hands the caller a run summary (quantities only) when an import ends.
+describe('ImportDialog — onImportFinished summary', () => {
+  const csv = 'Name,Email\nLucia,lucia@x.com\nAndres,andres@x.com\nSofia,sofia@x.com';
+
+  it('reports a completed run with row counts, timings, settings and column counts', async () => {
+    const onImportFinished = vi.fn();
+    const postBatch = vi.fn()
+      .mockResolvedValueOnce({ committed: true, operations: [{ id: 'row', ok: true, recordId: 'R1' }] })
+      .mockResolvedValueOnce({ committed: false, atomic: true, persisted: [], error: { message: 'Rejected' } })
+      .mockResolvedValueOnce({ committed: true, operations: [{ id: 'row', ok: true, recordId: 'R3' }] });
+    render(<ImportDialog open config={{ ...config, dedupe: undefined, limit: { concurrency: 1 } }} token="t" postBatch={postBatch}
+      simSearchFn={vi.fn()} onImported={() => {}} onImportFinished={onImportFinished} />);
+    await uploadFile(csv);
+    fireEvent.click(screen.getByTestId('ImportDialog__importButton'));
+    fireEvent.click(screen.getByTestId('ImportConfirmStep__confirm'));
+    await waitFor(() => expect(onImportFinished).toHaveBeenCalledTimes(1));
+    const summary = onImportFinished.mock.calls[0][0];
+    expect(summary).toMatchObject({
+      outcome: 'completed', entity: 'contacts',
+      rowsTotal: 3, rowsCreated: 2, rowsFailed: 1, rowsDuplicate: 0, rowsUnknown: 0,
+      batchSize: 1, concurrency: 1,
+      columnsInFile: 2, columnsAutoMapped: 2, columnsManuallyMapped: 0,
+      fkAutoResolved: 0, fkCreated: 0,
+    });
+    for (const key of ['durationMs', 'readMs', 'validateMs', 'sendMs']) {
+      expect(summary[key], key).toBeGreaterThanOrEqual(0);
+    }
+    // quantities, names of settings and an entity name — never a row, header or cell
+    const serialized = JSON.stringify(summary);
+    for (const secret of ['Lucia', 'Andres', 'lucia@x.com', 'Email']) expect(serialized).not.toContain(secret);
+    expect(Object.values(summary).every((v) => typeof v === 'number' || ['completed', 'contacts'].includes(v))).toBe(true);
+  });
+
+  it('reports a file that could not be read as failed, with no rows', async () => {
+    const onImportFinished = vi.fn();
+    render(<ImportDialog open config={config} token="t" postBatch={vi.fn()} simSearchFn={vi.fn()} onImported={() => {}} onImportFinished={onImportFinished} />);
+    fireEvent.change(screen.getByTestId('ImportDropzone__fileInput'), { target: { files: [makeFile('x', 'notes.docx')] } });
+    await waitFor(() => expect(onImportFinished).toHaveBeenCalledTimes(1));
+    expect(onImportFinished.mock.calls[0][0]).toMatchObject({ outcome: 'failed', rowsTotal: 0, rowsCreated: 0 });
+  });
+
+  it('reports a file abandoned before sending as cancelled, once', async () => {
+    const onImportFinished = vi.fn();
+    const onOpenChange = vi.fn();
+    render(<ImportDialog open onOpenChange={onOpenChange} config={config} token="t" postBatch={vi.fn()} simSearchFn={vi.fn()} onImported={() => {}} onImportFinished={onImportFinished} />);
+    await uploadFile(csv);
+    fireEvent.keyDown(screen.getByTestId('DialogContent__38a6c3'), { key: 'Escape' });
+    await waitFor(() => expect(onImportFinished).toHaveBeenCalledTimes(1));
+    expect(onImportFinished.mock.calls[0][0]).toMatchObject({ outcome: 'cancelled', rowsCreated: 0, columnsInFile: 2 });
+  });
+
+  it('does not report when the dialog is closed without a file', () => {
+    const onImportFinished = vi.fn();
+    const view = render(<ImportDialog open config={config} token="t" postBatch={vi.fn()} simSearchFn={vi.fn()} onImported={() => {}} onImportFinished={onImportFinished} />);
+    view.unmount();
+    expect(onImportFinished).not.toHaveBeenCalled();
+  });
+});
+

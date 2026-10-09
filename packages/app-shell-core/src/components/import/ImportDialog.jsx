@@ -24,19 +24,24 @@ import { buildTemplateXlsx } from '../../lib/import/buildTemplateXlsx.js';
 import {
   isXlsxFileName, outputFormats, isAcceptedFileName, formatNames,
 } from '../../lib/import/importFormats.js';
+import { resetImportRun } from '../../lib/import/importRunState.js';
+import { getCreatedEntityCount } from '../../lib/import/resolveDependentEntity.js';
+import { countColumns, countAutoResolvedFks, countResults } from '../../lib/import/importSummary.js';
 import { runImportRowValidator } from '../../lib/import/rowValidators.js';
 import { findExistingKeys, buildLookupKey } from '../../lib/import/existingRecordLookup.js';
 
 // Root-level labels for ImportDialog's own chrome. `importButton` is a function of the
 // valid-row count, mirroring the (n) => string labels the confirm step already uses, so the
 // whole flow's button text is translatable rather than the hardcoded `Import ${n}` it was.
-const DEFAULT_LABELS = { title: 'Import', revalidating: 'Revalidating rows…', processing: 'Processing…', downloadTemplate: 'Download CSV template', downloadTemplateCsv: 'Download CSV template', downloadTemplateXlsx: 'Download Excel template', importButton: (n) => `Import ${n}` };
+const DEFAULT_LABELS = { title: 'Import', reading: 'Reading file…', revalidating: 'Revalidating rows…', downloadTemplate: 'Download CSV template', downloadTemplateCsv: 'Download CSV template', downloadTemplateXlsx: 'Download Excel template', importButton: (n) => `Import ${n}` };
 
 /**
  * Why a row was skipped. Skipping is not an error — nothing is wrong with the file and
  * there is nothing for the user to fix — so these carry their own wording, separate from
  * the validation messages in `validateRows.js`.
  */
+const PROGRESS_THROTTLE_MS = 150;
+
 const SKIP_MESSAGES = {
   duplicateInFile: { key: 'importSkipDuplicateInFile', fallback: 'Duplicate row (already in file).' },
   alreadyExists: { key: 'importSkipAlreadyExists', fallback: 'This record already exists and will not be imported again.' },
@@ -50,9 +55,9 @@ const SKIP_MESSAGES = {
  * builds this object from its useUI() dictionary and MUST match this shape exactly.
  *
  *   {
- *     title, revalidating, processing, downloadTemplate, importButton: (n) => string,   // this dialog
+ *     title, reading, revalidating, downloadTemplate, importButton: (n) => string,   // this dialog
  *     dropzone:     { dropHere, dropHint },                                  // ImportDropzone
- *     progress:     { title, subtitle },                                     // ImportProgressStep
+ *     progress:     { title, subtitle, counter },// ImportProgressStep
  *     mapping:      { notImported, mappedSummary, editMatch, editTitle, save, cancel }, // ImportColumnMapping
  *     confirm:      { title, willImport: (n) => string, willSkip: (n) => string, cancel, confirm }, // ImportConfirmStep
  *     fileError:    { title, cancel, retry },                                // ImportFileErrorDialog
@@ -120,19 +125,27 @@ function renameRowKeys(row, mapping) {
  *   step from which the user can retry with another file. Processed once per open and per
  *   File instance; omit it and the dialog opens on its dropzone as before.
  */
-export function ImportDialog({ open, onOpenChange, config, token, postBatch, simSearchFn, onImported, labels, translate, fieldLabelFn, existingKeyFetchFn, initialFile }) {
+export function ImportDialog({ open, onOpenChange, config, token, postBatch, simSearchFn, onImported, labels, translate, fieldLabelFn, existingKeyFetchFn, initialFile, batchSize: batchSizeOverride, onImportFinished }) {
   const text = { ...DEFAULT_LABELS, ...labels };
   const [step, setStep] = useState(STEP.DROPZONE);
+  // True from the moment a file is attached until the preview (or the error) is ready: parsing,
+  // FK resolution and the existing-record lookup run in between and used to leave the dropzone
+  // sitting there looking frozen. While true the dropzone is replaced, so nothing can be
+  // attached on top of the file being read.
+  const [isReadingFile, setIsReadingFile] = useState(false);
+  // Run summary for `onImportFinished` (ETP-5676): quantities only, collected as the run goes.
+  // `finished` guards against reporting one run twice (e.g. a send's own report and the dialog
+  // unmounting afterwards); it re-arms whenever a new file is attached.
+  const runStatsRef = useRef({ attached: false, finished: false, readMs: 0, validateMs: 0, rowsInFile: 0, headers: [], autoMapping: {} });
   const [fileErrorMessage, setFileErrorMessage] = useState(null);
   const [mapping, setMapping] = useState({});
   const [headers, setHeaders] = useState([]);
   const [rawRows, setRawRows] = useState([]);
   const [entries, setEntries] = useState([]);
   const [isRevalidating, setIsRevalidating] = useState(false);
-  // A selected file is being parsed and validated (which can hit the network). The state drives
-  // the indicator that replaces the dropzone; the ref is the synchronous guard that drops any
-  // further selection meanwhile, so a second drop cannot start a concurrent run.
-  const [isProcessingFile, setIsProcessingFile] = useState(false);
+  // Synchronous twin of `isReadingFile` (ETP-5600): set before any await, so a second file
+  // arriving mid-run (a new `initialFile`, a double drop) is dropped instead of starting a
+  // concurrent run. The state only drives the indicator, and lags a render behind.
   const processingFileRef = useRef(false);
   // Two independent filters, not one shared value — the design spec is explicit that
   // the preview (pre-send) and result (post-send) review queues each remember their own
@@ -142,7 +155,20 @@ export function ImportDialog({ open, onOpenChange, config, token, postBatch, sim
   // row validation state.
   const [statusFilterPreSend, setStatusFilterPreSend] = useState('ok');
   const [statusFilterPostSend, setStatusFilterPostSend] = useState('error');
-  const [progress, setProgress] = useState(0);
+  // { done, total } of the running send. Percent and counter both derive from it. The engine
+  // reports once per row; handleSend throttles the updates so a 2,000-row file re-renders the
+  // dialog a few times a second, not 2,000 times.
+  const [progress, setProgress] = useState({ done: 0, total: 0 });
+  const lastProgressTickRef = useRef(0);
+  const latestProgressRef = useRef({ done: 0, total: 0 });
+  const progressTimerRef = useRef(null);
+  const cancelProgressFlush = useCallback(() => {
+    if (progressTimerRef.current !== null) {
+      clearTimeout(progressTimerRef.current);
+      progressTimerRef.current = null;
+    }
+  }, []);
+  useEffect(() => cancelProgressFlush, [cancelProgressFlush]);
   // Debug-phase aid (per explicit request while the backend integration is still being
   // stabilized, one error at a time): the last uncontrolled/system-level failure of a
   // send, shown in its own blocking dialog with the full raw trace on top of the normal
@@ -249,7 +275,11 @@ export function ImportDialog({ open, onOpenChange, config, token, postBatch, sim
     targets: config.fields.map((f) => f.target),
     token,
     translate,
-  }), [config.spec, config.entity, config.descriptor, config.fields, token, translate]);
+    // ETP-5676: the preview's answers (popover picks included, stored by id). Descriptors hand
+    // them to their registered FK resolvers, which answer from them instead of asking the
+    // backend again for every row.
+    fkResolutions,
+  }), [config.spec, config.entity, config.descriptor, config.fields, token, translate, fkResolutions]);
 
   // The real config shape (decisions.json → window.import, verified against
   // artifacts/contacts/decisions.json) is `dedupe: { scope, key: string[] }`, not a flat
@@ -297,6 +327,59 @@ export function ImportDialog({ open, onOpenChange, config, token, postBatch, sim
    */
   const maxRows = config.limit?.maxRows ?? config.maxRows ?? 5000;
   const concurrency = config.limit?.concurrency ?? config.concurrency ?? 4;
+  // ETP-5676: rows per `/batch` request. 1 (the default) is the original one-request-per-row
+  // behaviour; the engine caps it. Opt-in per window via `window.import.limit.batchSize`.
+  // `batchSize` (prop) is an override the caller already resolved — e.g. an operational flag; core
+  // does not know where it comes from.
+  const batchSize = batchSizeOverride ?? config.limit?.batchSize ?? 1;
+
+  // Latest values for the summary below, read through a ref so reporting never forces the send
+  // and close callbacks to re-create on every mapping or progress change.
+  const liveRef = useRef({});
+  liveRef.current = { headers, mapping, fkResolutions, step, config, concurrency, batchSize, onImportFinished };
+
+  /**
+   * ETP-5676: hands the caller a summary of the run — counts, timings and the settings used,
+   * NEVER a row, a header or a cell — so it can be sent to telemetry without core knowing about
+   * any telemetry. `outcome` is 'completed' (a send finished, whatever its row failures),
+   * 'failed' (the file could not be read, or the send itself blew up) or 'cancelled' (a file
+   * was loaded and the dialog was left before sending). `durationMs` is the processing time
+   * (read + validate + send); the time the user spends reviewing is deliberately not in it.
+   * One report per run: later calls are ignored until the next file or send re-arms it.
+   */
+  const reportImportFinished = useCallback((outcome, { sendMs = 0, results = [] } = {}) => {
+    const stats = runStatsRef.current;
+    const live = liveRef.current;
+    if (!stats.attached || stats.finished || typeof live.onImportFinished !== 'function') return;
+    stats.finished = true;
+    const counts = results.length > 0
+      ? countResults(results)
+      : { rowsTotal: outcome === 'cancelled' ? stats.rowsInFile : 0, rowsCreated: 0, rowsFailed: 0, rowsDuplicate: 0, rowsUnknown: 0 };
+    const summary = {
+      outcome,
+      entity: live.config.spec ?? live.config.entity,
+      ...counts,
+      durationMs: stats.readMs + stats.validateMs + sendMs,
+      readMs: stats.readMs,
+      validateMs: stats.validateMs,
+      sendMs,
+      batchSize: live.batchSize,
+      concurrency: live.concurrency,
+      ...countColumns(stats.headers, stats.autoMapping, live.mapping),
+      fkAutoResolved: countAutoResolvedFks(live.fkResolutions),
+      fkCreated: getCreatedEntityCount(),
+    };
+    try {
+      live.onImportFinished(summary);
+    } catch {
+      // Reporting is best-effort; it must never break an import.
+    }
+  }, []);
+
+  // The dialog going away with a loaded file and no send in flight is an abandoned import.
+  useEffect(() => () => {
+    if (liveRef.current.step !== STEP.SENDING) reportImportFinished('cancelled');
+  }, [reportImportFinished]);
 
   // The two reasons a row is skipped rather than failed. Both are shown verbatim in the
   // review queue, so both go through `translate` — they were hardcoded English strings
@@ -389,7 +472,13 @@ export function ImportDialog({ open, onOpenChange, config, token, postBatch, sim
   const handleFileSelected = useCallback(async (file) => {
     if (processingFileRef.current) return;
     processingFileRef.current = true;
-    setIsProcessingFile(true);
+    // ETP-5676: a new file is a new run — drop the FK memo, the dependent-entity creation cache
+    // and every cache a descriptor registered, so nothing is answered from the previous file's
+    // snapshot of the backend.
+    resetImportRun();
+    setIsReadingFile(true);
+    const readStartedAt = Date.now();
+    runStatsRef.current = { attached: true, finished: false, readMs: 0, validateMs: 0, rowsInFile: 0, headers: [], autoMapping: {} };
     try {
       // A new file starts a fresh review session. Do not carry a previous
       // Errors/All selection into the next upload.
@@ -432,16 +521,24 @@ export function ImportDialog({ open, onOpenChange, config, token, postBatch, sim
       setHeaders(parsedHeaders);
       setRawRows(rows);
       setMapping(autoMapping);
+      const validateStartedAt = Date.now();
+      runStatsRef.current.readMs = validateStartedAt - readStartedAt;
+      runStatsRef.current.headers = parsedHeaders;
+      runStatsRef.current.autoMapping = autoMapping;
+      runStatsRef.current.rowsInFile = rows.length;
       await runValidation(rows.map((row) => renameRowKeys(row, autoMapping)));
+      runStatsRef.current.validateMs = Date.now() - validateStartedAt;
       setStep(STEP.MAPPING);
     } catch (error) {
+      runStatsRef.current.readMs = runStatsRef.current.readMs || Date.now() - readStartedAt;
       setFileErrorMessage(localizeError(error));
       setStep(STEP.FILE_ERROR);
+      reportImportFinished('failed');
     } finally {
       processingFileRef.current = false;
-      setIsProcessingFile(false);
+      setIsReadingFile(false);
     }
-  }, [localizedFields, runValidation, localizeError, config.formats, maxRows]);
+  }, [localizedFields, runValidation, localizeError, config.formats, maxRows, reportImportFinished]);
 
   /**
    * The `initialFile` already handed to `handleFileSelected` during the current open. A ref so
@@ -608,11 +705,18 @@ export function ImportDialog({ open, onOpenChange, config, token, postBatch, sim
 
   const handleSend = useCallback(async () => {
     setStep(STEP.SENDING);
-    setProgress(0);
     // A previous run's unanswered question must not resurface over this one.
     setPendingCloseWhileSending(false);
     closedWhileSendingRef.current = false;
     const toSend = entries.filter((e) => e.status === 'pending' && e.errors.length === 0);
+    // Every send — the first one and a resend of fixed rows from the result step — starts its
+    // counter at zero over ITS OWN rows. (The engine caps a run at `maxRows`.)
+    setProgress({ done: 0, total: Math.min(toSend.length, maxRows) });
+    lastProgressTickRef.current = 0;
+    cancelProgressFlush();
+    // A new send is a new report (a resend of fixed rows reports again, about its own rows).
+    runStatsRef.current.finished = false;
+    const sendStartedAt = Date.now();
     // runImport isolates per-row build/send failures on its own (a bad row surfaces as
     // that row's FAILED result, not a thrown exception) — this catch is a last-resort
     // safety net for anything genuinely unexpected escaping that isolation, so the dialog
@@ -627,13 +731,34 @@ export function ImportDialog({ open, onOpenChange, config, token, postBatch, sim
         translate,
         concurrency,
         maxRows,
-        onProgress: (completed, total) => setProgress(Math.round((completed / total) * 100)),
+        batchSize,
+        onProgress: (completed, total) => {
+          // A batched send settles up to `batchSize` rows in the same tick, so a bare throttle
+          // would publish the first and drop the rest until the next chunk. Publish at most every
+          // PROGRESS_THROTTLE_MS, keep the latest value, and flush it on a trailing timer; the
+          // final tick is always published at once and cancels the timer.
+          latestProgressRef.current = { done: completed, total };
+          const publish = () => {
+            progressTimerRef.current = null;
+            lastProgressTickRef.current = Date.now();
+            setProgress(latestProgressRef.current);
+          };
+          const wait = PROGRESS_THROTTLE_MS - (Date.now() - lastProgressTickRef.current);
+          if (completed === total || wait <= 0) {
+            cancelProgressFlush();
+            publish();
+          } else if (progressTimerRef.current === null) {
+            progressTimerRef.current = setTimeout(publish, wait);
+          }
+        },
       }));
     } catch (error) {
       setFileErrorMessage(localizeError(error));
       setStep(STEP.FILE_ERROR);
+      reportImportFinished('failed', { sendMs: Date.now() - sendStartedAt });
       return;
     }
+    reportImportFinished('completed', { sendMs: Date.now() - sendStartedAt, results });
     const okCount = results.filter((r) => r.status === 'ok').length;
     // A DUPLICATE result (the row's record already exists server-side, a unique-constraint
     // rejection — see importEngine.js's classifyImportError) is not an actionable failure:
@@ -706,7 +831,7 @@ export function ImportDialog({ open, onOpenChange, config, token, postBatch, sim
         { count: trueFailures.length },
       ));
     }
-  }, [entries, operationsConfig, concurrency, maxRows, postBatch, onImported, translate, localize, labelFor, localizeError]);
+  }, [entries, operationsConfig, concurrency, maxRows, batchSize, postBatch, onImported, translate, localize, labelFor, localizeError, cancelProgressFlush, reportImportFinished]);
 
   const handleRetryEntryPostSend = useCallback(async (index) => {
     const entry = entries[index];
@@ -775,7 +900,8 @@ export function ImportDialog({ open, onOpenChange, config, token, postBatch, sim
    * closed it to abort a mistaken import found the products there after a reload — the modal
    * read as a cancel button that silently was not one.
    *
-   * The send cannot actually be stopped (each row is its own committed `/batch` call), so the
+   * The send cannot actually be stopped (each row — or, with `limit.batchSize`, each chunk of
+   * rows — is its own committed `/batch` call), so the
    * close is intercepted and the user is told what it does, rather than offered a cancel that
    * would be a lie. Every other step closes as before — this only guards the one window where
    * closing means something different from what it looks like.
@@ -785,8 +911,9 @@ export function ImportDialog({ open, onOpenChange, config, token, postBatch, sim
       setPendingCloseWhileSending(true);
       return;
     }
+    if (!next) reportImportFinished('cancelled');
     onOpenChange(next);
-  }, [step, onOpenChange]);
+  }, [step, onOpenChange, reportImportFinished]);
 
   const closeAnyway = useCallback(() => {
     setPendingCloseWhileSending(false);
@@ -802,25 +929,25 @@ export function ImportDialog({ open, onOpenChange, config, token, postBatch, sim
             <DialogTitle data-testid="DialogTitle__38a6c3">{text.title}</DialogTitle>
           </DialogHeader>
 
-          {step === STEP.DROPZONE && (
+          {step === STEP.DROPZONE && isReadingFile && (
+            <div
+              role="status"
+              aria-live="polite"
+              className="flex flex-col items-center justify-center gap-3 py-12 text-sm text-muted-foreground"
+              data-testid="ImportDialog__reading"
+            >
+              <Loader2 className="h-6 w-6 animate-spin" aria-hidden="true" data-testid="Loader2__ImportDialogReading" />
+              <span>{text.reading}</span>
+            </div>
+          )}
+
+          {step === STEP.DROPZONE && !isReadingFile && (
             <div className="flex flex-col gap-2">
-              {isProcessingFile ? (
-                <div
-                  className="flex flex-col items-center justify-center gap-2 rounded-lg border-2 border-dashed border-border p-8"
-                  role="status"
-                  aria-live="polite"
-                  data-testid="ImportDialog__processingFile"
-                >
-                  <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" data-testid="Loader2__ImportDialog" />
-                  <span className="text-sm text-muted-foreground">{text.processing}</span>
-                </div>
-              ) : (
-                <ImportDropzone
-                  onFileSelected={handleFileSelected}
-                  formats={config.formats}
-                  labels={labels?.dropzone}
-                  data-testid="ImportDropzone__38a6c3" />
-              )}
+              <ImportDropzone
+                onFileSelected={handleFileSelected}
+                formats={config.formats}
+                labels={labels?.dropzone}
+                data-testid="ImportDropzone__38a6c3" />
               <div className="flex flex-wrap items-center justify-center gap-3">
                 {templateFormats.map((format) => (
                   <button
@@ -905,7 +1032,7 @@ export function ImportDialog({ open, onOpenChange, config, token, postBatch, sim
               data-testid="ImportConfirmStep__38a6c3" />
           )}
 
-          {step === STEP.SENDING && <ImportProgressStep percent={progress} labels={labels?.progress} data-testid="ImportProgressStep__38a6c3" />}
+          {step === STEP.SENDING && <ImportProgressStep percent={progress.total > 0 ? Math.round((progress.done / progress.total) * 100) : 0} processed={progress.done} total={progress.total} labels={labels?.progress} data-testid="ImportProgressStep__38a6c3" />}
 
           {step === STEP.RESULT && (
             <div className="flex min-h-0 max-h-[70vh] min-w-0 flex-col gap-4">
