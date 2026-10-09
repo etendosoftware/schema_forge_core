@@ -261,6 +261,118 @@ export async function sendRow(operations, { postBatch, translate } = {}) {
   return { status, error: { ...error, message, raw } };
 }
 
+/** Upper bound on rows per `/batch` request, whatever a window's decisions.json asks for. */
+export const MAX_BATCH_SIZE = 50;
+
+function clampBatchSize(value) {
+  const n = Math.floor(Number(value));
+  if (!Number.isFinite(n) || n < 1) return 1;
+  return Math.min(n, MAX_BATCH_SIZE);
+}
+
+const REF_PREFIX = '$ref:';
+
+// Rewrites every reference to a sibling op's id (`parentRef`, and `$ref:<id>` placeholders
+// anywhere in the body) so ids stay unique when several rows share one request.
+function prefixRefs(value, ids, prefix) {
+  if (typeof value === 'string') {
+    if (value.startsWith(REF_PREFIX) && ids.has(value.slice(REF_PREFIX.length))) {
+      return `${REF_PREFIX}${prefix}${value.slice(REF_PREFIX.length)}`;
+    }
+    return value;
+  }
+  if (Array.isArray(value)) return value.map((v) => prefixRefs(v, ids, prefix));
+  if (value && typeof value === 'object') {
+    return Object.fromEntries(Object.entries(value).map(([k, v]) => [k, prefixRefs(v, ids, prefix)]));
+  }
+  return value;
+}
+
+/** One row's operations with every op id (and reference to one) namespaced by `prefix`. */
+function prefixOperations(operations, prefix) {
+  const ids = new Set(operations.map((op) => op.id));
+  return operations.map((op) => {
+    const next = prefixRefs({ ...op }, ids, prefix);
+    next.id = `${prefix}${op.id}`;
+    if (ids.has(op.parentRef)) next.parentRef = `${prefix}${op.parentRef}`;
+    return next;
+  });
+}
+
+/**
+ * Send up to `batchSize` rows in ONE `/batch` request (ETP-5676), reporting each row through
+ * `settle(index, result)` as soon as its outcome is known.
+ *
+ * `/batch` is all-or-nothing, so the outcome of the request decides what is safe to do next:
+ *  - committed: every row is OK, its recordId read from its own prefixed first op;
+ *  - proven rollback (`committed:false`, `atomic:true`, empty `persisted`): no row was created, so each row is
+ *    resent ON ITS OWN through the ordinary single-row path and gets its own accurate outcome.
+ *    No bisecting — the one-by-one resend is what tells the bad row from the good ones;
+ *  - UNKNOWN (no definite response), or any failure that is not a proven rollback (another body
+ *    shape, `atomic:false`, a missing or non-empty `persisted`): the batch may have committed, and `/batch` has no idempotency key,
+ *    so resending could create duplicates. Every row of the chunk is reported UNKNOWN, exactly
+ *    as a single row with no response is today.
+ * A row whose operations cannot be built is FAILED on its own and never joins the request.
+ */
+async function sendChunk(chunk, { buildRowOperations, postBatch, translate, settle }) {
+  const built = await Promise.all(chunk.rows.map(async (row, i) => {
+    const index = chunk.start + i;
+    try {
+      return { index, operations: await buildRowOperations(row) };
+    } catch (error) {
+      settle(index, { status: SEND_STATUS.FAILED, error, operations: null });
+      return null;
+    }
+  }));
+  const sendable = built.filter(Boolean);
+  if (sendable.length === 0) return;
+
+  const sendAlone = async ({ index, operations }) => {
+    settle(index, { ...(await sendRow(operations, { postBatch, translate })), operations });
+  };
+  if (sendable.length === 1) {
+    await sendAlone(sendable[0]);
+    return;
+  }
+
+  const prefixed = sendable.map(({ index, operations }) => prefixOperations(operations, `r${index}.`));
+  let response;
+  const result = await sendRow(prefixed.flat(), {
+    translate,
+    postBatch: async (ops) => {
+      response = await postBatch(ops);
+      return response;
+    },
+  });
+
+  if (result.status === SEND_STATUS.OK) {
+    const recordIds = new Map((response.operations ?? []).map((op) => [op.id, op.recordId]));
+    sendable.forEach(({ index, operations }, i) => {
+      settle(index, { status: SEND_STATUS.OK, recordId: recordIds.get(prefixed[i][0].id), operations });
+    });
+    return;
+  }
+
+  // Resend only on a rollback BatchService itself vouches for: `committed:false`, `atomic:true`
+  // and an EMPTY `persisted` array. Anything else — a `{message}` gateway/5xx envelope, a missing
+  // or non-array `persisted`, `atomic:false`, records that outlived the rollback — cannot prove
+  // that nothing was created, and `/batch` has no idempotency key, so a resend could duplicate.
+  const provenRollback = response?.committed === false
+    && response?.atomic === true
+    && Array.isArray(response?.persisted)
+    && response.persisted.length === 0;
+  if (result.status === SEND_STATUS.UNKNOWN || !provenRollback) {
+    sendable.forEach(({ index, operations }) => {
+      settle(index, { status: SEND_STATUS.UNKNOWN, error: result.error, operations });
+    });
+    return;
+  }
+
+  for (const item of sendable) {
+    await sendAlone(item);
+  }
+}
+
 /**
  * Run a bounded-concurrency pool of async `worker(item)` calls over `items`,
  * calling `onSettle(result, item, index)` as each one finishes. No external
@@ -286,11 +398,31 @@ async function runBoundedPool(items, concurrency, worker, onSettle) {
  * `results` — the caller reports `truncatedCount` explicitly rather than
  * silently dropping them.
  */
-export async function runImport(rows, { buildRowOperations, postBatch, translate, concurrency = 4, maxRows = 5000, onProgress }) {
+export async function runImport(rows, { buildRowOperations, postBatch, translate, concurrency = 4, maxRows = 5000, batchSize = 1, onProgress }) {
   const attempted = rows.slice(0, maxRows);
   const truncatedCount = rows.length - attempted.length;
   const results = new Array(attempted.length);
   let completed = 0;
+
+  const size = clampBatchSize(batchSize);
+  if (size > 1) {
+    const chunks = [];
+    for (let start = 0; start < attempted.length; start += size) {
+      chunks.push({ start, rows: attempted.slice(start, start + size) });
+    }
+    const settle = (index, result) => {
+      results[index] = { row: attempted[index], ...result };
+      completed += 1;
+      onProgress?.(completed, attempted.length);
+    };
+    await runBoundedPool(
+      chunks,
+      concurrency,
+      (chunk) => sendChunk(chunk, { buildRowOperations, postBatch, translate, settle }),
+      () => {},
+    );
+    return { results, truncatedCount };
+  }
 
   await runBoundedPool(
     attempted,

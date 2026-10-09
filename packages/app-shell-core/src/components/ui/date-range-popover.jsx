@@ -195,14 +195,14 @@ export function DateRangePopover({ value, onChange, placeholder }) {
       <PopoverTrigger asChild data-testid="PopoverTrigger__482ed1">
         <button
           type="button"
-          className="inline-flex h-9 items-center justify-between gap-1.5 rounded-lg border border-border bg-white px-3 text-sm font-normal leading-6 text-muted-foreground transition-colors hover:bg-[#F5F7F9]"
+          className="inline-flex h-10 items-center justify-between gap-1.5 rounded-lg border border-border bg-white px-3 text-sm font-medium leading-6 text-[#121217] transition-colors hover:bg-[#F5F7F9]"
         >
           <CalendarDays
-            className="h-3.5 w-3.5 shrink-0 text-muted-foreground"
+            className="h-5 w-5 shrink-0 text-[#828FA3]"
             data-testid="CalendarDays__482ed1" />
           <span className="mx-1 truncate text-left">{triggerLabel}</span>
           <ChevronDown
-            className="h-3.5 w-3.5 shrink-0 text-muted-foreground"
+            className="h-4 w-4 shrink-0 text-[#828FA3]"
             data-testid="ChevronDown__482ed1" />
         </button>
       </PopoverTrigger>

@@ -1,3 +1,4 @@
+// @covers packages/etendo-go-core/src/onboarding/errorMessages.js
 import { describe, it } from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
@@ -15,6 +16,7 @@ const onboardingDir = join(__dirname, '..', 'src', 'onboarding');
 // Mirrors useUI(): interpolates {param} and echoes the key when it has no translation.
 const DICTIONARY = {
   onboardingGenericError: 'Something went wrong during onboarding.',
+  onboardingSessionLostError: 'Your session ended. Sign in again to continue.',
   onboardingCreateClientFailed: 'We could not create your environment.',
   onboardingCreateOrgFailed: 'We could not create your organization.',
   onboardingDuplicateClient: 'That company name is already taken.',
@@ -161,5 +163,24 @@ describe('the flow routes its failures through the resolver (ETP-4665)', () => {
     const api = read('api.js');
     assert.match(api, /error\.field = data\?\.error\?\.field \?\? null;/);
     assert.match(api, /error\.max = data\?\.error\?\.max \?\? null;/);
+  });
+});
+
+// ETP-5675 — the reported failure: provisioning refused for a session another tab had closed showed
+// the backend's raw English "Missing or invalid Authorization header" under a Spanish UI.
+describe('resolveOnboardingErrorMessage — lost session (ETP-5675)', () => {
+  it('translates a 401 instead of quoting the backend', () => {
+    const err = Object.assign(new Error('Missing or invalid Authorization header'), { status: 401 });
+    assert.equal(resolveOnboardingErrorMessage(ui, err), DICTIONARY.onboardingSessionLostError);
+  });
+
+  it('translates the account-mismatch 403', () => {
+    const err = Object.assign(new Error('Session belongs to another account'), { status: 403 });
+    assert.equal(resolveOnboardingErrorMessage(ui, err), DICTIONARY.onboardingSessionLostError);
+  });
+
+  it('leaves other 403s to the existing rules', () => {
+    const err = Object.assign(new Error('Origin not allowed'), { status: 403 });
+    assert.notEqual(resolveOnboardingErrorMessage(ui, err), DICTIONARY.onboardingSessionLostError);
   });
 });

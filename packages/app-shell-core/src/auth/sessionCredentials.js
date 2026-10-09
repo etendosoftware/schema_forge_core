@@ -60,7 +60,17 @@ const COOKIE = 'cookie';
  */
 const AUTO = 'auto';
 
-const DEFAULTS = Object.freeze({ mode: BEARER, token: null, csrfToken: null });
+const DEFAULTS = Object.freeze({ mode: BEARER, token: null, csrfToken: null, accountId: null });
+
+/**
+ * ETP-5675 — the header that tells the backend which account THIS document believes it is
+ * signed in as. The `__Host-` cookie is shared by every tab and window of the browser profile,
+ * and production is one domain for every customer, so a tab opened as account B keeps sending
+ * the cookie after another tab signed in as account C. A read carries no CSRF proof, so without
+ * this header that tab was answered with C's tenant data under B's UI. The backend refuses a
+ * mismatch with 403 `Session belongs to another account` (GoSessionSecurity.ACCOUNT_HEADER).
+ */
+export const ACCOUNT_HEADER = 'X-Go-Account';
 
 let current = { ...DEFAULTS };
 
@@ -94,13 +104,19 @@ function resolveMode(mode, csrfToken) {
  * storing a snapshot here would have quietly frozen it at whatever was held when the
  * session was declared.
  *
- * @param {{mode?: string, token?: string|(() => string|null)|null, csrfToken?: string|null}} next
+ * `accountId` (ETP-5675) is KEPT when the caller does not mention it, unlike the other
+ * fields: the CSRF recovery republishes `{ mode, token, csrfToken }` and must not drop the
+ * account the tab is bound to. Pass `accountId: null` to clear it.
+ *
+ * @param {{mode?: string, token?: string|(() => string|null)|null, csrfToken?: string|null,
+ *   accountId?: string|null}} next
  */
 export function setSessionCredentials(next = {}) {
   current = {
     mode: resolveMode(next.mode, next.csrfToken ?? null),
     token: next.token ?? null,
     csrfToken: next.csrfToken ?? null,
+    accountId: 'accountId' in next ? (next.accountId ?? null) : current.accountId,
   };
   return current;
 }
@@ -114,6 +130,11 @@ export function resetSessionCredentials() {
 /** The active scheme, for the rare caller that needs to branch on it. */
 export function getCredentialMode() {
   return current.mode;
+}
+
+/** ETP-5675 — the account this document is bound to, or null when it holds no session. */
+export function getSessionAccountId() {
+  return current.accountId;
 }
 
 /** The held CSRF proof, so a caller republishing credentials does not drop it. */
@@ -131,7 +152,16 @@ export function getSessionCsrfToken() {
  * the request authenticates with the cookie, exactly like every other one.
  */
 export function credentialHeadersForToken(token) {
-  return current.mode === BEARER && token ? { Authorization: `Bearer ${token}` } : {};
+  return current.mode === BEARER && token ? { Authorization: `Bearer ${token}` } : accountHeaders();
+}
+
+/**
+ * ETP-5675 — `X-Go-Account` under `cookie` when the document is bound to an account. Cookie
+ * only: a bearer request names its identity in the token itself, and the cookie scheme is
+ * same-origin, so this custom header never turns a simple request into a CORS preflight.
+ */
+function accountHeaders() {
+  return current.mode === COOKIE && current.accountId ? { [ACCOUNT_HEADER]: current.accountId } : {};
 }
 
 /** Resolves `token`, which may have been published as a value or as a provider. */
@@ -143,13 +173,14 @@ function currentToken() {
  * Headers for safe methods (GET/HEAD).
  *
  * Under `cookie` these carry no credential at all — the browser attaches the
- * `__Host-` cookie and a read needs no CSRF proof. Under `bearer` they carry the
+ * `__Host-` cookie and a read needs no CSRF proof. They do carry `X-Go-Account`
+ * once the document is bound to an account (ETP-5675), which is not a credential. Under `bearer` they carry the
  * Authorization header, and omit it when no token is held rather than sending
  * the string "Bearer undefined", which is what a template literal over a missing
  * token produces and what earns a 401 that looks like a server fault.
  */
 export function jsonHeaders() {
-  const headers = { 'Content-Type': 'application/json' };
+  const headers = { 'Content-Type': 'application/json', ...accountHeaders() };
   const token = currentToken();
   if (current.mode === BEARER && token) {
     headers.Authorization = `Bearer ${token}`;
@@ -178,8 +209,8 @@ export function writeHeaders() {
  * `application/json` is not a CORS-safelisted value and forces a preflight
  * OPTIONS on every call. Safe methods only — a read carries no CSRF proof.
  *
- * Under `cookie` this is an empty object, which is correct: the browser
- * attaches the `__Host-` cookie and nothing else is needed. A caller must
+ * Under `cookie` this is empty apart from `X-Go-Account` (ETP-5675), which is
+ * correct: the browser attaches the `__Host-` cookie and nothing else is needed. A caller must
  * therefore never treat "no headers" as "not authenticated" — that assumption
  * is exactly what a `!token` gate encodes, and it silently cancels the request
  * under a cookie session.
