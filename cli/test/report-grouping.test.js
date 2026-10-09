@@ -1,3 +1,4 @@
+// @covers cli/src/report-grouping.js
 import { describe, it } from 'node:test';
 import { strict as assert } from 'node:assert';
 
@@ -522,5 +523,191 @@ describe('buildAccountReportTree — regression: roll-up and formula sums are no
     assert.equal(30000.1 + 638.46, 30638.559999999998, 'sanity check: the raw sum IS noisy');
     const rows = byId(buildAccountReportTree(nodes, operands));
     assert.equal(rows.F.amount, 30638.56);
+  });
+
+  it('flags formula rows with isFormula: no children and has operands (ETP-5663)', () => {
+    const nodes = [
+      node('root', { sort_path: '000001' }),
+      node('H', { parent_id: 'root', sort_path: '000001.000001', elementlevel: 'E' }),
+      node('A', { parent_id: 'H', sort_path: '000001.000001.000001', own_amt: 10 }),
+      node('F', { parent_id: 'root', sort_path: '000001.000002', elementlevel: 'E' }),
+      // Operands on a node WITH children are ignored (roll-up wins), as in Java.
+      node('G', { parent_id: 'root', sort_path: '000001.000003', elementlevel: 'E' }),
+      node('g1', { parent_id: 'G', sort_path: '000001.000003.000001', own_amt: 5 }),
+    ];
+    const operands = [
+      { owner_id: 'F', operand_id: 'H', sign: 1, seqno: 10 },
+      { owner_id: 'G', operand_id: 'H', sign: 1, seqno: 10 },
+    ];
+    const rows = byId(buildAccountReportTree(nodes, operands));
+    assert.equal(rows.F.isFormula, true);
+    for (const id of ['H', 'A', 'G', 'g1']) assert.equal(rows[id].isFormula, false, id);
+    assert.equal(rows.G.amount, 5);
+  });
+});
+
+describe('buildAccountReportTree — ShowValueCond (ETP-5662)', () => {
+  const n = (id, parent, path, group, value, level, sign, own, extra = {}) => ({
+    node_id: id, parent_id: parent, sort_path: path, group_name: group, value, name: value,
+    elementlevel: level, isalwaysshown: 'N', accountsign: sign, own_amt: own, own_amt_ref: 0,
+    showvaluecond: null, issummary: 'Y', ...extra,
+  });
+  // Mini PGC balance sheet: Activo (D) A.B > 551(P) > 5510(P) > 55100000; A.TOTAL = A.B.
+  // Pasivo (C): (551)(P) > (5510)(P formula, -1 x 5510); 555 leaf.
+  const mirrorTree = (dr, dr555) => [
+    n('A', null, '1', 'A', 'A', 'E', 'D', 0),
+    n('AB', 'A', '1.1', 'A', 'A.B', 'E', 'D', 0),
+    n('551', 'AB', '1.1.1', 'A', '551', 'C', 'D', 0, { showvaluecond: 'P' }),
+    n('5510', '551', '1.1.1.1', 'A', '5510', 'D', 'D', 0, { showvaluecond: 'P' }),
+    n('55100000', '5510', '1.1.1.1.1', 'A', '55100000', 'S', 'D', dr, { issummary: 'N' }),
+    n('ATOT', 'A', '1.2', 'A', 'A.TOTAL', 'E', 'D', 0),
+    n('P', null, '2', 'P', 'P', 'E', 'C', 0),
+    n('M551', 'P', '2.1', 'P', '(551)', 'C', 'C', 0, { showvaluecond: 'P' }),
+    n('M5510', 'M551', '2.1.1', 'P', '(5510)', 'D', 'C', 0, { showvaluecond: 'P' }),
+    n('555', 'P', '2.2', 'P', '555', 'C', 'C', dr555, { issummary: 'N' }),
+  ];
+  const operands = [
+    { owner_id: 'M5510', operand_id: '5510', sign: -1 },
+    { owner_id: 'ATOT', operand_id: 'AB', sign: 1 },
+  ];
+  const ids = (rows) => rows.map((r) => r.node_id);
+  const amt = (rows, id) => rows.find((r) => r.node_id === id)?.amount;
+
+  it('oracle case 1: credit balance on 551 hides Activo, the mirror shows it', () => {
+    const rows = buildAccountReportTree(mirrorTree(-1, 1), operands, { showOnlyWithValue: true });
+    for (const id of ['AB', '551', '5510', '55100000', 'ATOT']) {
+      assert.ok(!ids(rows).includes(id), id);
+    }
+    assert.equal(amt(rows, 'M5510'), 1);
+    assert.equal(amt(rows, 'M551'), 1);
+    assert.equal(amt(rows, '555'), -1);
+    assert.equal(rows[0].isGroupStart, true, 'a lone visible group still gets its header');
+  });
+
+  it('oracle case 2: debit balance on 551 shows Activo, the mirror is hidden', () => {
+    const rows = buildAccountReportTree(mirrorTree(5, -5), operands, { showOnlyWithValue: true });
+    for (const id of ['AB', '551', '5510', '55100000', 'ATOT']) assert.equal(amt(rows, id), 5, id);
+    assert.ok(!ids(rows).includes('M551'));
+    assert.ok(!ids(rows).includes('M5510'));
+  });
+
+  it('N keeps only negatives; non-summary and null/A svc pass through', () => {
+    const rows = buildAccountReportTree([
+      n('R', null, '1', 'G', 'R', 'E', 'D', 0),
+      n('N1', 'R', '1.1', 'G', 'N1', 'C', 'D', 5, { showvaluecond: 'N' }),
+      n('N2', 'R', '1.2', 'G', 'N2', 'C', 'D', -5, { showvaluecond: 'N' }),
+      n('L', 'R', '1.3', 'G', 'L', 'C', 'D', 5, { showvaluecond: 'P', issummary: 'N' }),
+      n('X', 'R', '1.4', 'G', 'X', 'C', 'D', -5),
+      n('A', 'R', '1.5', 'G', 'A', 'C', 'D', -5, { showvaluecond: 'A' }),
+    ], []);
+    assert.deepEqual(['N1', 'N2', 'L', 'X', 'A'].map((id) => amt(rows, id)), [0, -5, 5, -5, -5]);
+  });
+
+  it('a clamped child contributes 0 to its parent', () => {
+    const rows = buildAccountReportTree([
+      n('R', null, '1', 'G', 'R', 'E', 'D', 0),
+      n('H', 'R', '1.1', 'G', 'H', 'E', 'D', 0),
+      n('C1', 'H', '1.1.1', 'G', 'C1', 'C', 'D', -3, { showvaluecond: 'P' }),
+      n('C2', 'H', '1.1.2', 'G', 'C2', 'C', 'D', 4, { issummary: 'N' }),
+    ], [], { showOnlyWithValue: true });
+    assert.equal(amt(rows, 'H'), 4);
+    assert.ok(!ids(rows).includes('C1'));
+  });
+
+  it('reference-period reset is independent of the main period', () => {
+    const rows = buildAccountReportTree([
+      n('R', null, '1', 'G', 'R', 'E', 'D', 0),
+      n('S', 'R', '1.1', 'G', 'S', 'C', 'D', 0, { showvaluecond: 'P' }),
+      n('K', 'S', '1.1.1', 'G', 'K', 'S', 'D', 7, { issummary: 'N', own_amt_ref: -2 }),
+    ], []);
+    const k = rows.find((r) => r.node_id === 'K');
+    assert.equal(k.amount, 7);
+    assert.equal(k.amount_ref, 0);
+  });
+
+  it('552 cross-wired pair: each breakdown shows on the side where it is positive', () => {
+    // Real PGC wiring: 552A -> 5523+5524 and 552B -> 5525 under Activo, but the
+    // mirrors are crossed under Pasivo: (552A) -> (5525), (552B) -> (5523)+(5524).
+    // Each (552x) breakdown is a formula over its asset twin, operands +1/-1/-1.
+    const tree = [
+      n('A', null, '1', 'A', 'A', 'E', 'D', 0),
+      n('552A', 'A', '1.1', 'A', '552A', 'C', 'D', 0, { showvaluecond: 'P' }),
+      n('5523', '552A', '1.1.1', 'A', '5523', 'D', 'D', 0, { showvaluecond: 'P' }),
+      n('55230000', '5523', '1.1.1.1', 'A', '55230000', 'S', 'D', 4, { issummary: 'N' }),
+      n('5524', '552A', '1.1.2', 'A', '5524', 'D', 'D', 0, { showvaluecond: 'P' }),
+      n('55240000', '5524', '1.1.2.1', 'A', '55240000', 'S', 'D', -2, { issummary: 'N' }),
+      n('552B', 'A', '1.2', 'A', '552B', 'C', 'D', 0, { showvaluecond: 'P' }),
+      n('5525', '552B', '1.2.1', 'A', '5525', 'D', 'D', 0, { showvaluecond: 'P' }),
+      n('55250000', '5525', '1.2.1.1', 'A', '55250000', 'S', 'D', -3, { issummary: 'N' }),
+      n('P', null, '2', 'P', 'P', 'E', 'C', 0),
+      n('M552A', 'P', '2.1', 'P', '(552A)', 'C', 'C', 0, { showvaluecond: 'P' }),
+      n('M5525', 'M552A', '2.1.1', 'P', '(5525)', 'D', 'C', 0, { showvaluecond: 'P' }),
+      n('M552B', 'P', '2.2', 'P', '(552B)', 'C', 'C', 0, { showvaluecond: 'P' }),
+      n('M5523', 'M552B', '2.2.1', 'P', '(5523)', 'D', 'C', 0, { showvaluecond: 'P' }),
+      n('M5524', 'M552B', '2.2.2', 'P', '(5524)', 'D', 'C', 0, { showvaluecond: 'P' }),
+    ];
+    const netMinusOne = (owner, target) => [1, -1, -1].map((sign) => ({ owner_id: owner, operand_id: target, sign }));
+    const ops = [
+      ...netMinusOne('M5523', '5523'),
+      ...netMinusOne('M5524', '5524'),
+      ...netMinusOne('M5525', '5525'),
+    ];
+    const rows = buildAccountReportTree(tree, ops, { showOnlyWithValue: true });
+    // Activo: only the debit balance (5523) survives; 5524/5525 reset to 0.
+    assert.equal(amt(rows, '552A'), 4);
+    assert.equal(amt(rows, '5523'), 4);
+    for (const id of ['5524', '55240000', '552B', '5525', '55250000']) {
+      assert.ok(!ids(rows).includes(id), id);
+    }
+    // Pasivo: the credit balances land on the crossed mirrors.
+    assert.equal(amt(rows, 'M552A'), 3);
+    assert.equal(amt(rows, 'M5525'), 3);
+    assert.equal(amt(rows, 'M552B'), 2);
+    assert.equal(amt(rows, 'M5524'), 2);
+    assert.ok(!ids(rows).includes('M5523'), '(5523) mirrors a debit balance');
+  });
+
+  it('a zero-net parent hides while a child with value renders', () => {
+    const rows = buildAccountReportTree([
+      n('R', null, '1', 'G', 'R', 'E', 'D', 0),
+      n('H', 'R', '1.1', 'G', 'H', 'C', 'D', 0),
+      n('C1', 'H', '1.1.1', 'G', 'C1', 'S', 'D', 5, { issummary: 'N' }),
+      n('C2', 'H', '1.1.2', 'G', 'C2', 'S', 'D', -5, { issummary: 'N' }),
+    ], [], { showOnlyWithValue: true });
+    assert.ok(!ids(rows).includes('H'));
+    assert.equal(amt(rows, 'C1'), 5);
+    assert.equal(amt(rows, 'C2'), -5);
+  });
+
+  it('N clamps a formula node, and the clamped 0 rolls up to its parent', () => {
+    const tree = (own) => [
+      n('R', null, '1', 'G', 'R', 'E', 'D', 0),
+      n('X', 'R', '1.1', 'G', 'X', 'S', 'D', own, { issummary: 'N' }),
+      n('H', 'R', '1.2', 'G', 'H', 'E', 'D', 0),
+      n('F', 'H', '1.2.1', 'G', 'F', 'C', 'D', 0, { showvaluecond: 'N' }),
+    ];
+    const ops = [{ owner_id: 'F', operand_id: 'X', sign: 1 }];
+    const positive = buildAccountReportTree(tree(5), ops);
+    assert.equal(amt(positive, 'F'), 0);
+    assert.equal(amt(positive, 'H'), 0);
+    const negative = buildAccountReportTree(tree(-5), ops);
+    assert.equal(amt(negative, 'F'), -5);
+    assert.equal(amt(negative, 'H'), -5);
+  });
+
+  it('a single-root (P&L-shaped) report gets no forced group header', () => {
+    const rows = buildAccountReportTree([
+      n('R', null, '1', 'PL', 'R', 'E', 'C', 0),
+      n('I', 'R', '1.1', 'PL', '7', 'C', 'C', -10, { issummary: 'N' }),
+      n('E', 'R', '1.2', 'PL', '6', 'C', 'C', 4, { issummary: 'N' }),
+    ], []);
+    assert.equal(rows.length, 2);
+    assert.ok(rows.every((r) => r.isGroupStart === false));
+  });
+
+  it('with no operand rows the mirror stays empty (R39 precondition)', () => {
+    const rows = buildAccountReportTree(mirrorTree(-1, 1), [], { showOnlyWithValue: true });
+    assert.ok(!ids(rows).includes('551'));
+    assert.ok(!ids(rows).includes('M551'));
   });
 });

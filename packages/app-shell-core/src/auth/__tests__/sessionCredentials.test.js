@@ -2,16 +2,22 @@ import { describe, it, beforeEach } from 'node:test';
 import { strict as assert } from 'node:assert';
 
 import {
+  ACCOUNT_HEADER,
   CREDENTIAL_MODES,
+  credentialHeadersForToken,
   credentialOptions,
   getCredentialMode,
+  getSessionAccountId,
   jsonHeaders,
+  readCredentialHeaders,
   resetSessionCredentials,
   setSessionCredentials,
   writeHeaders,
 } from '../sessionCredentials.js';
 
 /**
+ * @covers packages/app-shell-core/src/auth/sessionCredentials.js
+ *
  * sessionCredentials.js is the single decision point for how a request proves
  * who is making it, so every call site in the core and the host inherits
  * whatever it gets wrong. These are real behavioural assertions rather than
@@ -127,6 +133,47 @@ describe('sessionCredentials', () => {
    * The backend already reveals the answer — only a cookie session issues a CSRF
    * token — so these assert that the presence of that token IS the decision.
    */
+  /**
+   * ETP-5675 — the session cookie is the browser profile's, so a tab must say which account it
+   * believes it is signed in as; the backend refuses a mismatch. Cookie scheme only, and the
+   * binding must survive the CSRF recovery republishing the other three fields.
+   */
+  describe('account binding (ETP-5675)', () => {
+    it('sends X-Go-Account on reads and writes under cookie', () => {
+      setSessionCredentials({ mode: CREDENTIAL_MODES.cookie, csrfToken: 'csrf-1', accountId: 'acc-B' });
+
+      assert.equal(readCredentialHeaders()[ACCOUNT_HEADER], 'acc-B');
+      assert.equal(jsonHeaders()[ACCOUNT_HEADER], 'acc-B');
+      assert.equal(writeHeaders()[ACCOUNT_HEADER], 'acc-B');
+      assert.equal(credentialHeadersForToken('ignored')[ACCOUNT_HEADER], 'acc-B');
+    });
+
+    it('never sends it under bearer', () => {
+      setSessionCredentials({ mode: CREDENTIAL_MODES.bearer, token: 'tok', accountId: 'acc-B' });
+
+      assert.equal(ACCOUNT_HEADER in writeHeaders(), false);
+      assert.equal(ACCOUNT_HEADER in readCredentialHeaders(), false);
+    });
+
+    it('keeps the account when a republish does not mention it', () => {
+      setSessionCredentials({ mode: CREDENTIAL_MODES.cookie, csrfToken: 'csrf-1', accountId: 'acc-B' });
+      setSessionCredentials({ mode: CREDENTIAL_MODES.cookie, csrfToken: 'csrf-2' });
+
+      assert.equal(getSessionAccountId(), 'acc-B');
+      assert.equal(writeHeaders()[ACCOUNT_HEADER], 'acc-B');
+    });
+
+    it('clears it on an explicit null and on reset', () => {
+      setSessionCredentials({ mode: CREDENTIAL_MODES.cookie, csrfToken: 'csrf-1', accountId: 'acc-B' });
+      setSessionCredentials({ mode: CREDENTIAL_MODES.cookie, csrfToken: 'csrf-1', accountId: null });
+      assert.equal(ACCOUNT_HEADER in writeHeaders(), false);
+
+      setSessionCredentials({ mode: CREDENTIAL_MODES.cookie, csrfToken: 'csrf-1', accountId: 'acc-B' });
+      resetSessionCredentials();
+      assert.equal(getSessionAccountId(), null);
+    });
+  });
+
   describe('auto mode', () => {
     it('resolves to cookie when a CSRF token is held', () => {
       setSessionCredentials({ mode: CREDENTIAL_MODES.auto, token: 'tk', csrfToken: 'csrf' });
