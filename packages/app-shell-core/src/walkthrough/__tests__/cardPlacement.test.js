@@ -1,3 +1,4 @@
+// @covers packages/app-shell-core/src/walkthrough/cardPlacement.js
 /**
  * Contract of the step-card geometry (ETP-5144).
  *
@@ -14,7 +15,7 @@
 import { describe, it } from 'node:test';
 import assert from 'node:assert/strict';
 
-import { computeCardPosition, computeScrimPanels } from '../cardPlacement.js';
+import { computeCardPosition, computeHoleShieldPanels, computeScrimPanels } from '../cardPlacement.js';
 
 /** The real card size (see `WalkthroughOverlay.jsx`'s `CARD_WIDTH`). */
 const CARD = { width: 380, height: 168 };
@@ -208,5 +209,61 @@ describe('computeScrimPanels', () => {
       assert.ok(panel.left + panel.width <= VIEWPORT.width);
       assert.ok(panel.top + panel.height <= VIEWPORT.height);
     }
+  });
+});
+
+/**
+ * The click shields over the part of the spotlight hole that is NOT the target
+ * (the chevron of a split "New" button, plus the padding ring around it).
+ * Without them a click there reaches the page and derails the tour.
+ */
+describe('computeHoleShieldPanels', () => {
+  /** A split button: the highlight group, and the main button on its left. */
+  const GROUP = { top: 100, left: 100, width: 120, height: 40 };
+  const MAIN_BUTTON = { top: 100, left: 100, width: 90, height: 40 };
+
+  it('returns no shield when either rect is missing', () => {
+    for (const [rect, targetRect] of [[null, MAIN_BUTTON], [GROUP, null], [null, null]]) {
+      assert.deepEqual(computeHoleShieldPanels({ rect, targetRect, viewport: VIEWPORT, padding: 8 }), []);
+    }
+  });
+
+  it('returns no shield when the target fills the whole hole', () => {
+    const panels = computeHoleShieldPanels({
+      rect: GROUP, targetRect: GROUP, viewport: VIEWPORT, padding: 0,
+    });
+
+    assert.deepEqual(panels, []);
+  });
+
+  it('shields the chevron and the padding ring, leaving the target open', () => {
+    const panels = computeHoleShieldPanels({
+      rect: GROUP, targetRect: MAIN_BUTTON, viewport: VIEWPORT, padding: 8,
+    });
+
+    // Hole = group padded by 8: top 92, left 92, right 228, bottom 148.
+    assert.deepEqual(panels, [
+      { top: 92, left: 92, width: 136, height: 8 }, // above the target
+      { top: 140, left: 92, width: 136, height: 8 }, // below the target
+      { top: 100, left: 92, width: 8, height: 40 }, // left padding strip
+      { top: 100, left: 190, width: 38, height: 40 }, // the chevron + right padding
+    ]);
+  });
+
+  it('clamps the shields to the viewport for a group at the top-right edge', () => {
+    const panels = computeHoleShieldPanels({
+      rect: { top: 0, left: 1340, width: 120, height: 40 },
+      targetRect: { top: 0, left: 1340, width: 90, height: 40 },
+      viewport: VIEWPORT,
+      padding: 8,
+    });
+
+    // The strip above is 0px (hole clamped to top 0) and is dropped; the right
+    // shield stops at the viewport edge instead of the padded 1468.
+    assert.deepEqual(panels, [
+      { top: 40, left: 1332, width: 108, height: 8 },
+      { top: 0, left: 1332, width: 8, height: 40 },
+      { top: 0, left: 1430, width: 10, height: 40 },
+    ]);
   });
 });
