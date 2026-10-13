@@ -1,3 +1,4 @@
+// @covers cli/src/resolve-curated.js
 import { describe, it } from 'node:test';
 import { strict as assert } from 'node:assert';
 import { resolveCurated } from '../src/resolve-curated.js';
@@ -1285,5 +1286,46 @@ describe('resolveCurated — draftMode.keepSaveWhenCompletedFields (ETP-4839)', 
     };
     const { schema } = await resolveCurated(schemaRaw, { rules: [] }, decisions);
     assert.ok(!('keepSaveWhenCompletedFields' in schema.entities[0].draftMode));
+  });
+});
+
+// ETP-5692 — draftMode.editableLineFieldsWhenCompleted: line field keys that stay editable
+// and savable (one-field PATCH) on a completed document, each still subject to its own
+// readOnlyLogic. Same additive pass-through rule as keepSaveWhenCompletedFields: emitted only
+// as a non-empty array, absent otherwise, so every other draftMode contract stays byte-identical.
+describe('resolveCurated — draftMode.editableLineFieldsWhenCompleted (ETP-5692)', () => {
+  const schemaRaw = {
+    window: { id: '700', name: 'Purchase Invoice' },
+    entities: [{
+      name: 'cInvoice',
+      tableName: 'C_Invoice',
+      tabId: '10',
+      tabName: 'Header',
+      fields: [
+        { name: 'documentNo', columnName: 'DocumentNo', label: 'Document No',
+          type: 'string', visibility: 'readOnly' },
+      ],
+    }],
+  };
+  const draftMode = (extra = {}) => ({
+    enabled: true, processField: 'documentAction', processValue: 'CO', label: 'Complete', ...extra,
+  });
+  const resolveWith = (dm) => resolveCurated(schemaRaw, { rules: [] }, {
+    version: 2,
+    window: { name: 'Purchase Invoice', draftMode: dm },
+    entities: { cInvoice: { name: 'purchaseInvoice' } },
+    rules: {},
+  });
+
+  it('propagates a non-empty array verbatim to the primary entity draftMode', async () => {
+    const { schema } = await resolveWith(draftMode({ editableLineFieldsWhenCompleted: ['project', 'costcenter'] }));
+    assert.deepEqual(schema.entities[0].draftMode.editableLineFieldsWhenCompleted, ['project', 'costcenter']);
+  });
+
+  it('never emits the key for an empty array or a non-array value', async () => {
+    for (const value of [[], true, 'project']) {
+      const { schema } = await resolveWith(draftMode({ editableLineFieldsWhenCompleted: value }));
+      assert.ok(!('editableLineFieldsWhenCompleted' in schema.entities[0].draftMode));
+    }
   });
 });
