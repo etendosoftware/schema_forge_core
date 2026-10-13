@@ -730,6 +730,12 @@ function buildDraftMode(draftModeDecision, enabled) {
     // criterion as the other optional draftMode keys above.
     draftMode.keepSaveWhenCompletedFields = draftModeDecision.keepSaveWhenCompletedFields;
   }
+  if (Array.isArray(draftModeDecision.editableLineFieldsWhenCompleted) && draftModeDecision.editableLineFieldsWhenCompleted.length > 0) {
+    // ETP-5692: the line-level counterpart of keepSaveWhenCompletedFields — line field keys
+    // that stay editable (one-field PATCH, each still subject to its own readOnlyLogic) on a
+    // completed document. Honored by the app-shell inline lines grid. Same additive criterion.
+    draftMode.editableLineFieldsWhenCompleted = draftModeDecision.editableLineFieldsWhenCompleted;
+  }
   return draftMode;
 }
 
