@@ -4,7 +4,7 @@ import { Button } from '@etendosoftware/app-shell-core/components/ui/button';
 import { Label } from '@etendosoftware/app-shell-core/components/ui/label';
 import { useUI } from '@etendosoftware/app-shell-core/i18n';
 import { isCompanyStepValid, isSampleDataOffered } from '../state.js';
-import { ONBOARDING_FIELD_LIMITS } from '../fieldLimits.js';
+import { ONBOARDING_FIELD_LIMITS, CLIENT_NAME_INPUT_MAX_LENGTH, exceedsLimit } from '../fieldLimits.js';
 import { trackOnboarding } from '../tracking.js';
 import { SetupShell } from '../components/SetupShell.jsx';
 import { OnboardingSessionAction } from '../components/OnboardingSessionAction.jsx';
@@ -66,6 +66,8 @@ export function CompanyStep({ config, stepData, onNext, onBack, goToStep, onChan
   }));
 
   const isValid = isCompanyStepValid(form);
+  // Trim to match isCompanyStepValid, so the inline error and the Start button never disagree.
+  const clientNameTooLong = exceedsLimit(form.clientName?.trim(), ONBOARDING_FIELD_LIMITS.clientName);
   const sessionAction = token && (
     <OnboardingSessionAction onLogout={onLogout} label={ui('logout')} />
   );
@@ -105,7 +107,8 @@ export function CompanyStep({ config, stepData, onNext, onBack, goToStep, onChan
               value={form.clientName}
               onChange={e => updateField('clientName', e.target.value)}
               placeholder={ui('onboardingCompanyNamePlaceholder')}
-              maxLength={ONBOARDING_FIELD_LIMITS.clientName}
+              maxLength={CLIENT_NAME_INPUT_MAX_LENGTH}
+              error={clientNameTooLong ? ui('onboardingFieldTooLong', { max: ONBOARDING_FIELD_LIMITS.clientName }) : null}
               data-testid="SetupField__79cf84" />
           )}
 

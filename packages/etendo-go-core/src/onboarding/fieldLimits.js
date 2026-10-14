@@ -46,6 +46,14 @@ export const FULL_NAME_MAX_LENGTH = 60;
  * which 40 keeps comfortably inside its own 60. */
 export const CLIENT_NAME_MAX_LENGTH = 40;
 
+/**
+ * Hard cap of the company-name input, looser than CLIENT_NAME_MAX_LENGTH on
+ * purpose: a `maxLength` at the real limit silently truncates a pasted name, so
+ * the user never learns why it was cut. Typing headroom up to `AD_CLIENT.NAME`
+ * (60) lets the over-limit value surface as an inline error instead (ETP-5638).
+ */
+export const CLIENT_NAME_INPUT_MAX_LENGTH = 60;
+
 /** `C_BPARTNER.TAXID` / `AD_ORGINFO.TAXID` are VARCHAR(20). Preventive: today
  * the tax id is only persisted in the onboarding draft and never reaches the
  * AD, but the cap keeps the value storable the day it does. */
