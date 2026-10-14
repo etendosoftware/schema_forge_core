@@ -1,3 +1,4 @@
+// @covers packages/app-shell-core/src/walkthrough/targetResolver.js
 /**
  * Contract of `resolveHighlightBox` (ETP-5144).
  *
@@ -19,7 +20,7 @@
  * `getBoundingClientRect` always reports zeros, so each element's rect is
  * stubbed with the measured numbers above.
  */
-import { resolveHighlightBox, isSelectorValid } from '../targetResolver.js';
+import { resolveExplicitHighlight, resolveHighlightBox, isSelectorValid } from '../targetResolver.js';
 
 /** Gives `el` a fixed rect, since jsdom measures nothing. */
 function withRect(el, { top = 0, left = 0, width = 0, height = 0 }) {
@@ -171,5 +172,68 @@ describe('isSelectorValid', () => {
     for (const selector of [undefined, null, '', '   ', 42]) {
       expect(isSelectorValid(selector)).toBe(false);
     }
+  });
+});
+
+/**
+ * `resolveExplicitHighlight`: the element a step's `highlightTarget` names
+ * (e.g. the wrapper of a split "New" button), or null so the overlay keeps the
+ * historical box. Containment is the safety rule: a highlight that does not
+ * enclose the target would cut the control the user must click out of the hole.
+ */
+describe('resolveExplicitHighlight', () => {
+  /** A split button: `group` wraps the main `button` and its `chevron`. */
+  function buildSplitButton(testId = 'action-new-group') {
+    const group = withRect(document.createElement('div'), { top: 10, left: 10, width: 120, height: 32 });
+    group.dataset.testid = testId;
+    const button = withRect(document.createElement('button'), { top: 10, left: 10, width: 90, height: 32 });
+    const chevron = withRect(document.createElement('button'), { top: 10, left: 100, width: 30, height: 32 });
+    group.append(button, chevron);
+    document.body.append(group);
+    return { group, button, chevron };
+  }
+
+  it('returns the named element when it is visible and contains the target', () => {
+    const { group, button } = buildSplitButton();
+
+    expect(resolveExplicitHighlight(button, '[data-testid="action-new-group"]', document)).toBe(group);
+  });
+
+  it('returns null instead of throwing when it cannot be used', () => {
+    const { button, chevron } = buildSplitButton();
+    const cases = [
+      ['no selector', undefined],
+      ['empty selector', '   '],
+      ['malformed selector', '[data-testid='],
+      ['no match', '[data-testid="missing"]'],
+      ['a match that does not contain the target', '.chevron'],
+    ];
+    chevron.className = 'chevron';
+
+    for (const [label, selector] of cases) {
+      expect(resolveExplicitHighlight(button, selector, document), label).toBeNull();
+    }
+  });
+
+  it('returns null when the only match is hidden', () => {
+    const { group, button } = buildSplitButton();
+    group.style.visibility = 'hidden';
+
+    expect(resolveExplicitHighlight(button, '[data-testid="action-new-group"]', document)).toBeNull();
+  });
+
+  it('returns null when the only match is the target itself', () => {
+    const { button } = buildSplitButton();
+    button.dataset.testid = 'action-new';
+
+    expect(resolveExplicitHighlight(button, '[data-testid="action-new"]', document)).toBeNull();
+  });
+
+  it('picks the match that contains the target when several share the test id', () => {
+    // Another mounted list renders the same split button first in the DOM.
+    buildSplitButton();
+    const { group, button } = buildSplitButton();
+
+    expect(resolveExplicitHighlight(button, '[data-testid="action-new-group"]', document)).toBe(group);
   });
 });

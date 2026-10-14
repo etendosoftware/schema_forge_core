@@ -1,3 +1,4 @@
+// @covers packages/app-shell-core/src/components/import/ImportDropzone.jsx
 import { describe, it, expect, vi, afterEach } from 'vitest';
 import { render, screen, fireEvent, cleanup } from '@testing-library/react';
 import { ImportDropzone } from '../ImportDropzone.jsx';
@@ -73,5 +74,52 @@ describe('ImportDropzone', () => {
     const dropzone = screen.getByTestId('ImportDropzone__zone');
     fireEvent.drop(dropzone, { dataTransfer: { files: [] } });
     expect(onFileSelected).not.toHaveBeenCalled();
+  });
+
+  describe('disabled', () => {
+    const csv = () => new File(['a,b\n1,2'], 'contacts.csv', { type: 'text/csv' });
+
+    /** Renders the dropzone and spies the hidden input's click (the file picker). */
+    function renderZone(props) {
+      const onFileSelected = vi.fn();
+      render(<ImportDropzone onFileSelected={onFileSelected} {...props} />);
+      const input = screen.getByTestId('ImportDropzone__fileInput');
+      const openPicker = vi.spyOn(input, 'click').mockImplementation(() => {});
+      return { onFileSelected, openPicker, input, zone: screen.getByTestId('ImportDropzone__zone') };
+    }
+
+    it('stays interactive by default: focusable, enabled, opens the picker and accepts drops', () => {
+      const { onFileSelected, openPicker, input, zone } = renderZone();
+      expect(zone.getAttribute('tabindex')).toBe('0');
+      expect(zone.hasAttribute('aria-disabled')).toBe(false);
+      expect(input.disabled).toBe(false);
+
+      fireEvent.click(zone);
+      fireEvent.keyDown(zone, { key: 'Enter' });
+      expect(openPicker).toHaveBeenCalledTimes(2);
+
+      const file = csv();
+      fireEvent.drop(zone, { dataTransfer: { files: [file] } });
+      expect(onFileSelected).toHaveBeenCalledWith(file);
+    });
+
+    it('is out of the tab order, announced as disabled and has a disabled input', () => {
+      const { input, zone } = renderZone({ disabled: true });
+      expect(zone.getAttribute('tabindex')).toBe('-1');
+      expect(zone.getAttribute('aria-disabled')).toBe('true');
+      expect(input.disabled).toBe(true);
+    });
+
+    it('ignores click, Enter, Space and drop', () => {
+      const { onFileSelected, openPicker, zone } = renderZone({ disabled: true });
+
+      fireEvent.click(zone);
+      fireEvent.keyDown(zone, { key: 'Enter' });
+      fireEvent.keyDown(zone, { key: ' ' });
+      fireEvent.drop(zone, { dataTransfer: { files: [csv()] } });
+
+      expect(openPicker).not.toHaveBeenCalled();
+      expect(onFileSelected).not.toHaveBeenCalled();
+    });
   });
 });
