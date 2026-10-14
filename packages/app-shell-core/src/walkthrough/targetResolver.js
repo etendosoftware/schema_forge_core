@@ -285,3 +285,34 @@ function paintsBorder(style) {
   ];
   return widths.every((w) => Number.parseFloat(w) > 0) && style.borderStyle !== 'none';
 }
+
+/**
+ * The element a step's `highlightTarget` names, for drawing the spotlight
+ * around something larger than the target -- or null when the step has none or
+ * it cannot be used, in which case the overlay keeps `resolveHighlightBox(target)`
+ * (the historical behaviour, unchanged for every step that does not opt in).
+ *
+ * Returns the first VISIBLE match that CONTAINS the target. Containment is the
+ * safety rule: a highlight element that does not enclose the target would cut
+ * the very control the user must click out of the hole. Picking the enclosing
+ * match (rather than the first match) also keeps a shared test id
+ * (`action-new-group` on several mounted lists) pinned to the right instance.
+ * The author named this element explicitly, so it is used as-is -- no climbing.
+ *
+ * Never fails the step: a missing, hidden, non-enclosing or malformed match
+ * returns null. The step's "target not found" logic only ever looks at `target`.
+ */
+export function resolveExplicitHighlight(target, highlightSelector, doc = target?.ownerDocument) {
+  if (!target || !doc?.querySelectorAll) return null;
+  if (typeof highlightSelector !== 'string' || highlightSelector.trim().length === 0) return null;
+  let matches;
+  try {
+    matches = doc.querySelectorAll(highlightSelector);
+  } catch {
+    return null;
+  }
+  for (const el of matches) {
+    if (el !== target && el.contains?.(target) && isTargetVisible(el)) return el;
+  }
+  return null;
+}

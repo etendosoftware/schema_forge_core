@@ -8,6 +8,7 @@ import {
   ONBOARDING_FIELD_LIMITS,
   FULL_NAME_MAX_LENGTH,
   CLIENT_NAME_MAX_LENGTH,
+  CLIENT_NAME_INPUT_MAX_LENGTH,
   FREELANCER_FULL_NAME_MAX_LENGTH,
   fullNameLimitFor,
   exceedsLimit,
@@ -47,6 +48,12 @@ describe('onboarding field limits (ETP-4665)', () => {
     // The same string is written to both columns by InitialSetupUtility.insertClient,
     // so the search key is what binds. Relaxing this to 60 reintroduces the bug.
     assert.equal(CLIENT_NAME_MAX_LENGTH, 40);
+  });
+
+  it('gives the company-name input headroom over the limit, within AD_CLIENT.NAME', () => {
+    // ETP-5638: a cap at the limit would truncate a paste silently instead of showing the error.
+    assert.ok(CLIENT_NAME_INPUT_MAX_LENGTH > CLIENT_NAME_MAX_LENGTH);
+    assert.equal(CLIENT_NAME_INPUT_MAX_LENGTH, 60);
   });
 
   it('applies the stricter client-name limit to a freelancer full name', () => {
@@ -144,7 +151,11 @@ describe('the forms wire the limits to the inputs (ETP-4665)', () => {
 
   it('caps company name, tax id and address in the company step', () => {
     const step = readStep('CompanyStep.jsx');
-    assert.match(step, /maxLength=\{ONBOARDING_FIELD_LIMITS\.clientName\}/);
+    // ETP-5638: the company name keeps typing headroom so a pasted over-long name is not
+    // silently truncated; the real limit surfaces as an inline error, trimmed like the validator.
+    assert.match(step, /maxLength=\{CLIENT_NAME_INPUT_MAX_LENGTH\}/);
+    assert.match(step, /exceedsLimit\(form\.clientName\?\.trim\(\), ONBOARDING_FIELD_LIMITS\.clientName\)/);
+    assert.match(step, /ui\('onboardingFieldTooLong', \{ max: ONBOARDING_FIELD_LIMITS\.clientName \}\)/);
     assert.match(step, /maxLength=\{ONBOARDING_FIELD_LIMITS\.fiscalId\}/);
     assert.match(step, /maxLength=\{ONBOARDING_FIELD_LIMITS\.address\}/);
   });
