@@ -23,22 +23,6 @@
   scrollbar-color: #E8EAEF transparent;
 }
 
-/* Contacts — row states (scoped to avoid affecting other windows) */
-.contacts-rows tr:hover {
-  background-color: #ffffff !important;
-  position: relative;
-  z-index: 1;
-  filter: drop-shadow(0px 10px 15px rgba(18, 18, 23, 0.08))
-          drop-shadow(0px 4px 6px rgba(18, 18, 23, 0.05));
-}
-.contacts-rows tr:has([aria-checked="true"]):hover {
-  background-color: #ECEEF1 !important;
-  position: relative;
-  z-index: 1;
-  filter: drop-shadow(0px 10px 15px rgba(18, 18, 23, 0.08))
-          drop-shadow(0px 4px 6px rgba(18, 18, 23, 0.05));
-}
-
 .address-grid {
   display: grid;
   grid-template-columns: repeat(4, 1fr);

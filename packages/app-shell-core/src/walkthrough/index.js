@@ -54,11 +54,12 @@ export {
   isTargetVisible,
   isValueDisplay,
   readTargetValue,
+  resolveExplicitHighlight,
   resolveTarget,
   waitForTarget,
 } from './targetResolver.js';
 export { MISSING_TEXT_FALLBACK_KEY, resolveStepText, resetStepTextWarnings } from './stepText.js';
 export { useStepText } from './useStepText.js';
-export { computeCardPosition, computeScrimPanels } from './cardPlacement.js';
+export { computeCardPosition, computeHoleShieldPanels, computeScrimPanels } from './cardPlacement.js';
 export { useElementRect } from './useElementRect.js';
 export { useForeignDialog, hasForeignDialog } from './useForeignDialog.js';

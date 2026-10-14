@@ -1,3 +1,4 @@
+// @covers packages/app-shell-core/src/components/ui/custom-icons.jsx
 import { describe, it } from 'node:test';
 import assert from 'node:assert/strict';
 import { readFile } from 'node:fs/promises';
@@ -37,9 +38,9 @@ describe('custom-icons — exports (ETP-3660)', () => {
     assert.match(src, /export function PricingIcon/);
   });
 
-  it('has exactly seven exported functions (no accidental extras)', () => {
+  it('has exactly ten exported functions (no accidental extras)', () => {
     const exportedFunctions = src.match(/export function \w+/g) ?? [];
-    assert.equal(exportedFunctions.length, 7);
+    assert.equal(exportedFunctions.length, 10);
   });
 });
 
@@ -126,4 +127,32 @@ describe('custom-icons — SearchIcon dimensions (ETP-3660)', () => {
   it('SearchIcon svg is 17x17', () => {
     assert.match(src, /function SearchIcon[\s\S]*?width="17"[\s\S]*?height="17"/);
   });
+});
+
+// ---------------------------------------------------------------------------
+// Iconic set (24-unit grid). Source-reading like the rest of this file: it runs
+// under `node --test`, which cannot import JSX. Each icon keeps the design's
+// 24x24 frame (so the Tailwind size IS the Figma size), colours through
+// `currentColor`, and forwards className plus any extra prop to the <svg>.
+// ---------------------------------------------------------------------------
+
+describe('custom-icons — Iconic 24px icons', () => {
+  for (const name of ['IconicTrashIcon', 'IconicArrowUpIcon', 'IconicArrowDownIcon']) {
+    const body = src.match(new RegExp(`export function ${name}\\b[\\s\\S]*?</svg>`))?.[0] ?? '';
+    const svgTag = body.match(/<svg\b[^>]*>/)?.[0] ?? '';
+
+    it(`${name} is exported and takes className plus the remaining props`, () => {
+      assert.match(body, new RegExp(`export function ${name}\\s*\\(\\s*\\{\\s*className\\s*,\\s*\\.\\.\\.props\\s*\\}\\s*\\)`));
+    });
+
+    it(`${name} renders a 24x24 svg that forwards className and the extra props`, () => {
+      assert.match(svgTag, /viewBox="0 0 24 24"/);
+      assert.match(svgTag, /className=\{className\}/);
+      assert.match(svgTag, /\{\.\.\.props\}/);
+    });
+
+    it(`${name} fills its path with currentColor`, () => {
+      assert.match(body, /<path\b[^>]*fill="currentColor"/);
+    });
+  }
 });

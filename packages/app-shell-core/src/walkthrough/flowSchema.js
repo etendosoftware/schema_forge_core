@@ -203,6 +203,12 @@ export function validateStep(raw, path = 'step') {
   if (raw.navPathSpeedMs !== undefined && !Number.isFinite(raw.navPathSpeedMs)) {
     errors.push(`${path}.navPathSpeedMs must be a number when present`);
   }
+  if (raw.highlightTarget !== undefined && !isNonEmptyString(raw.highlightTarget)) {
+    errors.push(`${path}.highlightTarget must be a non-empty string when present`);
+  }
+  if (raw.highlightTargetTestId !== undefined && !isNonEmptyString(raw.highlightTargetTestId)) {
+    errors.push(`${path}.highlightTargetTestId must be a non-empty string when present`);
+  }
   validateNavPath(raw.navPath, path, errors);
   // A navPath is only ever RUN when the step is off-screen, which is decided by
   // `routeMatch` -- and `routeMatch` defaults to `route`. Without a `route` the
@@ -213,6 +219,25 @@ export function validateStep(raw, path = 'step') {
   }
   validateAdvance(raw.advance, path, errors);
   return errors;
+}
+
+/**
+ * The optional spotlight-only selector. `highlightTarget` (CSS) wins over
+ * `highlightTargetTestId`, mirroring `target`/`targetTestId`. `null` means "draw
+ * the spotlight around the target", which is every step that does not opt in.
+ *
+ * It exists for composite controls whose clickable part is smaller than what
+ * the user reads as one control -- a split "New" button, where the step must
+ * advance on the main button only but the ring has to enclose the chevron too.
+ * It moves the spotlight (ring, scrim hole, card anchoring) and nothing else:
+ * the click/value listeners, the "target not found" wait and the error detail
+ * all stay on `target`. The overlay only honours it when the matched element
+ * CONTAINS the target, and falls back to the target otherwise.
+ */
+function normalizeHighlightTarget(raw) {
+  if (isNonEmptyString(raw.highlightTarget)) return raw.highlightTarget;
+  if (isNonEmptyString(raw.highlightTargetTestId)) return testIdSelector(raw.highlightTargetTestId);
+  return null;
 }
 
 /**
@@ -238,6 +263,8 @@ export function normalizeStep(raw, flowDefaults = {}) {
       ? raw.routeMatch
       : (isNonEmptyString(raw.route) ? raw.route : null),
     target: isNonEmptyString(raw.target) ? raw.target : testIdSelector(raw.targetTestId),
+    // Spotlight-only element (see `normalizeHighlightTarget`); null = the target.
+    highlightTarget: normalizeHighlightTarget(raw),
     titleKey: isNonEmptyString(raw.titleKey) ? raw.titleKey : null,
     bodyKey: raw.bodyKey,
     placement: PLACEMENTS.includes(raw.placement) ? raw.placement : 'auto',

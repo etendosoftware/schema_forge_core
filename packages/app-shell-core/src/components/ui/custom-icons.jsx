@@ -35,6 +35,37 @@ export function TrashIcon({ className }) {
   );
 }
 
+/*
+ * Iconic set, 24-unit grid (ETP-5600). Unlike `TrashIcon` above — the same trash glyph cropped
+ * to a tight 16x17 box, so `w-4 h-4` renders the glyph itself at 16px (ImageField) — these keep
+ * the design's 24x24 frame with its built-in padding, so the Tailwind size IS the Figma size
+ * (`size-5` = the 20px row-action trash, `size-6` = the 24px header trash, `size-4` = the 16px
+ * trend arrows). Single filled path, coloured through `currentColor`.
+ */
+export function IconicTrashIcon({ className, ...props }) {
+  return (
+    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" className={className} aria-hidden="true" xmlns="http://www.w3.org/2000/svg" {...props}>
+      <path d="M13.25 6.75C13.25 6.19772 12.8023 5.75 12.25 5.75H11.75C11.1977 5.75 10.75 6.19772 10.75 6.75H13.25ZM8.58691 17.3369C8.63196 17.8536 9.06536 18.25 9.58398 18.25H14.416C14.9346 18.25 15.368 17.8536 15.4131 17.3369L16.1592 8.75H7.84082L8.58691 17.3369ZM19 6.75C19.5523 6.75 20 7.19772 20 7.75C20 8.30228 19.5523 8.75 19 8.75H18.167L17.4053 17.5098C17.2705 19.06 15.9721 20.25 14.416 20.25H9.58398C8.02786 20.25 6.72953 19.06 6.59473 17.5098L5.83301 8.75H5C4.44772 8.75 4 8.30228 4 7.75C4 7.19772 4.44772 6.75 5 6.75H8.75C8.75 5.09315 10.0931 3.75 11.75 3.75H12.25C13.9069 3.75 15.25 5.09315 15.25 6.75H19Z" fill="currentColor"/>
+    </svg>
+  );
+}
+
+export function IconicArrowUpIcon({ className, ...props }) {
+  return (
+    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" className={className} aria-hidden="true" xmlns="http://www.w3.org/2000/svg" {...props}>
+      <path d="M11 19.25V7.24609L7.47368 10.9404C7.09239 11.3399 6.45912 11.3548 6.05961 10.9736C5.66017 10.5923 5.64523 9.95908 6.02641 9.55957L11.2764 4.05957C11.4651 3.86189 11.7268 3.75 12 3.75C12.2733 3.75 12.535 3.86189 12.7237 4.05957L17.9737 9.55957C18.3549 9.95908 18.3399 10.5923 17.9405 10.9736C17.541 11.3548 16.9077 11.3399 16.5264 10.9404L13 7.24609V19.25C13 19.8023 12.5523 20.25 12 20.25C11.4478 20.25 11 19.8023 11 19.25Z" fill="currentColor"/>
+    </svg>
+  );
+}
+
+export function IconicArrowDownIcon({ className, ...props }) {
+  return (
+    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" className={className} aria-hidden="true" xmlns="http://www.w3.org/2000/svg" {...props}>
+      <path d="M11 4.75C11 4.19772 11.4478 3.75 12 3.75C12.5523 3.75 13 4.19772 13 4.75V16.7529L16.5264 13.0596C16.9077 12.6601 17.541 12.6452 17.9405 13.0264C18.3399 13.4077 18.3549 14.0409 17.9737 14.4404L12.7237 19.9404C12.535 20.1381 12.2733 20.25 12 20.25C11.7268 20.25 11.4651 20.1381 11.2764 19.9404L6.02641 14.4404C5.64523 14.0409 5.66017 13.4077 6.05961 13.0264C6.45912 12.6452 7.09239 12.6601 7.47368 13.0596L11 16.7529V4.75Z" fill="currentColor"/>
+    </svg>
+  );
+}
+
 export function PricingIcon({ className }) {
   return (
     <svg width="18" height="18" viewBox="0 0 18 18" fill="none" className={className} xmlns="http://www.w3.org/2000/svg">
