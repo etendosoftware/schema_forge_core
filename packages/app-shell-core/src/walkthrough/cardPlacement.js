@@ -141,6 +141,42 @@ export function computeScrimPanels({ rect, viewport, padding = 8 }) {
   ].filter((panel) => panel.width > 0 && panel.height > 0);
 }
 
+/**
+ * The parts of the spotlight hole that are NOT the target, as transparent
+ * click-shield rectangles. Only non-empty when the hole is drawn around a
+ * larger element than the target (a step's `highlightTarget`).
+ *
+ * The scrim never covers the hole, so without these a click on the
+ * highlighted-but-not-target area (the chevron of a split "New" button) reaches
+ * the page: it does not advance the step, but it opens whatever that control
+ * opens and derails the tour. When the step blocks outside its target, this
+ * area IS outside the target, so it is blocked too. Same clamping as the hole.
+ *
+ * @param {{rect, targetRect, viewport, padding}} args `rect` is the highlight
+ *   element's rect (the hole before padding), `targetRect` the target's.
+ */
+export function computeHoleShieldPanels({ rect, targetRect, viewport, padding = 8 }) {
+  if (!rect || !targetRect) return [];
+  const hole = {
+    top: Math.max(0, rect.top - padding),
+    left: Math.max(0, rect.left - padding),
+    right: Math.min(viewport.width, rect.left + rect.width + padding),
+    bottom: Math.min(viewport.height, rect.top + rect.height + padding),
+  };
+  const inner = {
+    top: clamp(targetRect.top, hole.top, hole.bottom),
+    left: clamp(targetRect.left, hole.left, hole.right),
+    right: clamp(targetRect.left + targetRect.width, hole.left, hole.right),
+    bottom: clamp(targetRect.top + targetRect.height, hole.top, hole.bottom),
+  };
+  return [
+    { top: hole.top, left: hole.left, width: hole.right - hole.left, height: inner.top - hole.top },
+    { top: inner.bottom, left: hole.left, width: hole.right - hole.left, height: hole.bottom - inner.bottom },
+    { top: inner.top, left: hole.left, width: inner.left - hole.left, height: inner.bottom - inner.top },
+    { top: inner.top, left: inner.right, width: hole.right - inner.right, height: inner.bottom - inner.top },
+  ].filter((panel) => panel.width > 0 && panel.height > 0);
+}
+
 function clamp(value, min, max) {
   if (max < min) return min;
   return Math.min(Math.max(value, min), max);

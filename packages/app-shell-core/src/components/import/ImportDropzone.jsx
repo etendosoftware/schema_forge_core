@@ -16,20 +16,28 @@ const DEFAULT_LABELS = {
  * It governs BOTH the `accept` attribute and the hint text, so the two cannot disagree; before
  * this, both were hardcoded to CSV/TXT and the declaration was dead config. An explicit
  * `accept` still wins, for a caller that is not import-driven.
+ *
+ * Visuals follow the Figma "Drag" component, shared by the import dialog and the Contacts empty
+ * state (ETP-5600): a 1px dashed gray/200 border and NO fill by default; on hover a translucent
+ * #121217 overlay at 5% (so it reads on a white AND a grey surface) and a gray/400 border, 200ms
+ * ease-in. `disabled` (optional, default false) renders the design's disabled fill and ignores
+ * clicks and drops. Dragging a file over keeps its primary highlight.
  */
-export function ImportDropzone({ accept, formats, onFileSelected, labels }) {
+export function ImportDropzone({ accept, formats, onFileSelected, labels, disabled = false }) {
   const text = { ...DEFAULT_LABELS, ...labels };
   const acceptAttr = accept ?? acceptAttribute(formats);
   const hint = text.dropHint.replace('{formats}', formatNames(formats).join(', '));
   const [dragOver, setDragOver] = useState(false);
   const inputRef = useRef(null);
 
-  const handleZoneClick = useCallback(() => inputRef.current?.click(), []);
+  const handleZoneClick = useCallback(() => {
+    if (!disabled) inputRef.current?.click();
+  }, [disabled]);
 
   const handleDragOver = useCallback((e) => {
     e.preventDefault();
-    setDragOver(true);
-  }, []);
+    if (!disabled) setDragOver(true);
+  }, [disabled]);
 
   const handleDragLeave = useCallback((e) => {
     e.preventDefault();
@@ -39,9 +47,10 @@ export function ImportDropzone({ accept, formats, onFileSelected, labels }) {
   const handleDrop = useCallback((e) => {
     e.preventDefault();
     setDragOver(false);
+    if (disabled) return;
     const file = e.dataTransfer?.files?.[0];
     if (file) onFileSelected(file);
-  }, [onFileSelected]);
+  }, [disabled, onFileSelected]);
 
   const handleInputChange = useCallback((e) => {
     const file = e.target.files?.[0];
@@ -52,7 +61,8 @@ export function ImportDropzone({ accept, formats, onFileSelected, labels }) {
   return (
     <div
       role="button"
-      tabIndex={0}
+      tabIndex={disabled ? -1 : 0}
+      aria-disabled={disabled || undefined}
       data-testid="ImportDropzone__zone"
       onClick={handleZoneClick}
       onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); handleZoneClick(); } }}
@@ -60,8 +70,10 @@ export function ImportDropzone({ accept, formats, onFileSelected, labels }) {
       onDragLeave={handleDragLeave}
       onDrop={handleDrop}
       className={cn(
-        'flex flex-col items-center justify-center gap-2 rounded-lg border-2 border-dashed p-8 cursor-pointer transition-colors',
-        dragOver ? 'border-primary bg-primary/5' : 'border-border hover:bg-muted/40',
+        'flex flex-col items-center justify-center gap-2 rounded-lg border border-dashed px-8 py-5 transition-colors duration-200 ease-in',
+        disabled && 'cursor-not-allowed bg-[hsl(var(--field-hover))] border-[hsl(var(--field-disabled-border))]',
+        !disabled && dragOver && 'cursor-pointer border-primary bg-primary/5',
+        !disabled && !dragOver && 'cursor-pointer border-[hsl(var(--field-disabled-border))] hover:border-[#828FA3] hover:bg-[rgba(18,18,23,0.05)]',
       )}
     >
       {/*
@@ -78,6 +90,7 @@ export function ImportDropzone({ accept, formats, onFileSelected, labels }) {
         ref={inputRef}
         type="file"
         accept={acceptAttr}
+        disabled={disabled}
         onChange={handleInputChange}
         data-testid="ImportDropzone__fileInput"
         className="hidden"
