@@ -1,3 +1,4 @@
+// @covers packages/app-shell-core/src/walkthrough/flowSchema.js
 /**
  * `revision`, the flow<->user contract (ETP-5144).
  *
@@ -15,7 +16,9 @@ import {
   DEFAULT_FLOW_REVISION,
   normalizeFlow,
   normalizeRevision,
+  normalizeStep,
   validateFlow,
+  validateStep,
 } from '../src/walkthrough/flowSchema.js';
 
 /** Minimal valid step, so these cases are about the flow, not the steps. */
@@ -86,4 +89,47 @@ describe('validateFlow() on revision', () => {
       assert.match(errors[0], /create-contact/);
     }
   });
+});
+
+/**
+ * `highlightTarget` / `highlightTargetTestId`: the optional spotlight-only
+ * element of a step (e.g. the wrapper of a split "New" button). Same shape as
+ * `target` / `targetTestId`: the CSS selector wins, a test id becomes a
+ * `[data-testid]` selector, and a step that does not opt in gets `null`.
+ */
+describe('step highlightTarget', () => {
+  it('normalizes to null when the step declares no highlight', () => {
+    assert.equal(normalizeStep(STEP).highlightTarget, null);
+  });
+
+  it('turns highlightTargetTestId into a data-testid selector', () => {
+    const step = normalizeStep({ ...STEP, highlightTargetTestId: 'action-new-group' });
+    assert.equal(step.highlightTarget, '[data-testid="action-new-group"]');
+  });
+
+  it('lets the CSS selector win when both are declared', () => {
+    const step = normalizeStep({
+      ...STEP,
+      highlightTarget: '.split-button',
+      highlightTargetTestId: 'action-new-group',
+    });
+    assert.equal(step.highlightTarget, '.split-button');
+  });
+
+  it('accepts either field as a non-empty string', () => {
+    assert.deepEqual(validateStep({ ...STEP, highlightTarget: '.split-button' }), []);
+    assert.deepEqual(validateStep({ ...STEP, highlightTargetTestId: 'action-new-group' }), []);
+  });
+
+  for (const field of ['highlightTarget', 'highlightTargetTestId']) {
+    it(`rejects an empty or non-string ${field}`, () => {
+      for (const value of ['', '   ', 42, null, true, {}]) {
+        assert.deepEqual(
+          validateStep({ ...STEP, [field]: value }),
+          [`step.${field} must be a non-empty string when present`],
+          `expected ${field}=${JSON.stringify(value)} to be rejected`,
+        );
+      }
+    });
+  }
 });

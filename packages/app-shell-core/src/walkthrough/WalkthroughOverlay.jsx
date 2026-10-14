@@ -4,12 +4,12 @@ import { ArrowLeft, ArrowRight, Check, Loader2, TriangleAlert, X } from 'lucide-
 import { Button } from '../components/ui/button.jsx';
 import { useLocale, useUI } from '../i18n/index.js';
 import { cn } from '../lib/utils.js';
-import { computeCardPosition, computeScrimPanels } from './cardPlacement.js';
+import { computeCardPosition, computeHoleShieldPanels, computeScrimPanels } from './cardPlacement.js';
 import { WalkthroughCursor } from './WalkthroughCursor.jsx';
 import { resolveStepText } from './stepText.js';
 import { useElementRect } from './useElementRect.js';
 import { useForeignDialog } from './useForeignDialog.js';
-import { resolveHighlightBox, WALKTHROUGH_ERROR } from './targetResolver.js';
+import { resolveExplicitHighlight, resolveHighlightBox, WALKTHROUGH_ERROR } from './targetResolver.js';
 
 /**
  * The overlay's elevation. It has to clear every surface a tour can point at,
@@ -75,11 +75,27 @@ export function WalkthroughOverlay({ engine }) {
   // bordered wrapper, with the chevron as a flex sibling 20px further right.
   // See `resolveHighlightBox`. Recomputed per target only -- it reads layout,
   // and the ancestor of a given element does not change while the step is up.
+  //
+  // A step may also NAME a larger spotlight element (`highlightTarget`, e.g. the
+  // wrapper of a split "New" button so the chevron is not cut out of the ring).
+  // It moves the ring, the scrim hole and the card anchor -- the card is placed
+  // against what is drawn, so it never covers the chevron. Everything else
+  // (click listener, value read, cursor, "target not found") stays on `target`.
+  // When it cannot be used it is null and the historical box applies.
+  const explicitHighlight = useMemo(
+    () => (isActive ? resolveExplicitHighlight(target, step?.highlightTarget) : null),
+    [target, isActive, step?.highlightTarget],
+  );
   const highlightBox = useMemo(
-    () => (isActive ? resolveHighlightBox(target) : target),
-    [target, isActive],
+    () => (isActive ? (explicitHighlight ?? resolveHighlightBox(target)) : target),
+    [target, isActive, explicitHighlight],
   );
   const rect = useElementRect(highlightBox, isActive);
+  // Only measured when the hole is larger than the target ON PURPOSE: it is what
+  // the click shield below is cut around. The implicit `resolveHighlightBox`
+  // widening is not shielded -- its extra area is the same control (a selector's
+  // own chevron), which the user is meant to be able to use.
+  const targetRect = useElementRect(explicitHighlight ? target : null, isActive);
   // A drawer/modal/dropdown the step's own target just opened. While one is up
   // the scrim would dim it from above (the overlay is deliberately the topmost
   // tier), so the dimming is suspended and the card is parked out of the way.
@@ -152,6 +168,17 @@ export function WalkthroughOverlay({ engine }) {
   // interact with.
   const blocking = isActive && !!rect && !foreignDialogOpen && step?.blockOutside === true;
 
+  // The part of the hole that is NOT the target (the chevron of a split "New"
+  // button). The scrim never covers the hole, so without this a click there
+  // reaches the page: it does not advance the step (the listener is on the
+  // target) but it opens whatever that control opens and derails the tour.
+  // Under `blockOutside` that area IS outside the target, so it is blocked like
+  // the rest -- transparent, so it still reads as spotlighted. Without
+  // `blockOutside` nothing is blocked anywhere, and neither is this.
+  const shieldPanels = blocking && explicitHighlight && targetRect
+    ? computeHoleShieldPanels({ rect, targetRect, viewport, padding: step?.spotlightPadding ?? 8 })
+    : [];
+
   return createPortal(
     <div
       className="pointer-events-none fixed inset-0"
@@ -176,6 +203,15 @@ export function WalkthroughOverlay({ engine }) {
           )}
           style={{ top: panel.top, left: panel.left, width: panel.width, height: panel.height }}
           data-testid="walkthrough-scrim-panel"
+        />
+      ))}
+
+      {shieldPanels.map((panel, index) => (
+        <div
+          key={`shield-${panel.top}-${panel.left}-${index}`}
+          className="pointer-events-auto fixed bg-transparent"
+          style={{ top: panel.top, left: panel.left, width: panel.width, height: panel.height }}
+          data-testid="walkthrough-hole-shield"
         />
       ))}
 
