@@ -265,7 +265,9 @@ describe('real provider authoritative refresh', () => {
     await act(async () => old.resolve(jsonResponse({}, 401)));
     expect((await oldRequest).name).toBe('AbortError');
     expect(result.current.token).toBe(session.token);
-    fetch.mockResolvedValueOnce(jsonResponse({}, 401));
+    // ETP-5489: the 401 only logs out once GET /sws/go/session agrees, so the probe is a second 401
+    // (the default 200 above would read as a live session and, correctly, not log out).
+    fetch.mockResolvedValueOnce(jsonResponse({}, 401)).mockResolvedValueOnce(jsonResponse({}, 401));
     await act(async () => {
       await expect(result.current.request('/resource')).rejects.toThrow('Unauthorized');
     });
