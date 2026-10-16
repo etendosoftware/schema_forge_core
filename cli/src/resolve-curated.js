@@ -1233,6 +1233,7 @@ async function runCli() {
       processes.processes || [],
       prevVersion,
       prevContract,
+      { specName: windowName },
     );
 
     const contractPath = join(artifactsDir, 'contract.json');

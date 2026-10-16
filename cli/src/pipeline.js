@@ -699,7 +699,7 @@ export async function runGenerateContractStep(windowName, pipelineContext, deps 
   prevContract = loadedContract.prevContract;
   prevContractRaw = loadedContract.prevContractRaw;
   prevMcpContract = await loadPreviousMcpContract(readFile, windowName, prevMcpContract);
-  const generatedContract = generateContract(schema, Array.isArray(rules) ? rules : rules.rules || [], processes.processes || [], prevVersion, prevContract);
+  const generatedContract = generateContract(schema, Array.isArray(rules) ? rules : rules.rules || [], processes.processes || [], prevVersion, prevContract, { specName: windowName });
   const {contract, mcpContract} = splitWindowContractArtifacts(generatedContract, prevContract, prevMcpContract);
   if (prevContractRaw) {
     await writeFile(`artifacts/${windowName}/contract.prev.json`, prevContractRaw, 'utf-8');
