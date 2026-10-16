@@ -922,6 +922,8 @@ const WINDOW_TRUTHY_PROPS = [
   'documentPreview',
   'notesField',
   'relatedDocuments',
+  // ETP-5648: hides the detail (lines) tab, and skips its fetch, without the capability.
+  'detailVisibleWhenCapability',
   'customComponents',
   'menuActions',
   'processOverrides',
@@ -1009,7 +1011,7 @@ export const WINDOW_KEY_ORDER = [
   'hideListFilters', 'hideRecordCount', 'hideStatusFilter', 'hideLink', 'hideEyeCount', 'customListIcons', 'breadcrumb',
   'customComponents', 'menuActions', 'processOverrides',
   'entityLabel', 'detailLabel', 'detailTabIndex', 'detailTabOrder', 'secondaryTabs',
-  'detailEntity', 'statusBar', 'statusField', 'summaryFields',
+  'detailEntity', 'detailVisibleWhenCapability', 'statusBar', 'statusField', 'summaryFields',
   'detailSortBy', 'listSortBy', 'salesTheme', 'listKpiCards', 'headerExtra', 'documentDateField',
   'labelOverrides', 'primaryTabs', 'othersLabel',
   'disableProcessedLock', 'titleField',
