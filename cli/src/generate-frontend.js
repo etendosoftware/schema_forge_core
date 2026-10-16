@@ -2196,8 +2196,14 @@ export function generatePageComponent(headerEntity, detailEntity, contract) {
   // gate for "+ Añadir línea" — the button only appears when all of these are
   // filled in `data`. Windows can still override with their own addLineGuard
   // prop for more complex business rules.
+  // Only fields the user can fill: visibility 'readOnly' (header totals,
+  // DocumentNo, DocStatus) is excluded — those are filled by the backend after
+  // the save, so demanding them hid the button until then. A field that is
+  // merely locked by readOnlyLogic (e.g. after completion) is still editable in
+  // draft and stays in the list.
+  const NOT_USER_FILLABLE_VISIBILITIES = new Set(['discarded', 'system', 'readOnly']);
   const requiredHeaderFieldNames = allEntityFields
-    .filter(f => f.required && f.form && f.visibility !== 'discarded' && f.visibility !== 'system')
+    .filter(f => f.required && f.form && !NOT_USER_FILLABLE_VISIBILITIES.has(f.visibility))
     .map(f => f.name);
   // Built without a nested template literal (Sonar S4624): plain concat
   // around each name keeps the outer template flat.
