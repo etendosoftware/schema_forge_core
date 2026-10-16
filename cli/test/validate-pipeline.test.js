@@ -1116,6 +1116,33 @@ describe('Rule F22 — customTabsAfterBottom + tabOrder', () => {
   });
 });
 
+// ─── F24 — contract specName vs artifact directory name (ETP-4763) ──────────
+
+describe('Rule F24 — contract specName must equal the artifact directory', () => {
+  it('F24: specName derived from the display name instead of the directory is blocked', async () => {
+    const result = await runOnFixtures(['window-f24-mismatch']);
+    const f24 = result.violations.find(v => v.rule === 'F24');
+    assert.ok(f24, 'F24 should fire when apiPrediction.specName != directory name');
+    assert.equal(f24.severity, 'BLOCK');
+    assert.match(f24.message, /'tax-rate'.*'window-f24-mismatch'/);
+  });
+
+  it('F24: specName equal to the directory passes', async () => {
+    const result = await runOnFixtures(['window-f24-ok']);
+    assert.ok(!result.violations.find(v => v.rule === 'F24'));
+  });
+
+  it('F24: contract without apiPrediction is skipped silently', async () => {
+    const result = await runOnFixtures(['window-f22-ok']);
+    assert.ok(!result.violations.find(v => v.rule === 'F24'));
+  });
+
+  it('F24: honors --skip=F24', async () => {
+    const result = await runOnFixtures(['window-f24-mismatch'], { skip: ['F24'] });
+    assert.ok(!result.violations.find(v => v.rule === 'F24'));
+  });
+});
+
 // ─── F23 — ETGO_SF_FIELD.VISIBILITY vs the flags it projects to ────────────
 // ETP-4793 / IMP-26 §5.3. Every fixture below declares its spec NAME as
 // 'window-ok' so it lines up with an existing window artifact — F23 keys the
