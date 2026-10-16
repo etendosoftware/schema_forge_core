@@ -148,3 +148,37 @@ for (const [label, expiresIn] of [
     assert.ok(result.expiresAt >= before && result.expiresAt <= after);
   });
 }
+
+test('never follows a redirect, so client_secret is not re-sent to its target', async () => {
+  const { createServer } = await import('node:http');
+  let targetHits = 0;
+  const target = createServer((_req, res) => {
+    targetHits += 1;
+    res.writeHead(200, { 'Content-Type': 'application/json' }).end(JSON.stringify({ access_token: 'stolen' }));
+  });
+  await new Promise<void>((resolve) => target.listen(0, '127.0.0.1', resolve));
+  const targetPort = (target.address() as { port: number }).port;
+  const origin = createServer((_req, res) => {
+    res.writeHead(307, { Location: `http://127.0.0.1:${targetPort}/oauth2/token` }).end();
+  });
+  await new Promise<void>((resolve) => origin.listen(0, '127.0.0.1', resolve));
+  const originPort = (origin.address() as { port: number }).port;
+  try {
+    const service = new TokenExchangeService(`http://127.0.0.1:${originPort}`);
+    await assert.rejects(() => service.exchangeApiKeyForJwt('id', 'secret'), TokenExchangeUnavailableError);
+    assert.equal(targetHits, 0, 'the redirect target was never contacted');
+  } finally {
+    origin.close();
+    target.close();
+  }
+});
+
+test('the token POST is sent with redirect: "error"', async () => {
+  let redirect: RequestRedirect | undefined;
+  const service = new TokenExchangeService(BASE_URL, (async (_url: string, init: RequestInit) => {
+    redirect = init.redirect;
+    return new Response(JSON.stringify({ access_token: 'jwt', expires_in: 60 }), { status: 200 });
+  }) as typeof fetch);
+  await service.exchangeApiKeyForJwt('id', 'secret');
+  assert.equal(redirect, 'error');
+});

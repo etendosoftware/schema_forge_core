@@ -213,3 +213,51 @@ test('evictJwt for a token that is no longer cached leaves the fresh entry alone
   assert.equal(await cache.getJwtForApiKey('id-1', 'secret-1'), 'jwt-2');
   assert.equal(calls.length, 1);
 });
+
+test('non-finite options fall back to the defaults instead of collapsing the cache', async () => {
+  const clock = fakeClock();
+  let exchanges = 0;
+  const exchanger = {
+    exchangeApiKeyForJwt: async (id: string) => {
+      exchanges += 1;
+      return { jwt: `jwt-${id}`, expiresAt: clock.seconds() + 3600 };
+    },
+  } as unknown as TokenExchangeService;
+  const cache = new CachedTokenExchangeService(exchanger, {
+    now: clock.now,
+    maxEntries: Number.NaN,
+    safetyMarginSeconds: Number.POSITIVE_INFINITY,
+  });
+  for (const id of ['a', 'b', 'c']) await cache.getJwtForApiKey(id, 's');
+  for (const id of ['a', 'b', 'c']) await cache.getJwtForApiKey(id, 's');
+  assert.equal(exchanges, 3, 'all three credentials stayed cached');
+  assert.equal(cache.size, 3);
+
+  clock.advance(3600 - TOKEN_CACHE_SAFETY_MARGIN_SECONDS); // the default margin applies
+  await cache.getJwtForApiKey('a', 's');
+  assert.equal(exchanges, 4);
+});
+
+test('a negative margin is clamped to 0 and a fractional cap is floored to at least 1', async () => {
+  const clock = fakeClock();
+  let exchanges = 0;
+  const exchanger = {
+    exchangeApiKeyForJwt: async (id: string) => {
+      exchanges += 1;
+      return { jwt: `jwt-${id}`, expiresAt: clock.seconds() + 60 };
+    },
+  } as unknown as TokenExchangeService;
+  const cache = new CachedTokenExchangeService(exchanger, {
+    now: clock.now,
+    maxEntries: 0.5,
+    safetyMarginSeconds: -100,
+  });
+  await cache.getJwtForApiKey('a', 's');
+  clock.advance(59); // a -100 s margin would stretch the entry past Etendo's expiry
+  await cache.getJwtForApiKey('a', 's');
+  assert.equal(exchanges, 1);
+  clock.advance(1);
+  await cache.getJwtForApiKey('a', 's');
+  assert.equal(exchanges, 2, 'served exactly until expiry, never beyond');
+  assert.equal(cache.size, 1);
+});

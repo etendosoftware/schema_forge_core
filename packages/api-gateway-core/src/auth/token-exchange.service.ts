@@ -71,6 +71,9 @@ export class TokenExchangeService {
         method: 'POST',
         headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
         body: body.toString(),
+        // Never follow a redirect: it would re-send client_secret to wherever it points.
+        // fetch rejects instead, which surfaces below as TokenExchangeUnavailableError.
+        redirect: 'error',
         ...(this.timeoutMs > 0 ? { signal: AbortSignal.timeout(this.timeoutMs) } : {}),
       });
     } catch (cause) {

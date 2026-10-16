@@ -22,6 +22,11 @@ export interface CachedTokenExchangeOptions {
   now?: () => number;
 }
 
+/** The option when it is a finite number, the default otherwise (undefined, NaN, Infinity). */
+function finiteOr(value: number | undefined, fallback: number): number {
+  return typeof value === 'number' && Number.isFinite(value) ? value : fallback;
+}
+
 interface CacheEntry {
   jwt: string;
   /** Epoch ms after which the entry is no longer served (Etendo's expiry minus the margin). */
@@ -43,8 +48,9 @@ export class CachedTokenExchangeService {
     private readonly exchanger: TokenExchangeService,
     options: CachedTokenExchangeOptions = {}
   ) {
-    this.safetyMarginMs = (options.safetyMarginSeconds ?? TOKEN_CACHE_SAFETY_MARGIN_SECONDS) * 1000;
-    this.maxEntries = Math.max(1, options.maxEntries ?? TOKEN_CACHE_MAX_ENTRIES);
+    this.safetyMarginMs =
+      Math.max(0, finiteOr(options.safetyMarginSeconds, TOKEN_CACHE_SAFETY_MARGIN_SECONDS)) * 1000;
+    this.maxEntries = Math.max(1, Math.floor(finiteOr(options.maxEntries, TOKEN_CACHE_MAX_ENTRIES)));
     this.now = options.now ?? Date.now;
   }
 

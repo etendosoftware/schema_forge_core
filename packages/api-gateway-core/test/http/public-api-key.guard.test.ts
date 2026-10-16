@@ -133,3 +133,73 @@ test('attaches an evictNeoJwt closure that evicts exactly the token it attached'
   request.evictNeoJwt!();
   assert.deepEqual(evicted, ['jwt-abc']);
 });
+
+function spyLogger(guard: PublicApiKeyGuard) {
+  const lines: Array<{ level: 'warn' | 'error'; text: string }> = [];
+  (guard as unknown as { logger: unknown }).logger = {
+    warn: (...args: unknown[]) => lines.push({ level: 'warn', text: args.map(String).join(' ') }),
+    error: (...args: unknown[]) => lines.push({ level: 'error', text: args.map(String).join(' ') }),
+  };
+  return lines;
+}
+
+test('an unavailable exchange is logged as a warning with message and cause codes, never the secret', async () => {
+  const connRefused = Object.assign(new Error('connect ECONNREFUSED 127.0.0.1:8080'), { code: 'ECONNREFUSED' });
+  const fetchFailed = new TypeError('fetch failed', { cause: connRefused });
+  const guard = new PublicApiKeyGuard(
+    fakeTokenExchange('jwt', [], {
+      failWith: new TokenExchangeUnavailableError('OAuth2 token endpoint unreachable', undefined, { cause: fetchFailed }),
+    })
+  );
+  const lines = spyLogger(guard);
+  await assert.rejects(
+    () => guard.canActivate(fakeContext({ headers: { authorization: 'Bearer client-1:top-secret-value' } })),
+    ServiceUnavailableException
+  );
+  assert.equal(lines.length, 1);
+  assert.equal(lines[0].level, 'warn');
+  assert.match(lines[0].text, /OAuth2 token endpoint unreachable/);
+  assert.match(lines[0].text, /TypeError/);
+  assert.match(lines[0].text, /ECONNREFUSED/);
+  assert.ok(!lines[0].text.includes('top-secret-value'));
+});
+
+test('a timeout is logged with the TimeoutError cause name', async () => {
+  const timeout = new DOMException('The operation was aborted due to timeout', 'TimeoutError');
+  const guard = new PublicApiKeyGuard(
+    fakeTokenExchange('jwt', [], {
+      failWith: new TokenExchangeUnavailableError('OAuth2 token endpoint unreachable', undefined, { cause: timeout }),
+    })
+  );
+  const lines = spyLogger(guard);
+  await assert.rejects(
+    () => guard.canActivate(fakeContext({ headers: { authorization: 'Bearer client-1:top-secret-value' } })),
+    ServiceUnavailableException
+  );
+  assert.match(lines[0].text, /TimeoutError/);
+  assert.ok(!lines[0].text.includes('top-secret-value'));
+});
+
+test('an unclassified exchange error is logged at error level with its stack, never the secret', async () => {
+  const guard = new PublicApiKeyGuard(fakeTokenExchange('jwt', [], { failWith: new RangeError('boom') }));
+  const lines = spyLogger(guard);
+  await assert.rejects(
+    () => guard.canActivate(fakeContext({ headers: { authorization: 'Bearer client-1:top-secret-value' } })),
+    ServiceUnavailableException
+  );
+  assert.equal(lines.length, 1);
+  assert.equal(lines[0].level, 'error');
+  assert.match(lines[0].text, /RangeError/);
+  assert.match(lines[0].text, /at /, 'the stack is included');
+  assert.ok(!lines[0].text.includes('top-secret-value'));
+});
+
+test('a refused credential is not logged at all', async () => {
+  const guard = new PublicApiKeyGuard(fakeTokenExchange('jwt', []));
+  const lines = spyLogger(guard);
+  await assert.rejects(
+    () => guard.canActivate(fakeContext({ headers: { authorization: 'Bearer client-1:top-secret-value' } })),
+    UnauthorizedException
+  );
+  assert.equal(lines.length, 0);
+});

@@ -9,7 +9,7 @@ import {
 // Regular (not `import type`) import — see cached-token-exchange.service.ts for why:
 // constructor-injected types must be real imports for emitDecoratorMetadata (ETP-5345).
 import { CachedTokenExchangeService } from '../auth/cached-token-exchange.service.ts';
-import { InvalidApiKeyError } from '../auth/token-exchange.service.ts';
+import { InvalidApiKeyError, TokenExchangeUnavailableError } from '../auth/token-exchange.service.ts';
 
 /** What {@link PublicApiKeyGuard} attaches to an authenticated request. */
 export interface PublicApiKeyRequest {
@@ -56,8 +56,18 @@ export class PublicApiKeyGuard implements CanActivate {
         throw new UnauthorizedException('Invalid API key');
       }
       // Etendo could not be asked (outage, timeout, garbage answer): the key may be fine, so
-      // this is not a 401. Log the class and status only — never the credential.
-      this.logger.warn(`API key exchange unavailable: ${describe(error)}`);
+      // this is not a 401. Never log the credential.
+      if (error instanceof TokenExchangeUnavailableError) {
+        // Its message is a fixed string; the cause chain adds only names and codes
+        // (TimeoutError, ECONNREFUSED), never a cause's own message.
+        this.logger.warn(`API key exchange unavailable: ${describeUnavailable(error)}`);
+      } else {
+        // Not a failure the exchanger classified: a bug, so keep the stack.
+        this.logger.error(
+          `API key exchange failed unexpectedly: ${error instanceof Error ? error.name : typeof error}`,
+          error instanceof Error ? error.stack : undefined
+        );
+      }
       throw new ServiceUnavailableException('Authentication service unavailable');
     }
     request.neoJwt = jwt;
@@ -70,8 +80,17 @@ export class PublicApiKeyGuard implements CanActivate {
   }
 }
 
-function describe(error: unknown): string {
-  if (!(error instanceof Error)) return typeof error;
-  const status = (error as { status?: unknown }).status;
-  return typeof status === 'number' ? `${error.name} (${status})` : error.name;
+/** "<message> (status N) [cause: TypeError, cause: Error ECONNREFUSED]" — names and codes only. */
+function describeUnavailable(error: TokenExchangeUnavailableError): string {
+  const parts = [error.message];
+  if (typeof error.status === 'number') parts.push(`(status ${error.status})`);
+  const causes: string[] = [];
+  let cause: unknown = error.cause;
+  for (let depth = 0; depth < 3 && cause instanceof Error; depth++) {
+    const code = (cause as { code?: unknown }).code;
+    causes.push(typeof code === 'string' ? `${cause.name} ${code}` : cause.name);
+    cause = cause.cause;
+  }
+  if (causes.length > 0) parts.push(`[cause: ${causes.join(', cause: ')}]`);
+  return parts.join(' ');
 }
