@@ -15,7 +15,7 @@ export interface TokenExchangeOptions {
 export const DEFAULT_TOKEN_EXCHANGE_TIMEOUT_MS = 10_000;
 
 /**
- * Etendo refused the credential: it answered the token endpoint with a 4xx. For the
+ * Etendo refused the credential: it answered the token endpoint with 400, 401 or 403. For the
  * client_credentials grant `OAuth2Servlet` answers 401 `invalid_client` for an unknown,
  * inactive or deleted key and for a wrong secret, and 400 `invalid_request` / `invalid_scope`
  * for a malformed request. Retrying with the same credential will not help.
@@ -31,7 +31,8 @@ export class InvalidApiKeyError extends Error {
 }
 
 /**
- * The credential could not be checked: network failure, timeout, a 5xx (or 408/429), or a
+ * The credential could not be checked: network failure, timeout, any status other than
+ * 400/401/403 (a 5xx, or a 404/405/429... from a misconfigured token URL or a proxy), or a
  * response that is not a usable token. Says nothing about whether the credential is valid.
  */
 export class TokenExchangeUnavailableError extends Error {
@@ -45,8 +46,11 @@ export class TokenExchangeUnavailableError extends Error {
   }
 }
 
-/** 4xx statuses that mean "try again later", not "this credential is wrong". */
-const TRANSIENT_CLIENT_STATUSES = new Set([408, 429]);
+/**
+ * The only statuses that mean "this credential is wrong". Any other 4xx (404, 405, 408, 429...)
+ * points at the gateway's configuration or a proxy, and must not blame every key with a 401.
+ */
+const CREDENTIAL_REFUSED_STATUSES = new Set([400, 401, 403]);
 
 export class TokenExchangeService {
   private readonly timeoutMs: number;
@@ -82,7 +86,7 @@ export class TokenExchangeService {
 
     const json = await readJsonObject(response);
     const status = response.status;
-    if (status >= 400 && status < 500 && !TRANSIENT_CLIENT_STATUSES.has(status)) {
+    if (CREDENTIAL_REFUSED_STATUSES.has(status)) {
       throw new InvalidApiKeyError(status, typeof json?.error === 'string' ? json.error : undefined);
     }
     if (!response.ok) {

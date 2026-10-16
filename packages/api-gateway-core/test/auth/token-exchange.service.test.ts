@@ -54,11 +54,30 @@ test('a 401 invalid_client (unknown, inactive or wrong secret) is an InvalidApiK
   );
 });
 
-test('a 400 (malformed request) is an InvalidApiKeyError too', async () => {
-  const service = serviceAnswering(
-    () => new Response(JSON.stringify({ error: 'invalid_request' }), { status: 400 })
+for (const [status, oauthError] of [
+  [400, 'invalid_request'],
+  [403, 'access_denied'],
+] as const) {
+  test(`a ${status} is an InvalidApiKeyError too`, async () => {
+    const service = serviceAnswering(
+      () => new Response(JSON.stringify({ error: oauthError }), { status })
+    );
+    await assert.rejects(
+      () => service.exchangeApiKeyForJwt('id', 'secret'),
+      (err: unknown) => err instanceof InvalidApiKeyError && err.status === status
+    );
+  });
+}
+
+test('a refusal with an HTML body has no oauthError and names the status', async () => {
+  const service = serviceAnswering(() => new Response('<html>Unauthorized</html>', { status: 401 }));
+  await assert.rejects(
+    () => service.exchangeApiKeyForJwt('id', 'secret'),
+    (err: unknown) =>
+      err instanceof InvalidApiKeyError &&
+      err.oauthError === undefined &&
+      err.message.includes('401')
   );
-  await assert.rejects(() => service.exchangeApiKeyForJwt('id', 'secret'), InvalidApiKeyError);
 });
 
 test('the error never carries the secret', async () => {
@@ -83,10 +102,17 @@ for (const status of [500, 502, 503]) {
   });
 }
 
-for (const status of [408, 429]) {
-  test(`a transient ${status} is a TokenExchangeUnavailableError`, async () => {
-    const service = serviceAnswering(() => new Response('{}', { status }));
-    await assert.rejects(() => service.exchangeApiKeyForJwt('id', 'secret'), TokenExchangeUnavailableError);
+// 404/405 come from a misconfigured token URL or a proxy, 408/429 are transient, 418 stands
+// for any other 4xx: none of them may blame the key with a 401.
+for (const status of [404, 405, 408, 418, 429]) {
+  test(`a ${status} is a TokenExchangeUnavailableError, not an invalid credential`, async () => {
+    const service = serviceAnswering(
+      () => new Response(JSON.stringify({ error: 'invalid_client' }), { status })
+    );
+    await assert.rejects(
+      () => service.exchangeApiKeyForJwt('id', 'secret'),
+      (err: unknown) => err instanceof TokenExchangeUnavailableError && err.status === status
+    );
   });
 }
 
@@ -181,4 +207,27 @@ test('the token POST is sent with redirect: "error"', async () => {
   }) as typeof fetch);
   await service.exchangeApiKeyForJwt('id', 'secret');
   assert.equal(redirect, 'error');
+});
+
+test('timeoutMs: 0 disables the timeout: the request carries no signal', async () => {
+  let init: RequestInit | undefined;
+  const service = new TokenExchangeService(
+    BASE_URL,
+    (async (_url: string, requestInit: RequestInit) => {
+      init = requestInit;
+      return new Response(JSON.stringify({ access_token: 'jwt', expires_in: 60 }), { status: 200 });
+    }) as typeof fetch,
+    { timeoutMs: 0 }
+  );
+  await service.exchangeApiKeyForJwt('id', 'secret');
+  assert.ok(init);
+  assert.equal('signal' in init, false);
+});
+
+test('a 200 whose body is valid JSON but not an object (null) is a TokenExchangeUnavailableError', async () => {
+  const service = serviceAnswering(() => new Response('null', { status: 200 }));
+  await assert.rejects(
+    () => service.exchangeApiKeyForJwt('id', 'secret'),
+    (err: unknown) => err instanceof TokenExchangeUnavailableError && err.status === 200
+  );
 });

@@ -203,3 +203,36 @@ test('a refused credential is not logged at all', async () => {
   );
   assert.equal(lines.length, 0);
 });
+
+test('a cause message is never logged, only its name and code', async () => {
+  const sentinel = 'SENTINEL-cause-message-http://user:pw@host';
+  const inner = Object.assign(new Error(sentinel, { cause: new Error('deeper') }), { code: 'ECONNREFUSED' });
+  const guard = new PublicApiKeyGuard(
+    fakeTokenExchange('jwt', [], {
+      failWith: new TokenExchangeUnavailableError('OAuth2 token endpoint unreachable', undefined, { cause: inner }),
+    })
+  );
+  const lines = spyLogger(guard);
+  await assert.rejects(
+    () => guard.canActivate(fakeContext({ headers: { authorization: 'Bearer client-1:top-secret-value' } })),
+    ServiceUnavailableException
+  );
+  assert.equal(lines.length, 1);
+  assert.match(lines[0].text, /Error ECONNREFUSED/);
+  assert.ok(!lines[0].text.includes(sentinel));
+  assert.ok(!lines[0].text.includes('deeper'));
+});
+
+test('a non-Error thrown by the exchanger answers 503 and is logged at error level by type', async () => {
+  const guard = new PublicApiKeyGuard(fakeTokenExchange('jwt', [], { failWith: 'boom' }));
+  const lines = spyLogger(guard);
+  await assert.rejects(
+    () => guard.canActivate(fakeContext({ headers: { authorization: 'Bearer client-1:top-secret-value' } })),
+    (err: unknown) => err instanceof ServiceUnavailableException && err.getStatus() === 503
+  );
+  assert.equal(lines.length, 1);
+  assert.equal(lines[0].level, 'error');
+  assert.match(lines[0].text, /string/);
+  assert.ok(!lines[0].text.includes('boom'));
+  assert.ok(!lines[0].text.includes('top-secret-value'));
+});
