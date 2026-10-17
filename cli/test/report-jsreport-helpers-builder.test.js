@@ -1,5 +1,6 @@
 import { describe, it } from 'node:test';
 import assert from 'node:assert/strict';
+import { createHash } from 'node:crypto';
 import { readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { buildJsreportHelpersString, createReportHelpers } from '../../templates/reports/helpers/report-html-helpers.js';
@@ -195,6 +196,36 @@ describe('buildJsreportHelpersString', () => {
     const formatCurrency = new Function(`${groupSrc}\n${fnSource}; return formatCurrency;`)();
     assert.equal(formatCurrency(1232), '1.232,00');
     assert.equal(formatCurrency(1000), '1.000,00');
+  });
+
+  // ETP-4910: the jsreport string must round HALF-UP on the DECIMAL value, like the
+  // browser formatter (`tools/app-shell/src/lib/formatCurrency.js`'s `toFixedHalfUp`)
+  // and like the backend's BigDecimal HALF_UP arithmetic — not through the binary
+  // `abs.toFixed(maxFrac)`, which renders (2.675).toFixed(2) as "2.67" because 2.675
+  // is stored as 2.67499999… . This repo's copy of the helper module lost that rule
+  // (it was added in the functional repo by ETP-5107 and never mirrored), so a PDF
+  // produced by THIS repo's report server showed one cent less than the screen it was
+  // printed from. Pinned here so the mirrored copy cannot lose it again silently.
+  it('rounds HALF-UP on the decimal value, never through the binary toFixed approximation (ETP-5107)', () => {
+    const built = buildJsreportHelpersString(DOCUMENT_HELPERS_SRC);
+    const groupSrc = extractFunctionSource(built, '__groupEsEs');
+    const fnSource = extractFunctionSource(built, 'formatCurrency');
+    const formatCurrency = new Function(`${groupSrc}\n${fnSource}; return formatCurrency;`)();
+
+    // Native toFixed(2) would answer "2.67"/"8.57"/"1234.56" for all three.
+    assert.equal(formatCurrency(2.675), '2,68');
+    assert.equal(formatCurrency(8.575), '8,58');
+    // Rounding and grouping together, on a monetary amount.
+    assert.equal(formatCurrency(1234.565), '1.234,57');
+  });
+
+  it('still rounds a value whose binary form is already exact (no regression on the ordinary path)', () => {
+    const built = buildJsreportHelpersString(DOCUMENT_HELPERS_SRC);
+    const groupSrc = extractFunctionSource(built, '__groupEsEs');
+    const fnSource = extractFunctionSource(built, 'formatCurrency');
+    const formatCurrency = new Function(`${groupSrc}\n${fnSource}; return formatCurrency;`)();
+    assert.equal(formatCurrency(0.125), '0,13');
+    assert.equal(formatCurrency(2.674), '2,67');
   });
 
   it('accepts an explicit numberFormat override as a 2nd param — for callers with a known JS value (not a helpers.js string to regex-extract from)', () => {
@@ -593,5 +624,75 @@ describe('buildJsreportHelpersString — source guard against the minification-u
     // comment was deleted; the guard above still works, but the next reader
     // loses the explanation of WHY. Kept as a canary, not as a hard rule.
     assert.match(fnSrc, /toString/);
+  });
+});
+
+// ─────────────────────────────────────────────────────────────────────────────
+// ETP-4910 — cross-repo parity contract for the report helper modules.
+//
+// `templates/` is not a published package, so `templates/reports/helpers/*.js`
+// exists as one physical copy per repo: the canonical one in
+// `etendosoftware/etendo_schema_forge` (the copy the assembled report-server
+// image carries — see that repo's `scripts/assemble-report-server-context.sh`)
+// and this mirror. They drifted silently once already: ETP-4908 synced them,
+// then ETP-5107 added the HALF_UP rounding to the canonical copy only, so this
+// one kept rendering half-cent amounts a cent lower for ~2.5 months.
+//
+// The contract is `templates/reports/helpers/parity.json`, committed with
+// identical bytes in both repos and regenerated ONLY by
+// `make sync-report-helpers` in the canonical repo: one canonical sha256 per
+// module. This check is deliberately self-contained (it reads this repo's own
+// copy and its own manifest, never the sibling checkout), so it also runs in a
+// standalone core CI checkout. Applying the recorded import-line normalisation
+// means a copy that differs from the canonical one by anything else — the
+// HALF_UP rule, a comment, a whole function — fails here.
+// ─────────────────────────────────────────────────────────────────────────────
+
+const PARITY_MANIFEST_PATH = fileURLToPath(
+  new URL('../../templates/reports/helpers/parity.json', import.meta.url),
+);
+const PARITY_MANIFEST = JSON.parse(readFileSync(PARITY_MANIFEST_PATH, 'utf8'));
+
+/** sha256 of this repo's copy of a helper module, reduced to the canonical form. */
+function mirrorDigest(moduleName) {
+  const raw = readFileSync(fileURLToPath(new URL(`../../templates/reports/helpers/${moduleName}`, import.meta.url)), 'utf8');
+  const canonical = raw
+    .replace(/\r\n/g, '\n')
+    .split(PARITY_MANIFEST.importLine.schema_forge_core)
+    .join(PARITY_MANIFEST.importLine.schema_forge);
+  return createHash('sha256').update(canonical, 'utf8').digest('hex');
+}
+
+describe('report helper modules — cross-repo parity contract (ETP-4910)', () => {
+  it('the manifest lists the mirrored modules and both import specifiers', () => {
+    assert.deepEqual(PARITY_MANIFEST.modules, ['common.js', 'jsreport-helpers.js', 'report-html-helpers.js']);
+    assert.ok(PARITY_MANIFEST.importLine.schema_forge);
+    assert.ok(PARITY_MANIFEST.importLine.schema_forge_core);
+  });
+
+  for (const moduleName of PARITY_MANIFEST.modules) {
+    it(`${moduleName} matches the canonical digest in parity.json`, () => {
+      assert.equal(
+        mirrorDigest(moduleName),
+        PARITY_MANIFEST.sha256[moduleName],
+        `${moduleName} no longer matches the canonical copy in etendo_schema_forge. `
+        + 'In that repo run `make sync-report-helpers` (it rewrites this repo\'s copy and both '
+        + 'parity.json files) and commit the result in BOTH repos.',
+      );
+    });
+  }
+
+  it('the mirrored helper module imports report-i18n relatively, as the contract records', () => {
+    // The one allowed difference: this repo ships report-i18n inside cli/src, the
+    // canonical repo imports it from the published CLI package.
+    const raw = readFileSync(
+      fileURLToPath(new URL('../../templates/reports/helpers/report-html-helpers.js', import.meta.url)),
+      'utf8',
+    );
+    assert.ok(
+      raw.includes(PARITY_MANIFEST.importLine.schema_forge_core),
+      'report-html-helpers.js must import report-i18n from ../../../cli/src/report-i18n.js in this repo',
+    );
+    assert.ok(!raw.includes(PARITY_MANIFEST.importLine.schema_forge));
   });
 });
