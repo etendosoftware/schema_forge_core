@@ -114,7 +114,10 @@ export function VerifyEmailStep({ config, accountName, accountEmail, token, onLo
     <AuthShell
       brandLabel={config.brandLabel || 'Etendo'}
       headerContent={onLogout && (
-        <OnboardingSessionAction onLogout={onLogout} label={ui('logout')} />
+        <OnboardingSessionAction
+          onLogout={onLogout}
+          label={ui('logout')}
+          data-testid="OnboardingSessionAction__32ea2f" />
       )}
       marketingTitle={ui('onboardingMarketingTitle')}
       marketingDescription={ui('onboardingMarketingDescription')}
@@ -122,7 +125,10 @@ export function VerifyEmailStep({ config, accountName, accountEmail, token, onLo
       data-testid="AuthShell__verify_email">
       <div data-testid="verify-email-step">
         <div className="mb-6 flex h-14 w-14 items-center justify-center rounded-2xl border border-slate-200 bg-white shadow-sm">
-          <MailCheck className="h-6 w-6 text-slate-500" aria-hidden="true" />
+          <MailCheck
+            className="h-6 w-6 text-slate-500"
+            aria-hidden="true"
+            data-testid="MailCheck__32ea2f" />
         </div>
 
         <h1 className="text-3xl font-semibold tracking-[-0.06em] text-slate-900 sm:text-[2.7rem] sm:leading-[1.04]">
@@ -148,7 +154,10 @@ export function VerifyEmailStep({ config, accountName, accountEmail, token, onLo
             data-testid="verify-email-resend"
             className="h-12 rounded-lg px-6 text-base font-medium">
             {state === 'sending' && (
-              <Loader2 className="mr-2 h-4 w-4 animate-spin" aria-hidden="true" />
+              <Loader2
+                className="mr-2 h-4 w-4 animate-spin"
+                aria-hidden="true"
+                data-testid="Loader2__32ea2f" />
             )}
             {state === 'sending' && ui('onboardingEmailVerifyResending')}
             {state !== 'sending' && cooling
