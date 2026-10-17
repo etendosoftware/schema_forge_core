@@ -14,7 +14,10 @@ export function PageHeader({ accountName, onLogout, isAuthenticated, logoutLabel
         {isAuthenticated && (
           <div className="flex shrink-0 items-center gap-3">
             {accountName && <span className="max-w-32 min-w-0 truncate text-sm text-gray-500">{accountName}</span>}
-            <OnboardingSessionAction onLogout={onLogout} label={logoutLabel} />
+            <OnboardingSessionAction
+              onLogout={onLogout}
+              label={logoutLabel}
+              data-testid="OnboardingSessionAction__d68637" />
           </div>
         )}
       </div>

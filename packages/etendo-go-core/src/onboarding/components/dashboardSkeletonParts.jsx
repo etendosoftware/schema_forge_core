@@ -80,13 +80,16 @@ export function RailMenuItem({ icon: Icon, width, hasChevron }) {
   return (
     <div className="flex h-8 items-center px-2">
       <span className={`flex w-7 flex-none items-center pl-1 ${ICON_COLOR}`}>
-        <Icon size={20} weight="regular" />
+        <Icon size={20} weight="regular" data-testid="Icon__870fc2" />
       </span>
       <span className="min-w-0 flex-1 px-2">
-        <Bar width={width} />
+        <Bar width={width} data-testid="Bar__870fc2" />
       </span>
       <span className={`flex w-7 flex-none items-center justify-center pr-1 ${ICON_COLOR}`}>
-        {hasChevron && <ChevronDown className="h-[18px] w-[18px]" strokeWidth={1.7} />}
+        {hasChevron && <ChevronDown
+          className="h-[18px] w-[18px]"
+          strokeWidth={1.7}
+          data-testid="ChevronDown__870fc2" />}
       </span>
     </div>
   );
@@ -115,11 +118,11 @@ export function TableRow({ widths, tall, checked }) {
   return (
     <div className={`flex items-center border-b border-[#E8EAEF] ${tall ? 'h-[52px]' : 'h-10'}`}>
       <div className="flex w-8 flex-none justify-center pl-2">
-        <Checkbox checked={checked} />
+        <Checkbox checked={checked} data-testid="Checkbox__870fc2" />
       </div>
       {widths.map((barWidth, i) => (
         <div key={i} className="flex flex-none items-center px-3" style={{ width: `${CELL_WIDTHS[i]}px` }}>
-          <Bar width={barWidth} />
+          <Bar width={barWidth} data-testid="Bar__870fc2" />
         </div>
       ))}
     </div>
