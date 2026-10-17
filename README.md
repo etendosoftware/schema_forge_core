@@ -535,6 +535,33 @@ schema_forge/
 └── .env.example            # Environment configuration template
 ```
 
+### `templates/` — the one tree that must stay in sync with the other repo
+
+`templates/` belongs to no published package, so `templates/reports/helpers/*.js`
+exists as **one physical copy per repo**: this one is the mirror, and
+[`etendo_schema_forge`](https://github.com/etendosoftware/etendo_schema_forge) holds the
+canonical copy (the one the assembled report-server image actually carries — see that
+repo's `scripts/assemble-report-server-context.sh`). The copies are byte-identical
+except for the `report-i18n` import specifier (imported from the published CLI package
+there, reached relatively inside `cli/src` here).
+
+They drifted silently once already: ETP-4908 synced them, then ETP-5107's HALF_UP
+rounding landed on the canonical copy only and this one kept rendering half-cent
+amounts a cent lower for ~2.5 months (ETP-4910).
+
+Never edit `templates/reports/helpers/*.js` here by hand. Run, in
+`etendo_schema_forge`:
+
+```bash
+make sync-report-helpers     # rewrites this repo's copy + both parity.json files
+```
+
+and commit the result in both repos. The contract (`templates/reports/helpers/parity.json`,
+one canonical sha256 per module) is verified by this repo's own
+`cli/test/report-jsreport-helpers-builder.test.js` — self-contained, so it runs in a
+standalone core CI checkout — and cross-checked against the sibling checkout by that
+repo's `tools/app-shell/test/report-template-helpers-contract.test.js`.
+
 ## Documentation
 
 See [`docs/index.md`](docs/index.md) for the full documentation index, including:
