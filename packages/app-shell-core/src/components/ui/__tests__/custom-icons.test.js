@@ -38,9 +38,9 @@ describe('custom-icons — exports (ETP-3660)', () => {
     assert.match(src, /export function PricingIcon/);
   });
 
-  it('has exactly thirteen exported functions (no accidental extras)', () => {
+  it('has exactly fourteen exported functions (no accidental extras)', () => {
     const exportedFunctions = src.match(/export function \w+/g) ?? [];
-    assert.equal(exportedFunctions.length, 13);
+    assert.equal(exportedFunctions.length, 14);
   });
 });
 
@@ -162,6 +162,7 @@ describe('custom-icons — Figma row-action icons on the 20px frame (ETP-5600 St
     ['IconicEditIcon', /translate\(3\.125 3\.678\)/],
     ['IconicCopyIcon', /translate\(3\.125 3\.125\)/],
     ['IconicMailIcon', /translate\(1\.667 3\.333\)/],
+    ['IconicDotsVerticalIcon', /translate\(9 5\.667\)/],
   ]) {
     const body = src.match(new RegExp(`export function ${name}\\b[\\s\\S]*?</svg>`))?.[0] ?? '';
     const svgTag = body.match(/<svg\b[^>]*>/)?.[0] ?? '';
