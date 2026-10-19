@@ -43,9 +43,9 @@ function isGeneratedPublicApiManifest(path) {
   // Versioned public API manifests (e.g. public-api/base.v1.json) are written by
   // the consumer's generate-base-public-api-manifest script. Child resources of
   // similar documents legitimately share field blocks, so every regeneration
-  // repeats them. Only the root JSON manifests are skipped: anything else under
-  // public-api/ (scripts, nested files) is still checked.
-  return /^public-api\/[^/]+\.json$/.test(path);
+  // repeats them. Only versioned root manifests (*.vN.json) are skipped: anything
+  // else under public-api/ (hand-written JSON, scripts, nested files) is checked.
+  return /^public-api\/[^/]+\.v\d+\.json$/.test(path);
 }
 
 function isLocaleJsonFile(path) {

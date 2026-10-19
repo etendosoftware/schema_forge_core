@@ -177,8 +177,18 @@ describe('detectDuplicatedBlocks', () => {
       );
     });
 
-    it('only skips root JSON manifests, not other files under public-api/', () => {
+    it('ignores a repeat between two versioned manifests', () => {
       const diff = [
+        makeDiff('public-api/base.v1.json', block),
+        makeDiff('public-api/base.v2.json', block),
+      ].join('\n');
+
+      assert.deepEqual(detectDuplicatedBlocks(diff), []);
+    });
+
+    it('only skips versioned root manifests, not other files under public-api/', () => {
+      const diff = [
+        makeDiff('public-api/overrides.json', block),
         makeDiff('public-api/scripts/build.js', block),
         makeDiff('public-api/nested/base.v1.json', block),
       ].join('\n');
@@ -187,7 +197,7 @@ describe('detectDuplicatedBlocks', () => {
       assert.equal(findings.length, 1);
       assert.deepEqual(
         findings[0].locations.map((location) => location.path),
-        ['public-api/scripts/build.js', 'public-api/nested/base.v1.json'],
+        ['public-api/overrides.json', 'public-api/scripts/build.js', 'public-api/nested/base.v1.json'],
       );
     });
   });
