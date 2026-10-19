@@ -2264,6 +2264,7 @@ export function generatePageComponent(headerEntity, detailEntity, contract) {
   const windowAccessId = windowConfig.id ?? null;
   const documentPreview = windowConfig.documentPreview ?? null;
   const notesField = windowConfig.notesField ?? null;
+  const detailVisibleWhenCapability = windowConfig.detailVisibleWhenCapability ?? null;
   const relatedDocuments = windowConfig.relatedDocuments ?? false;
   const hideDetailForm = windowConfig.hideDetailForm ?? false;
   const hideDeleteWhenComplete = windowConfig.hideDeleteWhenComplete ?? false;
@@ -2367,6 +2368,7 @@ export function generatePageComponent(headerEntity, detailEntity, contract) {
     documentPreview
   );
   const notesFieldProp = wrapIf('\n        notesField="', notesField, '"');
+  const detailVisibleWhenCapabilityProp = wrapIf('\n        detailVisibleWhenCapability="', detailVisibleWhenCapability, '"');
   // ETP-4610 — see `dimensionsPanelFieldKeys` computation above.
   const dimensionsPanelFieldKeysProp = jsonWrapIf(
     '\n        dimensionsPanelFieldKeys={',
@@ -2754,7 +2756,7 @@ ${menuActionStateStatements}`)}${fragmentIf(confirmModalName, `
         detailLabel="${entityDetailLabel}"` : ''}
         windowName={windowName}
         recordId={recordId}
-        breadcrumb={breadcrumb}${apiProp}${detailTabIndexProp}${detailTabOrderProp}${secondaryTabsProp}${formFooterProp}${customLinesProp}${primaryTabsProp}${othersLabelProp}${documentPreviewProp}${hideDeleteProp}${hideDeleteButtonProp}${customTabsAfterBottomProp}${hidePrintProp}${hidePrintWhenProp}${hideSaveStatusesProp}${hideMoreMenuProp}${hideMoreDetailsProp}${noHeaderBorderProp}${toolbarBorderBottomProp}${compactSidebarPaddingProp}${whiteFormBackgroundProp}${autoSaveOnBlurProp}${hideFormCardProp}${sidebarAboveTabsOnlyProp}${tabsSeparatorProp}${sidebarClassNameProp}${tabsBarPaddingXProp}${primaryTabsVariantProp}${toolbarPaddingXProp}${toolbarButtonSizeProp}${contentBgProp}${formCardPaddingProp}${formScrollPaddingXProp}${notesFieldProp}${dimensionsPanelFieldKeysProp}${customTabsProp}${customCompPropsBlock}${menuActionsProp}${draftModeProp}${requiredHeaderFieldsProp}${addLineGuardProp}${headerContentProp}${detailSortByProp}${titleFieldProp}${documentDateFieldProp}${salesThemeProp}${disableProcessedLockProp}${statusEnumLabelsProp}${statusFieldLabelProp}${lockedAlertProp}${showDetailFooterTotalsProp}${labelOverridesProp}${lineConfigProp}${linesLayoutProp}${balanceFooterProp}${sendDocumentDetailProp}${selectorPriceCurrencyProp}
+        breadcrumb={breadcrumb}${apiProp}${detailTabIndexProp}${detailTabOrderProp}${secondaryTabsProp}${formFooterProp}${customLinesProp}${primaryTabsProp}${othersLabelProp}${documentPreviewProp}${hideDeleteProp}${hideDeleteButtonProp}${customTabsAfterBottomProp}${hidePrintProp}${hidePrintWhenProp}${hideSaveStatusesProp}${hideMoreMenuProp}${hideMoreDetailsProp}${noHeaderBorderProp}${toolbarBorderBottomProp}${compactSidebarPaddingProp}${whiteFormBackgroundProp}${autoSaveOnBlurProp}${hideFormCardProp}${sidebarAboveTabsOnlyProp}${tabsSeparatorProp}${sidebarClassNameProp}${tabsBarPaddingXProp}${primaryTabsVariantProp}${toolbarPaddingXProp}${toolbarButtonSizeProp}${contentBgProp}${formCardPaddingProp}${formScrollPaddingXProp}${notesFieldProp}${detailVisibleWhenCapabilityProp}${dimensionsPanelFieldKeysProp}${customTabsProp}${customCompPropsBlock}${menuActionsProp}${draftModeProp}${requiredHeaderFieldsProp}${addLineGuardProp}${headerContentProp}${detailSortByProp}${titleFieldProp}${documentDateFieldProp}${salesThemeProp}${disableProcessedLockProp}${statusEnumLabelsProp}${statusFieldLabelProp}${lockedAlertProp}${showDetailFooterTotalsProp}${labelOverridesProp}${lineConfigProp}${linesLayoutProp}${balanceFooterProp}${sendDocumentDetailProp}${selectorPriceCurrencyProp}
         {...props}${effectiveWindowProp}${sidebarContentProp}
       />
 ${menuActionModals}${confirmModalName ? `

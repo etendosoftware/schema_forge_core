@@ -3062,3 +3062,27 @@ describe('resolveSecondaryTabDefs / buildSecondaryTabPropEntry — maxDetailLine
     assert.ok(!entry.includes('maxDetailLines'), 'maxDetailLines must not appear when undeclared');
   });
 });
+
+// ---------------------------------------------------------------------------
+// window.detailVisibleWhenCapability — detail (lines) tab capability gate
+// ---------------------------------------------------------------------------
+
+describe('generatePageComponent — window.detailVisibleWhenCapability', () => {
+  const withGate = {
+    ...masterDetailContract,
+    frontendContract: {
+      ...masterDetailContract.frontendContract,
+      window: { ...masterDetailContract.frontendContract.window, detailVisibleWhenCapability: 'showAccountingFields' },
+    },
+  };
+
+  it('passes the capability to DetailView when declared', () => {
+    const code = generatePageComponent('order', 'orderLine', withGate);
+    assert.match(code, /detailVisibleWhenCapability="showAccountingFields"/);
+  });
+
+  it('emits no prop when not declared', () => {
+    const code = generatePageComponent('order', 'orderLine', masterDetailContract);
+    assert.doesNotMatch(code, /detailVisibleWhenCapability/);
+  });
+});
