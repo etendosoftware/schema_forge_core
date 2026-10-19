@@ -1,0 +1,10 @@
+{
+  "version": "v2",
+  "frontendContract": {
+    "window": {},
+    "entities": {}
+  },
+  "apiPrediction": {
+    "specName": "window-f24-ok"
+  }
+}

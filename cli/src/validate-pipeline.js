@@ -811,6 +811,33 @@ async function ruleF22(artifactDir, artifactName) {
     'Remove window.customTabsAfterBottom, or remove tabOrder from the listed custom tab(s).');
 }
 
+// ─── F24 — contract specName vs artifact directory name ─────────────────────
+// ETP-4763. The artifact directory name IS the NEO spec name (push-to-neo registers
+// the spec under it, the runtime routes on it). A contract whose apiPrediction.specName
+// was derived from the window display name ("Tax Rate" -> tax-rate) makes every
+// api.crud URL used for child saves 404 ("Spec not found") while reads still work.
+
+/**
+ * F24: contract `apiPrediction.specName` must equal the artifact directory name.
+ * @param {string} artifactDir
+ * @param {string} artifactName
+ */
+async function ruleF24(artifactDir, artifactName) {
+  const contractPath = join(artifactDir, 'contract.json');
+  if (!(await fileExists(contractPath))) return null;
+  let contract;
+  try {
+    contract = await readWindowContractBundle(artifactDir);
+  } catch {
+    return skipped('F24', artifactName, 'contract.json or contract.mcp.json could not be parsed — F24 check skipped');
+  }
+  const specName = contract?.apiPrediction?.specName;
+  if (typeof specName !== 'string' || specName === artifactName) return null;
+  return violation('F24', artifactName, 'BLOCK',
+    `contract apiPrediction.specName is '${specName}' but the artifact directory (the registered NEO spec) is '${artifactName}' — api.crud URLs will 404 with "Spec not found: ${specName}".`,
+    `Regenerate with 'make regen ONLY=${artifactName}' so generate-contract receives the directory name as the spec name.`);
+}
+
 // ─── F23 — ETGO_SF_FIELD visibility vs the flags it projects to ─────────────
 // ETP-4793 / IMP-26 §5.3. `populateSpec` writes ISINCLUDED/ISREADONLY on every
 // push but VISIBILITY only on some paths, so the same decision — stored twice
@@ -1989,6 +2016,7 @@ async function runWindowChecks(artifactDir, artifactName, registryContent, root,
     { rule: 'F21', run: () => ruleF21(artifactDir, artifactName) },
     { rule: 'F22', run: () => ruleF22(artifactDir, artifactName) },
     { rule: 'F23', run: () => ruleF23(artifactDir, artifactName, goSourcedataDir, root) },
+    { rule: 'F24', run: () => ruleF24(artifactDir, artifactName) },
   ], skipSet);
 }
 
