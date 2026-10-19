@@ -1,3 +1,4 @@
+// @covers cli/src/generate-frontend.js
 import { describe, it } from 'node:test';
 import { strict as assert } from 'node:assert';
 import {
@@ -1107,6 +1108,53 @@ describe('generatePageComponent — documentDateField prop', () => {
     // cond ? prefix+value+suffix : '' and cond defaults to value, so a null value emits ''.
     const code = generatePageComponent('order', 'orderLine', masterDetailContract);
     assert.ok(!code.includes('documentDateField='), 'documentDateField prop should be entirely absent from output');
+  });
+});
+
+describe('generatePageComponent — requiredHeaderFields add-lines guard', () => {
+  // The list gates "+ Añadir línea" (resolveCanAddLines): every entry must hold a value.
+  // A readOnly field is never filled by the user (GrandTotal/TotalLines, DocumentNo,
+  // DocStatus), so demanding it would hide the button until the header is saved.
+  function requiredHeaderFieldsOf(code) {
+    const match = code.match(/const requiredHeaderFields = (\[[^\]]*\]);/);
+    assert.ok(match, 'requiredHeaderFields const should be emitted');
+    return JSON.parse(match[1].replaceAll("'", '"'));
+  }
+
+  it('lists only required form fields the user can fill', () => {
+    const code = generatePageComponent('order', 'orderLine', masterDetailContract);
+    assert.deepEqual(requiredHeaderFieldsOf(code),
+      ['businessPartner', 'partnerAddress', 'warehouse', 'priceList']);
+  });
+
+  it('excludes required readOnly fields such as header totals', () => {
+    const contract = structuredClone(masterDetailContract);
+    contract.frontendContract.entities.order.fields.push(
+      { name: 'grandTotalAmount', column: 'GrandTotal', type: 'amount', tsType: 'number',
+        visibility: 'readOnly', required: true, grid: false, form: true, section: 'summary' },
+      { name: 'summedLineAmount', column: 'TotalLines', type: 'amount', tsType: 'number',
+        visibility: 'readOnly', required: true, grid: false, form: true, section: 'summary' });
+    const fields = requiredHeaderFieldsOf(generatePageComponent('order', 'orderLine', contract));
+    assert.ok(!fields.includes('grandTotalAmount'));
+    assert.ok(!fields.includes('summedLineAmount'));
+  });
+
+  it('keeps an editable field whose readOnlyLogic only locks it after completion', () => {
+    const contract = structuredClone(masterDetailContract);
+    contract.frontendContract.entities.order.fields
+      .find((f) => f.name === 'warehouse').readOnlyLogic = "@DocStatus@!'DR'";
+    const fields = requiredHeaderFieldsOf(generatePageComponent('order', 'orderLine', contract));
+    assert.ok(fields.includes('warehouse'));
+  });
+
+  it('omits the requiredHeaderFields prop when every required field is readOnly', () => {
+    const contract = structuredClone(masterDetailContract);
+    for (const f of contract.frontendContract.entities.order.fields) {
+      if (f.visibility === 'editable') f.required = false;
+    }
+    const code = generatePageComponent('order', 'orderLine', contract);
+    assert.deepEqual(requiredHeaderFieldsOf(code), []);
+    assert.ok(!code.includes('requiredHeaderFields={requiredHeaderFields}'));
   });
 });
 
@@ -3012,5 +3060,29 @@ describe('resolveSecondaryTabDefs / buildSecondaryTabPropEntry — maxDetailLine
     const code = generatePageComponent('product', null, buildSecondaryTabMaxLinesContract());
     const entry = extractSecondaryTabEntry(code, 'accounting');
     assert.ok(!entry.includes('maxDetailLines'), 'maxDetailLines must not appear when undeclared');
+  });
+});
+
+// ---------------------------------------------------------------------------
+// window.detailVisibleWhenCapability — detail (lines) tab capability gate
+// ---------------------------------------------------------------------------
+
+describe('generatePageComponent — window.detailVisibleWhenCapability', () => {
+  const withGate = {
+    ...masterDetailContract,
+    frontendContract: {
+      ...masterDetailContract.frontendContract,
+      window: { ...masterDetailContract.frontendContract.window, detailVisibleWhenCapability: 'showAccountingFields' },
+    },
+  };
+
+  it('passes the capability to DetailView when declared', () => {
+    const code = generatePageComponent('order', 'orderLine', withGate);
+    assert.match(code, /detailVisibleWhenCapability="showAccountingFields"/);
+  });
+
+  it('emits no prop when not declared', () => {
+    const code = generatePageComponent('order', 'orderLine', masterDetailContract);
+    assert.doesNotMatch(code, /detailVisibleWhenCapability/);
   });
 });

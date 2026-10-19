@@ -1,0 +1,10 @@
+{
+  "version": "v2",
+  "frontendContract": {
+    "window": {},
+    "entities": {}
+  },
+  "apiPrediction": {
+    "specName": "tax-rate"
+  }
+}

@@ -1002,6 +1002,24 @@ describe('generateApiPrediction', () => {
     assert.equal(prediction.specName, 'sales-order');
   });
 
+  it('specName override (artifact directory name) wins over the window display name', () => {
+    const fc = generateFrontendContract(fkSchema);
+    const bc = generateBackendContract(fkSchema);
+    const prediction = generateApiPrediction(fkSchema, fc, bc, 'sales-order-dir');
+    assert.equal(prediction.specName, 'sales-order-dir');
+    assert.ok(prediction.baseUrl.startsWith('/sws/neo/sales-order-dir'));
+    for (const crud of Object.values(prediction.crud)) {
+      assert.ok(crud.listUrl.startsWith('/sws/neo/sales-order-dir'), crud.listUrl);
+      assert.ok(crud.detailUrl.startsWith('/sws/neo/sales-order-dir/'), crud.detailUrl);
+    }
+  });
+
+  it('generateContract threads options.specName into apiPrediction', () => {
+    const contract = generateContract(fkSchema, [], [], null, null, { specName: 'tax' });
+    assert.equal(contract.apiPrediction.specName, 'tax');
+    assert.equal(contract.agentProfile.specName ?? 'tax', 'tax');
+  });
+
   it('baseUrl follows NEO Headless pattern', () => {
     const fc = generateFrontendContract(fkSchema);
     const bc = generateBackendContract(fkSchema);

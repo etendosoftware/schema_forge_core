@@ -1416,9 +1416,13 @@ function dedupeBy(items, keyFn) {
 
 /**
  * Generate API prediction: predicts NEO Headless URLs, selectors, actions, and query params.
+ *
+ * @param {string} [specNameOverride] - Spec name the window is registered under (the
+ *   artifact directory name, which push-to-neo uses). Falls back to the kebab-case of the
+ *   window display name only when the caller does not know the directory.
  */
-export function generateApiPrediction(schema, frontendContract, backendContract) {
-  const specName = toSpecName(schema.window.name);
+export function generateApiPrediction(schema, frontendContract, backendContract, specNameOverride = null) {
+  const specName = specNameOverride || toSpecName(schema.window.name);
   const baseUrl = `/sws/neo/${specName}`;
 
   const crud = {};
@@ -1982,14 +1986,18 @@ function deriveProfileWarnings(schema, formState, isTransactional, actions) {
 
 /**
  * Main orchestrator: generates the full contract object.
+ *
+ * @param {object} [options]
+ * @param {string} [options.specName] - Artifact directory name = NEO spec name. Callers that
+ *   know the directory MUST pass it: the display name ("Tax Rate") can differ from it ("tax").
  */
-export function generateContract(schema, rules = [], processes = [], previousVersion = null, previousContract = null) {
+export function generateContract(schema, rules = [], processes = [], previousVersion = null, previousContract = null, options = {}) {
   lockFieldOrderToPreviousContract(schema, previousContract);
 
   const frontendContract = generateFrontendContract(schema, rules);
   const backendContract = generateBackendContract(schema, rules, processes);
   const testManifest = generateTestManifest(frontendContract, backendContract, rules, processes);
-  const apiPrediction = generateApiPrediction(schema, frontendContract, backendContract);
+  const apiPrediction = generateApiPrediction(schema, frontendContract, backendContract, options?.specName);
   const formState = generateFormState(schema, rules);
   const agentProfile = generateAgentProfile(schema, apiPrediction, formState, schema.window);
 

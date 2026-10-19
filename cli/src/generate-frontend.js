@@ -2196,8 +2196,14 @@ export function generatePageComponent(headerEntity, detailEntity, contract) {
   // gate for "+ Añadir línea" — the button only appears when all of these are
   // filled in `data`. Windows can still override with their own addLineGuard
   // prop for more complex business rules.
+  // Only fields the user can fill: visibility 'readOnly' (header totals,
+  // DocumentNo, DocStatus) is excluded — those are filled by the backend after
+  // the save, so demanding them hid the button until then. A field that is
+  // merely locked by readOnlyLogic (e.g. after completion) is still editable in
+  // draft and stays in the list.
+  const NOT_USER_FILLABLE_VISIBILITIES = new Set(['discarded', 'system', 'readOnly']);
   const requiredHeaderFieldNames = allEntityFields
-    .filter(f => f.required && f.form && f.visibility !== 'discarded' && f.visibility !== 'system')
+    .filter(f => f.required && f.form && !NOT_USER_FILLABLE_VISIBILITIES.has(f.visibility))
     .map(f => f.name);
   // Built without a nested template literal (Sonar S4624): plain concat
   // around each name keeps the outer template flat.
@@ -2258,6 +2264,7 @@ export function generatePageComponent(headerEntity, detailEntity, contract) {
   const windowAccessId = windowConfig.id ?? null;
   const documentPreview = windowConfig.documentPreview ?? null;
   const notesField = windowConfig.notesField ?? null;
+  const detailVisibleWhenCapability = windowConfig.detailVisibleWhenCapability ?? null;
   const relatedDocuments = windowConfig.relatedDocuments ?? false;
   const hideDetailForm = windowConfig.hideDetailForm ?? false;
   const hideDeleteWhenComplete = windowConfig.hideDeleteWhenComplete ?? false;
@@ -2361,6 +2368,7 @@ export function generatePageComponent(headerEntity, detailEntity, contract) {
     documentPreview
   );
   const notesFieldProp = wrapIf('\n        notesField="', notesField, '"');
+  const detailVisibleWhenCapabilityProp = wrapIf('\n        detailVisibleWhenCapability="', detailVisibleWhenCapability, '"');
   // ETP-4610 — see `dimensionsPanelFieldKeys` computation above.
   const dimensionsPanelFieldKeysProp = jsonWrapIf(
     '\n        dimensionsPanelFieldKeys={',
@@ -2748,7 +2756,7 @@ ${menuActionStateStatements}`)}${fragmentIf(confirmModalName, `
         detailLabel="${entityDetailLabel}"` : ''}
         windowName={windowName}
         recordId={recordId}
-        breadcrumb={breadcrumb}${apiProp}${detailTabIndexProp}${detailTabOrderProp}${secondaryTabsProp}${formFooterProp}${customLinesProp}${primaryTabsProp}${othersLabelProp}${documentPreviewProp}${hideDeleteProp}${hideDeleteButtonProp}${customTabsAfterBottomProp}${hidePrintProp}${hidePrintWhenProp}${hideSaveStatusesProp}${hideMoreMenuProp}${hideMoreDetailsProp}${noHeaderBorderProp}${toolbarBorderBottomProp}${compactSidebarPaddingProp}${whiteFormBackgroundProp}${autoSaveOnBlurProp}${hideFormCardProp}${sidebarAboveTabsOnlyProp}${tabsSeparatorProp}${sidebarClassNameProp}${tabsBarPaddingXProp}${primaryTabsVariantProp}${toolbarPaddingXProp}${toolbarButtonSizeProp}${contentBgProp}${formCardPaddingProp}${formScrollPaddingXProp}${notesFieldProp}${dimensionsPanelFieldKeysProp}${customTabsProp}${customCompPropsBlock}${menuActionsProp}${draftModeProp}${requiredHeaderFieldsProp}${addLineGuardProp}${headerContentProp}${detailSortByProp}${titleFieldProp}${documentDateFieldProp}${salesThemeProp}${disableProcessedLockProp}${statusEnumLabelsProp}${statusFieldLabelProp}${lockedAlertProp}${showDetailFooterTotalsProp}${labelOverridesProp}${lineConfigProp}${linesLayoutProp}${balanceFooterProp}${sendDocumentDetailProp}${selectorPriceCurrencyProp}
+        breadcrumb={breadcrumb}${apiProp}${detailTabIndexProp}${detailTabOrderProp}${secondaryTabsProp}${formFooterProp}${customLinesProp}${primaryTabsProp}${othersLabelProp}${documentPreviewProp}${hideDeleteProp}${hideDeleteButtonProp}${customTabsAfterBottomProp}${hidePrintProp}${hidePrintWhenProp}${hideSaveStatusesProp}${hideMoreMenuProp}${hideMoreDetailsProp}${noHeaderBorderProp}${toolbarBorderBottomProp}${compactSidebarPaddingProp}${whiteFormBackgroundProp}${autoSaveOnBlurProp}${hideFormCardProp}${sidebarAboveTabsOnlyProp}${tabsSeparatorProp}${sidebarClassNameProp}${tabsBarPaddingXProp}${primaryTabsVariantProp}${toolbarPaddingXProp}${toolbarButtonSizeProp}${contentBgProp}${formCardPaddingProp}${formScrollPaddingXProp}${notesFieldProp}${detailVisibleWhenCapabilityProp}${dimensionsPanelFieldKeysProp}${customTabsProp}${customCompPropsBlock}${menuActionsProp}${draftModeProp}${requiredHeaderFieldsProp}${addLineGuardProp}${headerContentProp}${detailSortByProp}${titleFieldProp}${documentDateFieldProp}${salesThemeProp}${disableProcessedLockProp}${statusEnumLabelsProp}${statusFieldLabelProp}${lockedAlertProp}${showDetailFooterTotalsProp}${labelOverridesProp}${lineConfigProp}${linesLayoutProp}${balanceFooterProp}${sendDocumentDetailProp}${selectorPriceCurrencyProp}
         {...props}${effectiveWindowProp}${sidebarContentProp}
       />
 ${menuActionModals}${confirmModalName ? `
