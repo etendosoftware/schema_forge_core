@@ -994,7 +994,10 @@ const WINDOW_BOOLEAN_TRUE_PROPS = [
 // `attachments` is defined-only (not truthy) so an explicit `false` from
 // decisions.json reaches the contract and disables the AttachmentsTab in the
 // generator. Accepted shapes: boolean | { enabled?: boolean, ...options }.
-const WINDOW_DEFINED_PROPS = ['contentBg', 'breadcrumb', 'attachments', 'sidebarClassName', 'tabsBarPaddingX', 'primaryTabsVariant', 'toolbarPaddingX', 'toolbarButtonSize', 'listbarPaddingX', 'tablePaddingX', 'customLinesComponent', 'customLinesLabel', 'formCardPadding', 'formScrollPaddingX', 'maxDetailLines', 'agentPrompt', 'import'];
+// `showDetailFooterTotals` is defined-only for the same reason: its only useful
+// value is an explicit `false` (DetailView computes the default when absent),
+// which a truthy/boolean-true copy would drop before the generator sees it.
+const WINDOW_DEFINED_PROPS = ['contentBg', 'breadcrumb', 'attachments', 'showDetailFooterTotals', 'sidebarClassName', 'tabsBarPaddingX', 'primaryTabsVariant', 'toolbarPaddingX', 'toolbarButtonSize', 'listbarPaddingX', 'tablePaddingX', 'customLinesComponent', 'customLinesLabel', 'formCardPadding', 'formScrollPaddingX', 'maxDetailLines', 'agentPrompt', 'import'];
 const WINDOW_NOT_NULL_PROPS = ['detailTabIndex', 'detailTabOrder', 'salesTheme'];
 
 // Canonical key order for the contract window object. Stabilizes contract.json
@@ -1018,7 +1021,7 @@ export const WINDOW_KEY_ORDER = [
   'dateFilterKey', 'statusEnumLabels', 'statusFieldLabel', 'lockedAlert', 'noHeaderBorder', 'toolbarBorderBottom', 'compactSidebarPadding', 'whiteFormBackground', 'hideFormCard', 'sidebarAboveTabsOnly', 'tabsSeparator', 'sidebarClassName', 'formCardPadding', 'formScrollPaddingX', 'tabsBarPaddingX', 'primaryTabsVariant', 'toolbarPaddingX', 'toolbarButtonSize', 'listbarPaddingX', 'tablePaddingX', 'lineEntityConfig',
   'extraTabs', 'attachments', 'customPanelTabs', 'rowQuickActions',
   'sendDocument',
-  'layoutType', 'linesLayout', 'balanceFooter', 'selectorPriceCurrency',
+  'layoutType', 'linesLayout', 'balanceFooter', 'showDetailFooterTotals', 'selectorPriceCurrency',
   'vectorSearch',
   'import',
 ];

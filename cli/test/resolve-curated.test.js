@@ -271,6 +271,22 @@ describe('resolveCurated — window.detailTabOrder passthrough (ETP-4415)', () =
   });
 });
 
+describe('resolveCurated — window.showDetailFooterTotals passthrough', () => {
+  const schemaRaw = { window: { id: '900', name: 'Item' }, entities: [] };
+
+  it('passes an explicit false through to the curated window object', async () => {
+    const decisions = { window: { showDetailFooterTotals: false } };
+    const { schema } = await resolveCurated(schemaRaw, { rules: [] }, decisions);
+    assert.strictEqual(schema.window.showDetailFooterTotals, false);
+  });
+
+  it('does not add showDetailFooterTotals when not declared', async () => {
+    const decisions = { window: {} };
+    const { schema } = await resolveCurated(schemaRaw, { rules: [] }, decisions);
+    assert.equal(Object.hasOwn(schema.window, 'showDetailFooterTotals'), false);
+  });
+});
+
 describe('resolveCurated — agentPrompt passthrough (ETP-4252)', () => {
   const schemaRaw = {
     window: { id: '700', name: 'Purchase Order' },
