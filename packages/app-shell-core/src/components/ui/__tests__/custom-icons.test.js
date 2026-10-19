@@ -38,9 +38,9 @@ describe('custom-icons — exports (ETP-3660)', () => {
     assert.match(src, /export function PricingIcon/);
   });
 
-  it('has exactly ten exported functions (no accidental extras)', () => {
+  it('has exactly eleven exported functions (no accidental extras)', () => {
     const exportedFunctions = src.match(/export function \w+/g) ?? [];
-    assert.equal(exportedFunctions.length, 10);
+    assert.equal(exportedFunctions.length, 11);
   });
 });
 
@@ -155,4 +155,25 @@ describe('custom-icons — Iconic 24px icons', () => {
       assert.match(body, /<path\b[^>]*fill="currentColor"/);
     });
   }
+});
+
+describe('custom-icons — IconicEditIcon (Figma row-action edit, 20px frame)', () => {
+  const body = src.match(/export function IconicEditIcon\b[\s\S]*?<\/svg>/)?.[0] ?? '';
+  const svgTag = body.match(/<svg\b[^>]*>/)?.[0] ?? '';
+
+  it('is exported and takes className plus the remaining props', () => {
+    assert.match(body, /export function IconicEditIcon\s*\(\s*\{\s*className\s*,\s*\.\.\.props\s*\}\s*\)/);
+  });
+
+  it('renders a 20x20 decorative svg that forwards className and the extra props', () => {
+    assert.match(svgTag, /viewBox="0 0 20 20"/);
+    assert.match(svgTag, /aria-hidden="true"/);
+    assert.match(svgTag, /className=\{className\}/);
+    assert.match(svgTag, /\{\.\.\.props\}/);
+  });
+
+  it('offsets the 14px glyph to the Figma position and fills it with currentColor', () => {
+    assert.match(body, /<g transform="translate\(3\.125 3\.678\)">/);
+    assert.match(body, /<path\b[^>]*fill="currentColor"/);
+  });
 });

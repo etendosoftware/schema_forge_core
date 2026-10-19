@@ -50,6 +50,22 @@ export function IconicTrashIcon({ className, ...props }) {
   );
 }
 
+/**
+ * Figma "Iconic / Edit" (row actions). The source glyph is 14x14 and sits inside the 20x20
+ * icon frame at left 15.62% / top 18.39%; the translate reproduces that offset so `size-5`
+ * renders exactly the Figma frame. Coloured through `currentColor` (Figma #828FA3 comes from
+ * the button's muted-foreground text colour).
+ */
+export function IconicEditIcon({ className, ...props }) {
+  return (
+    <svg width="20" height="20" viewBox="0 0 20 20" fill="none" className={className} aria-hidden="true" xmlns="http://www.w3.org/2000/svg" {...props}>
+      <g transform="translate(3.125 3.678)">
+        <path d="M8.82178 0.488155C9.47265 -0.16272 10.5277 -0.162717 11.1785 0.488155L12.7085 2.0181C13.3592 2.66899 13.3593 3.72404 12.7085 4.37487L4.96436 12.119C4.85486 12.2285 4.71711 12.3057 4.56641 12.3412L1.02474 13.1745C0.743845 13.2406 0.448372 13.1564 0.244306 12.9523C0.0402364 12.7483 -0.0439626 12.4528 0.0221375 12.1719L0.855471 8.63024C0.890978 8.4795 0.968142 8.34182 1.07764 8.2323L8.82178 0.488155ZM12.9168 11.5298C13.3771 11.5298 13.7502 11.9029 13.7502 12.3632C13.7501 12.8233 13.377 13.1965 12.9168 13.1965H8.3335C7.8733 13.1965 7.50023 12.8233 7.50016 12.3632C7.50016 11.9029 7.87326 11.5298 8.3335 11.5298H12.9168ZM2.42367 9.24222L1.95248 11.2425L3.95362 10.7722L11.5301 3.19649L10.0002 1.66654L2.42367 9.24222Z" fill="currentColor"/>
+      </g>
+    </svg>
+  );
+}
+
 export function IconicArrowUpIcon({ className, ...props }) {
   return (
     <svg width="24" height="24" viewBox="0 0 24 24" fill="none" className={className} aria-hidden="true" xmlns="http://www.w3.org/2000/svg" {...props}>
