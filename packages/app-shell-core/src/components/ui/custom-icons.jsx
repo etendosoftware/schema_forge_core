@@ -35,18 +35,13 @@ export function TrashIcon({ className }) {
   );
 }
 
-/*
- * Iconic set, 24-unit grid (ETP-5600). Unlike `TrashIcon` above — the same trash glyph cropped
- * to a tight 16x17 box, so `w-4 h-4` renders the glyph itself at 16px (ImageField) — these keep
- * the design's 24x24 frame with its built-in padding, so the Tailwind size IS the Figma size
- * (`size-5` = the 20px row-action trash, `size-6` = the 24px header trash, `size-4` = the 16px
- * trend arrows). Single filled path, coloured through `currentColor`.
- */
 /**
- * Figma "Iconic / Trash". Drawn on a 24x24 frame (the topbar Delete renders it at 24px); at
- * `size-5` (20px, the row actions) it is exactly the Figma 20x20 "Sticky Acciones" trash: every
- * coordinate is the 20px Figma path (13.333x13.75 glyph at left 16.67% / top 15.62%) scaled by
- * 24/20, so one icon serves both sizes. Do not redraw it per size.
+ * Figma "Iconic / Trash" (ETP-5600). Drawn on a 24x24 frame with its built-in padding (unlike
+ * `TrashIcon` above, the same glyph cropped to 16x17), so the Tailwind size IS the Figma size:
+ * `size-6` is the 24px topbar Delete, and at `size-5` (20px, the row actions) it is exactly the
+ * Figma 20x20 "Sticky Acciones" trash — every coordinate is the 20px Figma path (13.333x13.75
+ * glyph at left 16.67% / top 15.62%) scaled by 24/20, so one icon serves both sizes. Do not
+ * redraw it per size. Single filled path, `currentColor`.
  */
 export function IconicTrashIcon({ className, ...props }) {
   return (
@@ -60,7 +55,7 @@ export function IconicTrashIcon({ className, ...props }) {
  * Figma "Iconic / Edit" (row actions). The source glyph is 14x14 and sits inside the 20x20
  * icon frame at left 15.62% / top 18.39%; the translate reproduces that offset so `size-5`
  * renders exactly the Figma frame. Coloured through `currentColor` (Figma #828FA3 comes from
- * the button's muted-foreground text colour).
+ * the button's text colour, the `--sf-icon-outline-secondary` token in the functional app).
  */
 export function IconicEditIcon({ className, ...props }) {
   return (
