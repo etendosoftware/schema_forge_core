@@ -640,3 +640,25 @@ describe('resolveCurated — window.hidePrintWhen propagates to curated schema',
 // Coverage for lines 859-968 must come from integration/CLI tests or be accepted
 // as CLI-only code that is excluded from unit-test coverage targets.
 // ---------------------------------------------------------------------------
+
+// ---------------------------------------------------------------------------
+// window.detailVisibleWhenCapability — WINDOW_TRUTHY_PROPS propagation
+// ---------------------------------------------------------------------------
+
+describe('resolveCurated — window.detailVisibleWhenCapability propagates to curated schema', () => {
+  const schemaRaw = makeSchema('finPayment', [
+    { name: 'status', columnName: 'Status', label: 'Status', type: 'string', visibility: 'readOnly' },
+  ]);
+
+  it('carries detailVisibleWhenCapability from decisions window to schema.window', async () => {
+    const decisions = makeDecisions('finPayment', { name: 'finPayment', fields: {} }, { detailVisibleWhenCapability: 'showAccountingFields' });
+    const { schema } = await resolveCurated(schemaRaw, { rules: [] }, decisions);
+    assert.equal(schema.window.detailVisibleWhenCapability, 'showAccountingFields');
+  });
+
+  it('does not set detailVisibleWhenCapability when absent from decisions', async () => {
+    const decisions = makeDecisions('finPayment', { name: 'finPayment', fields: {} });
+    const { schema } = await resolveCurated(schemaRaw, { rules: [] }, decisions);
+    assert.equal(schema.window.detailVisibleWhenCapability, undefined);
+  });
+});
