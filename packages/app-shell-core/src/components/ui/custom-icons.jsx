@@ -42,6 +42,12 @@ export function TrashIcon({ className }) {
  * (`size-5` = the 20px row-action trash, `size-6` = the 24px header trash, `size-4` = the 16px
  * trend arrows). Single filled path, coloured through `currentColor`.
  */
+/**
+ * Figma "Iconic / Trash". Drawn on a 24x24 frame (the topbar Delete renders it at 24px); at
+ * `size-5` (20px, the row actions) it is exactly the Figma 20x20 "Sticky Acciones" trash: every
+ * coordinate is the 20px Figma path (13.333x13.75 glyph at left 16.67% / top 15.62%) scaled by
+ * 24/20, so one icon serves both sizes. Do not redraw it per size.
+ */
 export function IconicTrashIcon({ className, ...props }) {
   return (
     <svg width="24" height="24" viewBox="0 0 24 24" fill="none" className={className} aria-hidden="true" xmlns="http://www.w3.org/2000/svg" {...props}>
@@ -61,6 +67,35 @@ export function IconicEditIcon({ className, ...props }) {
     <svg width="20" height="20" viewBox="0 0 20 20" fill="none" className={className} aria-hidden="true" xmlns="http://www.w3.org/2000/svg" {...props}>
       <g transform="translate(3.125 3.678)">
         <path d="M8.82178 0.488155C9.47265 -0.16272 10.5277 -0.162717 11.1785 0.488155L12.7085 2.0181C13.3592 2.66899 13.3593 3.72404 12.7085 4.37487L4.96436 12.119C4.85486 12.2285 4.71711 12.3057 4.56641 12.3412L1.02474 13.1745C0.743845 13.2406 0.448372 13.1564 0.244306 12.9523C0.0402364 12.7483 -0.0439626 12.4528 0.0221375 12.1719L0.855471 8.63024C0.890978 8.4795 0.968142 8.34182 1.07764 8.2323L8.82178 0.488155ZM12.9168 11.5298C13.3771 11.5298 13.7502 11.9029 13.7502 12.3632C13.7501 12.8233 13.377 13.1965 12.9168 13.1965H8.3335C7.8733 13.1965 7.50023 12.8233 7.50016 12.3632C7.50016 11.9029 7.87326 11.5298 8.3335 11.5298H12.9168ZM2.42367 9.24222L1.95248 11.2425L3.95362 10.7722L11.5301 3.19649L10.0002 1.66654L2.42367 9.24222Z" fill="currentColor"/>
+      </g>
+    </svg>
+  );
+}
+
+/**
+ * Figma "Iconic / Copy" (row actions, ETP-5600). The 14x14 source glyph sits inside the 20x20
+ * icon frame at left 15.62% / top 15.62%, reproduced by the translate, so `size-5` renders the
+ * exact Figma frame. Coloured through `currentColor`.
+ */
+export function IconicCopyIcon({ className, ...props }) {
+  return (
+    <svg width="20" height="20" viewBox="0 0 20 20" fill="none" className={className} aria-hidden="true" xmlns="http://www.w3.org/2000/svg" {...props}>
+      <g transform="translate(3.125 3.125)">
+        <path d="M12.0833 5.83333C12.0833 5.3731 11.7102 5 11.25 5H5.83333C5.3731 5 5 5.3731 5 5.83333V11.25C5 11.7102 5.3731 12.0833 5.83333 12.0833H11.25C11.7102 12.0833 12.0833 11.7102 12.0833 11.25V5.83333ZM8.75 2.29167C8.75 1.94649 8.47018 1.66667 8.125 1.66667H2.5C2.03976 1.66667 1.66667 2.03976 1.66667 2.5V8.125C1.66667 8.47018 1.94649 8.75 2.29167 8.75C2.7519 8.75 3.125 9.1231 3.125 9.58333C3.125 10.0436 2.7519 10.4167 2.29167 10.4167C1.02601 10.4167 0 9.39065 0 8.125V2.5C0 1.11929 1.11929 0 2.5 0H8.125C9.39065 0 10.4167 1.02601 10.4167 2.29167C10.4167 2.7519 10.0436 3.125 9.58333 3.125C9.1231 3.125 8.75 2.7519 8.75 2.29167ZM13.75 11.25C13.75 12.6307 12.6307 13.75 11.25 13.75H5.83333C4.45262 13.75 3.33333 12.6307 3.33333 11.25V5.83333C3.33333 4.45262 4.45262 3.33333 5.83333 3.33333H11.25C12.6307 3.33333 13.75 4.45262 13.75 5.83333V11.25Z" fill="currentColor"/>
+      </g>
+    </svg>
+  );
+}
+
+/**
+ * Figma "Iconic / Mail" (row actions, ETP-5600). The 16.667x13.333 source glyph sits inside the
+ * 20x20 icon frame at left 8.33% / top 16.67%, reproduced by the translate. `currentColor`.
+ */
+export function IconicMailIcon({ className, ...props }) {
+  return (
+    <svg width="20" height="20" viewBox="0 0 20 20" fill="none" className={className} aria-hidden="true" xmlns="http://www.w3.org/2000/svg" {...props}>
+      <g transform="translate(1.667 3.333)">
+        <path d="M15 2.5C15 2.27899 14.9121 2.06709 14.7559 1.91081C14.5996 1.75453 14.3877 1.66667 14.1667 1.66667H2.5C2.27899 1.66667 2.06709 1.75453 1.91081 1.91081C1.75453 2.06709 1.66667 2.27899 1.66667 2.5V10.8333C1.66667 11.0543 1.75453 11.2662 1.91081 11.4225C2.06709 11.5788 2.27899 11.6667 2.5 11.6667H14.1667C14.3877 11.6667 14.5996 11.5788 14.7559 11.4225C14.9121 11.2662 15 11.0543 15 10.8333V2.5ZM11.9792 3.51562C12.3386 3.22812 12.8635 3.28645 13.151 3.64583C13.4385 4.00522 13.3802 4.5302 13.0208 4.81771L9.89583 7.31771L9.89502 7.31689C9.45167 7.67172 8.9012 7.8654 8.33333 7.8654C7.76532 7.8654 7.21424 7.6719 6.77083 7.31689L3.64583 4.81771C3.28645 4.5302 3.22812 4.00522 3.51562 3.64583C3.80313 3.28645 4.32812 3.22812 4.6875 3.51562L7.8125 6.01562C7.96028 6.13389 8.14406 6.19873 8.33333 6.19873C8.52267 6.19873 8.70637 6.13396 8.85417 6.01562L11.9792 3.51562ZM16.6667 10.8333C16.6667 11.4964 16.4031 12.1321 15.9342 12.6009C15.4654 13.0698 14.8297 13.3333 14.1667 13.3333H2.5C1.83696 13.3333 1.20126 13.0698 0.732422 12.6009C0.263581 12.1321 0 11.4964 0 10.8333V2.5C0 1.83696 0.263581 1.20126 0.732422 0.732422C1.20126 0.263581 1.83696 0 2.5 0H14.1667C14.8297 0 15.4654 0.263581 15.9342 0.732422C16.4031 1.20126 16.6667 1.83696 16.6667 2.5V10.8333Z" fill="currentColor"/>
       </g>
     </svg>
   );
