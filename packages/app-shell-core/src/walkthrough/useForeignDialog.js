@@ -71,9 +71,26 @@ export function hasForeignDialog(doc = globalThis.document, target = null) {
     // The step points INSIDE this dialog -- keep the scrim so the step still
     // has a spotlight.
     if (target && el.contains?.(target)) continue;
+    // A tooltip is a passive label, not a layer the user interacts with.
+    if (isTooltipPopper(el)) continue;
     return true;
   }
   return false;
+}
+
+/**
+ * True for the popper wrapper of a Radix Tooltip (it renders a
+ * `role="tooltip"` node inside). It must not suspend the scrim nor park the
+ * card.
+ *
+ * Counting it did real harm: closing the Guided Tutorials dropdown returns
+ * focus to its trigger, whose Tooltip opens on that focus. A focus-opened
+ * tooltip only closes on blur or pointer movement, so with a still mouse the
+ * first step stayed parked bottom-left with no highlight for seconds.
+ */
+function isTooltipPopper(el) {
+  if (!el.hasAttribute?.('data-radix-popper-content-wrapper')) return false;
+  return !!el.querySelector?.('[role="tooltip"]');
 }
 
 /**
