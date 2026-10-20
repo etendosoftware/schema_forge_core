@@ -39,6 +39,15 @@ function isGeneratedDependencyManifest(path) {
   return /(^|\/)(package-lock|npm-shrinkwrap)\.json$/.test(path);
 }
 
+function isGeneratedPublicApiManifest(path) {
+  // Versioned public API manifests (e.g. public-api/base.v1.json) are written by
+  // the consumer's generate-base-public-api-manifest script. Child resources of
+  // similar documents legitimately share field blocks, so every regeneration
+  // repeats them. Only versioned root manifests (*.vN.json) are skipped: anything
+  // else under public-api/ (hand-written JSON, scripts, nested files) is checked.
+  return /^public-api\/[^/]+\.v\d+\.json$/.test(path);
+}
+
 function isLocaleJsonFile(path) {
   // Locale JSON dictionaries are DATA (parallel key -> translation maps), not
   // application logic: translated strings legitimately repeat across locale
@@ -178,6 +187,7 @@ export function detectDuplicatedBlocks(diffText, { minLines = DUPLICATE_MIN_LINE
     // standard columns/records legitimately repeat across entities — DRY/extract
     // rules do not apply, same as the artifacts/ skip above.
     if (run.path.startsWith('cli/cache/')) continue;
+    if (isGeneratedPublicApiManifest(run.path)) continue;
     if (isGeneratedDependencyManifest(run.path)) continue;
     if (isLocaleJsonFile(run.path)) continue;
     const normalizedLines = run.lines

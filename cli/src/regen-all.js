@@ -187,7 +187,7 @@ async function runPipeline(name, windowId, { pushToNeo, skipExtract }) {
   const { prevVersion, prevContract, prevContractRaw, prevMcpContract } = await readPreviousWindowContracts(name);
 
   const rules = Array.isArray(resolved.rules) ? resolved.rules : resolved.rules?.rules || [];
-  const generatedContract = generateContract(resolved.schema, rules, processes.processes || [], prevVersion, prevContract);
+  const generatedContract = generateContract(resolved.schema, rules, processes.processes || [], prevVersion, prevContract, { specName: name });
   const { contract, mcpContract } = splitWindowContractArtifacts(generatedContract, prevContract, prevMcpContract);
   if (prevContractRaw) {
     await wf2(join(ARTIFACTS, name, 'contract.prev.json'), prevContractRaw, 'utf-8');
