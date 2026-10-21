@@ -634,3 +634,133 @@ describe('runImport — multi-row batches (batchSize)', () => {
     assert.deepEqual(results.map((r) => r.row.name), makeRows(25).map((r) => r.name));
   });
 });
+
+// ETP-5677 — an async job commits row by row and answers per-row results.
+describe('runImport — per-row job results (async batch)', () => {
+  const productOps = (row) => [
+    { id: 'product', spec: 'p', entity: 'product', body: { name: row.name } },
+    { id: 'salesPrice', spec: 'p', entity: 'price', parentRef: 'product', body: { product: '$ref:product' } },
+  ];
+  const makeRows = (n) => Array.from({ length: n }, (_, i) => ({ name: `P${i}` }));
+  const run = (rows, opts) => runImport(rows, { buildRowOperations: async (row) => productOps(row), concurrency: 1, batchSize: 10, ...opts });
+
+  const committedRow = (i) => ({
+    index: i,
+    ids: [`r${i}.product`, `r${i}.salesPrice`],
+    committed: true,
+    operations: [
+      { id: `r${i}.product`, ok: true, recordId: `REC-${i}` },
+      { id: `r${i}.salesPrice`, ok: true, recordId: `PRICE-${i}` },
+    ],
+  });
+  const rejectedRow = (i, message = 'Rejected') => ({
+    index: i,
+    ids: [`r${i}.product`, `r${i}.salesPrice`],
+    committed: false,
+    failedAt: { id: `r${i}.product`, index: 0 },
+    error: { status: 400, message },
+  });
+  const partial = (rows, state = 'PARTIAL') => ({ committed: false, partial: true, state, rows });
+
+  function recordingBatch(response) {
+    const calls = [];
+    const postBatch = async (...args) => {
+      calls.push(args);
+      return typeof response === 'function' ? response(...args) : response;
+    };
+    return { postBatch, calls };
+  }
+
+  it('settles each row from its own result row and never resends a created row', async () => {
+    const { postBatch, calls } = recordingBatch(partial([committedRow(0), rejectedRow(1), committedRow(2)]));
+
+    const { results } = await run(makeRows(3), { postBatch });
+
+    assert.equal(calls.length, 1, 'the job already answered for every row: nothing is resent');
+    assert.deepEqual(results.map((r) => r.status), [SEND_STATUS.OK, SEND_STATUS.FAILED, SEND_STATUS.OK]);
+    assert.deepEqual(results.map((r) => r.recordId), ['REC-0', undefined, 'REC-2']);
+    assert.match(results[1].error.raw, /Rejected/);
+  });
+
+  it('classifies a rejected row exactly like a synchronous rejection (duplicate stays DUPLICATE)', async () => {
+    const duplicate = 'There is already a Product with the same (Client, Organization, Search Key). (Client, Organization, Search Key) must be unique.';
+    const { postBatch } = recordingBatch(partial([committedRow(0), rejectedRow(1, duplicate)]));
+
+    const { results } = await run(makeRows(2), { postBatch });
+
+    assert.deepEqual(results.map((r) => r.status), [SEND_STATUS.OK, SEND_STATUS.DUPLICATE]);
+  });
+
+  it('settles several import rows from ONE result row when the server grouped them (shared parent)', async () => {
+    const merged = {
+      index: 0,
+      ids: ['r0.product', 'r0.salesPrice', 'r1.product', 'r1.salesPrice'],
+      committed: true,
+      operations: [
+        { id: 'r0.product', ok: true, recordId: 'A' }, { id: 'r0.salesPrice', ok: true, recordId: 'A-P' },
+        { id: 'r1.product', ok: true, recordId: 'B' }, { id: 'r1.salesPrice', ok: true, recordId: 'B-P' },
+      ],
+    };
+    const { postBatch } = recordingBatch(partial([merged, committedRow(2)]));
+
+    const { results } = await run(makeRows(3), { postBatch });
+
+    assert.deepEqual(results.map((r) => r.recordId), ['A', 'B', 'REC-2']);
+    assert.ok(results.every((r) => r.status === SEND_STATUS.OK));
+  });
+
+  it('reports a row missing from an interrupted or cancelled job as UNKNOWN and does not resend it', async () => {
+    for (const state of ['INTERRUPTED', 'CANCELLED']) {
+      const { postBatch, calls } = recordingBatch(partial([committedRow(0)], state));
+
+      const { results } = await run(makeRows(3), { postBatch });
+
+      assert.equal(calls.length, 1);
+      assert.deepEqual(results.map((r) => r.status), [SEND_STATUS.OK, SEND_STATUS.UNKNOWN, SEND_STATUS.UNKNOWN]);
+    }
+  });
+
+  it('a single-row request reads the same envelope: the rejected row is FAILED with its message', async () => {
+    // A request of ONE row is sent with its own, unprefixed op ids, and the job lists them as sent.
+    const row = { ...rejectedRow(0, 'bad name'), ids: ['product', 'salesPrice'] };
+    const { postBatch } = recordingBatch({ committed: false, partial: true, state: 'FAILED', rows: [row], error: row.error });
+
+    const { results } = await runImport(makeRows(1), { buildRowOperations: async (row) => productOps(row), postBatch, concurrency: 1 });
+
+    assert.equal(results[0].status, SEND_STATUS.FAILED);
+    assert.match(results[0].error.raw, /bad name/);
+  });
+
+  it('a single-row request whose job was interrupted before reporting it is UNKNOWN, never FAILED', async () => {
+    const { postBatch } = recordingBatch(partial([], 'INTERRUPTED'));
+
+    const { results } = await runImport(makeRows(1), { buildRowOperations: async (row) => productOps(row), postBatch, concurrency: 1 });
+
+    assert.equal(results[0].status, SEND_STATUS.UNKNOWN);
+  });
+
+  it('passes the job progress to postBatch and folds it into the row counter without ever going back', async () => {
+    const ticks = [];
+    const postBatch = async (ops, opts) => {
+      opts.onProgress({ processedRows: 1, totalRows: 4 });
+      opts.onProgress({ processedRows: 2, totalRows: 4 });
+      opts.onProgress({ processedRows: 4, totalRows: 4 });
+      return { committed: true, operations: ops.map((op) => ({ id: op.id, ok: true, recordId: `REC-${op.id}` })) };
+    };
+
+    await run(makeRows(4), { postBatch, onProgress: (done, total) => ticks.push([done, total]) });
+
+    assert.ok(ticks.some(([done]) => done > 0 && done < 4), 'the bar moved before the chunk finished');
+    assert.ok(ticks.every(([, total]) => total === 4));
+    assert.ok(ticks.every(([done], i) => i === 0 || done >= ticks[i - 1][0]), 'monotonic');
+    assert.deepEqual(ticks.at(-1), [4, 4]);
+  });
+
+  it('keeps calling postBatch with the operations alone when nobody listens to progress', async () => {
+    const { postBatch, calls } = recordingBatch((ops) => ({ committed: true, operations: ops.map((op) => ({ id: op.id, ok: true, recordId: 'X' })) }));
+
+    await run(makeRows(3), { postBatch });
+
+    assert.equal(calls[0].length, 1);
+  });
+});

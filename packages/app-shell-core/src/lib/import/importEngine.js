@@ -214,6 +214,10 @@ export async function sendRow(operations, { postBatch, translate } = {}) {
     const recordId = response.operations?.[0]?.recordId;
     return { status: SEND_STATUS.OK, recordId };
   }
+  // ETP-5677: an async job's per-row answer. A single-row request is one result row.
+  if (response.partial === true && Array.isArray(response.rows) && operations?.length) {
+    return settleFromJobRows(response, operations[0].id, translate);
+  }
   // BatchService.java's documented failure shape is `{ committed: false, error: { message,
   // ... } }`, but a raw unhandled server exception (a genuine 500, not a graceful
   // transactional rollback) doesn't go through that wrapper at all — it comes back as
@@ -299,6 +303,36 @@ function prefixOperations(operations, prefix) {
   });
 }
 
+
+/**
+ * Outcome of one import row inside a per-row job result (ETP-5677). The result row that lists
+ * `firstOpId` decides: committed → OK with that op's recordId; rejected → classified exactly like a
+ * synchronous rejection; not listed → UNKNOWN (the job was cancelled or interrupted before reporting
+ * it, so it may exist and must not be resent).
+ */
+async function settleFromJobRows(response, firstOpId, translate) {
+  const row = response.rows.find((r) => Array.isArray(r?.ids) && r.ids.includes(firstOpId));
+  if (row?.committed === true) {
+    const op = (row.operations ?? []).find((o) => o.id === firstOpId);
+    return { status: SEND_STATUS.OK, recordId: op?.recordId };
+  }
+  if (row) {
+    return sendRow([], {
+      translate,
+      postBatch: async () => ({ committed: false, error: row.error, failedAt: row.failedAt }),
+    });
+  }
+  return sendRow([], {
+    translate,
+    postBatch: async () => {
+      const error = new Error(`Batch job ${response.state ?? 'ended'} before reporting this row`);
+      error.messageKey = 'importErrorServerFailure';
+      error.params = { status: 500 };
+      throw error;
+    },
+  });
+}
+
 /**
  * Send up to `batchSize` rows in ONE `/batch` request (ETP-5676), reporting each row through
  * `settle(index, result)` as soon as its outcome is known.
@@ -313,8 +347,14 @@ function prefixOperations(operations, prefix) {
  *    so resending could create duplicates. Every row of the chunk is reported UNKNOWN, exactly
  *    as a single row with no response is today.
  * A row whose operations cannot be built is FAILED on its own and never joins the request.
+ *
+ * An ASYNC job (ETP-5677) commits row by row and answers `{ committed:false, partial:true, rows:[…] }`
+ * when not every row committed: each row of the chunk is then settled from the result row that lists
+ * its first operation id, so a created row is never resent. A row the result does not list may exist
+ * (cancelled / interrupted job): UNKNOWN, never resent. `onChunkProgress({ processedRows, totalRows })`
+ * is handed to `postBatch` as `{ onProgress }` so the caller can follow the job while it runs.
  */
-async function sendChunk(chunk, { buildRowOperations, postBatch, translate, settle }) {
+async function sendChunk(chunk, { buildRowOperations, postBatch, translate, settle, onChunkProgress }) {
   const built = await Promise.all(chunk.rows.map(async (row, i) => {
     const index = chunk.start + i;
     try {
@@ -340,10 +380,18 @@ async function sendChunk(chunk, { buildRowOperations, postBatch, translate, sett
   const result = await sendRow(prefixed.flat(), {
     translate,
     postBatch: async (ops) => {
-      response = await postBatch(ops);
+      response = onChunkProgress ? await postBatch(ops, { onProgress: onChunkProgress }) : await postBatch(ops);
       return response;
     },
   });
+
+  if (response?.partial === true && Array.isArray(response.rows)) {
+    for (let i = 0; i < sendable.length; i += 1) {
+      const { index, operations } = sendable[i];
+      settle(index, { ...(await settleFromJobRows(response, prefixed[i][0].id, translate)), operations });
+    }
+    return;
+  }
 
   if (result.status === SEND_STATUS.OK) {
     const recordIds = new Map((response.operations ?? []).map((op) => [op.id, op.recordId]));
@@ -410,15 +458,38 @@ export async function runImport(rows, { buildRowOperations, postBatch, translate
     for (let start = 0; start < attempted.length; start += size) {
       chunks.push({ start, rows: attempted.slice(start, start + size) });
     }
+    // ETP-5677: rows of a chunk the server has already processed (an async job reports it while it
+    // runs), per chunk. Folded into the bar so it advances between chunks too. Each settled row
+    // moves one unit from "in flight" to "completed", so the figure never goes down.
+    const inFlight = new Map();
+    const inFlightTotal = () => [...inFlight.values()].reduce((sum, n) => sum + n, 0);
+    const publish = () => onProgress?.(Math.min(attempted.length, completed + inFlightTotal()), attempted.length);
+    const chunkOf = (index) => chunks.find((c) => index >= c.start && index < c.start + c.rows.length);
     const settle = (index, result) => {
       results[index] = { row: attempted[index], ...result };
       completed += 1;
-      onProgress?.(completed, attempted.length);
+      const chunk = chunkOf(index);
+      if (chunk && inFlight.has(chunk.start)) inFlight.set(chunk.start, Math.max(0, inFlight.get(chunk.start) - 1));
+      publish();
     };
     await runBoundedPool(
       chunks,
       concurrency,
-      (chunk) => sendChunk(chunk, { buildRowOperations, postBatch, translate, settle }),
+      async (chunk) => {
+        const settledIn = () => results.slice(chunk.start, chunk.start + chunk.rows.length).filter(Boolean).length;
+        const onChunkProgress = onProgress
+          ? ({ processedRows = 0, totalRows = 0 } = {}) => {
+            const share = totalRows > 0 ? Math.floor(chunk.rows.length * Math.min(1, processedRows / totalRows)) : 0;
+            inFlight.set(chunk.start, Math.max(0, share - settledIn()));
+            publish();
+          }
+          : undefined;
+        try {
+          await sendChunk(chunk, { buildRowOperations, postBatch, translate, settle, onChunkProgress });
+        } finally {
+          inFlight.delete(chunk.start);
+        }
+      },
       () => {},
     );
     return { results, truncatedCount };
