@@ -657,6 +657,9 @@ describe('runImport — per-row job results (async batch)', () => {
     index: i,
     ids: [`r${i}.product`, `r${i}.salesPrice`],
     committed: false,
+    atomic: true,
+    persisted: [],
+    safeToResend: true,
     failedAt: { id: `r${i}.product`, index: 0 },
     error: { status: 400, message },
   });
@@ -680,6 +683,17 @@ describe('runImport — per-row job results (async batch)', () => {
     assert.deepEqual(results.map((r) => r.status), [SEND_STATUS.OK, SEND_STATUS.FAILED, SEND_STATUS.OK]);
     assert.deepEqual(results.map((r) => r.recordId), ['REC-0', undefined, 'REC-2']);
     assert.match(results[1].error.raw, /Rejected/);
+  });
+
+  it('reports a rejected row that is NOT proven rolled back as UNKNOWN: its records may exist and a Retry would duplicate them', async () => {
+    const survived = { ...rejectedRow(1), atomic: false, persisted: ['REC-SURVIVOR'], safeToResend: false };
+    const silent = { ...rejectedRow(2), atomic: undefined, persisted: undefined, safeToResend: false };
+    const { postBatch, calls } = recordingBatch(partial([committedRow(0), survived, silent]));
+
+    const { results } = await run(makeRows(3), { postBatch });
+
+    assert.equal(calls.length, 1);
+    assert.deepEqual(results.map((r) => r.status), [SEND_STATUS.OK, SEND_STATUS.UNKNOWN, SEND_STATUS.UNKNOWN]);
   });
 
   it('classifies a rejected row exactly like a synchronous rejection (duplicate stays DUPLICATE)', async () => {

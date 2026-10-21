@@ -303,12 +303,15 @@ function prefixOperations(operations, prefix) {
   });
 }
 
-
 /**
  * Outcome of one import row inside a per-row job result (ETP-5677). The result row that lists
- * `firstOpId` decides: committed → OK with that op's recordId; rejected → classified exactly like a
- * synchronous rejection; not listed → UNKNOWN (the job was cancelled or interrupted before reporting
- * it, so it may exist and must not be resent).
+ * `firstOpId` decides:
+ *  - committed → OK with that op's recordId;
+ *  - rejected AND proven rolled back (`atomic:true`, empty `persisted` — the same proof a synchronous
+ *    batch needs before its rows are resent) → classified exactly like a synchronous rejection;
+ *  - rejected without that proof (`atomic:false`: a process committed underneath the row and its
+ *    records survive; or no outcome at all) → UNKNOWN, because a Retry would duplicate them;
+ *  - not listed → UNKNOWN (the job was cancelled or interrupted before reporting it, so it may exist).
  */
 async function settleFromJobRows(response, firstOpId, translate) {
   const row = response.rows.find((r) => Array.isArray(r?.ids) && r.ids.includes(firstOpId));
@@ -316,7 +319,8 @@ async function settleFromJobRows(response, firstOpId, translate) {
     const op = (row.operations ?? []).find((o) => o.id === firstOpId);
     return { status: SEND_STATUS.OK, recordId: op?.recordId };
   }
-  if (row) {
+  const provenRollback = row?.atomic === true && Array.isArray(row.persisted) && row.persisted.length === 0;
+  if (row && provenRollback) {
     return sendRow([], {
       translate,
       postBatch: async () => ({ committed: false, error: row.error, failedAt: row.failedAt }),
@@ -325,9 +329,11 @@ async function settleFromJobRows(response, firstOpId, translate) {
   return sendRow([], {
     translate,
     postBatch: async () => {
-      const error = new Error(`Batch job ${response.state ?? 'ended'} before reporting this row`);
+      const error = new Error(row
+        ? `Batch row not proven rolled back (job ${response.state ?? 'ended'})`
+        : `Batch job ${response.state ?? 'ended'} before reporting this row`);
       error.messageKey = 'importErrorServerFailure';
-      error.params = { status: 500 };
+      error.params = { status: row?.error?.status ?? 500 };
       throw error;
     },
   });
