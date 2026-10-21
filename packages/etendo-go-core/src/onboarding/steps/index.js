@@ -1,6 +1,7 @@
 import LoginStep from './LoginStep.jsx';
 import RegisterStep from './RegisterStep.jsx';
 import VerifyEmailStep from './VerifyEmailStep.jsx';
+import LoginLinkStep from './LoginLinkStep.jsx';
 import EnvSelectStep from './EnvSelectStep.jsx';
 import ProfileStep from './ProfileStep.jsx';
 import CompanyStep from './CompanyStep.jsx';
@@ -10,6 +11,7 @@ export const coreSteps = [
   { id: 'login', component: LoginStep },
   { id: 'register', component: RegisterStep },
   { id: 'verify-email', component: VerifyEmailStep },
+  { id: 'login-link', component: LoginLinkStep },
   { id: 'env-select', component: EnvSelectStep },
   { id: 'profile', component: ProfileStep, persistable: true, draftStep: 1 },
   { id: 'company', component: CompanyStep, persistable: true, draftStep: 2 },
