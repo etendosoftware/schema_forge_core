@@ -14,6 +14,7 @@ export const ONBOARDING_ERROR_CODES = {
   streamUnavailable: 'onboardingStreamUnavailable',
   missingResult: 'onboardingMissingResult',
   emailVerifyFailed: 'onboardingEmailVerifyFailed',
+  loginLinkFailed: 'onboardingLoginLinkInvalid',
 };
 
 // ETP-4664 — maps the stable, SCREAMING_SNAKE `error.code` returned by the
@@ -44,6 +45,8 @@ export const AUTH_ERROR_UI_KEYS = {
   INVALID_CURRENT_PASSWORD: 'onboardingInvalidCurrentPassword',
   // ETP-5258 — the reset/set-password link is unknown, already used or expired.
   PASSWORD_RESET_INVALID: 'onboardingCredentialResetFailed',
+  // ETP-5847 — the one-time login link is unknown, already used or expired.
+  LOGIN_LINK_INVALID: 'onboardingLoginLinkInvalid',
 };
 
 /**
@@ -251,6 +254,23 @@ export async function verifyEmail(fetchImpl, baseUrl, token) {
     body: JSON.stringify({ token }),
   });
   return readJsonResponse(response, ONBOARDING_ERROR_CODES.emailVerifyFailed);
+}
+
+/**
+ * ETP-5847 — signs in with the one-time login link mailed when an environment created by the
+ * signup API is ready. Spends the link and opens the cookie session; answers like POST /session
+ * ({ status, account, csrfToken }), so the caller routes into the environment the same way a
+ * password login does. Called on a click, never on page load: a mail scanner that opens the URL
+ * must not spend the link.
+ */
+export async function consumeLoginLink(fetchImpl, baseUrl, token) {
+  const response = await fetchImpl(`${baseUrl}/sws/go/session/link`, {
+    method: 'POST',
+    credentials: 'include',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ token }),
+  });
+  return readJsonResponse(response, ONBOARDING_ERROR_CODES.loginLinkFailed);
 }
 
 /**
