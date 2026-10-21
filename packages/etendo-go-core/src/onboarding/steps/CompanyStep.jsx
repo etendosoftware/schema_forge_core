@@ -11,6 +11,7 @@ import { OnboardingSessionAction } from '../components/OnboardingSessionAction.j
 import { DraftSaveWarning } from '../components/DraftSaveWarning.jsx';
 import { SetupField } from '../components/SetupField.jsx';
 import { SetupSelect } from '../components/SetupSelect.jsx';
+import { AddressCell } from '../components/AddressCell.jsx';
 
 export function CompanyStep({ config, stepData, onNext, onBack, goToStep, onChange, draftNotice, draftSaveWarning, setDraftNotice, accountName, token, onLogout }) {
   const ui = useUI();
@@ -153,38 +154,52 @@ export function CompanyStep({ config, stepData, onNext, onBack, goToStep, onChan
               until the user types into one of them; from then on Street+Number are required
               (see isAddressBlockStarted/isCompanyStepValid). City/Country are intentionally not
               asked here — Country already comes from the Profile step's country selector, and
-              City is left for the user to complete later from the Organization popup. */}
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-[2fr_1fr]">
-            <SetupField
-              id="streetName"
-              label={ui('streetNameLabel')}
-              required={addressStarted}
-              trailingLabel={!addressStarted ? `(${ui('optional')})` : null}
-              value={form.streetName}
-              onChange={e => updateField('streetName', e.target.value)}
-              placeholder={ui('onboardingAddressPlaceholder')}
-              maxLength={ONBOARDING_FIELD_LIMITS.streetName}
-              error={streetNameMissing ? ui('fieldRequiredMessage') : null}
-              data-testid="SetupField__79cf84" />
-            <SetupField
-              id="buildingNumber"
-              label={ui('buildingNumberLabel')}
-              required={addressStarted}
-              trailingLabel={!addressStarted ? `(${ui('optional')})` : null}
-              value={form.buildingNumber}
-              onChange={e => updateField('buildingNumber', e.target.value)}
-              maxLength={ONBOARDING_FIELD_LIMITS.buildingNumber}
-              error={buildingNumberMissing ? ui('fieldRequiredMessage') : null}
-              data-testid="SetupField__79cf84" />
+              City is left for the user to complete later from the Organization popup.
+
+              Design follow-up (same ticket): rendered as a single "compound field" — one outer
+              border for all 3 inputs, divided internally by thin lines, label inside each cell
+              — so it reads as one piece of data ("the address") rather than three separate
+              bordered inputs. See AddressCell.jsx for the cell itself. */}
+          <div>
+            <Label
+              className="mb-2 block text-sm font-medium leading-6 text-slate-900"
+              data-testid="Label__79cf84">
+              {ui('onboardingAddressLabel')} <span className="ml-2 font-normal text-slate-500">({ui('optional')})</span>
+            </Label>
+            <div className="overflow-hidden rounded-lg border border-[#D1D4DB] bg-white shadow-[0_1px_2px_rgba(18,18,23,0.05)]">
+              <div className="grid grid-cols-[2fr_1fr] divide-x divide-[#D1D4DB]">
+                <AddressCell
+                  id="streetName"
+                  label={ui('streetNameLabel')}
+                  required={addressStarted}
+                  value={form.streetName}
+                  onChange={e => updateField('streetName', e.target.value)}
+                  placeholder={ui('onboardingAddressPlaceholder')}
+                  maxLength={ONBOARDING_FIELD_LIMITS.streetName}
+                  error={streetNameMissing ? ui('fieldRequiredMessage') : null}
+                  data-testid="AddressCell__streetName" />
+                <AddressCell
+                  id="buildingNumber"
+                  label={ui('buildingNumberLabel')}
+                  required={addressStarted}
+                  value={form.buildingNumber}
+                  onChange={e => updateField('buildingNumber', e.target.value)}
+                  maxLength={ONBOARDING_FIELD_LIMITS.buildingNumber}
+                  error={buildingNumberMissing ? ui('fieldRequiredMessage') : null}
+                  data-testid="AddressCell__buildingNumber" />
+              </div>
+              <div className="border-t border-[#D1D4DB]">
+                <AddressCell
+                  id="buildingName"
+                  label={ui('buildingNameLabel')}
+                  trailingLabel={`(${ui('optional')})`}
+                  value={form.buildingName}
+                  onChange={e => updateField('buildingName', e.target.value)}
+                  maxLength={ONBOARDING_FIELD_LIMITS.buildingName}
+                  data-testid="AddressCell__buildingName" />
+              </div>
+            </div>
           </div>
-          <SetupField
-            id="buildingName"
-            label={ui('buildingNameLabel')}
-            trailingLabel={`(${ui('optional')})`}
-            value={form.buildingName}
-            onChange={e => updateField('buildingName', e.target.value)}
-            maxLength={ONBOARDING_FIELD_LIMITS.buildingName}
-            data-testid="SetupField__79cf84" />
 
           <SetupSelect
             id="sector"
