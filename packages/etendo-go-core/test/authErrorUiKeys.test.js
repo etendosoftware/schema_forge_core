@@ -43,6 +43,8 @@ describe('AUTH_ERROR_UI_KEYS (ETP-4664)', () => {
       INVALID_CURRENT_PASSWORD: 'onboardingInvalidCurrentPassword',
       // ETP-5258 — unknown, used or expired reset/set-password link.
       PASSWORD_RESET_INVALID: 'onboardingCredentialResetFailed',
+      // ETP-5847 — unknown, used or expired one-time login link.
+      LOGIN_LINK_INVALID: 'onboardingLoginLinkInvalid',
     };
     assert.deepEqual(AUTH_ERROR_UI_KEYS, expected);
   });
