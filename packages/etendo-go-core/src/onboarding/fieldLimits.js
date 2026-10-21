@@ -59,8 +59,20 @@ export const CLIENT_NAME_INPUT_MAX_LENGTH = 60;
  * AD, but the cap keeps the value storable the day it does. */
 export const FISCAL_ID_MAX_LENGTH = 20;
 
-/** `C_LOCATION.ADDRESS1` is NVARCHAR(60). */
+/** `C_LOCATION.ADDRESS1` is NVARCHAR(60). Legacy free-text address, superseded by the structured
+ * Street/Number/Building Name fields below (ETP-5806) but kept for any caller still sending it. */
 export const ADDRESS_MAX_LENGTH = 60;
+
+/**
+ * ETP-5806 — structured address fields added to the onboarding company step, matching
+ * `org.openbravo.sepa.iso20022`'s `AD_COLUMN.FIELDLENGTH` for
+ * `EM_OBSEPA_StrtNm`/`BldgNb`/`BldgNm`. Keep in sync with
+ * `@etendosoftware/app-shell-core/lib/locationAddress.js` and the Java-side
+ * `StructuredAddressComposer`.
+ */
+export const STREET_NAME_MAX_LENGTH = 70;
+export const BUILDING_NUMBER_MAX_LENGTH = 16;
+export const BUILDING_NAME_MAX_LENGTH = 35;
 
 /**
  * Freelancers have no company: `CompanyStep` reuses their personal full name as
@@ -77,6 +89,9 @@ export const ONBOARDING_FIELD_LIMITS = {
   clientName: CLIENT_NAME_MAX_LENGTH,
   fiscalId: FISCAL_ID_MAX_LENGTH,
   address: ADDRESS_MAX_LENGTH,
+  streetName: STREET_NAME_MAX_LENGTH,
+  buildingNumber: BUILDING_NUMBER_MAX_LENGTH,
+  buildingName: BUILDING_NAME_MAX_LENGTH,
 };
 
 /**

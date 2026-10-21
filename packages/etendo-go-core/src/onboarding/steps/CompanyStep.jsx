@@ -3,7 +3,7 @@ import { ArrowRight } from 'lucide-react';
 import { Button } from '@etendosoftware/app-shell-core/components/ui/button';
 import { Label } from '@etendosoftware/app-shell-core/components/ui/label';
 import { useUI } from '@etendosoftware/app-shell-core/i18n';
-import { isCompanyStepValid, isSampleDataOffered } from '../state.js';
+import { isCompanyStepValid, isSampleDataOffered, isAddressBlockStarted } from '../state.js';
 import { ONBOARDING_FIELD_LIMITS, CLIENT_NAME_INPUT_MAX_LENGTH, exceedsLimit } from '../fieldLimits.js';
 import { trackOnboarding } from '../tracking.js';
 import { SetupShell } from '../components/SetupShell.jsx';
@@ -27,7 +27,13 @@ export function CompanyStep({ config, stepData, onNext, onBack, goToStep, onChan
     clientName: isFreelancer ? (stepData.fullName ?? '') : (stepData.clientName ?? config.defaultForm?.clientName ?? ''),
     fiscalIdType: stepData.fiscalIdType ?? config.defaultForm?.fiscalIdType ?? '',
     fiscalIdValue: stepData.fiscalIdValue ?? config.defaultForm?.fiscalIdValue ?? '',
-    address: stepData.address ?? config.defaultForm?.address ?? '',
+    // ETP-5806 — structured address fields, replacing the single free-text `address` input with
+    // the same Street/Number/Building Name breakdown used by every other address popup
+    // (LocationEditorModal.jsx). The block stays fully optional on this minimalist step; see
+    // `isAddressBlockStarted`/`isCompanyStepValid` in state.js for the mandatoriness rule.
+    streetName: stepData.streetName ?? config.defaultForm?.streetName ?? '',
+    buildingNumber: stepData.buildingNumber ?? config.defaultForm?.buildingNumber ?? '',
+    buildingName: stepData.buildingName ?? config.defaultForm?.buildingName ?? '',
     sector: stepData.sector ?? config.defaultForm?.sector ?? 'technology',
     // ETP-5426: unticked by default, without exception — a tenant meant for real use must never
     // receive fictitious data nobody asked for. Restored from the draft when the user ticked it.
@@ -64,6 +70,13 @@ export function CompanyStep({ config, stepData, onNext, onBack, goToStep, onChan
     value: code,
     label: ui(`onboardingSector${code.charAt(0).toUpperCase()}${code.slice(1)}`),
   }));
+
+  // ETP-5806 — once the user starts the address block, Street and Number become mandatory
+  // together; shown immediately (no blur/touched gating), same style as `clientNameTooLong`
+  // below.
+  const addressStarted = isAddressBlockStarted(form);
+  const streetNameMissing = addressStarted && !form.streetName?.trim();
+  const buildingNumberMissing = addressStarted && !form.buildingNumber?.trim();
 
   const isValid = isCompanyStepValid(form);
   // Trim to match isCompanyStepValid, so the inline error and the Start button never disagree.
@@ -135,14 +148,42 @@ export function CompanyStep({ config, stepData, onNext, onBack, goToStep, onChan
             </div>
           </div>
 
+          {/* ETP-5806 — Street/Number/Building Name, replacing the free-text address field with
+              the same structured breakdown used by every other address popup. Fully optional
+              until the user types into one of them; from then on Street+Number are required
+              (see isAddressBlockStarted/isCompanyStepValid). City/Country are intentionally not
+              asked here — Country already comes from the Profile step's country selector, and
+              City is left for the user to complete later from the Organization popup. */}
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-[2fr_1fr]">
+            <SetupField
+              id="streetName"
+              label={ui('streetNameLabel')}
+              required={addressStarted}
+              trailingLabel={!addressStarted ? `(${ui('optional')})` : null}
+              value={form.streetName}
+              onChange={e => updateField('streetName', e.target.value)}
+              placeholder={ui('onboardingAddressPlaceholder')}
+              maxLength={ONBOARDING_FIELD_LIMITS.streetName}
+              error={streetNameMissing ? ui('fieldRequiredMessage') : null}
+              data-testid="SetupField__79cf84" />
+            <SetupField
+              id="buildingNumber"
+              label={ui('buildingNumberLabel')}
+              required={addressStarted}
+              trailingLabel={!addressStarted ? `(${ui('optional')})` : null}
+              value={form.buildingNumber}
+              onChange={e => updateField('buildingNumber', e.target.value)}
+              maxLength={ONBOARDING_FIELD_LIMITS.buildingNumber}
+              error={buildingNumberMissing ? ui('fieldRequiredMessage') : null}
+              data-testid="SetupField__79cf84" />
+          </div>
           <SetupField
-            id="address"
-            label={ui('onboardingAddressLabel')}
+            id="buildingName"
+            label={ui('buildingNameLabel')}
             trailingLabel={`(${ui('optional')})`}
-            value={form.address}
-            onChange={e => updateField('address', e.target.value)}
-            placeholder={ui('onboardingAddressPlaceholder')}
-            maxLength={ONBOARDING_FIELD_LIMITS.address}
+            value={form.buildingName}
+            onChange={e => updateField('buildingName', e.target.value)}
+            maxLength={ONBOARDING_FIELD_LIMITS.buildingName}
             data-testid="SetupField__79cf84" />
 
           <SetupSelect

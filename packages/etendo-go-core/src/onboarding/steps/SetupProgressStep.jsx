@@ -150,6 +150,11 @@ export function SetupProgressStep({ config, stepData, onNext, onBack, goToStep, 
       clientName: stepData.clientName,
       fullName: stepData.fullName,
       address: stepData.address,
+      // ETP-5806 — structured address fields from the Company step; `address` above is kept as a
+      // legacy fallback for any caller still sending free text.
+      streetName: stepData.streetName,
+      buildingNumber: stepData.buildingNumber,
+      buildingName: stepData.buildingName,
       // Optional Tax ID from the Company step (ETP-4749) — runOnboardingStream only
       // includes it in the request body when non-empty, same as address/fullName.
       fiscalIdValue: stepData.fiscalIdValue,

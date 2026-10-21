@@ -32,7 +32,11 @@ describe('onboarding field limits (ETP-4665)', () => {
       fullName: 60,     // AD_USER.NAME
       clientName: 40,   // AD_CLIENT.VALUE / AD_ORG.VALUE (tighter than NAME's 60)
       fiscalId: 20,     // C_BPARTNER.TAXID / AD_ORGINFO.TAXID
-      address: 60,      // C_LOCATION.ADDRESS1
+      address: 60,      // C_LOCATION.ADDRESS1 (legacy free text, superseded below)
+      // ETP-5806 — structured address fields, EM_OBSEPA_StrtNm/BldgNb/BldgNm
+      streetName: 70,
+      buildingNumber: 16,
+      buildingName: 35,
     });
   });
 
@@ -149,7 +153,7 @@ describe('the forms wire the limits to the inputs (ETP-4665)', () => {
     assert.match(step, /exceedsLimit\(form\.fullName\?\.trim\(\), fullNameLimit\)/);
   });
 
-  it('caps company name, tax id and address in the company step', () => {
+  it('caps company name, tax id and the structured address fields in the company step', () => {
     const step = readStep('CompanyStep.jsx');
     // ETP-5638: the company name keeps typing headroom so a pasted over-long name is not
     // silently truncated; the real limit surfaces as an inline error, trimmed like the validator.
@@ -157,7 +161,10 @@ describe('the forms wire the limits to the inputs (ETP-4665)', () => {
     assert.match(step, /exceedsLimit\(form\.clientName\?\.trim\(\), ONBOARDING_FIELD_LIMITS\.clientName\)/);
     assert.match(step, /ui\('onboardingFieldTooLong', \{ max: ONBOARDING_FIELD_LIMITS\.clientName \}\)/);
     assert.match(step, /maxLength=\{ONBOARDING_FIELD_LIMITS\.fiscalId\}/);
-    assert.match(step, /maxLength=\{ONBOARDING_FIELD_LIMITS\.address\}/);
+    // ETP-5806: the free-text address field was replaced by Street/Number/Building Name.
+    assert.match(step, /maxLength=\{ONBOARDING_FIELD_LIMITS\.streetName\}/);
+    assert.match(step, /maxLength=\{ONBOARDING_FIELD_LIMITS\.buildingNumber\}/);
+    assert.match(step, /maxLength=\{ONBOARDING_FIELD_LIMITS\.buildingName\}/);
   });
 
   it('never hardcodes a limit inline — every cap comes from fieldLimits.js', () => {
