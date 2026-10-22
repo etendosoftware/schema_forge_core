@@ -38,13 +38,15 @@ an investigation signal, not an incident** and must not page anyone.
 per deployment. The monitor query below matches production as it is deployed; if
 a deployment uses a different context path, adjust the path facet to match.
 
-## The query, exactly as requested
+## The search expression, exactly as requested
 
 ```
 @http.url_details.path:/etendo/sws/go/session/sso/google @http.status_code:403
 ```
 
-This is the query from ETP-5679, kept verbatim.
+This is the search expression from ETP-5679, kept verbatim. It is what you run
+ad hoc in Logs Explorer; the monitor wraps it with the aggregation and the window
+(see [Monitor definition](#monitor-definition)).
 
 ## Recommended query — the deduplicated form
 
@@ -64,6 +66,13 @@ reflects the backend's answer. Count the ALB source only:
 @http.url_details.path:/etendo/sws/go/session/sso/google @http.status_code:403 @<alb-source-facet>:<alb-source-name>
 ```
 
+In the monitor's `query` field that expression is wrapped, with the same window
+and threshold as above:
+
+```
+logs("@http.url_details.path:/etendo/sws/go/session/sso/google @http.status_code:403 @<alb-source-facet>:<alb-source-name>").index("*").rollup("count").last("10m") >= 2
+```
+
 `<alb-source-facet>` / `<alb-source-name>` are **placeholders on purpose.** The
 facet and source names under which ALB logs are ingested are not documented in any
 repository and cannot be discovered without Datadog access. Determine them at
@@ -72,15 +81,32 @@ the source facet off a live 403 line — then pin the facet here.
 
 ## Monitor definition
 
-Datadog log monitor. Importable as-is via the Datadog API
-(`POST /api/v1/monitor`) or the UI "Import JSON" dialog.
+Datadog log monitor. Importable via the Datadog API (`POST /api/v1/monitor`) or
+the UI "Import JSON" dialog.
+
+The `query` field uses the **log-monitor query form**, not a bare search string:
+
+```
+logs("<search>").index("*").rollup("count").last("10m") >= 2
+```
+
+- `rollup("count")` — the value evaluated against the threshold is the number of
+  matching log events.
+- `last("10m")` — **the ten-minute window is enforced here.** Without it the
+  monitor has no evaluation period and the "at least 2 in 10 minutes" rule is not
+  expressed at all; `thresholds.critical` alone only compares against whatever
+  range `last()` names.
+- `index("*")` — matches every log index the search can reach.
+
+`<search>` is the search expression below, wrapped in double quotes. Keep the raw
+expression (without the wrapper) to run it ad hoc in Logs Explorer.
 
 ```json
 {
   "name": "[GO] Google SSO authorization failures (>=2 403s / 10m)",
   "type": "log alert",
-  "query": "@http.url_details.path:/etendo/sws/go/session/sso/google @http.status_code:403",
-  "message": "@slack-oncall\nGoogle SSO authorization is failing: {{count}} HTTP 403 responses on POST /etendo/sws/go/session/sso/google in the last 10 minutes.\n\nLatest occurrences (UTC):\n{{#is_alert}}{{timestamp}}  provider=google  path=/etendo/sws/go/session/sso/google  status=403{{/is_alert}}\n\nLog query:\nhttps://app.datadoghq.com/logs?query=%40http.url_details.path%3A%2Fetendo%2Fsws%2Fgo%2Fsession%2Fsso%2Fgoogle%20%40http.status_code%3A403\n\nA single 403 is an investigation signal and does not page. See\nschema_forge_core/docs/ops/datadog-monitors/google-sso-403.md for triage.",
+  "query": "logs(\"@http.url_details.path:/etendo/sws/go/session/sso/google @http.status_code:403\").index(\"*\").rollup(\"count\").last(\"10m\") >= 2",
+  "message": "@slack-oncall\nGoogle SSO authorization is failing: {{value}} HTTP 403 responses on POST /etendo/sws/go/session/sso/google in the last 10 minutes.\n\nAlert triggered (UTC): {{last_triggered_at}}\nprovider=google  path=/etendo/sws/go/session/sso/google  status=403  count={{value}}\n\nLog query:\nhttps://app.datadoghq.com/logs?query=%40http.url_details.path%3A%2Fetendo%2Fsws%2Fgo%2Fsession%2Fsso%2Fgoogle%20%40http.status_code%3A403\n\nA single 403 is an investigation signal and does not page. The only 403 on this\nroute is a CSRF double-submit rejection that logs nothing, so a backend log\nsearch will return no correlated line. See\nschema_forge_core/docs/ops/datadog-monitors/google-sso-403.md for triage.",
   "tags": ["service:go", "component:auth", "type:sso", "severity:low"],
   "options": {
     "thresholds": {
@@ -107,6 +133,7 @@ Datadog log monitor. Importable as-is via the Datadog API
 | Setting | Value | Reason |
 | --- | --- | --- |
 | `type` | `log alert` | The signal lives in edge access logs, not in a metric. A log monitor is the only Datadog monitor type that reads them. |
+| `query` | `logs("…").index("*").rollup("count").last("10m") >= 2` | Carries the search, the aggregation, **and the ten-minute window**. `last("10m")` is what makes "at least 2 in 10 minutes" true; `thresholds.critical` then compares the resulting count against `2`. |
 | `thresholds.critical` | `2` | The ticket's rule: alert at two or more 403s in ten minutes. One 403 pages nobody. |
 | `renotify_interval` / `renotify_evaluated` | `60` / `true` | Re-notifies hourly while the condition is still true, so a persistent failure does not go quiet after one page. |
 | `notify_no_data` / `renotify_no_data` | `false` | Silence from the edge source is an ingestion problem, not an SSO incident. Paging on it would be noise. |
@@ -118,11 +145,22 @@ Datadog log monitor. Importable as-is via the Datadog API
 
 The template carries **only** the five elements the ticket asks for:
 
-1. UTC timestamps — rendered by Datadog in the message UTC.
-2. provider — literal `provider=google`.
-3. path — the request path.
-4. HTTP status — the status code.
-5. a link to the log query — the Logs Explorer URL.
+| Required element | Rendered by | Variable |
+| --- | --- | --- |
+| UTC timestamp | the alert evaluation time, rendered in UTC | `{{last_triggered_at}}` |
+| provider | literal text | `provider=google` |
+| path | literal text | `path=/etendo/sws/go/session/sso/google` |
+| HTTP status | literal text | `status=403` |
+| link to the log query | the Logs Explorer URL | — (static link) |
+
+The evaluated count also appears, as `{{value}}` — Datadog exposes the rolled-up
+`count` under `{{value}}`; `{{count}}` is not a Datadog template variable and would
+render empty.
+
+`{{last_triggered_at}}` is the alert evaluation time, not a per-log-event
+timestamp. A log monitor evaluates over a window rather than per event, so a
+per-event timestamp (`{{log.timestamp}}`) has no single value to report here; the
+Logs Explorer link is what takes the on-call to the individual events.
 
 The on-call channel is the `@slack-oncall` handle in the template. Replace it with
 the real channel identifier at activation time; no repository documents it.
