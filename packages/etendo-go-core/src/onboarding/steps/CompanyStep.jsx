@@ -69,7 +69,10 @@ export function CompanyStep({ config, stepData, onNext, onBack, goToStep, onChan
   // Trim to match isCompanyStepValid, so the inline error and the Start button never disagree.
   const clientNameTooLong = exceedsLimit(form.clientName?.trim(), ONBOARDING_FIELD_LIMITS.clientName);
   const sessionAction = token && (
-    <OnboardingSessionAction onLogout={onLogout} label={ui('logout')} />
+    <OnboardingSessionAction
+      onLogout={onLogout}
+      label={ui('logout')}
+      data-testid="OnboardingSessionAction__55c534" />
   );
 
   return (
@@ -87,7 +90,10 @@ export function CompanyStep({ config, stepData, onNext, onBack, goToStep, onChan
           {ui('onboardingDraftRestoredNotice')}
         </div>
       )}
-      <DraftSaveWarning show={draftSaveWarning} message={ui('onboardingDraftSaveWarning')} />
+      <DraftSaveWarning
+        show={draftSaveWarning}
+        message={ui('onboardingDraftSaveWarning')}
+        data-testid="DraftSaveWarning__55c534" />
       <div>
         <div className="mb-10">
           <h1 className="text-3xl font-semibold tracking-[-0.06em] text-slate-900 sm:text-[2.7rem] sm:leading-[1.04]">

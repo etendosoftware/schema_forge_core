@@ -539,9 +539,10 @@ export function LoginStep({ config, stepData, onNext, onBack, goToStep, setToken
           {ui('onboardingLoginSubtitle')}
         </p>
       </div>
-
-      <DraftSaveWarning show={draftSaveWarning} message={ui('onboardingDraftSaveWarning')} />
-
+      <DraftSaveWarning
+        show={draftSaveWarning}
+        message={ui('onboardingDraftSaveWarning')}
+        data-testid="DraftSaveWarning__ff5413" />
       {loginNotice && (
         <div
           data-testid="login-notice"
@@ -550,7 +551,6 @@ export function LoginStep({ config, stepData, onNext, onBack, goToStep, setToken
           {ui(loginNotice)}
         </div>
       )}
-
       <AuthSsoOptions
         providers={SSO_PROVIDERS}
         buttonRef={loginSsoButtonRef}
