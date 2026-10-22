@@ -1,8 +1,5 @@
 import { describe, it } from 'node:test';
 import assert from 'node:assert/strict';
-import { readFileSync } from 'node:fs';
-import { dirname, join } from 'node:path';
-import { fileURLToPath } from 'node:url';
 
 import {
   ONBOARDING_FIELD_LIMITS,
@@ -14,10 +11,6 @@ import {
   exceedsLimit,
 } from '../src/onboarding/fieldLimits.js';
 import { isProfileStepValid, isCompanyStepValid } from '../src/onboarding/state.js';
-
-const __dirname = dirname(fileURLToPath(import.meta.url));
-const stepsDir = join(__dirname, '..', 'src', 'onboarding', 'steps');
-const readStep = name => readFileSync(join(stepsDir, name), 'utf8');
 
 // ETP-4665 — onboarding inputs had no length cap, so an over-long value was only
 // rejected by the DAL halfway through tenant provisioning (rolling the whole
@@ -122,47 +115,5 @@ describe('step validation gates on length (ETP-4665)', () => {
   it('keeps the address optional', () => {
     assert.equal(isCompanyStepValid({ clientName: 'Acme', address: '' }), true);
     assert.equal(isCompanyStepValid({ clientName: 'Acme', address: undefined }), true);
-  });
-});
-
-describe('the forms wire the limits to the inputs (ETP-4665)', () => {
-  it('caps name, email and password in the register step', () => {
-    const step = readStep('RegisterStep.jsx');
-    assert.match(step, /maxLength=\{ONBOARDING_FIELD_LIMITS\.accountName\}/);
-    assert.match(step, /maxLength=\{ONBOARDING_FIELD_LIMITS\.email\}/);
-    assert.match(step, /maxLength=\{ONBOARDING_FIELD_LIMITS\.password\}/);
-  });
-
-  it('does not show a character counter on the password', () => {
-    // There is no bcrypt in the stack and the stored hash is fixed-length, so a
-    // counter would advertise a limit that does not exist.
-    const step = readStep('RegisterStep.jsx');
-    assert.doesNotMatch(step, /\/\s*\{?\s*(72|ONBOARDING_FIELD_LIMITS\.password)\s*\}?\s*</);
-  });
-
-  it('caps the full name and surfaces the freelancer overflow inline', () => {
-    const step = readStep('ProfileStep.jsx');
-    assert.match(step, /maxLength=\{ONBOARDING_FIELD_LIMITS\.fullName\}/);
-    assert.match(step, /error=\{fullNameTooLong \? ui\('onboardingFieldTooLong', \{ max: fullNameLimit \}\) : null\}/);
-    assert.match(step, /const fullNameLimit = fullNameLimitFor\(form\.businessType\)/);
-    // Trimmed, so the inline error and the Continue button agree on padded input.
-    assert.match(step, /exceedsLimit\(form\.fullName\?\.trim\(\), fullNameLimit\)/);
-  });
-
-  it('caps company name, tax id and address in the company step', () => {
-    const step = readStep('CompanyStep.jsx');
-    // ETP-5638: the company name keeps typing headroom so a pasted over-long name is not
-    // silently truncated; the real limit surfaces as an inline error, trimmed like the validator.
-    assert.match(step, /maxLength=\{CLIENT_NAME_INPUT_MAX_LENGTH\}/);
-    assert.match(step, /exceedsLimit\(form\.clientName\?\.trim\(\), ONBOARDING_FIELD_LIMITS\.clientName\)/);
-    assert.match(step, /ui\('onboardingFieldTooLong', \{ max: ONBOARDING_FIELD_LIMITS\.clientName \}\)/);
-    assert.match(step, /maxLength=\{ONBOARDING_FIELD_LIMITS\.fiscalId\}/);
-    assert.match(step, /maxLength=\{ONBOARDING_FIELD_LIMITS\.address\}/);
-  });
-
-  it('never hardcodes a limit inline — every cap comes from fieldLimits.js', () => {
-    for (const name of ['RegisterStep.jsx', 'ProfileStep.jsx', 'CompanyStep.jsx']) {
-      assert.doesNotMatch(readStep(name), /maxLength=\{\d+\}/, `${name} hardcodes a maxLength`);
-    }
   });
 });

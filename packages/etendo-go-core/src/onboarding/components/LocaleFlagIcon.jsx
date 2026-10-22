@@ -71,7 +71,7 @@ export function LocaleFlagIcon({ locale, className }) {
   if (region === 'ES') {
     return (
       <span className={`inline-flex h-5 w-5 overflow-hidden rounded-full ${className || ''}`}>
-        <SpainFlag clipId={clipId} />
+        <SpainFlag clipId={clipId} data-testid="SpainFlag__33e670" />
       </span>
     );
   }
@@ -79,12 +79,12 @@ export function LocaleFlagIcon({ locale, className }) {
   if (region === 'US') {
     return (
       <span className={`inline-flex h-5 w-5 overflow-hidden rounded-full ${className || ''}`}>
-        <UnitedStatesFlag clipId={clipId} />
+        <UnitedStatesFlag clipId={clipId} data-testid="UnitedStatesFlag__33e670" />
       </span>
     );
   }
 
-  return <FallbackFlag region={region} className={className} />;
+  return <FallbackFlag region={region} className={className} data-testid="FallbackFlag__33e670" />;
 }
 
 export default LocaleFlagIcon;
