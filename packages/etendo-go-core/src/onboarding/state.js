@@ -67,6 +67,8 @@ export function buildOnboardingPayload(form) {
     streetName: form.streetName,
     buildingNumber: form.buildingNumber,
     buildingName: form.buildingName,
+    // ETP-5806 — City, mandatory together with Street/Number once the address block is started.
+    city: form.city,
     // Optional Tax ID from the Company step — sent to provisioning when provided
     // (ETP-4749; previously dropped here, matching the old api.js/SetupProgressStep.jsx
     // behavior that this same fix reverses).
@@ -186,16 +188,15 @@ export function isProfileStepValid(form) {
 }
 
 /**
- * ETP-5806 — whether the structured address block (Street/Number/Building Name) has been
- * started: the user typed into at least one of the 3 fields. A block that was never touched
+ * ETP-5806 — whether the structured address block (Street/Number/Building Name/City) has been
+ * started: the user typed into at least one of the 4 fields. A block that was never touched
  * stays fully optional, exactly like the free-text `address` field it replaces; once started,
- * Street and Number become mandatory together (City/Country are NOT asked on this minimalist
- * step — Country is already guaranteed by the Profile step's `countryCode`, and City is left for
- * the user to complete later from the Organization popup, which carries the full
- * Calle/Número/Ciudad/País validation).
+ * Street, Number and City become mandatory together (Country is NOT asked on this minimalist
+ * step — it is already guaranteed by the Profile step's `countryCode`).
  */
 export function isAddressBlockStarted(form) {
-  return Boolean(form.streetName?.trim() || form.buildingNumber?.trim() || form.buildingName?.trim());
+  return Boolean(form.streetName?.trim() || form.buildingNumber?.trim()
+    || form.buildingName?.trim() || form.city?.trim());
 }
 
 export function isCompanyStepValid(form) {
@@ -211,8 +212,10 @@ export function isCompanyStepValid(form) {
   if (exceedsLimit(form.streetName?.trim(), ONBOARDING_FIELD_LIMITS.streetName)) return false;
   if (exceedsLimit(form.buildingNumber?.trim(), ONBOARDING_FIELD_LIMITS.buildingNumber)) return false;
   if (exceedsLimit(form.buildingName?.trim(), ONBOARDING_FIELD_LIMITS.buildingName)) return false;
+  if (exceedsLimit(form.city?.trim(), ONBOARDING_FIELD_LIMITS.city)) return false;
   if (isAddressBlockStarted(form)) {
-    return Boolean(form.streetName?.trim()) && Boolean(form.buildingNumber?.trim());
+    return Boolean(form.streetName?.trim()) && Boolean(form.buildingNumber?.trim())
+      && Boolean(form.city?.trim());
   }
   return true;
 }

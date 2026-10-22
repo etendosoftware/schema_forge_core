@@ -75,6 +75,14 @@ export const BUILDING_NUMBER_MAX_LENGTH = 16;
 export const BUILDING_NAME_MAX_LENGTH = 35;
 
 /**
+ * ETP-5806 — City, mandatory together with Street/Number once the address block is started (see
+ * `isAddressBlockStarted`/`isCompanyStepValid` below). `C_Location.City` (DAL property `cityName`)
+ * is a plain NVARCHAR(60) AD column — not one of `org.openbravo.sepa.iso20022`'s SEPA columns —
+ * confirmed against the real schema, not assumed from the other 3 fields' 35/70/16 pattern.
+ */
+export const CITY_MAX_LENGTH = 60;
+
+/**
  * Freelancers have no company: `CompanyStep` reuses their personal full name as
  * the invoicing name, so for them the profile step's full name inherits the
  * stricter company-name limit.
@@ -92,6 +100,7 @@ export const ONBOARDING_FIELD_LIMITS = {
   streetName: STREET_NAME_MAX_LENGTH,
   buildingNumber: BUILDING_NUMBER_MAX_LENGTH,
   buildingName: BUILDING_NAME_MAX_LENGTH,
+  city: CITY_MAX_LENGTH,
 };
 
 /**

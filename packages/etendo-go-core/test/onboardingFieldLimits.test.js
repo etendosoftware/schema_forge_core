@@ -37,6 +37,8 @@ describe('onboarding field limits (ETP-4665)', () => {
       streetName: 70,
       buildingNumber: 16,
       buildingName: 35,
+      // ETP-5806 — City, C_LOCATION.CITY (plain AD column, not a SEPA field)
+      city: 60,
     });
   });
 

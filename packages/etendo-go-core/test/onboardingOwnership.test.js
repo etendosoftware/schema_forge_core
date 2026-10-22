@@ -136,11 +136,12 @@ describe('Core-owned onboarding state and SSO helpers', () => {
     assert.equal(second[0].status, 'pending');
     assert.equal(applyProgressMessage(second, { type: 'progress', step: 'client', status: 'error', message: 'failed' })[1].status, 'failed');
     // ETP-4749: fiscalIdValue is now a provisioning contract field (previously stripped).
-    // ETP-5806: streetName/buildingNumber/buildingName joined the contract alongside the legacy
-    // `address` field.
+    // ETP-5806: streetName/buildingNumber/buildingName/city joined the contract alongside the
+    // legacy `address` field.
     assert.deepEqual(buildOnboardingPayload({ clientName: 'Core', currency: 'EUR', language: 'en_US', countryCode: 'ES', fiscalIdValue: '1234' }), {
       clientName: 'Core', currency: 'EUR', language: 'en_US', countryCode: 'ES', address: undefined,
-      streetName: undefined, buildingNumber: undefined, buildingName: undefined, fiscalIdValue: '1234',
+      streetName: undefined, buildingNumber: undefined, buildingName: undefined, city: undefined,
+      fiscalIdValue: '1234',
       // ETP-5426: the sample-data opt-in is a contract field too, false unless explicitly true.
       includeSampleData: false,
     });

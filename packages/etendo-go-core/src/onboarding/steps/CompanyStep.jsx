@@ -35,6 +35,8 @@ export function CompanyStep({ config, stepData, onNext, onBack, goToStep, onChan
     streetName: stepData.streetName ?? config.defaultForm?.streetName ?? '',
     buildingNumber: stepData.buildingNumber ?? config.defaultForm?.buildingNumber ?? '',
     buildingName: stepData.buildingName ?? config.defaultForm?.buildingName ?? '',
+    // ETP-5806 — City, mandatory together with Street/Number once the address block is started.
+    city: stepData.city ?? config.defaultForm?.city ?? '',
     sector: stepData.sector ?? config.defaultForm?.sector ?? 'technology',
     // ETP-5426: unticked by default, without exception — a tenant meant for real use must never
     // receive fictitious data nobody asked for. Restored from the draft when the user ticked it.
@@ -78,6 +80,7 @@ export function CompanyStep({ config, stepData, onNext, onBack, goToStep, onChan
   const addressStarted = isAddressBlockStarted(form);
   const streetNameMissing = addressStarted && !form.streetName?.trim();
   const buildingNumberMissing = addressStarted && !form.buildingNumber?.trim();
+  const cityMissing = addressStarted && !form.city?.trim();
 
   const isValid = isCompanyStepValid(form);
   // Trim to match isCompanyStepValid, so the inline error and the Start button never disagree.
@@ -149,16 +152,16 @@ export function CompanyStep({ config, stepData, onNext, onBack, goToStep, onChan
             </div>
           </div>
 
-          {/* ETP-5806 — Street/Number/Building Name, replacing the free-text address field with
-              the same structured breakdown used by every other address popup. Fully optional
-              until the user types into one of them; from then on Street+Number are required
-              (see isAddressBlockStarted/isCompanyStepValid). City/Country are intentionally not
-              asked here — Country already comes from the Profile step's country selector, and
-              City is left for the user to complete later from the Organization popup.
+          {/* ETP-5806 — Street/Number/Building Name/City, replacing the free-text address field
+              with the same structured breakdown used by every other address popup. Fully
+              optional until the user types into one of them; from then on Street+Number+City are
+              required together (see isAddressBlockStarted/isCompanyStepValid). Country is
+              intentionally not asked here — it already comes from the Profile step's country
+              selector.
 
               Design follow-up (same ticket): rendered as a single "compound field" — one outer
-              border for all 3 inputs, divided internally by thin lines, label inside each cell
-              — so it reads as one piece of data ("the address") rather than three separate
+              border for all 4 inputs, divided internally by thin lines, label inside each cell
+              — so it reads as one piece of data ("the address") rather than four separate
               bordered inputs. See AddressCell.jsx for the cell itself. */}
           <div>
             <Label
@@ -174,7 +177,7 @@ export function CompanyStep({ config, stepData, onNext, onBack, goToStep, onChan
                   required={addressStarted}
                   value={form.streetName}
                   onChange={e => updateField('streetName', e.target.value)}
-                  placeholder={ui('onboardingAddressPlaceholder')}
+                  placeholder={ui('streetNamePlaceholder')}
                   maxLength={ONBOARDING_FIELD_LIMITS.streetName}
                   error={streetNameMissing ? ui('fieldRequiredMessage') : null}
                   data-testid="AddressCell__streetName" />
@@ -184,11 +187,12 @@ export function CompanyStep({ config, stepData, onNext, onBack, goToStep, onChan
                   required={addressStarted}
                   value={form.buildingNumber}
                   onChange={e => updateField('buildingNumber', e.target.value)}
+                  placeholder={ui('buildingNumberPlaceholder')}
                   maxLength={ONBOARDING_FIELD_LIMITS.buildingNumber}
                   error={buildingNumberMissing ? ui('fieldRequiredMessage') : null}
                   data-testid="AddressCell__buildingNumber" />
               </div>
-              <div className="border-t border-[#D1D4DB]">
+              <div className="grid grid-cols-[2fr_1fr] divide-x divide-[#D1D4DB] border-t border-[#D1D4DB]">
                 <AddressCell
                   id="buildingName"
                   label={ui('buildingNameLabel')}
@@ -197,6 +201,15 @@ export function CompanyStep({ config, stepData, onNext, onBack, goToStep, onChan
                   onChange={e => updateField('buildingName', e.target.value)}
                   maxLength={ONBOARDING_FIELD_LIMITS.buildingName}
                   data-testid="AddressCell__buildingName" />
+                <AddressCell
+                  id="city"
+                  label={ui('cityLabel')}
+                  required={addressStarted}
+                  value={form.city}
+                  onChange={e => updateField('city', e.target.value)}
+                  maxLength={ONBOARDING_FIELD_LIMITS.city}
+                  error={cityMissing ? ui('fieldRequiredMessage') : null}
+                  data-testid="AddressCell__city" />
               </div>
             </div>
           </div>
