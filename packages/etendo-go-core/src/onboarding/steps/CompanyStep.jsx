@@ -180,14 +180,13 @@ export function CompanyStep({ config, stepData, onNext, onBack, goToStep, onChan
                   placeholder={ui('streetNamePlaceholder')}
                   maxLength={ONBOARDING_FIELD_LIMITS.streetName}
                   error={streetNameMissing ? ui('fieldRequiredMessage') : null}
-                  // ETP-5806 — without an explicit autoComplete, Chrome's built-in autofill
-                  // heuristic guesses the field type from `id` alone (no `name`/autoComplete
-                  // needed to trigger it) and paints a blue/grey autofill background on this
-                  // field once it recognizes "streetName" as an address line. Number/Building
-                  // Name don't match a recognized heuristic and were never affected. This is a
-                  // one-time account-creation step, so autofill offers no value here — disable
-                  // it outright rather than fight the highlight with CSS the browser may ignore.
-                  autoComplete="off"
+                  // ETP-5806 — browser autofill is wanted here (it genuinely speeds up this
+                  // step), so we declare the standard HTML autocomplete token instead of
+                  // disabling it. Chrome paints its own blue/grey highlight on an autofilled
+                  // field regardless of the token used; that highlight is neutralized globally
+                  // in packages/app-shell-core/src/styles.css (the -webkit-autofill override)
+                  // so the field keeps the app's normal white background.
+                  autoComplete="address-line1"
                   data-testid="AddressCell__streetName" />
                 <AddressCell
                   id="buildingNumber"
@@ -198,6 +197,9 @@ export function CompanyStep({ config, stepData, onNext, onBack, goToStep, onChan
                   placeholder={ui('buildingNumberPlaceholder')}
                   maxLength={ONBOARDING_FIELD_LIMITS.buildingNumber}
                   error={buildingNumberMissing ? ui('fieldRequiredMessage') : null}
+                  // The WHATWG autocomplete spec has no dedicated "house/door number" token —
+                  // address-line1/2/3 are full line values, not line sub-fields — so there is no
+                  // reasonable standard token to offer the browser for this field specifically.
                   autoComplete="off"
                   data-testid="AddressCell__buildingNumber" />
               </div>
@@ -209,7 +211,10 @@ export function CompanyStep({ config, stepData, onNext, onBack, goToStep, onChan
                   value={form.buildingName}
                   onChange={e => updateField('buildingName', e.target.value)}
                   maxLength={ONBOARDING_FIELD_LIMITS.buildingName}
-                  autoComplete="off"
+                  // address-line2 is the standard token for an additional address line —
+                  // apartment, suite, unit or building name — which is exactly this field,
+                  // and a closer fit than overloading it onto the house/door number.
+                  autoComplete="address-line2"
                   data-testid="AddressCell__buildingName" />
                 <AddressCell
                   id="city"
@@ -219,7 +224,7 @@ export function CompanyStep({ config, stepData, onNext, onBack, goToStep, onChan
                   onChange={e => updateField('city', e.target.value)}
                   maxLength={ONBOARDING_FIELD_LIMITS.city}
                   error={cityMissing ? ui('fieldRequiredMessage') : null}
-                  autoComplete="off"
+                  autoComplete="address-level2"
                   data-testid="AddressCell__city" />
               </div>
             </div>
