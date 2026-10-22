@@ -15,7 +15,7 @@ import { decodeCsvBuffer, parseDelimited, ImportParseError } from '../../lib/imp
 import { parseXlsx } from '../../lib/import/parseXlsx.js';
 import { mapColumns } from '../../lib/import/mapColumns.js';
 import { dedupeRows } from '../../lib/import/dedupeRows.js';
-import { resolveForeignKeys, resolveForeignKeyColumn } from '../../lib/import/resolveForeignKeys.js';
+import { resolveForeignKeys, resolveForeignKeyColumn, scoreModeForField } from '../../lib/import/resolveForeignKeys.js';
 import { validateRow } from '../../lib/import/validateRows.js';
 import { buildOperations } from '../../lib/import/buildOperations.js';
 import { runImport, sendRow, SEND_STATUS } from '../../lib/import/importEngine.js';
@@ -244,7 +244,7 @@ export function ImportDialog({ open, onOpenChange, config, token, postBatch, sim
   // Contacts' country), never previewed, confirmed by a real browser capture showing the
   // `/webhooks/?name=SimSearch` request firing only during send, not during the mapping/
   // confirm preview.
-  const fkColumns = useMemo(() => config.fields.filter((f) => f.matchEntity).map((f) => ({ target: f.target, matchEntity: f.matchEntity, qtyResults: f.qtyResults })), [config.fields]);
+  const fkColumns = useMemo(() => config.fields.filter((f) => f.matchEntity).map((f) => ({ target: f.target, matchEntity: f.matchEntity, qtyResults: f.qtyResults, scoreMode: scoreModeForField(f) })), [config.fields]);
   const fkTargets = useMemo(() => fkColumns.map((c) => c.target), [fkColumns]);
   const [fkResolutions, setFkResolutions] = useState(new Map());
   // buildOperations (engine) expects { spec, entity, targets: string[], descriptorName? } —
@@ -599,6 +599,7 @@ export function ImportDialog({ open, onOpenChange, config, token, postBatch, sim
         simSearchFn,
         token,
         qtyResults: field.qtyResults,
+        scoreMode: scoreModeForField(field),
       });
       resolution = valueMap.get(value);
     }

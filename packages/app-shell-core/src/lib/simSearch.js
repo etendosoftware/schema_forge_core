@@ -47,12 +47,32 @@ function stripPercentSign(value) {
   return typeof value === 'string' ? value.replace(/%\s*$/, '') : value;
 }
 
-function mapRow(row) {
-  return {
+/**
+ * `scoreMode: 'text'` reports the WHOLE-STRING similarity as `similarityPercent` instead of the
+ * endpoint's score (ETP-5730).
+ *
+ * The endpoint's score is `GREATEST(similarity, word_similarity)`, so every name that merely
+ * CONTAINS the term scores 100, the same as the name that equals it: "IVA Normal" scores 100 for
+ * "IVA Normal", "IVA Normal ISP" and "IVA Normal Servicios", and an import cannot tell which one the
+ * cell meant. The endpoint now also returns `text_similarity_percent` (100 only for an identical
+ * string), which is what a caller that must pick ONE record should compare. Opt-in per call: the
+ * default keeps the original number, which is what inclusion-oriented callers (Copilot) rely on. An
+ * older backend without the field falls back to the original number, so nothing breaks mid-deploy.
+ */
+function mapRow(row, scoreMode) {
+  const score = stripPercentSign(row.similarity_percent ?? row.similarityPercent);
+  const textScore = stripPercentSign(row.text_similarity_percent ?? row.textSimilarityPercent);
+  const useText = scoreMode === 'text' && textScore !== undefined && textScore !== null;
+  const exactMatch = row.exact_match ?? row.exactMatch;
+  const mapped = {
     id: row.id,
     name: row.name || row._identifier || row.id,
-    similarityPercent: stripPercentSign(row.similarity_percent ?? row.similarityPercent),
+    similarityPercent: useText ? textScore : score,
   };
+  // Only present when the backend sent them, so an older backend yields the original shape.
+  if (textScore !== undefined && textScore !== null) mapped.textSimilarityPercent = textScore;
+  if (exactMatch !== undefined && exactMatch !== null) mapped.exactMatch = exactMatch;
+  return mapped;
 }
 
 /**
@@ -70,8 +90,9 @@ function mapRow(row) {
  *
  * @param {object} envelope - Parsed JSON body returned by fetch.
  * @param {number} itemCount - Number of items the request asked about.
+ * @param {'text'} [scoreMode] - report the whole-string similarity as `similarityPercent` (see `mapRow`).
  */
-export function parseSimSearchEnvelope(envelope, itemCount) {
+export function parseSimSearchEnvelope(envelope, itemCount, scoreMode) {
   if (!envelope || typeof envelope !== 'object') return Array(itemCount).fill(null);
   const results = [];
   for (let i = 0; i < itemCount; i += 1) {
@@ -81,7 +102,14 @@ export function parseSimSearchEnvelope(envelope, itemCount) {
       results.push(null);
       continue;
     }
-    const candidates = data.map(mapRow);
+    const candidates = data.map((row) => mapRow(row, scoreMode));
+    // The endpoint orders by its own score, which can disagree with the whole-string one (a name
+    // that contains the term at 100 / 52 sorts before one at 90 / 90). `classifyCandidates` reads
+    // the list best-first, so re-sort by the number it will actually compare. Stable, so ties keep
+    // the endpoint's order.
+    if (scoreMode === 'text') {
+      candidates.sort((a, b) => Number(b.similarityPercent) - Number(a.similarityPercent));
+    }
     results.push({ ...candidates[0], candidates });
   }
   return results;
@@ -103,11 +131,12 @@ export function parseSimSearchEnvelope(envelope, itemCount) {
  *   items: string[],
  *   minSimPercent?: number,
  *   qtyResults?: number,
+ *   scoreMode?: 'text',
  * }} params
  * @returns {Promise<ReturnType<typeof parseSimSearchEnvelope>>}
  */
 export async function simSearch({
-  entityName, items, minSimPercent = 30, qtyResults = 1, language = getStoredLocale(),
+  entityName, items, minSimPercent = 30, qtyResults = 1, language = getStoredLocale(), scoreMode,
 }) {
   if (!entityName || !Array.isArray(items) || items.length === 0) {
     return Array(items?.length || 0).fill(null);
@@ -135,7 +164,7 @@ export async function simSearch({
     });
     if (!res.ok) return Array(items.length).fill(null);
     const envelope = await res.json().catch(() => null);
-    return parseSimSearchEnvelope(envelope, items.length);
+    return parseSimSearchEnvelope(envelope, items.length, scoreMode);
   } catch {
     return Array(items.length).fill(null);
   }

@@ -8,6 +8,7 @@ import { Command, CommandInput, CommandList, CommandEmpty, CommandGroup, Command
 import { Dialog, DialogContent, DialogHeader, DialogFooter, DialogTitle, DialogDescription } from '../ui/dialog.jsx';
 import { ScrollPane } from '../ui/scroll-pane.jsx';
 import { csvField } from '../../lib/csv/csvSerializer.js';
+import { scoreModeForField } from '../../lib/import/resolveForeignKeys.js';
 
 const DEFAULT_LABELS = {
   filterAll: 'All',
@@ -249,7 +250,7 @@ function FkMismatchCell({ index, field, value, error, onSelect, simSearchFn, tok
       // for this text" into either a live similarity-ranked search (typed text)
       // or an effective "list every record" browse (blank/no-candidates case) —
       // there is no dedicated "list all" endpoint wired into this generic package.
-      const [result] = await simSearchFn({ token, entityName: field.matchEntity, items: [searchText], qtyResults: 50, minSimPercent: 0 });
+      const [result] = await simSearchFn({ token, entityName: field.matchEntity, items: [searchText], qtyResults: 50, minSimPercent: 0, scoreMode: scoreModeForField(field) });
       const found = result?.candidates ?? [];
       if (requestId === requestIdRef.current) setCandidates(found);
       return found;
