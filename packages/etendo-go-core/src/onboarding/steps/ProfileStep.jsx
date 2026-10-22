@@ -75,7 +75,10 @@ export function ProfileStep({ config, stepData, onNext, onBack, goToStep, accoun
   const isValid = isProfileStepValid(form);
   const setupGreetingName = (form.fullName || accountName || ui('onboardingGreetingFallback')).trim().split(/\s+/)[0];
   const sessionAction = token && (
-    <OnboardingSessionAction onLogout={onLogout} label={ui('logout')} />
+    <OnboardingSessionAction
+      onLogout={onLogout}
+      label={ui('logout')}
+      data-testid="OnboardingSessionAction__162805" />
   );
 
   return (
@@ -93,8 +96,10 @@ export function ProfileStep({ config, stepData, onNext, onBack, goToStep, accoun
           {ui('onboardingDraftRestoredNotice')}
         </div>
       )}
-      <DraftSaveWarning show={draftSaveWarning} message={ui('onboardingDraftSaveWarning')} />
-
+      <DraftSaveWarning
+        show={draftSaveWarning}
+        message={ui('onboardingDraftSaveWarning')}
+        data-testid="DraftSaveWarning__162805" />
       <div>
         <div className="mb-10">
           <h1 className="text-3xl font-semibold tracking-[-0.06em] text-slate-900 sm:text-[2.7rem] sm:leading-[1.04]">
