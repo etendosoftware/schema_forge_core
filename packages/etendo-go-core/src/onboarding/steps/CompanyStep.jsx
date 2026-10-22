@@ -180,6 +180,14 @@ export function CompanyStep({ config, stepData, onNext, onBack, goToStep, onChan
                   placeholder={ui('streetNamePlaceholder')}
                   maxLength={ONBOARDING_FIELD_LIMITS.streetName}
                   error={streetNameMissing ? ui('fieldRequiredMessage') : null}
+                  // ETP-5806 — without an explicit autoComplete, Chrome's built-in autofill
+                  // heuristic guesses the field type from `id` alone (no `name`/autoComplete
+                  // needed to trigger it) and paints a blue/grey autofill background on this
+                  // field once it recognizes "streetName" as an address line. Number/Building
+                  // Name don't match a recognized heuristic and were never affected. This is a
+                  // one-time account-creation step, so autofill offers no value here — disable
+                  // it outright rather than fight the highlight with CSS the browser may ignore.
+                  autoComplete="off"
                   data-testid="AddressCell__streetName" />
                 <AddressCell
                   id="buildingNumber"
@@ -190,6 +198,7 @@ export function CompanyStep({ config, stepData, onNext, onBack, goToStep, onChan
                   placeholder={ui('buildingNumberPlaceholder')}
                   maxLength={ONBOARDING_FIELD_LIMITS.buildingNumber}
                   error={buildingNumberMissing ? ui('fieldRequiredMessage') : null}
+                  autoComplete="off"
                   data-testid="AddressCell__buildingNumber" />
               </div>
               <div className="grid grid-cols-[2fr_1fr] divide-x divide-[#D1D4DB] border-t border-[#D1D4DB]">
@@ -200,6 +209,7 @@ export function CompanyStep({ config, stepData, onNext, onBack, goToStep, onChan
                   value={form.buildingName}
                   onChange={e => updateField('buildingName', e.target.value)}
                   maxLength={ONBOARDING_FIELD_LIMITS.buildingName}
+                  autoComplete="off"
                   data-testid="AddressCell__buildingName" />
                 <AddressCell
                   id="city"
@@ -209,6 +219,7 @@ export function CompanyStep({ config, stepData, onNext, onBack, goToStep, onChan
                   onChange={e => updateField('city', e.target.value)}
                   maxLength={ONBOARDING_FIELD_LIMITS.city}
                   error={cityMissing ? ui('fieldRequiredMessage') : null}
+                  autoComplete="off"
                   data-testid="AddressCell__city" />
               </div>
             </div>
