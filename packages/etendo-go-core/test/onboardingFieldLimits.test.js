@@ -1,3 +1,8 @@
+// @covers packages/etendo-go-core/src/onboarding/fieldLimits.js
+// @covers packages/etendo-go-core/src/onboarding/state.js
+// @covers packages/etendo-go-core/src/onboarding/steps/CompanyStep.jsx
+// @covers packages/etendo-go-core/src/onboarding/steps/RegisterStep.jsx
+// @covers packages/etendo-go-core/src/onboarding/steps/ProfileStep.jsx
 import { describe, it } from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
@@ -13,7 +18,7 @@ import {
   fullNameLimitFor,
   exceedsLimit,
 } from '../src/onboarding/fieldLimits.js';
-import { isProfileStepValid, isCompanyStepValid } from '../src/onboarding/state.js';
+import { isProfileStepValid, isCompanyStepValid, isAddressBlockStarted } from '../src/onboarding/state.js';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const stepsDir = join(__dirname, '..', 'src', 'onboarding', 'steps');
@@ -131,6 +136,48 @@ describe('step validation gates on length (ETP-4665)', () => {
   });
 });
 
+// ETP-5806 — the free-text `address` field was replaced by a structured Street/Number/
+// Building Name/City block, fully optional until the user starts typing into it; from
+// then on Street+Number+City become mandatory together (Country is not asked here).
+describe('isAddressBlockStarted / isCompanyStepValid — structured address block (ETP-5806)', () => {
+  it('reports not started when every address field is empty or blank', () => {
+    assert.equal(isAddressBlockStarted({}), false);
+    assert.equal(isAddressBlockStarted({ streetName: '', buildingNumber: '  ', buildingName: null, city: undefined }), false);
+  });
+
+  it('reports started as soon as ANY of the 4 fields carries non-blank text', () => {
+    assert.equal(isAddressBlockStarted({ streetName: 'Av. Corrientes' }), true);
+    assert.equal(isAddressBlockStarted({ buildingNumber: '1234' }), true);
+    assert.equal(isAddressBlockStarted({ buildingName: 'Torre Norte' }), true);
+    assert.equal(isAddressBlockStarted({ city: 'Madrid' }), true);
+  });
+
+  it('keeps the step valid with the address block untouched (fully optional)', () => {
+    assert.equal(isCompanyStepValid({ clientName: 'Acme' }), true);
+    assert.equal(isCompanyStepValid({ clientName: 'Acme', streetName: '', buildingNumber: '', city: '' }), true);
+  });
+
+  it('requires Street, Number and City together once the block is started, but not Building Name', () => {
+    const base = { clientName: 'Acme' };
+    // Only City typed in — Street/Number still missing: invalid.
+    assert.equal(isCompanyStepValid({ ...base, city: 'Madrid' }), false);
+    // Street + Number but no City: still invalid.
+    assert.equal(isCompanyStepValid({ ...base, streetName: 'Av. Corrientes', buildingNumber: '1234' }), false);
+    // All three mandatory fields present, Building Name omitted: valid.
+    assert.equal(isCompanyStepValid({ ...base, streetName: 'Av. Corrientes', buildingNumber: '1234', city: 'Madrid' }), true);
+    // Whitespace-only does not count as filled.
+    assert.equal(isCompanyStepValid({ ...base, streetName: '   ', buildingNumber: '1234', city: 'Madrid' }), false);
+  });
+
+  it('rejects a structured field past its AD column length', () => {
+    const base = { clientName: 'Acme', streetName: 'Av. Corrientes', buildingNumber: '1234', city: 'Madrid' };
+    assert.equal(isCompanyStepValid({ ...base, streetName: 'a'.repeat(71) }), false);
+    assert.equal(isCompanyStepValid({ ...base, buildingNumber: 'a'.repeat(17) }), false);
+    assert.equal(isCompanyStepValid({ ...base, buildingName: 'a'.repeat(36) }), false);
+    assert.equal(isCompanyStepValid({ ...base, city: 'a'.repeat(61) }), false);
+  });
+});
+
 describe('the forms wire the limits to the inputs (ETP-4665)', () => {
   it('caps name, email and password in the register step', () => {
     const step = readStep('RegisterStep.jsx');
@@ -167,6 +214,35 @@ describe('the forms wire the limits to the inputs (ETP-4665)', () => {
     assert.match(step, /maxLength=\{ONBOARDING_FIELD_LIMITS\.streetName\}/);
     assert.match(step, /maxLength=\{ONBOARDING_FIELD_LIMITS\.buildingNumber\}/);
     assert.match(step, /maxLength=\{ONBOARDING_FIELD_LIMITS\.buildingName\}/);
+  });
+
+  it('wires the Street/Number placeholders and autoComplete tokens through i18n, not hardcoded strings (ETP-5806)', () => {
+    const step = readStep('CompanyStep.jsx');
+    assert.match(step, /placeholder=\{ui\('streetNamePlaceholder'\)\}/);
+    assert.match(step, /placeholder=\{ui\('buildingNumberPlaceholder'\)\}/);
+    // Standard autocomplete tokens per field: street -> address-line1, building name ->
+    // address-line2 (the closest standard fit for "additional address line"), city ->
+    // address-level2. Building number has no dedicated WHATWG token, so it opts out.
+    assert.match(step, /id="streetName"[\s\S]*?autoComplete="address-line1"/);
+    assert.match(step, /id="buildingNumber"[\s\S]*?autoComplete="off"/);
+    assert.match(step, /id="buildingName"[\s\S]*?autoComplete="address-line2"/);
+    assert.match(step, /id="city"[\s\S]*?autoComplete="address-level2"/);
+  });
+
+  it('renders the address block as a single compound field: one AddressCell row for Street/Number, another for Building name/City (ETP-5806 design follow-up)', () => {
+    const step = readStep('CompanyStep.jsx');
+    assert.match(step, /import \{ AddressCell \} from '\.\.\/components\/AddressCell\.jsx'/);
+    // Street + Number share one grid row with a divider, Building name + City share the next —
+    // not four independently-bordered inputs.
+    const addressBlockMatch = step.match(/<div className="overflow-hidden rounded-lg border[\s\S]*?<\/div>\s*<\/div>\s*<\/div>/);
+    assert.ok(addressBlockMatch, 'expected a single bordered compound-field container for the address block');
+    const addressBlock = addressBlockMatch[0];
+    assert.match(addressBlock, /grid-cols-\[2fr_1fr\]/);
+    assert.match(addressBlock, /divide-x/);
+    assert.match(addressBlock, /id="streetName"/);
+    assert.match(addressBlock, /id="buildingNumber"/);
+    assert.match(addressBlock, /id="buildingName"/);
+    assert.match(addressBlock, /id="city"/);
   });
 
   it('never hardcodes a limit inline — every cap comes from fieldLimits.js', () => {
