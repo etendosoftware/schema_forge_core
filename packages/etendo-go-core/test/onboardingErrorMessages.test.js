@@ -1,17 +1,13 @@
 // @covers packages/etendo-go-core/src/onboarding/errorMessages.js
+// @covers packages/etendo-go-core/src/onboarding/api.js
 import { describe, it } from 'node:test';
 import assert from 'node:assert/strict';
-import { readFileSync } from 'node:fs';
-import { dirname, join } from 'node:path';
-import { fileURLToPath } from 'node:url';
 
 import {
   isAdMessageKey,
   resolveOnboardingErrorMessage,
 } from '../src/onboarding/errorMessages.js';
-
-const __dirname = dirname(fileURLToPath(import.meta.url));
-const onboardingDir = join(__dirname, '..', 'src', 'onboarding');
+import { registerAccount } from '../src/onboarding/api.js';
 
 // Mirrors useUI(): interpolates {param} and echoes the key when it has no translation.
 const DICTIONARY = {
@@ -30,6 +26,16 @@ function ui(key, params = {}) {
   return template.replace(/\{(\w+)\}/g, (match, name) => (
     params[name] === undefined || params[name] === null ? match : String(params[name])
   ));
+}
+
+const BASE = 'https://etendo.example.test';
+
+function jsonResponse(body, { ok = true, status = 200 } = {}) {
+  return {
+    ok,
+    status,
+    json: async () => body,
+  };
 }
 
 // ETP-4665 — InitialClientSetup / InitialOrgSetup report failures as UNRESOLVED
@@ -131,38 +137,41 @@ describe('resolveOnboardingErrorMessage (ETP-4665)', () => {
   });
 });
 
-describe('the flow routes its failures through the resolver (ETP-4665)', () => {
-  const read = name => readFileSync(join(onboardingDir, name), 'utf8');
+// ETP-4665 — the flow routes its failures through the resolver, and the error envelope must carry
+// the length-violation details the resolver needs. The callers' side of it (SetupProgressStep
+// resolving a stream result, RegisterStep localizing FIELD_TOO_LONG with the backend's `max`, and
+// never showing the raw backend sentence) is asserted on the rendered components in
+// src/onboarding/steps/__tests__/AuthErrorMessages.vitest.jsx; what is left here is the transport:
+// what the real api module hands back.
+describe('the error envelope carries the length-violation details (ETP-4665)', () => {
+  it('exposes the field and max the backend reported', async () => {
+    const response = jsonResponse({
+      error: {
+        code: 'FIELD_TOO_LONG',
+        message: 'Field clientName must not exceed 40 characters',
+        field: 'clientName',
+        max: 40,
+      },
+    }, { ok: false, status: 400 });
 
-  it('resolves the stream result instead of rendering msg.message raw', () => {
-    const step = read(join('steps', 'SetupProgressStep.jsx'));
-    assert.match(step, /error: msg\.success \? null : resolveOnboardingErrorMessage\(ui, msg\)/);
-    assert.doesNotMatch(step, /error: msg\.success \? null : msg\.message/);
+    const error = await registerAccount(async () => response, BASE, { email: 'ada@example.test' })
+      .catch((thrown) => thrown);
+
+    assert.equal(error.code, 'FIELD_TOO_LONG');
+    assert.equal(error.field, 'clientName');
+    assert.equal(error.max, 40);
   });
 
-  it('localizes a register length violation with the limit the backend reported', () => {
-    // ETP-4664 resolves register errors through the flat AUTH_ERROR_UI_KEYS table,
-    // which cannot interpolate a parameter. FIELD_TOO_LONG carries `max` and its
-    // message embeds it, so it is handled just before that table is consulted.
-    const step = read(join('steps', 'RegisterStep.jsx'));
-    assert.match(step, /if \(err\.code === 'FIELD_TOO_LONG' && err\.max\)/);
-    assert.match(step, /ui\('onboardingFieldTooLong', \{ max: err\.max \}\)/);
-    assert.match(step, /ui\(AUTH_ERROR_UI_KEYS\[err\.code\] \|\| 'onboardingConnectionError'\)/);
-  });
+  it('reports them as null when the backend did not send them', async () => {
+    const response = jsonResponse({
+      error: { code: 'WEAK_PASSWORD', message: 'Password does not meet the policy' },
+    }, { ok: false, status: 400 });
 
-  it('never shows the raw backend sentence on the register screen (ETP-4664)', () => {
-    const step = read(join('steps', 'RegisterStep.jsx'));
-    const handleRegister = step.slice(
-      step.indexOf('const handleRegister ='),
-      step.indexOf('const authFeatureLabels ='),
-    );
-    assert.doesNotMatch(handleRegister, /err\.userMessage/);
-  });
+    const error = await registerAccount(async () => response, BASE, { email: 'ada@example.test' })
+      .catch((thrown) => thrown);
 
-  it('carries the field and max details out of the JSON error envelope', () => {
-    const api = read('api.js');
-    assert.match(api, /error\.field = data\?\.error\?\.field \?\? null;/);
-    assert.match(api, /error\.max = data\?\.error\?\.max \?\? null;/);
+    assert.equal(error.field, null);
+    assert.equal(error.max, null);
   });
 });
 

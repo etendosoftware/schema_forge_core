@@ -24,6 +24,8 @@ export function OnboardingFlow({ steps = [], config = {} }) {
   // ETP-4576: the session lives in the __Host- cookie now; there is no more
   // client-readable token, only the CSRF proof issued alongside it.
   const [csrfToken, setCsrfToken] = useState(null);
+  // ETP-5847 — the one-time login link's token, held until the login-link step spends it.
+  const [loginToken, setLoginToken] = useState(null);
   const [accountName, setAccountName] = useState(null);
   const [accountEmail, setAccountEmail] = useState(null);
   const [draftNotice, setDraftNotice] = useState(false);
@@ -299,6 +301,19 @@ export function OnboardingFlow({ steps = [], config = {} }) {
       return;
     }
 
+    // ETP-5847 — the signup API's one-time login link lands here with ?loginToken=. Take it off the
+    // address bar (history, shared URLs) and wait for the click on the login-link step: spending it
+    // on load would let a mail scanner that opens the URL use it up.
+    const loginLinkToken = search.get('loginToken');
+    if (loginLinkToken) {
+      search.delete('loginToken');
+      const query = search.toString();
+      window.history.replaceState({}, '', `${window.location.pathname}${query ? `?${query}` : ''}`);
+      setLoginToken(loginLinkToken);
+      goToStep('login-link');
+      return;
+    }
+
     // ETP-4798 — the confirmation link lands here with ?verifyToken=. Confirm it, strip the token
     // from the address bar so it is not left in history or a shared URL, then fall through to the
     // ordinary bootstrap: the link is usually opened while already signed in mid-onboarding, and it
@@ -520,6 +535,7 @@ export function OnboardingFlow({ steps = [], config = {} }) {
       environments={environments}
       loadingEnvs={loadingEnvs}
       routeByEnvironments={routeByEnvironments}
+      loginToken={loginToken}
       handleRegisterSuccess={handleRegisterSuccess}
       onAccountChange={bindAccount}
       onSessionLost={markSessionLost}

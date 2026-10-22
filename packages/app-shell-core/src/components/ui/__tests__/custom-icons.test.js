@@ -38,9 +38,9 @@ describe('custom-icons — exports (ETP-3660)', () => {
     assert.match(src, /export function PricingIcon/);
   });
 
-  it('has exactly ten exported functions (no accidental extras)', () => {
+  it('has exactly fourteen exported functions (no accidental extras)', () => {
     const exportedFunctions = src.match(/export function \w+/g) ?? [];
-    assert.equal(exportedFunctions.length, 10);
+    assert.equal(exportedFunctions.length, 14);
   });
 });
 
@@ -152,6 +152,34 @@ describe('custom-icons — Iconic 24px icons', () => {
     });
 
     it(`${name} fills its path with currentColor`, () => {
+      assert.match(body, /<path\b[^>]*fill="currentColor"/);
+    });
+  }
+});
+
+describe('custom-icons — Figma row-action icons on the 20px frame (ETP-5600 Sticky Acciones)', () => {
+  for (const [name, translate] of [
+    ['IconicEditIcon', /translate\(3\.125 3\.678\)/],
+    ['IconicCopyIcon', /translate\(3\.125 3\.125\)/],
+    ['IconicMailIcon', /translate\(1\.667 3\.333\)/],
+    ['IconicDotsVerticalIcon', /translate\(9 5\.667\)/],
+  ]) {
+    const body = src.match(new RegExp(`export function ${name}\\b[\\s\\S]*?</svg>`))?.[0] ?? '';
+    const svgTag = body.match(/<svg\b[^>]*>/)?.[0] ?? '';
+
+    it(`${name} is exported and takes className plus the remaining props`, () => {
+      assert.match(body, new RegExp(`export function ${name}\\s*\\(\\s*\\{\\s*className\\s*,\\s*\\.\\.\\.props\\s*\\}\\s*\\)`));
+    });
+
+    it(`${name} renders a 20x20 decorative svg that forwards className and the extra props`, () => {
+      assert.match(svgTag, /viewBox="0 0 20 20"/);
+      assert.match(svgTag, /aria-hidden="true"/);
+      assert.match(svgTag, /className=\{className\}/);
+      assert.match(svgTag, /\{\.\.\.props\}/);
+    });
+
+    it(`${name} offsets its glyph to the Figma position and fills it with currentColor`, () => {
+      assert.match(body, translate);
       assert.match(body, /<path\b[^>]*fill="currentColor"/);
     });
   }

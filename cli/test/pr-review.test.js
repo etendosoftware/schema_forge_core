@@ -1,3 +1,4 @@
+// @covers cli/src/pr-review.js
 import { describe, it } from 'node:test';
 import { strict as assert } from 'node:assert';
 import { execFileSync } from 'node:child_process';
@@ -139,6 +140,66 @@ describe('detectDuplicatedBlocks', () => {
       findings[0].locations.map((location) => location.path),
       ['tools/app-shell/src/foo.js', 'tools/app-shell/src/bar.js'],
     );
+  });
+
+  describe('generated public API manifest', () => {
+    const block = [
+      '+          "documentNo": { "type": "string" },',
+      '+          "description": { "type": "string" },',
+      '+          "lineNo": { "type": "integer" },',
+      '+          "product": { "type": "string" },',
+      '+          "quantity": { "type": "number" },',
+      '+          "unitPrice": { "type": "number" }',
+    ].join('\n');
+
+    it('ignores repeated blocks added to public-api/base.v1.json', () => {
+      const diff = [
+        makeDiff('public-api/base.v1.json', block),
+        makeDiff('public-api/base.v1.json', block),
+      ].join('\n');
+
+      assert.deepEqual(detectDuplicatedBlocks(diff), []);
+    });
+
+    it('still flags the same repeated block in source files', () => {
+      const diff = [
+        makeDiff('public-api/base.v1.json', block),
+        makeDiff('tools/app-shell/src/foo.js', block),
+        makeDiff('tools/app-shell/src/bar.js', block),
+      ].join('\n');
+
+      const findings = detectDuplicatedBlocks(diff);
+      assert.equal(findings.length, 1);
+      assert.equal(findings[0].code, 'DUPLICATED_BLOCK');
+      assert.deepEqual(
+        findings[0].locations.map((location) => location.path),
+        ['tools/app-shell/src/foo.js', 'tools/app-shell/src/bar.js'],
+      );
+    });
+
+    it('ignores a repeat between two versioned manifests', () => {
+      const diff = [
+        makeDiff('public-api/base.v1.json', block),
+        makeDiff('public-api/base.v2.json', block),
+      ].join('\n');
+
+      assert.deepEqual(detectDuplicatedBlocks(diff), []);
+    });
+
+    it('only skips versioned root manifests, not other files under public-api/', () => {
+      const diff = [
+        makeDiff('public-api/overrides.json', block),
+        makeDiff('public-api/scripts/build.js', block),
+        makeDiff('public-api/nested/base.v1.json', block),
+      ].join('\n');
+
+      const findings = detectDuplicatedBlocks(diff);
+      assert.equal(findings.length, 1);
+      assert.deepEqual(
+        findings[0].locations.map((location) => location.path),
+        ['public-api/overrides.json', 'public-api/scripts/build.js', 'public-api/nested/base.v1.json'],
+      );
+    });
   });
 
   it('ignores duplicated blocks in locale JSON dictionaries', () => {

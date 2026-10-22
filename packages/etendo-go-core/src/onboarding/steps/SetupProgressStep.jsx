@@ -437,7 +437,10 @@ export function SetupProgressStep({ config, stepData, onNext, onBack, goToStep, 
   return (
     <SetupProgressShell
       background={config.background}
-      headerContent={token && <OnboardingSessionAction onLogout={handleLogout} label={ui('logout')} />}
+      headerContent={token && <OnboardingSessionAction
+        onLogout={handleLogout}
+        label={ui('logout')}
+        data-testid="OnboardingSessionAction__c76d30" />}
       data-testid="SetupProgressShell__79cf84">
       <div className="w-full flex flex-col items-center gap-6">
         <SetupProgressCard data-testid="SetupProgressCard__79cf84" {...setupProgressState} />
