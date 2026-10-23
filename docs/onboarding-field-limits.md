@@ -36,29 +36,7 @@ user saw that literal string on screen with no indication of which field was at 
 | 2 | Full name *(freelancer)* | **40** | `CompanyStep` reuses a freelancer's full name as the client name, so it inherits the client-name limit |
 | 3 | Company name | **40** | `AD_CLIENT.VALUE` / `AD_ORG.VALUE` NVARCHAR(40) — `InitialSetupUtility.insertClient` writes the same string to `NAME`(60) *and* `VALUE`(40), so the search key binds first |
 | 3 | Tax ID (NIF) | 20 | `C_BPARTNER.TAXID` / `AD_ORGINFO.TAXID` VARCHAR(20) — **preventive**: today the tax id is only persisted in the onboarding draft and never reaches the AD |
-| 3 | Address *(legacy, superseded)* | 60 | `C_LOCATION.ADDRESS1` NVARCHAR(60) — kept for any caller still sending free-text `address`; the step 3 UI no longer collects it directly (see below) |
-| 3 | Calle (Street) | **70** | `EM_OBSEPA_StrtNm` (`org.openbravo.sepa.iso20022`) — ETP-5806 |
-| 3 | Número (Building Number) | **16** | `EM_OBSEPA_BldgNb` — ETP-5806 |
-| 3 | Nombre de edificio (Building Name, optional) | **35** | `EM_OBSEPA_BldgNm` — ETP-5806 |
-| 3 | Ciudad (City) | **60** | `C_LOCATION.CITY` (DAL `cityName`) NVARCHAR(60) — ETP-5806 |
-
-### ETP-5806 — structured address fields replace the single Address input
-
-Step 3 ("Datos para empezar a facturar") no longer collects a single free-text address. It asks for
-Street, Number, Building Name (optional) and City instead — the same breakdown as every other
-address popup in the product (`LocationEditorModal.jsx`), rendered in `CompanyStep.jsx` as one
-"compound field" (`AddressCell.jsx`): a single outer border around all 4 inputs, divided internally
-by thin lines, so it reads as one piece of data rather than four separate bordered inputs. Country
-is **not** asked here — it already comes from the Profile step's country selector.
-
-The whole block stays **optional** if the user never types into it (`isAddressBlockStarted` in
-`state.js`). Once they start — any of the 4 fields non-blank — Street, Number and City become
-**mandatory together** (`isCompanyStepValid`), shown as an inline "campo obligatorio" error with no
-blur/touched gating, the same style as the company-name length error. Building Name stays optional
-in every case. The limits live in `ONBOARDING_FIELD_LIMITS` (`fieldLimits.js`) and must stay in sync
-with `@etendosoftware/app-shell-core/lib/locationAddress.js` and the Java-side
-`StructuredAddressComposer` (`com.etendoerp.go`) — same 70/16/35 lengths, same composition
-algorithm for the Address Line 1/2 the backend ultimately writes to `C_LOCATION`.
+| 3 | Address | **60** | `C_LOCATION.ADDRESS1` NVARCHAR(60) |
 
 ### Step 1's name is pinned to step 2's, not to its column
 

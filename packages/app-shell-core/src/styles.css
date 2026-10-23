@@ -33,22 +33,6 @@
   min-width: 0;
 }
 
-/* ETP-5806 — browser autofill is intentionally kept ON for address inputs (it speeds up
-   onboarding), but Chrome/WebKit paints its own blue/grey background the instant a field is
-   autofilled, which clashes with the app's own white input fields and makes the autofill
-   obvious. The only reliable override is this inset box-shadow trick (background-color on an
-   autofilled input is otherwise ignored by WebKit) — fill color matches the normal white
-   input/card background (--card, #ffffff) so an autofilled field is visually identical to a
-   manually-typed one. The long transition delay prevents WebKit's own repaint from flashing
-   the native color back in before our shadow applies. */
-input:-webkit-autofill,
-input:-webkit-autofill:hover,
-input:-webkit-autofill:focus {
-  -webkit-box-shadow: 0 0 0px 1000px hsl(var(--card)) inset;
-  -webkit-text-fill-color: hsl(var(--text-primary));
-  transition: background-color 5000s ease-in-out 0s;
-}
-
 .entity-creation-modal input:not([type="checkbox"]):not([type="radio"]):not(.option-picker-search),
 .entity-creation-modal select {
   height: 40px !important;
