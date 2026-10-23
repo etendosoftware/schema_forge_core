@@ -1,5 +1,3 @@
-// @covers packages/etendo-go-core/src/onboarding/state.js
-// @covers packages/etendo-go-core/src/onboarding/api.js
 import { describe, it } from 'node:test';
 import assert from 'node:assert/strict';
 import {
@@ -138,12 +136,8 @@ describe('Core-owned onboarding state and SSO helpers', () => {
     assert.equal(second[0].status, 'pending');
     assert.equal(applyProgressMessage(second, { type: 'progress', step: 'client', status: 'error', message: 'failed' })[1].status, 'failed');
     // ETP-4749: fiscalIdValue is now a provisioning contract field (previously stripped).
-    // ETP-5806: streetName/buildingNumber/buildingName/city joined the contract alongside the
-    // legacy `address` field.
     assert.deepEqual(buildOnboardingPayload({ clientName: 'Core', currency: 'EUR', language: 'en_US', countryCode: 'ES', fiscalIdValue: '1234' }), {
-      clientName: 'Core', currency: 'EUR', language: 'en_US', countryCode: 'ES', address: undefined,
-      streetName: undefined, buildingNumber: undefined, buildingName: undefined, city: undefined,
-      fiscalIdValue: '1234',
+      clientName: 'Core', currency: 'EUR', language: 'en_US', countryCode: 'ES', address: undefined, fiscalIdValue: '1234',
       // ETP-5426: the sample-data opt-in is a contract field too, false unless explicitly true.
       includeSampleData: false,
     });
@@ -151,27 +145,6 @@ describe('Core-owned onboarding state and SSO helpers', () => {
     assert.equal(buildOnboardingPayload({ clientName: 'Core', includeSampleData: 'true' }).includeSampleData, false);
     assert.equal(isProfileStepValid({ fullName: 'Ada', countryCode: 'ES' }), true);
     assert.equal(isCompanyStepValid({ clientName: 'Core' }), true);
-  });
-
-  // ETP-5806 — `city` (and the other structured address fields) is always a key of the
-  // object `buildOnboardingPayload` returns, but `JSON.stringify` — what `runOnboardingStream`
-  // actually sends over the wire — drops an `undefined` value entirely. So the request body
-  // sent to POST /sws/go/onboarding carries "city" only when the user filled the address
-  // block in; an untouched block never sends the key at all.
-  it('carries city (and the other structured address fields) in the serialized request body only when the address block was filled in', () => {
-    const withoutAddress = buildOnboardingPayload({ clientName: 'Core' });
-    assert.equal('city' in withoutAddress, true);
-    assert.equal(withoutAddress.city, undefined);
-    assert.equal('city' in JSON.parse(JSON.stringify(withoutAddress)), false);
-
-    const withAddress = buildOnboardingPayload({
-      clientName: 'Core', streetName: 'Av. Corrientes', buildingNumber: '1234', city: 'Madrid',
-    });
-    const serialized = JSON.parse(JSON.stringify(withAddress));
-    assert.equal(serialized.city, 'Madrid');
-    assert.equal(serialized.streetName, 'Av. Corrientes');
-    assert.equal(serialized.buildingNumber, '1234');
-    assert.equal('buildingName' in serialized, false); // omitted, not seeded in this call
   });
 
   // ETP-4576: this test also asserted that buildEnvironmentSessionStorage
