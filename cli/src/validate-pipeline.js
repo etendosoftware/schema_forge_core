@@ -228,8 +228,10 @@ async function ruleF2(artifactDir, artifactName) {
 /**
  * F3: New window has contract.json but no entry in registry.js.
  * The caller passes registryContent (raw text of registry.js), or null if unreadable.
+ * A retired window whose menu.json item declares `redirect` is routed by registry.js
+ * from menu.json (ETP-5795), not by a loader entry, so it counts as registered.
  */
-async function ruleF3(artifactDir, artifactName, registryContent) {
+async function ruleF3(artifactDir, artifactName, registryContent, redirectNames = new Set()) {
   if (BACKEND_ONLY_ARTIFACTS.has(artifactName)) {
     return skipped('F3', artifactName, 'backend-only artifact (NEO spec, no frontend window) — F3 not applicable');
   }
@@ -241,7 +243,7 @@ async function ruleF3(artifactDir, artifactName, registryContent) {
   if (!(await fileExists(contractPath))) return null;
 
   // Check both windowLoaders and customLoaders sections
-  const isInRegistry = registryContent.includes(`'${artifactName}'`);
+  const isInRegistry = registryContent.includes(`'${artifactName}'`) || redirectNames.has(artifactName);
   if (!isInRegistry) {
     return violation(
       'F3', artifactName, 'BLOCK',
@@ -1979,6 +1981,16 @@ async function loadRegistryContent(registryPath) {
   }
 }
 
+/** Names of the menu.json items that declare `redirect`; empty when menu.json is unreadable. */
+async function loadMenuRedirectNames(menuPath) {
+  try {
+    const menu = JSON.parse(await readFile(menuPath, 'utf-8'));
+    return new Set((menu.menu ?? []).flatMap((g) => g.items ?? []).filter((i) => i.redirect).map((i) => i.name));
+  } catch {
+    return new Set();
+  }
+}
+
 async function resolveArtifactNames(scope, root, artifactsRoot) {
   if (scope === 'staged') {
     const staged = await getStagedArtifacts(root);
@@ -1993,11 +2005,11 @@ async function runEnabledChecks(checks, skipSet) {
   return (await Promise.all(pendingChecks)).filter(Boolean);
 }
 
-async function runWindowChecks(artifactDir, artifactName, registryContent, root, skipSet, goSourcedataDir, f19Allowlist = []) {
+async function runWindowChecks({ artifactDir, artifactName, registryContent, root, skipSet, goSourcedataDir, f19Allowlist = [], redirectNames = new Set() }) {
   return runEnabledChecks([
     { rule: 'F1', run: () => ruleF1(artifactDir, artifactName) },
     { rule: 'F2', run: () => ruleF2(artifactDir, artifactName) },
-    { rule: 'F3', run: () => ruleF3(artifactDir, artifactName, registryContent) },
+    { rule: 'F3', run: () => ruleF3(artifactDir, artifactName, registryContent, redirectNames) },
     { rule: 'F4', run: () => ruleF4(artifactDir, artifactName) },
     { rule: 'F5', run: () => ruleF5(artifactDir, artifactName) },
     { rule: 'F6', run: () => ruleF6(artifactDir, artifactName) },
@@ -2039,10 +2051,10 @@ async function runAggregateSectionChecks(artifactDir, artifactName, skipSet, roo
   return [...f9Results, ...f4Results, ...f23Results];
 }
 
-async function runChecksForArtifact({ kind, artifactDir, artifactName, registryContent, root, skipSet, strict, f19Allowlist, goSourcedataDir }) {
+async function runChecksForArtifact({ kind, artifactDir, artifactName, registryContent, redirectNames, root, skipSet, strict, f19Allowlist, goSourcedataDir }) {
   if (kind === 'window') {
     return tagArtifactKind(
-      await runWindowChecks(artifactDir, artifactName, registryContent, root, skipSet, goSourcedataDir, f19Allowlist),
+      await runWindowChecks({ artifactDir, artifactName, registryContent, root, skipSet, goSourcedataDir, f19Allowlist, redirectNames }),
       'window',
     );
   }
@@ -2160,6 +2172,7 @@ export async function validatePipeline({
   skip = [],
   root = ROOT,
   registryPath,
+  menuPath,
   f19AllowlistPath,
   // F23 reads the exported ETGO_SF_*.xml from the com.etendoerp.go checkout.
   // Injectable so tests point at a fixture instead of whatever module tree
@@ -2170,6 +2183,7 @@ export async function validatePipeline({
   const artifactsRoot = _artifactsRoot ?? join(root, 'artifacts');
   const resolvedRegistryPath = registryPath ?? join(root, 'tools', 'app-shell', 'src', 'windows', 'registry.js');
   const registryContent = await loadRegistryContent(resolvedRegistryPath);
+  const redirectNames = await loadMenuRedirectNames(menuPath ?? join(root, 'tools', 'app-shell', 'src', 'menu.json'));
   const resolvedF19AllowlistPath = f19AllowlistPath ?? join(__dirname, 'validate-pipeline-f19-allowlist.json');
   const f19Allowlist = await loadF19Allowlist(resolvedF19AllowlistPath);
   const artifactNames = await resolveArtifactNames(scope, root, artifactsRoot);
@@ -2187,6 +2201,7 @@ export async function validatePipeline({
       artifactDir,
       artifactName: name,
       registryContent,
+      redirectNames,
       root,
       skipSet,
       strict,
