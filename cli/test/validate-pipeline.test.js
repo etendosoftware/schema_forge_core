@@ -27,6 +27,7 @@ async function runOnFixtures(windowNames, opts = {}) {
     // a real tools/app-shell/src/windows/custom/<name>/ tree pass opts.root.
     root: opts.root ?? join(FIXTURES, '..', '..', '..'),
     registryPath: opts.registryPath ?? join(FIXTURES, 'mock-registry.js'),
+    menuPath: opts.menuPath,
     // F19 allowlist — tests that need a fixture-scoped allowlist entry pass
     // opts.f19AllowlistPath; otherwise this falls through to the real
     // (production) allowlist file, which never matches fixture artifact names.
@@ -151,6 +152,33 @@ describe('Rule F3 — orphan registry', () => {
     const result = await runOnFixtures(['window-ok']); // window-ok is in mock-registry
     const v = result.violations.find(v => v.rule === 'F3');
     assert.ok(!v, 'No F3 violation expected for window-ok');
+  });
+
+  // ETP-5795 moved retired windows' routes from registry.js loaders to a menu.json `redirect`,
+  // which registry.js registers itself (ETP-5592).
+  async function withMenu(item, fn) {
+    const dir = await mkdtemp(join(tmpdir(), 'f3-menu-'));
+    try {
+      const menuPath = join(dir, 'menu.json');
+      await writeFile(menuPath, JSON.stringify({ menu: [{ group: 'Finance', items: [item] }] }));
+      return await fn(menuPath);
+    } finally {
+      await rm(dir, { recursive: true, force: true });
+    }
+  }
+
+  it('does not emit F3 for a retired window that menu.json redirects', async () => {
+    await withMenu({ name: 'window-orphan-registry', hidden: true, redirect: '/elsewhere' }, async (menuPath) => {
+      const result = await runOnFixtures(['window-orphan-registry'], { menuPath });
+      assert.ok(!result.violations.find(v => v.rule === 'F3'), 'No F3 violation expected for a redirected window');
+    });
+  });
+
+  it('still emits F3 for a hidden menu.json item without a redirect', async () => {
+    await withMenu({ name: 'window-orphan-registry', hidden: true }, async (menuPath) => {
+      const result = await runOnFixtures(['window-orphan-registry'], { menuPath });
+      assert.ok(result.violations.find(v => v.rule === 'F3'), 'F3 violation expected without a redirect');
+    });
   });
 });
 
