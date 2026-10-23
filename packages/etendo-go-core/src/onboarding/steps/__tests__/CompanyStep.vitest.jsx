@@ -95,7 +95,7 @@ describe('CompanyStep freelancer clientName handling (ETP-4673)', () => {
       fullName: 'Ada Lovelace',
     });
 
-    fireEvent.change(container.querySelector('#address'), { target: { value: '1 Main St' } });
+    fireEvent.change(container.querySelector('#streetName'), { target: { value: '1 Main St' } });
 
     expect(clientNamePushes(onChange)).toHaveLength(1);
   });
@@ -148,10 +148,13 @@ describe('CompanyStep field limits (ETP-4665 / ETP-5638)', () => {
     expect(startButton().disabled).toBe(false);
   });
 
-  it('caps the tax id and address at their AD column limits', () => {
+  it('caps the tax id and structured address fields at their AD column limits', () => {
     const { container } = renderCompanyStep({ businessType: 'company', clientName: 'Acme' });
 
     expect(container.querySelector('#fiscalIdValue').maxLength).toBe(ONBOARDING_FIELD_LIMITS.fiscalId);
-    expect(container.querySelector('#address').maxLength).toBe(ONBOARDING_FIELD_LIMITS.address);
+    expect(container.querySelector('#streetName').maxLength).toBe(ONBOARDING_FIELD_LIMITS.streetName);
+    expect(container.querySelector('#buildingNumber').maxLength).toBe(ONBOARDING_FIELD_LIMITS.buildingNumber);
+    expect(container.querySelector('#buildingName').maxLength).toBe(ONBOARDING_FIELD_LIMITS.buildingName);
+    expect(container.querySelector('#city').maxLength).toBe(ONBOARDING_FIELD_LIMITS.city);
   });
 });
