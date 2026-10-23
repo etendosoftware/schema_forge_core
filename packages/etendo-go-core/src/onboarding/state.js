@@ -62,13 +62,6 @@ export function buildOnboardingPayload(form) {
     language: form.language,
     countryCode: form.countryCode,
     address: form.address,
-    // ETP-5806 — structured address fields, replacing the free-text `address` above for the
-    // onboarding company step (kept for any caller still sending the legacy field).
-    streetName: form.streetName,
-    buildingNumber: form.buildingNumber,
-    buildingName: form.buildingName,
-    // ETP-5806 — City, mandatory together with Street/Number once the address block is started.
-    city: form.city,
     // Optional Tax ID from the Company step — sent to provisioning when provided
     // (ETP-4749; previously dropped here, matching the old api.js/SetupProgressStep.jsx
     // behavior that this same fix reverses).
@@ -187,35 +180,12 @@ export function isProfileStepValid(form) {
   return !exceedsLimit(form.fullName.trim(), fullNameLimitFor(form.businessType));
 }
 
-/**
- * ETP-5806 — whether the structured address block (Street/Number/Building Name/City) has been
- * started: the user typed into at least one of the 4 fields. A block that was never touched
- * stays fully optional, exactly like the free-text `address` field it replaces; once started,
- * Street, Number and City become mandatory together (Country is NOT asked on this minimalist
- * step — it is already guaranteed by the Profile step's `countryCode`).
- */
-export function isAddressBlockStarted(form) {
-  return Boolean(form.streetName?.trim() || form.buildingNumber?.trim()
-    || form.buildingName?.trim() || form.city?.trim());
-}
-
 export function isCompanyStepValid(form) {
   // Tax ID (fiscalIdValue) is optional: it IS sent to provisioning when the user fills
   // it in (ETP-4749 — see SetupProgressStep.jsx's formPayload and api.js's
   // runOnboardingStream), but it must still not gate the step. Only the company name
   // is required to advance.
   if (!form.clientName?.trim()) return false;
-  if (exceedsLimit(form.clientName.trim(), ONBOARDING_FIELD_LIMITS.clientName)) return false;
-  // Legacy free-text address (superseded by the structured fields below, kept for any caller
-  // still sending it).
-  if (exceedsLimit(form.address?.trim(), ONBOARDING_FIELD_LIMITS.address)) return false;
-  if (exceedsLimit(form.streetName?.trim(), ONBOARDING_FIELD_LIMITS.streetName)) return false;
-  if (exceedsLimit(form.buildingNumber?.trim(), ONBOARDING_FIELD_LIMITS.buildingNumber)) return false;
-  if (exceedsLimit(form.buildingName?.trim(), ONBOARDING_FIELD_LIMITS.buildingName)) return false;
-  if (exceedsLimit(form.city?.trim(), ONBOARDING_FIELD_LIMITS.city)) return false;
-  if (isAddressBlockStarted(form)) {
-    return Boolean(form.streetName?.trim()) && Boolean(form.buildingNumber?.trim())
-      && Boolean(form.city?.trim());
-  }
-  return true;
+  return !exceedsLimit(form.clientName.trim(), ONBOARDING_FIELD_LIMITS.clientName)
+    && !exceedsLimit(form.address?.trim(), ONBOARDING_FIELD_LIMITS.address);
 }
