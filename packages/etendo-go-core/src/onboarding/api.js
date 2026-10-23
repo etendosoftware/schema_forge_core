@@ -406,15 +406,7 @@ export async function runOnboardingStream(fetchImpl, baseUrl, csrfToken, form, o
       currency: form.currency,
       language: form.language,
       countryCode: form.countryCode,
-      // ETP-5806 — structured address fields from the onboarding company step. `address` is kept
-      // as a legacy fallback for any caller still sending free text.
       ...(form.address ? { address: form.address } : {}),
-      ...(form.streetName ? { streetName: form.streetName } : {}),
-      ...(form.buildingNumber ? { buildingNumber: form.buildingNumber } : {}),
-      ...(form.buildingName ? { buildingName: form.buildingName } : {}),
-      // ETP-5806 — City, mandatory together with streetName/buildingNumber once the address
-      // block is started.
-      ...(form.city ? { city: form.city } : {}),
       ...(form.fullName ? { fullName: form.fullName } : {}),
       // Optional Tax ID from the Company step (ETP-4749) — matches
       // com.etendoerp.go's EtendoGoJwtServlet, which reads this same JSON key
