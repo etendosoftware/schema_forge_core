@@ -51,7 +51,10 @@ export function LoginLinkStep({ config, loginToken, goToStep, setToken, setAccou
       data-testid="AuthShell__login_link">
       <div data-testid="login-link-step">
         <div className="mb-6 flex h-14 w-14 items-center justify-center rounded-2xl border border-slate-200 bg-white shadow-sm">
-          <LogIn className="h-6 w-6 text-slate-500" aria-hidden="true" />
+          <LogIn
+            className="h-6 w-6 text-slate-500"
+            aria-hidden="true"
+            data-testid="LogIn__ef2b07" />
         </div>
 
         <h1 className="text-3xl font-semibold tracking-[-0.06em] text-slate-900 sm:text-[2.7rem] sm:leading-[1.04]">
@@ -70,7 +73,10 @@ export function LoginLinkStep({ config, loginToken, goToStep, setToken, setAccou
             data-testid="login-link-enter"
             className="h-12 rounded-lg px-6 text-base font-medium">
             {state === 'entering' && (
-              <Loader2 className="mr-2 h-4 w-4 animate-spin" aria-hidden="true" />
+              <Loader2
+                className="mr-2 h-4 w-4 animate-spin"
+                aria-hidden="true"
+                data-testid="Loader2__ef2b07" />
             )}
             {ui('onboardingLoginLinkEnter')}
           </Button>
