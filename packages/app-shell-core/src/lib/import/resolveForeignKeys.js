@@ -1,3 +1,12 @@
+/**
+ * The simSearch `scoreMode` an import field asks for (ETP-5730). `matchMode: 'strict'` in
+ * `decisions.json` means the percentage shown and classified is the whole-string similarity, so an
+ * exact name outranks the names that only contain it. Any other value keeps the endpoint's score.
+ */
+export function scoreModeForField(field) {
+  return field?.matchMode === 'strict' ? 'text' : undefined;
+}
+
 export const FK_AUTO_RESOLVE_THRESHOLD = 80;
 export const FK_AMBIGUOUS_GAP = 15;
 
@@ -28,8 +37,8 @@ export function classifyCandidates(candidates) {
  * Resolve one column's distinct raw text values against a single Etendo
  * entity via one batched simSearchFn call — never one lookup per row.
  */
-export async function resolveForeignKeyColumn({ values, matchEntity, simSearchFn, token, qtyResults = 5 }) {
-  const results = await simSearchFn({ token, entityName: matchEntity, items: values, qtyResults });
+export async function resolveForeignKeyColumn({ values, matchEntity, simSearchFn, token, qtyResults = 5, scoreMode }) {
+  const results = await simSearchFn({ token, entityName: matchEntity, items: values, qtyResults, scoreMode });
   const map = new Map();
   values.forEach((value, i) => {
     const entry = results[i];
@@ -54,6 +63,7 @@ export async function resolveForeignKeys({ rows, columns, simSearchFn, token }) 
       simSearchFn,
       token,
       qtyResults: column.qtyResults,
+      scoreMode: column.scoreMode,
     });
     result.set(column.target, columnMap);
   }
