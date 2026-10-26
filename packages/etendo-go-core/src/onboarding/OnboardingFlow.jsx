@@ -28,6 +28,12 @@ export function OnboardingFlow({ steps = [], config = {} }) {
   const [loginToken, setLoginToken] = useState(null);
   const [accountName, setAccountName] = useState(null);
   const [accountEmail, setAccountEmail] = useState(null);
+  // ETP-5806 — backend-only feature flags surfaced as a `capabilities` map on the session
+  // bootstrap response (GET /sws/go/session), the only backend signal available before a tenant
+  // exists. Steps read `capabilities.<flag>` and never evaluate a flag themselves (see
+  // `docs/plans/2026-10-20-etp-5806-structured-address-plan.md` — frontend never evaluates a
+  // backend-only flag directly).
+  const [capabilities, setCapabilities] = useState({});
   const [draftNotice, setDraftNotice] = useState(false);
   const [draftSaveWarning, setDraftSaveWarning] = useState(false);
   const [environments, setEnvironments] = useState([]);
@@ -362,6 +368,7 @@ export function OnboardingFlow({ steps = [], config = {} }) {
         .then(data => {
           setCsrfToken(data.csrfToken ?? null);
           setAccountName(data.account?.name || data.account?.email || null);
+          setCapabilities(data.capabilities ?? {});
           bindAccount(data.account);
           routeByEnvironments(data.csrfToken);
         })
@@ -529,6 +536,7 @@ export function OnboardingFlow({ steps = [], config = {} }) {
       accountName={accountName}
       setAccountName={setAccountName}
       accountEmail={accountEmail}
+      capabilities={capabilities}
       draftNotice={draftNotice}
       setDraftNotice={setDraftNotice}
       draftSaveWarning={draftSaveWarning}

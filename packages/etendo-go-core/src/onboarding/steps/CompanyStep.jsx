@@ -13,8 +13,13 @@ import { SetupField } from '../components/SetupField.jsx';
 import { SetupSelect } from '../components/SetupSelect.jsx';
 import { AddressCell } from '../components/AddressCell.jsx';
 
-export function CompanyStep({ config, stepData, onNext, onBack, goToStep, onChange, draftNotice, draftSaveWarning, setDraftNotice, accountName, token, onLogout }) {
+export function CompanyStep({ config, stepData, onNext, onBack, goToStep, onChange, draftNotice, draftSaveWarning, setDraftNotice, accountName, token, onLogout, capabilities }) {
   const ui = useUI();
+  // ETP-5806 — backend-only `structured-address-for-sepa` flag (TTL 2026-11-15). `capabilities` is the
+  // session-bootstrap signal (GET /sws/go/session, OnboardingFlow.jsx), never evaluated anywhere
+  // but here — when false/absent, this step renders the pre-ETP-5806 single-line `address` field,
+  // exactly as it behaved before this feature existed.
+  const structuredAddressEnabled = capabilities?.structuredAddressForSepa === true;
   // Freelancers have no company: their personal full name (captured in the
   // profile step) is used as the invoicing name instead.
   const isFreelancer = stepData.businessType === 'freelancer';
@@ -28,10 +33,13 @@ export function CompanyStep({ config, stepData, onNext, onBack, goToStep, onChan
     clientName: isFreelancer ? (stepData.fullName ?? '') : (stepData.clientName ?? config.defaultForm?.clientName ?? ''),
     fiscalIdType: stepData.fiscalIdType ?? config.defaultForm?.fiscalIdType ?? '',
     fiscalIdValue: stepData.fiscalIdValue ?? config.defaultForm?.fiscalIdValue ?? '',
-    // ETP-5806 — structured address fields, replacing the single free-text `address` input with
-    // the same Street/Number/Building Name breakdown used by every other address popup
-    // (LocationEditorModal.jsx). The block stays fully optional on this minimalist step; see
-    // `isAddressBlockStarted`/`isCompanyStepValid` in state.js for the mandatoriness rule.
+    // Legacy single-line address, used while `structured-address-for-sepa` (ETP-5806) is off.
+    address: stepData.address ?? config.defaultForm?.address ?? '',
+    // ETP-5806 — structured address fields, gated behind `capabilities.structuredAddressForSepa`; while
+    // on, these replace the single free-text `address` input above with the same Street/
+    // Number/Building Name breakdown used by every other address popup (LocationEditorModal.jsx).
+    // The block stays fully optional on this minimalist step; see `isAddressBlockStarted`/
+    // `isCompanyStepValid` in state.js for the mandatoriness rule.
     streetName: stepData.streetName ?? config.defaultForm?.streetName ?? '',
     buildingNumber: stepData.buildingNumber ?? config.defaultForm?.buildingNumber ?? '',
     buildingName: stepData.buildingName ?? config.defaultForm?.buildingName ?? '',
@@ -168,7 +176,22 @@ export function CompanyStep({ config, stepData, onNext, onBack, goToStep, onChan
               Design follow-up (same ticket): rendered as a single "compound field" — one outer
               border for all 4 inputs, divided internally by thin lines, label inside each cell
               — so it reads as one piece of data ("the address") rather than four separate
-              bordered inputs. See AddressCell.jsx for the cell itself. */}
+              bordered inputs. See AddressCell.jsx for the cell itself.
+
+              Gated behind `capabilities.structuredAddressForSepa` (backend-only flag, TTL 2026-11-15):
+              while off, the pre-ETP-5806 single-line SetupField below renders instead. */}
+          {!structuredAddressEnabled && (
+            <SetupField
+              id="address"
+              label={ui('onboardingAddressLabel')}
+              trailingLabel={`(${ui('optional')})`}
+              value={form.address}
+              onChange={e => updateField('address', e.target.value)}
+              placeholder={ui('onboardingAddressPlaceholder')}
+              maxLength={ONBOARDING_FIELD_LIMITS.address}
+              data-testid="SetupField__79cf84" />
+          )}
+          {structuredAddressEnabled && (
           <div>
             <Label
               className="mb-2 block text-sm font-medium leading-6 text-slate-900"
@@ -235,6 +258,7 @@ export function CompanyStep({ config, stepData, onNext, onBack, goToStep, onChan
               </div>
             </div>
           </div>
+          )}
 
           <SetupSelect
             id="sector"
