@@ -3086,3 +3086,46 @@ describe('generatePageComponent — window.detailVisibleWhenCapability', () => {
     assert.doesNotMatch(code, /detailVisibleWhenCapability/);
   });
 });
+
+describe('generateFormComponent - responsiveCols (formColsResponsive)', () => {
+  const make = (entityExtra) => ({
+    frontendContract: {
+      window: { id: '1', name: 'Simple Item', primaryEntity: 'item', category: 'reference' },
+      entities: {
+        item: {
+          ...entityExtra,
+          fields: [
+            { name: 'name', column: 'Name', type: 'string', tsType: 'string', visibility: 'editable', required: true, grid: true, form: true },
+          ],
+          searchableFields: ['name'],
+          computedFields: [],
+        },
+      },
+    },
+    backendContract: { processEndpoints: [] },
+  });
+
+  it('emits responsiveCols right after cols when both formCols and the flag are set', () => {
+    const code = generateFormComponent('item', make({ formCols: 4, formColsResponsive: true }));
+    assert.match(code, /<EntityForm fields=\{fields\} cols=\{4\} responsiveCols /);
+  });
+
+  it('keeps the fixed cols output unchanged without the flag', () => {
+    const code = generateFormComponent('item', make({ formCols: 4 }));
+    assert.match(code, /<EntityForm fields=\{fields\} cols=\{4\} /);
+    assert.ok(!code.includes('responsiveCols'));
+  });
+
+  it('emits neither cols nor responsiveCols when the flag is set without formCols', () => {
+    const code = generateFormComponent('item', make({ formColsResponsive: true }));
+    assert.ok(!code.includes('cols='));
+    assert.ok(!code.includes('responsiveCols'));
+  });
+
+  it('ignores false and non-boolean flag values', () => {
+    for (const value of [false, 'true', 1]) {
+      const code = generateFormComponent('item', make({ formCols: 4, formColsResponsive: value }));
+      assert.ok(!code.includes('responsiveCols'), `value ${String(value)} must be ignored`);
+    }
+  });
+});

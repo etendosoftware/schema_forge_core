@@ -790,6 +790,11 @@ function applyEntityDecisions(entity, entityDecision) {
   if (entityDecision.formCols != null) {
     entity.formCols = entityDecision.formCols;
   }
+  // formColsResponsive (ETP-5696): treat formCols as a maximum instead of a fixed
+  // count. Opt-in; absent keeps the fixed-columns behaviour every window has today.
+  if (entityDecision.formColsResponsive === true) {
+    entity.formColsResponsive = true;
+  }
   // HandleDefaults opt-out: carry an explicit false so the contract/frontend can
   // skip fetching line /defaults for this entity. Default (absent) stays on.
   if (entityDecision.handlesDefaults === false) {

@@ -683,7 +683,10 @@ function buildFormMaxLengthPart(type, f) {
 export function generateFormComponent(entityName, contract) {
   const entity = contract.frontendContract.entities[entityName];
   const formCols = entity.formCols ?? null;
-  const colsProp = formCols != null ? ` cols={${formCols}}` : '';
+  // `responsiveCols` (ETP-5696) is only meaningful next to `cols`: it makes EntityForm treat
+  // `cols` as a maximum and size the grid from its own width.
+  const responsiveColsProp = formCols != null && entity.formColsResponsive === true ? ' responsiveCols' : '';
+  const colsProp = formCols != null ? ` cols={${formCols}}${responsiveColsProp}` : '';
   const specName = contract.apiPrediction?.specName;
   // Sort by seq override if present (stable sort: fields without seq keep natural DB order)
   const formFields = entity.fields

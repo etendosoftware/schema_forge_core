@@ -382,6 +382,8 @@ function applyEntityLevelFlags(entity, feEntity) {
   if (entity.javaQualifier) feEntity.javaQualifier = entity.javaQualifier;
   if (entity.draftMode?.enabled) feEntity.draftMode = entity.draftMode;
   if (entity.formCols != null) feEntity.formCols = entity.formCols;
+  // Emit only when explicitly enabled (ETP-5696); absent means fixed formCols.
+  if (entity.formColsResponsive === true) feEntity.formColsResponsive = true;
   // HandleDefaults opt-out: emit only when explicitly disabled (default is on).
   if (entity.handlesDefaults === false) feEntity.handlesDefaults = false;
   // Per-entity delete opt-out (ETP-4512): emit only when explicitly set.

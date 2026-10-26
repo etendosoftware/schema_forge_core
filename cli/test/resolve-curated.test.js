@@ -1345,3 +1345,42 @@ describe('resolveCurated — draftMode.editableLineFieldsWhenCompleted (ETP-5692
     }
   });
 });
+
+describe('resolveCurated — formColsResponsive', () => {
+  const schemaRaw = () => ({
+    window: { id: '100', name: 'Sales Order' },
+    entities: [
+      { name: 'cOrder', tableName: 'C_Order', tabId: '10', tabName: 'Header', fields: [] },
+      { name: 'cOrderLine', tableName: 'C_OrderLine', tabId: '20', tabName: 'Lines', fields: [] },
+    ],
+  });
+  const resolveWith = (entityDecision) => resolveCurated(schemaRaw(), { rules: [] }, {
+    version: 2,
+    window: { name: 'Order Entry' },
+    entities: { cOrder: { name: 'order', ...entityDecision }, cOrderLine: { name: 'orderLine' } },
+    rules: {},
+  });
+
+  it('carries formColsResponsive:true next to formCols', async () => {
+    const { schema } = await resolveWith({ formCols: 4, formColsResponsive: true });
+    assert.equal(schema.entities[0].formCols, 4);
+    assert.equal(schema.entities[0].formColsResponsive, true);
+  });
+
+  it('omits the key by default', async () => {
+    const { schema } = await resolveWith({ formCols: 4 });
+    assert.ok(!('formColsResponsive' in schema.entities[0]));
+  });
+
+  it('ignores false and non-boolean values', async () => {
+    for (const value of [false, 'true', 1, null]) {
+      const { schema } = await resolveWith({ formCols: 4, formColsResponsive: value });
+      assert.ok(!('formColsResponsive' in schema.entities[0]), `value ${String(value)} must be ignored`);
+    }
+  });
+
+  it('does not leak the flag to other entities', async () => {
+    const { schema } = await resolveWith({ formCols: 4, formColsResponsive: true });
+    assert.ok(!('formColsResponsive' in schema.entities[1]));
+  });
+});

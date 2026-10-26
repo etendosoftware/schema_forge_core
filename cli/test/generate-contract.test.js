@@ -2922,3 +2922,43 @@ describe('mapFieldForContract — publicApi stamping (ETP-5345)', () => {
     assert.equal('publicApi' in mapped, false);
   });
 });
+
+describe('generateFrontendContract — formColsResponsive', () => {
+  const make = (flag) => ({
+    version: '0.1.0',
+    window: { id: '900', name: 'GL Journal', primaryEntity: 'journal', category: 'finance' },
+    entities: [
+      { name: 'journal', table: 'GL_Journal', level: 'header', formCols: 4,
+        ...(flag === undefined ? {} : { formColsResponsive: flag }),
+        fields: [
+          { name: 'description', column: 'Description', type: 'string', visibility: 'editable', required: false, grid: false, form: true },
+        ] },
+      { name: 'journalLine', table: 'GL_JournalLine', level: 'line', fields: [
+        { name: 'account', column: 'Account_ID', type: 'string', visibility: 'editable', required: false, grid: true, form: true },
+      ] },
+    ],
+  });
+
+  it('emits formColsResponsive:true alongside formCols when the entity opts in', () => {
+    const fc = generateFrontendContract(make(true));
+    assert.equal(fc.entities.journal.formCols, 4);
+    assert.equal(fc.entities.journal.formColsResponsive, true);
+  });
+
+  it('omits the key by default', () => {
+    const fc = generateFrontendContract(make(undefined));
+    assert.ok(!('formColsResponsive' in fc.entities.journal));
+  });
+
+  it('ignores false and non-boolean values', () => {
+    for (const value of [false, 'true', 1]) {
+      const fc = generateFrontendContract(make(value));
+      assert.ok(!('formColsResponsive' in fc.entities.journal), `value ${String(value)} must be ignored`);
+    }
+  });
+
+  it('does not leak the flag to other entities', () => {
+    const fc = generateFrontendContract(make(true));
+    assert.ok(!('formColsResponsive' in fc.entities.journalLine));
+  });
+});
