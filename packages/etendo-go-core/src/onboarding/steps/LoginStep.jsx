@@ -300,6 +300,7 @@ export function LoginStep({ config, stepData, onNext, onBack, goToStep, setToken
     return (
       <AuthShell
         brandLabel={config.brandLabel || 'Etendo'}
+        brandHref={config.brandHref}
         headerContent={localeControl}
         marketingTitle={ui('onboardingMarketingTitle')}
         marketingDescription={ui('onboardingMarketingDescription')}
@@ -399,6 +400,7 @@ export function LoginStep({ config, stepData, onNext, onBack, goToStep, setToken
     return (
       <AuthShell
         brandLabel={config.brandLabel || 'Etendo'}
+        brandHref={config.brandHref}
         headerContent={localeControl}
         marketingTitle={ui('onboardingMarketingTitle')}
         marketingDescription={ui('onboardingMarketingDescription')}
@@ -526,6 +528,7 @@ export function LoginStep({ config, stepData, onNext, onBack, goToStep, setToken
         if (goToStep) goToStep('register');
       }}
       brandLabel={config.brandLabel || 'Etendo'}
+      brandHref={config.brandHref}
       headerContent={localeControl}
       marketingTitle={ui('onboardingMarketingTitle')}
       marketingDescription={ui('onboardingMarketingDescription')}
