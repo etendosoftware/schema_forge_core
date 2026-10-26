@@ -36,15 +36,25 @@ user saw that literal string on screen with no indication of which field was at 
 | 2 | Full name *(freelancer)* | **40** | `CompanyStep` reuses a freelancer's full name as the client name, so it inherits the client-name limit |
 | 3 | Company name | **40** | `AD_CLIENT.VALUE` / `AD_ORG.VALUE` NVARCHAR(40) — `InitialSetupUtility.insertClient` writes the same string to `NAME`(60) *and* `VALUE`(40), so the search key binds first |
 | 3 | Tax ID (NIF) | 20 | `C_BPARTNER.TAXID` / `AD_ORGINFO.TAXID` VARCHAR(20) — **preventive**: today the tax id is only persisted in the onboarding draft and never reaches the AD |
-| 3 | Address *(legacy, superseded)* | 60 | `C_LOCATION.ADDRESS1` NVARCHAR(60) — kept for any caller still sending free-text `address`; the step 3 UI no longer collects it directly (see below) |
-| 3 | Calle (Street) | **70** | `EM_OBSEPA_StrtNm` (`org.openbravo.sepa.iso20022`) — ETP-5806 |
-| 3 | Número (Building Number) | **16** | `EM_OBSEPA_BldgNb` — ETP-5806 |
-| 3 | Nombre de edificio (Building Name, optional) | **35** | `EM_OBSEPA_BldgNm` — ETP-5806 |
-| 3 | Ciudad (City) | **60** | `C_LOCATION.CITY` (DAL `cityName`) NVARCHAR(60) — ETP-5806 |
+| 3 | Address *(legacy; only field when `structured-address-for-sepa` is off, kept as a fallback for a stale caller when the flag is on)* | 60 | `C_LOCATION.ADDRESS1` NVARCHAR(60) |
+| 3 | Calle (Street) *(only when `structured-address-for-sepa` is on, see below)* | **70** | `EM_OBSEPA_StrtNm` (`org.openbravo.sepa.iso20022`) — ETP-5806 |
+| 3 | Número (Building Number) *(idem)* | **16** | `EM_OBSEPA_BldgNb` — ETP-5806 |
+| 3 | Nombre de edificio (Building Name, optional) *(idem)* | **35** | `EM_OBSEPA_BldgNm` — ETP-5806 |
+| 3 | Ciudad (City) *(idem)* | **60** | `C_LOCATION.CITY` (DAL `cityName`) NVARCHAR(60) — ETP-5806 |
 
-### ETP-5806 — structured address fields replace the single Address input
+### ETP-5806 — structured address fields replace the single Address input, gated behind `structured-address-for-sepa`
 
-Step 3 ("Datos para empezar a facturar") no longer collects a single free-text address. It asks for
+This is a backend-only flag (TTL 2026-11-15; see `com.etendoerp.go` `docs/feature-flags-and-tenant-upgrade.md`
+§1 and that repo's `docs/onboarding-flow.md` "Pre-tenant capability bootstrap"). `CompanyStep`
+receives the answer as a `capabilities` prop threaded down from `OnboardingFlow` (itself fed by the
+`GET /sws/go/session` response's `capabilities.structuredAddressForSepa`) — it never evaluates the
+flag itself.
+
+**While off** (default pre-launch), Step 3 ("Datos para empezar a facturar") is unchanged from
+before this ticket: a single free-text Address input, and the legacy row in the table above applies
+as-is.
+
+**While on**, Step 3 no longer collects a single free-text address. It asks for
 Street, Number, Building Name (optional) and City instead — the same breakdown as every other
 address popup in the product (`LocationEditorModal.jsx`), rendered in `CompanyStep.jsx` as one
 "compound field" (`AddressCell.jsx`): a single outer border around all 4 inputs, divided internally
