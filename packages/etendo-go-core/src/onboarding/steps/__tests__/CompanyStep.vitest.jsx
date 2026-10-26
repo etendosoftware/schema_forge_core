@@ -11,6 +11,11 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
  * ETP-4665 / ETP-5638 — the company name, tax id and address are capped at their
  * AD columns; the company-name input keeps typing headroom so a pasted over-long
  * value is shown as an inline error instead of being silently truncated.
+ * ETP-5806 — the structured Street/Number/Building Name/City block only renders when
+ * `capabilities.structuredAddressForSepa` is `true`; otherwise (false, undefined or missing —
+ * the default, pre-launch state) the legacy single-line `address` field renders instead, exactly
+ * as it did before this flag existed. The frontend never evaluates the flag itself, only the
+ * boolean it is handed.
  */
 
 vi.mock('@etendosoftware/app-shell-core/i18n', () => ({
@@ -33,12 +38,13 @@ const {
 
 const CONFIG = { apiBase: '', brandLabel: 'Etendo', defaultForm: {} };
 
-function renderCompanyStep(stepData = {}) {
+function renderCompanyStep(stepData = {}, capabilities) {
   const onChange = vi.fn();
   const utils = render(
     <CompanyStep
       config={CONFIG}
       stepData={stepData}
+      capabilities={capabilities}
       onChange={onChange}
       onNext={vi.fn()}
       onBack={vi.fn()} />,
@@ -95,7 +101,9 @@ describe('CompanyStep freelancer clientName handling (ETP-4673)', () => {
       fullName: 'Ada Lovelace',
     });
 
-    fireEvent.change(container.querySelector('#streetName'), { target: { value: '1 Main St' } });
+    // Any other field works for this assertion; fiscalIdValue renders regardless of the
+    // structured-address-for-sepa flag (ETP-5806), unlike streetName.
+    fireEvent.change(container.querySelector('#fiscalIdValue'), { target: { value: 'B12345678' } });
 
     expect(clientNamePushes(onChange)).toHaveLength(1);
   });
@@ -149,12 +157,62 @@ describe('CompanyStep field limits (ETP-4665 / ETP-5638)', () => {
   });
 
   it('caps the tax id and structured address fields at their AD column limits', () => {
-    const { container } = renderCompanyStep({ businessType: 'company', clientName: 'Acme' });
+    // ETP-5806 — the structured fields only exist on the DOM when the flag is on.
+    const { container } = renderCompanyStep(
+      { businessType: 'company', clientName: 'Acme' },
+      { structuredAddressForSepa: true },
+    );
 
     expect(container.querySelector('#fiscalIdValue').maxLength).toBe(ONBOARDING_FIELD_LIMITS.fiscalId);
     expect(container.querySelector('#streetName').maxLength).toBe(ONBOARDING_FIELD_LIMITS.streetName);
     expect(container.querySelector('#buildingNumber').maxLength).toBe(ONBOARDING_FIELD_LIMITS.buildingNumber);
     expect(container.querySelector('#buildingName').maxLength).toBe(ONBOARDING_FIELD_LIMITS.buildingName);
     expect(container.querySelector('#city').maxLength).toBe(ONBOARDING_FIELD_LIMITS.city);
+  });
+});
+
+describe('CompanyStep structured-address-for-sepa flag gating (ETP-5806)', () => {
+  it.each([
+    ['capabilities is undefined', undefined],
+    ['capabilities.structuredAddressForSepa is false', { structuredAddressForSepa: false }],
+    ['capabilities.structuredAddressForSepa is missing', {}],
+  ])('renders the legacy single-line address field, not the structured block, when %s', (_label, capabilities) => {
+    const { container } = renderCompanyStep({ businessType: 'company', clientName: 'Acme' }, capabilities);
+
+    expect(container.querySelector('#address')).toBeTruthy();
+    expect(container.querySelector('#streetName')).toBeNull();
+    expect(container.querySelector('#buildingNumber')).toBeNull();
+    expect(container.querySelector('#buildingName')).toBeNull();
+    expect(container.querySelector('#city')).toBeNull();
+  });
+
+  it('renders the structured Street/Number/Building Name/City block, not the legacy address field, when the flag is on', () => {
+    const { container } = renderCompanyStep(
+      { businessType: 'company', clientName: 'Acme' },
+      { structuredAddressForSepa: true },
+    );
+
+    expect(container.querySelector('#address')).toBeNull();
+    expect(container.querySelector('#streetName')).toBeTruthy();
+    expect(container.querySelector('#buildingNumber')).toBeTruthy();
+    expect(container.querySelector('#buildingName')).toBeTruthy();
+    expect(container.querySelector('#city')).toBeTruthy();
+  });
+
+  it('keeps Start disabled once the structured block is started until Street, Number and City are filled', () => {
+    const { container } = renderCompanyStep(
+      { businessType: 'company', clientName: 'Acme' },
+      { structuredAddressForSepa: true },
+    );
+
+    fireEvent.change(container.querySelector('#streetName'), { target: { value: 'Main St' } });
+
+    // Street alone started the block; Number and City are still missing.
+    expect(startButton().disabled).toBe(true);
+
+    fireEvent.change(container.querySelector('#buildingNumber'), { target: { value: '42' } });
+    fireEvent.change(container.querySelector('#city'), { target: { value: 'Madrid' } });
+
+    expect(startButton().disabled).toBe(false);
   });
 });

@@ -13,6 +13,11 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
  *
  * Renders the real OnboardingFlow with stand-in steps around the real EnvSelectStep; every routing
  * decision is observed as "which view is on screen", driven by a stubbed global fetch.
+ *
+ * ETP-5806 — the session bootstrap response also carries `capabilities` (backend-only feature
+ * flags, e.g. `structuredAddressForSepa`); OnboardingFlow must thread it through to every step
+ * component unchanged, defaulting to `{}` when the backend omits it. The flow itself never reads
+ * or evaluates a flag, only passes the object down.
  */
 
 vi.mock('@etendosoftware/app-shell-core/i18n', () => ({
@@ -38,15 +43,22 @@ function RegisterStandIn() {
   return <div data-testid="register-step">register</div>;
 }
 
+// ETP-5806 — captures whatever `capabilities` OnboardingFlow hands down, so the test can assert on
+// it without relying on a real step's own rendering of the flag.
+function ProfileStandIn({ capabilities }) {
+  return <div data-testid="profile-step" data-capabilities={JSON.stringify(capabilities)}>profile</div>;
+}
+
 const STEPS = [
   { id: 'login', component: LoginStandIn },
   // Register IS a valid step of this flow: the fallbacks must still never choose it.
   { id: 'register', component: RegisterStandIn },
   { id: 'env-select', component: EnvSelectStep },
-  { id: 'profile', component: () => <div data-testid="profile-step">profile</div> },
+  { id: 'profile', component: ProfileStandIn },
 ];
 
 let sessionStatus;
+let sessionCapabilities;
 let unavailableProbes;
 let environments;
 let requests;
@@ -57,6 +69,7 @@ function sessionProbeCount() {
 
 beforeEach(() => {
   sessionStatus = 401;
+  sessionCapabilities = undefined;
   unavailableProbes = 0;
   environments = [];
   requests = [];
@@ -73,7 +86,12 @@ beforeEach(() => {
       if (sessionStatus !== 200) {
         return json({ error: { code: 'invalidSession', message: 'no session' } }, sessionStatus);
       }
-      return json({ status: 'success', account: ACCOUNT, csrfToken: 'csrf-A' });
+      return json({
+        status: 'success',
+        account: ACCOUNT,
+        csrfToken: 'csrf-A',
+        ...(sessionCapabilities !== undefined ? { capabilities: sessionCapabilities } : {}),
+      });
     }
     if (path.endsWith('/sws/go/session') && method === 'DELETE') return new Response(null, { status: 204 });
     if (path.endsWith('/sws/go/me')) return json(ACCOUNT);
@@ -169,5 +187,27 @@ describe('OnboardingFlow default view (ETP-4443)', () => {
     // itself holds no logout logic and no storage cleanup.
     expect(requests.some((r) => r.path.endsWith('/sws/go/session') && r.method === 'DELETE')).toBe(true);
     expect(localStorage.getItem('sf_platform_token')).toBeNull();
+  });
+});
+
+describe('OnboardingFlow capabilities threading (ETP-5806)', () => {
+  it('passes the session capabilities object down to the active step', async () => {
+    sessionStatus = 200;
+    sessionCapabilities = { structuredAddressForSepa: true };
+
+    render(<OnboardingFlow steps={STEPS} config={{ apiBase: '' }} />);
+
+    const profileStep = await screen.findByTestId('profile-step');
+    expect(JSON.parse(profileStep.dataset.capabilities)).toEqual({ structuredAddressForSepa: true });
+  });
+
+  it('defaults capabilities to an empty object when the backend omits it', async () => {
+    sessionStatus = 200;
+    sessionCapabilities = undefined;
+
+    render(<OnboardingFlow steps={STEPS} config={{ apiBase: '' }} />);
+
+    const profileStep = await screen.findByTestId('profile-step');
+    expect(JSON.parse(profileStep.dataset.capabilities)).toEqual({});
   });
 });
