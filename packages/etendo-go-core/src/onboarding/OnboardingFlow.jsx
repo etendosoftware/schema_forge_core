@@ -326,10 +326,20 @@ export function OnboardingFlow({ steps = [], config = {} }) {
       window.history.replaceState({}, '', `${window.location.pathname}${query ? `?${query}` : ''}`);
     }
 
-    const initialView = localStorage.getItem('sf_onboarding_initial_view');
-    if (initialView) {
+    // ETP-5847 — the public website's "Start for free" links here with ?view=register, since it
+    // cannot reach this origin's localStorage. The address wins over the stored one-shot flag; it is
+    // taken off the address bar so a later reload lands on the default login view.
+    const viewParam = search.get('view');
+    if (viewParam) {
+      search.delete('view');
+      const query = search.toString();
+      window.history.replaceState({}, '', `${window.location.pathname}${query ? `?${query}` : ''}`);
+    }
+    const storedView = localStorage.getItem('sf_onboarding_initial_view');
+    if (storedView) {
       localStorage.removeItem('sf_onboarding_initial_view');
     }
+    const initialView = viewParam || storedView;
 
     // ETP-4798: the confirmation MUST settle before the session is read. Both requests used to be
     // fired concurrently, and whenever the session read answered first it reported the still-pending

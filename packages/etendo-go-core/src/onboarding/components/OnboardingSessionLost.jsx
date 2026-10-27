@@ -21,6 +21,7 @@ export function OnboardingSessionLost({ config = {}, accountEmail, onSignInAgain
   return (
     <AuthShell
       brandLabel={config.brandLabel || 'Etendo'}
+      brandHref={config.brandHref}
       marketingTitle={ui('onboardingMarketingTitle')}
       marketingDescription={ui('onboardingMarketingDescription')}
       featureLabels={AUTH_FEATURE_KEYS.map((key) => ui(key))}

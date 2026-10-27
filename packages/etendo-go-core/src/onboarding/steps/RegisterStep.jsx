@@ -220,6 +220,7 @@ export function RegisterStep({ config, stepData, onNext, onBack, goToStep, setTo
         if (goToStep) goToStep('login');
       }}
       brandLabel={config.brandLabel || 'Etendo'}
+      brandHref={config.brandHref}
       headerContent={localeControl}
       marketingTitle={ui('onboardingMarketingTitle')}
       marketingDescription={ui('onboardingMarketingDescription')}
