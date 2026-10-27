@@ -3,7 +3,7 @@ import { ArrowRight } from 'lucide-react';
 import { Button } from '@etendosoftware/app-shell-core/components/ui/button';
 import { Label } from '@etendosoftware/app-shell-core/components/ui/label';
 import { useUI } from '@etendosoftware/app-shell-core/i18n';
-import { isCompanyStepValid, isSampleDataOffered } from '../state.js';
+import { isCompanyStepValid, isSampleDataOffered, isAddressBlockStarted } from '../state.js';
 import { ONBOARDING_FIELD_LIMITS, CLIENT_NAME_INPUT_MAX_LENGTH, exceedsLimit } from '../fieldLimits.js';
 import { trackOnboarding } from '../tracking.js';
 import { SetupShell } from '../components/SetupShell.jsx';
@@ -11,9 +11,15 @@ import { OnboardingSessionAction } from '../components/OnboardingSessionAction.j
 import { DraftSaveWarning } from '../components/DraftSaveWarning.jsx';
 import { SetupField } from '../components/SetupField.jsx';
 import { SetupSelect } from '../components/SetupSelect.jsx';
+import { AddressCell } from '../components/AddressCell.jsx';
 
-export function CompanyStep({ config, stepData, onNext, onBack, goToStep, onChange, draftNotice, draftSaveWarning, setDraftNotice, accountName, token, onLogout }) {
+export function CompanyStep({ config, stepData, onNext, onBack, goToStep, onChange, draftNotice, draftSaveWarning, setDraftNotice, accountName, token, onLogout, capabilities }) {
   const ui = useUI();
+  // ETP-5806 — backend-only `structured-address-for-sepa` flag (TTL 2026-11-15). `capabilities` is the
+  // session-bootstrap signal (GET /sws/go/session, OnboardingFlow.jsx), never evaluated anywhere
+  // but here — when false/absent, this step renders the pre-ETP-5806 single-line `address` field,
+  // exactly as it behaved before this feature existed.
+  const structuredAddressEnabled = capabilities?.structuredAddressForSepa === true;
   // Freelancers have no company: their personal full name (captured in the
   // profile step) is used as the invoicing name instead.
   const isFreelancer = stepData.businessType === 'freelancer';
@@ -27,7 +33,18 @@ export function CompanyStep({ config, stepData, onNext, onBack, goToStep, onChan
     clientName: isFreelancer ? (stepData.fullName ?? '') : (stepData.clientName ?? config.defaultForm?.clientName ?? ''),
     fiscalIdType: stepData.fiscalIdType ?? config.defaultForm?.fiscalIdType ?? '',
     fiscalIdValue: stepData.fiscalIdValue ?? config.defaultForm?.fiscalIdValue ?? '',
+    // Legacy single-line address, used while `structured-address-for-sepa` (ETP-5806) is off.
     address: stepData.address ?? config.defaultForm?.address ?? '',
+    // ETP-5806 — structured address fields, gated behind `capabilities.structuredAddressForSepa`; while
+    // on, these replace the single free-text `address` input above with the same Street/
+    // Number/Building Name breakdown used by every other address popup (LocationEditorModal.jsx).
+    // The block stays fully optional on this minimalist step; see `isAddressBlockStarted`/
+    // `isCompanyStepValid` in state.js for the mandatoriness rule.
+    streetName: stepData.streetName ?? config.defaultForm?.streetName ?? '',
+    buildingNumber: stepData.buildingNumber ?? config.defaultForm?.buildingNumber ?? '',
+    buildingName: stepData.buildingName ?? config.defaultForm?.buildingName ?? '',
+    // ETP-5806 — City, mandatory together with Street/Number once the address block is started.
+    city: stepData.city ?? config.defaultForm?.city ?? '',
     sector: stepData.sector ?? config.defaultForm?.sector ?? 'technology',
     // ETP-5426: unticked by default, without exception — a tenant meant for real use must never
     // receive fictitious data nobody asked for. Restored from the draft when the user ticked it.
@@ -64,6 +81,14 @@ export function CompanyStep({ config, stepData, onNext, onBack, goToStep, onChan
     value: code,
     label: ui(`onboardingSector${code.charAt(0).toUpperCase()}${code.slice(1)}`),
   }));
+
+  // ETP-5806 — once the user starts the address block, Street and Number become mandatory
+  // together; shown immediately (no blur/touched gating), same style as `clientNameTooLong`
+  // below.
+  const addressStarted = isAddressBlockStarted(form);
+  const streetNameMissing = addressStarted && !form.streetName?.trim();
+  const buildingNumberMissing = addressStarted && !form.buildingNumber?.trim();
+  const cityMissing = addressStarted && !form.city?.trim();
 
   const isValid = isCompanyStepValid(form);
   // Trim to match isCompanyStepValid, so the inline error and the Start button never disagree.
@@ -142,15 +167,99 @@ export function CompanyStep({ config, stepData, onNext, onBack, goToStep, onChan
             </div>
           </div>
 
-          <SetupField
-            id="address"
-            label={ui('onboardingAddressLabel')}
-            trailingLabel={`(${ui('optional')})`}
-            value={form.address}
-            onChange={e => updateField('address', e.target.value)}
-            placeholder={ui('onboardingAddressPlaceholder')}
-            maxLength={ONBOARDING_FIELD_LIMITS.address}
-            data-testid="SetupField__79cf84" />
+          {/* ETP-5806 — Street/Number/Building Name/City, replacing the free-text address field
+              with the same structured breakdown used by every other address popup. Fully
+              optional until the user types into one of them; from then on Street+Number+City are
+              required together (see isAddressBlockStarted/isCompanyStepValid). Country is
+              intentionally not asked here — it already comes from the Profile step's country
+              selector.
+
+              Design follow-up (same ticket): rendered as a single "compound field" — one outer
+              border for all 4 inputs, divided internally by thin lines, label inside each cell
+              — so it reads as one piece of data ("the address") rather than four separate
+              bordered inputs. See AddressCell.jsx for the cell itself.
+
+              Gated behind `capabilities.structuredAddressForSepa` (backend-only flag, TTL 2026-11-15):
+              while off, the pre-ETP-5806 single-line SetupField below renders instead. */}
+          {!structuredAddressEnabled && (
+            <SetupField
+              id="address"
+              label={ui('onboardingAddressLabel')}
+              trailingLabel={`(${ui('optional')})`}
+              value={form.address}
+              onChange={e => updateField('address', e.target.value)}
+              placeholder={ui('onboardingAddressPlaceholder')}
+              maxLength={ONBOARDING_FIELD_LIMITS.address}
+              data-testid="SetupField__79cf84" />
+          )}
+          {structuredAddressEnabled && (
+          <div>
+            <Label
+              className="mb-2 block text-sm font-medium leading-6 text-slate-900"
+              data-testid="Label__79cf84">
+              {ui('onboardingAddressLabel')} <span className="ml-2 font-normal text-slate-500">({ui('optional')})</span>
+            </Label>
+            <div className="overflow-hidden rounded-lg border border-[#D1D4DB] bg-white shadow-[0_1px_2px_rgba(18,18,23,0.05)]">
+              <div className="grid grid-cols-[2fr_1fr] divide-x divide-[#D1D4DB]">
+                <AddressCell
+                  id="streetName"
+                  label={ui('streetNameLabel')}
+                  required={addressStarted}
+                  value={form.streetName}
+                  onChange={e => updateField('streetName', e.target.value)}
+                  placeholder={ui('streetNamePlaceholder')}
+                  maxLength={ONBOARDING_FIELD_LIMITS.streetName}
+                  error={streetNameMissing ? ui('fieldRequiredMessage') : null}
+                  // ETP-5806 — browser autofill is wanted here (it genuinely speeds up this
+                  // step), so we declare the standard HTML autocomplete token instead of
+                  // disabling it. Chrome paints its own blue/grey highlight on an autofilled
+                  // field regardless of the token used; that highlight is neutralized globally
+                  // in packages/app-shell-core/src/styles.css (the -webkit-autofill override)
+                  // so the field keeps the app's normal white background.
+                  autoComplete="address-line1"
+                  data-testid="AddressCell__streetName" />
+                <AddressCell
+                  id="buildingNumber"
+                  label={ui('buildingNumberLabel')}
+                  required={addressStarted}
+                  value={form.buildingNumber}
+                  onChange={e => updateField('buildingNumber', e.target.value)}
+                  placeholder={ui('buildingNumberPlaceholder')}
+                  maxLength={ONBOARDING_FIELD_LIMITS.buildingNumber}
+                  error={buildingNumberMissing ? ui('fieldRequiredMessage') : null}
+                  // The WHATWG autocomplete spec has no dedicated "house/door number" token —
+                  // address-line1/2/3 are full line values, not line sub-fields — so there is no
+                  // reasonable standard token to offer the browser for this field specifically.
+                  autoComplete="off"
+                  data-testid="AddressCell__buildingNumber" />
+              </div>
+              <div className="grid grid-cols-[2fr_1fr] divide-x divide-[#D1D4DB] border-t border-[#D1D4DB]">
+                <AddressCell
+                  id="buildingName"
+                  label={ui('buildingNameLabel')}
+                  trailingLabel={`(${ui('optional')})`}
+                  value={form.buildingName}
+                  onChange={e => updateField('buildingName', e.target.value)}
+                  maxLength={ONBOARDING_FIELD_LIMITS.buildingName}
+                  // address-line2 is the standard token for an additional address line —
+                  // apartment, suite, unit or building name — which is exactly this field,
+                  // and a closer fit than overloading it onto the house/door number.
+                  autoComplete="address-line2"
+                  data-testid="AddressCell__buildingName" />
+                <AddressCell
+                  id="city"
+                  label={ui('cityLabel')}
+                  required={addressStarted}
+                  value={form.city}
+                  onChange={e => updateField('city', e.target.value)}
+                  maxLength={ONBOARDING_FIELD_LIMITS.city}
+                  error={cityMissing ? ui('fieldRequiredMessage') : null}
+                  autoComplete="address-level2"
+                  data-testid="AddressCell__city" />
+              </div>
+            </div>
+          </div>
+          )}
 
           <SetupSelect
             id="sector"
