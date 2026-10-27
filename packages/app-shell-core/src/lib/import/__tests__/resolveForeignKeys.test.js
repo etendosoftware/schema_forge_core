@@ -6,7 +6,9 @@ import {
   classifyCandidates,
   resolveForeignKeyColumn,
   resolveForeignKeys,
+  scoreModeForField,
 } from '../resolveForeignKeys.js';
+import { parseSimSearchEnvelope } from '../../simSearch.js';
 
 describe('classifyCandidates', () => {
   it('auto-resolves a single high-confidence candidate', () => {
@@ -117,3 +119,63 @@ describe('resolveForeignKeys', () => {
     assert.deepEqual(calls[0].items, ['Kg']);
   });
 });
+
+describe('strict matching (ETP-5730)', () => {
+  // The endpoint's answer for "IVA Normal": all three names CONTAIN the term, so all score 100.
+  const envelope = {
+    item_0: {
+      data: [
+        { id: 'ISP', name: 'IVA Normal ISP', similarity_percent: '100.0000%', text_similarity_percent: '78.6000%', exact_match: false },
+        { id: 'EXACT', name: 'IVA Normal', similarity_percent: '100.0000%', text_similarity_percent: '100.0000%', exact_match: true },
+        { id: 'SERV', name: 'IVA Normal Servicios', similarity_percent: '100.0000%', text_similarity_percent: '52.4000%', exact_match: false },
+      ],
+    },
+  };
+  const simSearchFn = async ({ scoreMode }) => parseSimSearchEnvelope(envelope, 1, scoreMode);
+
+  it("only fields declaring matchMode 'strict' ask for the whole-string score", () => {
+    assert.equal(scoreModeForField({ matchMode: 'strict' }), 'text');
+    assert.equal(scoreModeForField({ matchEntity: 'UOM' }), undefined);
+    assert.equal(scoreModeForField({ matchMode: 'fuzzy' }), undefined);
+    assert.equal(scoreModeForField(undefined), undefined);
+  });
+
+  it('keeps today\'s behaviour by default: three names at 100 is a tie, so it needs review', async () => {
+    const map = await resolveForeignKeyColumn({ values: ['IVA Normal'], matchEntity: 'FinancialMgmtTaxCategory', simSearchFn });
+    assert.equal(map.get('IVA Normal').status, 'needs-review');
+  });
+
+  it('resolves the exact name on its own when the whole-string score is used', async () => {
+    const map = await resolveForeignKeyColumn({
+      values: ['IVA Normal'], matchEntity: 'FinancialMgmtTaxCategory', simSearchFn, scoreMode: 'text',
+    });
+    const resolution = map.get('IVA Normal');
+    assert.equal(resolution.status, 'auto-resolved');
+    assert.equal(resolution.id, 'EXACT');
+  });
+
+  it('still asks for review when no name is close enough, strict or not', async () => {
+    const typo = { item_0: { data: [
+      { id: 'A', name: 'Metric Ton', similarity_percent: '57.1429%', text_similarity_percent: '28.6000%', exact_match: false },
+      { id: 'B', name: 'Meter', similarity_percent: '42.8571%', text_similarity_percent: '30.0000%', exact_match: false },
+    ] } };
+    const fn = async ({ scoreMode }) => parseSimSearchEnvelope(typo, 1, scoreMode);
+    const map = await resolveForeignKeyColumn({ values: ['Metrox'], matchEntity: 'UOM', simSearchFn: fn, scoreMode: 'text' });
+    assert.equal(map.get('Metrox').status, 'needs-review');
+  });
+
+  it('resolveForeignKeys threads each column\'s scoreMode into its own lookup', async () => {
+    const seen = [];
+    const fn = async (params) => { seen.push([params.entityName, params.scoreMode]); return params.items.map(() => null); };
+    await resolveForeignKeys({
+      rows: [{ a: 'x', b: 'y' }],
+      columns: [
+        { target: 'a', matchEntity: 'UOM', scoreMode: 'text' },
+        { target: 'b', matchEntity: 'Country' },
+      ],
+      simSearchFn: fn,
+    });
+    assert.deepEqual(seen, [['UOM', 'text'], ['Country', undefined]]);
+  });
+});
+

@@ -364,3 +364,63 @@ describe('simSearchEveryLanguage', () => {
     });
   });
 });
+
+describe('parseSimSearchEnvelope — whole-string similarity (ETP-5730)', () => {
+  // What the endpoint returns for "IVA Normal": every name that CONTAINS the term scores 100.
+  const envelope = {
+    item_0: {
+      data: [
+        { id: 'A', name: 'IVA Normal ISP', similarity_percent: '100.0000%', text_similarity_percent: '78.6000%', exact_match: false },
+        { id: 'B', name: 'IVA Normal', similarity_percent: '100.0000%', text_similarity_percent: '100.0000%', exact_match: true },
+      ],
+    },
+  };
+
+  it('keeps the endpoint score by default and exposes the new fields next to it', () => {
+    const [result] = parseSimSearchEnvelope(envelope, 1);
+    assert.equal(result.candidates[0].similarityPercent, '100.0000');
+    assert.equal(result.candidates[1].similarityPercent, '100.0000');
+    assert.equal(result.candidates[0].textSimilarityPercent, '78.6000');
+    assert.equal(result.candidates[1].exactMatch, true);
+  });
+
+  it("reports the whole-string similarity as similarityPercent when scoreMode is 'text'", () => {
+    const [result] = parseSimSearchEnvelope(envelope, 1, 'text');
+    assert.deepEqual(result.candidates.map((c) => c.similarityPercent), ['100.0000', '78.6000']);
+  });
+
+  it("falls back to the endpoint score when an older backend sends no text similarity", () => {
+    const legacy = { item_0: { data: [{ id: 'A', name: 'Meter', similarity_percent: '100.0000%' }] } };
+    const [result] = parseSimSearchEnvelope(legacy, 1, 'text');
+    assert.equal(result.similarityPercent, '100.0000');
+    assert.ok(!('textSimilarityPercent' in result.candidates[0]));
+    assert.ok(!('exactMatch' in result.candidates[0]));
+  });
+
+  it('re-sorts the candidates best-first by the whole-string score', () => {
+    const [result] = parseSimSearchEnvelope(envelope, 1, 'text');
+    assert.deepEqual(result.candidates.map((c) => c.name), ['IVA Normal', 'IVA Normal ISP']);
+    assert.equal(result.name, 'IVA Normal');
+  });
+
+  it('simSearch forwards scoreMode to the parser', async () => {
+    const original = globalThis.fetch;
+    const hadWindow = 'window' in globalThis;
+    const realWindow = globalThis.window;
+    globalThis.window = { location: { pathname: '/etendo/web/app/' } };
+    globalThis.fetch = async () => ({ ok: true, json: async () => envelope });
+    try {
+      const [text] = await simSearch({ entityName: 'FinancialMgmtTaxCategory', items: ['IVA Normal'], scoreMode: 'text', language: 'es_ES' });
+      const [plain] = await simSearch({ entityName: 'FinancialMgmtTaxCategory', items: ['IVA Normal'], language: 'es_ES' });
+      assert.equal(text.candidates[0].similarityPercent, '100.0000');
+      assert.equal(text.candidates[1].similarityPercent, '78.6000');
+      assert.equal(plain.candidates[0].similarityPercent, '100.0000');
+      assert.equal(plain.candidates[1].similarityPercent, '100.0000');
+    } finally {
+      globalThis.fetch = original;
+      if (hadWindow) globalThis.window = realWindow;
+      else delete globalThis.window;
+    }
+  });
+});
+
