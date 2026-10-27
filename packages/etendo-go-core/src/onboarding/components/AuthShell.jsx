@@ -4,13 +4,13 @@ import AuthBrand from './AuthBrand.jsx';
 import AuthFeaturePill from './AuthFeaturePill.jsx';
 import AuthPreviewMockup from './AuthPreviewMockup.jsx';
 
-export function AuthShell({ brandLabel, switchPrompt, switchAction, switchTestId, onSwitch, headerContent, marketingTitle, marketingDescription, featureLabels, children }) {
+export function AuthShell({ brandLabel, brandHref, switchPrompt, switchAction, switchTestId, onSwitch, headerContent, marketingTitle, marketingDescription, featureLabels, children }) {
   return (
     <div className="h-screen overflow-hidden bg-[#F5F7F9]">
       <div className="flex h-full w-full lg:grid lg:grid-cols-[minmax(0,1.32fr)_minmax(420px,1fr)]">
         <section className="m-2 flex flex-col overflow-y-auto rounded-xl bg-white px-6 py-6 sm:px-8 lg:px-10 xl:px-12">
           <div className="flex flex-col gap-5 border-b border-slate-100 pb-6 sm:flex-row sm:items-start sm:justify-between lg:border-b-0 lg:pb-0">
-            <AuthBrand label={brandLabel} data-testid="AuthBrand__79cf84" />
+            <AuthBrand label={brandLabel} href={brandHref} data-testid="AuthBrand__79cf84" />
             <div className="flex flex-col items-end gap-4">
               {headerContent}
               {switchPrompt && (

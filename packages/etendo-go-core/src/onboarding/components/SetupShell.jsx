@@ -14,7 +14,7 @@ let lastProgressValue = 0;
 // change, which is what lets its CSS transitions (the scroll animation) fire.
 // This component renders only the form section; OnboardingFlow provides the
 // two-column grid and the persistent preview aside.
-export function SetupShell({ brandLabel, progressLabel, progressValue, headerContent, children }) {
+export function SetupShell({ brandLabel, brandHref, progressLabel, progressValue, headerContent, children }) {
   // Start from the previously rendered value so the fill grows into the new one.
   const [fillWidth, setFillWidth] = useState(lastProgressValue);
   useEffect(() => {
@@ -37,7 +37,7 @@ export function SetupShell({ brandLabel, progressLabel, progressValue, headerCon
   return (
     <section className="flex min-h-screen flex-col bg-white px-6 py-6 sm:px-8 lg:px-10 xl:px-12">
       <div className="flex items-start justify-between gap-6">
-        <AuthBrand label={brandLabel} data-testid="AuthBrand__79cf84" />
+        <AuthBrand label={brandLabel} href={brandHref} data-testid="AuthBrand__79cf84" />
         <div className="flex w-full max-w-[22rem] flex-col items-end gap-3 pt-1">
           {headerContent}
           <div className="w-full">

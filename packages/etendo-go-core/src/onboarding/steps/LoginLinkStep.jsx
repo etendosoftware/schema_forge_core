@@ -45,6 +45,7 @@ export function LoginLinkStep({ config, loginToken, goToStep, setToken, setAccou
   return (
     <AuthShell
       brandLabel={config.brandLabel || 'Etendo'}
+      brandHref={config.brandHref}
       marketingTitle={ui('onboardingMarketingTitle')}
       marketingDescription={ui('onboardingMarketingDescription')}
       featureLabels={AUTH_FEATURE_KEYS.map((key) => ui(key))}
