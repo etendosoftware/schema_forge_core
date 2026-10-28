@@ -2011,9 +2011,48 @@ export function resolveSecondaryTabDefs(secondaryTabsDecl, contract, headerEntit
       const readOnlyLogicJs = cfg.readOnlyLogic
         ? convertLogicToJs(cfg.readOnlyLogic, headerColumnMap, headerBooleanFields)
         : null;
-      return { key, label: cfg.label ?? toLabel(key), isFormTab, isPanelTab, isCustomForm: !!cfg.customForm, isCustomTable: !!cfg.customTable, PanelName, FormName, TableName, addLineEntries, requireSavedRecord, maxDetailLines, isCustomAddModal: !!customAddModalName, CustomAddModalName: customAddModalName, readOnlyLogicJs, tabOrder: cfg.tabOrder, labelKey: cfg.labelKey ?? null, addLineLabelKey: cfg.addLineLabelKey ?? null, visibleWhenCapability: cfg.visibleWhenCapability ?? null };
+      const visibleWhenJs = cfg.visibleWhenLogic
+        ? compileVisibleWhenLogic(cfg.visibleWhenLogic, headerColumnMap, headerBooleanFields,
+          `${contract.frontendContract?.window?.name ?? headerEntity} / secondaryTabs.${key}`)
+        : null;
+      return { key, label: cfg.label ?? toLabel(key), isFormTab, isPanelTab, isCustomForm: !!cfg.customForm, isCustomTable: !!cfg.customTable, PanelName, FormName, TableName, addLineEntries, requireSavedRecord, maxDetailLines, isCustomAddModal: !!customAddModalName, CustomAddModalName: customAddModalName, readOnlyLogicJs, tabOrder: cfg.tabOrder, labelKey: cfg.labelKey ?? null, addLineLabelKey: cfg.addLineLabelKey ?? null, visibleWhenCapability: cfg.visibleWhenCapability ?? null, visibleWhenJs };
     });
 }
+
+/**
+ * Compile `secondaryTabs.<key>.visibleWhenLogic` (AD-style logic, `@#Name@` = context var)
+ * into a JS expression over `(record, ctx)`. Strict on purpose, unlike readOnlyLogic: any
+ * unresolved token, unknown column or unparsable result throws, naming window + tab, so a
+ * typo can never silently degrade into a camelCase guess. Each distinct context variable is
+ * guarded with `ctx['X'] != null &&` so the tab stays HIDDEN until the value has loaded.
+ */
+function compileVisibleWhenLogic(raw, columnMap, booleanFields, where) {
+  const fail = (msg) => { throw new Error(`visibleWhenLogic (${where}): ${msg} — "${raw}"`); };
+  // Literals are copied verbatim into generated JS: a backslash or a control char (newline,
+  // U+2028/U+2029, ...) can merge two literals and still parse, so reject them anywhere.
+  // eslint-disable-next-line no-control-regex
+  const bad = String(raw).match(/[\\\u0000-\u001f\u007f-\u009f\u2028\u2029]/);
+  if (bad) fail(`illegal character ${JSON.stringify(bad[0])} (backslashes and control characters are not allowed)`);
+  for (const [, tok] of String(raw).matchAll(/@(\w+)@/g)) {
+    if (!Object.prototype.hasOwnProperty.call(columnMap ?? {}, tok)) {
+      fail(`column '${tok}' is not a field of the header entity`);
+    }
+  }
+  let js = convertLogicToJs(String(raw), columnMap, booleanFields, { contextVars: true });
+  if (js.includes('@')) fail(`unsupported or unresolved token in compiled output '${js}'`);
+  const ctxNames = [...new Set([...String(raw).matchAll(/@#(\w+)@/g)].map(m => m[1]))];
+  if (ctxNames.length > 0) {
+    js = `${ctxNames.map(n => `ctx['${n}'] != null`).join(' && ')} && (${js})`;
+  }
+  try {
+    // eslint-disable-next-line no-new-func
+    new Function('record', 'ctx', `return ${js}`);
+  } catch (e) {
+    fail(`compiled output is not valid JS (${e.message}): ${js}`);
+  }
+  return js;
+}
+
 
 function buildDetailTableAndFormProps(detailEntity, customLinesComp, hideDetailForm, detailName) {
   if (!detailEntity || customLinesComp) return '';
@@ -2081,18 +2120,24 @@ export function buildSecondaryTabPropEntry(t) {
   const visibleWhenCapabilityPart = t.visibleWhenCapability
     ? `, visibleWhenCapability: '${String(t.visibleWhenCapability).replace(/'/g, "\\'")}'`
     : '';
+  // `secondaryTabs.<key>.visibleWhenLogic` is the data-driven sibling of visibleWhenCapability:
+  // an AD-style logic string (`@Col@` = record field, `@#Name@` = context variable) compiled
+  // by compileVisibleWhenLogic into `visibleWhen: (record, ctx) => boolean`.
+  // visibleWhenLogic — AD-style logic compiled to `(record, ctx) => boolean` (see
+  // compileVisibleWhenLogic). Evaluated at runtime; absent => nothing emitted.
+  const visibleWhenPart = t.visibleWhenJs ? `, visibleWhen: (record, ctx) => ${t.visibleWhenJs}` : '';
   if (t.isFormTab) {
-    return `          { key: '${t.key}', label: '${t.label}', isFormTab: true, Form: ${t.FormName}${requireSavedPart}${readOnlyLogicPart}${tabOrderPart}${labelKeyPart}${visibleWhenCapabilityPart} },`;
+    return `          { key: '${t.key}', label: '${t.label}', isFormTab: true, Form: ${t.FormName}${requireSavedPart}${readOnlyLogicPart}${tabOrderPart}${labelKeyPart}${visibleWhenCapabilityPart}${visibleWhenPart} },`;
   }
   if (t.isPanelTab) {
-    return `          { key: '${t.key}', label: '${t.label}', Panel: ${t.PanelName}${requireSavedPart}${readOnlyLogicPart}${tabOrderPart}${labelKeyPart}${visibleWhenCapabilityPart} },`;
+    return `          { key: '${t.key}', label: '${t.label}', Panel: ${t.PanelName}${requireSavedPart}${readOnlyLogicPart}${tabOrderPart}${labelKeyPart}${visibleWhenCapabilityPart}${visibleWhenPart} },`;
   }
   const addLinePart = t.addLineEntries.length > 0
     ? `, addLineFields: { entry: [\n${t.addLineEntries.join(',\n')},\n          ], derived: [], hidden: [] }`
     : '';
   const customAddModalPart = wrapIf(', customAddModal: ', t.CustomAddModalName);
   const formProp = (t.isCustomAddModal && !t.isCustomForm) ? '' : `, Form: ${t.FormName}`;
-  return `          { key: '${t.key}', label: '${t.label}', Table: ${t.TableName}${formProp}${addLinePart}${customAddModalPart}${requireSavedPart}${readOnlyLogicPart}${maxDetailLinesPart}${tabOrderPart}${labelKeyPart}${addLineLabelKeyPart}${visibleWhenCapabilityPart} },`;
+  return `          { key: '${t.key}', label: '${t.label}', Table: ${t.TableName}${formProp}${addLinePart}${customAddModalPart}${requireSavedPart}${readOnlyLogicPart}${maxDetailLinesPart}${tabOrderPart}${labelKeyPart}${addLineLabelKeyPart}${visibleWhenCapabilityPart}${visibleWhenPart} },`;
 }
 
 function buildDetailProcessesForPage(detailEntity, contract, processOverrides) {
