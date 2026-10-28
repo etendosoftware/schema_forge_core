@@ -1,3 +1,4 @@
+// @covers cli/src/generate-contract.js
 import { describe, it } from 'node:test';
 import { strict as assert } from 'node:assert';
 import {
@@ -2920,5 +2921,143 @@ describe('mapFieldForContract — publicApi stamping (ETP-5345)', () => {
     const decisionField = { name: 'internalNotes', visibility: 'editable' };
     const mapped = mapFieldForContract(decisionField, { rules: [] });
     assert.equal('publicApi' in mapped, false);
+  });
+});
+
+// ─── stepper flag (FIELD_ATTR_SPECS) ─────────────────────────────────────────
+describe('generateFrontendContract — stepper', () => {
+  function schemaWith(extra = {}) {
+    return {
+      version: '0.1.0',
+      window: { id: '903', name: 'Payment Term', primaryEntity: 'header', category: 'financial' },
+      entities: [{
+        name: 'header',
+        table: 'C_PaymentTerm',
+        level: 'header',
+        fields: [
+          { name: 'overduePaymentDaysRule', column: 'NetDays', type: 'number', visibility: 'editable',
+            required: true, searchable: false, grid: true, form: true, ...extra },
+          { name: 'name', column: 'Name', type: 'string', visibility: 'editable',
+            required: true, searchable: true, grid: true, form: true },
+        ],
+      }],
+    };
+  }
+
+  const fieldOf = (fc, name) => fc.entities.header.fields.find(f => f.name === name);
+
+  it('copies stepper: true onto the contract field with its bounds', () => {
+    const fc = generateFrontendContract(schemaWith({ stepper: true, min: 0, max: 365, integer: true }));
+    const f = fieldOf(fc, 'overduePaymentDaysRule');
+    assert.equal(f.stepper, true);
+    assert.equal(f.min, 0);
+    assert.equal(f.max, 365);
+    assert.equal(f.integer, true);
+  });
+
+  it('omits stepper when the curated field has none (and on siblings)', () => {
+    assert.equal('stepper' in fieldOf(generateFrontendContract(schemaWith()), 'overduePaymentDaysRule'), false);
+    assert.equal('stepper' in fieldOf(generateFrontendContract(schemaWith({ stepper: true })), 'name'), false);
+  });
+
+  it('omits stepper: false (flag mode only emits true)', () => {
+    assert.equal('stepper' in fieldOf(generateFrontendContract(schemaWith({ stepper: false })), 'overduePaymentDaysRule'), false);
+  });
+
+  it('appends stepper after every pre-existing optional attribute (key order is byte-checked)', () => {
+    const f = fieldOf(generateFrontendContract(schemaWith({ stepper: true, backendSortKey: 'netDays' })), 'overduePaymentDaysRule');
+    const keys = Object.keys(f);
+    assert.ok(keys.indexOf('stepper') > keys.indexOf('backendSortKey'), keys.join(','));
+  });
+
+  it('copies stepperRejectedKey verbatim, after stepper, and omits it when absent', () => {
+    const f = fieldOf(generateFrontendContract(schemaWith({ stepper: true, stepperRejectedKey: 'paymentTermDaysNotInteger' })), 'overduePaymentDaysRule');
+    assert.equal(f.stepperRejectedKey, 'paymentTermDaysNotInteger');
+    const keys = Object.keys(f);
+    assert.ok(keys.indexOf('stepperRejectedKey') > keys.indexOf('stepper'), keys.join(','));
+    assert.equal('stepperRejectedKey' in fieldOf(generateFrontendContract(schemaWith({ stepper: true })), 'overduePaymentDaysRule'), false);
+  });
+
+  it('survives decisions.json → resolveCurated → contract', async () => {
+    const schemaRaw = {
+      window: { id: '903', name: 'Payment Term' },
+      entities: [{
+        name: 'header',
+        tableName: 'C_PaymentTerm',
+        fields: [
+          { name: 'overduePaymentDaysRule', columnName: 'NetDays', label: 'Overdue Payment Days Rule',
+            type: 'number', visibility: 'editable', mandatory: true },
+        ],
+      }],
+    };
+    const decisions = {
+      version: 2,
+      window: { name: 'Payment Term' },
+      entities: { header: { fields: { overduePaymentDaysRule: { stepper: true, min: 0, max: 365, integer: true, stepperRejectedKey: 'paymentTermDaysNotInteger' } } } },
+      rules: {},
+    };
+    const { schema } = await resolveCurated(schemaRaw, { rules: [] }, decisions);
+    const fc = generateFrontendContract(schema);
+    const entity = Object.values(fc.entities)[0];
+    const f = entity.fields.find(x => x.name === 'overduePaymentDaysRule');
+    assert.ok(f, 'field should reach the contract');
+    assert.equal(f.stepper, true);
+    assert.equal(f.stepperRejectedKey, 'paymentTermDaysNotInteger');
+    assert.equal(f.min, 0);
+    assert.equal(f.max, 365);
+    assert.equal(f.integer, true);
+  });
+});
+
+// ─── columnMaxWidth grid hint (list-modal column cap) ────────────────────────
+describe('generateFrontendContract — columnMaxWidth', () => {
+  function schemaWith(extra = {}) {
+    return {
+      version: '0.1.0',
+      window: { id: '903', name: 'Payment Term', primaryEntity: 'header', category: 'financial' },
+      entities: [{
+        name: 'header', table: 'C_PaymentTerm', level: 'header',
+        fields: [
+          { name: 'name', column: 'Name', type: 'string', visibility: 'editable',
+            required: true, searchable: true, grid: true, form: true, ...extra },
+          { name: 'netDays', column: 'NetDays', type: 'number', visibility: 'editable',
+            required: true, searchable: false, grid: true, form: true },
+        ],
+      }],
+    };
+  }
+  const nameOf = (fc) => fc.entities.header.fields.find(f => f.name === 'name');
+
+  it('emits columnMaxWidth next to columnWidth when declared', () => {
+    const f = nameOf(generateFrontendContract(schemaWith({ columnWidth: 164, columnMaxWidth: 240 })));
+    assert.equal(f.columnWidth, 164);
+    assert.equal(f.columnMaxWidth, 240);
+    const keys = Object.keys(f);
+    assert.equal(keys.indexOf('columnMaxWidth'), keys.indexOf('columnWidth') + 1, keys.join(','));
+  });
+
+  it('omits columnMaxWidth when not declared (or null), and on siblings', () => {
+    assert.equal('columnMaxWidth' in nameOf(generateFrontendContract(schemaWith({ columnWidth: 164 }))), false);
+    assert.equal('columnMaxWidth' in nameOf(generateFrontendContract(schemaWith({ columnMaxWidth: null }))), false);
+    const fc = generateFrontendContract(schemaWith({ columnMaxWidth: 240 }));
+    assert.equal('columnMaxWidth' in fc.entities.header.fields.find(f => f.name === 'netDays'), false);
+  });
+
+  it('survives decisions.json → resolveCurated → contract', async () => {
+    const schemaRaw = {
+      window: { id: '903', name: 'Payment Term' },
+      entities: [{
+        name: 'header', tableName: 'C_PaymentTerm',
+        fields: [{ name: 'name', columnName: 'Name', label: 'Name', type: 'string', visibility: 'editable', mandatory: true }],
+      }],
+    };
+    const decisions = {
+      version: 2, window: { name: 'Payment Term' }, rules: {},
+      entities: { header: { fields: { name: { columnWidth: 164, columnMaxWidth: 240 } } } },
+    };
+    const { schema } = await resolveCurated(schemaRaw, { rules: [] }, decisions);
+    const f = Object.values(generateFrontendContract(schema).entities)[0].fields.find(x => x.name === 'name');
+    assert.equal(f.columnWidth, 164);
+    assert.equal(f.columnMaxWidth, 240);
   });
 });
