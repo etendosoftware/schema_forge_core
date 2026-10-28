@@ -330,6 +330,8 @@ function applyGridHints(f, mapped) {
   if (f.gridOrder != null) mapped.gridOrder = f.gridOrder;
   if (f.grow) mapped.grow = true;
   if (f.columnWidth != null) mapped.columnWidth = f.columnWidth;
+  // ETP-5978 — list-modal column cap (px). Emitted only when declared.
+  if (f.columnMaxWidth != null) mapped.columnMaxWidth = f.columnMaxWidth;
   if (f.gridReadOnly) mapped.gridReadOnly = true;
   // ETP-5133 — opt out of the default grid-cell truncate/ellipsis: the value
   // renders in full and scrolls horizontally within its own cell on overflow.
@@ -711,6 +713,10 @@ const FIELD_ATTR_SPECS = [
   // for sorting; see resolve-curated.js's FIELD_DECISION_COPY_PROPS for the
   // full description.
   ['backendSortKey', 'verbatim'],
+  // ETP-5978 — same append-at-tail rule as above. Integer field rendered as a − / + stepper
+  // (EntityForm → NumberStepperInput); bounds are the flat `min` / `max`.
+  ['stepper', 'flag'],
+  ['stepperRejectedKey', 'verbatim'],
 ];
 
 function mapFieldAttributes(f, mapped) {
