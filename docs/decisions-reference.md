@@ -915,6 +915,24 @@ At runtime, the consuming component reads the `capabilities` map off `useAuth()`
 
 **Note:** as of ETP-4520, this mechanism is end-to-end complete. The standard grid column emission and the `list-modal` grid column emission are wired on the generator side, and the functional repo's runtime consumption is also in place: `DataTable.jsx` filters gated columns out of `visibleColumns`, and `DetailView.jsx` resolves gated `statusPills`/`extraBadges` entries to `null` before rendering — both via the shared `isCapabilityVisible`/`useCapabilitiesSafe` pair described above (functional repo commit `c6e2ac1e3`). The concrete shipped consumer is the `posted` field on `sales-invoice` and `purchase-invoice`, gated behind `showAccountingFields` (see those windows' `docs/generated-custom-windows/*.md` guides in the functional repo).
 
+#### Data-driven secondary-tab visibility (`secondaryTabs.<key>.visibleWhenLogic`)
+
+Opt-in, per tab. An AD-style logic string compiled by `generate-frontend.js` into `visibleWhen: (record, ctx) => boolean` on the generated `secondaryTabs` entry (form, panel and table tabs alike). Absent key emits nothing — output is byte-identical to before.
+
+```json
+"secondaryTabs": {
+  "exchangeRates": {
+    "visibleWhenLogic": "@C_Currency_ID@!'' & @C_Currency_ID@!@#OrgCurrencyId@"
+  }
+}
+```
+
+- **Syntax:** the same dialect as field `readOnlyLogic` (`@Col@='V'`, `!=`, `!''`, `&`, `|`), where `@Col@` resolves through the header entity's column map to `record['<prop>']`. `convertLogicToJs(..., { contextVars: true })` adds two forms: `@#Name@` resolves to `ctx['Name']` (context/session variable), and token-vs-token comparison (`@A@=@B@`, `@A@!@B@`, `@A@!=@B@`, either side may be `@#Name@`); `=` emits `===`, `!`/`!=` emit `!==`. The option is off by default and never used for field-level or tab `readOnlyLogic`.
+- **Fail closed:** every distinct `@#Name@` gets a `ctx['Name'] != null &&` guard, so the tab stays hidden until the context value is loaded. The example above compiles to `ctx['OrgCurrencyId'] != null && ((record['currency'] != null && record['currency'] !== '') && record['currency'] !== ctx['OrgCurrencyId'])` — the tab shows only when the document currency differs from the org currency.
+- **Strict generation errors** (thrown with window and tab key): a non-`#` token that is not a header-entity column (no camelCase guessing), an `@` left in the compiled output (unsupported form), compiled output that is not valid JS, and any backslash or control character (newline, U+2028/U+2029, ...) in the logic.
+- **Runtime:** this is a no-op until the app-shell consumes `visibleWhen(record, ctx)`, where `ctx` carries the context variables (e.g. `OrgCurrencyId`, backed by `useCurrencyId()` from app-shell-core).
+- Composes with `visibleWhenCapability` (both must pass). Full `secondaryTabs` reference lives in the functional repo (`etendo_schema_forge`) `docs/decisions-reference.md`.
+
 #### Status column rendering (`columnType` and `enumValues`)
 
 Two field-level props control how the grid column renders raw values as labeled badges — without touching the underlying Etendo AD column reference.
