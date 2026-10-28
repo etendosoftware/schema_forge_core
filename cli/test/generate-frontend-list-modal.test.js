@@ -1,3 +1,4 @@
+// @covers cli/src/generate-frontend.js
 import { describe, it } from 'node:test';
 import { strict as assert } from 'node:assert';
 import {
@@ -501,5 +502,265 @@ describe('generatePageComponent — allowCreate and placeholderKey in field line
     const nameLine = fieldsMatch[1].split('\n').find(l => l.includes("key: 'name'"));
     assert.ok(nameLine, 'name field should exist');
     assert.ok(!nameLine.includes('placeholderKey'), `name should not have placeholderKey — got: ${nameLine}`);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Opt-in list-modal look keys, numeric/stepper field props and boolean-badge
+// column props. Every one is emitted ONLY when declared, so the list-modal pages
+// that declare none (match-rule, …) regenerate byte-identical.
+// ---------------------------------------------------------------------------
+
+const OPT_IN_KEYS = ['modalVariant', 'hideBackButton', 'hideSearch', 'newButtonVariant', 'rowClickEdit', 'listVariant'];
+
+function listModalConfigOf(code) {
+  const m = code.match(/const listModalConfig = (\{[\s\S]*?\n\});/);
+  assert.ok(m, 'listModalConfig literal should exist');
+  return JSON.parse(m[1]);
+}
+
+function blockLine(code, block, key) {
+  const m = code.match(new RegExp(`const ${block} = \\[([\\s\\S]*?)\\n\\];`));
+  assert.ok(m, `${block} block should exist`);
+  return m[1].split('\n').find(l => l.includes(`key: '${key}'`));
+}
+
+function withTemplateConfig(extra) {
+  const c = listModalContract();
+  Object.assign(c.frontendContract.window.templateConfig, extra);
+  return c;
+}
+
+function withField(name, extra) {
+  const c = listModalContract();
+  const f = c.frontendContract.entities.etgoMatchRuleHeader.fields.find(x => x.name === name);
+  Object.assign(f, extra);
+  return c;
+}
+
+describe('generateListModalPage — templateConfig opt-in keys', () => {
+  it('emits none of the opt-in keys when the window declares none', () => {
+    const cfg = listModalConfigOf(generateListModalPage('etgoMatchRuleHeader', listModalContract()));
+    for (const key of OPT_IN_KEYS) assert.equal(key in cfg, false, `${key} must be absent`);
+  });
+
+  it('keeps the output byte-identical when the keys are absent or explicitly undefined', () => {
+    const base = generateListModalPage('etgoMatchRuleHeader', listModalContract());
+    const undef = Object.fromEntries(OPT_IN_KEYS.map(k => [k, undefined]));
+    assert.equal(generateListModalPage('etgoMatchRuleHeader', withTemplateConfig(undef)), base);
+  });
+
+  it('passes every declared key through with its value', () => {
+    const declared = {
+      modalVariant: 'compact', hideBackButton: true, hideSearch: true,
+      newButtonVariant: 'primary', rowClickEdit: true, listVariant: 'compact',
+    };
+    const cfg = listModalConfigOf(generateListModalPage('etgoMatchRuleHeader', withTemplateConfig(declared)));
+    for (const [key, value] of Object.entries(declared)) assert.deepEqual(cfg[key], value, key);
+  });
+
+  it('passes a single declared key without dragging the others in', () => {
+    const cfg = listModalConfigOf(generateListModalPage('etgoMatchRuleHeader', withTemplateConfig({ rowClickEdit: true })));
+    assert.equal(cfg.rowClickEdit, true);
+    for (const key of OPT_IN_KEYS.filter(k => k !== 'rowClickEdit')) assert.equal(key in cfg, false, key);
+  });
+
+  it('keeps an explicit false (declared, so emitted)', () => {
+    const cfg = listModalConfigOf(generateListModalPage('etgoMatchRuleHeader', withTemplateConfig({ hideBackButton: false })));
+    assert.equal(cfg.hideBackButton, false);
+  });
+
+  it('appends the opt-in keys after toolbarFilters, leaving the historical key order intact', () => {
+    const cfg = listModalConfigOf(generateListModalPage('etgoMatchRuleHeader', withTemplateConfig({ modalVariant: 'compact', rowClickEdit: true })));
+    const keys = Object.keys(cfg);
+    assert.deepEqual(keys.slice(-3), ['toolbarFilters', 'modalVariant', 'rowClickEdit']);
+  });
+
+  it('does not pass through an undeclared templateConfig key', () => {
+    const cfg = listModalConfigOf(generateListModalPage('etgoMatchRuleHeader', withTemplateConfig({ someFutureKey: 'x' })));
+    assert.equal('someFutureKey' in cfg, false);
+  });
+});
+
+describe('generateListModalPage — field bounds and stepper', () => {
+  it('emits min / max / integer / stepper on a modal field that declares them, at the tail', () => {
+    const code = generateListModalPage('etgoMatchRuleHeader', withField('priority', { min: 0, max: 365, integer: true, stepper: true }));
+    const line = blockLine(code, 'fields', 'priority');
+    assert.match(line, /, min: 0, max: 365, integer: true, stepper: true \},$/);
+  });
+
+  it('emits none of them on a field that declares none', () => {
+    const line = blockLine(generateListModalPage('etgoMatchRuleHeader', listModalContract()), 'fields', 'priority');
+    assert.doesNotMatch(line, /min:|max:|integer:|stepper:/);
+  });
+
+  it('keeps a min of 0 (not dropped as falsy)', () => {
+    const line = blockLine(generateListModalPage('etgoMatchRuleHeader', withField('priority', { min: 0 })), 'fields', 'priority');
+    assert.match(line, /, min: 0 \},$/);
+  });
+
+  it('emits integer only for a real true', () => {
+    const line = blockLine(generateListModalPage('etgoMatchRuleHeader', withField('priority', { integer: 'Y' })), 'fields', 'priority');
+    assert.doesNotMatch(line, /integer:/);
+  });
+
+  it('does not leak the stepper flag onto a sibling field', () => {
+    const code = generateListModalPage('etgoMatchRuleHeader', withField('priority', { stepper: true }));
+    assert.doesNotMatch(blockLine(code, 'fields', 'name'), /stepper/);
+  });
+
+  it('a stepper flag does not reach the grid column', () => {
+    const code = generateListModalPage('etgoMatchRuleHeader', withField('priority', { stepper: true, min: 0, max: 10 }));
+    assert.doesNotMatch(blockLine(code, 'columns', 'priority'), /stepper|min:|max:/);
+  });
+});
+
+describe('generateListModalPage — column labels and boolean badges', () => {
+  const LABELS = { es_ES: 'Días', en_US: 'Days' };
+  const BADGE_LABELS = { true: { es_ES: 'Sí', en_US: 'Yes' }, false: { es_ES: 'No', en_US: 'No' } };
+  const BADGE_VARIANTS = { true: 'green', false: 'neutral' };
+
+  it('emits labels / badgeLabels / badgeVariants as JSON at the tail of the column', () => {
+    const code = generateListModalPage('etgoMatchRuleHeader', withField('active', {
+      badge: true, labels: LABELS, badgeLabels: BADGE_LABELS, badgeVariants: BADGE_VARIANTS,
+    }));
+    const line = blockLine(code, 'columns', 'active');
+    assert.ok(line.includes(', badge: true'), 'badge flag kept');
+    assert.ok(line.endsWith(
+      `, labels: ${JSON.stringify(LABELS)}, badgeLabels: ${JSON.stringify(BADGE_LABELS)}, badgeVariants: ${JSON.stringify(BADGE_VARIANTS)} },`,
+    ), line);
+  });
+
+  it('emits each prop independently', () => {
+    const code = generateListModalPage('etgoMatchRuleHeader', withField('active', { badgeVariants: BADGE_VARIANTS }));
+    const line = blockLine(code, 'columns', 'active');
+    assert.ok(line.includes(`badgeVariants: ${JSON.stringify(BADGE_VARIANTS)}`));
+    assert.doesNotMatch(line, /labels:|badgeLabels:/);
+  });
+
+  it('emits none of them on a column that declares none', () => {
+    const line = blockLine(generateListModalPage('etgoMatchRuleHeader', listModalContract()), 'columns', 'active');
+    assert.doesNotMatch(line, /labels:|badgeLabels:|badgeVariants:/);
+  });
+
+  it('carries a boldText cellType through', () => {
+    const code = generateListModalPage('etgoMatchRuleHeader', withField('name', { cellType: 'boldText' }));
+    assert.ok(blockLine(code, 'columns', 'name').includes("cellType: 'boldText'"));
+  });
+});
+
+describe('generateListModalPage — column widths', () => {
+  it('emits minWidth from columnWidth and maxWidth from columnMaxWidth, at the tail', () => {
+    const code = generateListModalPage('etgoMatchRuleHeader', withField('name', { columnWidth: 164, columnMaxWidth: 240 }));
+    assert.match(blockLine(code, 'columns', 'name'), /, minWidth: 164, maxWidth: 240 \},$/);
+  });
+
+  it('emits each width independently', () => {
+    const onlyMin = blockLine(generateListModalPage('etgoMatchRuleHeader', withField('name', { columnWidth: 158 })), 'columns', 'name');
+    assert.match(onlyMin, /, minWidth: 158 \},$/);
+    assert.doesNotMatch(onlyMin, /maxWidth/);
+    const onlyMax = blockLine(generateListModalPage('etgoMatchRuleHeader', withField('name', { columnMaxWidth: 240 })), 'columns', 'name');
+    assert.match(onlyMax, /, maxWidth: 240 \},$/);
+    assert.doesNotMatch(onlyMax, /minWidth/);
+  });
+
+  it('emits no width for a column that declares none, or declares null', () => {
+    const none = blockLine(generateListModalPage('etgoMatchRuleHeader', listModalContract()), 'columns', 'name');
+    assert.doesNotMatch(none, /minWidth|maxWidth/);
+    const nulls = blockLine(generateListModalPage('etgoMatchRuleHeader', withField('name', { columnWidth: null, columnMaxWidth: null })), 'columns', 'name');
+    assert.doesNotMatch(nulls, /minWidth|maxWidth/);
+  });
+
+  it('widths stay on the grid column, never on the modal field', () => {
+    const code = generateListModalPage('etgoMatchRuleHeader', withField('name', { columnWidth: 164, columnMaxWidth: 240 }));
+    assert.doesNotMatch(blockLine(code, 'fields', 'name'), /minWidth|maxWidth/);
+  });
+
+  it('widths come after the badge/label props when both are declared', () => {
+    const code = generateListModalPage('etgoMatchRuleHeader', withField('active', { badgeVariants: { true: 'green' }, columnWidth: 158 }));
+    assert.match(blockLine(code, 'columns', 'active'), /badgeVariants: \{"true":"green"\}, minWidth: 158 \},$/);
+  });
+});
+
+describe('generateListModalPage — text maxLength', () => {
+  function withExtraFields(...extra) {
+    const c = listModalContract();
+    c.frontendContract.entities.etgoMatchRuleHeader.fields.push(...extra);
+    return c;
+  }
+  const textarea = { name: 'description', column: 'Description', type: 'string', tsType: 'string', visibility: 'editable', required: false, grid: false, form: true, section: 'general', validation: { maxLength: 255 } };
+  const checkbox = { name: 'isDefault', column: 'IsDefault', type: 'boolean', tsType: 'boolean', visibility: 'editable', required: false, grid: true, form: true, section: 'general', validation: { maxLength: 1 } };
+
+  it('emits maxLength from validation.maxLength on a text field, at the tail', () => {
+    const code = generateListModalPage('etgoMatchRuleHeader', withField('name', { validation: { required: true, maxLength: 60 } }));
+    const line = blockLine(code, 'fields', 'name');
+    assert.match(line, /type: 'text'/);
+    assert.match(line, /, maxLength: 60 \},$/);
+  });
+
+  it('emits maxLength on a textarea field', () => {
+    const line = blockLine(generateListModalPage('etgoMatchRuleHeader', withExtraFields(textarea)), 'fields', 'description');
+    assert.match(line, /type: 'textarea'/);
+    assert.match(line, /, maxLength: 255 \},$/);
+  });
+
+  it('comes after the stepper / bounds props', () => {
+    const code = generateListModalPage('etgoMatchRuleHeader', withField('name', { stepper: true, validation: { maxLength: 60 } }));
+    assert.match(blockLine(code, 'fields', 'name'), /, stepper: true, maxLength: 60 \},$/);
+  });
+
+  it('emits none on a text field without validation.maxLength', () => {
+    const code = generateListModalPage('etgoMatchRuleHeader', withField('name', { validation: { required: true } }));
+    assert.doesNotMatch(blockLine(code, 'fields', 'name'), /maxLength/);
+    assert.doesNotMatch(blockLine(generateListModalPage('etgoMatchRuleHeader', listModalContract()), 'fields', 'name'), /maxLength/);
+  });
+
+  it('emits none on number, checkbox, search and selector fields', () => {
+    const c = withExtraFields(checkbox);
+    for (const f of c.frontendContract.entities.etgoMatchRuleHeader.fields) {
+      if (['priority', 'businessPartner', 'project'].includes(f.name)) f.validation = { maxLength: 32 };
+    }
+    const code = generateListModalPage('etgoMatchRuleHeader', c);
+    for (const [key, type] of [['priority', 'number'], ['isDefault', 'checkbox'], ['businessPartner', 'search'], ['project', 'selector']]) {
+      const line = blockLine(code, 'fields', key);
+      assert.match(line, new RegExp(`type: '${type}'`), key);
+      assert.doesNotMatch(line, /maxLength/, key);
+    }
+  });
+
+  it('never lands on the grid column', () => {
+    const code = generateListModalPage('etgoMatchRuleHeader', withField('name', { validation: { maxLength: 60 } }));
+    assert.doesNotMatch(blockLine(code, 'columns', 'name'), /maxLength/);
+  });
+});
+
+describe('generateListModalPage — stepperRejectedKey', () => {
+  it('emits the key quoted at the very tail of the field literal', () => {
+    const code = generateListModalPage('etgoMatchRuleHeader', withField('priority', {
+      min: 0, max: 365, integer: true, stepper: true, stepperRejectedKey: 'paymentTermDaysNotInteger',
+    }));
+    assert.match(
+      blockLine(code, 'fields', 'priority'),
+      /, min: 0, max: 365, integer: true, stepper: true, stepperRejectedKey: 'paymentTermDaysNotInteger' \},$/,
+    );
+  });
+
+  it('comes after maxLength on a text field', () => {
+    const code = generateListModalPage('etgoMatchRuleHeader', withField('name', {
+      validation: { maxLength: 60 }, stepperRejectedKey: 'someKey',
+    }));
+    assert.match(blockLine(code, 'fields', 'name'), /, maxLength: 60, stepperRejectedKey: 'someKey' \},$/);
+  });
+
+  it('escapes a single quote in the key', () => {
+    const code = generateListModalPage('etgoMatchRuleHeader', withField('priority', { stepperRejectedKey: "it's" }));
+    assert.ok(blockLine(code, 'fields', 'priority').includes("stepperRejectedKey: 'it\\'s'"));
+  });
+
+  it('emits nothing when absent, and never on the grid column', () => {
+    assert.doesNotMatch(generateListModalPage('etgoMatchRuleHeader', listModalContract()), /stepperRejectedKey/);
+    const code = generateListModalPage('etgoMatchRuleHeader', withField('priority', { stepperRejectedKey: 'k' }));
+    assert.doesNotMatch(blockLine(code, 'columns', 'priority'), /stepperRejectedKey/);
+    assert.doesNotMatch(blockLine(code, 'fields', 'name'), /stepperRejectedKey/);
   });
 });
