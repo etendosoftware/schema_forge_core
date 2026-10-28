@@ -361,6 +361,8 @@ input:-webkit-autofill:focus {
     --status-info-bg: #EFF6FF;
     --status-info-fg: #1D4ED8;
     --status-info-border: #BFDBFE;
+    --status-caution-bg: #FFE8E1;
+    --status-caution-fg: #B82E00;
     --status-destructive-bg: #FEF0F4;
     --status-destructive-fg: #D50B3E;
     --status-neutral-bg: #F5F7F9;
@@ -445,6 +447,8 @@ input:-webkit-autofill:focus {
     --status-info-bg: #172554;
     --status-info-fg: #BFDBFE;
     --status-info-border: #2563EB;
+    --status-caution-bg: #4A1D0A;
+    --status-caution-fg: #FDBA8C;
     --status-destructive-bg: #4C0519;
     --status-destructive-fg: #FECDD3;
     --status-neutral-bg: #1F2937;
@@ -499,5 +503,6 @@ input:-webkit-autofill:focus {
   .status-tag--success     { background: var(--status-success-bg);     color: var(--status-success-fg); }
   .status-tag--warning     { background: var(--status-warning-bg);     color: var(--status-warning-fg); }
   .status-tag--destructive { background: var(--status-destructive-bg); color: var(--status-destructive-fg); }
+  .status-tag--caution     { background: var(--status-caution-bg);     color: var(--status-caution-fg); }
   .status-tag--neutral     { background: var(--status-neutral-bg);     color: var(--status-neutral-fg); }
 }
