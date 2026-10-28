@@ -3,6 +3,7 @@ import { readFileSync, writeFileSync, mkdirSync, readdirSync, existsSync } from 
 import { resolve, dirname } from 'node:path';
 import { exitOnHelp, isMainModule } from './utils.js';
 import { MARKERS } from './custom-section-markers.js';
+import { parseExpression } from '@babel/parser';
 import { convertLogicToJs } from './generate-contract.js';
 import { resolveEnumLabelKey } from './enum-label-key.js';
 
@@ -2030,9 +2031,12 @@ function compileVisibleWhenLogic(raw, columnMap, booleanFields, where) {
   const fail = (msg) => { throw new Error(`visibleWhenLogic (${where}): ${msg} — "${raw}"`); };
   // Literals are copied verbatim into generated JS: a backslash or a control char (newline,
   // U+2028/U+2029, ...) can merge two literals and still parse, so reject them anywhere.
-  // eslint-disable-next-line no-control-regex
-  const bad = String(raw).match(/[\\\u0000-\u001f\u007f-\u009f\u2028\u2029]/);
-  if (bad) fail(`illegal character ${JSON.stringify(bad[0])} (backslashes and control characters are not allowed)`);
+  for (const ch of String(raw)) {
+    const c = ch.codePointAt(0);
+    if (ch === '\\' || c <= 0x1f || (c >= 0x7f && c <= 0x9f) || c === 0x2028 || c === 0x2029) {
+      fail('illegal character ' + JSON.stringify(ch) + ' (backslashes and control characters are not allowed)');
+    }
+  }
   for (const [, tok] of String(raw).matchAll(/@(\w+)@/g)) {
     if (!Object.prototype.hasOwnProperty.call(columnMap ?? {}, tok)) {
       fail(`column '${tok}' is not a field of the header entity`);
@@ -2042,11 +2046,12 @@ function compileVisibleWhenLogic(raw, columnMap, booleanFields, where) {
   if (js.includes('@')) fail(`unsupported or unresolved token in compiled output '${js}'`);
   const ctxNames = [...new Set([...String(raw).matchAll(/@#(\w+)@/g)].map(m => m[1]))];
   if (ctxNames.length > 0) {
-    js = `${ctxNames.map(n => `ctx['${n}'] != null`).join(' && ')} && (${js})`;
+    const guards = ctxNames.map(n => "ctx['" + n + "'] != null").join(' && ');
+    js = `${guards} && (${js})`;
   }
   try {
-    // eslint-disable-next-line no-new-func
-    new Function('record', 'ctx', `return ${js}`);
+    // Syntax check only — parse, never execute. A trailing token or statement is an error.
+    parseExpression(js);
   } catch (e) {
     fail(`compiled output is not valid JS (${e.message}): ${js}`);
   }
