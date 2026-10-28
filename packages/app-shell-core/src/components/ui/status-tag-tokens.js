@@ -5,6 +5,8 @@ export const TONE_STYLES = {
   destructive: { background: '#FEF0F4', color: '#D50B3E' },
   neutral:     { background: '#F5F7F9', color: '#3F3F50' },
   info:        { background: '#F0FAFF', color: '#0075AD' },
+  // ETP-5591: orange, the Tag palette's `orange` — needs action, but is not an error.
+  caution:     { background: '#FFE8E1', color: '#B82E00' },
 };
 
 export const BASE_STYLE = {
