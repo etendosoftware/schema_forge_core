@@ -20,6 +20,9 @@ function getApiBase() {
  * ----------------------------------------------------------------*/
 
 const CurrencyContext = createContext(null);
+// Separate context for the org currency's AD id (`currencyId` of GET /session) so
+// useCurrency()'s value shape stays untouched.
+const CurrencyIdContext = createContext(null);
 
 /**
  * Place this provider inside <AuthProvider> at the app root so the
@@ -39,7 +42,7 @@ export function CurrencyProvider({ children, value, apiBaseUrl, fetcher = global
   // `token` is undefined under the cookie scheme; the identity stays stable and distinct
   // anyway through org + authRevision + base URL, which is what it is keyed on.
   const identity = `${token}|${selectedOrg?.id}|${authRevision}|${apiBaseUrl}`;
-  const setCurrencyCode = (code) => setResolved({ code, identity });
+  const setCurrencyCode = (code, id = null) => setResolved({ code, id, identity });
 
   useEffect(() => {
     if (value != null) {
@@ -75,7 +78,8 @@ export function CurrencyProvider({ children, value, apiBaseUrl, fetcher = global
         if (res.ok) {
           const json = await res.json();
           const code = json?.currencyCode;
-          if (code && current()) setCurrencyCode(String(code));
+          const id = json?.currencyId;
+          if (code && current()) setCurrencyCode(String(code), id ? String(id) : null);
         }
       } catch {
         // session endpoint unavailable — keep null (callers fall back to 'USD')
@@ -86,9 +90,15 @@ export function CurrencyProvider({ children, value, apiBaseUrl, fetcher = global
     return () => { cancelled = true; };
   }, [apiBaseUrl, fetcher, isAuthenticated, token, selectedOrg?.id, value, isSessionReady, authRevision, captureSession, isCurrentSession, apiSessionScope]);
 
+  const sessionReady = isSessionReady !== false && resolved?.identity === identity;
+  // The `value` override carries only a code, so no id is known in that mode.
+  const currencyId = value != null || !sessionReady ? null : (resolved.id ?? null);
+
   return (
-    <CurrencyContext.Provider value={value ?? (isSessionReady !== false && resolved?.identity === identity ? resolved.code : null)}>
-      {children}
+    <CurrencyContext.Provider value={value ?? (sessionReady ? resolved.code : null)}>
+      <CurrencyIdContext.Provider value={currencyId}>
+        {children}
+      </CurrencyIdContext.Provider>
     </CurrencyContext.Provider>
   );
 }
@@ -111,4 +121,15 @@ export function CurrencyProvider({ children, value, apiBaseUrl, fetcher = global
  */
 export function useCurrency() {
   return useContext(CurrencyContext);
+}
+
+/**
+ * Returns the AD id (C_Currency_ID) of the active org currency, or `null` while it is
+ * loading, when the session lookup fails, or when `CurrencyProvider` uses the `value`
+ * override (which carries no id).
+ *
+ * @returns {string|null}
+ */
+export function useCurrencyId() {
+  return useContext(CurrencyIdContext);
 }

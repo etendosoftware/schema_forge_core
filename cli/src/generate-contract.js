@@ -90,8 +90,14 @@ function findMatchingRule(rules, identifier, type) {
  * Convert an Etendo readOnly/displayLogic expression into a JS expression string.
  * Uses a column→propertyName map built from the schema to resolve @Column@ references.
  * Falls back to camelCase of the column name when not found in the map.
+ *
+ * `options.contextVars` (opt-in, default off — output is byte-identical when off) adds
+ * support for `@#Name@` session/context variables, resolved to `ctx['Name']`, and for
+ * token-vs-token comparisons (`@Col@!@#Name@`, `@A@=@B@`). Used by
+ * `secondaryTabs.<key>.visibleWhenLogic`; field-level and tab `readOnlyLogic` never set it.
  */
-export function convertLogicToJs(rawExpr, columnMap, booleanFields) {
+export function convertLogicToJs(rawExpr, columnMap, booleanFields, options = {}) {
+  const contextVars = options?.contextVars === true;
   const boolSet = new Set(booleanFields || []);
   // Helper: for Y/N comparisons on boolean fields, compare against BOTH the coerced
   // boolean and the raw AD string.
@@ -141,7 +147,10 @@ export function convertLogicToJs(rawExpr, columnMap, booleanFields) {
   const nullExpr = (col) => `record['${propOf(col)}'] == null`;
   // numeric comparison (@Col@>0, @Col@>'0') — typical for SQL-computed counters.
   const gtExpr = (col, num) => `Number(record['${propOf(col)}']) > ${num}`;
-  return rawExpr
+  // contextVars operand: `#Name` -> ctx['Name'], otherwise the usual record property.
+  const operandOf = (tok) => (tok.startsWith('#') ? `ctx['${tok.slice(1)}']` : `record['${propOf(tok)}']`);
+  const cmpOp = (op) => (op === '=' ? '===' : '!==');
+  const base = rawExpr
     // Convert the AD logical operators FIRST. The token rules below emit JS '&&'
     // (e.g. the "not empty" form), so running the &→&& / |→|| pass afterwards would
     // mangle them into ' &&  && '. AD never uses '&&'/'||', so this is safe.
@@ -160,6 +169,15 @@ export function convertLogicToJs(rawExpr, columnMap, booleanFields) {
     .replace(/@(\w+)@='([^']+)'/g, (_, col, val) => eqExpr(col, val))
     .replace(/@(\w+)@!='([^']+)'/g, (_, col, val) => neqExpr(col, val))
     .replace(/@(\w+)@!'([^']+)'/g, (_, col, val) => neqExpr(col, val));
+  if (!contextVars) return base;
+  // Context-variable rules run AFTER the field rules above. Those only match `\w+` tokens,
+  // so a `#` operand is never consumed by them and can only be resolved here. Whitespace
+  // stays bounded ({0,32}) for the same ReDoS reason as above.
+  return base
+    .replace(/@(#?\w+)@\s{0,32}(!=|!|=)\s{0,32}@(#?\w+)@/g,
+      (_, a, op, b) => `${operandOf(a)} ${cmpOp(op)} ${operandOf(b)}`)
+    .replace(/@#(\w+)@\s{0,32}(!=|!|=)\s{0,32}'([^']*)'/g,
+      (_, name, op, val) => `ctx['${name}'] ${cmpOp(op)} '${val}'`);
 }
 
 /**
