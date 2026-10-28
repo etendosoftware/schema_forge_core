@@ -46,6 +46,10 @@ describe('StatusTag — TONE_STYLES Figma tokens', () => {
     assert.ok(TONE_STYLES.neutral);
   });
 
+  it('caution uses the Tag orange palette (#FFE8E1 / #B82E00)', () => {
+    assert.deepEqual(TONE_STYLES.caution, { background: '#FFE8E1', color: '#B82E00' });
+  });
+
   it('success uses Figma green palette (#EEFBF4 / #17663A)', () => {
     assert.equal(TONE_STYLES.success.background, '#EEFBF4');
     assert.equal(TONE_STYLES.success.color, '#17663A');
