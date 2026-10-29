@@ -13,7 +13,7 @@ const schema: PublicApiSchema = {
       specName: 'product',
       operations: ['GET', 'LIST'],
       fields: {
-        name: { publicApi: true, direction: 'out', internalPath: 'name', type: 'passthrough', handlerId: null },
+        name: { publicApi: true, direction: 'out', internalPath: 'name' },
       },
     },
   },
