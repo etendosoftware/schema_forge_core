@@ -23,5 +23,20 @@
     "artifact": "product",
     "key": "name",
     "reason": "ETP-4768: same multiField.parts false positive as 'searchKey' above — the 'name' entry is the second part of the same ETP-4603 composite identity cell in ProductCustomTable.jsx."
+  },
+  {
+    "artifact": "sales-invoice",
+    "key": "invoiceDate",
+    "reason": "ETP-5852: ReversedInvoicesPanel.jsx's 'invoiceDate' grid column shows the date of the original invoice a rectification line points to (display only, no local `column`); F19 matches it by key against the header's invoiceDate field, which is required. Marking the panel column required would make its inline row editor refuse a new line before the original invoice is chosen."
+  },
+  {
+    "artifact": "sales-invoice",
+    "key": "documentNo",
+    "reason": "ETP-5852: same false positive as 'invoiceDate' — ReversedInvoicesPanel.jsx's 'documentNo' grid column displays the original invoice's documentNo (no local `column`); F19 matches it by key against the header field of the same name."
+  },
+  {
+    "artifact": "sales-invoice",
+    "key": "grandTotalAmount",
+    "reason": "ETP-5852: same false positive as 'invoiceDate' — ReversedInvoicesPanel.jsx's 'grandTotalAmount' grid column displays the original invoice's total (no local `column`); F19 matches it by key against the header field of the same name."
   }
 ]
