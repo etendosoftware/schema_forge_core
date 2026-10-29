@@ -772,7 +772,12 @@ export function generateFormComponent(entityName, contract) {
     // ETP-4749: fixed chip rendered before the input (e.g. "https://"); see EntityForm's
     // renderInputField and recipientEdits.js's format validators.
     const inputPrefixPart = wrapIf(", inputPrefix: '", f.inputPrefix, "'");
-    const fieldLine = `  { key: '${f.name}', column: '${f.column}', type: '${type}'${labelsPart}${formLabelPart}${requiredPart}${lookupPart}${popupPart}${readOnlyPart}${inlinePart}${sectionPart}${referencePart}${inputModePart}${searchSelectPart}${allowCreatePart}${createPart}${dependsOnPart}${optionsPart}${valueTypePart}${defaultValuePart}${helpPart}${placeholderPart}${emptyOptionPart}${fieldGroupPart}${precisionPart}${minPart}${maxLengthPart}${integerPart}${displayLogicPart}${readOnlyLogicPart}${spanPart}${rowsPart}${clearablePart}${customRendererPart}${editModalPart}${inputPrefixPart} },`;
+    // ETP-5684: the same capability gate the list columns carry (ETP-4520); EntityForm hides the
+    // field when the role lacks it. Emitted only when declared, so other forms stay byte-for-byte.
+    const visibleWhenCapabilityPart = f.visibleWhenCapability
+      ? `, visibleWhenCapability: '${String(f.visibleWhenCapability).replace(/'/g, "\\'")}'`
+      : '';
+    const fieldLine = `  { key: '${f.name}', column: '${f.column}', type: '${type}'${labelsPart}${formLabelPart}${requiredPart}${lookupPart}${popupPart}${readOnlyPart}${inlinePart}${sectionPart}${referencePart}${inputModePart}${searchSelectPart}${allowCreatePart}${createPart}${dependsOnPart}${optionsPart}${valueTypePart}${defaultValuePart}${helpPart}${placeholderPart}${emptyOptionPart}${fieldGroupPart}${precisionPart}${minPart}${maxLengthPart}${integerPart}${displayLogicPart}${readOnlyLogicPart}${spanPart}${rowsPart}${clearablePart}${customRendererPart}${editModalPart}${inputPrefixPart}${visibleWhenCapabilityPart} },`;
     return [...slotLines, fieldLine].join('\n');
   }).join('\n');
 
@@ -1156,8 +1161,7 @@ export function getMenuActionsProp(menuActionsConfig, menuActionsFnParams) {
       }
       const labelKeyPart = a.labelKey ? `labelKey: '${a.labelKey}', ` : '';
       const successPart = getSuccessPart(a);
-      const preUnpostPart = a.preUnpost ? `preUnpost: true, ` : '';
-      return `          { key: '${a.key}', label: '${a.label}', ${destr}${vis}${labelKeyPart}${successPart}${preUnpostPart}${handler} }`;
+      return `          { key: '${a.key}', label: '${a.label}', ${destr}${vis}${labelKeyPart}${successPart}${handler} }`;
     }).join(',\n')}\n        ]}`;
   } else {
     menuActionsProp = '';
