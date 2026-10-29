@@ -774,9 +774,7 @@ export function generateFormComponent(entityName, contract) {
     const inputPrefixPart = wrapIf(", inputPrefix: '", f.inputPrefix, "'");
     // ETP-5684: the same capability gate the list columns carry (ETP-4520); EntityForm hides the
     // field when the role lacks it. Emitted only when declared, so other forms stay byte-for-byte.
-    const visibleWhenCapabilityPart = f.visibleWhenCapability
-      ? `, visibleWhenCapability: '${String(f.visibleWhenCapability).replace(/'/g, "\\'")}'`
-      : '';
+    const visibleWhenCapabilityPart = quotedProp('visibleWhenCapability', f.visibleWhenCapability);
     const fieldLine = `  { key: '${f.name}', column: '${f.column}', type: '${type}'${labelsPart}${formLabelPart}${requiredPart}${lookupPart}${popupPart}${readOnlyPart}${inlinePart}${sectionPart}${referencePart}${inputModePart}${searchSelectPart}${allowCreatePart}${createPart}${dependsOnPart}${optionsPart}${valueTypePart}${defaultValuePart}${helpPart}${placeholderPart}${emptyOptionPart}${fieldGroupPart}${precisionPart}${minPart}${maxLengthPart}${integerPart}${displayLogicPart}${readOnlyLogicPart}${spanPart}${rowsPart}${clearablePart}${customRendererPart}${editModalPart}${inputPrefixPart}${visibleWhenCapabilityPart} },`;
     return [...slotLines, fieldLine].join('\n');
   }).join('\n');
