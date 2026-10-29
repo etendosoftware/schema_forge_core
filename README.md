@@ -434,7 +434,7 @@ All tools live in `cli/src/`. Available as `sf-*` commands after `npm install`:
 
 Every published `sf-*` bin runs through `npx` / `node_modules/.bin`. Bins that take a
 positional argument (`sf-generate-frontend`, `sf-test-report`,
-`sf-generate-public-api-schema`, `sf-check-version`, `sf-gen-log`) answer `--help` / `-h`
+`sf-check-version`, `sf-gen-log`) answer `--help` / `-h`
 with their usage and exit 0.
 
 **Which repo a bin operates on** is decided by `resolveRepoRoot()`

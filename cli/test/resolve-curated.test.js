@@ -716,7 +716,7 @@ describe('resolveCurated — publicApi passthrough', () => {
       product: {
         name: 'product',
         fields: {
-          name: { publicApi: { exposed: true, name: 'name', type: 'passthrough', handlerId: null } },
+          name: { publicApi: { exposed: true, name: 'name' } },
           internalCostBasis: {},
         },
       },
@@ -727,7 +727,7 @@ describe('resolveCurated — publicApi passthrough', () => {
   it('copies publicApi from decisions to the curated field', async () => {
     const { schema } = await resolveCurated(schemaRaw, { rules: [] }, decisionsWithPublicApi);
     const name = schema.entities[0].fields.find(f => f.name === 'name');
-    assert.deepEqual(name.publicApi, { exposed: true, name: 'name', type: 'passthrough', handlerId: null });
+    assert.deepEqual(name.publicApi, { exposed: true, name: 'name' });
   });
 
   it('does NOT set publicApi on a field that lacks it in decisions', async () => {

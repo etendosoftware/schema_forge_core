@@ -2906,15 +2906,10 @@ describe('mapFieldForContract — publicApi stamping (ETP-5345)', () => {
       visibility: 'editable',
       grid: true,
       form: true,
-      publicApi: { exposed: true, name: 'name', type: 'passthrough', handlerId: null },
+      publicApi: { exposed: true, name: 'name' },
     };
     const mapped = mapFieldForContract(decisionField, { rules: [] });
-    assert.deepEqual(mapped.publicApi, {
-      exposed: true,
-      name: 'name',
-      type: 'passthrough',
-      handlerId: null,
-    });
+    assert.deepEqual(mapped.publicApi, { exposed: true, name: 'name' });
   });
 
   it('omits publicApi from the mapped field when absent', () => {
