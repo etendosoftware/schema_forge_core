@@ -1345,3 +1345,86 @@ describe('resolveCurated — draftMode.editableLineFieldsWhenCompleted (ETP-5692
     }
   });
 });
+
+// ─── stepper — FIELD_DECISION_COPY_PROPS passthrough ─────────────────────────
+// An integer field rendered as NumberStepperInput opts in with `stepper: true` in
+// decisions.json; its bounds are the field's ordinary min / max.
+describe('resolveCurated — stepper passthrough', () => {
+  const schemaRaw = {
+    window: { id: '903', name: 'Payment Term' },
+    entities: [{
+      name: 'paymentTerm',
+      tableName: 'C_PaymentTerm',
+      fields: [
+        { name: 'overduePaymentDaysRule', columnName: 'NetDays', label: 'Overdue Payment Days Rule',
+          type: 'number', visibility: 'editable', mandatory: true },
+        { name: 'name', columnName: 'Name', label: 'Name', type: 'string', visibility: 'editable', mandatory: true },
+      ],
+    }],
+  };
+
+  function decisions(fields) {
+    return { version: 2, window: { name: 'Payment Term' }, entities: { paymentTerm: { fields } }, rules: {} };
+  }
+
+  it('copies stepper: true from decisions to the curated field, together with its bounds', async () => {
+    const { schema } = await resolveCurated(schemaRaw, { rules: [] }, decisions({
+      overduePaymentDaysRule: { stepper: true, min: 0, max: 365, integer: true },
+    }));
+    const f = schema.entities[0].fields.find(x => x.name === 'overduePaymentDaysRule');
+    assert.equal(f.stepper, true);
+    assert.equal(f.min, 0);
+    assert.equal(f.max, 365);
+    assert.equal(f.integer, true);
+  });
+
+  it('does not set stepper on a sibling field', async () => {
+    const { schema } = await resolveCurated(schemaRaw, { rules: [] }, decisions({
+      overduePaymentDaysRule: { stepper: true },
+      name: {},
+    }));
+    assert.equal(schema.entities[0].fields.find(x => x.name === 'name').stepper, undefined);
+  });
+
+  it('copies stepperRejectedKey from decisions, and leaves it absent otherwise', async () => {
+    const { schema } = await resolveCurated(schemaRaw, { rules: [] }, decisions({
+      overduePaymentDaysRule: { stepper: true, stepperRejectedKey: 'paymentTermDaysNotInteger' },
+      name: {},
+    }));
+    const fields = schema.entities[0].fields;
+    assert.equal(fields.find(x => x.name === 'overduePaymentDaysRule').stepperRejectedKey, 'paymentTermDaysNotInteger');
+    assert.equal(fields.find(x => x.name === 'name').stepperRejectedKey, undefined);
+  });
+
+  it('does not set stepper when decisions do not declare it', async () => {
+    const { schema } = await resolveCurated(schemaRaw, { rules: [] }, decisions({ overduePaymentDaysRule: {} }));
+    assert.equal(schema.entities[0].fields.find(x => x.name === 'overduePaymentDaysRule').stepper, undefined);
+  });
+});
+
+// ─── columnMaxWidth — FIELD_DECISION_COPY_PROPS passthrough ──────────────────
+describe('resolveCurated — columnMaxWidth passthrough', () => {
+  const schemaRaw = {
+    window: { id: '903', name: 'Payment Term' },
+    entities: [{
+      name: 'paymentTerm', tableName: 'C_PaymentTerm',
+      fields: [
+        { name: 'name', columnName: 'Name', label: 'Name', type: 'string', visibility: 'editable', mandatory: true },
+        { name: 'netDays', columnName: 'NetDays', label: 'Days', type: 'number', visibility: 'editable', mandatory: true },
+      ],
+    }],
+  };
+  const decisions = (fields) => ({ version: 2, window: { name: 'Payment Term' }, entities: { paymentTerm: { fields } }, rules: {} });
+
+  it('copies columnMaxWidth from decisions to the curated field', async () => {
+    const { schema } = await resolveCurated(schemaRaw, { rules: [] }, decisions({ name: { columnWidth: 164, columnMaxWidth: 240 } }));
+    const f = schema.entities[0].fields.find(x => x.name === 'name');
+    assert.equal(f.columnMaxWidth, 240);
+    assert.equal(f.columnWidth, 164);
+  });
+
+  it('leaves columnMaxWidth absent when not declared, and on siblings', async () => {
+    const { schema } = await resolveCurated(schemaRaw, { rules: [] }, decisions({ name: { columnMaxWidth: 240 }, netDays: {} }));
+    assert.equal(schema.entities[0].fields.find(x => x.name === 'netDays').columnMaxWidth, undefined);
+  });
+});

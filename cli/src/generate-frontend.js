@@ -1649,7 +1649,18 @@ function buildListModalColumns(entity) {
     // ETP-5382 — same sort-key override as the standard DataTable columns, appended
     // right after backendFilterKey for the same byte-identity reason as above.
     const backendSortKeyPart = quotedProp('backendSortKey', f.backendSortKey);
-    return `  { key: '${f.name}', column: '${f.column}', type: '${type}'${labelPart}${labelKeyPart}${enumLabelsPart}${enumVariantsPart}${togglePart}${inlineEditPart}${badgePart}${displayPart}${cellTypePart}${subFieldPart}${subEmptyKeyPart}${kindFieldPart}${patternFieldPart}${kindLabelsPart}${tonesPart}${visibleWhenCapabilityPart}${filterModePart}${backendFilterKeyPart}${backendSortKeyPart} },`;
+    // ETP-5978 — boolean badge wording/colour and per-locale header labels, same shape as the
+    // standard DataTable columns. Appended at the tail so windows declaring none stay
+    // byte-identical.
+    const labelsPart = jsonWrapIf(', labels: ', f.labels);
+    const badgeLabelsPart = jsonWrapIf(', badgeLabels: ', f.badgeLabels);
+    const badgeVariantsPart = jsonWrapIf(', badgeVariants: ', f.badgeVariants);
+    // Fixed column width (`columnWidth`, emitted as `minWidth` like the standard DataTable
+    // literal) and its growth cap (`columnMaxWidth` → `maxWidth`). ListModalWindow gives a grid
+    // with widths an empty spacer column, so no data column stretches.
+    const minWidthPart = optProp('minWidth', f.columnWidth ?? undefined);
+    const maxWidthPart = optProp('maxWidth', f.columnMaxWidth ?? undefined);
+    return `  { key: '${f.name}', column: '${f.column}', type: '${type}'${labelPart}${labelKeyPart}${enumLabelsPart}${enumVariantsPart}${togglePart}${inlineEditPart}${badgePart}${displayPart}${cellTypePart}${subFieldPart}${subEmptyKeyPart}${kindFieldPart}${patternFieldPart}${kindLabelsPart}${tonesPart}${visibleWhenCapabilityPart}${filterModePart}${backendFilterKeyPart}${backendSortKeyPart}${labelsPart}${badgeLabelsPart}${badgeVariantsPart}${minWidthPart}${maxWidthPart} },`;
   }).join('\n');
 }
 
@@ -1703,7 +1714,16 @@ function buildListModalFields(formFields) {
     // modal body too (in place), instead of a plain checkbox.
     const togglePart = (type === 'checkbox' && (f.cellType === 'toggle' || f.inlineToggle))
       ? ', toggle: true' : '';
-    return `  { key: '${f.name}', column: '${f.column}', type: '${type}'${labelPart}${requiredPart}${lookupPart}${popupPart}${referencePart}${inputModePart}${searchSelectPart}${allowCreatePart}${createPart}${sectionPart}${optionsPart}${valueTypePart}${defaultValuePart}${helpPart}${placeholderPart}${emptyOptionPart}${spanPart}${rowsPart}${togglePart} },`;
+    // ETP-5978 — numeric bounds (read by getNumericFieldError / clampNumericFieldMax and the
+    // stepper buttons) and the stepper opt-in. Tail-appended: absent ⇒ byte-identical output.
+    const minPart = optProp('min', f.min);
+    const maxPart = optProp('max', f.max);
+    const integerPart = fragmentIf(f.integer === true, ', integer: true');
+    const stepperPart = fragmentIf(f.stepper, ', stepper: true');
+    const stepperRejectedKeyPart = quotedProp('stepperRejectedKey', f.stepperRejectedKey);
+    // Same DB-derived client hard stop the standard form emits (ETP-5323): text / textarea only.
+    const maxLengthPart = buildFormMaxLengthPart(type, f);
+    return `  { key: '${f.name}', column: '${f.column}', type: '${type}'${labelPart}${requiredPart}${lookupPart}${popupPart}${referencePart}${inputModePart}${searchSelectPart}${allowCreatePart}${createPart}${sectionPart}${optionsPart}${valueTypePart}${defaultValuePart}${helpPart}${placeholderPart}${emptyOptionPart}${spanPart}${rowsPart}${togglePart}${minPart}${maxPart}${integerPart}${stepperPart}${maxLengthPart}${stepperRejectedKeyPart} },`;
   }).join('\n');
 }
 
@@ -1716,6 +1736,15 @@ function buildListModalFields(formFields) {
  * CRUD endpoint and the i18n title/banner — so the same template serves any
  * catalog/master-data window that opts in.
  */
+// ETP-5978 — list-modal templateConfig keys passed through only when the window declares them.
+const LIST_MODAL_OPT_IN_KEYS = ['modalVariant', 'hideBackButton', 'hideSearch', 'newButtonVariant', 'rowClickEdit', 'listVariant'];
+
+function pickDefined(source, keys) {
+  const out = {};
+  for (const key of keys) if (source[key] !== undefined) out[key] = source[key];
+  return out;
+}
+
 export function generateListModalPage(headerEntity, contract) {
   const headerName = toJsIdentifier(headerEntity);
   const compName = `${headerName}Page`;
@@ -1802,6 +1831,10 @@ export function generateListModalPage(headerEntity, contract) {
     backLabelKey: tc.backLabelKey ?? null,
     backTo: tc.backTo ?? null,
     toolbarFilters: tc.toolbarFilters ?? [],
+    // ETP-5978 — opt-in look keys, emitted ONLY when declared so every existing list-modal
+    // page stays byte-identical: modalVariant ("compact"), hideBackButton, hideSearch,
+    // newButtonVariant ("primary"), rowClickEdit, listVariant ("compact").
+    ...pickDefined(tc, LIST_MODAL_OPT_IN_KEYS),
   }, null, 2);
 
   return `${reactImportLine}import { ListModalWindow } from '@/components/contract-ui';${windowAccessImport}
