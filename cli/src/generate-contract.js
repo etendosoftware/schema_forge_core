@@ -495,7 +495,7 @@ export function mapFieldForContract(f, { rules = [], columnMap = {}, booleanFiel
   }
 
   // Public API curation (ETP-5345): copied verbatim from decisions.json so the
-  // public-api-schema resolver can read field.publicApi straight off contract.json.
+  // public API manifest generator can read field.publicApi straight off contract.json.
   if (f.publicApi) {
     mapped.publicApi = f.publicApi;
   }
