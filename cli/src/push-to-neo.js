@@ -355,13 +355,19 @@ function resolveWindowId(schemaRawData, contract, options) {
   return schemaRawData.window.id;
 }
 
-function buildFieldDefaultExprMap(decisionsData) {
+/**
+ * Build a `entityName.fieldName` -> defaultExpr map from decisions.json. The field part is the
+ * name the contract pushes the field under: its `name` when decisions renames it (purchase-order
+ * `salesRepresentative` → `companyAgent`), else the decisions key. Keyed by the decisions key
+ * alone, a renamed field never matched and its value was silently not pushed (ETP-6036).
+ */
+export function buildFieldDefaultExprMap(decisionsData) {
   const map = {};
   for (const [entityKey, entityConf] of Object.entries(decisionsData.entities || {})) {
     const entityName = entityConf.name || entityKey;
     for (const [fieldName, fieldConf] of Object.entries(entityConf.fields || {})) {
       if (fieldConf.defaultExpr != null) {
-        map[`${entityName}.${fieldName}`] = fieldConf.defaultExpr;
+        map[`${entityName}.${fieldConf.name || fieldName}`] = fieldConf.defaultExpr;
       }
     }
   }
@@ -371,7 +377,8 @@ function buildFieldDefaultExprMap(decisionsData) {
 /**
  * Build a `entityName.fieldName` -> agentPrompt map from decisions.json.
  * Mirrors buildFieldDefaultExprMap so the per-field agent guidance flows to
- * etendo_schema the same way default expressions flow to the contract.
+ * etendo_schema the same way default expressions flow to the contract, keyed by
+ * the field's pushed name (its `name` when renamed) like that map.
  */
 export function buildFieldAgentPromptMap(decisionsData) {
   const map = {};
@@ -379,7 +386,8 @@ export function buildFieldAgentPromptMap(decisionsData) {
     const entityName = entityConf.name || entityKey;
     for (const [fieldName, fieldConf] of Object.entries(entityConf.fields || {})) {
       if (Object.hasOwn(fieldConf, 'agentPrompt')) {
-        map[`${entityName}.${fieldName}`] = normalizeAgentPrompt(fieldConf.agentPrompt);
+        map[`${entityName}.${fieldConf.name || fieldName}`] =
+          normalizeAgentPrompt(fieldConf.agentPrompt);
       }
     }
   }
