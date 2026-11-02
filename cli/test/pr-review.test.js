@@ -248,6 +248,63 @@ describe('detectDuplicatedBlocks', () => {
       ['tools/app-shell/src/foo.js', 'tools/app-shell/src/bar.js'],
     );
   });
+
+  describe('agent instruction mirrors', () => {
+    const block = [
+      '+### The automatic afternoon cut',
+      '+A Jenkins job cuts develop again in the afternoon.',
+      '+It holds the cut while a merge block or hotfix PR into main is open.',
+      '+A held cut is retried on the next runs, until the deadline.',
+      '+A cut not merged by the deadline is closed.',
+      '+What it carries goes in the next cut.',
+    ].join('\n');
+
+    it('ignores the copies of CLAUDE.md and .claude/ that other coding agents read', () => {
+      const mirrorSets = [
+        ['.claude/agents/merge-block-helper.md', '.codex/agents/merge-block-helper.toml',
+          '.opencode/agents/merge-block-helper.md', '.omp/agents/merge-block-helper.md'],
+        ['.claude/skills/emails/SKILL.md', '.agents/skills/emails/SKILL.md'],
+        ['CLAUDE.md', 'AGENTS.md'],
+      ];
+
+      for (const paths of mirrorSets) {
+        const diff = paths.map((path) => makeDiff(path, block)).join('\n');
+        assert.deepEqual(detectDuplicatedBlocks(diff), [], paths[0]);
+      }
+    });
+
+    it('still flags a block repeated across two sources while their mirrors are skipped', () => {
+      const diff = [
+        makeDiff('.claude/agents/merge-block-helper.md', block),
+        makeDiff('.codex/agents/merge-block-helper.toml', block),
+        makeDiff('.claude/agents/workflow.md', block),
+        makeDiff('.codex/agents/workflow.toml', block),
+      ].join('\n');
+
+      const findings = detectDuplicatedBlocks(diff);
+      assert.equal(findings.length, 1);
+      assert.equal(findings[0].code, 'DUPLICATED_BLOCK');
+      assert.deepEqual(
+        findings[0].locations.map((location) => location.path),
+        ['.claude/agents/merge-block-helper.md', '.claude/agents/workflow.md'],
+      );
+    });
+
+    it('only skips the mirrors at the repository root', () => {
+      const diff = [
+        makeDiff('docs/AGENTS.md', block),
+        makeDiff('tools/.codex/agents/workflow.toml', block),
+        makeDiff('.codex/config.toml', block),
+      ].join('\n');
+
+      const findings = detectDuplicatedBlocks(diff);
+      assert.equal(findings.length, 1);
+      assert.deepEqual(
+        findings[0].locations.map((location) => location.path),
+        ['docs/AGENTS.md', 'tools/.codex/agents/workflow.toml', '.codex/config.toml'],
+      );
+    });
+  });
 });
 
 describe('analyzeChangedFiles', () => {

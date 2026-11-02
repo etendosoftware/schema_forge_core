@@ -61,7 +61,7 @@ When a later push fixes all blockers, the workflow dismisses prior bot change re
 - CommonJS patterns (`require`, `module.exports`) in changed JS/TS files
 - changed files larger than the repository threshold
 
-Exclusions: the duplicated-block check skips generated or data files, where repeated blocks are expected — `artifacts/`, `cli/cache/`, npm lockfiles (`package-lock.json`, `npm-shrinkwrap.json`), locale dictionaries (`<dir>/locales/*.json`) and versioned public API manifests (`public-api/*.vN.json`, e.g. `public-api/base.v1.json`). Hand-written JSON in `public-api/` (e.g. `overrides.json`) is still checked.
+Exclusions: the duplicated-block check skips generated or data files, where repeated blocks are expected — `artifacts/`, `cli/cache/`, npm lockfiles (`package-lock.json`, `npm-shrinkwrap.json`), locale dictionaries (`<dir>/locales/*.json`) and versioned public API manifests (`public-api/*.vN.json`, e.g. `public-api/base.v1.json`). Hand-written JSON in `public-api/` (e.g. `overrides.json`) is still checked. It also skips the agent instruction mirrors at the repository root (`AGENTS.md`, `.agents/skills/`, `.codex/agents/`, `.opencode/agents/`, `.omp/agents/`): they carry the text of `CLAUDE.md` and `.claude/` for coding agents that only read their own folder, so every instruction change repeats there. `CLAUDE.md` and `.claude/` are still checked.
 
 The goal is not to replace human review. The goal is to catch obvious architecture drift before review time is wasted.
 
