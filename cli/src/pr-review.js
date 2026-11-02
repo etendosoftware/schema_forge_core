@@ -56,6 +56,14 @@ function isLocaleJsonFile(path) {
   return /\/locales\/[^/]+\.json$/.test(path);
 }
 
+function isAgentInstructionMirror(path) {
+  // Root AGENTS.md and the agent/skill folders of Codex, OpenCode and oh-my-pi carry the
+  // text of CLAUDE.md and .claude/ for coding agents that only read their own folder (the
+  // consumer's cli/sync-agents.sh writes them). Every instruction change repeats there by
+  // design, so only the CLAUDE.md and .claude/ copies are compared.
+  return /^(?:AGENTS\.md$|\.agents\/skills\/|\.codex\/agents\/|\.opencode\/agents\/|\.omp\/agents\/)/.test(path);
+}
+
 function normalizeDuplicateLine(line) {
   const trimmed = line.trim();
   if (!trimmed) return '';
@@ -190,6 +198,7 @@ export function detectDuplicatedBlocks(diffText, { minLines = DUPLICATE_MIN_LINE
     if (isGeneratedPublicApiManifest(run.path)) continue;
     if (isGeneratedDependencyManifest(run.path)) continue;
     if (isLocaleJsonFile(run.path)) continue;
+    if (isAgentInstructionMirror(run.path)) continue;
     const normalizedLines = run.lines
       .map((entry) => ({ ...entry, normalized: normalizeDuplicateLine(entry.text) }))
       .filter((entry) => entry.normalized);
