@@ -284,6 +284,8 @@ export async function upsertEntity(client, params) {
  * @param {string} [params.agentPrompt] - Per-field agent guidance for etendo_schema
  * @param {string} [params.javaQualifier]
  * @param {number} [params.seqNo]
+ * @param {number|null} [params.gridSeqNo] - ETP-5848: position in the window list, NULL when the
+ *   list does not show the field. etendo_list projects to these fields by default.
  * @param {object} [params.audit] - Override audit defaults
  * @returns {{ fieldId: string, created: boolean }}
  */
@@ -341,6 +343,10 @@ export async function upsertField(client, params) {
       setClauses.push(`visibility = $${paramIndex++}`);
       values.push(normalizeVisibility(params.visibility));
     }
+    if ('gridSeqNo' in params) {
+      setClauses.push(`grid_seqno = $${paramIndex++}`);
+      values.push(params.gridSeqNo ?? null);
+    }
 
     setClauses.push(`updated = $${paramIndex++}`);
     values.push(auditVals.updated);
@@ -361,6 +367,7 @@ export async function upsertField(client, params) {
   const seqNo = params.seqNo ?? null;
   const agentPrompt = params.agentPrompt ?? null;
   const visibility = normalizeVisibility(params.visibility);
+  const gridSeqNo = params.gridSeqNo ?? null;
 
   const fieldId = generateId();
   await client.query(
@@ -368,13 +375,13 @@ export async function upsertField(client, params) {
      (etgo_sf_field_id, etgo_sf_entity_id, ad_column_id, ad_module_id,
       isincluded, isreadonly, isbusinesscritical, defaultvalue, java_qualifier, seqno,
       ad_client_id, ad_org_id, isactive, created, createdby, updated, updatedby,
-      agent_prompt, visibility)
-     VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19)`,
+      agent_prompt, visibility, grid_seqno)
+     VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20)`,
     [fieldId, entityId, columnId, moduleId,
      isIncluded, isReadOnly, isBusinessCritical, defaultValue, javaQualifier, seqNo,
      auditVals.ad_client_id, auditVals.ad_org_id, auditVals.isactive,
      auditVals.created, auditVals.createdby, auditVals.updated, auditVals.updatedby,
-     agentPrompt, visibility],
+     agentPrompt, visibility, gridSeqNo],
   );
   return { fieldId, created: true };
 }
