@@ -83,10 +83,6 @@ function isGetReportsRequest(method, path) {
   return method === 'GET' && path === '/api/reports';
 }
 
-function isGetDataRequest(method, dataMatch) {
-  return method === 'GET' && dataMatch;
-}
-
 function isPostRequestForRender(method, renderMatch) {
   return method === 'POST' && renderMatch;
 }
@@ -360,11 +356,6 @@ describe('report-server helpers', () => {
       assert.ok(isGetReportsRequest('GET', '/api/reports'));
       assert.ok(!isGetReportsRequest('POST', '/api/reports'));
       assert.ok(!isGetReportsRequest('GET', '/api/other'));
-    });
-
-    it('isGetDataRequest', () => {
-      assert.ok(isGetDataRequest('GET', { 1: 'id' }));
-      assert.ok(!isGetDataRequest('GET', null));
     });
 
     it('isPostRequestForRender', () => {

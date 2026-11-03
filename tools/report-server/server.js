@@ -3,7 +3,7 @@
  *
  * Handles:
  *   GET  /api/reports                       — list available reports
- *   GET  /api/reports/:id/data              — execute SQL and return JSON rows
+ *   POST /api/reports/:id/query             — report data as JSON (interactive view, ETP-6080)
  *   POST /api/reports/:id/render            — render via jsreport (HTML/PDF/XLSX)
  *   GET  /api/report-selectors/:type        — selector search (BP, Product, Org…)
  *   GET  /api/ping                          — health check
@@ -27,11 +27,12 @@ import { fileURLToPath } from 'node:url';
 import { registerReportHelpers, computeDocumentQrDataUrl, buildJsreportHelpersString } from '../../templates/reports/helpers/report-html-helpers.js';
 import { listReportDescriptors } from '../../cli/src/report-descriptor.js';
 import { pickLabel, pickUiStrings, buildContractLabels } from '../../cli/src/report-i18n.js';
-import { resolveGrouping, buildNestedGroups, buildAccountReportTree } from '../../cli/src/report-grouping.js';
+import { resolveGrouping, buildNestedGroups, buildAccountReportTree, addVariation } from '../../cli/src/report-grouping.js';
 import { applyPlaceholders } from '../../cli/src/report-sql.js';
 import { filterAndTransformParams } from '../../cli/src/report-filters.js';
 import { hydrateDocumentBranding, resolveCompanyLogoDataUrl } from '../../cli/src/report-branding.js';
-import { resolveReportSession, reportAuthErrorBody } from '../../cli/src/report-auth.js';
+import { resolveReportSession, reportAuthErrorBody, assertReportOrgAccess } from '../../cli/src/report-auth.js';
+import { handleReportQuery } from '../../cli/src/report-query.js';
 
 const _require = createRequire(import.meta.url);
 const __dirname = dirname(fileURLToPath(import.meta.url));
@@ -376,11 +377,60 @@ function resolveReportData(result, params, locale) {
     rows = buildAccountReportTree(rows, operandRows, {
       accountLevel: params.accountLevel || 'S',
       showOnlyWithValue: params.showOnlyAccountsWithValue === 'true',
+      // ETP-6080: the interactive view prints what it shows — its expanded
+      // nodes replace the level cutoff. Absent = the old viewer, unchanged.
+      expandedNodeIds: parseExpandedNodeIds(params.expandedNodeIds),
     });
+    rows = addVariation(rows, { compare: params.compareTo === 'true' });
   }
 
   const grouped = resolveGrouping(contract, params, rows, locale);
   return { ...grouped, openingRows };
+}
+
+/** `expandedNodeIds` arrives as a comma-joined string; '' = everything collapsed. */
+function parseExpandedNodeIds(value) {
+  if (value === undefined || value === null) return undefined;
+  return String(value).split(',').map((id) => id.trim()).filter(Boolean);
+}
+
+/**
+ * ETP-6080: the same org check `/query` runs, before any report data is read.
+ * Returns the error response to send, or null to go on. A report whose
+ * contract cannot be read is left to fetchReportData's own error path.
+ */
+async function checkRenderOrgAccess(reportId, session, params) {
+  const contractPath = join(ARTIFACTS_DIR, reportId, 'report-contract.json');
+  if (!existsSync(contractPath)) return null;
+  const contract = JSON.parse(readFileSync(contractPath, 'utf8'));
+  const pg = await import('pg');
+  const pool = new pg.default.Pool(getDbConfig());
+  try {
+    await assertReportOrgAccess(pool, session, { contract, orgId: params.orgId });
+    return null;
+  } catch (e) {
+    if (e?.name === 'ReportAuthError') return reportAuthErrorBody(e);
+    throw e;
+  } finally {
+    await pool.end();
+  }
+}
+
+/** POST /api/reports/:id/query — JSON data for the interactive view (ETP-6080). */
+async function queryReport(queryMatch, req, res) {
+  let body;
+  try {
+    body = JSON.parse((await readBody(req)) || '{}');
+  } catch {
+    json(res, 400, { error: 'Invalid JSON body', code: 'INVALID_BODY' });
+    return;
+  }
+  const pg = await import('pg');
+  const result = await handleReportQuery(
+    { reportId: queryMatch[1], headers: req.headers, method: req.method, body },
+    { artifactsDir: ARTIFACTS_DIR, etendoBase: ETENDO_URL, createPool: () => new pg.default.Pool(getDbConfig()) },
+  );
+  json(res, result.status, result.body);
 }
 
 // ---------------------------------------------------------------------------
@@ -410,6 +460,12 @@ async function renderReport(renderMatch, req, res) {
   } catch (e) {
     const { status, body: errorBody } = reportAuthErrorBody(e);
     json(res, status, errorBody);
+    return;
+  }
+
+  const denied = await checkRenderOrgAccess(reportId, session, params);
+  if (denied) {
+    json(res, denied.status, denied.body);
     return;
   }
 
@@ -565,10 +621,11 @@ async function handleRequest(req, res) {
     return;
   }
 
-  // GET /api/reports/:id/data
-  const dataMatch = new RegExp(/^\/api\/reports\/([\w-]+)\/data$/).exec(path);
-  if (isGetDataRequest(method, dataMatch)) {
-    await fetchReportDataById(dataMatch, url, req, res);
+  // POST /api/reports/:id/query (ETP-6080). GET /api/reports/:id/data was
+  // removed: it ran the report SQL with no params (every org) and had no caller.
+  const queryMatch = new RegExp(/^\/api\/reports\/([\w-]+)\/query$/).exec(path);
+  if (method === 'POST' && queryMatch) {
+    await queryReport(queryMatch, req, res);
     return;
   }
 
@@ -794,29 +851,6 @@ async function injectDocumentQr(documentData, templateData) {
 
 function isPostRequestForRender(method, renderMatch) {
   return method === 'POST' && renderMatch;
-}
-
-async function fetchReportDataById(dataMatch, url, req, res) {
-  const reportId = dataMatch[1];
-  const limit = url.searchParams.get('limit');
-
-  let session;
-  try {
-    session = await resolveReportSession(req.headers, { method: req.method, etendoBase: ETENDO_URL });
-  } catch (e) {
-    const { status, body } = reportAuthErrorBody(e);
-    json(res, status, body);
-    return;
-  }
-
-  try {
-    const { rows, contract } = await fetchReportData(reportId, { limit, session });
-    json(res, 200, { rows, contract, count: rows.length });
-  } catch (e) { json(res, 500, { error: e.message }); }
-}
-
-function isGetDataRequest(method, dataMatch) {
-  return method === 'GET' && dataMatch;
 }
 
 function isGetReportsRequest(method, path) {
