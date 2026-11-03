@@ -13,6 +13,7 @@ import {
   foldAggregateRows,
   groupAggregateRowsByAccount,
   buildAccountReportTree,
+  addVariation,
   cleanAmount,
   TRIAL_BALANCE_AMOUNT_FIELDS,
 } from '../src/report-grouping.js';
@@ -709,5 +710,114 @@ describe('buildAccountReportTree — ShowValueCond (ETP-5662)', () => {
     const rows = buildAccountReportTree(mirrorTree(-1, 1), [], { showOnlyWithValue: true });
     assert.ok(!ids(rows).includes('551'));
     assert.ok(!ids(rows).includes('M551'));
+  });
+});
+
+// ETP-6080 — the interactive Profit & Loss folds the tree on screen, so the
+// rows carry their listed parent and effective sign; the exports print the
+// same expansion through `expandedNodeIds`; and variation is computed here.
+describe('buildAccountReportTree — interactive view support (ETP-6080)', () => {
+  function node(node_id, {
+    parent_id = '', sort_path = node_id, elementlevel = 'C', own_amt = 0, own_amt_ref = 0,
+    accountsign = 'C', group_name = 'G1', isalwaysshown = 'N',
+  } = {}) {
+    return {
+      node_id, parent_id, sort_path, value: node_id, name: `Name ${node_id}`, elementlevel,
+      isalwaysshown, own_amt, own_amt_ref, accountsign, group_name,
+    };
+  }
+  // root (container) > E1 (heading) > C1 > {D1 > S1, D2}; plus an empty C2 under E1.
+  const nodes = [
+    node('root', { sort_path: '1' }),
+    node('E1', { parent_id: 'root', sort_path: '1.1', elementlevel: 'E' }),
+    node('C1', { parent_id: 'E1', sort_path: '1.1.1', elementlevel: 'C' }),
+    node('D1', { parent_id: 'C1', sort_path: '1.1.1.1', elementlevel: 'D' }),
+    node('S1', { parent_id: 'D1', sort_path: '1.1.1.1.1', elementlevel: 'S', own_amt: -100, own_amt_ref: -80 }),
+    node('D2', { parent_id: 'C1', sort_path: '1.1.1.2', elementlevel: 'D', own_amt: 30, own_amt_ref: 10 }),
+    node('C2', { parent_id: 'E1', sort_path: '1.1.2', elementlevel: 'C' }),
+  ];
+  const byId = (rows) => Object.fromEntries(rows.map((r) => [r.node_id, r]));
+
+  it('gives each row its listed parent (the root container is never a parent) and the effective sign', () => {
+    const rows = byId(buildAccountReportTree(nodes, []));
+    assert.equal(rows.E1.parentId, null);
+    assert.equal(rows.C1.parentId, 'E1');
+    assert.equal(rows.S1.parentId, 'D1');
+    assert.ok(Object.values(rows).every((r) => r.sign === 'C'), 'every row carries the root sign');
+  });
+
+  it('skips a row hidden by showOnlyWithValue when naming the parent', () => {
+    const hiddenMiddle = nodes.map((n) => (n.node_id === 'D1' ? { ...n, own_amt: 0 } : n))
+      .filter((n) => n.node_id !== 'S1').concat(node('S1', { parent_id: 'D1', sort_path: '1.1.1.1.1', elementlevel: 'S' }));
+    const rows = byId(buildAccountReportTree(hiddenMiddle, [], { showOnlyWithValue: true }));
+    assert.equal(rows.D1, undefined);
+    assert.equal(rows.D2.parentId, 'C1');
+  });
+
+  it('lists a node only when its parent is expanded, ignoring accountLevel', () => {
+    const ids = (opts) => buildAccountReportTree(nodes, [], opts).map((r) => r.node_id);
+    assert.deepEqual(ids({ expandedNodeIds: [] }), ['E1']);
+    assert.deepEqual(ids({ expandedNodeIds: ['E1'] }), ['E1', 'C1', 'C2']);
+    assert.deepEqual(ids({ expandedNodeIds: ['E1', 'C1'], accountLevel: 'E' }), ['E1', 'C1', 'D1', 'D2', 'C2']);
+    // an expanded node under a collapsed parent stays hidden
+    assert.deepEqual(ids({ expandedNodeIds: ['E1', 'D1'] }), ['E1', 'C1', 'C2']);
+  });
+
+  it('never changes a value: the cutoff and the expansion only choose rows (regression vs the render path)', () => {
+    const full = byId(buildAccountReportTree(nodes, [], { accountLevel: 'S' }));
+    for (const level of ['E', 'C', 'D', 'S']) {
+      for (const row of buildAccountReportTree(nodes, [], { accountLevel: level })) {
+        assert.equal(row.amount, full[row.node_id].amount, `${level}: ${row.node_id}`);
+        assert.equal(row.amount_ref, full[row.node_id].amount_ref, `${level}: ${row.node_id} ref`);
+      }
+    }
+    for (const row of buildAccountReportTree(nodes, [], { expandedNodeIds: ['E1'] })) {
+      assert.equal(row.amount, full[row.node_id].amount);
+    }
+    assert.equal(full.C1.amount, 70, 'credit-normal: -(-100 + 30)');
+  });
+});
+
+describe('addVariation (ETP-6080)', () => {
+  const row = (amount, amount_ref, sign = 'C') => ({ node_id: 'n', amount, amount_ref, sign });
+
+  it('computes € and % against the absolute reference', () => {
+    const [r] = addVariation([row(120, 100)]);
+    assert.equal(r.variationAmount, 20);
+    assert.equal(r.variationPct, 20);
+    const [neg] = addVariation([row(-90, -100)]);
+    assert.equal(neg.variationAmount, 10);
+    assert.equal(neg.variationPct, 10, '% is over |reference|, so an expense going down is +10 %');
+  });
+
+  it('leaves % empty when the reference is zero, never Infinity or 0', () => {
+    const [r] = addVariation([row(50, 0)]);
+    assert.equal(r.variationAmount, 50);
+    assert.equal(r.variationPct, null);
+  });
+
+  it('credit-normal (Profit & Loss): revenue up and expense down improve; the reverse worsens', () => {
+    const [revenueUp, revenueDown, expenseDown, expenseUp] = addVariation([
+      row(120, 100), row(80, 100), row(-80, -100), row(-120, -100),
+    ]);
+    assert.equal(revenueUp.trend, 'improves');
+    assert.equal(revenueDown.trend, 'worsens');
+    assert.equal(expenseDown.trend, 'improves');
+    assert.equal(expenseUp.trend, 'worsens');
+  });
+
+  it('debit-normal or unset sign reads the other way; no change has no trend', () => {
+    assert.equal(addVariation([row(120, 100, 'D')])[0].trend, 'worsens');
+    assert.equal(addVariation([row(120, 100, null)])[0].trend, 'worsens');
+    assert.equal(addVariation([row(100, 100)])[0].trend, null);
+  });
+
+  it('returns null fields when there is no comparison, without mutating the input', () => {
+    const input = [row(120, 100)];
+    const [r] = addVariation(input, { compare: false });
+    assert.equal(r.variationAmount, null);
+    assert.equal(r.variationPct, null);
+    assert.equal(r.trend, null);
+    assert.equal(input[0].variationAmount, undefined);
   });
 });

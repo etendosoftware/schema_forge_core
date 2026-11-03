@@ -349,6 +349,11 @@ export function accountSignMultiplier(sign) {
  */
 export function buildAccountReportTree(nodeRows, operandRows, options = {}) {
   const { accountLevel = 'S', showOnlyWithValue = false } = options;
+  // ETP-6080: when given, the set of EXPANDED node ids replaces the level
+  // cutoff — a node is listed when its parent is expanded (the report's root
+  // container always is). Used by the exports to print what the interactive
+  // view shows. Values never depend on it: they are resolved before the walk.
+  const expanded = options.expandedNodeIds ? new Set(options.expandedNodeIds) : null;
   const byId = new Map();
   for (const r of nodeRows || []) {
     byId.set(r.node_id, {
@@ -459,8 +464,9 @@ export function buildAccountReportTree(nodeRows, operandRows, options = {}) {
   const cutoffRank = ELEMENT_LEVEL_RANK[accountLevel] ?? ELEMENT_LEVEL_RANK.S;
   const out = [];
   let lastGroup;
-  const visit = (node, indent, isRoot, underReset = false, underResetRef = false) => {
+  const visit = (node, indent, isRoot, underReset = false, underResetRef = false, visibleParentId = null) => {
     let withinCutoff = true;
+    let childParentId = visibleParentId;
     if (!isRoot) {
       // Display: a descendant of a reset node shows 0 (filterSVC); every row
       // re-applies its own clamp (filterStructure). Periods reset independently.
@@ -468,7 +474,7 @@ export function buildAccountReportTree(nodeRows, operandRows, options = {}) {
       const amountRef = underResetRef ? 0 : applyShowValueCond(node, node.amount_ref);
       // An unknown/blank elementlevel is never a reason to drop a row.
       const rank = ELEMENT_LEVEL_RANK[node.elementlevel];
-      withinCutoff = rank === undefined || rank <= cutoffRank;
+      withinCutoff = expanded ? true : (rank === undefined || rank <= cutoffRank);
       const hasValue = Math.abs(amount) > 0.005 || Math.abs(amountRef) > 0.005;
       const alwaysShown = node.isalwaysshown === 'Y';
       if (withinCutoff && (!showOnlyWithValue || hasValue || alwaysShown)) {
@@ -488,16 +494,23 @@ export function buildAccountReportTree(nodeRows, operandRows, options = {}) {
           isFormula: isFormulaNode(node),
           group: node.group_name,
           isGroupStart,
+          // ETP-6080: the nearest LISTED ancestor (a row hidden by
+          // showOnlyWithValue is skipped), so a client can fold the rows; and
+          // the branch's effective sign the amounts were computed with.
+          parentId: visibleParentId,
+          sign: node.sign,
         });
+        childParentId = node.node_id;
       }
       if (!withinCutoff) return; // cutoff reached: do not descend further
+      if (expanded && !expanded.has(node.node_id)) return; // collapsed: children not listed
     }
     // The report's root node is a container (the accounting report's own node),
     // never a row — so its children start the visible tree at indent 0.
     const sortedChildren = [...node.children].sort(byPath);
     for (const child of sortedChildren) {
       visit(child, isRoot ? 0 : indent + 1, false, underReset || node.reset,
-        underResetRef || node.reset_ref);
+        underResetRef || node.reset_ref, childParentId);
     }
   };
   // toSorted (not sort): `roots` is a view into the caller's node list —
@@ -517,6 +530,41 @@ export function buildAccountReportTree(nodeRows, operandRows, options = {}) {
     out[0].isGroupStart = true;
   }
   return out;
+}
+
+/**
+ * ETP-6080: per-row variation against the comparison period, computed once
+ * here so the interactive view and the PDF/Excel/CSV exports show the same
+ * numbers. Returns new rows; the input is not mutated.
+ *
+ *  - `variationAmount` = amount − amount_ref;
+ *  - `variationPct` = variationAmount / |amount_ref| × 100, `null` when the
+ *    reference is zero (never ∞, never 0);
+ *  - `trend`: 'improves' / 'worsens' / null. Amounts are already displayed in
+ *    the branch's effective sign (`row.sign`, see applySignAsPerParent), so in
+ *    a credit-normal branch (Profit & Loss: revenue positive, expenses
+ *    negative) a higher amount is always the better result — revenue up and
+ *    expense down both raise it. A debit-normal branch reads the other way
+ *    (an unset sign counts as debit-normal, as in accountSignMultiplier). That
+ *    reading fits a result; Balance Sheet's asset side will need its own rule.
+ *
+ * With `compare` false every field is null: there is no comparison to show.
+ */
+export function addVariation(rows, { compare = true } = {}) {
+  return (rows || []).map((row) => {
+    if (!compare) return { ...row, variationAmount: null, variationPct: null, trend: null };
+    const amount = Number(row.amount) || 0;
+    const ref = Number(row.amount_ref) || 0;
+    const variationAmount = cleanAmount(amount - ref);
+    const variationPct = Math.abs(ref) < 0.005 ? null : cleanAmount((variationAmount / Math.abs(ref)) * 100);
+    let trend = null;
+    if (Math.abs(variationAmount) >= 0.005) {
+      // Same default as accountSignMultiplier: an unset sign is debit-normal.
+      const better = row.sign === 'C' ? variationAmount > 0 : variationAmount < 0;
+      trend = better ? 'improves' : 'worsens';
+    }
+    return { ...row, variationAmount, variationPct, trend };
+  });
 }
 
 /**
