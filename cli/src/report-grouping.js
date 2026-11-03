@@ -464,50 +464,56 @@ export function buildAccountReportTree(nodeRows, operandRows, options = {}) {
   const cutoffRank = ELEMENT_LEVEL_RANK[accountLevel] ?? ELEMENT_LEVEL_RANK.S;
   const out = [];
   let lastGroup;
+  // Lists one non-root node (or not) and says whether to descend into its children.
+  const listNode = (node, indent, underReset, underResetRef, visibleParentId) => {
+    let childParentId = visibleParentId;
+    // Display: a descendant of a reset node shows 0 (filterSVC); every row
+    // re-applies its own clamp (filterStructure). Periods reset independently.
+    const amount = underReset ? 0 : applyShowValueCond(node, node.amount);
+    const amountRef = underResetRef ? 0 : applyShowValueCond(node, node.amount_ref);
+    // An unknown/blank elementlevel is never a reason to drop a row.
+    const rank = ELEMENT_LEVEL_RANK[node.elementlevel];
+    const withinCutoff = expanded ? true : (rank === undefined || rank <= cutoffRank);
+    const hasValue = Math.abs(amount) > 0.005 || Math.abs(amountRef) > 0.005;
+    const alwaysShown = node.isalwaysshown === 'Y';
+    if (withinCutoff && (!showOnlyWithValue || hasValue || alwaysShown)) {
+      const isGroupStart = out.length > 0 && node.group_name !== lastGroup;
+      lastGroup = node.group_name;
+      out.push({
+        node_id: node.node_id,
+        value: node.value,
+        name: node.name,
+        element: `${node.value} - ${node.name}`,
+        elementlevel: node.elementlevel,
+        amount,
+        amount_ref: amountRef,
+        indent,
+        indentClass: `ind-${Math.min(indent, 6)}`,
+        isHeading: node.elementlevel === 'E',
+        isFormula: isFormulaNode(node),
+        group: node.group_name,
+        isGroupStart,
+        // ETP-6080: the nearest LISTED ancestor (a row hidden by
+        // showOnlyWithValue is skipped), so a client can fold the rows; and
+        // the branch's effective sign the amounts were computed with.
+        parentId: visibleParentId,
+        sign: node.sign,
+      });
+      childParentId = node.node_id;
+    }
+    if (!withinCutoff) return { descend: false }; // cutoff reached: do not descend further
+    // Collapsed: children not listed. Only a LISTED node can collapse — one
+    // hidden by showOnlyWithValue is transparent, as it is for parentId, or
+    // the export would drop rows the screen shows under the listed ancestor.
+    const listed = childParentId === node.node_id;
+    return { descend: !(expanded && listed && !expanded.has(node.node_id)), childParentId };
+  };
   const visit = (node, indent, isRoot, underReset = false, underResetRef = false, visibleParentId = null) => {
-    let withinCutoff = true;
     let childParentId = visibleParentId;
     if (!isRoot) {
-      // Display: a descendant of a reset node shows 0 (filterSVC); every row
-      // re-applies its own clamp (filterStructure). Periods reset independently.
-      const amount = underReset ? 0 : applyShowValueCond(node, node.amount);
-      const amountRef = underResetRef ? 0 : applyShowValueCond(node, node.amount_ref);
-      // An unknown/blank elementlevel is never a reason to drop a row.
-      const rank = ELEMENT_LEVEL_RANK[node.elementlevel];
-      withinCutoff = expanded ? true : (rank === undefined || rank <= cutoffRank);
-      const hasValue = Math.abs(amount) > 0.005 || Math.abs(amountRef) > 0.005;
-      const alwaysShown = node.isalwaysshown === 'Y';
-      if (withinCutoff && (!showOnlyWithValue || hasValue || alwaysShown)) {
-        const isGroupStart = out.length > 0 && node.group_name !== lastGroup;
-        lastGroup = node.group_name;
-        out.push({
-          node_id: node.node_id,
-          value: node.value,
-          name: node.name,
-          element: `${node.value} - ${node.name}`,
-          elementlevel: node.elementlevel,
-          amount,
-          amount_ref: amountRef,
-          indent,
-          indentClass: `ind-${Math.min(indent, 6)}`,
-          isHeading: node.elementlevel === 'E',
-          isFormula: isFormulaNode(node),
-          group: node.group_name,
-          isGroupStart,
-          // ETP-6080: the nearest LISTED ancestor (a row hidden by
-          // showOnlyWithValue is skipped), so a client can fold the rows; and
-          // the branch's effective sign the amounts were computed with.
-          parentId: visibleParentId,
-          sign: node.sign,
-        });
-        childParentId = node.node_id;
-      }
-      if (!withinCutoff) return; // cutoff reached: do not descend further
-      // Collapsed: children not listed. Only a LISTED node can collapse — one
-      // hidden by showOnlyWithValue is transparent, as it is for parentId, or
-      // the export would drop rows the screen shows under the listed ancestor.
-      const listed = childParentId === node.node_id;
-      if (expanded && listed && !expanded.has(node.node_id)) return;
+      const step = listNode(node, indent, underReset, underResetRef, visibleParentId);
+      if (!step.descend) return;
+      childParentId = step.childParentId;
     }
     // The report's root node is a container (the accounting report's own node),
     // never a row — so its children start the visible tree at indent 0.

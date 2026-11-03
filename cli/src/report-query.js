@@ -87,6 +87,33 @@ export function buildQueryResponse(contract, params, { rows, openingRows, operan
   return { kind: 'rows', rows, openingRows };
 }
 
+/** The report's SQL contract, or the error answer when it cannot be queried. */
+function loadQueryContract(artifactsDir, reportId) {
+  const contractPath = REPORT_ID_SHAPE.test(reportId || '') && join(artifactsDir, reportId, 'report-contract.json');
+  if (!contractPath || !existsSync(contractPath)) return { error: errorResult(404, 'REPORT_NOT_FOUND') };
+  let contract;
+  try {
+    contract = JSON.parse(readFileSync(contractPath, 'utf8'));
+  } catch (e) {
+    console.error(`[report-query] ${reportId}: unreadable contract:`, e?.message);
+    return { error: errorResult(500, 'QUERY_FAILED') };
+  }
+  if (!contract.sql?.query) return { error: errorResult(400, 'QUERY_NOT_SUPPORTED', 'Only SQL reports can be queried') };
+  return { contract };
+}
+
+/** Params, limit and split mode from the request body, or the 400 answer. */
+function parseQueryRequest(body, contract) {
+  const params = body.params && typeof body.params === 'object' ? body.params : {};
+  const limit = body.limit === undefined || body.limit === null || body.limit === '' ? undefined : Number(body.limit);
+  if (limit !== undefined && !isValidLimit(limit)) return { error: errorResult(400, 'INVALID_LIMIT') };
+  const isSplit = Boolean(params.splitBy || params.splitNodeId);
+  if (isSplit && (!contract.sql.splitQuery || !SPLIT_DIMENSIONS.has(params.splitBy) || !params.splitNodeId)) {
+    return { error: errorResult(400, 'SPLIT_NOT_SUPPORTED') };
+  }
+  return { params, limit, isSplit };
+}
+
 /**
  * The whole route, engine-independent. Order matters: the session and the
  * org check run BEFORE any report SQL, and a failure never reaches the DB.
@@ -111,24 +138,10 @@ export async function handleReportQuery({ reportId, headers, method, body = {} }
     return reportAuthErrorBody(e);
   }
 
-  const contractPath = REPORT_ID_SHAPE.test(reportId || '') && join(artifactsDir, reportId, 'report-contract.json');
-  if (!contractPath || !existsSync(contractPath)) return errorResult(404, 'REPORT_NOT_FOUND');
-  let contract;
-  try {
-    contract = JSON.parse(readFileSync(contractPath, 'utf8'));
-  } catch (e) {
-    console.error(`[report-query] ${reportId}: unreadable contract:`, e?.message);
-    return errorResult(500, 'QUERY_FAILED');
-  }
-  if (!contract.sql?.query) return errorResult(400, 'QUERY_NOT_SUPPORTED', 'Only SQL reports can be queried');
-
-  const params = body.params && typeof body.params === 'object' ? body.params : {};
-  const limit = body.limit === undefined || body.limit === null || body.limit === '' ? undefined : Number(body.limit);
-  if (limit !== undefined && !isValidLimit(limit)) return errorResult(400, 'INVALID_LIMIT');
-  const isSplit = Boolean(params.splitBy || params.splitNodeId);
-  if (isSplit && (!contract.sql.splitQuery || !SPLIT_DIMENSIONS.has(params.splitBy) || !params.splitNodeId)) {
-    return errorResult(400, 'SPLIT_NOT_SUPPORTED');
-  }
+  const { contract, error: contractError } = loadQueryContract(artifactsDir, reportId);
+  if (contractError) return contractError;
+  const { params, limit, isSplit, error: requestError } = parseQueryRequest(body, contract);
+  if (requestError) return requestError;
 
   // Every failure from here on (no DB config, DB down, bad SQL) is an answer,
   // never a throw: the dev engine's middleware has no outer catch.
