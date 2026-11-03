@@ -103,7 +103,9 @@ function loadQueryContract(artifactsDir, reportId) {
 }
 
 /** Params, limit and split mode from the request body, or the 400 answer. */
-function parseQueryRequest(body, contract) {
+function parseQueryRequest(rawBody, contract) {
+  // JSON `null`, a number or a string is valid JSON but no request object: read it as `{}`.
+  const body = rawBody && typeof rawBody === 'object' ? rawBody : {};
   const params = body.params && typeof body.params === 'object' ? body.params : {};
   const limit = body.limit === undefined || body.limit === null || body.limit === '' ? undefined : Number(body.limit);
   if (limit !== undefined && !isValidLimit(limit)) return { error: errorResult(400, 'INVALID_LIMIT') };

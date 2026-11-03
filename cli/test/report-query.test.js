@@ -138,6 +138,17 @@ describe('handleReportQuery — access', () => {
     }
   });
 
+  it('a JSON body that is not an object (null, number, string) is an answer, not a throw', async () => {
+    for (const body of [null, 5, 'x']) {
+      const res = await handleReportQuery(
+        { reportId: 'profit-loss', headers: { cookie: COOKIE, 'x-go-csrf': CSRF }, method: 'POST', body },
+        { artifactsDir, etendoBase: 'x', createPool: () => { throw new Error('no db'); }, fetchImpl: sessionFetch() },
+      );
+      assert.equal(res.status, 500, `body ${JSON.stringify(body)}`);
+      assert.equal(res.body.code, 'QUERY_FAILED');
+    }
+  });
+
   // Re-review W-a: every failure is an answer, never a throw (the dev
   // middleware has no outer catch, so a throw hung the request).
   it('500 QUERY_FAILED, not a throw, when the pool cannot be created', async () => {
