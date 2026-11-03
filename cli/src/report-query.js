@@ -22,18 +22,25 @@ import { resolveReportSession, reportAuthErrorBody, assertReportOrgAccess } from
 const REPORT_ID_SHAPE = /^[\w-]+$/;
 const SPLIT_DIMENSIONS = new Set(['org', 'bpartner', 'product']);
 
+/** A row cap goes into the SQL text, so only a positive safe integer is one. */
+const isValidLimit = (n) => Number.isSafeInteger(n) && n > 0;
+
 function errorResult(status, code, error) {
   return { status, body: { error: error || code, code } };
 }
 
 /**
  * Runs a SQL contract's main query plus its optional secondary queries, with
- * the same placeholder rules as the render. `limit` caps the main query only.
+ * the same placeholder rules as the render. `limit` caps the main query only;
+ * it is spliced into the SQL text, so anything but a positive safe integer throws.
  */
 export async function runReportSql(pool, contract, { clientId, params = {}, locale, limit } = {}) {
   const apply = (sql) => applyPlaceholders(sql, { clientId, params, contract, locale });
   let main = apply(contract.sql.query);
-  if (limit) main = `${main.replace(/;\s*$/, '')} LIMIT ${limit}`;
+  if (limit !== undefined && limit !== null) {
+    if (!isValidLimit(limit)) throw new TypeError(`runReportSql: invalid limit ${JSON.stringify(limit)}`);
+    main = `${main.replace(/;\s*$/, '')} LIMIT ${limit}`;
+  }
   const { rows } = await pool.query(main);
   const openingRows = contract.sql.openingQuery ? (await pool.query(apply(contract.sql.openingQuery))).rows : null;
   const operandRows = contract.sql.operandsQuery ? (await pool.query(apply(contract.sql.operandsQuery))).rows : null;
@@ -106,19 +113,28 @@ export async function handleReportQuery({ reportId, headers, method, body = {} }
 
   const contractPath = REPORT_ID_SHAPE.test(reportId || '') && join(artifactsDir, reportId, 'report-contract.json');
   if (!contractPath || !existsSync(contractPath)) return errorResult(404, 'REPORT_NOT_FOUND');
-  const contract = JSON.parse(readFileSync(contractPath, 'utf8'));
+  let contract;
+  try {
+    contract = JSON.parse(readFileSync(contractPath, 'utf8'));
+  } catch (e) {
+    console.error(`[report-query] ${reportId}: unreadable contract:`, e?.message);
+    return errorResult(500, 'QUERY_FAILED');
+  }
   if (!contract.sql?.query) return errorResult(400, 'QUERY_NOT_SUPPORTED', 'Only SQL reports can be queried');
 
   const params = body.params && typeof body.params === 'object' ? body.params : {};
   const limit = body.limit === undefined || body.limit === null || body.limit === '' ? undefined : Number(body.limit);
-  if (limit !== undefined && !(Number.isInteger(limit) && limit > 0)) return errorResult(400, 'INVALID_LIMIT');
+  if (limit !== undefined && !isValidLimit(limit)) return errorResult(400, 'INVALID_LIMIT');
   const isSplit = Boolean(params.splitBy || params.splitNodeId);
   if (isSplit && (!contract.sql.splitQuery || !SPLIT_DIMENSIONS.has(params.splitBy) || !params.splitNodeId)) {
     return errorResult(400, 'SPLIT_NOT_SUPPORTED');
   }
 
-  const pool = createPool();
+  // Every failure from here on (no DB config, DB down, bad SQL) is an answer,
+  // never a throw: the dev engine's middleware has no outer catch.
+  let pool;
   try {
+    pool = createPool();
     await assertReportOrgAccess(pool, session, { contract, params });
     const ctx = { clientId: session.clientId, params, locale: body.locale };
     if (isSplit) return { status: 200, body: { kind: 'split', rows: await runSplit(pool, contract, ctx) } };
@@ -130,6 +146,6 @@ export async function handleReportQuery({ reportId, headers, method, body = {} }
     console.error(`[report-query] ${reportId}:`, e?.message);
     return errorResult(500, 'QUERY_FAILED');
   } finally {
-    await pool.end();
+    await pool?.end();
   }
 }

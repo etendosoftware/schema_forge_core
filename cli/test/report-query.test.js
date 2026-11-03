@@ -11,7 +11,7 @@ import { mkdtempSync, mkdirSync, writeFileSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 
-import { handleReportQuery, buildQueryResponse } from '../src/report-query.js';
+import { handleReportQuery, buildQueryResponse, runReportSql } from '../src/report-query.js';
 import { buildAccountReportTree, ELEMENT_LEVEL_RANK } from '../src/report-grouping.js';
 
 const COOKIE = '__Host-go_session=abc';
@@ -126,7 +126,7 @@ describe('handleReportQuery — access', () => {
   });
 
   it('400 INVALID_LIMIT for a limit that is not a positive integer, before opening a pool', async () => {
-    for (const limit of ['abc', -1, 0, 2.5]) {
+    for (const limit of ['abc', -1, 0, 2.5, 1e21]) {
       let created = false;
       const res = await handleReportQuery(
         { reportId: 'profit-loss', headers: { cookie: COOKIE, 'x-go-csrf': CSRF }, method: 'POST', body: { limit } },
@@ -136,6 +136,24 @@ describe('handleReportQuery — access', () => {
       assert.equal(res.body.code, 'INVALID_LIMIT');
       assert.equal(created, false);
     }
+  });
+
+  // Re-review W-a: every failure is an answer, never a throw (the dev
+  // middleware has no outer catch, so a throw hung the request).
+  it('500 QUERY_FAILED, not a throw, when the pool cannot be created', async () => {
+    const res = await handleReportQuery(
+      { reportId: 'profit-loss', headers: { cookie: COOKIE, 'x-go-csrf': CSRF }, method: 'POST', body: {} },
+      { artifactsDir, etendoBase: 'x', createPool: () => { throw new Error('gradle.properties not found'); }, fetchImpl: sessionFetch() },
+    );
+    assert.deepEqual(res, { status: 500, body: { error: 'QUERY_FAILED', code: 'QUERY_FAILED' } });
+  });
+
+  it('500 QUERY_FAILED, not a throw, for a malformed contract file', async () => {
+    mkdirSync(join(artifactsDir, 'broken'), { recursive: true });
+    writeFileSync(join(artifactsDir, 'broken', 'report-contract.json'), '{ not json');
+    const res = await call('broken');
+    assert.equal(res.status, 500);
+    assert.equal(res.body.code, 'QUERY_FAILED');
   });
 
   it('404 for an unknown or malformed report id, 400 for a non-SQL report', async () => {
@@ -218,5 +236,24 @@ describe('query vs render — same numbers at every account level (regression, Q
         `level ${level}`,
       );
     }
+  });
+});
+
+// Re-review W-b: runReportSql is exported and splices `limit` into the SQL
+// text, so it validates the value itself, whatever its caller did.
+describe('runReportSql — limit', () => {
+  it('throws for anything but a positive safe integer, before running any SQL', async () => {
+    for (const limit of ['5; DROP TABLE x', '10', -1, 0, 2.5, 1e21, Number.NaN]) {
+      const pool = fakePool();
+      await assert.rejects(runReportSql(pool, PL, { clientId: 'C1', limit }), TypeError, `limit ${limit}`);
+      assert.equal(pool.queries.length, 0);
+    }
+  });
+
+  it('appends a valid limit to the main query only', async () => {
+    const pool = fakePool();
+    await runReportSql(pool, PL, { clientId: 'C1', limit: 5 });
+    assert.ok(pool.queries[0].endsWith(' LIMIT 5'));
+    assert.ok(!pool.queries[1].includes('LIMIT'));
   });
 });

@@ -4,7 +4,7 @@ import { strict as assert } from 'node:assert';
 // Exercises the REAL shared module — never a copy. These rules existed twice
 // (dev plugin + report-server) and the copies drifted, which is the whole
 // reason this module exists.
-import { applyPlaceholders, stripBlankOptionalClauses } from '../src/report-sql.js';
+import { applyPlaceholders, stripBlankOptionalClauses, resolvePlaceholderValue } from '../src/report-sql.js';
 
 /** True when every '(' in `sql` has its matching ')'. */
 function balanced(sql) {
@@ -255,5 +255,37 @@ describe('applyPlaceholders', () => {
       const out = applyPlaceholders("WHERE c = '__CLIENT_ID__'", base);
       assert.equal(out, "WHERE c = 'C1'");
     });
+  });
+});
+
+// Re-review N-c: the org check reads __ORGID__ through resolvePlaceholderValue,
+// the SQL is filled by applyPlaceholders. They must agree on every input, or a
+// check passes on one value while the SQL runs with another (W1, ETP-6080).
+describe('resolvePlaceholderValue agrees with applyPlaceholders (ETP-6080)', () => {
+  const fill = (contract, params) => applyPlaceholders("SELECT '__ORGID__'", { clientId: 'C1', contract, params });
+  const cases = [
+    ['request value', [{ name: 'orgId' }], { orgId: 'A' }],
+    ['default only', [{ name: 'orgId', default: 'D' }], {}],
+    ['request beats default', [{ name: 'orgId', default: 'D' }], { orgId: 'A' }],
+    ['blank request, default', [{ name: 'orgId', default: 'D' }], { orgId: '' }],
+    ['blank, no default', [{ name: 'orgId' }], { orgId: '' }],
+    ['null request', [{ name: 'orgId' }], { orgId: null }],
+    ['number', [{ name: 'orgId' }], { orgId: 0 }],
+    ['array (multi-select)', [{ name: 'orgId' }], { orgId: ['A', 'B'] }],
+    ['declared in another casing', [{ name: 'orgID' }], { orgID: 'A', orgId: 'B' }],
+    ['not declared', [], { orgId: 'A' }],
+  ];
+  for (const [label, parameters, params] of cases) {
+    it(label, () => {
+      const contract = { parameters };
+      const { value, ambiguous } = resolvePlaceholderValue(contract, params, 'ORGID');
+      assert.equal(ambiguous, false);
+      assert.equal(fill(contract, params), `SELECT '${value || '__ORGID__'}'`);
+    });
+  }
+
+  it('flags two declared params with the same placeholder as ambiguous', () => {
+    const { ambiguous } = resolvePlaceholderValue({ parameters: [{ name: 'orgId' }, { name: 'ORGID' }] }, { orgId: 'A' }, 'ORGID');
+    assert.equal(ambiguous, true);
   });
 });
