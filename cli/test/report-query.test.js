@@ -71,6 +71,7 @@ function writeContract(id, contract) {
   writeFileSync(join(artifactsDir, id, 'report-contract.json'), JSON.stringify(contract));
 }
 const PL = {
+  trend: 'result',
   parameters: [{ name: 'orgId' }, { name: 'dateFrom' }, { name: 'compareTo' }, { name: 'splitBy' },
     { name: 'splitNodeId' }, { name: 'splitSign' }, { name: 'showOnlyAccountsWithValue' }],
   sql: {
@@ -122,6 +123,19 @@ describe('handleReportQuery — access', () => {
     assert.equal(res.body.code, 'ORG_ACCESS_DENIED');
     assert.ok(pool.queries.every((q) => !q.includes("'TREE'")), 'report SQL ran after a denied org check');
     assert.equal(pool.ended, true);
+  });
+
+  it('400 INVALID_LIMIT for a limit that is not a positive integer, before opening a pool', async () => {
+    for (const limit of ['abc', -1, 0, 2.5]) {
+      let created = false;
+      const res = await handleReportQuery(
+        { reportId: 'profit-loss', headers: { cookie: COOKIE, 'x-go-csrf': CSRF }, method: 'POST', body: { limit } },
+        { artifactsDir, etendoBase: 'x', createPool: () => { created = true; return fakePool(); }, fetchImpl: sessionFetch() },
+      );
+      assert.equal(res.status, 400, `limit ${limit}`);
+      assert.equal(res.body.code, 'INVALID_LIMIT');
+      assert.equal(created, false);
+    }
   });
 
   it('404 for an unknown or malformed report id, 400 for a non-SQL report', async () => {

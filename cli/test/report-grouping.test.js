@@ -761,12 +761,27 @@ describe('buildAccountReportTree — interactive view support (ETP-6080)', () =>
     assert.deepEqual(ids({ expandedNodeIds: 'E1, C1' }), ['E1', 'C1', 'D1', 'D2', 'C2']);
     assert.deepEqual(ids({ expandedNodeIds: '' }), ['E1']);
     assert.deepEqual(ids({ accountLevel: 'C' }), ['E1', 'C1', 'C2']);
-    const s1 = buildRenderAccountTree(nodes, [], { compareTo: 'true' }).find((r) => r.node_id === 'S1');
+    const s1 = buildRenderAccountTree(nodes, [], { compareTo: 'true' }, { trend: 'result' }).find((r) => r.node_id === 'S1');
     assert.equal(s1.variationAmount, 20); // credit-normal: 100 vs 80
     assert.equal(s1.trend, 'improves');
+    assert.equal(buildRenderAccountTree(nodes, [], { compareTo: 'true' }).find((r) => r.node_id === 'S1').trend, null);
     assert.equal(buildRenderAccountTree(nodes, [], {}).find((r) => r.node_id === 'S1').variationAmount, null);
     assert.equal(parseExpandedNodeIds(undefined), undefined);
     assert.equal(parseExpandedNodeIds(null), undefined);
+  });
+
+  // Review W2: a node hidden by showOnlyWithValue never reaches the client, so
+  // it can never be in expandedNodeIds; it must not hide its children.
+  it('a hidden node does not collapse its children (export matches the screen)', () => {
+    const netZero = nodes.map((n) => {
+      if (n.node_id === 'S1') return { ...n, own_amt: -100, own_amt_ref: 0 };
+      if (n.node_id === 'D2') return { ...n, own_amt: 100, own_amt_ref: 0 };
+      return n;
+    });
+    // C1 (and so E1) nets to 0 and is hidden; D1/S1 and D2 carry value.
+    const rows = buildAccountReportTree(netZero, [], { showOnlyWithValue: true, expandedNodeIds: ['D1'] });
+    assert.deepEqual(rows.map((r) => r.node_id), ['D1', 'S1', 'D2']);
+    assert.equal(rows.find((r) => r.node_id === 'D1').parentId, null);
   });
 
   it('lists a node only when its parent is expanded, ignoring accountLevel', () => {
@@ -794,6 +809,15 @@ describe('buildAccountReportTree — interactive view support (ETP-6080)', () =>
 });
 
 describe('addVariation (ETP-6080)', () => {
+  const withTrend = (rows) => addVariation(rows, { trend: true });
+
+  // Review W3: the result rule is wrong for a balance, so trend is opt-in.
+  it('computes no trend unless asked (a balance must not get the result rule)', () => {
+    const [r] = addVariation([row(120, 100, 'C')]);
+    assert.equal(r.variationAmount, 20);
+    assert.equal(r.trend, null);
+  });
+
   const row = (amount, amount_ref, sign = 'C') => ({ node_id: 'n', amount, amount_ref, sign });
 
   it('computes € and % against the absolute reference', () => {
@@ -812,7 +836,7 @@ describe('addVariation (ETP-6080)', () => {
   });
 
   it('credit-normal (Profit & Loss): revenue up and expense down improve; the reverse worsens', () => {
-    const [revenueUp, revenueDown, expenseDown, expenseUp] = addVariation([
+    const [revenueUp, revenueDown, expenseDown, expenseUp] = withTrend([
       row(120, 100), row(80, 100), row(-80, -100), row(-120, -100),
     ]);
     assert.equal(revenueUp.trend, 'improves');
@@ -822,9 +846,9 @@ describe('addVariation (ETP-6080)', () => {
   });
 
   it('debit-normal or unset sign reads the other way; no change has no trend', () => {
-    assert.equal(addVariation([row(120, 100, 'D')])[0].trend, 'worsens');
-    assert.equal(addVariation([row(120, 100, null)])[0].trend, 'worsens');
-    assert.equal(addVariation([row(100, 100)])[0].trend, null);
+    assert.equal(withTrend([row(120, 100, 'D')])[0].trend, 'worsens');
+    assert.equal(withTrend([row(120, 100, null)])[0].trend, 'worsens');
+    assert.equal(withTrend([row(100, 100)])[0].trend, null);
   });
 
   it('returns null fields when there is no comparison, without mutating the input', () => {

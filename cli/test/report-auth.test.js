@@ -388,47 +388,73 @@ describe('assertReportOrgAccess (ETP-6080)', () => {
       },
     };
   }
-  const orgReport = { sql: { query: "SELECT 1 WHERE ('__ORGID__' = '' OR x = '__ORGID__')" } };
+  const orgReport = { parameters: [{ name: 'orgId' }], sql: { query: "SELECT 1 WHERE ('__ORGID__' = '' OR x = '__ORGID__')" } };
   const session = (roleOrgIds) => ({ clientId: 'C1', roleOrgIds });
   const denied = (err) => err instanceof ReportAuthError && err.status === 403 && err.code === 'ORG_ACCESS_DENIED';
 
   it('lets a role with org 0 read any org, and an empty org, without querying', async () => {
     const pool = treePool();
-    await assertReportOrgAccess(pool, session(['0', 'Spain']), { contract: orgReport, orgId: 'USA' });
-    await assertReportOrgAccess(pool, session(['0']), { contract: orgReport, orgId: '' });
+    await assertReportOrgAccess(pool, session(['0', 'Spain']), { contract: orgReport, params: { orgId: 'USA' } });
+    await assertReportOrgAccess(pool, session(['0']), { contract: orgReport, params: { orgId: '' } });
     assert.equal(pool.calls.length, 0);
   });
 
   it('accepts a listed org and a descendant of one', async () => {
-    await assertReportOrgAccess(treePool(), session(['Spain']), { contract: orgReport, orgId: 'Spain' });
-    await assertReportOrgAccess(treePool(), session(['Main']), { contract: orgReport, orgId: 'USA' });
+    await assertReportOrgAccess(treePool(), session(['Spain']), { contract: orgReport, params: { orgId: 'Spain' } });
+    await assertReportOrgAccess(treePool(), session(['Main']), { contract: orgReport, params: { orgId: 'USA' } });
   });
 
   it('rejects a foreign org and an ANCESTOR of a listed org (the SQL would expand it to siblings)', async () => {
-    await assert.rejects(assertReportOrgAccess(treePool(), session(['Spain']), { contract: orgReport, orgId: 'USA' }), denied);
-    await assert.rejects(assertReportOrgAccess(treePool(), session(['Spain']), { contract: orgReport, orgId: 'Main' }), denied);
+    await assert.rejects(assertReportOrgAccess(treePool(), session(['Spain']), { contract: orgReport, params: { orgId: 'USA' } }), denied);
+    await assert.rejects(assertReportOrgAccess(treePool(), session(['Spain']), { contract: orgReport, params: { orgId: 'Main' } }), denied);
   });
 
   it('treats empty, absent and 0 alike: all orgs, allowed only when the role covers the client', async () => {
     for (const orgId of ['', undefined, null, '0']) {
-      await assert.rejects(assertReportOrgAccess(treePool(), session(['Spain']), { contract: orgReport, orgId }), denied);
-      await assertReportOrgAccess(treePool(), session(['Main']), { contract: orgReport, orgId });
+      await assert.rejects(assertReportOrgAccess(treePool(), session(['Spain']), { contract: orgReport, params: { orgId } }), denied);
+      await assertReportOrgAccess(treePool(), session(['Main']), { contract: orgReport, params: { orgId } });
     }
   });
 
   it('rejects a role with no org access at all', async () => {
-    await assert.rejects(assertReportOrgAccess(treePool(), session([]), { contract: orgReport, orgId: 'Spain' }), denied);
+    await assert.rejects(assertReportOrgAccess(treePool(), session([]), { contract: orgReport, params: { orgId: 'Spain' } }), denied);
   });
 
   it('does not check a report whose SQL never filters by org (NEO reports, printables)', async () => {
     const pool = treePool();
-    await assertReportOrgAccess(pool, session([]), { contract: { neo: { endpoint: '/x' } }, orgId: 'USA' });
-    await assertReportOrgAccess(pool, session([]), { contract: { sql: { header: "WHERE id = '__DOCUMENTID__'" } }, orgId: 'USA' });
+    await assertReportOrgAccess(pool, session([]), { contract: { neo: { endpoint: '/x' } }, params: { orgId: 'USA' } });
+    await assertReportOrgAccess(pool, session([]), { contract: { sql: { header: "WHERE id = '__DOCUMENTID__'" } }, params: { orgId: 'USA' } });
     assert.equal(pool.calls.length, 0);
   });
 
+  // Review B1: the report SQL reads inactive orgs' postings too, so they count.
+  it('requires inactive orgs to be covered too when every org is requested', async () => {
+    const pool = treePool();
+    await assert.rejects(assertReportOrgAccess(pool, session(['Spain']), { contract: orgReport, params: {} }), denied);
+    const coverage = pool.calls.find((q) => q.includes('FROM ad_org o'));
+    assert.ok(coverage, 'coverage query ran');
+    assert.doesNotMatch(coverage, /isactive/i);
+  });
+
+  // Review W1: the check reads the value that will fill __ORGID__, not params.orgId.
+  it('reads the org through the declared param that fills __ORGID__, whatever its casing', async () => {
+    const cased = { ...orgReport, parameters: [{ name: 'orgID' }] };
+    await assert.rejects(assertReportOrgAccess(treePool(), session(['Spain']), { contract: cased, params: { orgID: 'USA', orgId: 'Spain' } }), denied);
+    await assertReportOrgAccess(treePool(), session(['Spain']), { contract: cased, params: { orgID: 'Spain' } });
+  });
+
+  it('checks the declared default when the request leaves orgId blank', async () => {
+    const withDefault = { ...orgReport, parameters: [{ name: 'orgId', default: 'USA' }] };
+    await assert.rejects(assertReportOrgAccess(treePool(), session(['Spain']), { contract: withDefault, params: { orgId: '' } }), denied);
+  });
+
+  it('refuses a contract where two declared params fill __ORGID__', async () => {
+    const ambiguous = { ...orgReport, parameters: [{ name: 'orgId' }, { name: 'ORGID' }] };
+    await assert.rejects(assertReportOrgAccess(treePool(), session(['0']), { contract: ambiguous, params: { orgId: 'Spain' } }), denied);
+  });
+
   it('maps to a 403 JSON body through reportAuthErrorBody', async () => {
-    const err = await assertReportOrgAccess(treePool(), session(['Spain']), { contract: orgReport, orgId: 'USA' }).catch((e) => e);
+    const err = await assertReportOrgAccess(treePool(), session(['Spain']), { contract: orgReport, params: { orgId: 'USA' } }).catch((e) => e);
     assert.deepEqual(reportAuthErrorBody(err), { status: 403, body: { error: err.message, code: 'ORG_ACCESS_DENIED' } });
   });
 });

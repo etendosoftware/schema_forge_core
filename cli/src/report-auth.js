@@ -20,6 +20,7 @@
  * the status-mapping table this module implements.
  */
 import { timingSafeEqual } from 'node:crypto';
+import { resolvePlaceholderValue } from './report-sql.js';
 
 const SESSION_COOKIE_NAME = '__Host-go_session';
 const SAFE_METHODS = new Set(['GET', 'HEAD', 'OPTIONS']);
@@ -175,25 +176,32 @@ function reportFiltersByOrg(contract) {
  *     sibling orgs the role cannot read;
  *   - an empty, absent or `0` orgId means "every org" to the SQL
  *     (`stripBlankOptionalClauses` drops the unfilled clause), so it passes
- *     only if the role's orgs and their descendants cover the whole client.
+ *     only if the role's orgs and their descendants cover the whole client —
+ *     INACTIVE orgs included: the report SQL reads their postings too.
+ *
+ * The requested org is the value that will fill `__ORGID__`
+ * (`resolvePlaceholderValue`: the declared param, its default), not a
+ * hardcoded `params.orgId`.
  *
  * Applies only to reports whose SQL contains `__ORGID__` — a NEO-sourced
  * report that merely declares `orgId`, or a printable, is not checked here.
  *
  * @param {{query: Function}} pool pg pool/client
  * @param {{clientId: string, roleOrgIds: string[]}} session from resolveReportSession
- * @param {{contract: object, orgId: ?string}} request
+ * @param {{contract: object, params: object}} request the render/query params
  * @throws {ReportAuthError} 403 ORG_ACCESS_DENIED
  */
-export async function assertReportOrgAccess(pool, session, { contract, orgId }) {
+export async function assertReportOrgAccess(pool, session, { contract, params = {} }) {
   if (!reportFiltersByOrg(contract)) return;
+  const denied = () => new ReportAuthError(403, 'ORG_ACCESS_DENIED', 'The role has no access to the requested organization');
+  const { value: orgId, ambiguous } = resolvePlaceholderValue(contract, params, 'ORGID');
+  if (ambiguous) throw denied(); // two declared params fill __ORGID__: refuse rather than guess
+
   const roleOrgIds = session?.roleOrgIds || [];
   if (roleOrgIds.includes('0')) return;
-
-  const denied = () => new ReportAuthError(403, 'ORG_ACCESS_DENIED', 'The role has no access to the requested organization');
   if (!roleOrgIds.length) throw denied();
 
-  const requested = orgId && orgId !== '0' ? String(orgId) : '';
+  const requested = orgId !== '0' ? orgId : '';
   if (requested) {
     const { rows } = await pool.query(
       `SELECT 1 FROM unnest($1::varchar[]) AS r(org_id)
@@ -206,7 +214,7 @@ export async function assertReportOrgAccess(pool, session, { contract, orgId }) 
 
   const { rows } = await pool.query(
     `SELECT 1 FROM ad_org o
-      WHERE o.ad_client_id = $1 AND o.ad_org_id <> '0' AND o.isactive = 'Y'
+      WHERE o.ad_client_id = $1 AND o.ad_org_id <> '0'
         AND NOT EXISTS (SELECT 1 FROM unnest($2::varchar[]) AS r(org_id)
                          WHERE ad_isorgincluded(o.ad_org_id, r.org_id, $1) <> -1)
       LIMIT 1`,

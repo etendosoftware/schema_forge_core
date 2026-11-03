@@ -374,7 +374,7 @@ function resolveReportData(result, params, locale) {
   // nodes, account-level cutoff) is assembled here, replacing `rows` so
   // recordCount/totals and the Excel/CSV templates keep working unchanged.
   if (contract.sql?.operandsQuery !== undefined && Array.isArray(rows)) {
-    rows = buildRenderAccountTree(rows, operandRows, params);
+    rows = buildRenderAccountTree(rows, operandRows, params, contract);
   }
 
   const grouped = resolveGrouping(contract, params, rows, locale);
@@ -389,17 +389,21 @@ function resolveReportData(result, params, locale) {
 async function checkRenderOrgAccess(reportId, session, params) {
   const contractPath = join(ARTIFACTS_DIR, reportId, 'report-contract.json');
   if (!existsSync(contractPath)) return null;
-  const contract = JSON.parse(readFileSync(contractPath, 'utf8'));
-  const pg = await import('pg');
-  const pool = new pg.default.Pool(getDbConfig());
+  let pool;
   try {
-    await assertReportOrgAccess(pool, session, { contract, orgId: params.orgId });
+    const contract = JSON.parse(readFileSync(contractPath, 'utf8'));
+    if (!contract.sql) return null; // NEO / jrxml reports: nothing reads __ORGID__ here
+    const pg = await import('pg');
+    pool = new pg.default.Pool(getDbConfig());
+    await assertReportOrgAccess(pool, session, { contract, params });
     return null;
   } catch (e) {
     if (e?.name === 'ReportAuthError') return reportAuthErrorBody(e);
-    throw e;
+    // Same as /query: the DB message stays in the server log.
+    console.error(`[report-server] org check ${reportId}:`, e?.message);
+    return { status: 500, body: { error: 'ORG_CHECK_FAILED', code: 'ORG_CHECK_FAILED' } };
   } finally {
-    await pool.end();
+    await pool?.end();
   }
 }
 

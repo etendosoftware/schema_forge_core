@@ -33,7 +33,7 @@ function errorResult(status, code, error) {
 export async function runReportSql(pool, contract, { clientId, params = {}, locale, limit } = {}) {
   const apply = (sql) => applyPlaceholders(sql, { clientId, params, contract, locale });
   let main = apply(contract.sql.query);
-  if (limit) main = `${main.replace(/;\s*$/, '')} LIMIT ${Number.parseInt(limit, 10)}`;
+  if (limit) main = `${main.replace(/;\s*$/, '')} LIMIT ${limit}`;
   const { rows } = await pool.query(main);
   const openingRows = contract.sql.openingQuery ? (await pool.query(apply(contract.sql.openingQuery))).rows : null;
   const operandRows = contract.sql.operandsQuery ? (await pool.query(apply(contract.sql.operandsQuery))).rows : null;
@@ -43,7 +43,9 @@ export async function runReportSql(pool, contract, { clientId, params = {}, loca
 /**
  * Account split (ticket item 8): one account's amounts per org / business
  * partner / product. `sql.splitQuery` returns `dimension_id`, `dimension_name`,
- * `own_amt`, `own_amt_ref` (raw debit − credit); the row's effective sign
+ * `own_amt`, `own_amt_ref` (raw debit − credit). It must carry the same
+ * `__ORGID__` predicate as the main query, or a split by org would list orgs
+ * the org check never covered. The row's effective sign
  * (`splitSign`, from the tree row the user split) turns them into the same
  * polarity the tree shows. The sign only affects display, never which rows
  * are read.
@@ -59,7 +61,7 @@ async function runSplit(pool, contract, { clientId, params, locale }) {
     amount_ref: cleanAmount((Number(r.own_amt_ref) || 0) * multiplier),
     sign,
   }));
-  return addVariation(split, { compare: params.compareTo === 'true' });
+  return addVariation(split, { compare: params.compareTo === 'true', trend: contract.trend === 'result' });
 }
 
 /**
@@ -73,7 +75,7 @@ export function buildQueryResponse(contract, params, { rows, openingRows, operan
       accountLevel: 'S',
       showOnlyWithValue: params.showOnlyAccountsWithValue === 'true',
     });
-    return { kind: 'tree', rows: addVariation(tree, { compare: params.compareTo === 'true' }) };
+    return { kind: 'tree', rows: addVariation(tree, { compare: params.compareTo === 'true', trend: contract.trend === 'result' }) };
   }
   return { kind: 'rows', rows, openingRows };
 }
@@ -108,6 +110,8 @@ export async function handleReportQuery({ reportId, headers, method, body = {} }
   if (!contract.sql?.query) return errorResult(400, 'QUERY_NOT_SUPPORTED', 'Only SQL reports can be queried');
 
   const params = body.params && typeof body.params === 'object' ? body.params : {};
+  const limit = body.limit === undefined || body.limit === null || body.limit === '' ? undefined : Number(body.limit);
+  if (limit !== undefined && !(Number.isInteger(limit) && limit > 0)) return errorResult(400, 'INVALID_LIMIT');
   const isSplit = Boolean(params.splitBy || params.splitNodeId);
   if (isSplit && (!contract.sql.splitQuery || !SPLIT_DIMENSIONS.has(params.splitBy) || !params.splitNodeId)) {
     return errorResult(400, 'SPLIT_NOT_SUPPORTED');
@@ -115,10 +119,10 @@ export async function handleReportQuery({ reportId, headers, method, body = {} }
 
   const pool = createPool();
   try {
-    await assertReportOrgAccess(pool, session, { contract, orgId: params.orgId });
+    await assertReportOrgAccess(pool, session, { contract, params });
     const ctx = { clientId: session.clientId, params, locale: body.locale };
     if (isSplit) return { status: 200, body: { kind: 'split', rows: await runSplit(pool, contract, ctx) } };
-    const result = await runReportSql(pool, contract, { ...ctx, limit: body.limit });
+    const result = await runReportSql(pool, contract, { ...ctx, limit });
     return { status: 200, body: buildQueryResponse(contract, params, result) };
   } catch (e) {
     if (e?.name === 'ReportAuthError') return reportAuthErrorBody(e);

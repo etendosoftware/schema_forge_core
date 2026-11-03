@@ -87,6 +87,14 @@ describe('server.js — POST /api/reports/:id/query delegates to the shared hand
     const dataIdx = fn.indexOf('await fetchReportData(');
     assert.ok(sessionIdx >= 0 && orgIdx > sessionIdx && dataIdx > orgIdx, 'order: session → org check → data');
   });
+
+  it('answers a failed org check (DB down, broken contract) with ORG_CHECK_FAILED, never the raw message', () => {
+    const start = SERVER_SRC.indexOf('async function checkRenderOrgAccess(');
+    const fn = SERVER_SRC.slice(start, SERVER_SRC.indexOf('\n}\n', start));
+    assert.match(fn, /code: 'ORG_CHECK_FAILED'/);
+    assert.ok(fn.indexOf('try {') < fn.indexOf('JSON.parse('), 'the contract is parsed inside the try');
+    assert.match(fn, /if \(!contract\.sql\) return null;/, 'no pool for a non-SQL report');
+  });
 });
 
 describe('server.js — fetchReportSelectors (GET /api/report-selectors/:type) resolves the session BEFORE any query', () => {

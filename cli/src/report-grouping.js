@@ -503,7 +503,11 @@ export function buildAccountReportTree(nodeRows, operandRows, options = {}) {
         childParentId = node.node_id;
       }
       if (!withinCutoff) return; // cutoff reached: do not descend further
-      if (expanded && !expanded.has(node.node_id)) return; // collapsed: children not listed
+      // Collapsed: children not listed. Only a LISTED node can collapse — one
+      // hidden by showOnlyWithValue is transparent, as it is for parentId, or
+      // the export would drop rows the screen shows under the listed ancestor.
+      const listed = childParentId === node.node_id;
+      if (expanded && listed && !expanded.has(node.node_id)) return;
     }
     // The report's root node is a container (the accounting report's own node),
     // never a row — so its children start the visible tree at indent 0.
@@ -549,8 +553,10 @@ export function buildAccountReportTree(nodeRows, operandRows, options = {}) {
  *    reading fits a result; Balance Sheet's asset side will need its own rule.
  *
  * With `compare` false every field is null: there is no comparison to show.
+ * `trend` is computed only when asked (`trend: true`, the contract's
+ * `trend: 'result'`): the rule above is wrong for a balance (ETP-6080 review).
  */
-export function addVariation(rows, { compare = true } = {}) {
+export function addVariation(rows, { compare = true, trend: withTrend = false } = {}) {
   return (rows || []).map((row) => {
     if (!compare) return { ...row, variationAmount: null, variationPct: null, trend: null };
     const amount = Number(row.amount) || 0;
@@ -558,7 +564,7 @@ export function addVariation(rows, { compare = true } = {}) {
     const variationAmount = cleanAmount(amount - ref);
     const variationPct = Math.abs(ref) < 0.005 ? null : cleanAmount((variationAmount / Math.abs(ref)) * 100);
     let trend = null;
-    if (Math.abs(variationAmount) >= 0.005) {
+    if (withTrend && Math.abs(variationAmount) >= 0.005) {
       // Same default as accountSignMultiplier: an unset sign is debit-normal.
       const better = row.sign === 'C' ? variationAmount > 0 : variationAmount < 0;
       trend = better ? 'improves' : 'worsens';
@@ -576,16 +582,17 @@ export function parseExpandedNodeIds(value) {
 /**
  * The account tree a RENDER prints, from the render params: the level cutoff,
  * or (ETP-6080) the interactive view's expanded nodes when it sends them, plus
- * the variation. One definition for both engines (dev plugin + report-server),
- * so the printed tree cannot drift from one to the other.
+ * the variation (trend only for a contract with `trend: 'result'`). One
+ * definition for both engines (dev plugin + report-server), so the printed
+ * tree cannot drift from one to the other.
  */
-export function buildRenderAccountTree(rows, operandRows, params = {}) {
+export function buildRenderAccountTree(rows, operandRows, params = {}, contract = {}) {
   const tree = buildAccountReportTree(rows, operandRows, {
     accountLevel: params.accountLevel || 'S',
     showOnlyWithValue: params.showOnlyAccountsWithValue === 'true',
     expandedNodeIds: parseExpandedNodeIds(params.expandedNodeIds),
   });
-  return addVariation(tree, { compare: params.compareTo === 'true' });
+  return addVariation(tree, { compare: params.compareTo === 'true', trend: contract.trend === 'result' });
 }
 
 /**
