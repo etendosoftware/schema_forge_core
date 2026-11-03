@@ -102,12 +102,16 @@ describe('applyPlaceholders', () => {
   });
 
   it('substitutes params and escapes single quotes', () => {
-    const out = applyPlaceholders("WHERE n = '__NAME__'", { ...base, params: { name: "O'Brien" } });
+    const out = applyPlaceholders("WHERE n = '__NAME__'", {
+      ...base, params: { name: "O'Brien" }, contract: { parameters: [{ name: 'name' }] },
+    });
     assert.equal(out, "WHERE n = 'O''Brien'");
   });
 
   it('ignores _display_ params — they never reach SQL', () => {
-    const out = applyPlaceholders("WHERE n = '__NAME__'", { ...base, params: { _display_name: 'X' } });
+    const out = applyPlaceholders("WHERE n = '__NAME__'", {
+      ...base, params: { _display_name: 'X' }, contract: { parameters: [{ name: 'name' }] },
+    });
     assert.ok(out.includes('__NAME__'), 'a display-only param must not substitute');
   });
 
@@ -119,7 +123,9 @@ describe('applyPlaceholders', () => {
   });
 
   it('rewrites a comma-joined multi-select into IN (...)', () => {
-    const out = applyPlaceholders("WHERE id = '__IDS__'", { ...base, params: { ids: 'a,b,c' } });
+    const out = applyPlaceholders("WHERE id = '__IDS__'", {
+      ...base, params: { ids: 'a,b,c' }, contract: { parameters: [{ name: 'ids' }] },
+    });
     assert.equal(out, "WHERE id IN ('a','b','c')");
   });
 
@@ -158,9 +164,21 @@ describe('applyPlaceholders', () => {
 
   it('keeps a filled optional clause', () => {
     const sql = "SELECT 1 FROM t WHERE ('__ORGID__' = '' OR t.org = '__ORGID__')";
-    const out = applyPlaceholders(sql, { ...base, params: { orgId: 'O1' } });
+    const out = applyPlaceholders(sql, {
+      ...base, params: { orgId: 'O1' }, contract: { parameters: [{ name: 'orgId' }] },
+    });
     assert.ok(out.includes("t.org = 'O1'"), 'a supplied filter must survive');
     assert.ok(balanced(out));
+  });
+
+  it('never substitutes a request key that is not a declared param (ETP-6080)', () => {
+    // `orgid` uppercases to the same `__ORGID__` as the declared `orgId`: a
+    // check made on params.orgId must not be bypassable by a differently-cased key.
+    const sql = "SELECT 1 FROM t WHERE AD_CLIENT_ID IN ('0') AND ('__ORGID__' = '' OR t.org = '__ORGID__')";
+    const out = applyPlaceholders(sql, {
+      ...base, params: { orgid: 'FOREIGN' }, contract: { parameters: [{ name: 'orgId' }] },
+    });
+    assert.ok(!out.includes('FOREIGN'), 'an undeclared key reached the SQL');
   });
 
   // ── ETP-5013: __REPORT_LOCALE__ placeholder ─────────────────────────────

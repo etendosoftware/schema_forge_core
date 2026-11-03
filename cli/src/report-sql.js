@@ -97,15 +97,19 @@ export function applyPlaceholders(rawSql, { clientId, params = {}, contract = {}
 
   let q = rawSql.replace(/__CLIENT_ID__/g, clientId);
 
-  for (const [key, value] of Object.entries(params)) {
-    if (key.startsWith('_display_')) continue; // display-only, never reaches SQL
+  // Only DECLARED params reach the SQL (ETP-6080): the placeholder is the
+  // uppercased name, so an undeclared request key like `orgid` would otherwise
+  // fill `__ORGID__` behind the back of any check made on `params.orgId`.
+  const declared = contract.parameters || [];
+  for (const p of declared) {
+    const value = params[p.name];
     if (value !== undefined && value !== null && value !== '') {
       const escaped = String(value).replace(/'/g, "''");
-      q = q.replace(new RegExp(`__${key.toUpperCase()}__`, 'g'), escaped);
+      q = q.replace(new RegExp(`__${p.name.toUpperCase()}__`, 'g'), escaped);
     }
   }
 
-  for (const p of (contract.parameters || [])) {
+  for (const p of declared) {
     if (p.default !== undefined && p.default !== null && p.default !== '') {
       q = q.replace(new RegExp(`__${p.name.toUpperCase()}__`, 'g'), String(p.default));
     }

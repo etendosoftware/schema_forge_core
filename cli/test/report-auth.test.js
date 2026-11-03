@@ -26,6 +26,7 @@ import {
   extractSessionCookie,
   resolveReportSession,
   reportAuthErrorBody,
+  assertReportOrgAccess,
 } from '../src/report-auth.js';
 
 const SESSION_COOKIE = '__Host-go_session=abc123';
@@ -37,13 +38,14 @@ function sessionResponse({
   environment = { clientId: 'C1', orgId: 'O1', roleId: 'R1', userId: 'U1' },
   csrfToken = 'csrf-good',
   json = true,
+  roleList,
 } = {}) {
   return {
     ok,
     status,
     json: async () => {
       if (!json) throw new Error('not JSON');
-      return { status: 'ok', environment, csrfToken };
+      return { status: 'ok', environment, csrfToken, ...(roleList ? { roleList } : {}) };
     },
   };
 }
@@ -334,5 +336,99 @@ describe('undici Origin header — open question from design id 455', () => {
     }
     assert.equal(receivedOrigin, 'https://app.test',
       'undici must forward a caller-set Origin header unmodified — resolveReportSession relies on this');
+  });
+});
+
+describe('resolveReportSession — roleOrgIds (ETP-6080)', () => {
+  const headers = { cookie: SESSION_COOKIE };
+
+  it('returns the org ids of the ACTIVE role only, never another role of the user', async () => {
+    const fetchImpl = fetchSpy(sessionResponse({
+      roleList: [
+        { id: 'R0', orgList: [{ id: 'OTHER' }] },
+        { id: 'R1', orgList: [{ id: 'O1', name: 'Spain' }, { id: 'O2', name: 'USA' }] },
+      ],
+    }));
+    const session = await resolveReportSession(headers, { etendoBase: ETENDO_BASE, fetchImpl });
+    assert.deepEqual(session.roleOrgIds, ['O1', 'O2']);
+  });
+
+  it('returns an empty list when the body has no roleList or the role is not in it', async () => {
+    const noList = await resolveReportSession(headers, { etendoBase: ETENDO_BASE, fetchImpl: fetchSpy(sessionResponse()) });
+    assert.deepEqual(noList.roleOrgIds, []);
+    const other = await resolveReportSession(headers, {
+      etendoBase: ETENDO_BASE,
+      fetchImpl: fetchSpy(sessionResponse({ roleList: [{ id: 'R9', orgList: [{ id: 'O1' }] }] })),
+    });
+    assert.deepEqual(other.roleOrgIds, []);
+  });
+});
+
+describe('assertReportOrgAccess (ETP-6080)', () => {
+  // Client C1: Main ⊃ {Spain, USA}. Mirrors QA Testing in the local sample data.
+  const PARENT = { Main: null, Spain: 'Main', USA: 'Main' };
+  const isIncluded = (org, parent) => {
+    for (let o = org; o; o = PARENT[o]) if (o === parent) return true;
+    return false;
+  };
+  // Answers the two queries assertReportOrgAccess runs, from PARENT.
+  function treePool() {
+    const calls = [];
+    return {
+      calls,
+      async query(sql, params) {
+        calls.push(sql);
+        if (sql.includes('FROM ad_org o')) {
+          const [, roleOrgIds] = params;
+          const uncovered = Object.keys(PARENT).filter((o) => !roleOrgIds.some((r) => isIncluded(o, r)));
+          return { rows: uncovered.length ? [{ '?column?': 1 }] : [] };
+        }
+        const [roleOrgIds, requested] = params;
+        return { rows: roleOrgIds.some((r) => isIncluded(requested, r)) ? [{ '?column?': 1 }] : [] };
+      },
+    };
+  }
+  const orgReport = { sql: { query: "SELECT 1 WHERE ('__ORGID__' = '' OR x = '__ORGID__')" } };
+  const session = (roleOrgIds) => ({ clientId: 'C1', roleOrgIds });
+  const denied = (err) => err instanceof ReportAuthError && err.status === 403 && err.code === 'ORG_ACCESS_DENIED';
+
+  it('lets a role with org 0 read any org, and an empty org, without querying', async () => {
+    const pool = treePool();
+    await assertReportOrgAccess(pool, session(['0', 'Spain']), { contract: orgReport, orgId: 'USA' });
+    await assertReportOrgAccess(pool, session(['0']), { contract: orgReport, orgId: '' });
+    assert.equal(pool.calls.length, 0);
+  });
+
+  it('accepts a listed org and a descendant of one', async () => {
+    await assertReportOrgAccess(treePool(), session(['Spain']), { contract: orgReport, orgId: 'Spain' });
+    await assertReportOrgAccess(treePool(), session(['Main']), { contract: orgReport, orgId: 'USA' });
+  });
+
+  it('rejects a foreign org and an ANCESTOR of a listed org (the SQL would expand it to siblings)', async () => {
+    await assert.rejects(assertReportOrgAccess(treePool(), session(['Spain']), { contract: orgReport, orgId: 'USA' }), denied);
+    await assert.rejects(assertReportOrgAccess(treePool(), session(['Spain']), { contract: orgReport, orgId: 'Main' }), denied);
+  });
+
+  it('treats empty, absent and 0 alike: all orgs, allowed only when the role covers the client', async () => {
+    for (const orgId of ['', undefined, null, '0']) {
+      await assert.rejects(assertReportOrgAccess(treePool(), session(['Spain']), { contract: orgReport, orgId }), denied);
+      await assertReportOrgAccess(treePool(), session(['Main']), { contract: orgReport, orgId });
+    }
+  });
+
+  it('rejects a role with no org access at all', async () => {
+    await assert.rejects(assertReportOrgAccess(treePool(), session([]), { contract: orgReport, orgId: 'Spain' }), denied);
+  });
+
+  it('does not check a report whose SQL never filters by org (NEO reports, printables)', async () => {
+    const pool = treePool();
+    await assertReportOrgAccess(pool, session([]), { contract: { neo: { endpoint: '/x' } }, orgId: 'USA' });
+    await assertReportOrgAccess(pool, session([]), { contract: { sql: { header: "WHERE id = '__DOCUMENTID__'" } }, orgId: 'USA' });
+    assert.equal(pool.calls.length, 0);
+  });
+
+  it('maps to a 403 JSON body through reportAuthErrorBody', async () => {
+    const err = await assertReportOrgAccess(treePool(), session(['Spain']), { contract: orgReport, orgId: 'USA' }).catch((e) => e);
+    assert.deepEqual(reportAuthErrorBody(err), { status: 403, body: { error: err.message, code: 'ORG_ACCESS_DENIED' } });
   });
 });
