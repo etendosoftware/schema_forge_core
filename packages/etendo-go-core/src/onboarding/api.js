@@ -15,6 +15,7 @@ export const ONBOARDING_ERROR_CODES = {
   missingResult: 'onboardingMissingResult',
   emailVerifyFailed: 'onboardingEmailVerifyFailed',
   loginLinkFailed: 'onboardingLoginLinkInvalid',
+  termsUnavailable: 'onboardingTermsUnavailable',
 };
 
 // ETP-4664 — maps the stable, SCREAMING_SNAKE `error.code` returned by the
@@ -198,7 +199,25 @@ export async function loginAccount(fetchImpl, baseUrl, form) {
   return readJsonResponse(response, ONBOARDING_ERROR_CODES.invalidCredentials);
 }
 
-export async function loginWithSsoProvider(fetchImpl, baseUrl, provider, payload) {
+/**
+ * ETP-6081 — the terms and conditions in force, in the requested language (English when that
+ * language has none): `{ version, language, content, publishedAt }`.
+ *
+ * Unauthenticated on purpose: the register screen shows them before any account exists. No
+ * `credentials` for the same reason verifyEmail takes none.
+ */
+export async function fetchTermsAndConditions(fetchImpl, baseUrl, language) {
+  const query = language ? `?language=${encodeURIComponent(language)}` : '';
+  const response = await fetchImpl(`${baseUrl}/sws/go/terms${query}`, { method: 'GET' });
+  return readJsonResponse(response, ONBOARDING_ERROR_CODES.termsUnavailable);
+}
+
+/**
+ * @param {object} [extra] fields the backend reads besides the provider's own credential, for
+ *   now only `termsVersion` (ETP-6081): the terms version the register screen showed, recorded
+ *   when this sign-in creates the account.
+ */
+export async function loginWithSsoProvider(fetchImpl, baseUrl, provider, payload, extra = {}) {
   const normalizedProvider = String(provider || '').trim().toLowerCase();
   const buildPayload = SSO_PAYLOAD_BUILDERS[normalizedProvider];
   if (!buildPayload) {
@@ -210,7 +229,10 @@ export async function loginWithSsoProvider(fetchImpl, baseUrl, provider, payload
     method: 'POST',
     credentials: 'include',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(buildPayload(payload)),
+    body: JSON.stringify({
+      ...buildPayload(payload),
+      ...(extra.termsVersion ? { termsVersion: extra.termsVersion } : {}),
+    }),
   });
   return readJsonResponse(response, ONBOARDING_ERROR_CODES.ssoFailed);
 }
