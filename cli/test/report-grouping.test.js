@@ -14,6 +14,8 @@ import {
   groupAggregateRowsByAccount,
   buildAccountReportTree,
   addVariation,
+  parseExpandedNodeIds,
+  buildRenderAccountTree,
   cleanAmount,
   TRIAL_BALANCE_AMOUNT_FIELDS,
 } from '../src/report-grouping.js';
@@ -752,6 +754,19 @@ describe('buildAccountReportTree — interactive view support (ETP-6080)', () =>
     const rows = byId(buildAccountReportTree(hiddenMiddle, [], { showOnlyWithValue: true }));
     assert.equal(rows.D1, undefined);
     assert.equal(rows.D2.parentId, 'C1');
+  });
+
+  it('buildRenderAccountTree reads the render params: comma string, level cutoff when absent, variation', () => {
+    const ids = (params) => buildRenderAccountTree(nodes, [], params).map((r) => r.node_id);
+    assert.deepEqual(ids({ expandedNodeIds: 'E1, C1' }), ['E1', 'C1', 'D1', 'D2', 'C2']);
+    assert.deepEqual(ids({ expandedNodeIds: '' }), ['E1']);
+    assert.deepEqual(ids({ accountLevel: 'C' }), ['E1', 'C1', 'C2']);
+    const s1 = buildRenderAccountTree(nodes, [], { compareTo: 'true' }).find((r) => r.node_id === 'S1');
+    assert.equal(s1.variationAmount, 20); // credit-normal: 100 vs 80
+    assert.equal(s1.trend, 'improves');
+    assert.equal(buildRenderAccountTree(nodes, [], {}).find((r) => r.node_id === 'S1').variationAmount, null);
+    assert.equal(parseExpandedNodeIds(undefined), undefined);
+    assert.equal(parseExpandedNodeIds(null), undefined);
   });
 
   it('lists a node only when its parent is expanded, ignoring accountLevel', () => {

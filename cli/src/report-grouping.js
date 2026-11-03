@@ -567,6 +567,27 @@ export function addVariation(rows, { compare = true } = {}) {
   });
 }
 
+/** `expandedNodeIds` arrives as a comma-joined string; '' = everything collapsed, absent = undefined. */
+export function parseExpandedNodeIds(value) {
+  if (value === undefined || value === null) return undefined;
+  return String(value).split(',').map((id) => id.trim()).filter(Boolean);
+}
+
+/**
+ * The account tree a RENDER prints, from the render params: the level cutoff,
+ * or (ETP-6080) the interactive view's expanded nodes when it sends them, plus
+ * the variation. One definition for both engines (dev plugin + report-server),
+ * so the printed tree cannot drift from one to the other.
+ */
+export function buildRenderAccountTree(rows, operandRows, params = {}) {
+  const tree = buildAccountReportTree(rows, operandRows, {
+    accountLevel: params.accountLevel || 'S',
+    showOnlyWithValue: params.showOnlyAccountsWithValue === 'true',
+    expandedNodeIds: parseExpandedNodeIds(params.expandedNodeIds),
+  });
+  return addVariation(tree, { compare: params.compareTo === 'true' });
+}
+
 /**
  * Resolves everything the `groupBy` parameter implies for one render: the band
  * labels, which row field the report is grouped by, the dimension-folded rows

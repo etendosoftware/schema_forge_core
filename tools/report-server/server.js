@@ -27,7 +27,7 @@ import { fileURLToPath } from 'node:url';
 import { registerReportHelpers, computeDocumentQrDataUrl, buildJsreportHelpersString } from '../../templates/reports/helpers/report-html-helpers.js';
 import { listReportDescriptors } from '../../cli/src/report-descriptor.js';
 import { pickLabel, pickUiStrings, buildContractLabels } from '../../cli/src/report-i18n.js';
-import { resolveGrouping, buildNestedGroups, buildAccountReportTree, addVariation } from '../../cli/src/report-grouping.js';
+import { resolveGrouping, buildNestedGroups, buildRenderAccountTree } from '../../cli/src/report-grouping.js';
 import { applyPlaceholders } from '../../cli/src/report-sql.js';
 import { filterAndTransformParams } from '../../cli/src/report-filters.js';
 import { hydrateDocumentBranding, resolveCompanyLogoDataUrl } from '../../cli/src/report-branding.js';
@@ -374,24 +374,11 @@ function resolveReportData(result, params, locale) {
   // nodes, account-level cutoff) is assembled here, replacing `rows` so
   // recordCount/totals and the Excel/CSV templates keep working unchanged.
   if (contract.sql?.operandsQuery !== undefined && Array.isArray(rows)) {
-    rows = buildAccountReportTree(rows, operandRows, {
-      accountLevel: params.accountLevel || 'S',
-      showOnlyWithValue: params.showOnlyAccountsWithValue === 'true',
-      // ETP-6080: the interactive view prints what it shows — its expanded
-      // nodes replace the level cutoff. Absent = the old viewer, unchanged.
-      expandedNodeIds: parseExpandedNodeIds(params.expandedNodeIds),
-    });
-    rows = addVariation(rows, { compare: params.compareTo === 'true' });
+    rows = buildRenderAccountTree(rows, operandRows, params);
   }
 
   const grouped = resolveGrouping(contract, params, rows, locale);
   return { ...grouped, openingRows };
-}
-
-/** `expandedNodeIds` arrives as a comma-joined string; '' = everything collapsed. */
-function parseExpandedNodeIds(value) {
-  if (value === undefined || value === null) return undefined;
-  return String(value).split(',').map((id) => id.trim()).filter(Boolean);
 }
 
 /**
