@@ -692,7 +692,7 @@ Field keys use **camelCase from raw schema** (e.g., `"businessPartner"`, `"order
 | Property | Type | Default | Values | Purpose |
 |----------|------|---------|--------|---------|
 | `visibility` | string | From extraction | `"editable"`, `"readOnly"`, `"system"`, `"discarded"` | User interaction level. See `docs/field-visibility-types.md`. |
-| `grid` | boolean | Per visibility | `true`/`false` | Show in list/grid view. |
+| `grid` | boolean | Per visibility | `true`/`false` | Show in list/grid view. Also the MCP's default list columns: `push-to-neo` writes each grid field's position (`gridOrder`, then the unordered grid fields in contract order) to `ETGO_SF_FIELD.GRID_SEQNO`, and `etendo_list` without `fields` returns those columns (ETP-5848). |
 | `form` | boolean | Per visibility | `true`/`false` | Show in detail/form view. |
 | `searchable` | boolean | `false` | `true`/`false` | Enable as filter parameter in list API. |
 | `section` | string | `null` | `"principal"`, `"other"`, custom | Group fields into form sections. |
