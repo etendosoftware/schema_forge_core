@@ -24,9 +24,11 @@ import {
   PHONE_NUMBER_MAX_LENGTH,
 } from '../phonePrefixes.js';
 
+export const MARKETING_CONSENT_DEFAULT = true;
+
 const AUTH_FEATURE_KEYS = ['onboardingAuthFeatureNoCard', 'onboardingAuthFeatureTrial', 'onboardingAuthFeatureInstantAccess'];
 
-export function RegisterStep({ config, stepData, onNext, onBack, goToStep, setToken, setAccountName, handleRegisterSuccess, initialName, initialEmail, emailReadOnly = false, registerHandler, onRegistered, askPhone = true, askPassword = false }) {
+export function RegisterStep({ config, stepData, onNext, onBack, goToStep, setToken, setAccountName, handleRegisterSuccess, initialName, initialEmail, emailReadOnly = false, registerHandler, onRegistered, askPhone = true, askPassword = false, askMarketingConsent = askPhone }) {
   const ui = useUI();
   const { locale, setLocale } = useLocaleSwitch();
 
@@ -59,6 +61,9 @@ export function RegisterStep({ config, stepData, onNext, onBack, goToStep, setTo
   const [terms, setTerms] = useState({ data: null, loading: false, error: null });
   const [termsOpen, setTermsOpen] = useState(false);
   const termsVersion = terms.data?.version || null;
+  // ETP-6081 — consent to promotional mail, ticked by default and untickable inside the terms
+  // dialog. Sent only when asked (not to an invitee, for the same reason as the phone).
+  const [marketingConsent, setMarketingConsent] = useState(MARKETING_CONSENT_DEFAULT);
   const termsLanguage = locale || config.defaultForm?.language || '';
 
   const loadTerms = useCallback(async () => {
@@ -101,7 +106,10 @@ export function RegisterStep({ config, stepData, onNext, onBack, goToStep, setTo
     setRegisterError(null);
     setSsoLoadingProvider(provider);
     try {
-      const data = await loginWithSsoProvider(fetch, apiBase, provider, payload, { termsVersion });
+      const data = await loginWithSsoProvider(fetch, apiBase, provider, payload, {
+        termsVersion,
+        ...(askMarketingConsent ? { marketingConsent } : {}),
+      });
       // Either credential counts, same as the password-registration path below:
       // gating on csrfToken alone made a bearer SSO registration report failure.
       const ssoCredential = data.csrfToken ?? data.token;
@@ -130,7 +138,7 @@ export function RegisterStep({ config, stepData, onNext, onBack, goToStep, setTo
     } finally {
       setSsoLoadingProvider(null);
     }
-  }, [handleAuthSuccess, ui, apiBase, config, termsVersion]);
+  }, [handleAuthSuccess, ui, apiBase, config, termsVersion, askMarketingConsent, marketingConsent]);
 
   useEffect(() => {
     if (!registerSsoButtonRef.current || !SSO_PROVIDERS.length) {
@@ -176,6 +184,7 @@ export function RegisterStep({ config, stepData, onNext, onBack, goToStep, setTo
     try {
       const termsField = termsVersion ? { termsVersion } : {};
       const phoneField = phone ? { phone } : {};
+      const marketingConsentField = askMarketingConsent ? { marketingConsent } : {};
       const credentials = askPassword
         ? registerForm
         : { name: registerForm.name, email: registerForm.email };
@@ -185,6 +194,7 @@ export function RegisterStep({ config, stepData, onNext, onBack, goToStep, setTo
           ...credentials,
           ...termsField,
           ...phoneField,
+          ...marketingConsentField,
           language: locale || config.defaultForm?.language || '',
         });
       // ETP-4576 — a credential of EITHER kind marks an authenticated response.
@@ -448,6 +458,8 @@ export function RegisterStep({ config, stepData, onNext, onBack, goToStep, setTo
         error={terms.error}
         onRetry={loadTerms}
         ui={ui}
+        marketingConsent={marketingConsent}
+        onMarketingConsentChange={askMarketingConsent ? setMarketingConsent : undefined}
         data-testid="TermsDialog__79cf84" />
     </AuthShell>
   );

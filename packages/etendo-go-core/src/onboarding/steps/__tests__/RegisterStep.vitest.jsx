@@ -8,7 +8,8 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
  * submit) and gates account creation on it, mirroring the password policy.
  * ETP-4665 — every input is capped at the size of the AD column it lands in,
  * and the password advertises no character counter (its hash is fixed-length).
- * ETP-6081 — the sign-up asks for no password; only an invitation (askPassword) does.
+ * ETP-6081 — the sign-up asks for no password; only an invitation (askPassword) does. The terms
+ * dialog holds the consent to promotional mail, ticked by default and sent with the sign-up.
  *
  * Rendered against the real component; the mocks only replace the i18n catalog
  * and the network the step would otherwise reach for.
@@ -273,6 +274,86 @@ describe('RegisterStep optional phone (ETP-6081)', () => {
 
     expect(screen.queryByTestId('phone-prefix-select')).toBeNull();
     expect(container.querySelector('#reg-phone')).toBeNull();
+  });
+});
+
+describe('RegisterStep consent to promotional mail (ETP-6081)', () => {
+  function fillValidForm(container) {
+    fireEvent.change(container.querySelector('#reg-name'), { target: { value: 'Ada' } });
+    typeEmail(container, VALID_EMAIL);
+  }
+
+  async function openTerms() {
+    fireEvent.click(screen.getByTestId('register-terms-link'));
+    await screen.findByTestId('terms-dialog');
+  }
+
+  it('shows the consent inside the terms dialog, ticked by default', async () => {
+    renderRegisterStep();
+    await openTerms();
+
+    const checkbox = screen.getByTestId('terms-marketing-consent');
+    expect(checkbox.checked).toBe(true);
+    expect(screen.getByTestId('terms-marketing-consent-label').textContent)
+      .toContain('onboardingMarketingConsent');
+  });
+
+  it('sends the consent with a registration that never opened the terms', async () => {
+    api.registerAccount.mockResolvedValue({ csrfToken: 'csrf', account: { name: 'Ada' } });
+    const { container } = renderRegisterStep({ handleRegisterSuccess: vi.fn() });
+    fillValidForm(container);
+
+    fireEvent.submit(container.querySelector('form'));
+
+    await waitFor(() => expect(api.registerAccount).toHaveBeenCalledWith(
+      expect.any(Function), '', expect.objectContaining({ marketingConsent: true }),
+    ));
+  });
+
+  it('keeps an untick after the dialog closes and sends it', async () => {
+    api.registerAccount.mockResolvedValue({ csrfToken: 'csrf', account: { name: 'Ada' } });
+    const { container } = renderRegisterStep({ handleRegisterSuccess: vi.fn() });
+    fillValidForm(container);
+    await openTerms();
+    fireEvent.click(screen.getByTestId('terms-marketing-consent'));
+    fireEvent.click(screen.getByTestId('terms-dialog-close'));
+    await waitFor(() => expect(screen.queryByTestId('terms-dialog')).toBeNull());
+
+    await openTerms();
+    expect(screen.getByTestId('terms-marketing-consent').checked).toBe(false);
+    fireEvent.click(screen.getByTestId('terms-dialog-close'));
+    await waitFor(() => expect(screen.queryByTestId('terms-dialog')).toBeNull());
+    fireEvent.submit(container.querySelector('form'));
+
+    await waitFor(() => expect(api.registerAccount).toHaveBeenCalledWith(
+      expect.any(Function), '', expect.objectContaining({ marketingConsent: false }),
+    ));
+  });
+
+  it('toggles once per click on the label text', async () => {
+    renderRegisterStep();
+    await openTerms();
+
+    fireEvent.click(screen.getByText('onboardingMarketingConsent'));
+
+    expect(screen.getByTestId('terms-marketing-consent').checked).toBe(false);
+  });
+
+  it('neither asks nor sends the consent for a company invitation', async () => {
+    const registerHandler = vi.fn().mockResolvedValue({ csrfToken: 'csrf', account: { name: 'Ada' } });
+    const { container } = renderRegisterStep({
+      askPhone: false, registerHandler, handleRegisterSuccess: vi.fn(),
+    });
+    await openTerms();
+    expect(screen.queryByTestId('terms-marketing-consent')).toBeNull();
+    fireEvent.click(screen.getByTestId('terms-dialog-close'));
+    await waitFor(() => expect(screen.queryByTestId('terms-dialog')).toBeNull());
+    fillValidForm(container);
+
+    fireEvent.submit(container.querySelector('form'));
+
+    await waitFor(() => expect(registerHandler).toHaveBeenCalled());
+    expect(registerHandler.mock.calls[0][0]).not.toHaveProperty('marketingConsent');
   });
 });
 

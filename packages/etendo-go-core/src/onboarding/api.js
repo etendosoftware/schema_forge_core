@@ -214,8 +214,9 @@ export async function fetchTermsAndConditions(fetchImpl, baseUrl, language) {
 
 /**
  * @param {object} [extra] fields the backend reads besides the provider's own credential, for
- *   now only `termsVersion` (ETP-6081): the terms version the register screen showed, recorded
- *   when this sign-in creates the account.
+ *   recorded when this sign-in creates the account (ETP-6081): `termsVersion`, the terms version
+ *   the register screen showed, and `marketingConsent`, whether promotional mail may be sent
+ *   (sent only when it is a boolean).
  */
 export async function loginWithSsoProvider(fetchImpl, baseUrl, provider, payload, extra = {}) {
   const normalizedProvider = String(provider || '').trim().toLowerCase();
@@ -232,6 +233,7 @@ export async function loginWithSsoProvider(fetchImpl, baseUrl, provider, payload
     body: JSON.stringify({
       ...buildPayload(payload),
       ...(extra.termsVersion ? { termsVersion: extra.termsVersion } : {}),
+      ...(typeof extra.marketingConsent === 'boolean' ? { marketingConsent: extra.marketingConsent } : {}),
     }),
   });
   return readJsonResponse(response, ONBOARDING_ERROR_CODES.ssoFailed);

@@ -17,7 +17,17 @@ import { Button } from '@etendosoftware/app-shell-core/components/ui/button';
  * The content is plain text from the ERP and is rendered as text, never as HTML: line breaks are
  * kept with `whitespace-pre-line`.
  */
-export function TermsDialog({ open, onOpenChange, terms, loading, error, onRetry, ui }) {
+/**
+ * The terms and conditions of the register screen.
+ *
+ * ETP-6081 — also holds the consent to promotional mail. It is a separate choice from accepting the
+ * terms (it can be unticked without blocking the sign-up), shown only when the caller passes
+ * `onMarketingConsentChange`, and owned by the caller so closing the dialog keeps the choice.
+ */
+export function TermsDialog({
+  open, onOpenChange, terms, loading, error, onRetry, ui,
+  marketingConsent = false, onMarketingConsentChange,
+}) {
   return (
     <Dialog open={open} onOpenChange={onOpenChange} data-testid="Dialog__terms">
       <DialogContent
@@ -56,6 +66,21 @@ export function TermsDialog({ open, onOpenChange, terms, loading, error, onRetry
             </div>
           )}
         </div>
+        {onMarketingConsentChange && (
+          <label
+            htmlFor="terms-marketing-consent"
+            className="flex cursor-pointer items-start gap-2 border-t border-slate-200 pt-4 text-sm leading-5 text-slate-700"
+            data-testid="terms-marketing-consent-label">
+            <input
+              id="terms-marketing-consent"
+              type="checkbox"
+              checked={marketingConsent}
+              onChange={e => onMarketingConsentChange(e.target.checked)}
+              className="mt-0.5 h-4 w-4 shrink-0 cursor-pointer accent-[#121217]"
+              data-testid="terms-marketing-consent" />
+            <span>{ui('onboardingMarketingConsent')}</span>
+          </label>
+        )}
         <div className="flex justify-end">
           <Button
             type="button"
