@@ -214,8 +214,7 @@ export function isCompanyStepValid(form) {
   if (exceedsLimit(form.buildingName?.trim(), ONBOARDING_FIELD_LIMITS.buildingName)) return false;
   if (exceedsLimit(form.city?.trim(), ONBOARDING_FIELD_LIMITS.city)) return false;
   if (isAddressBlockStarted(form)) {
-    return Boolean(form.streetName?.trim()) && Boolean(form.buildingNumber?.trim())
-      && Boolean(form.city?.trim());
+    return Boolean(form.streetName?.trim()) && Boolean(form.city?.trim());
   }
   return true;
 }
