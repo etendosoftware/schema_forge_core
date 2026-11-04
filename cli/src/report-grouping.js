@@ -579,9 +579,17 @@ export function addVariation(rows, { compare = true, trend: withTrend = false } 
   });
 }
 
-/** `expandedNodeIds` arrives as a comma-joined string; '' = everything collapsed, absent = undefined. */
+/** The `expandedNodeIds` value for "no row open": the interactive view sends it when everything is collapsed. */
+export const NO_EXPANDED_NODES = 'none';
+
+/**
+ * `expandedNodeIds` arrives as a comma-joined string. Absent or blank = not sent (the level cutoff
+ * applies): the old viewer sends '' for every parameter it has no value for, so '' cannot mean
+ * "everything collapsed" — `NO_EXPANDED_NODES` does.
+ */
 export function parseExpandedNodeIds(value) {
-  if (value === undefined || value === null) return undefined;
+  if (value === undefined || value === null || String(value).trim() === '') return undefined;
+  if (String(value).trim() === NO_EXPANDED_NODES) return [];
   return String(value).split(',').map((id) => id.trim()).filter(Boolean);
 }
 

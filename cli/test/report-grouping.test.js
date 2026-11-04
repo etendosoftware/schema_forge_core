@@ -759,7 +759,10 @@ describe('buildAccountReportTree — interactive view support (ETP-6080)', () =>
   it('buildRenderAccountTree reads the render params: comma string, level cutoff when absent, variation', () => {
     const ids = (params) => buildRenderAccountTree(nodes, [], params).map((r) => r.node_id);
     assert.deepEqual(ids({ expandedNodeIds: 'E1, C1' }), ['E1', 'C1', 'D1', 'D2', 'C2']);
-    assert.deepEqual(ids({ expandedNodeIds: '' }), ['E1']);
+    assert.deepEqual(ids({ expandedNodeIds: 'none' }), ['E1']);
+    // The old viewer sends '' for every parameter it has no value for: that is the level cutoff, not "all collapsed".
+    assert.deepEqual(ids({ accountLevel: 'C', expandedNodeIds: '' }), ['E1', 'C1', 'C2']);
+    assert.deepEqual(ids({ accountLevel: 'C', expandedNodeIds: '  ' }), ['E1', 'C1', 'C2']);
     assert.deepEqual(ids({ accountLevel: 'C' }), ['E1', 'C1', 'C2']);
     const s1 = buildRenderAccountTree(nodes, [], { compareTo: 'true' }, { trend: 'result' }).find((r) => r.node_id === 'S1');
     assert.equal(s1.variationAmount, 20); // credit-normal: 100 vs 80
