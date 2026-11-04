@@ -266,6 +266,21 @@ export async function upsertEntity(client, params) {
 // ---------------------------------------------------------------------------
 
 /**
+ * The columns upsertField's partial UPDATE writes only when the caller passes them:
+ * [param name, column, value mapper]. Absent keys leave the stored value untouched.
+ */
+const OPTIONAL_FIELD_COLUMNS = [
+  ['columnId', 'ad_column_id', (v) => v ?? null],
+  ['defaultValue', 'defaultvalue', (v) => v ?? null],
+  ['agentPrompt', 'agent_prompt', (v) => v ?? null],
+  ['javaQualifier', 'java_qualifier', (v) => v ?? null],
+  ['seqNo', 'seqno', (v) => v ?? null],
+  ['isBusinessCritical', 'isbusinesscritical', (v) => v ?? 'N'],
+  ['visibility', 'visibility', normalizeVisibility],
+  ['gridSeqNo', 'grid_seqno', (v) => v ?? null],
+];
+
+/**
  * Insert or update a field row in etgo_sf_field.
  *
  * @param {import('pg').PoolClient} client
@@ -315,37 +330,11 @@ export async function upsertField(client, params) {
     const values = [entityId, moduleId, isIncluded, isReadOnly];
     let paramIndex = 5;
 
-    if ('columnId' in params) {
-      setClauses.push(`ad_column_id = $${paramIndex++}`);
-      values.push(params.columnId ?? null);
-    }
-    if ('defaultValue' in params) {
-      setClauses.push(`defaultvalue = $${paramIndex++}`);
-      values.push(params.defaultValue ?? null);
-    }
-    if ('agentPrompt' in params) {
-      setClauses.push(`agent_prompt = $${paramIndex++}`);
-      values.push(params.agentPrompt ?? null);
-    }
-    if ('javaQualifier' in params) {
-      setClauses.push(`java_qualifier = $${paramIndex++}`);
-      values.push(params.javaQualifier ?? null);
-    }
-    if ('seqNo' in params) {
-      setClauses.push(`seqno = $${paramIndex++}`);
-      values.push(params.seqNo ?? null);
-    }
-    if ('isBusinessCritical' in params) {
-      setClauses.push(`isbusinesscritical = $${paramIndex++}`);
-      values.push(params.isBusinessCritical ?? 'N');
-    }
-    if ('visibility' in params) {
-      setClauses.push(`visibility = $${paramIndex++}`);
-      values.push(normalizeVisibility(params.visibility));
-    }
-    if ('gridSeqNo' in params) {
-      setClauses.push(`grid_seqno = $${paramIndex++}`);
-      values.push(params.gridSeqNo ?? null);
+    for (const [param, column, toValue] of OPTIONAL_FIELD_COLUMNS) {
+      if (param in params) {
+        setClauses.push(`${column} = $${paramIndex++}`);
+        values.push(toValue(params[param]));
+      }
     }
 
     setClauses.push(`updated = $${paramIndex++}`);
