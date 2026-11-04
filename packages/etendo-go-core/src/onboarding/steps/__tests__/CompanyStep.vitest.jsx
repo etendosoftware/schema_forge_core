@@ -199,7 +199,7 @@ describe('CompanyStep structured-address-for-sepa flag gating (ETP-5806)', () =>
     expect(container.querySelector('#city')).toBeTruthy();
   });
 
-  it('keeps Start disabled once the structured block is started until Street, Number and City are filled', () => {
+  it('keeps Start disabled once the structured block is started until Street and City are filled, Number not required (ETP-5806 follow-up)', () => {
     const { container } = renderCompanyStep(
       { businessType: 'company', clientName: 'Acme' },
       { structuredAddressForSepa: true },
@@ -207,12 +207,45 @@ describe('CompanyStep structured-address-for-sepa flag gating (ETP-5806)', () =>
 
     fireEvent.change(container.querySelector('#streetName'), { target: { value: 'Main St' } });
 
-    // Street alone started the block; Number and City are still missing.
+    // Street alone started the block; City is still missing.
     expect(startButton().disabled).toBe(true);
 
-    fireEvent.change(container.querySelector('#buildingNumber'), { target: { value: '42' } });
     fireEvent.change(container.querySelector('#city'), { target: { value: 'Madrid' } });
 
+    // Street + City filled, Number left empty: Start is enabled anyway.
     expect(startButton().disabled).toBe(false);
+    expect(container.querySelector('#buildingNumber').value).toBe('');
+  });
+
+  it('never marks Number as required or shows an inline error for it, unlike Street and City (ETP-5806 follow-up)', () => {
+    const { container } = renderCompanyStep(
+      { businessType: 'company', clientName: 'Acme' },
+      { structuredAddressForSepa: true },
+    );
+
+    // Start the address block via Street, leaving Number and City blank.
+    fireEvent.change(container.querySelector('#streetName'), { target: { value: 'Main St' } });
+
+    const numberCell = container.querySelector('label[for="buildingNumber"]').closest('div');
+    const cityCell = container.querySelector('label[for="city"]').closest('div');
+
+    // Street and City show the required-field asterisk once the block is started; Number never does.
+    expect(cityCell.textContent).toContain('*');
+    expect(numberCell.textContent).not.toContain('*');
+
+    // City is blank and the block is started, so its inline "required" error is showing;
+    // Number carries no such error regardless of being blank too.
+    expect(cityCell.querySelector('[data-testid="AddressCell-error__79cf84"]')?.textContent).toBe('fieldRequiredMessage');
+    expect(numberCell.querySelector('[data-testid="AddressCell-error__79cf84"]')).toBeNull();
+  });
+
+  it('uses the "empty" placeholder key for Number instead of the pre-ETP-5806-follow-up key', () => {
+    const { container } = renderCompanyStep(
+      { businessType: 'company', clientName: 'Acme' },
+      { structuredAddressForSepa: true },
+    );
+
+    // The i18n mock returns the key itself, so the rendered placeholder IS the key name.
+    expect(container.querySelector('#buildingNumber').placeholder).toBe('buildingNumberEmptyPlaceholder');
   });
 });
