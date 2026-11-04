@@ -261,6 +261,22 @@ describe('runReportSql — limit', () => {
     }
   });
 
+  it('runs a main query the caller built, then the secondary ones (W4)', async () => {
+    const pool = fakePool();
+    await runReportSql(pool, PL, { clientId: 'C1', mainSql: 'SELECT 1 LIMIT 3' });
+    assert.equal(pool.queries[0], 'SELECT 1 LIMIT 3');
+    assert.equal(pool.queries.length, 2);
+    assert.equal(pool.queries[1], "SELECT 'OPERANDS'");
+  });
+
+  it('runs a contract with no `sql` block (Jasper) without secondary queries', async () => {
+    const pool = fakePool();
+    const result = await runReportSql(pool, { parameters: [] }, { clientId: 'C1', mainSql: 'SELECT 2' });
+    assert.deepEqual(pool.queries, ['SELECT 2']);
+    assert.equal(result.openingRows, null);
+    assert.equal(result.operandRows, null);
+  });
+
   it('appends a valid limit to the main query only', async () => {
     const pool = fakePool();
     await runReportSql(pool, PL, { clientId: 'C1', limit: 5 });

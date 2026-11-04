@@ -32,7 +32,7 @@ import { applyPlaceholders } from '../../cli/src/report-sql.js';
 import { filterAndTransformParams } from '../../cli/src/report-filters.js';
 import { hydrateDocumentBranding, resolveCompanyLogoDataUrl } from '../../cli/src/report-branding.js';
 import { resolveReportSession, reportAuthErrorBody, assertReportOrgAccess } from '../../cli/src/report-auth.js';
-import { handleReportQuery } from '../../cli/src/report-query.js';
+import { handleReportQuery, runReportSql } from '../../cli/src/report-query.js';
 
 const _require = createRequire(import.meta.url);
 const __dirname = dirname(fileURLToPath(import.meta.url));
@@ -243,25 +243,9 @@ async function fetchReportData(reportId, { limit, session, params = {}, locale }
   const pg = await import('pg');
   const pool = new pg.default.Pool(getDbConfig());
   try {
-    const { rows } = await pool.query(sql);
-
-    // Optional secondary queries. Libro Mayor's "Initial Balance" (openingQuery,
-    // ETP-4898) and Profit & Loss's computed formula nodes (operandsQuery,
-    // ETP-4899) are declared per report in its contract. They were never run
-    // here, so the account trees and opening balances had no data to render
-    // server-side even once the functions that build them were available.
-    // Same placeholder rules as the main query, no LIMIT — both are already
-    // aggregated in SQL.
-    let openingRows = null;
-    if (contract.sql?.openingQuery) {
-      openingRows = (await pool.query(
-        applyPlaceholders(contract.sql.openingQuery, { clientId, params, contract, locale }))).rows;
-    }
-    let operandRows = null;
-    if (contract.sql?.operandsQuery) {
-      operandRows = (await pool.query(
-        applyPlaceholders(contract.sql.operandsQuery, { clientId, params, contract, locale }))).rows;
-    }
+    // Main query plus Libro Mayor's openingQuery (ETP-4898) and Profit & Loss's
+    // operandsQuery (ETP-4899): the same runner as `/query`, so they cannot drift.
+    const { rows, openingRows, operandRows } = await runReportSql(pool, contract, { clientId, params, locale, mainSql: sql });
 
     // Company logo for listing reports (ETP-5013) — same shared orgId/clientId
     // lookup as report-api.js: no `header` object exists for listing reports,

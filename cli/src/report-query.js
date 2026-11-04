@@ -31,19 +31,23 @@ function errorResult(status, code, error) {
 
 /**
  * Runs a SQL contract's main query plus its optional secondary queries, with
- * the same placeholder rules as the render. `limit` caps the main query only;
- * it is spliced into the SQL text, so anything but a positive safe integer throws.
+ * the same placeholder rules as the render. The one place that does it: `/query`,
+ * the report-server render and the dev plugin's render all call it (ETP-6080 W4).
+ * `mainSql` is a main query the caller already built (a Jasper report's extracted
+ * SQL with its date filters and limit); without it, `sql.query` is used. `limit`
+ * caps the main query only; it is spliced into the SQL text, so anything but a
+ * positive safe integer throws.
  */
-export async function runReportSql(pool, contract, { clientId, params = {}, locale, limit } = {}) {
+export async function runReportSql(pool, contract, { clientId, params = {}, locale, limit, mainSql } = {}) {
   const apply = (sql) => applyPlaceholders(sql, { clientId, params, contract, locale });
-  let main = apply(contract.sql.query);
+  let main = mainSql ?? apply(contract.sql.query);
   if (limit !== undefined && limit !== null) {
     if (!isValidLimit(limit)) throw new TypeError(`runReportSql: invalid limit ${JSON.stringify(limit)}`);
     main = `${main.replace(/;\s*$/, '')} LIMIT ${limit}`;
   }
   const { rows } = await pool.query(main);
-  const openingRows = contract.sql.openingQuery ? (await pool.query(apply(contract.sql.openingQuery))).rows : null;
-  const operandRows = contract.sql.operandsQuery ? (await pool.query(apply(contract.sql.operandsQuery))).rows : null;
+  const openingRows = contract.sql?.openingQuery ? (await pool.query(apply(contract.sql.openingQuery))).rows : null;
+  const operandRows = contract.sql?.operandsQuery ? (await pool.query(apply(contract.sql.operandsQuery))).rows : null;
   return { rows, openingRows, operandRows };
 }
 

@@ -554,8 +554,9 @@ describe('report i18n', () => {
     it('runs the optional openingQuery and operandsQuery', () => {
       // Without these the account trees and opening balances have no data to
       // render, however faithfully the builders are shared.
-      assert.match(SERVER_SRC, /contract\.sql\?\.openingQuery/);
-      assert.match(SERVER_SRC, /contract\.sql\?\.operandsQuery/);
+      // ETP-6080 W4: through the shared runner, not a copy of it.
+      assert.match(SERVER_SRC, /\{ rows, openingRows, operandRows \} = await runReportSql\(pool, contract, \{[^}]*mainSql: sql/);
+      assert.doesNotMatch(SERVER_SRC, /applyPlaceholders\(contract\.sql\.(openingQuery|operandsQuery)/);
     });
 
     it('carries the grouping outputs into meta', () => {
