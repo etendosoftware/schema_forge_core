@@ -551,6 +551,12 @@ describe('report i18n', () => {
         'getGroupedData was a near-copy of resolveGrouping and must not come back');
     });
 
+    it('checks the role may open the report before the org check on /render (ETP-6080)', () => {
+      const access = SERVER_SRC.indexOf('await assertReportAccess(session, reportId, { etendoBase: ETENDO_URL })');
+      const org = SERVER_SRC.indexOf('await checkRenderOrgAccess(reportId, session, params)');
+      assert.ok(access > 0 && access < org, 'assertReportAccess must run before the org check on /render');
+    });
+
     it('runs the optional openingQuery and operandsQuery', () => {
       // Without these the account trees and opening balances have no data to
       // render, however faithfully the builders are shared.

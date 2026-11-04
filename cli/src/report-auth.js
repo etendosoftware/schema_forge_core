@@ -223,6 +223,50 @@ export async function assertReportOrgAccess(pool, session, { contract, params = 
   if (rows.length) throw denied();
 }
 
+/** NEO answers `{result: "<json>"}` (a string or an object) or the bare object. */
+function unwrapNeoResult(body) {
+  const result = body?.result ?? body;
+  return typeof result === 'string' ? JSON.parse(result) : result;
+}
+
+/**
+ * ETP-6080: rejects a report the session's role cannot open, BEFORE any report
+ * data is read. The source is the same map the report catalog uses, NEO's
+ * `myreportaccess` (SFMyReportAccess in com.etendoerp.go): `governed` lists the
+ * report ids the Informes access catalog controls, `reportAccess` the ones this
+ * role can open (any tier). A report outside `governed` (a printable, a report
+ * left open by design) passes.
+ *
+ * shortcut: a backend that does not send `governed` yet (older com.etendoerp.go
+ * during a deploy) is not enforced; drop that branch once every environment
+ * runs the module version that sends it.
+ *
+ * @param {{forwardHeaders: object}} session from resolveReportSession
+ * @param {string} reportId the report being rendered or queried
+ * @param {{etendoBase: string, fetchImpl?: Function}} deps
+ * @throws {ReportAuthError} 403 REPORT_ACCESS_DENIED, 502 REPORT_ACCESS_UNAVAILABLE
+ */
+export async function assertReportAccess(session, reportId, { etendoBase, fetchImpl = fetch } = {}) {
+  const unavailable = (msg) => new ReportAuthError(502, 'REPORT_ACCESS_UNAVAILABLE', msg);
+  let res;
+  try {
+    res = await fetchImpl(`${etendoBase}/sws/neo/myreportaccess`, { headers: session?.forwardHeaders || {} });
+  } catch (e) {
+    throw unavailable(e.message);
+  }
+  if (!res.ok) throw unavailable(`Etendo report access check returned ${res.status}`);
+  let data;
+  try {
+    data = unwrapNeoResult(await res.json());
+  } catch {
+    throw unavailable('Unreadable report access response');
+  }
+  if (!Array.isArray(data?.governed)) return;
+  if (data.governed.includes(reportId) && !data.reportAccess?.[reportId]) {
+    throw new ReportAuthError(403, 'REPORT_ACCESS_DENIED', 'The role has no access to this report');
+  }
+}
+
 /**
  * Maps any error thrown by `resolveReportSession` (or an unexpected one, as
  * a safe default) to an HTTP status + JSON body an engine's route handler

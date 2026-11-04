@@ -22,6 +22,7 @@ import { strict as assert } from 'node:assert';
 import http from 'node:http';
 
 import {
+  assertReportAccess,
   ReportAuthError,
   extractSessionCookie,
   resolveReportSession,
@@ -456,5 +457,60 @@ describe('assertReportOrgAccess (ETP-6080)', () => {
   it('maps to a 403 JSON body through reportAuthErrorBody', async () => {
     const err = await assertReportOrgAccess(treePool(), session(['Spain']), { contract: orgReport, params: { orgId: 'USA' } }).catch((e) => e);
     assert.deepEqual(reportAuthErrorBody(err), { status: 403, body: { error: err.message, code: 'ORG_ACCESS_DENIED' } });
+  });
+});
+
+// ETP-6080: the role's access to the report itself (NEO myreportaccess), on /render and /query.
+describe('assertReportAccess', () => {
+  const SESSION = { forwardHeaders: { Cookie: 'c=1' } };
+  const neo = (payload, { ok = true, status = 200, raw = false } = {}) => {
+    const calls = [];
+    const fetchImpl = async (url, init) => {
+      calls.push({ url, init });
+      return { ok, status, json: async () => (raw ? payload : { result: JSON.stringify(payload) }) };
+    };
+    return { fetchImpl, calls };
+  };
+  const GOVERNED = ['profit-loss', 'report-general-ledger'];
+
+  it('lets a governed report through when the role has any tier on it', async () => {
+    const { fetchImpl, calls } = neo({ governed: GOVERNED, reportAccess: { 'profit-loss': 'read-only' } });
+    await assertReportAccess(SESSION, 'profit-loss', { etendoBase: 'http://e', fetchImpl });
+    assert.equal(calls[0].url, 'http://e/sws/neo/myreportaccess');
+    assert.deepEqual(calls[0].init.headers, { Cookie: 'c=1' });
+  });
+
+  it('refuses a governed report the role has no entry for', async () => {
+    const { fetchImpl } = neo({ governed: GOVERNED, reportAccess: { 'profit-loss': 'full' } });
+    await assert.rejects(assertReportAccess(SESSION, 'report-general-ledger', { etendoBase: 'x', fetchImpl }),
+      (e) => e.status === 403 && e.code === 'REPORT_ACCESS_DENIED');
+  });
+
+  it('lets a report outside the governed list through (printables, open reports)', async () => {
+    const { fetchImpl } = neo({ governed: GOVERNED, reportAccess: {} });
+    await assertReportAccess(SESSION, 'print-sales-invoice', { etendoBase: 'x', fetchImpl });
+  });
+
+  it('reads an unwrapped object answer too', async () => {
+    const { fetchImpl } = neo({ result: { governed: GOVERNED, reportAccess: {} } }, { raw: true });
+    await assert.rejects(assertReportAccess(SESSION, 'profit-loss', { etendoBase: 'x', fetchImpl }),
+      (e) => e.code === 'REPORT_ACCESS_DENIED');
+  });
+
+  it('does not enforce when the backend sends no governed list (older module)', async () => {
+    const { fetchImpl } = neo({ reportAccess: {} });
+    await assertReportAccess(SESSION, 'profit-loss', { etendoBase: 'x', fetchImpl });
+  });
+
+  it('fails closed with 502 when the access check cannot be read', async () => {
+    const down = async () => { throw new Error('ECONNREFUSED'); };
+    await assert.rejects(assertReportAccess(SESSION, 'profit-loss', { etendoBase: 'x', fetchImpl: down }),
+      (e) => e.status === 502 && e.code === 'REPORT_ACCESS_UNAVAILABLE');
+    const { fetchImpl: err } = neo({}, { ok: false, status: 500 });
+    await assert.rejects(assertReportAccess(SESSION, 'profit-loss', { etendoBase: 'x', fetchImpl: err }),
+      (e) => e.status === 502);
+    const bad = async () => ({ ok: true, status: 200, json: async () => ({ result: '{not json' }) });
+    await assert.rejects(assertReportAccess(SESSION, 'profit-loss', { etendoBase: 'x', fetchImpl: bad }),
+      (e) => e.status === 502);
   });
 });

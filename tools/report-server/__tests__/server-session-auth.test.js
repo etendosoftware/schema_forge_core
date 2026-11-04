@@ -28,7 +28,7 @@ const SERVER_SRC = readFileSync(fileURLToPath(new URL('../server.js', import.met
 
 describe('server.js — imports report-auth.js instead of decoding the JWT locally', () => {
   it('imports resolveReportSession and reportAuthErrorBody from the shared module', () => {
-    assert.match(SERVER_SRC, /import \{ resolveReportSession, reportAuthErrorBody(, assertReportOrgAccess)? \} from '\.\.\/\.\.\/cli\/src\/report-auth\.js'/);
+    assert.match(SERVER_SRC, /import \{ resolveReportSession, reportAuthErrorBody(, assertReportOrgAccess)?(, assertReportAccess)? \} from '\.\.\/\.\.\/cli\/src\/report-auth\.js'/);
   });
 
   it('no longer defines or calls getClientIdFromToken — the unverified JWT decode is gone', () => {

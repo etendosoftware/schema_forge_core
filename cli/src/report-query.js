@@ -17,7 +17,7 @@ import { readFileSync, existsSync } from 'node:fs';
 import { join } from 'node:path';
 import { applyPlaceholders } from './report-sql.js';
 import { buildAccountReportTree, addVariation, accountSignMultiplier, cleanAmount } from './report-grouping.js';
-import { resolveReportSession, reportAuthErrorBody, assertReportOrgAccess } from './report-auth.js';
+import { resolveReportSession, reportAuthErrorBody, assertReportOrgAccess, assertReportAccess } from './report-auth.js';
 
 const REPORT_ID_SHAPE = /^[\w-]+$/;
 const SPLIT_DIMENSIONS = new Set(['org', 'bpartner', 'product']);
@@ -139,7 +139,9 @@ function parseQueryRequest(rawBody, contract) {
 export async function handleReportQuery({ reportId, headers, method, body = {} }, { artifactsDir, etendoBase, createPool, fetchImpl }) {
   let session;
   try {
-    session = await resolveReportSession(headers, { method, etendoBase, ...(fetchImpl ? { fetchImpl } : {}) });
+    const deps = { etendoBase, ...(fetchImpl ? { fetchImpl } : {}) };
+    session = await resolveReportSession(headers, { method, ...deps });
+    await assertReportAccess(session, reportId, deps);
   } catch (e) {
     return reportAuthErrorBody(e);
   }

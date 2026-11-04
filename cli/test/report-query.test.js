@@ -17,8 +17,12 @@ import { buildAccountReportTree, ELEMENT_LEVEL_RANK } from '../src/report-groupi
 const COOKIE = '__Host-go_session=abc';
 const CSRF = 'csrf-ok';
 
-function sessionFetch({ roleOrgs = ['0'] } = {}) {
-  return async () => ({
+function sessionFetch({ roleOrgs = ['0'], reportAccess } = {}) {
+  return async (url) => (String(url).endsWith('/sws/neo/myreportaccess') ? {
+    ok: true,
+    status: 200,
+    json: async () => ({ result: JSON.stringify(reportAccess || { governed: [], reportAccess: {} }) }),
+  } : {
     ok: true,
     status: 200,
     json: async () => ({
@@ -252,6 +256,20 @@ describe('query vs render — same numbers at every account level (regression, Q
 
 // Re-review W-b: runReportSql is exported and splices `limit` into the SQL
 // text, so it validates the value itself, whatever its caller did.
+describe('handleReportQuery — report access (ETP-6080)', () => {
+  it('answers 403 REPORT_ACCESS_DENIED before any SQL for a report the role cannot open', async () => {
+    let created = false;
+    const result = await handleReportQuery(
+      { reportId: 'profit-loss', headers: { cookie: COOKIE, 'x-go-csrf': CSRF }, method: 'POST', body: { params: {} } },
+      { artifactsDir, etendoBase: 'x', createPool: () => { created = true; return fakePool(); },
+        fetchImpl: sessionFetch({ reportAccess: { governed: ['profit-loss'], reportAccess: {} } }) },
+    );
+    assert.equal(result.status, 403);
+    assert.equal(result.body.code, 'REPORT_ACCESS_DENIED');
+    assert.equal(created, false);
+  });
+});
+
 describe('runReportSql — limit', () => {
   it('throws for anything but a positive safe integer, before running any SQL', async () => {
     for (const limit of ['5; DROP TABLE x', '10', -1, 0, 2.5, 1e21, Number.NaN]) {

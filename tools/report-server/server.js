@@ -31,7 +31,7 @@ import { resolveGrouping, buildNestedGroups, buildRenderAccountTree } from '../.
 import { applyPlaceholders } from '../../cli/src/report-sql.js';
 import { filterAndTransformParams } from '../../cli/src/report-filters.js';
 import { hydrateDocumentBranding, resolveCompanyLogoDataUrl } from '../../cli/src/report-branding.js';
-import { resolveReportSession, reportAuthErrorBody, assertReportOrgAccess } from '../../cli/src/report-auth.js';
+import { resolveReportSession, reportAuthErrorBody, assertReportOrgAccess, assertReportAccess } from '../../cli/src/report-auth.js';
 import { handleReportQuery, runReportSql } from '../../cli/src/report-query.js';
 
 const _require = createRequire(import.meta.url);
@@ -432,6 +432,8 @@ async function renderReport(renderMatch, req, res) {
   let session;
   try {
     session = await resolveReportSession(req.headers, { method: req.method, etendoBase: ETENDO_URL });
+    // ETP-6080: the role must be allowed to open this report, as on /query.
+    await assertReportAccess(session, reportId, { etendoBase: ETENDO_URL });
   } catch (e) {
     const { status, body: errorBody } = reportAuthErrorBody(e);
     json(res, status, errorBody);
