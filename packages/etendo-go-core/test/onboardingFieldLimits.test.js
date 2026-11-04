@@ -157,16 +157,22 @@ describe('isAddressBlockStarted / isCompanyStepValid — structured address bloc
     assert.equal(isCompanyStepValid({ clientName: 'Acme', streetName: '', buildingNumber: '', city: '' }), true);
   });
 
-  it('requires Street, Number and City together once the block is started, but not Building Name', () => {
+  it('requires Street and City together once the block is started, but not Number or Building Name', () => {
     const base = { clientName: 'Acme' };
-    // Only City typed in — Street/Number still missing: invalid.
+    // Only City typed in — Street still missing: invalid.
     assert.equal(isCompanyStepValid({ ...base, city: 'Madrid' }), false);
-    // Street + Number but no City: still invalid.
-    assert.equal(isCompanyStepValid({ ...base, streetName: 'Av. Corrientes', buildingNumber: '1234' }), false);
-    // All three mandatory fields present, Building Name omitted: valid.
+    // Street but no City: still invalid.
+    assert.equal(isCompanyStepValid({ ...base, streetName: 'Av. Corrientes' }), false);
+    // Street + City present, Number and Building Name omitted: valid (Number stopped being
+    // mandatory — ETP-5806 follow-up).
+    assert.equal(isCompanyStepValid({ ...base, streetName: 'Av. Corrientes', city: 'Madrid' }), true);
+    // Street + Number + City all present: still valid, Number is accepted but not required.
     assert.equal(isCompanyStepValid({ ...base, streetName: 'Av. Corrientes', buildingNumber: '1234', city: 'Madrid' }), true);
     // Whitespace-only does not count as filled.
     assert.equal(isCompanyStepValid({ ...base, streetName: '   ', buildingNumber: '1234', city: 'Madrid' }), false);
+    // Number alone starts the block (isAddressBlockStarted still looks at all 4 fields),
+    // but without Street/City the step is still invalid.
+    assert.equal(isCompanyStepValid({ ...base, buildingNumber: '1234' }), false);
   });
 
   it('rejects a structured field past its AD column length', () => {
@@ -219,7 +225,10 @@ describe('the forms wire the limits to the inputs (ETP-4665)', () => {
   it('wires the Street/Number placeholders and autoComplete tokens through i18n, not hardcoded strings (ETP-5806)', () => {
     const step = readStep('CompanyStep.jsx');
     assert.match(step, /placeholder=\{ui\('streetNamePlaceholder'\)\}/);
-    assert.match(step, /placeholder=\{ui\('buildingNumberPlaceholder'\)\}/);
+    // ETP-5806 follow-up: Number is now optional, so its placeholder key communicates that
+    // explicitly instead of reusing the plain streetName-style placeholder key.
+    assert.match(step, /placeholder=\{ui\('buildingNumberEmptyPlaceholder'\)\}/);
+    assert.doesNotMatch(step, /placeholder=\{ui\('buildingNumberPlaceholder'\)\}/);
     // Standard autocomplete tokens per field: street -> address-line1, building name ->
     // address-line2 (the closest standard fit for "additional address line"), city ->
     // address-level2. Building number has no dedicated WHATWG token, so it opts out.
@@ -243,6 +252,24 @@ describe('the forms wire the limits to the inputs (ETP-4665)', () => {
     assert.match(addressBlock, /id="buildingNumber"/);
     assert.match(addressBlock, /id="buildingName"/);
     assert.match(addressBlock, /id="city"/);
+  });
+
+  it('stops marking Number as required while Street and City keep their required wiring (ETP-5806 follow-up)', () => {
+    const step = readStep('CompanyStep.jsx');
+    const streetCell = step.match(/<AddressCell\s+id="streetName"[\s\S]*?\/>/)[0];
+    const numberCell = step.match(/<AddressCell\s+id="buildingNumber"[\s\S]*?\/>/)[0];
+    const cityCell = step.match(/<AddressCell\s+id="city"[\s\S]*?\/>/)[0];
+
+    assert.match(streetCell, /required=\{addressStarted\}/);
+    assert.match(cityCell, /required=\{addressStarted\}/);
+    assert.doesNotMatch(numberCell, /required=/);
+
+    assert.match(streetCell, /error=\{streetNameMissing \? ui\('fieldRequiredMessage'\) : null\}/);
+    assert.match(cityCell, /error=\{cityMissing \? ui\('fieldRequiredMessage'\) : null\}/);
+    assert.match(numberCell, /error=\{null\}/);
+
+    // The now-unused "missing" flag for Number must not linger in the component either.
+    assert.doesNotMatch(step, /buildingNumberMissing/);
   });
 
   it('never hardcodes a limit inline — every cap comes from fieldLimits.js', () => {

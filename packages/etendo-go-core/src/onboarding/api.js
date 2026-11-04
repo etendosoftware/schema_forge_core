@@ -432,7 +432,11 @@ export async function runOnboardingStream(fetchImpl, baseUrl, csrfToken, form, o
       // as a legacy fallback for any caller still sending free text.
       ...(form.address ? { address: form.address } : {}),
       ...(form.streetName ? { streetName: form.streetName } : {}),
-      ...(form.buildingNumber ? { buildingNumber: form.buildingNumber } : {}),
+      // ETP-5806 — Number is optional for the user; once Street has content we fall back to
+      // "s/n" (same criterion as LocationEditorModal's popup) instead of omitting the field.
+      ...(form.streetName
+        ? { buildingNumber: form.buildingNumber || 's/n' }
+        : (form.buildingNumber ? { buildingNumber: form.buildingNumber } : {})),
       ...(form.buildingName ? { buildingName: form.buildingName } : {}),
       // ETP-5806 — City, mandatory together with streetName/buildingNumber once the address
       // block is started.
