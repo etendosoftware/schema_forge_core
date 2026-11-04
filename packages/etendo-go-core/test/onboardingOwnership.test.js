@@ -108,6 +108,65 @@ describe('Core-owned onboarding API contract', () => {
     assert.deepEqual(messages.map(({ type }) => type), ['progress', 'result']);
   });
 
+  // ETP-5806 follow-up: Number is optional in the UI, but a blank Number alongside a filled
+  // Street must still produce a usable structured address for SEPA — "s/n" ("sin número") is
+  // the same convention LocationEditorModal's popup falls back to in that situation.
+  it('falls back to "s/n" for buildingNumber when streetName has content but buildingNumber is blank or missing (ETP-5806)', async () => {
+    const calls = [];
+    const fetchImpl = async (url, options = {}) => {
+      calls.push({ url, options });
+      return streamResponse([{ type: 'result', success: true }]);
+    };
+
+    await runOnboardingStream(fetchImpl, '', 'token', {
+      clientName: 'Core', currency: 'EUR', language: 'en_US', countryCode: 'ES',
+      streetName: 'Av. Corrientes', buildingNumber: '', city: 'Madrid',
+    }, () => {});
+    assert.equal(JSON.parse(calls[0].options.body).buildingNumber, 's/n');
+
+    await runOnboardingStream(fetchImpl, '', 'token', {
+      clientName: 'Core', currency: 'EUR', language: 'en_US', countryCode: 'ES',
+      streetName: 'Av. Corrientes', city: 'Madrid',
+      // buildingNumber entirely absent from the form.
+    }, () => {});
+    assert.equal(JSON.parse(calls[1].options.body).buildingNumber, 's/n');
+  });
+
+  it('sends buildingNumber as-is when streetName has content and buildingNumber is also filled (ETP-5806)', async () => {
+    const calls = [];
+    const fetchImpl = async (url, options = {}) => {
+      calls.push({ url, options });
+      return streamResponse([{ type: 'result', success: true }]);
+    };
+
+    await runOnboardingStream(fetchImpl, '', 'token', {
+      clientName: 'Core', currency: 'EUR', language: 'en_US', countryCode: 'ES',
+      streetName: 'Av. Corrientes', buildingNumber: '1234', city: 'Madrid',
+    }, () => {});
+    assert.equal(JSON.parse(calls[0].options.body).buildingNumber, '1234');
+  });
+
+  it('keeps the legacy behavior — no "s/n" fallback — when streetName itself is blank/missing (ETP-5806)', async () => {
+    const calls = [];
+    const fetchImpl = async (url, options = {}) => {
+      calls.push({ url, options });
+      return streamResponse([{ type: 'result', success: true }]);
+    };
+
+    // Neither streetName nor buildingNumber filled: buildingNumber is omitted entirely.
+    await runOnboardingStream(fetchImpl, '', 'token', {
+      clientName: 'Core', currency: 'EUR', language: 'en_US', countryCode: 'ES',
+    }, () => {});
+    assert.equal('buildingNumber' in JSON.parse(calls[0].options.body), false);
+
+    // buildingNumber filled but streetName blank: sent as-is, untouched by the 's/n' rule.
+    await runOnboardingStream(fetchImpl, '', 'token', {
+      clientName: 'Core', currency: 'EUR', language: 'en_US', countryCode: 'ES',
+      buildingNumber: '99',
+    }, () => {});
+    assert.equal(JSON.parse(calls[1].options.body).buildingNumber, '99');
+  });
+
   it('includes fiscalIdValue in the /onboarding POST body when provided, and omits it when blank (ETP-4749)', async () => {
     const calls = [];
     const fetchImpl = async (url, options = {}) => {
