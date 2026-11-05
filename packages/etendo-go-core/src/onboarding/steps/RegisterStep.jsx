@@ -23,12 +23,13 @@ import {
   isValidPhoneNumber,
   PHONE_NUMBER_MAX_LENGTH,
 } from '../phonePrefixes.js';
+import { BUSINESS_SECTORS, isBusinessSector } from '../businessSectors.js';
 
 export const MARKETING_CONSENT_DEFAULT = true;
 
 const AUTH_FEATURE_KEYS = ['onboardingAuthFeatureNoCard', 'onboardingAuthFeatureTrial', 'onboardingAuthFeatureInstantAccess'];
 
-export function RegisterStep({ config, stepData, onNext, onBack, goToStep, setToken, setAccountName, handleRegisterSuccess, initialName, initialEmail, emailReadOnly = false, registerHandler, onRegistered, askPhone = true, askPassword = false, askMarketingConsent = askPhone }) {
+export function RegisterStep({ config, stepData, onNext, onBack, goToStep, setToken, setAccountName, handleRegisterSuccess, initialName, initialEmail, emailReadOnly = false, registerHandler, onRegistered, askPhone = true, askPassword = false, askMarketingConsent = askPhone, askSector = askPhone }) {
   const ui = useUI();
   const { locale, setLocale } = useLocaleSwitch();
 
@@ -41,6 +42,10 @@ export function RegisterStep({ config, stepData, onNext, onBack, goToStep, setTo
   const [phoneNumber, setPhoneNumber] = useState('');
   const phoneNumberInvalid = askPhone && !isValidPhoneNumber(phoneNumber);
   const phone = askPhone ? composePhone(phonePrefix, phoneNumber) : '';
+  // ETP-6082 — required business sector, for marketing's ideal-customer profile. Asked only of a
+  // sign-up lead, like the phone: an invitee joins a company that already has one.
+  const [sector, setSector] = useState('');
+  const sectorMissing = askSector && !isBusinessSector(sector);
   const [registerError, setRegisterError] = useState(null);
   const [registerLoading, setRegisterLoading] = useState(false);
   const [showRegisterPassword, setShowRegisterPassword] = useState(false);
@@ -185,6 +190,7 @@ export function RegisterStep({ config, stepData, onNext, onBack, goToStep, setTo
       const termsField = termsVersion ? { termsVersion } : {};
       const phoneField = phone ? { phone } : {};
       const marketingConsentField = askMarketingConsent ? { marketingConsent } : {};
+      const sectorField = askSector && sector ? { sector } : {};
       const credentials = askPassword
         ? registerForm
         : { name: registerForm.name, email: registerForm.email };
@@ -194,6 +200,7 @@ export function RegisterStep({ config, stepData, onNext, onBack, goToStep, setTo
           ...credentials,
           ...termsField,
           ...phoneField,
+          ...sectorField,
           ...marketingConsentField,
           language: locale || config.defaultForm?.language || '',
         });
@@ -342,6 +349,30 @@ export function RegisterStep({ config, stepData, onNext, onBack, goToStep, setTo
           ) : null}
           data-testid="AuthField__79cf84" />
 
+        {askSector && (
+          <div>
+            <Label
+              htmlFor="reg-sector"
+              className="mb-2 block text-sm font-medium leading-6 text-[#121217]"
+              data-testid="Label__sector">
+              {ui('onboardingBusinessSectorLabel')}
+            </Label>
+            <select
+              id="reg-sector"
+              value={sector}
+              onChange={e => setSector(e.target.value)}
+              disabled={registerLoading}
+              required
+              className="h-10 w-full rounded-lg border border-[#D1D4DB] bg-white px-3 text-sm text-[#121217] shadow-[0_1px_2px_rgba(18,18,23,0.05)] transition-colors hover:border-slate-400 focus:outline-none focus:border-slate-400"
+              data-testid="sector-select">
+              <option value="" disabled>{ui('onboardingBusinessSectorPlaceholder')}</option>
+              {BUSINESS_SECTORS.map(option => (
+                <option key={option.value} value={option.value}>{ui(option.labelKey)}</option>
+              ))}
+            </select>
+          </div>
+        )}
+
         {askPhone && (
           <div>
             <Label
@@ -426,7 +457,7 @@ export function RegisterStep({ config, stepData, onNext, onBack, goToStep, setTo
         <Button
           type="submit"
           data-testid="action-register-submit"
-          disabled={registerLoading || !registerPasswordStrong || !registerEmailValid || phoneNumberInvalid}
+          disabled={registerLoading || !registerPasswordStrong || !registerEmailValid || phoneNumberInvalid || sectorMissing}
           className="h-12 w-full rounded-lg bg-[#121217] text-base font-medium text-white hover:bg-accent-highlight hover:text-accent-highlight-foreground"
         >
           {registerLoading

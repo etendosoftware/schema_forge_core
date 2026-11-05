@@ -369,6 +369,7 @@ describe('every new-password screen shares the strength checklist (ETP-5258)', (
     expect(submitButton.disabled).toBe(true);
 
     typeInto(container, '#reg-password', STRONG_PASSWORD);
+    typeInto(container, '#reg-sector', 'servicios');
     ['minLength', 'uppercase', 'lowercase', 'number', 'special'].forEach((rule) => {
       expect(screen.getByTestId(`register-password-rule-${rule}`).dataset.met).toBe('true');
     });
