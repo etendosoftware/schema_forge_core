@@ -349,6 +349,11 @@ export function accountSignMultiplier(sign) {
  */
 export function buildAccountReportTree(nodeRows, operandRows, options = {}) {
   const { accountLevel = 'S', showOnlyWithValue = false } = options;
+  // ETP-6080: when given, the set of EXPANDED node ids replaces the level
+  // cutoff — a node is listed when its parent is expanded (the report's root
+  // container always is). Used by the exports to print what the interactive
+  // view shows. Values never depend on it: they are resolved before the walk.
+  const expanded = options.expandedNodeIds ? new Set(options.expandedNodeIds) : null;
   const byId = new Map();
   for (const r of nodeRows || []) {
     byId.set(r.node_id, {
@@ -459,45 +464,63 @@ export function buildAccountReportTree(nodeRows, operandRows, options = {}) {
   const cutoffRank = ELEMENT_LEVEL_RANK[accountLevel] ?? ELEMENT_LEVEL_RANK.S;
   const out = [];
   let lastGroup;
-  const visit = (node, indent, isRoot, underReset = false, underResetRef = false) => {
-    let withinCutoff = true;
+  // Lists one non-root node (or not) and says whether to descend into its children.
+  const listNode = (node, indent, underReset, underResetRef, visibleParentId) => {
+    let childParentId = visibleParentId;
+    // Display: a descendant of a reset node shows 0 (filterSVC); every row
+    // re-applies its own clamp (filterStructure). Periods reset independently.
+    const amount = underReset ? 0 : applyShowValueCond(node, node.amount);
+    const amountRef = underResetRef ? 0 : applyShowValueCond(node, node.amount_ref);
+    // An unknown/blank elementlevel is never a reason to drop a row.
+    const rank = ELEMENT_LEVEL_RANK[node.elementlevel];
+    const withinCutoff = expanded ? true : (rank === undefined || rank <= cutoffRank);
+    const hasValue = Math.abs(amount) > 0.005 || Math.abs(amountRef) > 0.005;
+    const alwaysShown = node.isalwaysshown === 'Y';
+    if (withinCutoff && (!showOnlyWithValue || hasValue || alwaysShown)) {
+      const isGroupStart = out.length > 0 && node.group_name !== lastGroup;
+      lastGroup = node.group_name;
+      out.push({
+        node_id: node.node_id,
+        value: node.value,
+        name: node.name,
+        element: `${node.value} - ${node.name}`,
+        elementlevel: node.elementlevel,
+        amount,
+        amount_ref: amountRef,
+        indent,
+        indentClass: `ind-${Math.min(indent, 6)}`,
+        isHeading: node.elementlevel === 'E',
+        isFormula: isFormulaNode(node),
+        group: node.group_name,
+        isGroupStart,
+        // ETP-6080: the nearest LISTED ancestor (a row hidden by
+        // showOnlyWithValue is skipped), so a client can fold the rows; and
+        // the branch's effective sign the amounts were computed with.
+        parentId: visibleParentId,
+        sign: node.sign,
+      });
+      childParentId = node.node_id;
+    }
+    if (!withinCutoff) return { descend: false }; // cutoff reached: do not descend further
+    // Collapsed: children not listed. Only a LISTED node can collapse — one
+    // hidden by showOnlyWithValue is transparent, as it is for parentId, or
+    // the export would drop rows the screen shows under the listed ancestor.
+    const listed = childParentId === node.node_id;
+    return { descend: !(expanded && listed && !expanded.has(node.node_id)), childParentId };
+  };
+  const visit = (node, indent, isRoot, underReset = false, underResetRef = false, visibleParentId = null) => {
+    let childParentId = visibleParentId;
     if (!isRoot) {
-      // Display: a descendant of a reset node shows 0 (filterSVC); every row
-      // re-applies its own clamp (filterStructure). Periods reset independently.
-      const amount = underReset ? 0 : applyShowValueCond(node, node.amount);
-      const amountRef = underResetRef ? 0 : applyShowValueCond(node, node.amount_ref);
-      // An unknown/blank elementlevel is never a reason to drop a row.
-      const rank = ELEMENT_LEVEL_RANK[node.elementlevel];
-      withinCutoff = rank === undefined || rank <= cutoffRank;
-      const hasValue = Math.abs(amount) > 0.005 || Math.abs(amountRef) > 0.005;
-      const alwaysShown = node.isalwaysshown === 'Y';
-      if (withinCutoff && (!showOnlyWithValue || hasValue || alwaysShown)) {
-        const isGroupStart = out.length > 0 && node.group_name !== lastGroup;
-        lastGroup = node.group_name;
-        out.push({
-          node_id: node.node_id,
-          value: node.value,
-          name: node.name,
-          element: `${node.value} - ${node.name}`,
-          elementlevel: node.elementlevel,
-          amount,
-          amount_ref: amountRef,
-          indent,
-          indentClass: `ind-${Math.min(indent, 6)}`,
-          isHeading: node.elementlevel === 'E',
-          isFormula: isFormulaNode(node),
-          group: node.group_name,
-          isGroupStart,
-        });
-      }
-      if (!withinCutoff) return; // cutoff reached: do not descend further
+      const step = listNode(node, indent, underReset, underResetRef, visibleParentId);
+      if (!step.descend) return;
+      childParentId = step.childParentId;
     }
     // The report's root node is a container (the accounting report's own node),
     // never a row — so its children start the visible tree at indent 0.
     const sortedChildren = [...node.children].sort(byPath);
     for (const child of sortedChildren) {
       visit(child, isRoot ? 0 : indent + 1, false, underReset || node.reset,
-        underResetRef || node.reset_ref);
+        underResetRef || node.reset_ref, childParentId);
     }
   };
   // toSorted (not sort): `roots` is a view into the caller's node list —
@@ -517,6 +540,73 @@ export function buildAccountReportTree(nodeRows, operandRows, options = {}) {
     out[0].isGroupStart = true;
   }
   return out;
+}
+
+/**
+ * ETP-6080: per-row variation against the comparison period, computed once
+ * here so the interactive view and the PDF/Excel/CSV exports show the same
+ * numbers. Returns new rows; the input is not mutated.
+ *
+ *  - `variationAmount` = amount − amount_ref;
+ *  - `variationPct` = variationAmount / |amount_ref| × 100, `null` when the
+ *    reference is zero (never ∞, never 0);
+ *  - `trend`: 'improves' / 'worsens' / null. Amounts are already displayed in
+ *    the branch's effective sign (`row.sign`, see applySignAsPerParent), so in
+ *    a credit-normal branch (Profit & Loss: revenue positive, expenses
+ *    negative) a higher amount is always the better result — revenue up and
+ *    expense down both raise it. A debit-normal branch reads the other way
+ *    (an unset sign counts as debit-normal, as in accountSignMultiplier). That
+ *    reading fits a result; Balance Sheet's asset side will need its own rule.
+ *
+ * With `compare` false every field is null: there is no comparison to show.
+ * `trend` is computed only when asked (`trend: true`, the contract's
+ * `trend: 'result'`): the rule above is wrong for a balance (ETP-6080 review).
+ */
+export function addVariation(rows, { compare = true, trend: withTrend = false } = {}) {
+  return (rows || []).map((row) => {
+    if (!compare) return { ...row, variationAmount: null, variationPct: null, trend: null };
+    const amount = Number(row.amount) || 0;
+    const ref = Number(row.amount_ref) || 0;
+    const variationAmount = cleanAmount(amount - ref);
+    const variationPct = Math.abs(ref) < 0.005 ? null : cleanAmount((variationAmount / Math.abs(ref)) * 100);
+    let trend = null;
+    if (withTrend && Math.abs(variationAmount) >= 0.005) {
+      // Same default as accountSignMultiplier: an unset sign is debit-normal.
+      const better = row.sign === 'C' ? variationAmount > 0 : variationAmount < 0;
+      trend = better ? 'improves' : 'worsens';
+    }
+    return { ...row, variationAmount, variationPct, trend };
+  });
+}
+
+/** The `expandedNodeIds` value for "no row open": the interactive view sends it when everything is collapsed. */
+export const NO_EXPANDED_NODES = 'none';
+
+/**
+ * `expandedNodeIds` arrives as a comma-joined string. Absent or blank = not sent (the level cutoff
+ * applies): the old viewer sends '' for every parameter it has no value for, so '' cannot mean
+ * "everything collapsed" — `NO_EXPANDED_NODES` does.
+ */
+export function parseExpandedNodeIds(value) {
+  if (value === undefined || value === null || String(value).trim() === '') return undefined;
+  if (String(value).trim() === NO_EXPANDED_NODES) return [];
+  return String(value).split(',').map((id) => id.trim()).filter(Boolean);
+}
+
+/**
+ * The account tree a RENDER prints, from the render params: the level cutoff,
+ * or (ETP-6080) the interactive view's expanded nodes when it sends them, plus
+ * the variation (trend only for a contract with `trend: 'result'`). One
+ * definition for both engines (dev plugin + report-server), so the printed
+ * tree cannot drift from one to the other.
+ */
+export function buildRenderAccountTree(rows, operandRows, params = {}, contract = {}) {
+  const tree = buildAccountReportTree(rows, operandRows, {
+    accountLevel: params.accountLevel || 'S',
+    showOnlyWithValue: params.showOnlyAccountsWithValue === 'true',
+    expandedNodeIds: parseExpandedNodeIds(params.expandedNodeIds),
+  });
+  return addVariation(tree, { compare: params.compareTo === 'true', trend: contract.trend === 'result' });
 }
 
 /**

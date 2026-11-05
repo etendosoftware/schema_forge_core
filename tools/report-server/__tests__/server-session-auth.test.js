@@ -29,7 +29,7 @@ const SERVER_SRC = readFileSync(fileURLToPath(new URL('../server.js', import.met
 
 describe('server.js — imports report-auth.js instead of decoding the JWT locally', () => {
   it('imports resolveReportSession and reportAuthErrorBody from the shared module', () => {
-    assert.match(SERVER_SRC, /import \{ resolveReportSession, reportAuthErrorBody \} from '\.\.\/\.\.\/cli\/src\/report-auth\.js'/);
+    assert.match(SERVER_SRC, /import \{ resolveReportSession, reportAuthErrorBody(, assertReportOrgAccess)?(, assertReportAccess)? \} from '\.\.\/\.\.\/cli\/src\/report-auth\.js'/);
   });
 
   it('no longer defines or calls getClientIdFromToken — the unverified JWT decode is gone', () => {
@@ -66,19 +66,35 @@ describe('server.js — renderReport (POST /api/reports/:id/render) resolves the
   });
 });
 
-describe('server.js — fetchReportDataById (GET /api/reports/:id/data) resolves the session BEFORE fetching data', () => {
-  it('calls resolveReportSession before fetchReportData and forwards no authToken', () => {
-    const fnStart = SERVER_SRC.indexOf('async function fetchReportDataById(');
+describe('server.js — POST /api/reports/:id/query delegates to the shared handler (ETP-6080)', () => {
+  it('routes /query to handleReportQuery, which resolves the session and the org check before any SQL', () => {
+    const fnStart = SERVER_SRC.indexOf('async function queryReport(');
     assert.ok(fnStart >= 0);
-    const fnEnd = SERVER_SRC.indexOf('\nfunction isGetDataRequest', fnStart);
-    const fn = SERVER_SRC.slice(fnStart, fnEnd);
+    const fn = SERVER_SRC.slice(fnStart, SERVER_SRC.indexOf('\n}\n', fnStart));
+    assert.match(fn, /await handleReportQuery\(/);
+    assert.doesNotMatch(fn, /pool\.query|fetchReportData/, 'the route must not read data itself, around the shared handler');
+  });
 
-    const sessionCallIdx = fn.search(/await resolveReportSession\(req\.headers, \{ method: req\.method, etendoBase: ETENDO_URL \}\)/);
-    const fetchDataIdx = fn.indexOf('await fetchReportData(reportId, { limit, session })');
-    assert.ok(sessionCallIdx >= 0);
-    assert.ok(fetchDataIdx >= 0);
-    assert.ok(sessionCallIdx < fetchDataIdx, 'no DB/NEO access must happen before the session is resolved');
-    assert.doesNotMatch(fn, /authToken/, 'must not forward an authToken anywhere in this handler');
+  it('no longer serves GET /api/reports/:id/data (ran the report SQL with no params: every org)', () => {
+    assert.doesNotMatch(SERVER_SRC, /\\\/data\$/);
+    assert.doesNotMatch(SERVER_SRC, /function fetchReportDataById/);
+  });
+
+  it('checks org access in /render after the session and before fetchReportData', () => {
+    const renderStart = SERVER_SRC.indexOf('async function renderReport(');
+    const fn = SERVER_SRC.slice(renderStart, SERVER_SRC.indexOf('\nasync function handleRequest', renderStart));
+    const sessionIdx = fn.indexOf('await resolveReportSession(');
+    const orgIdx = fn.indexOf('await checkRenderOrgAccess(');
+    const dataIdx = fn.indexOf('await fetchReportData(');
+    assert.ok(sessionIdx >= 0 && orgIdx > sessionIdx && dataIdx > orgIdx, 'order: session → org check → data');
+  });
+
+  it('answers a failed org check (DB down, broken contract) with ORG_CHECK_FAILED, never the raw message', () => {
+    const start = SERVER_SRC.indexOf('async function checkRenderOrgAccess(');
+    const fn = SERVER_SRC.slice(start, SERVER_SRC.indexOf('\n}\n', start));
+    assert.match(fn, /code: 'ORG_CHECK_FAILED'/);
+    assert.ok(fn.indexOf('try {') < fn.indexOf('JSON.parse('), 'the contract is parsed inside the try');
+    assert.match(fn, /if \(!contract\.sql\) return null;/, 'no pool for a non-SQL report');
   });
 });
 
