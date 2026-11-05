@@ -12,6 +12,7 @@ export {
   registerAccount,
   loginAccount,
   loginWithSsoProvider,
+  fetchTermsAndConditions,
   requestPasswordReset,
   confirmPasswordReset,
   changePassword,
