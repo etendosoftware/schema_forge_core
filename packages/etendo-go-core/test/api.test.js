@@ -135,6 +135,26 @@ describe('onboarding session API — identity cluster (ETP-4576)', () => {
       assert.deepEqual(result, { token: 'sso-session' });
     });
 
+    it('sends the terms version and the marketing consent next to the credential (ETP-6081)', async () => {
+      const { calls, fetchImpl } = recordingFetch(jsonResponse({ token: 'sso-session' }));
+
+      await loginWithSsoProvider(fetchImpl, '/etendo', 'google', { credential: 'id-token' }, {
+        termsVersion: '2026-11', marketingConsent: false,
+      });
+
+      const body = JSON.parse(calls[0].options.body);
+      assert.equal(body.termsVersion, '2026-11');
+      assert.equal(body.marketingConsent, false);
+    });
+
+    it('sends no marketing consent when none is given (ETP-6081)', async () => {
+      const { calls, fetchImpl } = recordingFetch(jsonResponse({ token: 'sso-session' }));
+
+      await loginWithSsoProvider(fetchImpl, '/etendo', 'google', { credential: 'id-token' });
+
+      assert.equal('marketingConsent' in JSON.parse(calls[0].options.body), false);
+    });
+
     it('still rejects unsupported providers with ssoFailed without calling fetch', async () => {
       const { calls, fetchImpl } = recordingFetch(jsonResponse({}));
 
