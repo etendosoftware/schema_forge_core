@@ -570,4 +570,5 @@ See [`docs/index.md`](docs/index.md) for the full documentation index, including
 - [PRD](docs/PRD.md) — product requirements and scope
 - [TDD](docs/TDD.md) — technical design and data models
 - [NEO Headless Extensibility](docs/neo-headless-extensibility.md) — how to extend the runtime API
+- [Report query route and access checks](docs/report-query.md) — `POST /api/reports/:id/query`, `runReportSql`, `assertReportAccess`, `expandedNodeIds`
 - [Etendo AD Reference](docs/etendo-ad/index.md) — how the Application Dictionary works
