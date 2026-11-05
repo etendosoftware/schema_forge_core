@@ -398,6 +398,8 @@ describe('RegisterStep without a password (ETP-6081)', () => {
   function fillNameAndEmail(container) {
     fireEvent.change(container.querySelector('#reg-name'), { target: { value: 'Ada' } });
     typeEmail(container, VALID_EMAIL);
+    // ETP-6082: the business sector is required too.
+    fireEvent.change(container.querySelector('#reg-sector'), { target: { value: 'servicios' } });
   }
 
   it('asks for no password and lets the account be created with name and email alone', () => {
