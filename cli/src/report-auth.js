@@ -20,6 +20,7 @@
  * the status-mapping table this module implements.
  */
 import { timingSafeEqual } from 'node:crypto';
+import { resolvePlaceholderValue } from './report-sql.js';
 
 const SESSION_COOKIE_NAME = '__Host-go_session';
 const SAFE_METHODS = new Set(['GET', 'HEAD', 'OPTIONS']);
@@ -84,7 +85,7 @@ function constantTimeEqual(a, b) {
  *   - CSRF check fails on an unsafe method                          -> 403
  *   - network error / Etendo 5xx / non-JSON response                -> 502
  *
- * @returns {Promise<{clientId: string, orgId: ?string, roleId: ?string, userId: ?string, forwardHeaders: object}>}
+ * @returns {Promise<{clientId: string, orgId: ?string, roleId: ?string, userId: ?string, roleOrgIds: string[], forwardHeaders: object}>}
  */
 export async function resolveReportSession(headers, {
   method = 'GET',
@@ -146,8 +147,124 @@ export async function resolveReportSession(headers, {
     orgId: environment.orgId,
     roleId: environment.roleId,
     userId: environment.userId,
+    // ETP-6080: the orgs AD_Role_OrgAccess grants the session's role — the
+    // session body already carries them (roleList[].orgList), for every role
+    // of the user, so only the ACTIVE role's list is kept.
+    roleOrgIds: (body.roleList || [])
+      .find((role) => role?.id === environment.roleId)?.orgList
+      ?.map((org) => org?.id).filter(Boolean) || [],
     forwardHeaders,
   };
+}
+
+/** True when any of the report's SQL statements filters by `__ORGID__`. */
+function reportFiltersByOrg(contract) {
+  return Object.values(contract?.sql || {}).some((q) => typeof q === 'string' && q.includes('__ORGID__'));
+}
+
+/**
+ * ETP-6080: rejects a report request whose `orgId` the session's role cannot
+ * read, BEFORE any report SQL runs. The client always comes from the session;
+ * this closes the same-client gap (a role limited to some orgs reading the
+ * others by changing, blanking or omitting `orgId`).
+ *
+ * Rule — Etendo's readable orgs (`OBContext.setReadableOrganizations`):
+ *   - org `0` in the role's access → every org of the client passes;
+ *   - otherwise the requested org must be one of the role's orgs or a
+ *     descendant of one. Unlike OBContext, an ANCESTOR is rejected: the report
+ *     SQL expands `orgId` to its whole subtree, so a parent would expose
+ *     sibling orgs the role cannot read;
+ *   - an empty, absent or `0` orgId means "every org" to the SQL
+ *     (`stripBlankOptionalClauses` drops the unfilled clause), so it passes
+ *     only if the role's orgs and their descendants cover the whole client —
+ *     INACTIVE orgs included: the report SQL reads their postings too.
+ *
+ * The requested org is the value that will fill `__ORGID__`
+ * (`resolvePlaceholderValue`: the declared param, its default), not a
+ * hardcoded `params.orgId`.
+ *
+ * Applies only to reports whose SQL contains `__ORGID__` — a NEO-sourced
+ * report that merely declares `orgId`, or a printable, is not checked here.
+ *
+ * @param {{query: Function}} pool pg pool/client
+ * @param {{clientId: string, roleOrgIds: string[]}} session from resolveReportSession
+ * @param {{contract: object, params: object}} request the render/query params
+ * @throws {ReportAuthError} 403 ORG_ACCESS_DENIED
+ */
+export async function assertReportOrgAccess(pool, session, { contract, params = {} }) {
+  if (!reportFiltersByOrg(contract)) return;
+  const denied = () => new ReportAuthError(403, 'ORG_ACCESS_DENIED', 'The role has no access to the requested organization');
+  const { value: orgId, ambiguous } = resolvePlaceholderValue(contract, params, 'ORGID');
+  if (ambiguous) throw denied(); // two declared params fill __ORGID__: refuse rather than guess
+
+  const roleOrgIds = session?.roleOrgIds || [];
+  if (roleOrgIds.includes('0')) return;
+  if (!roleOrgIds.length) throw denied();
+
+  const requested = orgId !== '0' ? orgId : '';
+  if (requested) {
+    const { rows } = await pool.query(
+      `SELECT 1 FROM unnest($1::varchar[]) AS r(org_id)
+        WHERE ad_isorgincluded($2, r.org_id, $3) <> -1 LIMIT 1`,
+      [roleOrgIds, requested, session.clientId],
+    );
+    if (!rows.length) throw denied();
+    return;
+  }
+
+  const { rows } = await pool.query(
+    `SELECT 1 FROM ad_org o
+      WHERE o.ad_client_id = $1 AND o.ad_org_id <> '0'
+        AND NOT EXISTS (SELECT 1 FROM unnest($2::varchar[]) AS r(org_id)
+                         WHERE ad_isorgincluded(o.ad_org_id, r.org_id, $1) <> -1)
+      LIMIT 1`,
+    [session.clientId, roleOrgIds],
+  );
+  if (rows.length) throw denied();
+}
+
+/** NEO answers `{result: "<json>"}` (a string or an object) or the bare object. */
+function unwrapNeoResult(body) {
+  const result = body?.result ?? body;
+  return typeof result === 'string' ? JSON.parse(result) : result;
+}
+
+/**
+ * ETP-6080: rejects a report the session's role cannot open, BEFORE any report
+ * data is read. The source is the same map the report catalog uses, NEO's
+ * `myreportaccess` (SFMyReportAccess in com.etendoerp.go): `governed` lists the
+ * report ids the Informes access catalog controls, `reportAccess` the ones this
+ * role can open (any tier). A report outside `governed` (a printable, a report
+ * left open by design) passes.
+ *
+ * shortcut: a backend that does not send `governed` yet (older com.etendoerp.go
+ * during a deploy) is not enforced; drop that branch once every environment
+ * runs the module version that sends it.
+ *
+ * @param {{forwardHeaders: object}} session from resolveReportSession
+ * @param {string} reportId the report being rendered or queried
+ * @param {{etendoBase: string, fetchImpl?: Function}} deps
+ * @throws {ReportAuthError} 403 REPORT_ACCESS_DENIED, 502 REPORT_ACCESS_UNAVAILABLE
+ */
+export async function assertReportAccess(session, reportId, { etendoBase, fetchImpl = fetch } = {}) {
+  const unavailable = (msg) => new ReportAuthError(502, 'REPORT_ACCESS_UNAVAILABLE', msg);
+  let res;
+  try {
+    res = await fetchImpl(`${etendoBase}/sws/neo/myreportaccess`, { headers: session?.forwardHeaders || {} });
+  } catch (e) {
+    throw unavailable(e.message);
+  }
+  if (!res.ok) throw unavailable(`Etendo report access check returned ${res.status}`);
+  let data;
+  try {
+    data = unwrapNeoResult(await res.json());
+  } catch {
+    throw unavailable('Unreadable report access response');
+  }
+  if (!Array.isArray(data?.governed)) return;
+  if (data.governed.includes(reportId) && !data.reportAccess?.[reportId]) {
+    throw new ReportAuthError(403, 'REPORT_ACCESS_DENIED', 'The role has no access to this report');
+  }
 }
 
 /**

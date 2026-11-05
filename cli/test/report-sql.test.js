@@ -1,10 +1,11 @@
+// @covers cli/src/report-sql.js
 import { describe, it } from 'node:test';
 import { strict as assert } from 'node:assert';
 
 // Exercises the REAL shared module — never a copy. These rules existed twice
 // (dev plugin + report-server) and the copies drifted, which is the whole
 // reason this module exists.
-import { applyPlaceholders, stripBlankOptionalClauses } from '../src/report-sql.js';
+import { applyPlaceholders, stripBlankOptionalClauses, resolvePlaceholderValue } from '../src/report-sql.js';
 
 /** True when every '(' in `sql` has its matching ')'. */
 function balanced(sql) {
@@ -102,12 +103,16 @@ describe('applyPlaceholders', () => {
   });
 
   it('substitutes params and escapes single quotes', () => {
-    const out = applyPlaceholders("WHERE n = '__NAME__'", { ...base, params: { name: "O'Brien" } });
+    const out = applyPlaceholders("WHERE n = '__NAME__'", {
+      ...base, params: { name: "O'Brien" }, contract: { parameters: [{ name: 'name' }] },
+    });
     assert.equal(out, "WHERE n = 'O''Brien'");
   });
 
   it('ignores _display_ params — they never reach SQL', () => {
-    const out = applyPlaceholders("WHERE n = '__NAME__'", { ...base, params: { _display_name: 'X' } });
+    const out = applyPlaceholders("WHERE n = '__NAME__'", {
+      ...base, params: { _display_name: 'X' }, contract: { parameters: [{ name: 'name' }] },
+    });
     assert.ok(out.includes('__NAME__'), 'a display-only param must not substitute');
   });
 
@@ -119,7 +124,9 @@ describe('applyPlaceholders', () => {
   });
 
   it('rewrites a comma-joined multi-select into IN (...)', () => {
-    const out = applyPlaceholders("WHERE id = '__IDS__'", { ...base, params: { ids: 'a,b,c' } });
+    const out = applyPlaceholders("WHERE id = '__IDS__'", {
+      ...base, params: { ids: 'a,b,c' }, contract: { parameters: [{ name: 'ids' }] },
+    });
     assert.equal(out, "WHERE id IN ('a','b','c')");
   });
 
@@ -158,9 +165,21 @@ describe('applyPlaceholders', () => {
 
   it('keeps a filled optional clause', () => {
     const sql = "SELECT 1 FROM t WHERE ('__ORGID__' = '' OR t.org = '__ORGID__')";
-    const out = applyPlaceholders(sql, { ...base, params: { orgId: 'O1' } });
+    const out = applyPlaceholders(sql, {
+      ...base, params: { orgId: 'O1' }, contract: { parameters: [{ name: 'orgId' }] },
+    });
     assert.ok(out.includes("t.org = 'O1'"), 'a supplied filter must survive');
     assert.ok(balanced(out));
+  });
+
+  it('never substitutes a request key that is not a declared param (ETP-6080)', () => {
+    // `orgid` uppercases to the same `__ORGID__` as the declared `orgId`: a
+    // check made on params.orgId must not be bypassable by a differently-cased key.
+    const sql = "SELECT 1 FROM t WHERE AD_CLIENT_ID IN ('0') AND ('__ORGID__' = '' OR t.org = '__ORGID__')";
+    const out = applyPlaceholders(sql, {
+      ...base, params: { orgid: 'FOREIGN' }, contract: { parameters: [{ name: 'orgId' }] },
+    });
+    assert.ok(!out.includes('FOREIGN'), 'an undeclared key reached the SQL');
   });
 
   // ── ETP-5013: __REPORT_LOCALE__ placeholder ─────────────────────────────
@@ -237,5 +256,80 @@ describe('applyPlaceholders', () => {
       const out = applyPlaceholders("WHERE c = '__CLIENT_ID__'", base);
       assert.equal(out, "WHERE c = 'C1'");
     });
+  });
+
+  describe('document report client scoping (ETP-6089)', () => {
+    // Only declared params are substituted (ETP-6080); every print-* contract declares documentId.
+    const contract = { parameters: [{ name: 'documentId' }] };
+
+    it('scopes document header, lines, and taxes queries by client id', () => {
+      const headerRaw = "SELECT * FROM c_order o WHERE o.c_order_id = '__DOCUMENTID__' AND o.ad_client_id = '__CLIENT_ID__'";
+      const linesRaw = "SELECT * FROM c_orderline ol WHERE ol.c_order_id = '__DOCUMENTID__' AND ol.ad_client_id = '__CLIENT_ID__' ORDER BY ol.line";
+      const taxesRaw = "SELECT * FROM c_ordertax ot WHERE ot.c_order_id = '__DOCUMENTID__' AND ot.ad_client_id = '__CLIENT_ID__'";
+
+      const options = {
+        clientId: '23C59575B9CF467C9620760EB255B389',
+        params: { documentId: 'ORDER123' },
+        contract,
+      };
+
+      assert.equal(
+        applyPlaceholders(headerRaw, options),
+        "SELECT * FROM c_order o WHERE o.c_order_id = 'ORDER123' AND o.ad_client_id = '23C59575B9CF467C9620760EB255B389'",
+      );
+      assert.equal(
+        applyPlaceholders(linesRaw, options),
+        "SELECT * FROM c_orderline ol WHERE ol.c_order_id = 'ORDER123' AND ol.ad_client_id = '23C59575B9CF467C9620760EB255B389' ORDER BY ol.line",
+      );
+      assert.equal(
+        applyPlaceholders(taxesRaw, options),
+        "SELECT * FROM c_ordertax ot WHERE ot.c_order_id = 'ORDER123' AND ot.ad_client_id = '23C59575B9CF467C9620760EB255B389'",
+      );
+    });
+
+    it('isolates cross-tenant document requests by rewriting client id', () => {
+      const headerRaw = "SELECT * FROM c_invoice i WHERE i.c_invoice_id = '__DOCUMENTID__' AND i.ad_client_id = '__CLIENT_ID__'";
+      const tenantA = { clientId: 'TENANTA', params: { documentId: 'INV001' }, contract };
+      const tenantB = { clientId: 'TENANTB', params: { documentId: 'INV001' }, contract };
+
+      const sqlA = applyPlaceholders(headerRaw, tenantA);
+      const sqlB = applyPlaceholders(headerRaw, tenantB);
+
+      assert.ok(sqlA.includes("i.ad_client_id = 'TENANTA'"));
+      assert.ok(sqlB.includes("i.ad_client_id = 'TENANTB'"));
+      assert.notEqual(sqlA, sqlB, 'requests for the same document from different tenants must yield distinct client-scoped queries');
+    });
+  });
+});
+
+// Re-review N-c: the org check reads __ORGID__ through resolvePlaceholderValue,
+// the SQL is filled by applyPlaceholders. They must agree on every input, or a
+// check passes on one value while the SQL runs with another (W1, ETP-6080).
+describe('resolvePlaceholderValue agrees with applyPlaceholders (ETP-6080)', () => {
+  const fill = (contract, params) => applyPlaceholders("SELECT '__ORGID__'", { clientId: 'C1', contract, params });
+  const cases = [
+    ['request value', [{ name: 'orgId' }], { orgId: 'A' }],
+    ['default only', [{ name: 'orgId', default: 'D' }], {}],
+    ['request beats default', [{ name: 'orgId', default: 'D' }], { orgId: 'A' }],
+    ['blank request, default', [{ name: 'orgId', default: 'D' }], { orgId: '' }],
+    ['blank, no default', [{ name: 'orgId' }], { orgId: '' }],
+    ['null request', [{ name: 'orgId' }], { orgId: null }],
+    ['number', [{ name: 'orgId' }], { orgId: 0 }],
+    ['array (multi-select)', [{ name: 'orgId' }], { orgId: ['A', 'B'] }],
+    ['declared in another casing', [{ name: 'orgID' }], { orgID: 'A', orgId: 'B' }],
+    ['not declared', [], { orgId: 'A' }],
+  ];
+  for (const [label, parameters, params] of cases) {
+    it(label, () => {
+      const contract = { parameters };
+      const { value, ambiguous } = resolvePlaceholderValue(contract, params, 'ORGID');
+      assert.equal(ambiguous, false);
+      assert.equal(fill(contract, params), `SELECT '${value || '__ORGID__'}'`);
+    });
+  }
+
+  it('flags two declared params with the same placeholder as ambiguous', () => {
+    const { ambiguous } = resolvePlaceholderValue({ parameters: [{ name: 'orgId' }, { name: 'ORGID' }] }, { orgId: 'A' }, 'ORGID');
+    assert.equal(ambiguous, true);
   });
 });
