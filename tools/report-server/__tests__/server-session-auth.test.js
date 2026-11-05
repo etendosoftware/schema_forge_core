@@ -1,3 +1,4 @@
+// @covers tools/report-server/server.js
 /**
  * ETP-5460 — server.js authenticates report requests via the session cookie
  * (`report-auth.js`'s `resolveReportSession`) instead of an unverified
@@ -28,7 +29,7 @@ const SERVER_SRC = readFileSync(fileURLToPath(new URL('../server.js', import.met
 
 describe('server.js — imports report-auth.js instead of decoding the JWT locally', () => {
   it('imports resolveReportSession and reportAuthErrorBody from the shared module', () => {
-    assert.match(SERVER_SRC, /import \{ resolveReportSession, reportAuthErrorBody \} from '\.\.\/\.\.\/cli\/src\/report-auth\.js'/);
+    assert.match(SERVER_SRC, /import \{ resolveReportSession, reportAuthErrorBody(, assertReportOrgAccess)?(, assertReportAccess)? \} from '\.\.\/\.\.\/cli\/src\/report-auth\.js'/);
   });
 
   it('no longer defines or calls getClientIdFromToken — the unverified JWT decode is gone', () => {
@@ -65,19 +66,35 @@ describe('server.js — renderReport (POST /api/reports/:id/render) resolves the
   });
 });
 
-describe('server.js — fetchReportDataById (GET /api/reports/:id/data) resolves the session BEFORE fetching data', () => {
-  it('calls resolveReportSession before fetchReportData and forwards no authToken', () => {
-    const fnStart = SERVER_SRC.indexOf('async function fetchReportDataById(');
+describe('server.js — POST /api/reports/:id/query delegates to the shared handler (ETP-6080)', () => {
+  it('routes /query to handleReportQuery, which resolves the session and the org check before any SQL', () => {
+    const fnStart = SERVER_SRC.indexOf('async function queryReport(');
     assert.ok(fnStart >= 0);
-    const fnEnd = SERVER_SRC.indexOf('\nfunction isGetDataRequest', fnStart);
-    const fn = SERVER_SRC.slice(fnStart, fnEnd);
+    const fn = SERVER_SRC.slice(fnStart, SERVER_SRC.indexOf('\n}\n', fnStart));
+    assert.match(fn, /await handleReportQuery\(/);
+    assert.doesNotMatch(fn, /pool\.query|fetchReportData/, 'the route must not read data itself, around the shared handler');
+  });
 
-    const sessionCallIdx = fn.search(/await resolveReportSession\(req\.headers, \{ method: req\.method, etendoBase: ETENDO_URL \}\)/);
-    const fetchDataIdx = fn.indexOf('await fetchReportData(reportId, { limit, session })');
-    assert.ok(sessionCallIdx >= 0);
-    assert.ok(fetchDataIdx >= 0);
-    assert.ok(sessionCallIdx < fetchDataIdx, 'no DB/NEO access must happen before the session is resolved');
-    assert.doesNotMatch(fn, /authToken/, 'must not forward an authToken anywhere in this handler');
+  it('no longer serves GET /api/reports/:id/data (ran the report SQL with no params: every org)', () => {
+    assert.doesNotMatch(SERVER_SRC, /\\\/data\$/);
+    assert.doesNotMatch(SERVER_SRC, /function fetchReportDataById/);
+  });
+
+  it('checks org access in /render after the session and before fetchReportData', () => {
+    const renderStart = SERVER_SRC.indexOf('async function renderReport(');
+    const fn = SERVER_SRC.slice(renderStart, SERVER_SRC.indexOf('\nasync function handleRequest', renderStart));
+    const sessionIdx = fn.indexOf('await resolveReportSession(');
+    const orgIdx = fn.indexOf('await checkRenderOrgAccess(');
+    const dataIdx = fn.indexOf('await fetchReportData(');
+    assert.ok(sessionIdx >= 0 && orgIdx > sessionIdx && dataIdx > orgIdx, 'order: session → org check → data');
+  });
+
+  it('answers a failed org check (DB down, broken contract) with ORG_CHECK_FAILED, never the raw message', () => {
+    const start = SERVER_SRC.indexOf('async function checkRenderOrgAccess(');
+    const fn = SERVER_SRC.slice(start, SERVER_SRC.indexOf('\n}\n', start));
+    assert.match(fn, /code: 'ORG_CHECK_FAILED'/);
+    assert.ok(fn.indexOf('try {') < fn.indexOf('JSON.parse('), 'the contract is parsed inside the try');
+    assert.match(fn, /if \(!contract\.sql\) return null;/, 'no pool for a non-SQL report');
   });
 });
 
@@ -146,5 +163,21 @@ describe('resolveReportSession — as server.js calls it', () => {
       assert.equal(mappedStatus, status);
       assert.equal(body.code, code);
     }
+  });
+});
+
+describe('server.js — document report tenant client scoping (ETP-6089)', () => {
+  it('passes header, lines, and taxes queries through applyPlaceholders with session.clientId', () => {
+    const docStart = SERVER_SRC.indexOf("if (contract.type === 'document' && contract.sql?.header)");
+    assert.ok(docStart >= 0, 'document branch must exist in fetchReportData');
+    const docEnd = SERVER_SRC.indexOf('\n  // SQL / Jasper path', docStart);
+    const docBranch = SERVER_SRC.slice(docStart, docEnd);
+
+    assert.doesNotMatch(docBranch, /function replacePlaceholders|const replace =/,
+      'inline parameter replacement functions must be replaced with applyPlaceholders');
+    assert.match(docBranch, /const clientId = session\.clientId;/);
+    assert.match(docBranch, /const headerSql = applyPlaceholders\(contract\.sql\.header, \{\s*clientId,\s*params,\s*contract,\s*locale\s*\}\);/);
+    assert.match(docBranch, /applyPlaceholders\(contract\.sql\.lines, \{\s*clientId,\s*params,\s*contract,\s*locale\s*\}\)/);
+    assert.match(docBranch, /applyPlaceholders\(contract\.sql\.taxes, \{\s*clientId,\s*params,\s*contract,\s*locale\s*\}\)/);
   });
 });

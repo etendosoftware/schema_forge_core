@@ -90,6 +90,24 @@ export function stripBlankOptionalClauses(q) {
  */
 const CLIENT_ID_SHAPE = /^[0-9A-Za-z]{1,32}$/;
 
+/**
+ * The value `applyPlaceholders` puts into `__<NAME>__`: the request value of
+ * the declared param whose uppercased name is NAME, else that param's default,
+ * else '' (the optional clause is stripped). A check on a placeholder (e.g. the
+ * org check on `__ORGID__`) must read it through here, never `params.orgId`
+ * by a hardcoded name, or a contract declaring `orgID` would fill the SQL from
+ * a key the check never looked at (ETP-6080). More than one declared param
+ * mapping to NAME is ambiguous: `ambiguous` is true and the caller must refuse.
+ */
+export function resolvePlaceholderValue(contract, params, name) {
+  const matches = (contract?.parameters || []).filter((p) => String(p.name).toUpperCase() === name);
+  if (matches.length !== 1) return { value: '', ambiguous: matches.length > 1 };
+  const [p] = matches;
+  const filled = (v) => v !== undefined && v !== null && v !== '';
+  const raw = filled(params?.[p.name]) ? params[p.name] : p.default;
+  return { value: filled(raw) ? String(raw) : '', ambiguous: false };
+}
+
 export function applyPlaceholders(rawSql, { clientId, params = {}, contract = {}, locale } = {}) {
   if (!CLIENT_ID_SHAPE.test(clientId || '')) {
     throw new Error(`applyPlaceholders: invalid or missing clientId (${JSON.stringify(clientId)})`);
@@ -97,15 +115,19 @@ export function applyPlaceholders(rawSql, { clientId, params = {}, contract = {}
 
   let q = rawSql.replace(/__CLIENT_ID__/g, clientId);
 
-  for (const [key, value] of Object.entries(params)) {
-    if (key.startsWith('_display_')) continue; // display-only, never reaches SQL
+  // Only DECLARED params reach the SQL (ETP-6080): the placeholder is the
+  // uppercased name, so an undeclared request key like `orgid` would otherwise
+  // fill `__ORGID__` behind the back of any check made on `params.orgId`.
+  const declared = contract.parameters || [];
+  for (const p of declared) {
+    const value = params[p.name];
     if (value !== undefined && value !== null && value !== '') {
       const escaped = String(value).replace(/'/g, "''");
-      q = q.replace(new RegExp(`__${key.toUpperCase()}__`, 'g'), escaped);
+      q = q.replace(new RegExp(`__${p.name.toUpperCase()}__`, 'g'), escaped);
     }
   }
 
-  for (const p of (contract.parameters || [])) {
+  for (const p of declared) {
     if (p.default !== undefined && p.default !== null && p.default !== '') {
       q = q.replace(new RegExp(`__${p.name.toUpperCase()}__`, 'g'), String(p.default));
     }

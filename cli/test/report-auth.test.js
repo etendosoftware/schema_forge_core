@@ -22,10 +22,12 @@ import { strict as assert } from 'node:assert';
 import http from 'node:http';
 
 import {
+  assertReportAccess,
   ReportAuthError,
   extractSessionCookie,
   resolveReportSession,
   reportAuthErrorBody,
+  assertReportOrgAccess,
 } from '../src/report-auth.js';
 
 const SESSION_COOKIE = '__Host-go_session=abc123';
@@ -37,13 +39,14 @@ function sessionResponse({
   environment = { clientId: 'C1', orgId: 'O1', roleId: 'R1', userId: 'U1' },
   csrfToken = 'csrf-good',
   json = true,
+  roleList,
 } = {}) {
   return {
     ok,
     status,
     json: async () => {
       if (!json) throw new Error('not JSON');
-      return { status: 'ok', environment, csrfToken };
+      return { status: 'ok', environment, csrfToken, ...(roleList ? { roleList } : {}) };
     },
   };
 }
@@ -334,5 +337,180 @@ describe('undici Origin header — open question from design id 455', () => {
     }
     assert.equal(receivedOrigin, 'https://app.test',
       'undici must forward a caller-set Origin header unmodified — resolveReportSession relies on this');
+  });
+});
+
+describe('resolveReportSession — roleOrgIds (ETP-6080)', () => {
+  const headers = { cookie: SESSION_COOKIE };
+
+  it('returns the org ids of the ACTIVE role only, never another role of the user', async () => {
+    const fetchImpl = fetchSpy(sessionResponse({
+      roleList: [
+        { id: 'R0', orgList: [{ id: 'OTHER' }] },
+        { id: 'R1', orgList: [{ id: 'O1', name: 'Spain' }, { id: 'O2', name: 'USA' }] },
+      ],
+    }));
+    const session = await resolveReportSession(headers, { etendoBase: ETENDO_BASE, fetchImpl });
+    assert.deepEqual(session.roleOrgIds, ['O1', 'O2']);
+  });
+
+  it('returns an empty list when the body has no roleList or the role is not in it', async () => {
+    const noList = await resolveReportSession(headers, { etendoBase: ETENDO_BASE, fetchImpl: fetchSpy(sessionResponse()) });
+    assert.deepEqual(noList.roleOrgIds, []);
+    const other = await resolveReportSession(headers, {
+      etendoBase: ETENDO_BASE,
+      fetchImpl: fetchSpy(sessionResponse({ roleList: [{ id: 'R9', orgList: [{ id: 'O1' }] }] })),
+    });
+    assert.deepEqual(other.roleOrgIds, []);
+  });
+});
+
+describe('assertReportOrgAccess (ETP-6080)', () => {
+  // Client C1: Main ⊃ {Spain, USA}. Mirrors QA Testing in the local sample data.
+  const PARENT = { Main: null, Spain: 'Main', USA: 'Main' };
+  const isIncluded = (org, parent) => {
+    for (let o = org; o; o = PARENT[o]) if (o === parent) return true;
+    return false;
+  };
+  // Answers the two queries assertReportOrgAccess runs, from PARENT.
+  function treePool() {
+    const calls = [];
+    return {
+      calls,
+      async query(sql, params) {
+        calls.push(sql);
+        if (sql.includes('FROM ad_org o')) {
+          const [, roleOrgIds] = params;
+          const uncovered = Object.keys(PARENT).filter((o) => !roleOrgIds.some((r) => isIncluded(o, r)));
+          return { rows: uncovered.length ? [{ '?column?': 1 }] : [] };
+        }
+        const [roleOrgIds, requested] = params;
+        return { rows: roleOrgIds.some((r) => isIncluded(requested, r)) ? [{ '?column?': 1 }] : [] };
+      },
+    };
+  }
+  const orgReport = { parameters: [{ name: 'orgId' }], sql: { query: "SELECT 1 WHERE ('__ORGID__' = '' OR x = '__ORGID__')" } };
+  const session = (roleOrgIds) => ({ clientId: 'C1', roleOrgIds });
+  const denied = (err) => err instanceof ReportAuthError && err.status === 403 && err.code === 'ORG_ACCESS_DENIED';
+
+  it('lets a role with org 0 read any org, and an empty org, without querying', async () => {
+    const pool = treePool();
+    await assertReportOrgAccess(pool, session(['0', 'Spain']), { contract: orgReport, params: { orgId: 'USA' } });
+    await assertReportOrgAccess(pool, session(['0']), { contract: orgReport, params: { orgId: '' } });
+    assert.equal(pool.calls.length, 0);
+  });
+
+  it('accepts a listed org and a descendant of one', async () => {
+    await assertReportOrgAccess(treePool(), session(['Spain']), { contract: orgReport, params: { orgId: 'Spain' } });
+    await assertReportOrgAccess(treePool(), session(['Main']), { contract: orgReport, params: { orgId: 'USA' } });
+  });
+
+  it('rejects a foreign org and an ANCESTOR of a listed org (the SQL would expand it to siblings)', async () => {
+    await assert.rejects(assertReportOrgAccess(treePool(), session(['Spain']), { contract: orgReport, params: { orgId: 'USA' } }), denied);
+    await assert.rejects(assertReportOrgAccess(treePool(), session(['Spain']), { contract: orgReport, params: { orgId: 'Main' } }), denied);
+  });
+
+  it('treats empty, absent and 0 alike: all orgs, allowed only when the role covers the client', async () => {
+    for (const orgId of ['', undefined, null, '0']) {
+      await assert.rejects(assertReportOrgAccess(treePool(), session(['Spain']), { contract: orgReport, params: { orgId } }), denied);
+      await assertReportOrgAccess(treePool(), session(['Main']), { contract: orgReport, params: { orgId } });
+    }
+  });
+
+  it('rejects a role with no org access at all', async () => {
+    await assert.rejects(assertReportOrgAccess(treePool(), session([]), { contract: orgReport, params: { orgId: 'Spain' } }), denied);
+  });
+
+  it('does not check a report whose SQL never filters by org (NEO reports, printables)', async () => {
+    const pool = treePool();
+    await assertReportOrgAccess(pool, session([]), { contract: { neo: { endpoint: '/x' } }, params: { orgId: 'USA' } });
+    await assertReportOrgAccess(pool, session([]), { contract: { sql: { header: "WHERE id = '__DOCUMENTID__'" } }, params: { orgId: 'USA' } });
+    assert.equal(pool.calls.length, 0);
+  });
+
+  // Review B1: the report SQL reads inactive orgs' postings too, so they count.
+  it('requires inactive orgs to be covered too when every org is requested', async () => {
+    const pool = treePool();
+    await assert.rejects(assertReportOrgAccess(pool, session(['Spain']), { contract: orgReport, params: {} }), denied);
+    const coverage = pool.calls.find((q) => q.includes('FROM ad_org o'));
+    assert.ok(coverage, 'coverage query ran');
+    assert.doesNotMatch(coverage, /isactive/i);
+  });
+
+  // Review W1: the check reads the value that will fill __ORGID__, not params.orgId.
+  it('reads the org through the declared param that fills __ORGID__, whatever its casing', async () => {
+    const cased = { ...orgReport, parameters: [{ name: 'orgID' }] };
+    await assert.rejects(assertReportOrgAccess(treePool(), session(['Spain']), { contract: cased, params: { orgID: 'USA', orgId: 'Spain' } }), denied);
+    await assertReportOrgAccess(treePool(), session(['Spain']), { contract: cased, params: { orgID: 'Spain' } });
+  });
+
+  it('checks the declared default when the request leaves orgId blank', async () => {
+    const withDefault = { ...orgReport, parameters: [{ name: 'orgId', default: 'USA' }] };
+    await assert.rejects(assertReportOrgAccess(treePool(), session(['Spain']), { contract: withDefault, params: { orgId: '' } }), denied);
+  });
+
+  it('refuses a contract where two declared params fill __ORGID__', async () => {
+    const ambiguous = { ...orgReport, parameters: [{ name: 'orgId' }, { name: 'ORGID' }] };
+    await assert.rejects(assertReportOrgAccess(treePool(), session(['0']), { contract: ambiguous, params: { orgId: 'Spain' } }), denied);
+  });
+
+  it('maps to a 403 JSON body through reportAuthErrorBody', async () => {
+    const err = await assertReportOrgAccess(treePool(), session(['Spain']), { contract: orgReport, params: { orgId: 'USA' } }).catch((e) => e);
+    assert.deepEqual(reportAuthErrorBody(err), { status: 403, body: { error: err.message, code: 'ORG_ACCESS_DENIED' } });
+  });
+});
+
+// ETP-6080: the role's access to the report itself (NEO myreportaccess), on /render and /query.
+describe('assertReportAccess', () => {
+  const SESSION = { forwardHeaders: { Cookie: 'c=1' } };
+  const neo = (payload, { ok = true, status = 200, raw = false } = {}) => {
+    const calls = [];
+    const fetchImpl = async (url, init) => {
+      calls.push({ url, init });
+      return { ok, status, json: async () => (raw ? payload : { result: JSON.stringify(payload) }) };
+    };
+    return { fetchImpl, calls };
+  };
+  const GOVERNED = ['profit-loss', 'report-general-ledger'];
+
+  it('lets a governed report through when the role has any tier on it', async () => {
+    const { fetchImpl, calls } = neo({ governed: GOVERNED, reportAccess: { 'profit-loss': 'read-only' } });
+    await assertReportAccess(SESSION, 'profit-loss', { etendoBase: 'http://e', fetchImpl });
+    assert.equal(calls[0].url, 'http://e/sws/neo/myreportaccess');
+    assert.deepEqual(calls[0].init.headers, { Cookie: 'c=1' });
+  });
+
+  it('refuses a governed report the role has no entry for', async () => {
+    const { fetchImpl } = neo({ governed: GOVERNED, reportAccess: { 'profit-loss': 'full' } });
+    await assert.rejects(assertReportAccess(SESSION, 'report-general-ledger', { etendoBase: 'x', fetchImpl }),
+      (e) => e.status === 403 && e.code === 'REPORT_ACCESS_DENIED');
+  });
+
+  it('lets a report outside the governed list through (printables, open reports)', async () => {
+    const { fetchImpl } = neo({ governed: GOVERNED, reportAccess: {} });
+    await assertReportAccess(SESSION, 'print-sales-invoice', { etendoBase: 'x', fetchImpl });
+  });
+
+  it('reads an unwrapped object answer too', async () => {
+    const { fetchImpl } = neo({ result: { governed: GOVERNED, reportAccess: {} } }, { raw: true });
+    await assert.rejects(assertReportAccess(SESSION, 'profit-loss', { etendoBase: 'x', fetchImpl }),
+      (e) => e.code === 'REPORT_ACCESS_DENIED');
+  });
+
+  it('does not enforce when the backend sends no governed list (older module)', async () => {
+    const { fetchImpl } = neo({ reportAccess: {} });
+    await assertReportAccess(SESSION, 'profit-loss', { etendoBase: 'x', fetchImpl });
+  });
+
+  it('fails closed with 502 when the access check cannot be read', async () => {
+    const down = async () => { throw new Error('ECONNREFUSED'); };
+    await assert.rejects(assertReportAccess(SESSION, 'profit-loss', { etendoBase: 'x', fetchImpl: down }),
+      (e) => e.status === 502 && e.code === 'REPORT_ACCESS_UNAVAILABLE');
+    const { fetchImpl: err } = neo({}, { ok: false, status: 500 });
+    await assert.rejects(assertReportAccess(SESSION, 'profit-loss', { etendoBase: 'x', fetchImpl: err }),
+      (e) => e.status === 502);
+    const bad = async () => ({ ok: true, status: 200, json: async () => ({ result: '{not json' }) });
+    await assert.rejects(assertReportAccess(SESSION, 'profit-loss', { etendoBase: 'x', fetchImpl: bad }),
+      (e) => e.status === 502);
   });
 });
