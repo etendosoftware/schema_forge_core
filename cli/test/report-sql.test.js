@@ -1,3 +1,4 @@
+// @covers cli/src/report-sql.js
 import { describe, it } from 'node:test';
 import { strict as assert } from 'node:assert';
 
@@ -236,6 +237,45 @@ describe('applyPlaceholders', () => {
     it('does not require locale for queries that never reference __REPORT_LOCALE__ (backward compatible with every non-Journal-Entries report)', () => {
       const out = applyPlaceholders("WHERE c = '__CLIENT_ID__'", base);
       assert.equal(out, "WHERE c = 'C1'");
+    });
+  });
+
+  describe('document report client scoping (ETP-6089)', () => {
+    it('scopes document header, lines, and taxes queries by client id', () => {
+      const headerRaw = "SELECT * FROM c_order o WHERE o.c_order_id = '__DOCUMENTID__' AND o.ad_client_id = '__CLIENT_ID__'";
+      const linesRaw = "SELECT * FROM c_orderline ol WHERE ol.c_order_id = '__DOCUMENTID__' AND ol.ad_client_id = '__CLIENT_ID__' ORDER BY ol.line";
+      const taxesRaw = "SELECT * FROM c_ordertax ot WHERE ot.c_order_id = '__DOCUMENTID__' AND ot.ad_client_id = '__CLIENT_ID__'";
+
+      const options = {
+        clientId: '23C59575B9CF467C9620760EB255B389',
+        params: { documentId: 'ORDER123' },
+      };
+
+      assert.equal(
+        applyPlaceholders(headerRaw, options),
+        "SELECT * FROM c_order o WHERE o.c_order_id = 'ORDER123' AND o.ad_client_id = '23C59575B9CF467C9620760EB255B389'",
+      );
+      assert.equal(
+        applyPlaceholders(linesRaw, options),
+        "SELECT * FROM c_orderline ol WHERE ol.c_order_id = 'ORDER123' AND ol.ad_client_id = '23C59575B9CF467C9620760EB255B389' ORDER BY ol.line",
+      );
+      assert.equal(
+        applyPlaceholders(taxesRaw, options),
+        "SELECT * FROM c_ordertax ot WHERE ot.c_order_id = 'ORDER123' AND ot.ad_client_id = '23C59575B9CF467C9620760EB255B389'",
+      );
+    });
+
+    it('isolates cross-tenant document requests by rewriting client id', () => {
+      const headerRaw = "SELECT * FROM c_invoice i WHERE i.c_invoice_id = '__DOCUMENTID__' AND i.ad_client_id = '__CLIENT_ID__'";
+      const tenantA = { clientId: 'TENANTA', params: { documentId: 'INV001' } };
+      const tenantB = { clientId: 'TENANTB', params: { documentId: 'INV001' } };
+
+      const sqlA = applyPlaceholders(headerRaw, tenantA);
+      const sqlB = applyPlaceholders(headerRaw, tenantB);
+
+      assert.ok(sqlA.includes("i.ad_client_id = 'TENANTA'"));
+      assert.ok(sqlB.includes("i.ad_client_id = 'TENANTB'"));
+      assert.notEqual(sqlA, sqlB, 'requests for the same document from different tenants must yield distinct client-scoped queries');
     });
   });
 });
