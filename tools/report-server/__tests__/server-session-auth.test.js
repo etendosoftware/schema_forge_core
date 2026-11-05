@@ -1,3 +1,4 @@
+// @covers tools/report-server/server.js
 /**
  * ETP-5460 — server.js authenticates report requests via the session cookie
  * (`report-auth.js`'s `resolveReportSession`) instead of an unverified
@@ -146,5 +147,21 @@ describe('resolveReportSession — as server.js calls it', () => {
       assert.equal(mappedStatus, status);
       assert.equal(body.code, code);
     }
+  });
+});
+
+describe('server.js — document report tenant client scoping (ETP-6089)', () => {
+  it('passes header, lines, and taxes queries through applyPlaceholders with session.clientId', () => {
+    const docStart = SERVER_SRC.indexOf("if (contract.type === 'document' && contract.sql?.header)");
+    assert.ok(docStart >= 0, 'document branch must exist in fetchReportData');
+    const docEnd = SERVER_SRC.indexOf('\n  // SQL / Jasper path', docStart);
+    const docBranch = SERVER_SRC.slice(docStart, docEnd);
+
+    assert.doesNotMatch(docBranch, /function replacePlaceholders|const replace =/,
+      'inline parameter replacement functions must be replaced with applyPlaceholders');
+    assert.match(docBranch, /const clientId = session\.clientId;/);
+    assert.match(docBranch, /const headerSql = applyPlaceholders\(contract\.sql\.header, \{\s*clientId,\s*params,\s*contract,\s*locale\s*\}\);/);
+    assert.match(docBranch, /applyPlaceholders\(contract\.sql\.lines, \{\s*clientId,\s*params,\s*contract,\s*locale\s*\}\)/);
+    assert.match(docBranch, /applyPlaceholders\(contract\.sql\.taxes, \{\s*clientId,\s*params,\s*contract,\s*locale\s*\}\)/);
   });
 });
