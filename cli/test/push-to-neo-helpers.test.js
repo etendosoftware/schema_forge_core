@@ -13,6 +13,7 @@ import {
   buildDesiredEntitiesMap,
   buildFieldUpdateParams,
   coalesceDuplicateColumnFields,
+  buildFieldGridOrderMap,
 } from '../src/push-to-neo.js';
 
 function updateParams(visibility) {
@@ -58,6 +59,46 @@ describe('buildFieldUpdateParams (visibility passthrough)', () => {
       assert.equal(params.isIncluded, expected.isIncluded);
       assert.equal(params.isReadOnly, expected.isReadOnly);
     }
+  });
+});
+
+describe('buildFieldGridOrderMap (ETP-5848: etendo_list default columns)', () => {
+  const contract = {
+    entities: {
+      header: {
+        fields: [
+          { name: 'documentNo', grid: true, gridOrder: 2 },
+          { name: 'description', grid: false },
+          { name: 'aeatsiiEstado', grid: true },
+          { name: 'invoiceDate', grid: true, gridOrder: 1 },
+          { name: 'tbaiStatus', grid: true },
+        ],
+      },
+      lines: { fields: [{ name: 'product' }] },
+    },
+  };
+
+  it('keeps the list order and puts unordered grid fields after it, in contract order', () => {
+    assert.deepEqual(buildFieldGridOrderMap(contract), {
+      'header.documentNo': 2,
+      'header.aeatsiiEstado': 3,
+      'header.invoiceDate': 1,
+      'header.tbaiStatus': 4,
+    });
+  });
+
+  it('writes NULL for a field the list does not show, so a stale position is cleared', () => {
+    const params = buildFieldUpdateParams(
+      { entityName: 'header', fieldName: 'description', column: 'Description' },
+      { moduleId: 'MOD1', fieldDefaultExprs: {}, auditOpts: {}, fieldGridOrders: buildFieldGridOrderMap(contract) },
+      'FLD1',
+      'ENT1',
+    );
+    assert.equal(params.gridSeqNo, null);
+  });
+
+  it('tolerates a contract without a frontend part', () => {
+    assert.deepEqual(buildFieldGridOrderMap(undefined), {});
   });
 });
 

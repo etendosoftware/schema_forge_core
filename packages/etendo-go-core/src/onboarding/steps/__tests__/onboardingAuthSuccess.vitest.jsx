@@ -54,6 +54,8 @@ vi.mock('../../api.js', () => ({
   loginAccount: (...args) => api.loginAccount(...args),
   loginWithSsoProvider: (...args) => api.loginWithSsoProvider(...args),
   registerAccount: (...args) => api.registerAccount(...args),
+  // ETP-6081: the register screen loads the terms in force; no version keeps the payloads as before.
+  fetchTermsAndConditions: async () => ({ content: '' }),
   requestPasswordReset: (...args) => api.requestPasswordReset(...args),
   confirmPasswordReset: (...args) => api.confirmPasswordReset(...args),
   fetchAccount: (...args) => api.fetchAccount(...args),
@@ -124,7 +126,6 @@ async function submitPasswordLogin(container) {
 async function fillAndSubmitRegistration(container) {
   fireEvent.change(container.querySelector('#reg-name'), { target: { value: ACCOUNT.name } });
   fireEvent.change(container.querySelector('#reg-email'), { target: { value: ACCOUNT.email } });
-  fireEvent.change(container.querySelector('#reg-password'), { target: { value: STRONG_PASSWORD } });
   await act(async () => {
     fireEvent.submit(screen.getByTestId('action-register-submit').closest('form'));
   });

@@ -188,13 +188,7 @@ async function fetchReportData(reportId, { limit, session, params = {}, locale }
     const pg = await import('pg');
     const pool = new pg.default.Pool(getDbConfig());
     try {
-      const replace = (sql) => {
-        let q = sql;
-        for (const [k, v] of Object.entries(params)) {
-          if (v) q = q.replace(new RegExp(`__${k.toUpperCase()}__`, 'g'), String(v).replaceAll('\'', "''"));
-        }
-        return q;
-      };
+      const clientId = session.clientId;
       // Company logo (ETP-4998 / ETP-5013 follow-up) — this branch used to
       // read the header SQL as-is, with no org_logo_id and no branding call
       // at all. Ported from the Vite dev plugin (report-api.js), which was
@@ -205,7 +199,7 @@ async function fetchReportData(reportId, { limit, session, params = {}, locale }
       // ran either. Same fallback as report-api.js: only auto-inject the
       // subquery when the contract's own header SQL doesn't already expose
       // org_logo_id itself.
-      const headerSql = replace(contract.sql.header);
+      const headerSql = applyPlaceholders(contract.sql.header, { clientId, params, contract, locale });
       const brandedHeaderSql = headerSql.includes('org_logo_id')
         ? headerSql
         : headerSql.replace(/^SELECT\s+/i,
@@ -215,11 +209,11 @@ async function fetchReportData(reportId, { limit, session, params = {}, locale }
         authHeaders: session.forwardHeaders,
         etendoBase: process.env.ETENDO_URL || 'http://localhost:8080/etendo',
       });
-      const linesResult = await pool.query(replace(contract.sql.lines));
+      const linesResult = await pool.query(applyPlaceholders(contract.sql.lines, { clientId, params, contract, locale }));
       const lines = linesResult.rows;
       let taxes = [];
       if (contract.sql.taxes) {
-        const taxResult = await pool.query(replace(contract.sql.taxes));
+        const taxResult = await pool.query(applyPlaceholders(contract.sql.taxes, { clientId, params, contract, locale }));
         taxes = taxResult.rows;
       }
       return { rows: lines, contract, documentData: { header, lines, taxes } };

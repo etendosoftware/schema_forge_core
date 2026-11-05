@@ -87,7 +87,6 @@ export function CompanyStep({ config, stepData, onNext, onBack, goToStep, onChan
   // below.
   const addressStarted = isAddressBlockStarted(form);
   const streetNameMissing = addressStarted && !form.streetName?.trim();
-  const buildingNumberMissing = addressStarted && !form.buildingNumber?.trim();
   const cityMissing = addressStarted && !form.city?.trim();
 
   const isValid = isCompanyStepValid(form);
@@ -221,12 +220,11 @@ export function CompanyStep({ config, stepData, onNext, onBack, goToStep, onChan
                 <AddressCell
                   id="buildingNumber"
                   label={ui('buildingNumberLabel')}
-                  required={addressStarted}
                   value={form.buildingNumber}
                   onChange={e => updateField('buildingNumber', e.target.value)}
-                  placeholder={ui('buildingNumberPlaceholder')}
+                  placeholder={ui('buildingNumberEmptyPlaceholder')}
                   maxLength={ONBOARDING_FIELD_LIMITS.buildingNumber}
-                  error={buildingNumberMissing ? ui('fieldRequiredMessage') : null}
+                  error={null}
                   // The WHATWG autocomplete spec has no dedicated "house/door number" token —
                   // address-line1/2/3 are full line values, not line sub-fields — so there is no
                   // reasonable standard token to offer the browser for this field specifically.

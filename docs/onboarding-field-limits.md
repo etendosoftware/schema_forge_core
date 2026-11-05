@@ -62,10 +62,14 @@ by thin lines, so it reads as one piece of data rather than four separate border
 is **not** asked here — it already comes from the Profile step's country selector.
 
 The whole block stays **optional** if the user never types into it (`isAddressBlockStarted` in
-`state.js`). Once they start — any of the 4 fields non-blank — Street, Number and City become
-**mandatory together** (`isCompanyStepValid`), shown as an inline "campo obligatorio" error with no
-blur/touched gating, the same style as the company-name length error. Building Name stays optional
-in every case. The limits live in `ONBOARDING_FIELD_LIMITS` (`fieldLimits.js`) and must stay in sync
+`state.js`). Once they start — any of the 4 fields non-blank — Street and City become **mandatory
+together** (`isCompanyStepValid`), shown as an inline "campo obligatorio" error with no
+blur/touched gating, the same style as the company-name length error. **Number is not required**:
+a blank value is sent to provisioning as the literal `"s/n"` (`api.js`'s `runOnboardingStream`,
+same fallback criterion as `LocationEditorModal`'s popup in the functional repo and
+`StructuredAddressComposer.effectiveBuildingNumber` on the backend — see `com.etendoerp.go`
+`docs/neo-headless.md` → "`buildingNumber` fallback, now consistent across every channel"). Building
+Name stays optional in every case. The limits live in `ONBOARDING_FIELD_LIMITS` (`fieldLimits.js`) and must stay in sync
 with `@etendosoftware/app-shell-core/lib/locationAddress.js` and the Java-side
 `StructuredAddressComposer` (`com.etendoerp.go`) — same 70/16/35 lengths, same composition
 algorithm for the Address Line 1/2 the backend ultimately writes to `C_LOCATION`.

@@ -5,13 +5,16 @@ import { Label } from '@etendosoftware/app-shell-core/components/ui/label';
 export function AuthField({ id, label, required = false, icon: Icon, trailing, error, className = '', inputClassName = '', ...props }) {
   return (
     <div className={className}>
-      <Label
-        htmlFor={id}
-        className="mb-2 block text-sm font-medium leading-6 text-[#121217]"
-        data-testid="Label__79cf84">
-        {label}
-        {required && <span className="ml-1 text-[#F53D6B]">*</span>}
-      </Label>
+      {/* No label when the caller labels the field itself (the phone shares one with its prefix). */}
+      {label && (
+        <Label
+          htmlFor={id}
+          className="mb-2 block text-sm font-medium leading-6 text-[#121217]"
+          data-testid="Label__79cf84">
+          {label}
+          {required && <span className="ml-1 text-[#F53D6B]">*</span>}
+        </Label>
+      )}
       <div className="relative">
         {Icon && (
           <Icon
