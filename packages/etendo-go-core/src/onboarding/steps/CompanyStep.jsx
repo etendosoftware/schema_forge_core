@@ -266,7 +266,8 @@ export function CompanyStep({ config, stepData, onNext, onBack, goToStep, onChan
               label={ui('onboardingBusinessSectorLabel')}
               required
               value={form.sector}
-              onChange={e => updateField('sector', e.target.value)}>
+              onChange={e => updateField('sector', e.target.value)}
+              data-testid="SetupSelect__55c534">
               <option value="" disabled>{ui('onboardingBusinessSectorPlaceholder')}</option>
               {BUSINESS_SECTORS.map((sector) => (
                 <option key={sector.value} value={sector.value}>{ui(sector.labelKey)}</option>
