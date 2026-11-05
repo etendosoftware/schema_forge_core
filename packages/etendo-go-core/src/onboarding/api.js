@@ -1,6 +1,7 @@
 import { sessionUnavailableError, whenSessionRevokeSettles } from '@etendosoftware/app-shell-core/auth/api';
 import { ACCOUNT_HEADER } from '@etendosoftware/app-shell-core/auth/sessionCredentials.js';
 import { isAccountMismatchText } from '@etendosoftware/app-shell-core/auth/sessionConflict.js';
+import { isBusinessSector } from './businessSectors.js';
 
 export const ONBOARDING_ERROR_CODES = {
   registerFailed: 'onboardingRegisterFailed',
@@ -451,6 +452,8 @@ export async function runOnboardingStream(fetchImpl, baseUrl, csrfToken, form, o
       // ETP-5426: sent only when the user ticked "include sample data"; the backend defaults the
       // absent key to false.
       ...(form.includeSampleData === true ? { includeSampleData: true } : {}),
+      // ETP-6082: the business sector the Company step asked an account that had none.
+      ...(isBusinessSector(form.sector) ? { sector: form.sector } : {}),
     }),
   });
 

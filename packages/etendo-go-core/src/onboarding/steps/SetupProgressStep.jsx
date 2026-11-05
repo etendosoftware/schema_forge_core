@@ -165,6 +165,8 @@ export function SetupProgressStep({ config, stepData, onNext, onBack, goToStep, 
       currency: config.defaultForm?.currency || '',
       // ETP-5426: the Company step's opt-in; only a literal true asks for sample data.
       includeSampleData: stepData.includeSampleData === true,
+      // ETP-6082: only set when the Company step asked it (the account had no sector).
+      sector: stepData.sector,
     };
 
     let succeeded = false;

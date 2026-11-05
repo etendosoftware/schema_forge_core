@@ -100,6 +100,25 @@ describe('sample-data offering policy (ETP-5426)', () => {
     expect('includeSampleData' in bodies[2]).toBe(false);
   });
 
+  it('sends the business sector only when it is one of the offered values', async () => {
+    // ETP-6082: the Company step asks it of an account with none; an old draft value is dropped.
+    const { runOnboardingStream } = await vi.importActual('../../api.js');
+    const bodies = [];
+    const fetchImpl = async (url, options = {}) => {
+      bodies.push(JSON.parse(options.body));
+      return streamResponse([{ type: 'result', success: true }]);
+    };
+    const form = { clientName: 'Core', currency: 'EUR', language: 'es_ES', countryCode: 'ES' };
+
+    await runOnboardingStream(fetchImpl, '', 'csrf', { ...form, sector: 'industria' }, () => {});
+    await runOnboardingStream(fetchImpl, '', 'csrf', { ...form, sector: 'technology' }, () => {});
+    await runOnboardingStream(fetchImpl, '', 'csrf', { ...form, sector: '' }, () => {});
+
+    expect(bodies[0].sector).toBe('industria');
+    expect('sector' in bodies[1]).toBe(false);
+    expect('sector' in bodies[2]).toBe(false);
+  });
+
   it('keeps a sample-data warning as a warning, never as a failed step', () => {
     expect(mapBackendStepStatus('warning')).toBe('warning');
 
