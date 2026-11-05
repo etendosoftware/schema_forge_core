@@ -16,6 +16,8 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
  * the default, pre-launch state) the legacy single-line `address` field renders instead, exactly
  * as it did before this flag existed. The frontend never evaluates the flag itself, only the
  * boolean it is handed.
+ * ETP-6082 — the business sector (the register form's list) is asked here only of an account that
+ * has none, an SSO sign-up; then it is required. Everyone else never sees it.
  */
 
 vi.mock('@etendosoftware/app-shell-core/i18n', () => ({
@@ -38,13 +40,14 @@ const {
 
 const CONFIG = { apiBase: '', brandLabel: 'Etendo', defaultForm: {} };
 
-function renderCompanyStep(stepData = {}, capabilities) {
+function renderCompanyStep(stepData = {}, capabilities, askSector = false) {
   const onChange = vi.fn();
   const utils = render(
     <CompanyStep
       config={CONFIG}
       stepData={stepData}
       capabilities={capabilities}
+      accountSectorMissing={askSector}
       onChange={onChange}
       onNext={vi.fn()}
       onBack={vi.fn()} />,
@@ -247,5 +250,37 @@ describe('CompanyStep structured-address-for-sepa flag gating (ETP-5806)', () =>
 
     // The i18n mock returns the key itself, so the rendered placeholder IS the key name.
     expect(container.querySelector('#buildingNumber').placeholder).toBe('buildingNumberEmptyPlaceholder');
+  });
+
+  describe('business sector', () => {
+    it('is not asked of an account that chose it at sign-up', () => {
+      const { container } = renderCompanyStep({ businessType: 'company', clientName: 'Acme' });
+
+      expect(container.querySelector('#sector')).toBeNull();
+      expect(startButton().disabled).toBe(false);
+    });
+
+    it('is required of an account that has none, from the register form list', () => {
+      const { container, onChange } = renderCompanyStep(
+        { businessType: 'company', clientName: 'Acme' }, undefined, true);
+      const select = container.querySelector('#sector');
+
+      expect([...select.options].map((option) => option.value))
+        .toEqual(['', 'industria', 'distribución_logística', 'servicios', 'startups_tecnología', 'otro']);
+      expect(startButton().disabled).toBe(true);
+
+      fireEvent.change(select, { target: { value: 'servicios' } });
+
+      expect(onChange).toHaveBeenCalledWith({ sector: 'servicios' });
+      expect(startButton().disabled).toBe(false);
+    });
+
+    it('drops a draft value from the retired list', () => {
+      const { container } = renderCompanyStep(
+        { businessType: 'company', clientName: 'Acme', sector: 'technology' }, undefined, true);
+
+      expect(container.querySelector('#sector').value).toBe('');
+      expect(startButton().disabled).toBe(true);
+    });
   });
 });

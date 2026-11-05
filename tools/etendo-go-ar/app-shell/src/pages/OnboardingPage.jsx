@@ -6,7 +6,6 @@ const AR_CONFIG = {
   brandLabel: 'Etendo',
   localeCodes: ['es_AR', 'en_US'],
   countryCodes: ['AR'],
-  sectorCodes: ['technology', 'services', 'commerce', 'manufacturing'],
   businessTypeValues: ['company', 'freelancer', 'advisory'],
   defaultForm: {
     currency: 'ARS',
@@ -18,7 +17,6 @@ const AR_CONFIG = {
     clientName: '',
     fiscalIdValue: '',
     address: '',
-    sector: 'technology',
   },
   track: (eventDefinition, properties) => {
     // Telemetry placeholder/noop for AR workspace
