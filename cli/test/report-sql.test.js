@@ -259,6 +259,9 @@ describe('applyPlaceholders', () => {
   });
 
   describe('document report client scoping (ETP-6089)', () => {
+    // Only declared params are substituted (ETP-6080); every print-* contract declares documentId.
+    const contract = { parameters: [{ name: 'documentId' }] };
+
     it('scopes document header, lines, and taxes queries by client id', () => {
       const headerRaw = "SELECT * FROM c_order o WHERE o.c_order_id = '__DOCUMENTID__' AND o.ad_client_id = '__CLIENT_ID__'";
       const linesRaw = "SELECT * FROM c_orderline ol WHERE ol.c_order_id = '__DOCUMENTID__' AND ol.ad_client_id = '__CLIENT_ID__' ORDER BY ol.line";
@@ -267,6 +270,7 @@ describe('applyPlaceholders', () => {
       const options = {
         clientId: '23C59575B9CF467C9620760EB255B389',
         params: { documentId: 'ORDER123' },
+        contract,
       };
 
       assert.equal(
@@ -285,8 +289,8 @@ describe('applyPlaceholders', () => {
 
     it('isolates cross-tenant document requests by rewriting client id', () => {
       const headerRaw = "SELECT * FROM c_invoice i WHERE i.c_invoice_id = '__DOCUMENTID__' AND i.ad_client_id = '__CLIENT_ID__'";
-      const tenantA = { clientId: 'TENANTA', params: { documentId: 'INV001' } };
-      const tenantB = { clientId: 'TENANTB', params: { documentId: 'INV001' } };
+      const tenantA = { clientId: 'TENANTA', params: { documentId: 'INV001' }, contract };
+      const tenantB = { clientId: 'TENANTB', params: { documentId: 'INV001' }, contract };
 
       const sqlA = applyPlaceholders(headerRaw, tenantA);
       const sqlB = applyPlaceholders(headerRaw, tenantB);
