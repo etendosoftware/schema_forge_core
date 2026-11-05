@@ -22,7 +22,6 @@ export function ProfileStep({ config, stepData, onNext, onBack, goToStep, accoun
     countryCode: stepData.countryCode ?? config.defaultForm?.countryCode ?? '',
     businessType: stepData.businessType ?? config.defaultForm?.businessType ?? 'company',
     language: stepData.language ?? config.defaultForm?.language ?? locale ?? '',
-    sector: stepData.sector ?? config.defaultForm?.sector ?? 'technology',
   }));
 
   useEffect(() => {

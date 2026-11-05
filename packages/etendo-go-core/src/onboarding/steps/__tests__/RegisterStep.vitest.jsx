@@ -111,7 +111,44 @@ describe('RegisterStep email format validation (ETP-4664)', () => {
     expect(submit.disabled).toBe(true);
 
     typeEmail(container, VALID_EMAIL);
+    // ETP-6082: the business sector is required too.
+    expect(submit.disabled).toBe(true);
+    fireEvent.change(container.querySelector('#reg-sector'), { target: { value: 'servicios' } });
     expect(submit.disabled).toBe(false);
+  });
+});
+
+describe('RegisterStep business sector (ETP-6082)', () => {
+  it('offers the HubSpot sector values with translated labels, none chosen', () => {
+    const { container } = renderRegisterStep();
+    const select = container.querySelector('#reg-sector');
+
+    expect(select.required).toBe(true);
+    expect(select.value).toBe('');
+    const values = Array.from(select.options).map((option) => option.value);
+    expect(values).toEqual(['', 'industria', 'distribución_logística', 'servicios',
+      'startups_tecnología', 'otro']);
+  });
+
+  it('sends the chosen sector with the account', async () => {
+    api.registerAccount.mockResolvedValue({ csrfToken: 'csrf', account: { name: 'Ada' } });
+    const { container } = renderRegisterStep();
+
+    fireEvent.change(container.querySelector('#reg-name'), { target: { value: 'Ada' } });
+    typeEmail(container, VALID_EMAIL);
+    fireEvent.change(container.querySelector('#reg-sector'), {
+      target: { value: 'startups_tecnología' },
+    });
+    fireEvent.submit(container.querySelector('form'));
+
+    await waitFor(() => expect(api.registerAccount).toHaveBeenCalled());
+    expect(api.registerAccount.mock.calls[0][2].sector).toBe('startups_tecnología');
+  });
+
+  it('is not asked of an invitee, who joins a company as it is', () => {
+    const { container } = renderRegisterStep({ askPhone: false, askPassword: true });
+
+    expect(container.querySelector('#reg-sector')).toBeNull();
   });
 });
 
