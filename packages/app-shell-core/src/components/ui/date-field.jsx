@@ -26,6 +26,28 @@ function toIsoDate(date) {
   return `${y}-${m}-${day}`;
 }
 
+const ISO_DATE_RE = /^(\d{4})-(\d{2})-(\d{2})$/;
+
+/** Whether a `yyyy-MM-dd` string names a real calendar day (so `2026-13-45` does not). */
+function isRealIsoDate(str) {
+  const m = ISO_DATE_RE.exec(str);
+  if (!m) return false;
+  const [y, mo, d] = [Number(m[1]), Number(m[2]), Number(m[3])];
+  const date = new Date(y, mo - 1, d);
+  return date.getFullYear() === y && date.getMonth() === mo - 1 && date.getDate() === d;
+}
+
+/**
+ * ETP-6148 — the `yyyy-MM-dd` a `minDate` prop stands for: `'today'` is the user's LOCAL
+ * calendar day (never a UTC slice), a real `yyyy-MM-dd` day is taken as is, anything else
+ * (including an impossible day such as `2026-13-45`) is ignored (null), so a bad value never
+ * locks the picker.
+ */
+export function resolveDateFieldMin(minDate, reference = new Date()) {
+  if (minDate === 'today') return toIsoDate(reference);
+  return typeof minDate === 'string' && isRealIsoDate(minDate) ? minDate : null;
+}
+
 function intlLocale(appLocale) {
   return (appLocale || 'en-GB').replace('_', '-');
 }
@@ -58,6 +80,15 @@ export function DateField({
   name,
   placeholder = '',
   className,
+  // ETP-6148 — optional lower bound, `'today'` or `yyyy-MM-dd`. Every way of committing a
+  // value honours it the same way, by REJECTING (never clamping): earlier days are disabled in
+  // the calendar, the «Today» button is disabled while today is earlier than the bound, and a
+  // typed date or a month/year picker change that would land earlier is not committed — the
+  // value stays as it was and `onMinDateRejected(iso)` lets the caller explain why. The value
+  // the field already holds is left alone even when it is earlier, so an existing record still
+  // displays. Absent: behaviour unchanged.
+  minDate,
+  onMinDateRejected,
   'data-testid': dataTestId,
 }) {
   const { locale: appLocale } = useLocaleSwitch();
@@ -74,6 +105,15 @@ export function DateField({
   const [pickerTab, setPickerTab] = React.useState('month'); // 'month' | 'year'
 
   const parsedValue = React.useMemo(() => parseCalendarDate(value), [value]);
+  const minIso = resolveDateFieldMin(minDate);
+  const minDay = React.useMemo(() => (minIso ? parseCalendarDate(minIso) : null), [minIso]);
+  const todayBeforeMin = Boolean(minIso) && toIsoDate(new Date()) < minIso;
+  // ETP-6148 — true when `iso` is a NEW value earlier than `minDate`; reports it to the caller.
+  const rejectBeforeMin = (iso) => {
+    if (!minIso || !iso || iso >= minIso) return false;
+    onMinDateRejected?.(iso);
+    return true;
+  };
 
   // The month currently rendered in the calendar — controlled so the picker can drive it.
   const [displayedMonth, setDisplayedMonth] = React.useState(
@@ -114,7 +154,14 @@ export function DateField({
       setInputText(formattedValue);
       return null;
     }
-    if (parsed.iso !== (value ?? '')) onChange?.(parsed.iso);
+    if (parsed.iso === (value ?? '')) return parsed.iso;
+    // ETP-6148 — a NEW typed date earlier than `minDate` is refused: revert to the last
+    // committed value and tell the caller. Same-string comparison on yyyy-MM-dd.
+    if (rejectBeforeMin(parsed.iso)) {
+      setInputText(formattedValue);
+      return null;
+    }
+    onChange?.(parsed.iso);
     return parsed.iso;
   };
 
@@ -186,7 +233,10 @@ export function DateField({
       // rather than silently clamping to a different day.
       const lastDay = new Date(tempYear, tempMonth + 1, 0).getDate();
       const day = parsedValue.getDate();
-      onChange?.(day <= lastDay ? toIsoDate(new Date(tempYear, tempMonth, day)) : '');
+      const next = day <= lastDay ? toIsoDate(new Date(tempYear, tempMonth, day)) : '';
+      // ETP-6148 — same rule as typed text: a month/year swap landing before `minDate` is
+      // rejected (the value is kept), not clamped. The calendar still moves to that month.
+      if (!rejectBeforeMin(next)) onChange?.(next);
     }
     setView('calendar');
   };
@@ -305,6 +355,7 @@ export function DateField({
                 mode="single"
                 selected={parsedValue || undefined}
                 onSelect={handleSelect}
+                disabled={minDay ? { before: minDay } : undefined}
                 month={displayedMonth}
                 onMonthChange={setDisplayedMonth}
                 hideNavigation
@@ -362,6 +413,7 @@ export function DateField({
                 <PillButton
                   variant="filled"
                   onClick={() => handleSelect(new Date())}
+                  disabled={todayBeforeMin}
                   data-testid="PillButton__d56af3">
                   {ui('dateRangeToday')}
                 </PillButton>

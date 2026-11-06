@@ -449,6 +449,9 @@ function applyFieldUIHints(f, mapped) {
   // ETP-4542 — flat `integer` bound (whole-number constraint). Additive, mirrors
   // min/max; the `false` sentinel is treated as "no constraint" for consistency.
   if (f.integer !== undefined && f.integer !== false) mapped.integer = f.integer;
+  // ETP-6148 — `minDate` on a date field ('today' | 'YYYY-MM-DD'), validated in
+  // resolve-curated. Emitted only when declared, so other contracts stay byte-identical.
+  if (f.minDate) mapped.minDate = f.minDate;
   // ETP-4555 — canonical declarative validation object (re-projected into a fixed
   // key order for deterministic output). Additive; absent when the field has none.
   const validation = projectValidation(f.validation);

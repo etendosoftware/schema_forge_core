@@ -1440,6 +1440,92 @@ describe('generateFormComponent - numeric constraints (min/integer)', () => {
 });
 
 // ---------------------------------------------------------------------------
+// minDate on date fields — header/line form literal and add-line entry
+// ---------------------------------------------------------------------------
+
+describe('generateFormComponent / generatePageComponent - minDate on date fields', () => {
+  const headerDate = (extra = {}) => ({
+    name: 'dueDate', column: 'Duedate', type: 'date', tsType: 'string',
+    visibility: 'editable', required: false, grid: true, form: true, ...extra,
+  });
+  const lineDate = (extra = {}) => ({
+    name: 'deliveryDate', column: 'DatePromised', type: 'date', tsType: 'string',
+    visibility: 'editable', required: false, grid: true, form: true, ...extra,
+  });
+  /** masterDetailContract with a date field on the header and on the lines. */
+  const withDates = (headerExtra, lineExtra) => {
+    const { entities } = masterDetailContract.frontendContract;
+    return {
+      ...masterDetailContract,
+      frontendContract: {
+        ...masterDetailContract.frontendContract,
+        entities: {
+          order: { ...entities.order, fields: [...entities.order.fields, headerDate(headerExtra)] },
+          orderLine: { ...entities.orderLine, fields: [...entities.orderLine.fields, lineDate(lineExtra)] },
+        },
+      },
+    };
+  };
+  const lineOf = (code, key) => code.split('\n').find(l => l.includes(`key: '${key}'`));
+  const entryArray = (code) => {
+    const m = code.match(/entry: \[([\s\S]*?)\]/);
+    assert.ok(m, 'addLineFields entry array not found');
+    return m[1];
+  };
+
+  it('emits minDate quoted, at the tail of the header form field line', () => {
+    const code = generateFormComponent('order', withDates({ minDate: 'today' }, {}));
+    assert.match(lineOf(code, 'dueDate'), /, minDate: 'today' \},$/);
+  });
+
+  it('emits a fixed YYYY-MM-DD minDate quoted on the header form field', () => {
+    const code = generateFormComponent('order', withDates({ minDate: '2026-12-01' }, {}));
+    assert.match(lineOf(code, 'dueDate'), /, minDate: '2026-12-01' \},$/);
+  });
+
+  it('emits minDate on the line form field', () => {
+    const code = generateFormComponent('orderLine', withDates({}, { minDate: 'today' }));
+    assert.match(lineOf(code, 'deliveryDate'), /, minDate: 'today' \},$/);
+  });
+
+  it('emits minDate on the add-line entry', () => {
+    const code = generatePageComponent('order', 'orderLine', withDates({}, { minDate: 'today' }));
+    assert.match(entryArray(code), /key: 'deliveryDate'[^}]*, minDate: 'today' \},/);
+  });
+
+  it('emits no minDate anywhere when no field declares it', () => {
+    const contract = withDates({}, {});
+    assert.doesNotMatch(generateFormComponent('order', contract), /minDate/);
+    assert.doesNotMatch(generateFormComponent('orderLine', contract), /minDate/);
+    assert.doesNotMatch(generatePageComponent('order', 'orderLine', contract), /minDate/);
+  });
+
+  it('a declared minDate changes only its own fragment: the rest of the output is byte-identical', () => {
+    const plain = withDates({}, {});
+    const bounded = withDates({ minDate: 'today' }, { minDate: 'today' });
+    const strip = (code) => code.replaceAll(", minDate: 'today'", '');
+    for (const gen of [
+      (c) => generateFormComponent('order', c),
+      (c) => generateFormComponent('orderLine', c),
+      (c) => generatePageComponent('order', 'orderLine', c),
+    ]) {
+      const withIt = gen(bounded);
+      assert.notEqual(withIt, gen(plain));
+      assert.equal(strip(withIt), gen(plain));
+    }
+  });
+
+  it('fields without minDate keep their pre-existing lines when a sibling declares it', () => {
+    const before = generateFormComponent('order', masterDetailContract);
+    const after = generateFormComponent('order', withDates({ minDate: 'today' }, {}));
+    for (const f of masterDetailContract.frontendContract.entities.order.fields.filter(x => x.form && x.visibility !== 'system')) {
+      const prev = lineOf(before, f.name);
+      if (prev) assert.equal(lineOf(after, f.name), prev, f.name);
+    }
+  });
+});
+
+// ---------------------------------------------------------------------------
 // addLineFields derived field separation
 // ---------------------------------------------------------------------------
 

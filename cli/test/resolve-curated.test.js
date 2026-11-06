@@ -1,7 +1,7 @@
 // @covers cli/src/resolve-curated.js
 import { describe, it } from 'node:test';
 import { strict as assert } from 'node:assert';
-import { resolveCurated } from '../src/resolve-curated.js';
+import { resolveCurated, applyMinDate } from '../src/resolve-curated.js';
 
 describe('resolveCurated', () => {
   it('applies entity, field, window, draft mode, and explicit rule decisions', async () => {
@@ -997,6 +997,72 @@ describe('resolveCurated — max field constraint (ETP-4277)', () => {
 });
 
 // ─── ETP-4555 — declarative validation constraint propagation ─────────────────
+describe('resolveCurated — minDate on date fields', () => {
+  const schemaRaw = {
+    window: { id: '810', name: 'Remittance' },
+    entities: [{
+      name: 'header',
+      tableName: 'REM_Remittance',
+      tabId: '30',
+      tabName: 'Header',
+      fields: [
+        { name: 'dueDate', columnName: 'Duedate', label: 'Due Date', type: 'date', visibility: 'editable' },
+        { name: 'dateTrx', columnName: 'DateTrx', label: 'Date', type: 'date', visibility: 'editable' },
+      ],
+    }],
+  };
+  const decide = (dueDate) => ({
+    version: 2,
+    window: { name: 'Remittance' },
+    entities: { header: { name: 'header', fields: { dueDate, dateTrx: {} } } },
+    rules: {},
+  });
+  const resolve = async (dueDate) => {
+    const { schema } = await resolveCurated(schemaRaw, { rules: [] }, decide(dueDate));
+    return schema.entities[0].fields;
+  };
+
+  it('carries minDate "today" to the curated field', async () => {
+    const fields = await resolve({ minDate: 'today' });
+    assert.equal(fields.find(f => f.name === 'dueDate').minDate, 'today');
+  });
+
+  it('carries a fixed YYYY-MM-DD minDate to the curated field', async () => {
+    const fields = await resolve({ minDate: '2026-12-01' });
+    assert.equal(fields.find(f => f.name === 'dueDate').minDate, '2026-12-01');
+  });
+
+  it('leaves minDate unset on a field that does not declare it', async () => {
+    const fields = await resolve({ minDate: 'today' });
+    assert.equal('minDate' in fields.find(f => f.name === 'dateTrx'), false);
+  });
+
+  for (const absent of [undefined, null, false]) {
+    it(`treats minDate ${String(absent)} as "no bound" (no key, no throw)`, async () => {
+      const fields = await resolve({ minDate: absent });
+      assert.equal('minDate' in fields.find(f => f.name === 'dueDate'), false);
+    });
+  }
+
+  for (const bad of ['tomorrow', 'TODAY', '2026/12/01', '01-12-2026', '2026-12-01T00:00:00Z', '', 20261201, true, {}]) {
+    it(`throws, naming the field, on minDate ${JSON.stringify(bad)}`, async () => {
+      await assert.rejects(resolve({ minDate: bad }), (err) => {
+        assert.match(err.message, /field "dueDate"/);
+        assert.match(err.message, /minDate/);
+        assert.match(err.message, /"today" or "YYYY-MM-DD"/);
+        return true;
+      });
+    });
+  }
+
+  it('applyMinDate: sets a valid value and throws on an invalid one with the field name', () => {
+    const field = { name: 'startDate' };
+    applyMinDate(field, { minDate: 'today' });
+    assert.equal(field.minDate, 'today');
+    assert.throws(() => applyMinDate({ name: 'startDate' }, { minDate: 'next week' }), /field "startDate" has minDate "next week"/);
+  });
+});
+
 describe('resolveCurated — validation constraint object (ETP-4555)', () => {
   function rawSchema(fieldExtra = {}, textFieldExtra = {}) {
     return {

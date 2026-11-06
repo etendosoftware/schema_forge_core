@@ -390,7 +390,33 @@ function applyFieldDecisionProps(field, fieldDecision) {
   applyFlatBound(field, fieldDecision, 'max');
   // ETP-4542 — flat `integer` bound (whole-number constraint), same sentinel handling as min/max.
   applyFlatBound(field, fieldDecision, 'integer');
+  applyMinDate(field, fieldDecision);
   copyTruthyDecisionProps(field, fieldDecision, FIELD_DECISION_COPY_PROPS);
+}
+
+// ETP-6148 — `minDate` on a date field: `'today'` (the user's local calendar day) or a fixed
+// `YYYY-MM-DD`. The UI disables earlier days in the picker and blocks saving a NEW earlier
+// value (see app-shell `lib/dateFieldValidation.js`). Any other value is a decisions error,
+// thrown rather than dropped: a silently ignored constraint would look configured and do nothing.
+const MIN_DATE_RE = /^(\d{4})-(\d{2})-(\d{2})$/;
+
+/** `"today"`, or a `YYYY-MM-DD` that names a real calendar day (so `2026-13-45` is refused). */
+function isValidMinDate(v) {
+  if (v === 'today') return true;
+  const m = typeof v === 'string' ? MIN_DATE_RE.exec(v) : null;
+  if (!m) return false;
+  const [y, mo, d] = [Number(m[1]), Number(m[2]), Number(m[3])];
+  const date = new Date(Date.UTC(y, mo - 1, d));
+  return date.getUTCFullYear() === y && date.getUTCMonth() === mo - 1 && date.getUTCDate() === d;
+}
+
+export function applyMinDate(field, fieldDecision) {
+  const v = fieldDecision.minDate;
+  if (v === undefined || v === null || v === false) return;
+  if (!isValidMinDate(v)) {
+    throw new Error(`decisions.json: field "${field.name}" has minDate ${JSON.stringify(v)}; expected "today" or "YYYY-MM-DD"`);
+  }
+  field.minDate = v;
 }
 
 // ETP-4556 — `false` is the disable sentinel (see field-validation.js): omit the flat

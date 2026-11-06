@@ -2468,6 +2468,51 @@ describe('generateFrontendContract — max field constraint (ETP-4277)', () => {
   });
 });
 
+// ─── minDate on a date field in contract fields ───────────────────────────────
+describe('generateFrontendContract — minDate date-field bound', () => {
+  function makeSchema(dueDateExtra = {}) {
+    return {
+      version: '0.1.0',
+      window: { id: '998', name: 'Remittance', primaryEntity: 'header', category: 'finance' },
+      entities: [{
+        name: 'header',
+        table: 'REM_Remittance',
+        level: 'header',
+        fields: [
+          { name: 'dueDate', column: 'Duedate', type: 'date', visibility: 'editable',
+            required: false, searchable: false, grid: true, form: true, ...dueDateExtra },
+          { name: 'dateTrx', column: 'DateTrx', type: 'date', visibility: 'editable',
+            required: false, searchable: false, grid: true, form: true },
+        ],
+      }],
+    };
+  }
+  const field = (fc, name) => fc.entities.header.fields.find(f => f.name === name);
+
+  it('carries minDate "today" to the contract field', () => {
+    assert.equal(field(generateFrontendContract(makeSchema({ minDate: 'today' })), 'dueDate').minDate, 'today');
+  });
+
+  it('carries a fixed YYYY-MM-DD minDate to the contract field', () => {
+    assert.equal(field(generateFrontendContract(makeSchema({ minDate: '2026-12-01' })), 'dueDate').minDate, '2026-12-01');
+  });
+
+  it('emits no minDate key on a field without it, and on its sibling', () => {
+    const fc = generateFrontendContract(makeSchema({ minDate: 'today' }));
+    assert.equal('minDate' in field(fc, 'dateTrx'), false);
+    assert.equal('minDate' in field(generateFrontendContract(makeSchema()), 'dueDate'), false);
+  });
+
+  it('minDate adds only its own key: the rest of the field is unchanged', () => {
+    // The only difference minDate introduces is the key itself.
+    const withIt = field(generateFrontendContract(makeSchema({ minDate: 'today' })), 'dueDate');
+    const without = field(generateFrontendContract(makeSchema()), 'dueDate');
+    const { minDate, ...rest } = withIt;
+    assert.equal(minDate, 'today');
+    assert.deepEqual(rest, without);
+  });
+});
+
 // ─── ETP-4556 — `false` disable sentinel end-to-end (decisions → resolve → contract) ──
 describe('false disable sentinel — regen level (ETP-4556)', () => {
   // Raw AD provides valueMin/valueMax so we can prove `false` disables an

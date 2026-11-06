@@ -749,6 +749,10 @@ export function generateFormComponent(entityName, contract) {
     // `integer`, not `type`, and EntityForm.getInputType only recognizes 'number'.
     const minPart = f.min != null ? `, min: ${f.min}` : '';
     const integerPart = fragmentIf(f.integer === true, ', integer: true');
+    // ETP-6148 — `minDate` ('today' | 'YYYY-MM-DD'): EntityForm hands it to DateField (earlier
+    // days disabled) and validates a new value on commit and in the useEntity save gate.
+    // Appended at the tail of the field line so forms that do not declare it stay byte-identical.
+    const minDatePart = quotedProp('minDate', f.minDate);
     // ETP-5323 — see buildFormMaxLengthPart for the full rationale (gating, emission rule).
     const maxLengthPart = buildFormMaxLengthPart(type, f);
     // Behavioral metadata: displayLogic and readOnlyLogic
@@ -775,7 +779,7 @@ export function generateFormComponent(entityName, contract) {
     // ETP-5684: the same capability gate the list columns carry (ETP-4520); EntityForm hides the
     // field when the role lacks it. Emitted only when declared, so other forms stay byte-for-byte.
     const visibleWhenCapabilityPart = quotedProp('visibleWhenCapability', f.visibleWhenCapability);
-    const fieldLine = `  { key: '${f.name}', column: '${f.column}', type: '${type}'${labelsPart}${formLabelPart}${requiredPart}${lookupPart}${popupPart}${readOnlyPart}${inlinePart}${sectionPart}${referencePart}${inputModePart}${searchSelectPart}${allowCreatePart}${createPart}${dependsOnPart}${optionsPart}${valueTypePart}${defaultValuePart}${helpPart}${placeholderPart}${emptyOptionPart}${fieldGroupPart}${precisionPart}${minPart}${maxLengthPart}${integerPart}${displayLogicPart}${readOnlyLogicPart}${spanPart}${rowsPart}${clearablePart}${customRendererPart}${editModalPart}${inputPrefixPart}${visibleWhenCapabilityPart} },`;
+    const fieldLine = `  { key: '${f.name}', column: '${f.column}', type: '${type}'${labelsPart}${formLabelPart}${requiredPart}${lookupPart}${popupPart}${readOnlyPart}${inlinePart}${sectionPart}${referencePart}${inputModePart}${searchSelectPart}${allowCreatePart}${createPart}${dependsOnPart}${optionsPart}${valueTypePart}${defaultValuePart}${helpPart}${placeholderPart}${emptyOptionPart}${fieldGroupPart}${precisionPart}${minPart}${maxLengthPart}${integerPart}${displayLogicPart}${readOnlyLogicPart}${spanPart}${rowsPart}${clearablePart}${customRendererPart}${editModalPart}${inputPrefixPart}${visibleWhenCapabilityPart}${minDatePart} },`;
     return [...slotLines, fieldLine].join('\n');
   }).join('\n');
 
@@ -1956,10 +1960,13 @@ function buildEntryFieldLine(f, i, firstSearchIdx) {
   const { lookupDrawerPart, lookupTitlePart, onSelectMappingsPart, displayFromCatalogPart } = buildLookupEntryParts(f);
   const minEntryPart = optProp('min', f.min);
   const maxEntryPart = optProp('max', f.max);
+  // ETP-6148 — carried on the add-line entry too, for a date entry rendered by a form that
+  // honours it. Tail-appended so entries without it stay byte-identical.
+  const minDateEntryPart = quotedProp('minDate', f.minDate);
   // Selector exclusion: hide the option equal to the current value of another field
   // on the same add-line row (e.g. newStorageBin can't equal storageBin).
   const excludeValueOfPart = f.excludeValueOf ? `, excludeValueOf: '${String(f.excludeValueOf).replace(/'/g, "\\'")}'` : '';
-  return `    { key: '${f.name}', column: '${f.column}', type: '${type}'${requiredPart}${lookupPart}${labelPart}${labelsDictPart}${clearsFieldPart}${skipDefaultPart}${referencePart}${inputModePart}${dependsOnPart}${defaultValuePart}${forceCalloutFieldsPart}${lookupDrawerPart}${lookupTitlePart}${onSelectMappingsPart}${displayFromCatalogPart}${minEntryPart}${maxEntryPart}${excludeValueOfPart} },`;
+  return `    { key: '${f.name}', column: '${f.column}', type: '${type}'${requiredPart}${lookupPart}${labelPart}${labelsDictPart}${clearsFieldPart}${skipDefaultPart}${referencePart}${inputModePart}${dependsOnPart}${defaultValuePart}${forceCalloutFieldsPart}${lookupDrawerPart}${lookupTitlePart}${onSelectMappingsPart}${displayFromCatalogPart}${minEntryPart}${maxEntryPart}${excludeValueOfPart}${minDateEntryPart} },`;
 }
 
 export function resolveSecondaryTabDefs(secondaryTabsDecl, contract, headerEntity, detailEntity, headerColumnMap, headerBooleanFields) {
