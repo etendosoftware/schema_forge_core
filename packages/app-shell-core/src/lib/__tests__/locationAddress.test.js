@@ -3,6 +3,8 @@ import { describe, it } from 'node:test';
 import assert from 'node:assert/strict';
 import {
   composeAddressLines,
+  effectiveBuildingNumber,
+  EMPTY_BUILDING_NUMBER_FALLBACK,
   ADDRESS_LINE_MAX_LENGTH,
   STREET_NAME_MAX_LENGTH,
   BUILDING_NUMBER_MAX_LENGTH,
@@ -80,6 +82,30 @@ describe('composeAddressLines (ETP-5806 — ports StructuredAddressComposer/Loca
     assert.deepEqual(result, { address1: 'Calle Mayor, 5', address2: '' });
   });
 
+  it('composes a blank number as "s/n" when a street is present (StructuredAddressComposer fallback)', () => {
+    assert.deepEqual(composeAddressLines('Calle Mayor', '', ''), { address1: 'Calle Mayor, s/n', address2: '' });
+    assert.deepEqual(composeAddressLines('Calle Mayor', '   ', 'Bajo'), {
+      address1: 'Calle Mayor, s/n - Bajo',
+      address2: '',
+    });
+  });
+
+  it('carries the "s/n" fallback into line 2 in the street-overflow branch', () => {
+    const street = 'W'.repeat(65);
+    const result = composeAddressLines(street, null, 'Nave 3');
+    assert.deepEqual(result, { address1: 'W'.repeat(60), address2: 's/n - Nave 3' });
+  });
+
+  it('returns empty lines when there is no street, even with a number or a building name typed', () => {
+    assert.deepEqual(composeAddressLines('', '1', ''), { address1: '', address2: '' });
+    assert.deepEqual(composeAddressLines('   ', '1', 'Edificio A'), { address1: '', address2: '' });
+  });
+
+  it('coerces numeric input to text before composing', () => {
+    assert.deepEqual(composeAddressLines('Calle Mayor', 5, ''), { address1: 'Calle Mayor, 5', address2: '' });
+    assert.deepEqual(composeAddressLines('Calle Mayor', 0, ''), { address1: 'Calle Mayor, 0', address2: '' });
+  });
+
   it('returns empty strings for completely empty input', () => {
     const result = composeAddressLines('', '', '');
     assert.deepEqual(result, { address1: '', address2: '' });
@@ -93,5 +119,29 @@ describe('composeAddressLines (ETP-5806 — ports StructuredAddressComposer/Loca
   it('composes Street + Number alone when there is no building name, regardless of length', () => {
     const result = composeAddressLines('Calle Larga del Pueblo', '42', '');
     assert.deepEqual(result, { address1: 'Calle Larga del Pueblo, 42', address2: '' });
+  });
+});
+
+describe('effectiveBuildingNumber (mirrors StructuredAddressComposer.effectiveBuildingNumber)', () => {
+  it('returns the trimmed number when there is one', () => {
+    assert.equal(effectiveBuildingNumber('Calle Mayor', '  12B  '), '12B');
+    assert.equal(effectiveBuildingNumber('', '7'), '7');
+  });
+
+  it('returns "s/n" when the number is blank and a street is present', () => {
+    assert.equal(EMPTY_BUILDING_NUMBER_FALLBACK, 's/n');
+    for (const blank of ['', '   ', null, undefined]) {
+      assert.equal(effectiveBuildingNumber('Calle Mayor', blank), 's/n');
+    }
+  });
+
+  it('returns null when both street and number are blank', () => {
+    assert.equal(effectiveBuildingNumber('', ''), null);
+    assert.equal(effectiveBuildingNumber(null, undefined), null);
+  });
+
+  it('coerces a numeric number, keeping 0 as a real value', () => {
+    assert.equal(effectiveBuildingNumber('Calle Mayor', 42), '42');
+    assert.equal(effectiveBuildingNumber('Calle Mayor', 0), '0');
   });
 });

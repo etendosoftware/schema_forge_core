@@ -72,7 +72,10 @@ same fallback criterion as `LocationEditorModal`'s popup in the functional repo 
 Name stays optional in every case. The limits live in `ONBOARDING_FIELD_LIMITS` (`fieldLimits.js`) and must stay in sync
 with `@etendosoftware/app-shell-core/lib/locationAddress.js` and the Java-side
 `StructuredAddressComposer` (`com.etendoerp.go`) — same 70/16/35 lengths, same composition
-algorithm for the Address Line 1/2 the backend ultimately writes to `C_LOCATION`.
+algorithm for the Address Line 1/2 the backend ultimately writes to `C_LOCATION`. That core module is the
+canonical browser copy of the rule: it exports the length constants, `effectiveBuildingNumber`
+(the `"s/n"` fallback, `EMPTY_BUILDING_NUMBER_FALLBACK`) and `composeAddressLines` (empty lines
+when there is no street).
 
 ### Step 1's name is pinned to step 2's, not to its column
 
