@@ -20,6 +20,8 @@ import {
   buildHeaderLogicMaps,
   buildProcessesArray,
 } from '../src/generate-frontend.js';
+import { generateContract } from '../src/generate-contract.js';
+import { resolveCurated } from '../src/resolve-curated.js';
 
 // ---------------------------------------------------------------------------
 // Fixtures
@@ -3170,5 +3172,139 @@ describe('generatePageComponent — window.detailVisibleWhenCapability', () => {
   it('emits no prop when not declared', () => {
     const code = generatePageComponent('order', 'orderLine', masterDetailContract);
     assert.doesNotMatch(code, /detailVisibleWhenCapability/);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// propertyPath fields — generated as plain read-only fields
+// ---------------------------------------------------------------------------
+
+describe('generateAll — propertyPath fields', () => {
+  const DOCNO_PATH = 'paymentScheduleDetail.invoicePaymentSchedule.invoice.documentNo';
+  const schemaRaw = {
+    window: { id: '700', name: 'Remittance' },
+    entities: [
+      { name: 'remittance', tableName: 'REM_Remittance', tabId: 'T1', level: 'header',
+        fields: [{ name: 'documentNo', columnName: 'DocumentNo', label: 'Document No', type: 'string', visibility: 'editable', mandatory: true }] },
+      { name: 'lines', tableName: 'REM_Line', tabId: 'T2', level: 'line',
+        fields: [{ name: 'amount', columnName: 'Amount', label: 'Amount', type: 'amount', visibility: 'editable', mandatory: true }] },
+    ],
+  };
+  const decisionsWith = (invoiceDocumentNo) => ({
+    version: 2, window: { name: 'Remittance' }, rules: {},
+    entities: { lines: { fields: { invoiceDocumentNo } } },
+  });
+
+  async function filesFor(decisions) {
+    const { schema, rules } = await resolveCurated(structuredClone(schemaRaw), { rules: [] }, decisions);
+    const contract = generateContract(schema, rules, []);
+    return { contract, files: generateAll(contract) };
+  }
+
+  // A decisions-only field with no propertyPath is not synthesized, so the plain twin is declared
+  // as a raw field instead: same key, column, label, type and read-only visibility.
+  async function plainTwinFiles() {
+    const raw = structuredClone(schemaRaw);
+    raw.entities[1].fields.push({ name: 'invoiceDocumentNo', columnName: 'DocumentNo', label: 'Invoice',
+      type: 'string', visibility: 'readOnly', mandatory: false });
+    const { schema, rules } = await resolveCurated(raw, { rules: [] }, decisionsWith({ visibility: 'readOnly', grid: true }));
+    return generateAll(generateContract(schema, rules, []));
+  }
+
+  it('emits the path field in the generated output', async () => {
+    const { contract, files } = await filesFor(decisionsWith({ propertyPath: DOCNO_PATH, column: 'DocumentNo', label: 'Invoice', grid: true }));
+    const be = contract.backendContract.entities.lines.fields.find(f => f.name === 'invoiceDocumentNo');
+    assert.equal(be.propertyPath, DOCNO_PATH, 'precondition: the contract carries the path');
+    assert.match(files['LinesTable.jsx'], /invoiceDocumentNo/);
+  });
+
+  it('generates byte-identical files to a plain read-only field with the same key', async () => {
+    const { files } = await filesFor(decisionsWith({ propertyPath: DOCNO_PATH, column: 'DocumentNo', label: 'Invoice', grid: true }));
+    assert.deepEqual(files, await plainTwinFiles());
+  });
+
+  it('never writes the path into generated JSX', async () => {
+    const { files } = await filesFor(decisionsWith({ propertyPath: DOCNO_PATH, column: 'DocumentNo', grid: true }));
+    for (const [name, content] of Object.entries(files)) {
+      assert.ok(!content.includes(DOCNO_PATH), `${name} must not mention the DAL path`);
+      assert.ok(!content.includes('propertyPath'), `${name} must not mention propertyPath`);
+    }
+  });
+});
+
+// ---------------------------------------------------------------------------
+// window.hideDetailForm — row click opens no line form
+// ---------------------------------------------------------------------------
+
+describe('generatePageComponent — hideDetailForm', () => {
+  const withWindow = (extra) => ({
+    ...masterDetailContract,
+    frontendContract: {
+      ...masterDetailContract.frontendContract,
+      window: { ...masterDetailContract.frontendContract.window, ...extra },
+    },
+  });
+
+  it('passes DetailForm to DetailView by default', () => {
+    const code = generatePageComponent('order', 'orderLine', masterDetailContract);
+    assert.match(code, /DetailTable=\{OrderLineTable\}\s*DetailForm=\{OrderLineForm\}/);
+  });
+
+  it('omits DetailForm but keeps DetailTable when hideDetailForm is true', () => {
+    const code = generatePageComponent('order', 'orderLine', withWindow({ hideDetailForm: true }));
+    assert.match(code, /DetailTable=\{OrderLineTable\}/);
+    assert.doesNotMatch(code, /DetailForm=/);
+  });
+
+  it('treats hideDetailForm: false like the default', () => {
+    assert.equal(
+      generatePageComponent('order', 'orderLine', withWindow({ hideDetailForm: false })),
+      generatePageComponent('order', 'orderLine', masterDetailContract),
+    );
+  });
+});
+
+describe('generateAll — property-path fields carry no write semantics', () => {
+  // payment.status: NOT NULL with an RPAP default on its anchor column. As a plain writable line
+  // field it is an add-line entry with that default and a required column; once its decision opts
+  // in with propertyPath it must be neither.
+  const schemaRaw = {
+    window: { id: '700', name: 'Remittance' },
+    entities: [
+      { name: 'remittance', tableName: 'REM_Remittance', tabId: 'T1', level: 'header',
+        fields: [{ name: 'documentNo', columnName: 'DocumentNo', label: 'Document No', type: 'string', visibility: 'editable', mandatory: true }] },
+      { name: 'lines', tableName: 'REM_Line', tabId: 'T2', level: 'line',
+        fields: [
+          { name: 'amount', columnName: 'Amount', label: 'Amount', type: 'amount', visibility: 'editable', mandatory: true },
+          { name: 'status', apiKey: 'status', columnName: 'Status', label: 'Status', type: 'enum', visibility: 'editable',
+            mandatory: true, defaultValue: 'RPAP', adPropertyPath: 'payment.status' },
+        ] },
+    ],
+  };
+  async function filesFor(statusDecision) {
+    const decisions = { version: 2, window: { name: 'Remittance' }, rules: {}, entities: { lines: { fields: { status: statusDecision } } } };
+    const { schema, rules } = await resolveCurated(structuredClone(schemaRaw), { rules: [] }, decisions);
+    return generateAll(generateContract(schema, rules, []));
+  }
+  const addLineBlock = (page, part) => page.match(new RegExp(`addLineFields = \\{[\\s\\S]*?\\n {2}${part}: \\[([\\s\\S]*?)\\n {2}\\],`))[1];
+  const statusLine = (block) => block.split('\n').find((l) => l.includes("key: 'status'"));
+  const statusColumn = (table) => table.split('\n').find((l) => l.includes("key: 'status'"));
+
+  it('without the opt-in, the field is an add-line entry with its default and a required column', async () => {
+    const files = await filesFor({ visibility: 'editable', grid: true });
+    const entry = statusLine(addLineBlock(files['RemittancePage.jsx'], 'entry'));
+    assert.ok(entry, 'status is an add-line entry');
+    assert.match(entry, /defaultValue: 'RPAP'/);
+    assert.match(entry, /required: true/);
+    assert.match(statusColumn(files['LinesTable.jsx']), /required: true/);
+  });
+
+  it('opted in, the path field is in neither addLineFields.entry nor .hidden, and its column is not required', async () => {
+    const files = await filesFor({ propertyPath: 'payment.status', visibility: 'readOnly', grid: true });
+    const page = files['RemittancePage.jsx'];
+    assert.equal(statusLine(addLineBlock(page, 'entry')), undefined);
+    assert.equal(statusLine(addLineBlock(page, 'hidden')), undefined);
+    assert.ok(statusColumn(files['LinesTable.jsx']), 'the path field is a grid column');
+    assert.doesNotMatch(statusColumn(files['LinesTable.jsx']), /required: true/);
   });
 });

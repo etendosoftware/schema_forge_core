@@ -3101,3 +3101,89 @@ describe('generateFrontendContract — columnMaxWidth', () => {
     assert.equal(f.columnMaxWidth, 240);
   });
 });
+
+describe('generateBackendContract — propertyPath', () => {
+  const PATH = 'paymentScheduleDetail.invoicePaymentSchedule.invoice.documentNo';
+  const pathSchema = {
+    version: '0.1.0',
+    window: { id: '700', name: 'Remittance', primaryEntity: 'lines', category: 'finance' },
+    entities: [{
+      name: 'lines',
+      tableName: 'REM_Line',
+      tabId: 'T2',
+      level: 'header',
+      fields: [
+        { name: 'amount', column: 'Amount', type: 'amount', visibility: 'editable', required: true,
+          searchable: false, grid: true, form: true },
+        { name: 'invoiceDocumentNo', column: 'DocumentNo', type: 'string', visibility: 'readOnly', required: false,
+          searchable: false, grid: true, form: false, propertyPath: PATH },
+      ],
+    }],
+  };
+  const fieldOf = (bc, name) => bc.entities.lines.fields.find(f => f.name === name);
+
+  it('carries propertyPath on the backend field that declares it', () => {
+    const bc = generateBackendContract(pathSchema);
+    const f = fieldOf(bc, 'invoiceDocumentNo');
+    assert.equal(f.propertyPath, PATH);
+    assert.equal(f.column, 'DocumentNo');
+    assert.equal(f.apiKey, 'invoiceDocumentNo');
+    assert.equal(f.visibility, 'readOnly');
+  });
+
+  it('emits no propertyPath key on a field without one', () => {
+    const bc = generateBackendContract(pathSchema);
+    assert.equal(Object.hasOwn(fieldOf(bc, 'amount'), 'propertyPath'), false);
+    for (const f of generateBackendContract(minimalSchema).entities.order.fields) {
+      assert.equal(Object.hasOwn(f, 'propertyPath'), false, `${f.name} must not carry propertyPath`);
+    }
+  });
+
+  it('leaves the frontend contract field identical to a plain read-only field', () => {
+    const plainSchema = structuredClone(pathSchema);
+    delete plainSchema.entities[0].fields[1].propertyPath;
+    assert.deepEqual(generateFrontendContract(pathSchema), generateFrontendContract(plainSchema));
+  });
+
+  it('keeps a Classic path field without the opt-in byte-identical to a legacy field in the contract', async () => {
+    const rawWith = (extra) => ({
+      window: { id: '700', name: 'Remittance' },
+      entities: [{
+        name: 'lines', tableName: 'REM_Line', tabId: 'T2',
+        fields: [{ name: 'status', apiKey: 'status', columnName: 'Status', label: 'Status', type: 'enum',
+          visibility: 'editable', mandatory: true, defaultValue: 'RPAP', ...extra }],
+      }],
+    });
+    const decisions = { version: 2, window: { name: 'Remittance' }, rules: {}, entities: { lines: { fields: { status: { grid: true } } } } };
+    const contractOf = async (raw) => {
+      const { schema, rules } = await resolveCurated(raw, { rules: [] }, structuredClone(decisions));
+      const c = generateContract(schema, rules, []);
+      return { frontendContract: c.frontendContract, backendContract: c.backendContract };
+    };
+    const classic = await contractOf(rawWith({ adPropertyPath: 'payment.status' }));
+    assert.deepEqual(classic, await contractOf(rawWith({})));
+    assert.doesNotMatch(JSON.stringify(classic), /propertyPath|adPropertyPath/i);
+    const f = classic.backendContract.entities.lines.fields.find(x => x.name === 'status');
+    assert.equal(f.apiKey, 'status');
+    assert.equal(f.visibility, 'editable');
+    assert.equal(f.required, true);
+  });
+
+  it('survives decisions.json → resolveCurated → contract for a decisions-only path field', async () => {
+    const schemaRaw = {
+      window: { id: '700', name: 'Remittance' },
+      entities: [{
+        name: 'lines', tableName: 'REM_Line', tabId: 'T2',
+        fields: [{ name: 'amount', columnName: 'Amount', label: 'Amount', type: 'amount', visibility: 'editable', mandatory: true }],
+      }],
+    };
+    const decisions = {
+      version: 2, window: { name: 'Remittance' }, rules: {},
+      entities: { lines: { fields: { invoiceDocumentNo: { propertyPath: PATH, column: 'DocumentNo' } } } },
+    };
+    const { schema } = await resolveCurated(schemaRaw, { rules: [] }, decisions);
+    const f = generateBackendContract(schema).entities.lines.fields.find(x => x.name === 'invoiceDocumentNo');
+    assert.equal(f.propertyPath, PATH);
+    assert.equal(f.visibility, 'readOnly');
+  });
+});

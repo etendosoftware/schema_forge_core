@@ -442,7 +442,20 @@ function mapFieldRow(row, systemColumns, refMap, enumValuesMap) {
   };
 
   applyFieldMetadata(fieldDef, row, schemaType, enumValuesMap);
+  // ETP-6148 — a Classic property-path field (AD_Field.Property, e.g. `payment.status`) points
+  // AD_Column_ID at the column of the path's LAST step, on another table. The extractor keeps the
+  // legacy treatment (key from that column, same classification) and only records the path as
+  // raw metadata: it becomes a path field only when the window's decision opts in by declaring
+  // `propertyPath` (resolve-curated.js). `adPropertyPath` never reaches the contract by itself.
+  const adPropertyPath = normalizePropertyPath(row.property);
+  if (adPropertyPath) fieldDef.adPropertyPath = adPropertyPath;
   return fieldDef;
+}
+
+/** A dotted DAL path with at least two segments (`a.b`), or null. */
+export function normalizePropertyPath(raw) {
+  const path = typeof raw === 'string' ? raw.trim() : '';
+  return /^[A-Za-z_]\w*(\.[A-Za-z_]\w*)+$/.test(path) ? path : null;
 }
 
 /**

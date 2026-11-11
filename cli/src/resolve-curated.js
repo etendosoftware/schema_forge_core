@@ -508,8 +508,36 @@ function applyVisibleFieldProps(field, rawField, fieldDecision) {
   if (rawField.validationRule) field.validationRule = rawField.validationRule;
 }
 
+/**
+ * Removes everything that only makes sense for a writable field. Used for property-path fields
+ * (ETP-6148), which read a value through a DAL path and are never written by NEO.
+ */
+function stripWriteSemantics(field) {
+  field.required = false;
+  delete field.sourceRequired;
+  delete field.defaultValue;
+  delete field.derivation;
+}
+
 function isVisibleField(visibility) {
   return visibility !== 'system' && visibility !== 'discarded';
+}
+
+/**
+ * Sets the field's default value. decisions.json can override it (e.g. movementQuantity: "1" on
+ * goods-receipt lines instead of the raw/computed AD default "0"). Mirrors the
+ * `derivation: null` suppression pattern of applyDecisionDerivation: an explicit
+ * `defaultValue: null` means "no default at all" (suppress the raw value), any other explicit
+ * value wins outright, and an absent key falls back to the raw AD-derived default (ETP-4671).
+ */
+function applyDefaultValue(field, rawField, fieldDecision) {
+  if (Object.prototype.hasOwnProperty.call(fieldDecision, 'defaultValue')) {
+    if (fieldDecision.defaultValue !== null) {
+      field.defaultValue = fieldDecision.defaultValue;
+    }
+  } else if (rawField.defaultValue !== undefined) {
+    field.defaultValue = rawField.defaultValue;
+  }
 }
 
 /**
@@ -517,7 +545,13 @@ function isVisibleField(visibility) {
  * Prunes all null/undefined properties before returning.
  */
 function buildCuratedField(rawField, fieldDecision, discardPatterns) {
-  const visibility = resolveFieldVisibility(rawField, fieldDecision, discardPatterns);
+  // ETP-6148 — a field is a property-path field ONLY when its decision declares `propertyPath`
+  // (strictly per-field opt-in). A Classic AD_Field.Property field without it keeps the legacy
+  // treatment untouched. A path field is never written: editable collapses to read-only.
+  const propertyPath = resolveDecisionPropertyPath(rawField.name, fieldDecision);
+  const isPathField = propertyPath != null;
+  const resolvedVisibility = resolveFieldVisibility(rawField, fieldDecision, discardPatterns);
+  const visibility = isPathField && resolvedVisibility === 'editable' ? 'readOnly' : resolvedVisibility;
   const field = buildBaseField(rawField, fieldDecision, visibility);
   const isVisible = isVisibleField(visibility);
 
@@ -529,18 +563,7 @@ function buildCuratedField(rawField, fieldDecision, discardPatterns) {
   if (isVisible && Array.isArray(fieldDecision.forceCalloutFields) && fieldDecision.forceCalloutFields.length > 0)
     field.forceCalloutFields = fieldDecision.forceCalloutFields;
 
-  // decisions.json can override a field's default value (e.g. movementQuantity: "1" on
-  // goods-receipt lines instead of the raw/computed AD default "0"). Mirrors the
-  // `derivation: null` suppression pattern below: an explicit `defaultValue: null` means
-  // "no default at all" (suppress the raw value), any other explicit value wins outright,
-  // and an absent key falls back to the raw AD-derived default exactly as before (ETP-4671).
-  if (Object.prototype.hasOwnProperty.call(fieldDecision, 'defaultValue')) {
-    if (fieldDecision.defaultValue !== null) {
-      field.defaultValue = fieldDecision.defaultValue;
-    }
-  } else if (rawField.defaultValue !== undefined) {
-    field.defaultValue = rawField.defaultValue;
-  }
+  applyDefaultValue(field, rawField, fieldDecision);
 
   if (isVisible) applyVisibleFieldProps(field, rawField, fieldDecision);
   // An empty array is truthy, so it reaches `field` through
@@ -568,6 +591,15 @@ function buildCuratedField(rawField, fieldDecision, discardPatterns) {
   // consumer must see (quality-gate invariants, validate-schema, generate-contract).
   // Runs AFTER copyRawProps(FIELD_RAW_COPY_PROPS) so the decision always wins over the raw value.
   applyDecisionDerivation(field, fieldDecision);
+
+  // ETP-6148 — a property-path field is never written, so it carries no write semantics: not
+  // required, no default, no derivation. Otherwise the generator would seed it into
+  // `addLineFields.hidden` and mark its column required (e.g. `payment.status` with its raw
+  // NOT NULL + `RPAP` default). Runs before buildFieldValidation, which reads `required`.
+  if (isPathField) {
+    field.propertyPath = propertyPath;
+    stripWriteSemantics(field);
+  }
 
   // Decisions can override raw-copied process routing (e.g. swap obuiapp JS handler
   // for a classic stored-procedure process that NEO can actually execute).
@@ -708,10 +740,54 @@ function findFieldDecision(rawField, fieldsDecisions) {
 }
 
 function buildCuratedFields(rawEntity, fieldsDecisions, discardPatterns) {
-  return (rawEntity.fields || []).map(rawField => {
+  const rawFields = rawEntity.fields || [];
+  const curated = rawFields.map(rawField => {
     const fieldDecision = findFieldDecision(rawField, fieldsDecisions);
     return buildCuratedField(rawField, fieldDecision, discardPatterns);
   });
+  for (const rawField of synthesizePathFields(rawFields, fieldsDecisions)) {
+    curated.push(buildCuratedField(rawField, fieldsDecisions[rawField.name], discardPatterns));
+  }
+  return curated;
+}
+
+// ETP-6148 — property-path fields: a value read through a many-to-one path from the tab's entity
+// (`paymentScheduleDetail.invoicePaymentSchedule.invoice.documentNo`), served by NEO from an
+// ETGO_SF_FIELD row with PROPERTY_PATH and no AD column, always read-only. Strictly opt-in per
+// field: the decision declares `propertyPath`. On a raw field (e.g. a Classic AD_Field.Property
+// field, whose AD path the extractor records as `adPropertyPath`) it converts that field; on a
+// key that is not in schema-raw it declares a decisions-only field, synthesized below. The key is the apiKey
+// NEO returns (and filters / sorts by); `type` (default `string`) and `column` (the target
+// column's AD name, used for labels and the filter widget) are the decision's to give, since no
+// AD metadata is read here.
+const PROPERTY_PATH_RE = /^[A-Za-z_]\w*(\.[A-Za-z_]\w*)+$/;
+
+/** The decision's `propertyPath` (validated), or null when the field does not opt in. */
+function resolveDecisionPropertyPath(name, decision) {
+  if (!decision?.propertyPath) return null;
+  if (!PROPERTY_PATH_RE.test(decision.propertyPath)) {
+    throw new Error(`decisions.json: field "${name}" has propertyPath ${JSON.stringify(decision.propertyPath)}; expected a dotted DAL path such as "a.b.c"`);
+  }
+  return decision.propertyPath;
+}
+
+function synthesizePathFields(rawFields, fieldsDecisions) {
+  const rawNames = new Set(rawFields.map(f => f.name));
+  const synthesized = [];
+  for (const [name, decision] of Object.entries(fieldsDecisions)) {
+    if (!decision?.propertyPath || rawNames.has(name)) continue;
+    resolveDecisionPropertyPath(name, decision);
+    synthesized.push({
+      name,
+      apiKey: name,
+      columnName: decision.column || name,
+      label: decision.label || name,
+      type: decision.type || 'string',
+      mandatory: false,
+      visibility: 'readOnly',
+    });
+  }
+  return synthesized;
 }
 
 function orderCuratedFields(curatedFields, fieldsDecisions) {

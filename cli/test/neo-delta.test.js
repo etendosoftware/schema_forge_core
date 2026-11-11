@@ -1,9 +1,11 @@
+// @covers cli/src/lib/neo-delta.js
 import { describe, it } from 'node:test';
 import { strict as assert } from 'node:assert';
 import {
   specNaturalKey,
   entityNaturalKey,
   fieldNaturalKey,
+  pathFieldNaturalKey,
   computeWindowDelta,
   serializeDelta,
 } from '../src/lib/neo-delta.js';
@@ -23,6 +25,10 @@ describe('neo-delta natural keys', () => {
 
   it('fieldNaturalKey joins spec/tabId/colId', () => {
     assert.equal(fieldNaturalKey('sales-order', '100', '200'), 'sales-order/100/200');
+  });
+
+  it('pathFieldNaturalKey joins spec/tabId/path:<propertyPath>', () => {
+    assert.equal(pathFieldNaturalKey('remittance', '100', 'payment.status'), 'remittance/100/path:payment.status');
   });
 });
 
@@ -405,5 +411,170 @@ describe('computeWindowDelta', () => {
     assert.equal(entities.length, 2);
     assert.equal(entities[0].SEQNO, '10');
     assert.equal(entities[1].SEQNO, '20');
+  });
+});
+
+// ---------------------------------------------------------------------------
+// computeWindowDelta — property-path fields (ETGO_SF_FIELD.PROPERTY_PATH rows)
+// ---------------------------------------------------------------------------
+
+describe('computeWindowDelta — property-path fields', () => {
+  const MODULE_ID = 'AABBCCDD11223344';
+  const INV_ACCOUNT = 'paymentScheduleDetail.invoicePaymentSchedule.invoice.eTABAMBankaccount.displayedAccount';
+  const ORD_ACCOUNT = 'paymentScheduleDetail.orderPaymentSchedule.order.eTABAMBankaccount.displayedAccount';
+
+  function deltaWith(fields, prevSnapshot = { spec: [], entity: [], field: [] }, adColumns) {
+    return computeWindowDelta({
+      specName: 'remittance',
+      windowId: 'W1',
+      moduleId: MODULE_ID,
+      contract: {
+        backendContract: {
+          entities: {
+            lines: { tabId: 'T2', tabName: 'Lines', tableName: 'REM_Line', fields },
+          },
+        },
+      },
+      decisions: {},
+      adTabs: [{ ad_tab_id: 'T2', ad_table_id: 'TBL2', name: 'Lines' }],
+      adColumns: adColumns ?? [
+        { ad_column_id: 'C_AMT', ad_table_id: 'TBL2', columnname: 'Amount' },
+        { ad_column_id: 'C_ST', ad_table_id: 'TBL2', columnname: 'Status' },
+      ],
+      prevSnapshot,
+    });
+  }
+  const pathRows = (delta) => delta.tables.ETGO_SF_FIELD.upserts.filter(r => r.PROPERTY_PATH);
+
+  it('emits a path row with no AD column, the path, the apiKey as JAVA_QUALIFIER, read-only', () => {
+    const delta = deltaWith([
+      { name: 'amount', column: 'Amount', visibility: 'editable' },
+      { name: 'displayedAccount', column: 'Displayedaccount', visibility: 'readOnly', propertyPath: INV_ACCOUNT },
+    ]);
+    const [row] = pathRows(delta);
+    assert.ok(row, 'a path row is emitted');
+    assert.equal(row._naturalKey, `remittance/T2/path:${INV_ACCOUNT}`);
+    assert.equal(Object.hasOwn(row, 'AD_COLUMN_ID'), false, 'no AD column on a path row');
+    assert.equal(row.PROPERTY_PATH, INV_ACCOUNT);
+    assert.equal(row.JAVA_QUALIFIER, 'displayedAccount');
+    assert.equal(row.ISREADONLY, 'Y');
+    assert.equal(row.ISINCLUDED, 'Y');
+    assert.equal(row.AD_MODULE_ID, MODULE_ID);
+    const entityId = delta.tables.ETGO_SF_ENTITY.upserts[0].ETGO_SF_ENTITY_ID;
+    assert.equal(row.ETGO_SF_ENTITY_ID, entityId);
+  });
+
+  it('forces read-only even when the contract field says editable', () => {
+    const [row] = pathRows(deltaWith([
+      { name: 'displayedAccount', column: 'Displayedaccount', visibility: 'editable', propertyPath: INV_ACCOUNT },
+    ]));
+    assert.equal(row.ISREADONLY, 'Y');
+  });
+
+  it('keeps two paths on the same target column as two rows', () => {
+    const rows = pathRows(deltaWith([
+      { name: 'displayedAccount', column: 'Displayedaccount', visibility: 'readOnly', propertyPath: INV_ACCOUNT },
+      { name: 'displayedAccount2', column: 'Displayedaccount', visibility: 'readOnly', propertyPath: ORD_ACCOUNT },
+    ]));
+    assert.deepEqual(rows.map(r => r.JAVA_QUALIFIER).sort(), ['displayedAccount', 'displayedAccount2']);
+    assert.deepEqual(rows.map(r => r._naturalKey).sort(), [
+      `remittance/T2/path:${INV_ACCOUNT}`,
+      `remittance/T2/path:${ORD_ACCOUNT}`,
+    ]);
+  });
+
+  it('keeps plain column rows keyed <spec>/<tab>/<column>', () => {
+    const delta = deltaWith([
+      { name: 'amount', column: 'Amount', visibility: 'editable' },
+      { name: 'displayedAccount', column: 'Displayedaccount', visibility: 'readOnly', propertyPath: INV_ACCOUNT },
+    ]);
+    const amount = delta.tables.ETGO_SF_FIELD.upserts.find(r => r.AD_COLUMN_ID === 'C_AMT');
+    assert.equal(amount._naturalKey, 'remittance/T2/C_AMT');
+    assert.equal(Object.hasOwn(amount, 'PROPERTY_PATH'), false);
+  });
+
+  it('does not let a path field keep a same-named column of the tab table included', () => {
+    // payment.status targets FIN_Payment.Status; REM_Line has its own Status column, which is
+    // not in the contract and must stay out.
+    const delta = deltaWith([
+      { name: 'amount', column: 'Amount', visibility: 'editable' },
+      { name: 'status', column: 'Status', visibility: 'readOnly', propertyPath: 'payment.status' },
+    ]);
+    const tabStatus = delta.tables.ETGO_SF_FIELD.upserts.find(r => r.AD_COLUMN_ID === 'C_ST');
+    assert.equal(tabStatus, undefined, 'the tab Status column is not created as an included row');
+    assert.equal(pathRows(delta).length, 1);
+  });
+
+  it('writes no row for a new discarded path field', () => {
+    const delta = deltaWith([
+      { name: 'displayedAccount', column: 'Displayedaccount', visibility: 'discarded', propertyPath: INV_ACCOUNT },
+    ]);
+    assert.deepEqual(pathRows(delta), []);
+  });
+
+  it('reuses the prev-snapshot row matched by path and closes it when discarded', () => {
+    const prev = {
+      spec: [{ ETGO_SF_SPEC_ID: 'S1', NAME: 'remittance', ISACTIVE: 'Y' }],
+      entity: [{ ETGO_SF_ENTITY_ID: 'E1', ETGO_SF_SPEC_ID: 'S1', AD_TAB_ID: 'T2', NAME: 'lines' }],
+      field: [{ ETGO_SF_FIELD_ID: 'PF1', ETGO_SF_ENTITY_ID: 'E1', AD_COLUMN_ID: null, PROPERTY_PATH: INV_ACCOUNT }],
+    };
+    const kept = pathRows(deltaWith([
+      { name: 'displayedAccount', column: 'Displayedaccount', visibility: 'readOnly', propertyPath: INV_ACCOUNT },
+    ], prev));
+    assert.equal(kept[0].ETGO_SF_FIELD_ID, 'PF1');
+
+    const delta = deltaWith([
+      { name: 'displayedAccount', column: 'Displayedaccount', visibility: 'discarded', propertyPath: INV_ACCOUNT },
+    ], prev);
+    const [closed] = pathRows(delta);
+    assert.equal(closed.ETGO_SF_FIELD_ID, 'PF1');
+    assert.equal(closed.ISINCLUDED, 'N');
+    assert.deepEqual(delta.tables.ETGO_SF_FIELD.deletes, []);
+  });
+
+  it('closes a stale path row the contract no longer declares instead of deleting it', () => {
+    const prev = {
+      spec: [{ ETGO_SF_SPEC_ID: 'S1', NAME: 'remittance', ISACTIVE: 'Y' }],
+      entity: [{ ETGO_SF_ENTITY_ID: 'E1', ETGO_SF_SPEC_ID: 'S1', AD_TAB_ID: 'T2', NAME: 'lines' }],
+      field: [{
+        ETGO_SF_FIELD_ID: 'PF_STALE', ETGO_SF_ENTITY_ID: 'E1', AD_COLUMN_ID: null, AD_MODULE_ID: MODULE_ID,
+        PROPERTY_PATH: 'payment.status', JAVA_QUALIFIER: 'status', ISINCLUDED: 'Y', ISREADONLY: 'Y',
+      }],
+    };
+    const delta = deltaWith([{ name: 'amount', column: 'Amount', visibility: 'editable' }], prev);
+    assert.deepEqual(delta.tables.ETGO_SF_FIELD.deletes, [], 'a stale path row is never deleted');
+    const [closed] = pathRows(delta);
+    assert.ok(closed, 'the stale path row is kept as an upsert');
+    assert.equal(closed._naturalKey, 'remittance/T2/path:payment.status');
+    assert.equal(closed.ETGO_SF_FIELD_ID, 'PF_STALE');
+    assert.equal(closed.ETGO_SF_ENTITY_ID, 'E1');
+    assert.equal(closed.PROPERTY_PATH, 'payment.status');
+    assert.equal(closed.JAVA_QUALIFIER, 'status');
+    assert.equal(closed.ISINCLUDED, 'N');
+    assert.equal(closed.ISREADONLY, 'Y');
+    assert.equal(Object.hasOwn(closed, 'AD_COLUMN_ID'), false);
+  });
+
+  it('closes only its own spec stale path rows and leaves declared ones open', () => {
+    const prev = {
+      spec: [
+        { ETGO_SF_SPEC_ID: 'S1', NAME: 'remittance', ISACTIVE: 'Y' },
+        { ETGO_SF_SPEC_ID: 'S9', NAME: 'remittance-other', ISACTIVE: 'Y' },
+      ],
+      entity: [
+        { ETGO_SF_ENTITY_ID: 'E1', ETGO_SF_SPEC_ID: 'S1', AD_TAB_ID: 'T2', NAME: 'lines' },
+        { ETGO_SF_ENTITY_ID: 'E9', ETGO_SF_SPEC_ID: 'S9', AD_TAB_ID: 'T9', NAME: 'lines' },
+      ],
+      field: [
+        { ETGO_SF_FIELD_ID: 'PF_KEEP', ETGO_SF_ENTITY_ID: 'E1', AD_COLUMN_ID: null, PROPERTY_PATH: INV_ACCOUNT },
+        { ETGO_SF_FIELD_ID: 'PF_OTHER', ETGO_SF_ENTITY_ID: 'E9', AD_COLUMN_ID: null, PROPERTY_PATH: 'payment.status' },
+      ],
+    };
+    const delta = deltaWith([
+      { name: 'displayedAccount', column: 'Displayedaccount', visibility: 'readOnly', propertyPath: INV_ACCOUNT },
+    ], prev);
+    const rows = pathRows(delta);
+    assert.deepEqual(rows.map(r => r.ETGO_SF_FIELD_ID), ['PF_KEEP']);
+    assert.equal(rows[0].ISINCLUDED, 'Y');
   });
 });

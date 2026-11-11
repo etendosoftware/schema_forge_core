@@ -760,6 +760,9 @@ export function generateBackendContract(schema, rules = [], processes = []) {
         required: f.required,
       };
       if (f.businessCritical) field.businessCritical = true;
+      // ETP-6148 — a property-path field: push-to-neo writes it as an ETGO_SF_FIELD row with
+      // PROPERTY_PATH (no AD column), keyed by this path. Emitted only when present.
+      if (f.propertyPath) field.propertyPath = f.propertyPath;
       // Persist the explicit decisions.json order (when set) so the NEXT run's
       // field-order stability lock can tell an intentional order change apart
       // from a field whose position is purely inherited. See

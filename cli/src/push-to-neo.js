@@ -87,6 +87,8 @@ export function extractFieldsFromContract(backendContract) {
         fieldName: field.name,
         column: field.column,
         visibility: field.visibility,
+        // ETP-6148 — property-path field: keyed by its path, never by `column`.
+        ...(field.propertyPath ? { propertyPath: field.propertyPath } : {}),
         businessCritical: field.businessCritical || false,
       });
     }
@@ -862,6 +864,7 @@ async function upsertSingleField(client, f, ctx, entityMaps) {
     console.warn(`  Warning: No entity ID found for '${f.entityName}', skipping field '${f.column}'`);
     return { column: f.column, entityName: f.entityName, success: false, error: 'no entity' };
   }
+  if (f.propertyPath) return upsertPathField(client, f, ctx, entityId);
   const colLookup = await client.query(
     `SELECT sf.etgo_sf_field_id
      FROM etgo_sf_field sf
@@ -883,9 +886,59 @@ async function upsertSingleField(client, f, ctx, entityMaps) {
   return { column: f.column, entityName: f.entityName, success: true };
 }
 
+/**
+ * ETP-6148 — a property-path field: an ETGO_SF_FIELD row with PROPERTY_PATH and NO AD column,
+ * matched by (entity, path) and inserted explicitly (populateWindowSpec only creates rows for the
+ * tab table's own columns). The apiKey goes in JAVA_QUALIFIER, which NEO requires on a path row,
+ * and the row is always read-only. A discarded path field with no row yet is not written at all.
+ */
+export function buildPathFieldParams(f, ctx, fieldId, entityId) {
+  const params = buildFieldUpdateParams(f, ctx, fieldId, entityId);
+  params.isReadOnly = 'Y';
+  if (params.visibility === 'editable') params.visibility = 'readOnly';
+  params.javaQualifier = f.fieldName;
+  params.propertyPath = f.propertyPath;
+  if (!fieldId) params.columnId = null;
+  return params;
+}
+
+/**
+ * Writes one property-path field (ETP-6148): matched by (entity, PROPERTY_PATH); a discarded
+ * field with no row yet is skipped; an existing row is updated without rewriting its path.
+ * Exported as a seam so it can be tested with an injected `client` (the push opens its own pool).
+ *
+ * @param {{ query: Function }} client - pg client (or a test double)
+ * @param {object} f - contract field from extractFieldsFromContract (`propertyPath`, `fieldName`, `visibility`, ...)
+ * @param {object} ctx - push context (`moduleId`, `auditOpts`, `fieldDefaultExprs`, ...)
+ * @param {string} entityId - ETGO_SF_ENTITY_ID of the field's entity
+ * @returns {Promise<object>} `{ success, skipped? }`, same shape as upsertSingleField
+ */
+export async function upsertPathField(client, f, ctx, entityId) {
+  const existing = await client.query(
+    `SELECT etgo_sf_field_id FROM etgo_sf_field
+     WHERE etgo_sf_entity_id = $1 AND property_path = $2
+     ORDER BY created, etgo_sf_field_id`,
+    [entityId, f.propertyPath],
+  );
+  const fieldId = existing.rows[0]?.etgo_sf_field_id ?? null;
+  if (!fieldId && mapVisibility(f.visibility).isIncluded !== 'Y') {
+    return { column: f.column, entityName: f.entityName, success: true, skipped: true };
+  }
+  const params = buildPathFieldParams(f, ctx, fieldId, entityId);
+  // UPDATE path: propertyPath is the match key, never rewritten.
+  if (fieldId) delete params.propertyPath;
+  await writerUpsertField(client, params);
+  return { column: f.column, propertyPath: f.propertyPath, entityName: f.entityName, success: true };
+}
+
 export async function stepExcludeNonContractFields(client, popResult, allFields, schemaRawData) {
   console.log(`[4/4] Excluding non-contract fields...`);
-  const contractColumns = new Set(allFields.map(f => f.column));
+  // Path fields carry no AD column of their own; their `column` (the target's name) must not keep
+  // a same-named column of the tab table included.
+  const contractColumns = new Set(allFields.filter(f => !f.propertyPath).map(f => f.column));
+  // Keyed by AD tab: popResult carries the tab (its `name` is still the AD tab name here).
+  const contractPathsByTab = new Set(allFields.filter(f => f.propertyPath)
+    .map(f => `${f.tabId}\u0000${f.propertyPath}`));
   // Only exclude columns that were extracted from AD in this run.
   // Columns belonging to uninstalled extension modules won't appear in
   // schemaRawData — leaving their isIncluded state untouched prevents the
@@ -915,8 +968,40 @@ export async function stepExcludeNonContractFields(client, popResult, allFields,
       }
     }
   }
+  excludedCount += await excludeNonContractPathFields(client, popResult, contractPathsByTab);
   console.log(`       ${excludedCount} non-contract fields excluded.`);
   return excludedCount;
+}
+
+/**
+ * ETP-6148 — closes the property-path rows of this spec that the contract no longer declares.
+ * Tolerates a database whose ETGO_SF_FIELD has no PROPERTY_PATH column yet (undefined_column,
+ * 42703): such a database holds no path rows to close.
+ */
+async function excludeNonContractPathFields(client, popResult, contractPathsByTab) {
+  let excluded = 0;
+  for (const ent of popResult.entities) {
+    let rows;
+    try {
+      ({ rows } = await client.query(
+        `SELECT etgo_sf_field_id, property_path FROM etgo_sf_field
+         WHERE etgo_sf_entity_id = $1 AND isincluded = 'Y' AND property_path IS NOT NULL`,
+        [ent.entityId],
+      ));
+    } catch (err) {
+      if (err?.code === '42703') return excluded;
+      throw err;
+    }
+    for (const row of rows) {
+      if (!row.property_path || contractPathsByTab.has(`${ent.tabId}\u0000${row.property_path}`)) continue;
+      await client.query(
+        `UPDATE etgo_sf_field SET isincluded = 'N', updated = now() WHERE etgo_sf_field_id = $1`,
+        [row.etgo_sf_field_id],
+      );
+      excluded++;
+    }
+  }
+  return excluded;
 }
 
 // ---------------------------------------------------------------------------

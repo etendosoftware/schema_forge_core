@@ -1494,3 +1494,235 @@ describe('resolveCurated — columnMaxWidth passthrough', () => {
     assert.equal(schema.entities[0].fields.find(x => x.name === 'netDays').columnMaxWidth, undefined);
   });
 });
+
+// ─── propertyPath — per-field opt-in path fields (Classic AD_Field.Property + decisions-only) ───
+describe('resolveCurated — propertyPath fields', () => {
+  const INVOICE_PATH = 'paymentScheduleDetail.invoicePaymentSchedule.invoice';
+  const DOCNO_PATH = 'paymentScheduleDetail.invoicePaymentSchedule.invoice.documentNo';
+
+  // Shape of extract-fields.js output for an AD_Field with Property set: the legacy field (key and
+  // classification from the target column) plus the AD path recorded as `adPropertyPath`.
+  const schemaRaw = {
+    window: { id: '700', name: 'Remittance' },
+    entities: [{
+      name: 'lines',
+      tableName: 'REM_Line',
+      tabId: 'T2',
+      fields: [
+        { name: 'amount', columnName: 'Amount', label: 'Amount', type: 'amount', visibility: 'editable', mandatory: true },
+        { name: 'invoice', apiKey: 'invoice', columnName: 'C_Invoice_ID', label: 'Invoice', type: 'foreignKey',
+          visibility: 'editable', mandatory: true, adPropertyPath: INVOICE_PATH },
+      ],
+    }],
+  };
+  const withoutAdPath = () => {
+    const raw = structuredClone(schemaRaw);
+    delete raw.entities[0].fields[1].adPropertyPath;
+    return raw;
+  };
+  const decisions = (fields) => ({ version: 2, window: { name: 'Remittance' }, entities: { lines: { fields } }, rules: {} });
+  const fieldNamed = (schema, name) => schema.entities[0].fields.find(x => x.name === name);
+
+  describe('Classic path field without the opt-in (no decision propertyPath)', () => {
+    for (const [label, fields] of [
+      ['no decision', {}],
+      ['a decision without propertyPath', { invoice: { visibility: 'readOnly', label: 'Factura', grid: true } }],
+      ['an editable decision', { invoice: { visibility: 'editable' } }],
+    ]) {
+      it(`keeps the legacy treatment exactly with ${label}`, async () => {
+        const withPath = await resolveCurated(structuredClone(schemaRaw), { rules: [] }, decisions(fields));
+        const legacy = await resolveCurated(withoutAdPath(), { rules: [] }, decisions(fields));
+        assert.deepEqual(withPath, legacy);
+        assert.equal(Object.hasOwn(fieldNamed(withPath.schema, 'invoice'), 'propertyPath'), false);
+      });
+    }
+
+    it('keeps the legacy key, visibility and required', async () => {
+      const { schema } = await resolveCurated(schemaRaw, { rules: [] }, decisions({}));
+      const f = fieldNamed(schema, 'invoice');
+      assert.equal(f.visibility, 'editable');
+      assert.equal(f.required, true);
+      assert.equal(Object.hasOwn(f, 'adPropertyPath'), false, 'the AD path is never copied to the curated field');
+    });
+  });
+
+  describe('Classic path field opted in (decision declares propertyPath)', () => {
+    it('becomes a read-only path field', async () => {
+      const { schema } = await resolveCurated(schemaRaw, { rules: [] }, decisions({
+        invoice: { propertyPath: INVOICE_PATH, visibility: 'readOnly' },
+      }));
+      const f = fieldNamed(schema, 'invoice');
+      assert.equal(f.visibility, 'readOnly');
+      assert.equal(f.propertyPath, INVOICE_PATH);
+      assert.equal(f.column, 'C_Invoice_ID');
+      assert.equal(f.type, 'foreignKey');
+      assert.equal(f.required, false);
+    });
+
+    it('collapses an explicit editable decision to readOnly', async () => {
+      const { schema } = await resolveCurated(schemaRaw, { rules: [] }, decisions({
+        invoice: { propertyPath: INVOICE_PATH, visibility: 'editable' },
+      }));
+      assert.equal(fieldNamed(schema, 'invoice').visibility, 'readOnly');
+    });
+
+    it('collapses an editable raw classification to readOnly when the decision gives no visibility', async () => {
+      const { schema } = await resolveCurated(schemaRaw, { rules: [] }, decisions({ invoice: { propertyPath: INVOICE_PATH } }));
+      assert.equal(fieldNamed(schema, 'invoice').visibility, 'readOnly');
+    });
+
+    it('honours an explicit discarded decision', async () => {
+      const { schema } = await resolveCurated(schemaRaw, { rules: [] }, decisions({
+        invoice: { propertyPath: INVOICE_PATH, visibility: 'discarded' },
+      }));
+      assert.equal(fieldNamed(schema, 'invoice').visibility, 'discarded');
+    });
+
+    it('keeps the decision key when the decision renames it', async () => {
+      const { schema } = await resolveCurated(schemaRaw, { rules: [] }, decisions({
+        invoice: { propertyPath: INVOICE_PATH, visibility: 'readOnly', name: 'sourceInvoice' },
+      }));
+      assert.equal(fieldNamed(schema, 'invoice'), undefined);
+      const f = fieldNamed(schema, 'sourceInvoice');
+      assert.equal(f.propertyPath, INVOICE_PATH);
+      assert.equal(f.visibility, 'readOnly');
+    });
+
+    it('throws on a malformed decision path instead of dropping it', async () => {
+      await assert.rejects(
+        resolveCurated(schemaRaw, { rules: [] }, decisions({ invoice: { propertyPath: 'invoice' } })),
+        /field "invoice" has propertyPath/,
+      );
+    });
+
+    it('leaves a plain field without a decision untouched', async () => {
+      const { schema } = await resolveCurated(schemaRaw, { rules: [] }, decisions({ invoice: { propertyPath: INVOICE_PATH } }));
+      const f = fieldNamed(schema, 'amount');
+      assert.equal(f.visibility, 'editable');
+      assert.equal(Object.hasOwn(f, 'propertyPath'), false);
+    });
+  });
+
+  describe('write semantics stripped from path fields', () => {
+    // payment.status: the raw anchor column is NOT NULL with an RPAP default and a computed
+    // derivation. A path field is never written, so none of that may survive.
+    const writeSchemaRaw = {
+      window: { id: '700', name: 'Remittance' },
+      entities: [{
+        name: 'lines', tableName: 'REM_Line', tabId: 'T2',
+        fields: [
+          { name: 'status', apiKey: 'status', columnName: 'Status', label: 'Status', type: 'enum',
+            visibility: 'readOnly', mandatory: true, defaultValue: 'RPAP',
+            derivation: { type: 'computed', expression: 'RPAP' }, adPropertyPath: 'payment.status' },
+          { name: 'lineStatus', columnName: 'Status', label: 'Status', type: 'enum',
+            visibility: 'editable', mandatory: true, defaultValue: 'RPAP',
+            derivation: { type: 'computed', expression: 'RPAP' } },
+        ],
+      }],
+    };
+    const writeFields = (fields) => resolveCurated(writeSchemaRaw, { rules: [] }, decisions(fields))
+      .then(({ schema }) => schema.entities[0].fields);
+    const assertNoWriteSemantics = (f) => {
+      assert.equal(f.required, false);
+      assert.equal(Object.hasOwn(f, 'sourceRequired'), false, 'sourceRequired');
+      assert.equal(Object.hasOwn(f, 'defaultValue'), false, 'defaultValue');
+      assert.equal(Object.hasOwn(f, 'derivation'), false, 'derivation');
+      assert.notEqual(f.validation?.required, true, 'validation.required');
+    };
+    const assertWriteSemantics = (f) => {
+      assert.equal(f.required, true);
+      assert.equal(f.sourceRequired, true);
+      assert.equal(f.defaultValue, 'RPAP');
+      assert.deepEqual(f.derivation, { type: 'computed', expression: 'RPAP' });
+    };
+
+    it('strips required, sourceRequired, defaultValue and derivation from an opted-in Classic path field', async () => {
+      const fields = await writeFields({ status: { propertyPath: 'payment.status', visibility: 'readOnly' } });
+      const f = fields.find(x => x.name === 'status');
+      assert.equal(f.visibility, 'readOnly');
+      assertNoWriteSemantics(f);
+    });
+
+    it('overrides an explicit required: true decision on a path field', async () => {
+      const fields = await writeFields({ status: { propertyPath: 'payment.status', visibility: 'readOnly', required: true } });
+      assertNoWriteSemantics(fields.find(x => x.name === 'status'));
+    });
+
+    it('strips a decision-declared defaultValue and derivation from a decisions-only path field', async () => {
+      const fields = await writeFields({
+        paymentStatus: { propertyPath: 'payment.status', type: 'enum', column: 'Status', required: true,
+          defaultValue: 'RPAP', derivation: { type: 'computed', expression: 'RPAP' } },
+      });
+      assertNoWriteSemantics(fields.find(x => x.name === 'paymentStatus'));
+    });
+
+    it('keeps the write semantics of a Classic path field that does not opt in', async () => {
+      const fields = await writeFields({ status: { visibility: 'readOnly' } });
+      assertWriteSemantics(fields.find(x => x.name === 'status'));
+    });
+
+    it('keeps the write semantics of a plain field with the same raw metadata', async () => {
+      const fields = await writeFields({ status: { propertyPath: 'payment.status', visibility: 'readOnly' } });
+      assertWriteSemantics(fields.find(x => x.name === 'lineStatus'));
+    });
+  });
+
+  describe('decisions-only path field', () => {
+    it('is synthesized and included read-only by default', async () => {
+      const { schema } = await resolveCurated(schemaRaw, { rules: [] }, decisions({
+        invoiceDocumentNo: { propertyPath: DOCNO_PATH, column: 'DocumentNo', label: 'Invoice' },
+      }));
+      const f = fieldNamed(schema, 'invoiceDocumentNo');
+      assert.ok(f, 'the decisions-only field is part of the curated entity');
+      assert.equal(f.visibility, 'readOnly');
+      assert.equal(f.propertyPath, DOCNO_PATH);
+      assert.equal(f.column, 'DocumentNo');
+      assert.equal(f.label, 'Invoice');
+      assert.equal(f.type, 'string', 'type defaults to string');
+      assert.equal(f.required, false);
+    });
+
+    it('keeps the declared type and collapses editable to readOnly', async () => {
+      const { schema } = await resolveCurated(schemaRaw, { rules: [] }, decisions({
+        businessPartner: { propertyPath: 'paymentScheduleDetail.businessPartner', type: 'foreignKey',
+          column: 'C_BPartner_ID', visibility: 'editable' },
+      }));
+      const f = fieldNamed(schema, 'businessPartner');
+      assert.equal(f.type, 'foreignKey');
+      assert.equal(f.visibility, 'readOnly');
+    });
+
+    it('falls back to the field key for column and label when the decision omits them', async () => {
+      const { schema } = await resolveCurated(schemaRaw, { rules: [] }, decisions({
+        paymentStatus: { propertyPath: 'payment.status' },
+      }));
+      const f = fieldNamed(schema, 'paymentStatus');
+      assert.equal(f.column, 'paymentStatus');
+      assert.equal(f.label, 'paymentStatus');
+    });
+
+    it('honours an explicit discarded visibility', async () => {
+      const { schema } = await resolveCurated(schemaRaw, { rules: [] }, decisions({
+        paymentStatus: { propertyPath: 'payment.status', visibility: 'discarded' },
+      }));
+      assert.equal(fieldNamed(schema, 'paymentStatus').visibility, 'discarded');
+    });
+
+    it('does not duplicate a raw field whose decision also declares propertyPath', async () => {
+      const { schema } = await resolveCurated(schemaRaw, { rules: [] }, decisions({
+        invoice: { propertyPath: INVOICE_PATH, visibility: 'readOnly' },
+      }));
+      assert.equal(schema.entities[0].fields.filter(x => x.name === 'invoice').length, 1);
+    });
+
+    it('throws on a malformed path instead of dropping it', async () => {
+      for (const propertyPath of ['status', 'a..b', 'a.b c']) {
+        await assert.rejects(
+          resolveCurated(schemaRaw, { rules: [] }, decisions({ broken: { propertyPath } })),
+          /field "broken" has propertyPath/,
+          `expected a rejection for ${JSON.stringify(propertyPath)}`,
+        );
+      }
+    });
+  });
+});

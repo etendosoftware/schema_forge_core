@@ -1,9 +1,12 @@
+// @covers cli/src/extract-fields.js
 import { describe, it } from 'node:test';
 import { strict as assert } from 'node:assert';
 import { readFile } from 'node:fs/promises';
 import { fileURLToPath } from 'node:url';
 import { dirname, join } from 'node:path';
-import { classifyField, inferDerivation, buildSchema, buildReference, parseValidationRule } from '../src/extract-fields.js';
+import {
+  classifyField, inferDerivation, buildSchema, buildReference, parseValidationRule, normalizePropertyPath,
+} from '../src/extract-fields.js';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const ROOT = join(__dirname, '..');
@@ -464,5 +467,99 @@ describe('buildSchema validationRule', () => {
     assert.deepEqual(field.validationRule.cascadeParams, ['C_BPartner_ID']);
     assert.deepEqual(field.validationRule.contextParams, []);
     assert.ok(field.validationRule.code.includes('IsShipTo'));
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Classic property-path fields (AD_Field.Property)
+// ---------------------------------------------------------------------------
+
+describe('normalizePropertyPath', () => {
+  it('accepts a dotted DAL path with two or more segments', () => {
+    assert.equal(normalizePropertyPath('payment.status'), 'payment.status');
+    assert.equal(
+      normalizePropertyPath('paymentScheduleDetail.invoicePaymentSchedule.invoice.documentNo'),
+      'paymentScheduleDetail.invoicePaymentSchedule.invoice.documentNo',
+    );
+  });
+
+  it('trims surrounding whitespace', () => {
+    assert.equal(normalizePropertyPath('  payment.status \n'), 'payment.status');
+  });
+
+  it('rejects a single segment, which is a plain property and not a path', () => {
+    assert.equal(normalizePropertyPath('status'), null);
+  });
+
+  it('rejects empty, non-string and malformed values', () => {
+    for (const raw of [null, undefined, '', '   ', 42, {}, 'a..b', '.a.b', 'a.b.', 'a.1b', 'a.b c', 'a.b-c']) {
+      assert.equal(normalizePropertyPath(raw), null, `expected null for ${JSON.stringify(raw)}`);
+    }
+  });
+});
+
+describe('buildSchema — Classic property-path fields (AD_Field.Property)', () => {
+  // AD_Field.Property set: AD_Column_ID points at the column of the path's LAST step, on another
+  // table (here C_Invoice.C_Invoice_ID reached from a remittance line). The extractor keeps the
+  // legacy treatment and only records the path as `adPropertyPath`; the window opts in per field.
+  function pathRow(overrides = {}) {
+    return makeRow({
+      tab_name: 'Lines',
+      tablevel: 1,
+      tablename: 'REM_Line',
+      field_name: 'Invoice',
+      columnname: 'C_Invoice_ID',
+      obdal_name: 'Invoice',
+      ad_reference_id: '19',
+      reference_name: 'TableDir',
+      property: 'paymentScheduleDetail.invoicePaymentSchedule.invoice',
+      ...overrides,
+    });
+  }
+  const fieldOf = (row) => buildSchema([row], systemColumns, refMap).entities[0].fields[0];
+
+  it('records the dotted AD path as adPropertyPath', () => {
+    assert.equal(fieldOf(pathRow()).adPropertyPath, 'paymentScheduleDetail.invoicePaymentSchedule.invoice');
+  });
+
+  it('keeps the legacy treatment exactly: same key, visibility, type and reference as without Property', () => {
+    const legacy = fieldOf(pathRow({ property: null }));
+    const { adPropertyPath, ...field } = fieldOf(pathRow());
+    assert.ok(adPropertyPath, 'precondition: the path is recorded');
+    assert.deepEqual(field, legacy);
+    assert.equal(field.name, 'invoice');
+    assert.equal(field.visibility, 'editable', 'an editable classification is not collapsed by the extractor');
+  });
+
+  it('never emits propertyPath: the extractor alone does not make a path field', () => {
+    assert.equal(Object.hasOwn(fieldOf(pathRow()), 'propertyPath'), false);
+  });
+
+  it('keeps legacy keys for two paths ending on the same target column', () => {
+    const rows = [
+      pathRow({
+        ad_field_id: '301', columnname: 'Displayedaccount', obdal_name: 'Displayedaccount',
+        ad_reference_id: 10, reference_name: 'String', field_seq: 10,
+        property: 'paymentScheduleDetail.invoicePaymentSchedule.invoice.eTABAMBankaccount.displayedAccount',
+      }),
+      pathRow({
+        ad_field_id: '302', columnname: 'Displayedaccount', obdal_name: 'Displayedaccount',
+        ad_reference_id: 10, reference_name: 'String', field_seq: 20,
+        property: 'paymentScheduleDetail.orderPaymentSchedule.order.eTABAMBankaccount.displayedAccount',
+      }),
+    ];
+    const fields = buildSchema(rows, systemColumns, refMap).entities[0].fields;
+    const legacy = buildSchema(rows.map((r) => ({ ...r, property: null })), systemColumns, refMap).entities[0].fields;
+    assert.deepEqual(fields.map((f) => f.name), legacy.map((f) => f.name));
+    assert.deepEqual(fields.map((f) => f.adPropertyPath), [
+      'paymentScheduleDetail.invoicePaymentSchedule.invoice.eTABAMBankaccount.displayedAccount',
+      'paymentScheduleDetail.orderPaymentSchedule.order.eTABAMBankaccount.displayedAccount',
+    ]);
+  });
+
+  it('records nothing for a blank or single-segment Property', () => {
+    for (const property of [null, '', 'invoice']) {
+      assert.equal(Object.hasOwn(fieldOf(pathRow({ property })), 'adPropertyPath'), false, JSON.stringify(property));
+    }
   });
 });
