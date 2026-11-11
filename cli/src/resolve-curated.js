@@ -391,7 +391,60 @@ function applyFieldDecisionProps(field, fieldDecision) {
   // ETP-4542 — flat `integer` bound (whole-number constraint), same sentinel handling as min/max.
   applyFlatBound(field, fieldDecision, 'integer');
   applyMinDate(field, fieldDecision);
+  applyColumnLink(field, fieldDecision);
+  applyColumnEditInPlace(field, fieldDecision);
   copyTruthyDecisionProps(field, fieldDecision, FIELD_DECISION_COPY_PROPS);
+}
+
+// ETP-6148 — `link` on a grid column: the cell renders as a link that opens another window's
+// record, `/<window>/<row[idField]>`. `window` is a route segment (spec name), or
+// `{ field, values }` to pick it per row from a sibling field's value (e.g. the invoice's
+// `salesTransaction` → sales or purchase invoice). The window names live in this window's
+// decisions, never in shared code. A malformed link is a decisions error, thrown rather than
+// dropped (a dropped link would look configured and do nothing).
+function applyColumnLink(field, fieldDecision) {
+  const link = fieldDecision.link;
+  if (link == null) return;
+  const name = fieldDecision.name || field.name;
+  if (!isValidColumnLink(link)) {
+    throw new Error(`decisions.json: field "${name}" has link ${JSON.stringify(link)}; expected { idField, window } where window is a spec name or { field, values: { <value>: <spec name> } }`);
+  }
+  field.link = link;
+}
+
+// ETP-6148 — `editInPlace` on a grid amount column: the lines grid shows it as an always-visible
+// amount input with a reset button, outside the row's edit mode, and validates it in place.
+// `resetToField` names the sibling field the reset restores; `maxField` the sibling field whose
+// magnitude the amount may not exceed (and whose sign it must have). At least one of the two is
+// required (an empty object declares nothing); any other key, or a non-string value, is a
+// decisions error.
+const EDIT_IN_PLACE_KEYS = new Set(['resetToField', 'maxField']);
+
+function applyColumnEditInPlace(field, fieldDecision) {
+  const config = fieldDecision.editInPlace;
+  if (config == null) return;
+  const name = fieldDecision.name || field.name;
+  const entries = typeof config === 'object' && !Array.isArray(config) ? Object.entries(config) : [];
+  const valid = entries.length > 0
+    && entries.every(([key, value]) => EDIT_IN_PLACE_KEYS.has(key) && isNonEmptyString(value));
+  if (!valid) {
+    throw new Error(`decisions.json: field "${name}" has editInPlace ${JSON.stringify(config)}; expected { resetToField?, maxField? } naming at least one sibling field`);
+  }
+  field.editInPlace = config;
+}
+
+function isNonEmptyString(value) {
+  return typeof value === 'string' && value.trim() !== '';
+}
+
+function isValidColumnLink(link) {
+  if (typeof link !== 'object' || Array.isArray(link) || !isNonEmptyString(link.idField)) return false;
+  if (isNonEmptyString(link.window)) return true;
+  const byField = link.window;
+  if (!byField || typeof byField !== 'object' || !isNonEmptyString(byField.field)) return false;
+  const values = byField.values;
+  return Boolean(values) && typeof values === 'object'
+    && Object.keys(values).length > 0 && Object.values(values).every(isNonEmptyString);
 }
 
 // ETP-6148 — `minDate` on a date field: `'today'` (the user's local calendar day) or a fixed
@@ -916,6 +969,9 @@ function applyEntityDecisions(entity, entityDecision) {
   if (entityDecision.hideDelete === true) {
     entity.hideDelete = true;
   }
+  // ETP-6148 — `rowEdit: false`: the entity's grid rows are not edited in place (no Edit action,
+  // a click does not enter edit mode). Only an explicit false is carried; absent = editable.
+  if (entityDecision.rowEdit === false) entity.rowEdit = false;
   applyEntityMethodDecisions(entity, entityDecision);
 }
 

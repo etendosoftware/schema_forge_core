@@ -393,6 +393,12 @@ const FIELD_HINTS_POST_GRID = [
   // "cCurrencyID" → the renderer reads `row['cCurrencyID$_identifier']`. Appended at
   // the tail so every contract that does not declare it stays byte-identical.
   ['currencyField', Boolean],
+  // ETP-6148 — `link` makes the grid cell open another window's record (see resolve-curated's
+  // applyColumnLink). Appended at the tail so contracts that do not declare it stay identical.
+  ['link', Boolean],
+  // ETP-6148 — `editInPlace`: an always-editable amount cell with reset (resolve-curated's
+  // applyColumnEditInPlace). Tail position, for the same byte-identity reason.
+  ['editInPlace', Boolean],
 ];
 
 // Entity-level opt-in/opt-out flags carried from the curated entity onto the
@@ -406,6 +412,8 @@ function applyEntityLevelFlags(entity, feEntity) {
   if (entity.handlesDefaults === false) feEntity.handlesDefaults = false;
   // Per-entity delete opt-out (ETP-4512): emit only when explicitly set.
   if (entity.hideDelete === true) feEntity.hideDelete = true;
+  // ETP-6148 — per-entity opt-out of in-place row editing in the grid.
+  if (entity.rowEdit === false) feEntity.rowEdit = false;
   const siblingFields = entity.fields.filter(f => isSystem(f) && f.addLineFromSibling).map(f => f.name);
   if (siblingFields.length > 0) feEntity.addLineHiddenFromSibling = siblingFields;
 }

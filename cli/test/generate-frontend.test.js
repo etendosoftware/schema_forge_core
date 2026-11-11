@@ -3308,3 +3308,79 @@ describe('generateAll — property-path fields carry no write semantics', () => 
     assert.doesNotMatch(statusColumn(files['LinesTable.jsx']), /required: true/);
   });
 });
+
+describe('generateTableComponent — column link and rowEditDisabled', () => {
+  const LINK = { idField: 'invoice', window: 'sales-invoice' };
+  const contractWith = ({ link, rowEdit } = {}) => {
+    const c = structuredClone(masterDetailContract);
+    const lines = c.frontendContract.entities.orderLine;
+    if (rowEdit !== undefined) lines.rowEdit = rowEdit;
+    if (link) lines.fields.find(f => f.name === 'product').link = link;
+    return c;
+  };
+  const productColumn = (code) => code.split('\n').find(l => l.includes("key: 'product'"));
+
+  it('appends the link at the tail of the column literal', () => {
+    const line = productColumn(generateTableComponent('orderLine', contractWith({ link: LINK })));
+    assert.match(line, /, link: \{"idField":"invoice","window":"sales-invoice"\} \},$/);
+  });
+
+  it('emits a per-row window link as JSON', () => {
+    const link = { idField: 'invoice', window: { field: 'invoiceSalesTransaction', values: { true: 'sales-invoice', false: 'purchase-invoice' } } };
+    const line = productColumn(generateTableComponent('orderLine', contractWith({ link })));
+    assert.ok(line.includes(`link: ${JSON.stringify(link)}`), line);
+  });
+
+  it('passes rowEditDisabled to both InlineLinesPanel renders when rowEdit is false', () => {
+    const code = generateTableComponent('orderLine', contractWith({ rowEdit: false }));
+    assert.match(code, /<InlineLinesPanel ref=\{ref\} columns=\{columns\} \{\.\.\.props\} rowEditDisabled addRow=\{undefined\} \/>/);
+    assert.match(code, /return <InlineLinesPanel ref=\{ref\} columns=\{columns\} \{\.\.\.props\} rowEditDisabled \/>;/);
+    assert.doesNotMatch(code, /<DataTable[^>]*rowEditDisabled/);
+  });
+
+  it('is byte-identical when neither option is declared (or rowEdit is true)', () => {
+    const base = generateTableComponent('orderLine', masterDetailContract);
+    assert.doesNotMatch(base, /rowEditDisabled|link:/);
+    assert.equal(generateTableComponent('orderLine', contractWith()), base);
+    assert.equal(generateTableComponent('orderLine', contractWith({ rowEdit: true })), base);
+  });
+
+  it('changes only the declared column and the panel props', () => {
+    const base = generateTableComponent('orderLine', masterDetailContract).split('\n');
+    const withBoth = generateTableComponent('orderLine', contractWith({ link: LINK, rowEdit: false })).split('\n');
+    assert.equal(withBoth.length, base.length);
+    const changed = withBoth.filter((l, i) => l !== base[i]);
+    assert.equal(changed.length, 3, changed.join('\n'));
+  });
+});
+
+describe('generateTableComponent — column editInPlace', () => {
+  const contractWith = (editInPlace, link) => {
+    const c = structuredClone(masterDetailContract);
+    const qty = c.frontendContract.entities.orderLine.fields.find(f => f.name === 'quantity');
+    if (editInPlace !== undefined) qty.editInPlace = editInPlace;
+    if (link) qty.link = link;
+    return c;
+  };
+  const quantityColumn = (code) => code.split('\n').find(l => l.includes("key: 'quantity'"));
+
+  it('appends editInPlace as JSON at the tail of the column literal', () => {
+    const line = quantityColumn(generateTableComponent('orderLine', contractWith({ resetToField: 'lineNetAmount', maxField: 'lineNetAmount' })));
+    assert.match(line, /, editInPlace: \{"resetToField":"lineNetAmount","maxField":"lineNetAmount"\} \},$/);
+  });
+
+  it('emits it after link when both are declared', () => {
+    const line = quantityColumn(generateTableComponent('orderLine',
+      contractWith({ maxField: 'lineNetAmount' }, { idField: 'product', window: 'product' })));
+    assert.match(line, /, link: \{[^}]*\}, editInPlace: \{"maxField":"lineNetAmount"\} \},$/);
+  });
+
+  it('is byte-identical when undeclared, and changes only the declared column when set', () => {
+    const base = generateTableComponent('orderLine', masterDetailContract);
+    assert.doesNotMatch(base, /editInPlace/);
+    assert.equal(generateTableComponent('orderLine', contractWith()), base);
+    const withIt = generateTableComponent('orderLine', contractWith({ maxField: 'lineNetAmount' })).split('\n');
+    const changed = withIt.filter((l, i) => l !== base.split('\n')[i]);
+    assert.deepEqual(changed, [quantityColumn(withIt.join('\n'))]);
+  });
+});

@@ -3187,3 +3187,101 @@ describe('generateBackendContract — propertyPath', () => {
     assert.equal(f.visibility, 'readOnly');
   });
 });
+
+describe('generateFrontendContract — column link and entity rowEdit', () => {
+  const LINK = { idField: 'invoice', window: { field: 'invoiceSalesTransaction', values: { true: 'sales-invoice', false: 'purchase-invoice' } } };
+  const schemaWith = ({ link, rowEdit } = {}) => ({
+    version: '0.1.0',
+    window: { id: '700', name: 'Remittance', primaryEntity: 'lines', category: 'finance' },
+    entities: [{
+      name: 'lines', tableName: 'REM_Line', tabId: 'T2', level: 'header',
+      ...(rowEdit === undefined ? {} : { rowEdit }),
+      fields: [
+        { name: 'invoiceDocumentNo', column: 'DocumentNo', type: 'string', visibility: 'readOnly', required: false,
+          searchable: false, grid: true, form: false, ...(link ? { link } : {}) },
+        { name: 'amount', column: 'Amount', type: 'amount', visibility: 'editable', required: true,
+          searchable: false, grid: true, form: true },
+      ],
+    }],
+  });
+  const feEntity = (schema) => generateFrontendContract(schema).entities.lines;
+  const feField = (schema, name) => feEntity(schema).fields.find(f => f.name === name);
+
+  it('carries a declared link onto the frontend field', () => {
+    assert.deepEqual(feField(schemaWith({ link: LINK }), 'invoiceDocumentNo').link, LINK);
+  });
+
+  it('emits no link key when none is declared, also on siblings', () => {
+    assert.equal('link' in feField(schemaWith(), 'invoiceDocumentNo'), false);
+    assert.equal('link' in feField(schemaWith({ link: LINK }), 'amount'), false);
+  });
+
+  it('carries rowEdit: false onto the frontend entity', () => {
+    assert.equal(feEntity(schemaWith({ rowEdit: false })).rowEdit, false);
+  });
+
+  it('emits no rowEdit key when absent or true', () => {
+    assert.equal('rowEdit' in feEntity(schemaWith()), false);
+    assert.equal('rowEdit' in feEntity(schemaWith({ rowEdit: true })), false);
+  });
+
+  it('leaves the contract identical when neither option is declared', () => {
+    const plain = schemaWith();
+    assert.deepEqual(generateFrontendContract(plain), generateFrontendContract(structuredClone(plain)));
+    assert.doesNotMatch(JSON.stringify(generateFrontendContract(plain)), /"link"|"rowEdit"/);
+  });
+
+  it('survives decisions.json → resolveCurated → contract', async () => {
+    const schemaRaw = {
+      window: { id: '700', name: 'Remittance' },
+      entities: [{ name: 'lines', tableName: 'REM_Line', tabId: 'T2',
+        fields: [{ name: 'invoiceDocumentNo', columnName: 'DocumentNo', label: 'Invoice', type: 'string', visibility: 'readOnly', mandatory: false }] }],
+    };
+    const decisions = { version: 2, window: { name: 'Remittance' }, rules: {},
+      entities: { lines: { rowEdit: false, fields: { invoiceDocumentNo: { grid: true, link: LINK } } } } };
+    const { schema } = await resolveCurated(schemaRaw, { rules: [] }, decisions);
+    const entity = Object.values(generateFrontendContract(schema).entities)[0];
+    assert.equal(entity.rowEdit, false);
+    assert.deepEqual(entity.fields.find(f => f.name === 'invoiceDocumentNo').link, LINK);
+  });
+});
+
+describe('generateFrontendContract — column editInPlace', () => {
+  const EIP = { resetToField: 'invoiceOutstanding', maxField: 'invoiceOutstanding' };
+  const schemaWith = (editInPlace) => ({
+    version: '0.1.0',
+    window: { id: '700', name: 'Remittance', primaryEntity: 'lines', category: 'finance' },
+    entities: [{
+      name: 'lines', tableName: 'REM_Line', tabId: 'T2', level: 'header',
+      fields: [
+        { name: 'amount', column: 'Amount', type: 'amount', visibility: 'editable', required: true,
+          searchable: false, grid: true, form: true, ...(editInPlace === undefined ? {} : { editInPlace }) },
+        { name: 'invoiceOutstanding', column: 'OutstandingAmt', type: 'amount', visibility: 'readOnly', required: false,
+          searchable: false, grid: true, form: false },
+      ],
+    }],
+  });
+  const feField = (schema, name) => generateFrontendContract(schema).entities.lines.fields.find(f => f.name === name);
+
+  it('carries a declared editInPlace onto the frontend field', () => {
+    assert.deepEqual(feField(schemaWith(EIP), 'amount').editInPlace, EIP);
+  });
+
+  it('emits no editInPlace key when undeclared, also on siblings', () => {
+    assert.equal('editInPlace' in feField(schemaWith(), 'amount'), false);
+    assert.equal('editInPlace' in feField(schemaWith(EIP), 'invoiceOutstanding'), false);
+  });
+
+  it('survives decisions.json → resolveCurated → contract', async () => {
+    const schemaRaw = {
+      window: { id: '700', name: 'Remittance' },
+      entities: [{ name: 'lines', tableName: 'REM_Line', tabId: 'T2',
+        fields: [{ name: 'amount', columnName: 'Amount', label: 'Amount', type: 'amount', visibility: 'editable', mandatory: true }] }],
+    };
+    const decisions = { version: 2, window: { name: 'Remittance' }, rules: {},
+      entities: { lines: { fields: { amount: { grid: true, editInPlace: EIP } } } } };
+    const { schema } = await resolveCurated(schemaRaw, { rules: [] }, decisions);
+    const entity = Object.values(generateFrontendContract(schema).entities)[0];
+    assert.deepEqual(entity.fields.find(f => f.name === 'amount').editInPlace, EIP);
+  });
+});

@@ -413,6 +413,10 @@ export function generateTableComponent(entityName, contract) {
   }
   const searchableFields = entity.searchableFields ?? [];
   const compName = `${toJsIdentifier(entityName)}Table`;
+  // ETP-6148 — `entities.<name>.rowEdit: false`: the rows are not edited in place, which only
+  // the inline-editable panel does (the classic DataTable opens the side panel instead).
+  // Emitted only then, so every other entity's Table stays byte-identical.
+  const rowEditPart = fragmentIf(entity.rowEdit === false, ' rowEditDisabled');
 
   // Collect known cell type render helpers needed by this table
   const neededCellTypes = new Set(gridFields.map(f => f.cellType).filter(Boolean));
@@ -516,7 +520,12 @@ export function generateTableComponent(entityName, contract) {
     // appended at the tail per the ETP-4681 convention above so emitted output stays
     // byte-identical for every window that does not declare it.
     const noTruncatePart = fragmentIf(f.noTruncate, ', noTruncate: true');
-    return `  { key: '${f.name}', column: '${f.column}', type: '${type}'${labelsPart}${labelPart}${enumLabelsPart}${enumVariantsPart}${selectionPart}${togglePart}${badgePart}${badgeLabelsPart}${badgeColorsPart}${badgeVariantsPart}${summablePart}${displayPart}${renderPart}${requiredPart}${lookupPart}${lookupDrawerColPart}${excludeValueOfColPart}${popupPart}${minColPart}${maxColPart}${maxLengthColPart}${growPart}${columnWidthPart}${noTrailingPart}${filterOnlyPart}${dotPart}${gridReadOnlyPart}${computedPart}${visibleWhenCapabilityPart}${filterModePart}${backendFilterKeyPart}${backendSortKeyPart}${currencyFieldPart}${noTruncatePart} },`;
+    // ETP-6148 — the cell links to another window's record (resolveColumnLink in app-shell's
+    // fkNavigation.js). Appended at the tail for the same byte-identity reason as above.
+    const linkPart = jsonWrapIf(', link: ', f.link);
+    // ETP-6148 — always-editable amount cell with reset (InlineLinesPanel's in-place cell).
+    const editInPlacePart = jsonWrapIf(', editInPlace: ', f.editInPlace);
+    return `  { key: '${f.name}', column: '${f.column}', type: '${type}'${labelsPart}${labelPart}${enumLabelsPart}${enumVariantsPart}${selectionPart}${togglePart}${badgePart}${badgeLabelsPart}${badgeColorsPart}${badgeVariantsPart}${summablePart}${displayPart}${renderPart}${requiredPart}${lookupPart}${lookupDrawerColPart}${excludeValueOfColPart}${popupPart}${minColPart}${maxColPart}${maxLengthColPart}${growPart}${columnWidthPart}${noTrailingPart}${filterOnlyPart}${dotPart}${gridReadOnlyPart}${computedPart}${visibleWhenCapabilityPart}${filterModePart}${backendFilterKeyPart}${backendSortKeyPart}${currencyFieldPart}${noTruncatePart}${linkPart}${editInPlacePart} },`;
   }).join('\n') + buildDimensionsPanelColumn(dimensionFieldsRaw);
 
   const filtersArray = searchableFields.map(f => `'${f}'`).join(', ');
@@ -592,12 +601,12 @@ const ${compName} = forwardRef(function ${compName}(props, ref) {
     if (props.addRow?.active) {
       return (
         <>
-          <InlineLinesPanel ref={ref} columns={columns} {...props} addRow={undefined} />
+          <InlineLinesPanel ref={ref} columns={columns} {...props}${rowEditPart} addRow={undefined} />
           <DataTable columns={columns} filters={filters} {...props} hideHeader hideDataRows />
         </>
       );
     }
-    return <InlineLinesPanel ref={ref} columns={columns} {...props} />;
+    return <InlineLinesPanel ref={ref} columns={columns} {...props}${rowEditPart} />;
   }
   return <DataTable columns={columns} filters={filters} {...props} />;
 });

@@ -1726,3 +1726,124 @@ describe('resolveCurated — propertyPath fields', () => {
     });
   });
 });
+
+// ─── column `link` + entity `rowEdit` ─────────────────────────────────────────
+describe('resolveCurated — column link and entity rowEdit', () => {
+  const schemaRaw = {
+    window: { id: '700', name: 'Remittance' },
+    entities: [{
+      name: 'lines', tableName: 'REM_Line', tabId: 'T2',
+      fields: [
+        { name: 'invoiceDocumentNo', columnName: 'DocumentNo', label: 'Invoice', type: 'string', visibility: 'readOnly', mandatory: false },
+        { name: 'amount', columnName: 'Amount', label: 'Amount', type: 'amount', visibility: 'editable', mandatory: true },
+      ],
+    }],
+  };
+  const decisions = (fields, entityExtra = {}) => ({
+    version: 2, window: { name: 'Remittance' }, rules: {}, entities: { lines: { ...entityExtra, fields } },
+  });
+  const resolveWith = (fields, entityExtra) => resolveCurated(structuredClone(schemaRaw), { rules: [] }, decisions(fields, entityExtra));
+  const fieldNamed = (schema, name) => schema.entities[0].fields.find(x => x.name === name);
+
+  it('carries a link with a fixed window', async () => {
+    const link = { idField: 'invoice', window: 'sales-invoice' };
+    const { schema } = await resolveWith({ invoiceDocumentNo: { link } });
+    assert.deepEqual(fieldNamed(schema, 'invoiceDocumentNo').link, link);
+  });
+
+  it('carries a link whose window is picked per row', async () => {
+    const link = { idField: 'invoice', window: { field: 'invoiceSalesTransaction', values: { true: 'sales-invoice', false: 'purchase-invoice' } } };
+    const { schema } = await resolveWith({ invoiceDocumentNo: { link } });
+    assert.deepEqual(fieldNamed(schema, 'invoiceDocumentNo').link, link);
+  });
+
+  it('emits no link when none is declared, also on siblings', async () => {
+    const { schema } = await resolveWith({ invoiceDocumentNo: { link: { idField: 'invoice', window: 'sales-invoice' } }, amount: {} });
+    assert.equal(Object.hasOwn(fieldNamed(schema, 'amount'), 'link'), false);
+  });
+
+  for (const [label, link] of [
+    ['a missing idField', { window: 'sales-invoice' }],
+    ['a blank idField', { idField: '  ', window: 'sales-invoice' }],
+    ['a missing window', { idField: 'invoice' }],
+    ['a blank window', { idField: 'invoice', window: '' }],
+    ['a numeric window', { idField: 'invoice', window: 7 }],
+    ['a window object without field', { idField: 'invoice', window: { values: { true: 'sales-invoice' } } }],
+    ['a window object without values', { idField: 'invoice', window: { field: 'invoiceSalesTransaction' } }],
+    ['empty values', { idField: 'invoice', window: { field: 'invoiceSalesTransaction', values: {} } }],
+    ['a blank target in values', { idField: 'invoice', window: { field: 'invoiceSalesTransaction', values: { true: 'sales-invoice', false: '' } } }],
+    ['a string link', 'sales-invoice'],
+    ['an array link', [{ idField: 'invoice', window: 'sales-invoice' }]],
+  ]) {
+    it(`throws on ${label}`, async () => {
+      await assert.rejects(resolveWith({ invoiceDocumentNo: { link } }), /field "invoiceDocumentNo" has link/);
+    });
+  }
+
+  it('names the renamed key in the error', async () => {
+    await assert.rejects(resolveWith({ invoiceDocumentNo: { name: 'invoiceNo', link: { idField: 'invoice' } } }), /field "invoiceNo" has link/);
+  });
+
+  it('carries entities.<name>.rowEdit: false', async () => {
+    const { schema } = await resolveWith({}, { rowEdit: false });
+    assert.equal(schema.entities[0].rowEdit, false);
+  });
+
+  it('emits nothing when rowEdit is absent or true', async () => {
+    for (const extra of [{}, { rowEdit: true }]) {
+      const { schema } = await resolveWith({}, extra);
+      assert.equal(Object.hasOwn(schema.entities[0], 'rowEdit'), false, JSON.stringify(extra));
+    }
+  });
+});
+
+// ─── column `editInPlace` ─────────────────────────────────────────────────────
+describe('resolveCurated — column editInPlace', () => {
+  const schemaRaw = {
+    window: { id: '700', name: 'Remittance' },
+    entities: [{
+      name: 'lines', tableName: 'REM_Line', tabId: 'T2',
+      fields: [
+        { name: 'amount', columnName: 'Amount', label: 'Amount', type: 'amount', visibility: 'editable', mandatory: true },
+        { name: 'invoiceOutstanding', columnName: 'OutstandingAmt', label: 'Outstanding', type: 'amount', visibility: 'readOnly', mandatory: false },
+      ],
+    }],
+  };
+  const resolveWith = (fields) => resolveCurated(structuredClone(schemaRaw), { rules: [] },
+    { version: 2, window: { name: 'Remittance' }, rules: {}, entities: { lines: { fields } } });
+  const fieldNamed = (schema, name) => schema.entities[0].fields.find(x => x.name === name);
+
+  for (const [label, editInPlace] of [
+    ['both keys', { resetToField: 'invoiceOutstanding', maxField: 'invoiceOutstanding' }],
+    ['only resetToField', { resetToField: 'invoiceOutstanding' }],
+    ['only maxField', { maxField: 'invoiceOutstanding' }],
+  ]) {
+    it(`carries editInPlace with ${label}`, async () => {
+      const { schema } = await resolveWith({ amount: { editInPlace } });
+      assert.deepEqual(fieldNamed(schema, 'amount').editInPlace, editInPlace);
+    });
+  }
+
+  it('emits no editInPlace when none is declared, also on siblings', async () => {
+    const { schema } = await resolveWith({ amount: { editInPlace: { maxField: 'invoiceOutstanding' } }, invoiceOutstanding: {} });
+    assert.equal(Object.hasOwn(fieldNamed(schema, 'invoiceOutstanding'), 'editInPlace'), false);
+  });
+
+  for (const [label, editInPlace] of [
+    // Alex review N3: an empty object declares nothing to reset to or bound by.
+    ['an empty object', {}],
+    ['an unknown key', { resetToField: 'invoiceOutstanding', minField: 'x' }],
+    ['a numeric value', { maxField: 3 }],
+    ['a blank value', { resetToField: '  ' }],
+    ['a null value', { maxField: null }],
+    ['an object value', { maxField: { field: 'invoiceOutstanding' } }],
+    ['a boolean editInPlace', true],
+    ['a false editInPlace', false],
+    ['a string editInPlace', 'invoiceOutstanding'],
+    ['an array editInPlace', ['invoiceOutstanding']],
+  ]) {
+    it(`throws on ${label}`, async () => {
+      await assert.rejects(resolveWith({ amount: { editInPlace } }), /field "amount" has editInPlace/);
+    });
+  }
+});
