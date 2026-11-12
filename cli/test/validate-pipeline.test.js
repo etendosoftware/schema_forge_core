@@ -4,7 +4,7 @@ import { strict as assert } from 'node:assert';
 import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { dirname } from 'node:path';
-import { mkdtemp, mkdir, rm, writeFile } from 'node:fs/promises';
+import { copyFile, mkdtemp, mkdir, rm, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { validatePipeline, classifyArtifact, getChangedArtifactsSince, parseCLIArgs, ruleF20, ruleF21, loadF20Allowlist } from '../src/validate-pipeline.js';
 import { generateContract, splitWindowContractArtifacts } from '../src/generate-contract.js';
@@ -40,7 +40,7 @@ async function runOnFixtures(windowNames, opts = {}) {
     // runtime module checked out next to this repo. F23's own tests override it.
     goSourcedataDir: opts.goSourcedataDir ?? join(FIXTURES, '..', 'f23-sourcedata-empty'),
     // Override the artifacts root to point at our fixture directory
-    _artifactsRoot: FIXTURES,
+    _artifactsRoot: opts.artifactsRoot ?? FIXTURES,
   });
 }
 
@@ -1368,43 +1368,59 @@ describe('Rule F19 — custom table required-flag drift', () => {
   });
 
   // ─── Personal grid-view column lists are not required-flag lists (ETP-5835) ───
-  const gridViewCase = (name, fixture, expectViolation, why) => it(name, async () => {
-    const result = await runOnFixtures([fixture], { root: FIXTURES });
-    const f19 = result.violations.find(v => v.rule === 'F19');
+  // Each case is one source file under fixtures/pipeline-validator/f19-grid-view/ plus the
+  // shared contract in _shared/; both are copied into a throwaway root so the validator
+  // sees an ordinary window with a custom table.
+  const GRID_VIEW_WINDOW = 'window-f19-gv';
+  const runGridViewCase = async (sourceName) => {
+    const tmpRoot = await mkdtemp(join(tmpdir(), 'sf-f19-gv-'));
+    try {
+      const customDir = join(tmpRoot, 'tools', 'app-shell', 'src', 'windows', 'custom', GRID_VIEW_WINDOW);
+      await mkdir(customDir, { recursive: true });
+      await mkdir(join(tmpRoot, GRID_VIEW_WINDOW), { recursive: true });
+      await copyFile(join(FIXTURES, '_shared', 'f19-grid-view-contract.json'), join(tmpRoot, GRID_VIEW_WINDOW, 'contract.json'));
+      await copyFile(join(FIXTURES, 'f19-grid-view', `${sourceName}.jsx`), join(customDir, 'CustomTable.jsx'));
+      const result = await runOnFixtures([GRID_VIEW_WINDOW], { root: tmpRoot, artifactsRoot: tmpRoot });
+      return result.violations.find(v => v.rule === 'F19');
+    } finally {
+      await rm(tmpRoot, { recursive: true, force: true });
+    }
+  };
+  const gridViewCase = (name, sourceName, expectViolation, why) => it(name, async () => {
+    const f19 = await runGridViewCase(sourceName);
     if (expectViolation) assert.ok(f19, why);
     else assert.ok(!f19, why);
   });
 
   gridViewCase('skips a list carrying sourceIndex (grid-view signature) despite a required mismatch',
-    'window-f19-gv-sourceindex', false, 'sourceIndex lists are grid-view lists');
+    'sourceindex', false, 'sourceIndex lists are grid-view lists');
   gridViewCase('skips a def list derived via .map and fed to useFlaggedGridView({ columns })',
-    'window-f19-gv-org-style', false, 'one-hop derivation reaching useFlaggedGridView');
+    'org-style', false, 'one-hop derivation reaching useFlaggedGridView');
   gridViewCase('skips a useMemo array passed directly to useGridView({ columns })',
-    'window-f19-gv-direct', false, 'direct useMemo binding passed to useGridView');
+    'direct', false, 'direct useMemo binding passed to useGridView');
   gridViewCase('skips a list passed as gridColumns to <GridViewControls>',
-    'window-f19-gv-controls', false, 'GridViewControls gridColumns prop');
+    'controls', false, 'GridViewControls gridColumns prop');
   gridViewCase('still reports a genuine column list with no grid-view usage',
-    'window-f19-gv-genuine', true, 'no grid-view usage means it is still checked');
+    'genuine', true, 'no grid-view usage means it is still checked');
 
   it('only skips the grid-view array when a file also holds a genuine list', async () => {
-    const result = await runOnFixtures(['window-f19-gv-mixed'], { root: FIXTURES });
-    const f19 = result.violations.find(v => v.rule === 'F19');
+    const f19 = await runGridViewCase('mixed');
     assert.ok(f19, 'the genuine list must still be reported');
     assert.match(f19.message, /'name'/);
     assert.doesNotMatch(f19.message, /'searchKey'/);
   });
 
   gridViewCase('does not follow derivations beyond two hops (documented limit)',
-    'window-f19-gv-threehop', true, 'a three-hop derivation is not followed');
+    'threehop', true, 'a three-hop derivation is not followed');
 
   gridViewCase('same-named binding: a genuine list in a later function is still reported (grid-view one first)',
-    'window-f19-gv-scope-gridfirst', true, 'scope resolution must not skip the unrelated later list');
+    'scope-gridfirst', true, 'scope resolution must not skip the unrelated later list');
   gridViewCase('same-named binding: a genuine list in an earlier function is still reported (grid-view one last)',
-    'window-f19-gv-scope-gridlast', true, 'scope resolution must not skip the unrelated earlier list');
+    'scope-gridlast', true, 'scope resolution must not skip the unrelated earlier list');
   gridViewCase('a list that only appears in a useMemo deps array is not treated as grid-view',
-    'window-f19-gv-deps', true, 'deps-array identifiers are not derivations');
+    'deps', true, 'deps-array identifiers are not derivations');
   gridViewCase('memo-body object keys do not link a module list to a grid-view binding',
-    'window-f19-gv-memokey', true, 'a non-computed object key named like a list is not a reference');
+    'memokey', true, 'a non-computed object key named like a list is not a reference');
   gridViewCase('memo-body inner-callback parameters shadow a same-named module list',
-    'window-f19-gv-memoshadow', true, 'a shadowing callback parameter is not a reference');
+    'memoshadow', true, 'a shadowing callback parameter is not a reference');
 });
