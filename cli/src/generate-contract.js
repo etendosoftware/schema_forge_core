@@ -393,6 +393,15 @@ const FIELD_HINTS_POST_GRID = [
   // "cCurrencyID" → the renderer reads `row['cCurrencyID$_identifier']`. Appended at
   // the tail so every contract that does not declare it stays byte-identical.
   ['currencyField', Boolean],
+  // ETP-6148 — `link` makes the grid cell open another window's record (see resolve-curated's
+  // applyColumnLink). Appended at the tail so contracts that do not declare it stay identical.
+  ['link', Boolean],
+  // ETP-6148 — `editInPlace`: an always-editable amount cell with reset (resolve-curated's
+  // applyColumnEditInPlace). Tail position, for the same byte-identity reason.
+  ['editInPlace', Boolean],
+  // ETP-6148 — `optionBadge`: a badge on the form selector's options (resolve-curated's
+  // applyOptionBadge). Tail position, for the same byte-identity reason.
+  ['optionBadge', Boolean],
 ];
 
 // Entity-level opt-in/opt-out flags carried from the curated entity onto the
@@ -406,6 +415,8 @@ function applyEntityLevelFlags(entity, feEntity) {
   if (entity.handlesDefaults === false) feEntity.handlesDefaults = false;
   // Per-entity delete opt-out (ETP-4512): emit only when explicitly set.
   if (entity.hideDelete === true) feEntity.hideDelete = true;
+  // ETP-6148 — per-entity opt-out of in-place row editing in the grid.
+  if (entity.rowEdit === false) feEntity.rowEdit = false;
   const siblingFields = entity.fields.filter(f => isSystem(f) && f.addLineFromSibling).map(f => f.name);
   if (siblingFields.length > 0) feEntity.addLineHiddenFromSibling = siblingFields;
 }
@@ -449,6 +460,9 @@ function applyFieldUIHints(f, mapped) {
   // ETP-4542 — flat `integer` bound (whole-number constraint). Additive, mirrors
   // min/max; the `false` sentinel is treated as "no constraint" for consistency.
   if (f.integer !== undefined && f.integer !== false) mapped.integer = f.integer;
+  // ETP-6148 — `minDate` on a date field ('today' | 'YYYY-MM-DD'), validated in
+  // resolve-curated. Emitted only when declared, so other contracts stay byte-identical.
+  if (f.minDate) mapped.minDate = f.minDate;
   // ETP-4555 — canonical declarative validation object (re-projected into a fixed
   // key order for deterministic output). Additive; absent when the field has none.
   const validation = projectValidation(f.validation);
@@ -757,6 +771,9 @@ export function generateBackendContract(schema, rules = [], processes = []) {
         required: f.required,
       };
       if (f.businessCritical) field.businessCritical = true;
+      // ETP-6148 — a property-path field: push-to-neo writes it as an ETGO_SF_FIELD row with
+      // PROPERTY_PATH (no AD column), keyed by this path. Emitted only when present.
+      if (f.propertyPath) field.propertyPath = f.propertyPath;
       // Persist the explicit decisions.json order (when set) so the NEXT run's
       // field-order stability lock can tell an intentional order change apart
       // from a field whose position is purely inherited. See
