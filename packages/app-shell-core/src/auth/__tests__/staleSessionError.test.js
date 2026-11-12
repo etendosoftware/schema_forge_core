@@ -1,3 +1,6 @@
+// @covers packages/app-shell-core/src/auth/staleSessionError.js
+// @covers packages/app-shell-core/src/auth/errorTranslator.js
+// @covers packages/app-shell-core/src/auth/networkError.js
 import { afterEach, describe, it } from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';

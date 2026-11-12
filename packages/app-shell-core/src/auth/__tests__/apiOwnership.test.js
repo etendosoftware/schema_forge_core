@@ -1,3 +1,5 @@
+// @covers packages/app-shell-core/src/auth/api.js
+// @covers packages/app-shell-core/src/auth/staleSessionError.js
 import { afterEach, describe, it } from 'node:test';
 import assert from 'node:assert/strict';
 import { apiFetch, createApiFetch, registerApiSession, resetApiSessionForTests } from '../api.js';
