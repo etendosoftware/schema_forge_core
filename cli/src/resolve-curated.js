@@ -390,7 +390,106 @@ function applyFieldDecisionProps(field, fieldDecision) {
   applyFlatBound(field, fieldDecision, 'max');
   // ETP-4542 — flat `integer` bound (whole-number constraint), same sentinel handling as min/max.
   applyFlatBound(field, fieldDecision, 'integer');
+  applyMinDate(field, fieldDecision);
+  applyColumnLink(field, fieldDecision);
+  applyColumnEditInPlace(field, fieldDecision);
+  applyOptionBadge(field, fieldDecision);
   copyTruthyDecisionProps(field, fieldDecision, FIELD_DECISION_COPY_PROPS);
+}
+
+// ETP-6148 — `link` on a grid column: the cell renders as a link that opens another window's
+// record, `/<window>/<row[idField]>`. `window` is a route segment (spec name), or
+// `{ field, values }` to pick it per row from a sibling field's value (e.g. the invoice's
+// `salesTransaction` → sales or purchase invoice). The window names live in this window's
+// decisions, never in shared code. A malformed link is a decisions error, thrown rather than
+// dropped (a dropped link would look configured and do nothing).
+function applyColumnLink(field, fieldDecision) {
+  const link = fieldDecision.link;
+  if (link == null) return;
+  const name = fieldDecision.name || field.name;
+  if (!isValidColumnLink(link)) {
+    throw new Error(`decisions.json: field "${name}" has link ${JSON.stringify(link)}; expected { idField, window } where window is a spec name or { field, values: { <value>: <spec name> } }`);
+  }
+  field.link = link;
+}
+
+// ETP-6148 — `editInPlace` on a grid amount column: the lines grid shows it as an always-visible
+// amount input with a reset button, outside the row's edit mode, and validates it in place.
+// `resetToField` names the sibling field the reset restores; `maxField` the sibling field whose
+// magnitude the amount may not exceed (and whose sign it must have). At least one of the two is
+// required (an empty object declares nothing); any other key, or a non-string value, is a
+// decisions error.
+const EDIT_IN_PLACE_KEYS = new Set(['resetToField', 'maxField']);
+
+function applyColumnEditInPlace(field, fieldDecision) {
+  const config = fieldDecision.editInPlace;
+  if (config == null) return;
+  const name = fieldDecision.name || field.name;
+  const entries = typeof config === 'object' && !Array.isArray(config) ? Object.entries(config) : [];
+  const valid = entries.length > 0
+    && entries.every(([key, value]) => EDIT_IN_PLACE_KEYS.has(key) && isNonEmptyString(value));
+  if (!valid) {
+    throw new Error(`decisions.json: field "${name}" has editInPlace ${JSON.stringify(config)}; expected { resetToField?, maxField? } naming at least one sibling field`);
+  }
+  field.editInPlace = config;
+}
+
+// ETP-6148 — `optionBadge` on a selector field: each option of the form's searchable selector shows
+// a small badge (`labelKey`, an i18n key) when the selector item's `field` equals `equals` — e.g.
+// remittance's Cuenta marks the accounts whose `ibanValid` is false with «Sin IBAN». The item key
+// must be served by the selector; nothing is computed in the SPA. A malformed config is a
+// decisions error, thrown rather than dropped.
+function applyOptionBadge(field, fieldDecision) {
+  const badge = fieldDecision.optionBadge;
+  if (badge == null) return;
+  const name = fieldDecision.name || field.name;
+  const scalar = ['boolean', 'string', 'number'].includes(typeof badge?.equals);
+  const valid = typeof badge === 'object' && !Array.isArray(badge) && isNonEmptyString(badge.field)
+    && isNonEmptyString(badge.labelKey) && scalar
+    && Object.keys(badge).every((key) => ['field', 'equals', 'labelKey'].includes(key));
+  if (!valid) {
+    throw new Error(`decisions.json: field "${name}" has optionBadge ${JSON.stringify(badge)}; expected { field, equals, labelKey } with a scalar equals`);
+  }
+  field.optionBadge = badge;
+}
+
+function isNonEmptyString(value) {
+  return typeof value === 'string' && value.trim() !== '';
+}
+
+function isValidColumnLink(link) {
+  if (typeof link !== 'object' || Array.isArray(link) || !isNonEmptyString(link.idField)) return false;
+  if (isNonEmptyString(link.window)) return true;
+  const byField = link.window;
+  if (!byField || typeof byField !== 'object' || !isNonEmptyString(byField.field)) return false;
+  const values = byField.values;
+  return Boolean(values) && typeof values === 'object'
+    && Object.keys(values).length > 0 && Object.values(values).every(isNonEmptyString);
+}
+
+// ETP-6148 — `minDate` on a date field: `'today'` (the user's local calendar day) or a fixed
+// `YYYY-MM-DD`. The UI disables earlier days in the picker and blocks saving a NEW earlier
+// value (see app-shell `lib/dateFieldValidation.js`). Any other value is a decisions error,
+// thrown rather than dropped: a silently ignored constraint would look configured and do nothing.
+const MIN_DATE_RE = /^(\d{4})-(\d{2})-(\d{2})$/;
+
+/** `"today"`, or a `YYYY-MM-DD` that names a real calendar day (so `2026-13-45` is refused). */
+function isValidMinDate(v) {
+  if (v === 'today') return true;
+  const m = typeof v === 'string' ? MIN_DATE_RE.exec(v) : null;
+  if (!m) return false;
+  const [y, mo, d] = [Number(m[1]), Number(m[2]), Number(m[3])];
+  const date = new Date(Date.UTC(y, mo - 1, d));
+  return date.getUTCFullYear() === y && date.getUTCMonth() === mo - 1 && date.getUTCDate() === d;
+}
+
+export function applyMinDate(field, fieldDecision) {
+  const v = fieldDecision.minDate;
+  if (v === undefined || v === null || v === false) return;
+  if (!isValidMinDate(v)) {
+    throw new Error(`decisions.json: field "${field.name}" has minDate ${JSON.stringify(v)}; expected "today" or "YYYY-MM-DD"`);
+  }
+  field.minDate = v;
 }
 
 // ETP-4556 — `false` is the disable sentinel (see field-validation.js): omit the flat
@@ -482,8 +581,36 @@ function applyVisibleFieldProps(field, rawField, fieldDecision) {
   if (rawField.validationRule) field.validationRule = rawField.validationRule;
 }
 
+/**
+ * Removes everything that only makes sense for a writable field. Used for property-path fields
+ * (ETP-6148), which read a value through a DAL path and are never written by NEO.
+ */
+function stripWriteSemantics(field) {
+  field.required = false;
+  delete field.sourceRequired;
+  delete field.defaultValue;
+  delete field.derivation;
+}
+
 function isVisibleField(visibility) {
   return visibility !== 'system' && visibility !== 'discarded';
+}
+
+/**
+ * Sets the field's default value. decisions.json can override it (e.g. movementQuantity: "1" on
+ * goods-receipt lines instead of the raw/computed AD default "0"). Mirrors the
+ * `derivation: null` suppression pattern of applyDecisionDerivation: an explicit
+ * `defaultValue: null` means "no default at all" (suppress the raw value), any other explicit
+ * value wins outright, and an absent key falls back to the raw AD-derived default (ETP-4671).
+ */
+function applyDefaultValue(field, rawField, fieldDecision) {
+  if (Object.prototype.hasOwnProperty.call(fieldDecision, 'defaultValue')) {
+    if (fieldDecision.defaultValue !== null) {
+      field.defaultValue = fieldDecision.defaultValue;
+    }
+  } else if (rawField.defaultValue !== undefined) {
+    field.defaultValue = rawField.defaultValue;
+  }
 }
 
 /**
@@ -491,7 +618,13 @@ function isVisibleField(visibility) {
  * Prunes all null/undefined properties before returning.
  */
 function buildCuratedField(rawField, fieldDecision, discardPatterns) {
-  const visibility = resolveFieldVisibility(rawField, fieldDecision, discardPatterns);
+  // ETP-6148 — a field is a property-path field ONLY when its decision declares `propertyPath`
+  // (strictly per-field opt-in). A Classic AD_Field.Property field without it keeps the legacy
+  // treatment untouched. A path field is never written: editable collapses to read-only.
+  const propertyPath = resolveDecisionPropertyPath(rawField.name, fieldDecision);
+  const isPathField = propertyPath != null;
+  const resolvedVisibility = resolveFieldVisibility(rawField, fieldDecision, discardPatterns);
+  const visibility = isPathField && resolvedVisibility === 'editable' ? 'readOnly' : resolvedVisibility;
   const field = buildBaseField(rawField, fieldDecision, visibility);
   const isVisible = isVisibleField(visibility);
 
@@ -503,18 +636,7 @@ function buildCuratedField(rawField, fieldDecision, discardPatterns) {
   if (isVisible && Array.isArray(fieldDecision.forceCalloutFields) && fieldDecision.forceCalloutFields.length > 0)
     field.forceCalloutFields = fieldDecision.forceCalloutFields;
 
-  // decisions.json can override a field's default value (e.g. movementQuantity: "1" on
-  // goods-receipt lines instead of the raw/computed AD default "0"). Mirrors the
-  // `derivation: null` suppression pattern below: an explicit `defaultValue: null` means
-  // "no default at all" (suppress the raw value), any other explicit value wins outright,
-  // and an absent key falls back to the raw AD-derived default exactly as before (ETP-4671).
-  if (Object.prototype.hasOwnProperty.call(fieldDecision, 'defaultValue')) {
-    if (fieldDecision.defaultValue !== null) {
-      field.defaultValue = fieldDecision.defaultValue;
-    }
-  } else if (rawField.defaultValue !== undefined) {
-    field.defaultValue = rawField.defaultValue;
-  }
+  applyDefaultValue(field, rawField, fieldDecision);
 
   if (isVisible) applyVisibleFieldProps(field, rawField, fieldDecision);
   // An empty array is truthy, so it reaches `field` through
@@ -542,6 +664,15 @@ function buildCuratedField(rawField, fieldDecision, discardPatterns) {
   // consumer must see (quality-gate invariants, validate-schema, generate-contract).
   // Runs AFTER copyRawProps(FIELD_RAW_COPY_PROPS) so the decision always wins over the raw value.
   applyDecisionDerivation(field, fieldDecision);
+
+  // ETP-6148 — a property-path field is never written, so it carries no write semantics: not
+  // required, no default, no derivation. Otherwise the generator would seed it into
+  // `addLineFields.hidden` and mark its column required (e.g. `payment.status` with its raw
+  // NOT NULL + `RPAP` default). Runs before buildFieldValidation, which reads `required`.
+  if (isPathField) {
+    field.propertyPath = propertyPath;
+    stripWriteSemantics(field);
+  }
 
   // Decisions can override raw-copied process routing (e.g. swap obuiapp JS handler
   // for a classic stored-procedure process that NEO can actually execute).
@@ -682,10 +813,54 @@ function findFieldDecision(rawField, fieldsDecisions) {
 }
 
 function buildCuratedFields(rawEntity, fieldsDecisions, discardPatterns) {
-  return (rawEntity.fields || []).map(rawField => {
+  const rawFields = rawEntity.fields || [];
+  const curated = rawFields.map(rawField => {
     const fieldDecision = findFieldDecision(rawField, fieldsDecisions);
     return buildCuratedField(rawField, fieldDecision, discardPatterns);
   });
+  for (const rawField of synthesizePathFields(rawFields, fieldsDecisions)) {
+    curated.push(buildCuratedField(rawField, fieldsDecisions[rawField.name], discardPatterns));
+  }
+  return curated;
+}
+
+// ETP-6148 — property-path fields: a value read through a many-to-one path from the tab's entity
+// (`paymentScheduleDetail.invoicePaymentSchedule.invoice.documentNo`), served by NEO from an
+// ETGO_SF_FIELD row with PROPERTY_PATH and no AD column, always read-only. Strictly opt-in per
+// field: the decision declares `propertyPath`. On a raw field (e.g. a Classic AD_Field.Property
+// field, whose AD path the extractor records as `adPropertyPath`) it converts that field; on a
+// key that is not in schema-raw it declares a decisions-only field, synthesized below. The key is the apiKey
+// NEO returns (and filters / sorts by); `type` (default `string`) and `column` (the target
+// column's AD name, used for labels and the filter widget) are the decision's to give, since no
+// AD metadata is read here.
+const PROPERTY_PATH_RE = /^[A-Za-z_]\w*(\.[A-Za-z_]\w*)+$/;
+
+/** The decision's `propertyPath` (validated), or null when the field does not opt in. */
+function resolveDecisionPropertyPath(name, decision) {
+  if (!decision?.propertyPath) return null;
+  if (!PROPERTY_PATH_RE.test(decision.propertyPath)) {
+    throw new Error(`decisions.json: field "${name}" has propertyPath ${JSON.stringify(decision.propertyPath)}; expected a dotted DAL path such as "a.b.c"`);
+  }
+  return decision.propertyPath;
+}
+
+function synthesizePathFields(rawFields, fieldsDecisions) {
+  const rawNames = new Set(rawFields.map(f => f.name));
+  const synthesized = [];
+  for (const [name, decision] of Object.entries(fieldsDecisions)) {
+    if (!decision?.propertyPath || rawNames.has(name)) continue;
+    resolveDecisionPropertyPath(name, decision);
+    synthesized.push({
+      name,
+      apiKey: name,
+      columnName: decision.column || name,
+      label: decision.label || name,
+      type: decision.type || 'string',
+      mandatory: false,
+      visibility: 'readOnly',
+    });
+  }
+  return synthesized;
 }
 
 function orderCuratedFields(curatedFields, fieldsDecisions) {
@@ -814,6 +989,9 @@ function applyEntityDecisions(entity, entityDecision) {
   if (entityDecision.hideDelete === true) {
     entity.hideDelete = true;
   }
+  // ETP-6148 — `rowEdit: false`: the entity's grid rows are not edited in place (no Edit action,
+  // a click does not enter edit mode). Only an explicit false is carried; absent = editable.
+  if (entityDecision.rowEdit === false) entity.rowEdit = false;
   applyEntityMethodDecisions(entity, entityDecision);
 }
 

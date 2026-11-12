@@ -2468,6 +2468,51 @@ describe('generateFrontendContract — max field constraint (ETP-4277)', () => {
   });
 });
 
+// ─── minDate on a date field in contract fields ───────────────────────────────
+describe('generateFrontendContract — minDate date-field bound', () => {
+  function makeSchema(dueDateExtra = {}) {
+    return {
+      version: '0.1.0',
+      window: { id: '998', name: 'Remittance', primaryEntity: 'header', category: 'finance' },
+      entities: [{
+        name: 'header',
+        table: 'REM_Remittance',
+        level: 'header',
+        fields: [
+          { name: 'dueDate', column: 'Duedate', type: 'date', visibility: 'editable',
+            required: false, searchable: false, grid: true, form: true, ...dueDateExtra },
+          { name: 'dateTrx', column: 'DateTrx', type: 'date', visibility: 'editable',
+            required: false, searchable: false, grid: true, form: true },
+        ],
+      }],
+    };
+  }
+  const field = (fc, name) => fc.entities.header.fields.find(f => f.name === name);
+
+  it('carries minDate "today" to the contract field', () => {
+    assert.equal(field(generateFrontendContract(makeSchema({ minDate: 'today' })), 'dueDate').minDate, 'today');
+  });
+
+  it('carries a fixed YYYY-MM-DD minDate to the contract field', () => {
+    assert.equal(field(generateFrontendContract(makeSchema({ minDate: '2026-12-01' })), 'dueDate').minDate, '2026-12-01');
+  });
+
+  it('emits no minDate key on a field without it, and on its sibling', () => {
+    const fc = generateFrontendContract(makeSchema({ minDate: 'today' }));
+    assert.equal('minDate' in field(fc, 'dateTrx'), false);
+    assert.equal('minDate' in field(generateFrontendContract(makeSchema()), 'dueDate'), false);
+  });
+
+  it('minDate adds only its own key: the rest of the field is unchanged', () => {
+    // The only difference minDate introduces is the key itself.
+    const withIt = field(generateFrontendContract(makeSchema({ minDate: 'today' })), 'dueDate');
+    const without = field(generateFrontendContract(makeSchema()), 'dueDate');
+    const { minDate, ...rest } = withIt;
+    assert.equal(minDate, 'today');
+    assert.deepEqual(rest, without);
+  });
+});
+
 // ─── ETP-4556 — `false` disable sentinel end-to-end (decisions → resolve → contract) ──
 describe('false disable sentinel — regen level (ETP-4556)', () => {
   // Raw AD provides valueMin/valueMax so we can prove `false` disables an
@@ -3054,5 +3099,229 @@ describe('generateFrontendContract — columnMaxWidth', () => {
     const f = Object.values(generateFrontendContract(schema).entities)[0].fields.find(x => x.name === 'name');
     assert.equal(f.columnWidth, 164);
     assert.equal(f.columnMaxWidth, 240);
+  });
+});
+
+describe('generateBackendContract — propertyPath', () => {
+  const PATH = 'paymentScheduleDetail.invoicePaymentSchedule.invoice.documentNo';
+  const pathSchema = {
+    version: '0.1.0',
+    window: { id: '700', name: 'Remittance', primaryEntity: 'lines', category: 'finance' },
+    entities: [{
+      name: 'lines',
+      tableName: 'REM_Line',
+      tabId: 'T2',
+      level: 'header',
+      fields: [
+        { name: 'amount', column: 'Amount', type: 'amount', visibility: 'editable', required: true,
+          searchable: false, grid: true, form: true },
+        { name: 'invoiceDocumentNo', column: 'DocumentNo', type: 'string', visibility: 'readOnly', required: false,
+          searchable: false, grid: true, form: false, propertyPath: PATH },
+      ],
+    }],
+  };
+  const fieldOf = (bc, name) => bc.entities.lines.fields.find(f => f.name === name);
+
+  it('carries propertyPath on the backend field that declares it', () => {
+    const bc = generateBackendContract(pathSchema);
+    const f = fieldOf(bc, 'invoiceDocumentNo');
+    assert.equal(f.propertyPath, PATH);
+    assert.equal(f.column, 'DocumentNo');
+    assert.equal(f.apiKey, 'invoiceDocumentNo');
+    assert.equal(f.visibility, 'readOnly');
+  });
+
+  it('emits no propertyPath key on a field without one', () => {
+    const bc = generateBackendContract(pathSchema);
+    assert.equal(Object.hasOwn(fieldOf(bc, 'amount'), 'propertyPath'), false);
+    for (const f of generateBackendContract(minimalSchema).entities.order.fields) {
+      assert.equal(Object.hasOwn(f, 'propertyPath'), false, `${f.name} must not carry propertyPath`);
+    }
+  });
+
+  it('leaves the frontend contract field identical to a plain read-only field', () => {
+    const plainSchema = structuredClone(pathSchema);
+    delete plainSchema.entities[0].fields[1].propertyPath;
+    assert.deepEqual(generateFrontendContract(pathSchema), generateFrontendContract(plainSchema));
+  });
+
+  it('keeps a Classic path field without the opt-in byte-identical to a legacy field in the contract', async () => {
+    const rawWith = (extra) => ({
+      window: { id: '700', name: 'Remittance' },
+      entities: [{
+        name: 'lines', tableName: 'REM_Line', tabId: 'T2',
+        fields: [{ name: 'status', apiKey: 'status', columnName: 'Status', label: 'Status', type: 'enum',
+          visibility: 'editable', mandatory: true, defaultValue: 'RPAP', ...extra }],
+      }],
+    });
+    const decisions = { version: 2, window: { name: 'Remittance' }, rules: {}, entities: { lines: { fields: { status: { grid: true } } } } };
+    const contractOf = async (raw) => {
+      const { schema, rules } = await resolveCurated(raw, { rules: [] }, structuredClone(decisions));
+      const c = generateContract(schema, rules, []);
+      return { frontendContract: c.frontendContract, backendContract: c.backendContract };
+    };
+    const classic = await contractOf(rawWith({ adPropertyPath: 'payment.status' }));
+    assert.deepEqual(classic, await contractOf(rawWith({})));
+    assert.doesNotMatch(JSON.stringify(classic), /propertyPath|adPropertyPath/i);
+    const f = classic.backendContract.entities.lines.fields.find(x => x.name === 'status');
+    assert.equal(f.apiKey, 'status');
+    assert.equal(f.visibility, 'editable');
+    assert.equal(f.required, true);
+  });
+
+  it('survives decisions.json → resolveCurated → contract for a decisions-only path field', async () => {
+    const schemaRaw = {
+      window: { id: '700', name: 'Remittance' },
+      entities: [{
+        name: 'lines', tableName: 'REM_Line', tabId: 'T2',
+        fields: [{ name: 'amount', columnName: 'Amount', label: 'Amount', type: 'amount', visibility: 'editable', mandatory: true }],
+      }],
+    };
+    const decisions = {
+      version: 2, window: { name: 'Remittance' }, rules: {},
+      entities: { lines: { fields: { invoiceDocumentNo: { propertyPath: PATH, column: 'DocumentNo' } } } },
+    };
+    const { schema } = await resolveCurated(schemaRaw, { rules: [] }, decisions);
+    const f = generateBackendContract(schema).entities.lines.fields.find(x => x.name === 'invoiceDocumentNo');
+    assert.equal(f.propertyPath, PATH);
+    assert.equal(f.visibility, 'readOnly');
+  });
+});
+
+describe('generateFrontendContract — column link and entity rowEdit', () => {
+  const LINK = { idField: 'invoice', window: { field: 'invoiceSalesTransaction', values: { true: 'sales-invoice', false: 'purchase-invoice' } } };
+  const schemaWith = ({ link, rowEdit } = {}) => ({
+    version: '0.1.0',
+    window: { id: '700', name: 'Remittance', primaryEntity: 'lines', category: 'finance' },
+    entities: [{
+      name: 'lines', tableName: 'REM_Line', tabId: 'T2', level: 'header',
+      ...(rowEdit === undefined ? {} : { rowEdit }),
+      fields: [
+        { name: 'invoiceDocumentNo', column: 'DocumentNo', type: 'string', visibility: 'readOnly', required: false,
+          searchable: false, grid: true, form: false, ...(link ? { link } : {}) },
+        { name: 'amount', column: 'Amount', type: 'amount', visibility: 'editable', required: true,
+          searchable: false, grid: true, form: true },
+      ],
+    }],
+  });
+  const feEntity = (schema) => generateFrontendContract(schema).entities.lines;
+  const feField = (schema, name) => feEntity(schema).fields.find(f => f.name === name);
+
+  it('carries a declared link onto the frontend field', () => {
+    assert.deepEqual(feField(schemaWith({ link: LINK }), 'invoiceDocumentNo').link, LINK);
+  });
+
+  it('emits no link key when none is declared, also on siblings', () => {
+    assert.equal('link' in feField(schemaWith(), 'invoiceDocumentNo'), false);
+    assert.equal('link' in feField(schemaWith({ link: LINK }), 'amount'), false);
+  });
+
+  it('carries rowEdit: false onto the frontend entity', () => {
+    assert.equal(feEntity(schemaWith({ rowEdit: false })).rowEdit, false);
+  });
+
+  it('emits no rowEdit key when absent or true', () => {
+    assert.equal('rowEdit' in feEntity(schemaWith()), false);
+    assert.equal('rowEdit' in feEntity(schemaWith({ rowEdit: true })), false);
+  });
+
+  it('leaves the contract identical when neither option is declared', () => {
+    const plain = schemaWith();
+    assert.deepEqual(generateFrontendContract(plain), generateFrontendContract(structuredClone(plain)));
+    assert.doesNotMatch(JSON.stringify(generateFrontendContract(plain)), /"link"|"rowEdit"/);
+  });
+
+  it('survives decisions.json → resolveCurated → contract', async () => {
+    const schemaRaw = {
+      window: { id: '700', name: 'Remittance' },
+      entities: [{ name: 'lines', tableName: 'REM_Line', tabId: 'T2',
+        fields: [{ name: 'invoiceDocumentNo', columnName: 'DocumentNo', label: 'Invoice', type: 'string', visibility: 'readOnly', mandatory: false }] }],
+    };
+    const decisions = { version: 2, window: { name: 'Remittance' }, rules: {},
+      entities: { lines: { rowEdit: false, fields: { invoiceDocumentNo: { grid: true, link: LINK } } } } };
+    const { schema } = await resolveCurated(schemaRaw, { rules: [] }, decisions);
+    const entity = Object.values(generateFrontendContract(schema).entities)[0];
+    assert.equal(entity.rowEdit, false);
+    assert.deepEqual(entity.fields.find(f => f.name === 'invoiceDocumentNo').link, LINK);
+  });
+});
+
+describe('generateFrontendContract — column editInPlace', () => {
+  const EIP = { resetToField: 'invoiceOutstanding', maxField: 'invoiceOutstanding' };
+  const schemaWith = (editInPlace) => ({
+    version: '0.1.0',
+    window: { id: '700', name: 'Remittance', primaryEntity: 'lines', category: 'finance' },
+    entities: [{
+      name: 'lines', tableName: 'REM_Line', tabId: 'T2', level: 'header',
+      fields: [
+        { name: 'amount', column: 'Amount', type: 'amount', visibility: 'editable', required: true,
+          searchable: false, grid: true, form: true, ...(editInPlace === undefined ? {} : { editInPlace }) },
+        { name: 'invoiceOutstanding', column: 'OutstandingAmt', type: 'amount', visibility: 'readOnly', required: false,
+          searchable: false, grid: true, form: false },
+      ],
+    }],
+  });
+  const feField = (schema, name) => generateFrontendContract(schema).entities.lines.fields.find(f => f.name === name);
+
+  it('carries a declared editInPlace onto the frontend field', () => {
+    assert.deepEqual(feField(schemaWith(EIP), 'amount').editInPlace, EIP);
+  });
+
+  it('emits no editInPlace key when undeclared, also on siblings', () => {
+    assert.equal('editInPlace' in feField(schemaWith(), 'amount'), false);
+    assert.equal('editInPlace' in feField(schemaWith(EIP), 'invoiceOutstanding'), false);
+  });
+
+  it('survives decisions.json → resolveCurated → contract', async () => {
+    const schemaRaw = {
+      window: { id: '700', name: 'Remittance' },
+      entities: [{ name: 'lines', tableName: 'REM_Line', tabId: 'T2',
+        fields: [{ name: 'amount', columnName: 'Amount', label: 'Amount', type: 'amount', visibility: 'editable', mandatory: true }] }],
+    };
+    const decisions = { version: 2, window: { name: 'Remittance' }, rules: {},
+      entities: { lines: { fields: { amount: { grid: true, editInPlace: EIP } } } } };
+    const { schema } = await resolveCurated(schemaRaw, { rules: [] }, decisions);
+    const entity = Object.values(generateFrontendContract(schema).entities)[0];
+    assert.deepEqual(entity.fields.find(f => f.name === 'amount').editInPlace, EIP);
+  });
+});
+
+describe('generateFrontendContract — selector optionBadge', () => {
+  const BADGE = { field: 'ibanValid', equals: false, labelKey: 'remittanceAccountNoIban' };
+  const schemaWith = (optionBadge) => ({
+    version: '0.1.0',
+    window: { id: '700', name: 'Remittance', primaryEntity: 'remittance', category: 'finance' },
+    entities: [{
+      name: 'remittance', tableName: 'REM_Remittance', tabId: 'T1', level: 'header',
+      fields: [
+        { name: 'financialAccount', column: 'FIN_Financial_Account_ID', type: 'foreignKey', visibility: 'editable', required: true,
+          searchable: false, grid: false, form: true, ...(optionBadge === undefined ? {} : { optionBadge }) },
+        { name: 'name', column: 'Name', type: 'string', visibility: 'editable', required: true,
+          searchable: true, grid: true, form: true },
+      ],
+    }],
+  });
+  const feField = (schema, name) => generateFrontendContract(schema).entities.remittance.fields.find(f => f.name === name);
+
+  it('carries a declared optionBadge onto the frontend field', () => {
+    assert.deepEqual(feField(schemaWith(BADGE), 'financialAccount').optionBadge, BADGE);
+  });
+
+  it('emits no optionBadge key when undeclared, also on siblings', () => {
+    assert.equal('optionBadge' in feField(schemaWith(), 'financialAccount'), false);
+    assert.equal('optionBadge' in feField(schemaWith(BADGE), 'name'), false);
+  });
+
+  it('survives decisions.json → resolveCurated → contract', async () => {
+    const schemaRaw = {
+      window: { id: '700', name: 'Remittance' },
+      entities: [{ name: 'remittance', tableName: 'REM_Remittance', tabId: 'T1',
+        fields: [{ name: 'financialAccount', columnName: 'FIN_Financial_Account_ID', label: 'Account', type: 'foreignKey', visibility: 'editable', mandatory: true }] }],
+    };
+    const decisions = { version: 2, window: { name: 'Remittance' }, rules: {},
+      entities: { remittance: { fields: { financialAccount: { optionBadge: BADGE } } } } };
+    const { schema } = await resolveCurated(schemaRaw, { rules: [] }, decisions);
+    const entity = Object.values(generateFrontendContract(schema).entities)[0];
+    assert.deepEqual(entity.fields.find(f => f.name === 'financialAccount').optionBadge, BADGE);
   });
 });

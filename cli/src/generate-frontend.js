@@ -413,6 +413,10 @@ export function generateTableComponent(entityName, contract) {
   }
   const searchableFields = entity.searchableFields ?? [];
   const compName = `${toJsIdentifier(entityName)}Table`;
+  // ETP-6148 — `entities.<name>.rowEdit: false`: the rows are not edited in place, which only
+  // the inline-editable panel does (the classic DataTable opens the side panel instead).
+  // Emitted only then, so every other entity's Table stays byte-identical.
+  const rowEditPart = fragmentIf(entity.rowEdit === false, ' rowEditDisabled');
 
   // Collect known cell type render helpers needed by this table
   const neededCellTypes = new Set(gridFields.map(f => f.cellType).filter(Boolean));
@@ -516,7 +520,12 @@ export function generateTableComponent(entityName, contract) {
     // appended at the tail per the ETP-4681 convention above so emitted output stays
     // byte-identical for every window that does not declare it.
     const noTruncatePart = fragmentIf(f.noTruncate, ', noTruncate: true');
-    return `  { key: '${f.name}', column: '${f.column}', type: '${type}'${labelsPart}${labelPart}${enumLabelsPart}${enumVariantsPart}${selectionPart}${togglePart}${badgePart}${badgeLabelsPart}${badgeColorsPart}${badgeVariantsPart}${summablePart}${displayPart}${renderPart}${requiredPart}${lookupPart}${lookupDrawerColPart}${excludeValueOfColPart}${popupPart}${minColPart}${maxColPart}${maxLengthColPart}${growPart}${columnWidthPart}${noTrailingPart}${filterOnlyPart}${dotPart}${gridReadOnlyPart}${computedPart}${visibleWhenCapabilityPart}${filterModePart}${backendFilterKeyPart}${backendSortKeyPart}${currencyFieldPart}${noTruncatePart} },`;
+    // ETP-6148 — the cell links to another window's record (resolveColumnLink in app-shell's
+    // fkNavigation.js). Appended at the tail for the same byte-identity reason as above.
+    const linkPart = jsonWrapIf(', link: ', f.link);
+    // ETP-6148 — always-editable amount cell with reset (InlineLinesPanel's in-place cell).
+    const editInPlacePart = jsonWrapIf(', editInPlace: ', f.editInPlace);
+    return `  { key: '${f.name}', column: '${f.column}', type: '${type}'${labelsPart}${labelPart}${enumLabelsPart}${enumVariantsPart}${selectionPart}${togglePart}${badgePart}${badgeLabelsPart}${badgeColorsPart}${badgeVariantsPart}${summablePart}${displayPart}${renderPart}${requiredPart}${lookupPart}${lookupDrawerColPart}${excludeValueOfColPart}${popupPart}${minColPart}${maxColPart}${maxLengthColPart}${growPart}${columnWidthPart}${noTrailingPart}${filterOnlyPart}${dotPart}${gridReadOnlyPart}${computedPart}${visibleWhenCapabilityPart}${filterModePart}${backendFilterKeyPart}${backendSortKeyPart}${currencyFieldPart}${noTruncatePart}${linkPart}${editInPlacePart} },`;
   }).join('\n') + buildDimensionsPanelColumn(dimensionFieldsRaw);
 
   const filtersArray = searchableFields.map(f => `'${f}'`).join(', ');
@@ -592,12 +601,12 @@ const ${compName} = forwardRef(function ${compName}(props, ref) {
     if (props.addRow?.active) {
       return (
         <>
-          <InlineLinesPanel ref={ref} columns={columns} {...props} addRow={undefined} />
+          <InlineLinesPanel ref={ref} columns={columns} {...props}${rowEditPart} addRow={undefined} />
           <DataTable columns={columns} filters={filters} {...props} hideHeader hideDataRows />
         </>
       );
     }
-    return <InlineLinesPanel ref={ref} columns={columns} {...props} />;
+    return <InlineLinesPanel ref={ref} columns={columns} {...props}${rowEditPart} />;
   }
   return <DataTable columns={columns} filters={filters} {...props} />;
 });
@@ -749,6 +758,13 @@ export function generateFormComponent(entityName, contract) {
     // `integer`, not `type`, and EntityForm.getInputType only recognizes 'number'.
     const minPart = f.min != null ? `, min: ${f.min}` : '';
     const integerPart = fragmentIf(f.integer === true, ', integer: true');
+    // ETP-6148 — `minDate` ('today' | 'YYYY-MM-DD'): EntityForm hands it to DateField (earlier
+    // days disabled) and validates a new value on commit and in the useEntity save gate.
+    // Appended at the tail of the field line so forms that do not declare it stay byte-identical.
+    const minDatePart = quotedProp('minDate', f.minDate);
+    // ETP-6148 — a badge on the selector's options (EntityForm → CreatableSearchSelect renderOption).
+    // Appended at the tail so every form field without it stays byte-identical.
+    const optionBadgePart = jsonWrapIf(', optionBadge: ', f.optionBadge);
     // ETP-5323 — see buildFormMaxLengthPart for the full rationale (gating, emission rule).
     const maxLengthPart = buildFormMaxLengthPart(type, f);
     // Behavioral metadata: displayLogic and readOnlyLogic
@@ -775,7 +791,7 @@ export function generateFormComponent(entityName, contract) {
     // ETP-5684: the same capability gate the list columns carry (ETP-4520); EntityForm hides the
     // field when the role lacks it. Emitted only when declared, so other forms stay byte-for-byte.
     const visibleWhenCapabilityPart = quotedProp('visibleWhenCapability', f.visibleWhenCapability);
-    const fieldLine = `  { key: '${f.name}', column: '${f.column}', type: '${type}'${labelsPart}${formLabelPart}${requiredPart}${lookupPart}${popupPart}${readOnlyPart}${inlinePart}${sectionPart}${referencePart}${inputModePart}${searchSelectPart}${allowCreatePart}${createPart}${dependsOnPart}${optionsPart}${valueTypePart}${defaultValuePart}${helpPart}${placeholderPart}${emptyOptionPart}${fieldGroupPart}${precisionPart}${minPart}${maxLengthPart}${integerPart}${displayLogicPart}${readOnlyLogicPart}${spanPart}${rowsPart}${clearablePart}${customRendererPart}${editModalPart}${inputPrefixPart}${visibleWhenCapabilityPart} },`;
+    const fieldLine = `  { key: '${f.name}', column: '${f.column}', type: '${type}'${labelsPart}${formLabelPart}${requiredPart}${lookupPart}${popupPart}${readOnlyPart}${inlinePart}${sectionPart}${referencePart}${inputModePart}${searchSelectPart}${allowCreatePart}${createPart}${dependsOnPart}${optionsPart}${valueTypePart}${defaultValuePart}${helpPart}${placeholderPart}${emptyOptionPart}${fieldGroupPart}${precisionPart}${minPart}${maxLengthPart}${integerPart}${displayLogicPart}${readOnlyLogicPart}${spanPart}${rowsPart}${clearablePart}${customRendererPart}${editModalPart}${inputPrefixPart}${visibleWhenCapabilityPart}${minDatePart}${optionBadgePart} },`;
     return [...slotLines, fieldLine].join('\n');
   }).join('\n');
 
@@ -1956,10 +1972,13 @@ function buildEntryFieldLine(f, i, firstSearchIdx) {
   const { lookupDrawerPart, lookupTitlePart, onSelectMappingsPart, displayFromCatalogPart } = buildLookupEntryParts(f);
   const minEntryPart = optProp('min', f.min);
   const maxEntryPart = optProp('max', f.max);
+  // ETP-6148 — carried on the add-line entry too, for a date entry rendered by a form that
+  // honours it. Tail-appended so entries without it stay byte-identical.
+  const minDateEntryPart = quotedProp('minDate', f.minDate);
   // Selector exclusion: hide the option equal to the current value of another field
   // on the same add-line row (e.g. newStorageBin can't equal storageBin).
   const excludeValueOfPart = f.excludeValueOf ? `, excludeValueOf: '${String(f.excludeValueOf).replace(/'/g, "\\'")}'` : '';
-  return `    { key: '${f.name}', column: '${f.column}', type: '${type}'${requiredPart}${lookupPart}${labelPart}${labelsDictPart}${clearsFieldPart}${skipDefaultPart}${referencePart}${inputModePart}${dependsOnPart}${defaultValuePart}${forceCalloutFieldsPart}${lookupDrawerPart}${lookupTitlePart}${onSelectMappingsPart}${displayFromCatalogPart}${minEntryPart}${maxEntryPart}${excludeValueOfPart} },`;
+  return `    { key: '${f.name}', column: '${f.column}', type: '${type}'${requiredPart}${lookupPart}${labelPart}${labelsDictPart}${clearsFieldPart}${skipDefaultPart}${referencePart}${inputModePart}${dependsOnPart}${defaultValuePart}${forceCalloutFieldsPart}${lookupDrawerPart}${lookupTitlePart}${onSelectMappingsPart}${displayFromCatalogPart}${minEntryPart}${maxEntryPart}${excludeValueOfPart}${minDateEntryPart} },`;
 }
 
 export function resolveSecondaryTabDefs(secondaryTabsDecl, contract, headerEntity, detailEntity, headerColumnMap, headerBooleanFields) {
