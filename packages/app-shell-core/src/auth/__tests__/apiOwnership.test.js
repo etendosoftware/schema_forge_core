@@ -4,6 +4,10 @@ import { apiFetch, createApiFetch, registerApiSession, resetApiSessionForTests }
 import { createSessionController } from '../sessionController.js';
 import { createMemoryAuthStorage } from '../session.js';
 import { getRecordVersion, resetRecordVersionsForTests } from '../../lib/recordVersions.js';
+import {
+  registerErrorTranslator, resetErrorTranslatorForTests,
+} from '../errorTranslator.js';
+import { STALE_SESSION_ERROR_FALLBACK, STALE_SESSION_ERROR_KEY } from '../staleSessionError.js';
 import { deferred, jsonResponse, sessionFixture } from './refreshFixtures.js';
 
 const originalFetch = globalThis.fetch;
@@ -11,6 +15,7 @@ afterEach(() => {
   globalThis.fetch = originalFetch;
   resetApiSessionForTests();
   resetRecordVersionsForTests();
+  resetErrorTranslatorForTests();
 });
 
 function setup() {
@@ -147,5 +152,43 @@ describe('request and response ownership (ETP-5195)', () => {
     pending.resolve(jsonResponse({ success: true }));
     assert.equal((await request).name, 'AbortError');
     assert.equal(calls, 1);
+  });
+});
+
+describe('the superseded-session message is localized (ETP-5763)', () => {
+  const SPANISH = 'Tu sesión se abrió en otra pestaña o ventana. Recarga la página para continuar.';
+
+  it('rejects the request with the TRANSLATED message, keeping the AbortError identity', async () => {
+    const { controller, session } = setup();
+    const asked = [];
+    registerErrorTranslator((key) => {
+      asked.push(key);
+      return key === STALE_SESSION_ERROR_KEY ? SPANISH : key;
+    });
+    const pending = deferred();
+    globalThis.fetch = () => pending.promise;
+    const request = apiFetch('/fixture/action', { method: 'POST', body: '{}' }).catch((error) => error);
+    controller.replace(session);
+    pending.resolve(jsonResponse({ success: true }));
+    const err = await request;
+    // The UI renders `err.message` verbatim (~150 sites), so THIS is what the user reads.
+    assert.equal(err.message, SPANISH);
+    assert.doesNotMatch(err.message, /superseded session/i);
+    // The identity the swallow-sites branch on is unchanged.
+    assert.equal(err.name, 'AbortError');
+    assert.equal(err.messageKey, STALE_SESSION_ERROR_KEY);
+    assert.ok(asked.includes(STALE_SESSION_ERROR_KEY));
+  });
+
+  it('rejects with the English fallback when the host app registered no translator', async () => {
+    const { controller, session } = setup();
+    const pending = deferred();
+    globalThis.fetch = () => pending.promise;
+    const request = apiFetch('/fixture/action', { method: 'POST', body: '{}' }).catch((error) => error);
+    controller.replace(session);
+    pending.resolve(jsonResponse({ success: true }));
+    const err = await request;
+    assert.equal(err.message, STALE_SESSION_ERROR_FALLBACK);
+    assert.equal(err.name, 'AbortError');
   });
 });

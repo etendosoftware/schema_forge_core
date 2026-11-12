@@ -16,6 +16,8 @@
  * `registerApiSession`, so a plain module that throws this needs no React context.
  */
 
+import { resolveErrorMessage } from './errorTranslator.js';
+
 export const NETWORK_ERROR_FALLBACK = 'Could not complete the action. Try again.';
 export const NETWORK_ERROR_KEY = 'networkErrorRetry';
 /**
@@ -24,31 +26,12 @@ export const NETWORK_ERROR_KEY = 'networkErrorRetry';
  */
 export const DEFAULT_API_TIMEOUT_MS = 60000;
 
-let errorTranslator = null;
-
-/**
- * Registers the function that turns {@link NETWORK_ERROR_KEY} into user-facing text. Called by
- * the host app once its i18n is ready, and again on a locale switch — a later registration
- * replaces the earlier one.
- *
- * The translator follows the app's own `translate(key, params)` contract: returning the key
- * unchanged means "missing", and falls back to {@link NETWORK_ERROR_FALLBACK}.
- *
- * @param {(key: string, params?: object) => string} fn
- * @returns {() => void} unregister — only drops the translator if it is still this one
- */
-export function registerErrorTranslator(fn) {
-  const registration = typeof fn === 'function' ? fn : null;
-  errorTranslator = registration;
-  return function unregister() {
-    if (errorTranslator === registration) errorTranslator = null;
-  };
-}
-
-/** Test seam: drops the registered translator so one suite cannot decide the next one's text. */
-export function resetErrorTranslatorForTests() {
-  errorTranslator = null;
-}
+// ETP-5763 — the registry now lives in its own module, shared with the stale-session error.
+// Two registries would leave whichever error registered second permanently English, silently.
+export {
+  registerErrorTranslator,
+  resetErrorTranslatorForTests,
+} from './errorTranslator.js';
 
 /**
  * Never throws: an error constructor that throws would replace the failure it describes with an
@@ -56,13 +39,7 @@ export function resetErrorTranslatorForTests() {
  * all mean the same thing — use the English fallback.
  */
 function resolveMessage(key, params) {
-  if (!errorTranslator) return NETWORK_ERROR_FALLBACK;
-  try {
-    const text = errorTranslator(key, params);
-    return typeof text === 'string' && text !== '' && text !== key ? text : NETWORK_ERROR_FALLBACK;
-  } catch {
-    return NETWORK_ERROR_FALLBACK;
-  }
+  return resolveErrorMessage(key, params) ?? NETWORK_ERROR_FALLBACK;
 }
 
 export class NetworkError extends Error {
