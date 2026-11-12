@@ -1430,64 +1430,112 @@ function f19PatternNames(pattern, out = []) {
   return out;
 }
 
+/** Visit every child value of an AST node (skipping location metadata). */
+function f19ForEachChild(node, visit) {
+  for (const [key, value] of Object.entries(node)) {
+    if (key === 'loc' || key === 'start' || key === 'end') continue;
+    visit(value, key);
+  }
+}
+
+/** Record `name` as bound in `scope` (to its init expression, or to null when not followable). */
+function f19Bind(scan, scope, name, init) {
+  if (!scan.bindings.has(scope)) scan.bindings.set(scope, new Map());
+  scan.bindings.get(scope).set(name, init);
+}
+
+function f19AddSink(scan, expr, scope) {
+  if (expr) scan.sinks.push({ expr, scope });
+}
+
+/** A function node opens a new scope: bind its own name (declarations) and its parameters. */
+function f19RecordFunction(scan, node, scope) {
+  if (node.type === 'FunctionDeclaration' && node.id) f19Bind(scan, scope, node.id.name, null);
+  scan.parents.set(node, scope);
+  for (const param of node.params) {
+    for (const name of f19PatternNames(param)) f19Bind(scan, node, name, null);
+  }
+  return node;
+}
+
+function f19RecordDeclarator(scan, node, scope) {
+  if (node.id.type === 'Identifier') {
+    f19Bind(scan, scope, node.id.name, node.init ?? null);
+    return;
+  }
+  for (const name of f19PatternNames(node.id)) f19Bind(scan, scope, name, null);
+}
+
+function f19HasSourceIndexElement(arrayNode) {
+  return arrayNode.elements.some(el => el && el.type === 'ObjectExpression' && findObjectProp(el, 'sourceIndex'));
+}
+
+/** Name of the object property that carries the column list for a grid-view call, or null. */
+function f19GridViewCallProp(calleeName) {
+  if (F19_GRID_VIEW_HOOKS.has(calleeName)) return 'columns';
+  if (calleeName === 'renderGridViewCells') return 'gridColumns';
+  return null;
+}
+
+function f19RecordCallSinks(scan, node, scope) {
+  const propName = f19GridViewCallProp(node.callee.name);
+  if (!propName) return;
+  for (const arg of node.arguments) {
+    if (arg.type === 'ObjectExpression') f19AddSink(scan, f19ObjectPropValue(arg, propName), scope);
+  }
+}
+
+function f19IsGridColumnsExpressionAttr(attr) {
+  return attr.type === 'JSXAttribute' && attr.name.name === 'gridColumns' && attr.value?.type === 'JSXExpressionContainer';
+}
+
+function f19RecordControlsSinks(scan, node, scope) {
+  for (const attr of node.attributes) {
+    if (f19IsGridColumnsExpressionAttr(attr)) f19AddSink(scan, attr.value.expression, scope);
+  }
+}
+
+function f19IsGridViewControlsElement(node) {
+  return node.type === 'JSXOpeningElement' && node.name.type === 'JSXIdentifier' && node.name.name === 'GridViewControls';
+}
+
+function f19IsIdentifierCall(node) {
+  return node.type === 'CallExpression' && node.callee.type === 'Identifier';
+}
+
+/** Record whatever one node contributes to the scan; returns the scope its children live in. */
+function f19RecordNode(scan, node, scope) {
+  if (F19_FUNCTION_TYPES.has(node.type)) return f19RecordFunction(scan, node, scope);
+  if (node.type === 'VariableDeclarator') f19RecordDeclarator(scan, node, scope);
+  else if (node.type === 'ArrayExpression' && f19HasSourceIndexElement(node)) scan.signature.add(node);
+  else if (f19IsIdentifierCall(node)) f19RecordCallSinks(scan, node, scope);
+  else if (f19IsGridViewControlsElement(node)) f19RecordControlsSinks(scan, node, scope);
+  return scope;
+}
+
+function f19VisitScan(scan, node, scope) {
+  if (!node || typeof node !== 'object') return;
+  if (Array.isArray(node)) {
+    node.forEach(child => f19VisitScan(scan, child, scope));
+    return;
+  }
+  if (typeof node.type !== 'string') return;
+  const inner = f19RecordNode(scan, node, scope);
+  f19ForEachChild(node, value => f19VisitScan(scan, value, inner));
+}
+
 /**
  * One traversal that records, per lexical scope (nearest enclosing function, or
- * the program), the bindings declared there, plus every grid-view sink with the
- * scope it sits in, plus the arrays carrying the `sourceIndex` signature.
- * `const X = ...` is bound to its init; parameters, destructured names and
- * function declarations are bound to `null` (they shadow outer names but are
- * never a followable list).
+ * the program), the bindings declared there (a map from name to init expression),
+ * plus every grid-view sink with the scope it sits in, plus the arrays carrying
+ * the `sourceIndex` signature. `const X = ...` is bound to its init; parameters,
+ * destructured names and function declarations are bound to null (they shadow
+ * outer names but are never a followable list).
  */
 function f19Scan(ast) {
-  const bindings = new Map(); // scope -> Map<name, init|null>
-  const parents = new Map();  // scope -> enclosing scope
-  const sinks = [];           // { expr, scope }
-  const signature = new Set();
-  const bind = (scope, name, init) => {
-    if (!bindings.has(scope)) bindings.set(scope, new Map());
-    bindings.get(scope).set(name, init);
-  };
-  const addSink = (expr, scope) => { if (expr) sinks.push({ expr, scope }); };
-
-  const visit = (node, scope) => {
-    if (!node || typeof node !== 'object') return;
-    if (Array.isArray(node)) { node.forEach(child => visit(child, scope)); return; }
-    if (typeof node.type !== 'string') return;
-    let inner = scope;
-    if (F19_FUNCTION_TYPES.has(node.type)) {
-      if (node.type === 'FunctionDeclaration' && node.id) bind(scope, node.id.name, null);
-      inner = node;
-      parents.set(node, scope);
-      for (const param of node.params) for (const name of f19PatternNames(param)) bind(inner, name, null);
-    } else if (node.type === 'VariableDeclarator') {
-      if (node.id.type === 'Identifier') bind(scope, node.id.name, node.init ?? null);
-      else for (const name of f19PatternNames(node.id)) bind(scope, name, null);
-    } else if (node.type === 'ArrayExpression') {
-      if (node.elements.some(el => el && el.type === 'ObjectExpression' && findObjectProp(el, 'sourceIndex'))) {
-        signature.add(node);
-      }
-    } else if (node.type === 'CallExpression' && node.callee.type === 'Identifier') {
-      const name = node.callee.name;
-      const propName = F19_GRID_VIEW_HOOKS.has(name) ? 'columns' : name === 'renderGridViewCells' ? 'gridColumns' : null;
-      if (propName) {
-        for (const arg of node.arguments) {
-          if (arg.type === 'ObjectExpression') addSink(f19ObjectPropValue(arg, propName), scope);
-        }
-      }
-    } else if (node.type === 'JSXOpeningElement' && node.name.type === 'JSXIdentifier' && node.name.name === 'GridViewControls') {
-      for (const attr of node.attributes) {
-        if (attr.type === 'JSXAttribute' && attr.name.name === 'gridColumns' && attr.value?.type === 'JSXExpressionContainer') {
-          addSink(attr.value.expression, scope);
-        }
-      }
-    }
-    for (const [key, value] of Object.entries(node)) {
-      if (key === 'loc' || key === 'start' || key === 'end') continue;
-      visit(value, inner);
-    }
-  };
-  visit(ast, ast);
-  return { bindings, parents, sinks, signature };
+  const scan = { bindings: new Map(), parents: new Map(), sinks: [], signature: new Set() };
+  f19VisitScan(scan, ast, ast);
+  return scan;
 }
 
 /** Nearest visible declaration of `name` from `scope` (own scope first, then ancestors). */
@@ -1499,62 +1547,106 @@ function f19Resolve(scan, name, scope) {
   return null;
 }
 
+function f19IsUseMemoCall(init) {
+  return init.type === 'CallExpression' && init.callee.type === 'Identifier' && init.callee.name === 'useMemo';
+}
+
+/** Names visible as shadowed inside a function node: its parameters and anything declared in its body. */
+function f19ShadowedByFunction(node, outerShadowed) {
+  const inner = new Set(outerShadowed);
+  node.params.forEach(param => f19PatternNames(param, []).forEach(n => inner.add(n)));
+  walkAst(node.body, (n) => {
+    if (n.type === 'VariableDeclarator') f19PatternNames(n.id, []).forEach(nm => inner.add(nm));
+  });
+  return inner;
+}
+
+/** Object members contribute only computed keys and their values, never plain key names. */
+function f19CollectObjectMember(node, shadowed, names) {
+  if (node.computed) f19CollectMemoNames(node.key, shadowed, names);
+  if (node.type === 'ObjectProperty') f19CollectMemoNames(node.value, shadowed, names);
+  else f19CollectMemoNames({ ...node, type: 'FunctionExpression', computed: false }, shadowed, names);
+}
+
+function f19CollectMemberObject(node, shadowed, names) {
+  f19CollectMemoNames(node.object, shadowed, names);
+  if (node.computed) f19CollectMemoNames(node.property, shadowed, names);
+}
+
+/** Collect identifier references in a useMemo callback body, minus names bound by inner functions. */
+function f19CollectMemoNames(node, shadowed, names) {
+  if (!node || typeof node !== 'object') return;
+  if (Array.isArray(node)) {
+    node.forEach(child => f19CollectMemoNames(child, shadowed, names));
+    return;
+  }
+  if (node.type === 'Identifier') {
+    if (!shadowed.has(node.name)) names.add(node.name);
+    return;
+  }
+  if (node.type === 'MemberExpression') return f19CollectMemberObject(node, shadowed, names);
+  if (node.type === 'ObjectProperty' || node.type === 'ObjectMethod') return f19CollectObjectMember(node, shadowed, names);
+  const isFunction = F19_FUNCTION_TYPES.has(node.type);
+  const inner = isFunction ? f19ShadowedByFunction(node, shadowed) : shadowed;
+  f19ForEachChild(node, (value, key) => {
+    if (isFunction && key === 'params') return;
+    f19CollectMemoNames(value, inner, names);
+  });
+}
+
+function f19IsDerivingMethodCall(n) {
+  return n.type === 'CallExpression' && n.callee.type === 'MemberExpression' && !n.callee.computed
+    && n.callee.object.type === 'Identifier' && n.callee.property.type === 'Identifier'
+    && F19_DERIVING_METHODS.has(n.callee.property.name);
+}
+
+/** Names reached through `X.map(...)`-style calls and `...X` spreads. */
+function f19StrictDerivedNames(init) {
+  const names = new Set();
+  walkAst(init, (n) => {
+    if (f19IsDerivingMethodCall(n)) names.add(n.callee.object.name);
+    else if (n.type === 'SpreadElement' && n.argument.type === 'Identifier') names.add(n.argument.name);
+  });
+  return names;
+}
+
 /**
  * Names a derived binding's init is built from. Only strict derivations count:
  * the object of an array-method call (`X.map(...)`), a spread (`...X`), and, for
- * `useMemo(() => ..., deps)`, any identifier inside the callback body — never the
+ * `useMemo(() => ..., deps)`, any identifier inside the callback body, never the
  * dependency array.
  */
 function f19DerivedNames(init) {
+  if (!f19IsUseMemoCall(init)) return f19StrictDerivedNames(init);
   const names = new Set();
-  const isMemo = init.type === 'CallExpression' && init.callee.type === 'Identifier' && init.callee.name === 'useMemo';
-  if (isMemo) {
-    const fn = init.arguments[0];
-    const collectAll = (node, shadowed) => {
-      if (!node || typeof node !== 'object') return;
-      if (Array.isArray(node)) { node.forEach(child => collectAll(child, shadowed)); return; }
-      if (node.type === 'Identifier') {
-        if (!shadowed.has(node.name)) names.add(node.name);
-        return;
-      }
-      if (node.type === 'MemberExpression') {
-        collectAll(node.object, shadowed);
-        if (node.computed) collectAll(node.property, shadowed);
-        return;
-      }
-      if (node.type === 'ObjectProperty' || node.type === 'ObjectMethod') {
-        if (node.computed) collectAll(node.key, shadowed);
-        if (node.type === 'ObjectProperty') collectAll(node.value, shadowed);
-        else collectAll({ ...node, type: 'FunctionExpression', computed: false }, shadowed);
-        return;
-      }
-      let inner = shadowed;
-      if (F19_FUNCTION_TYPES.has(node.type)) {
-        inner = new Set(shadowed);
-        node.params.forEach(param => f19PatternNames(param, []).forEach(n => inner.add(n)));
-        walkAst(node.body, (n) => {
-          if (n.type === 'VariableDeclarator') f19PatternNames(n.id, []).forEach(nm => inner.add(nm));
-        });
-      }
-      for (const [key, value] of Object.entries(node)) {
-        if (key === 'loc' || key === 'start' || key === 'end') continue;
-        if (F19_FUNCTION_TYPES.has(node.type) && key === 'params') continue;
-        collectAll(value, inner);
-      }
-    };
-    if (fn && F19_FUNCTION_TYPES.has(fn.type)) collectAll(fn.body, new Set());
-    return names;
-  }
-  walkAst(init, (n) => {
-    if (n.type === 'CallExpression' && n.callee.type === 'MemberExpression' && !n.callee.computed
-      && n.callee.object.type === 'Identifier' && n.callee.property.type === 'Identifier'
-      && F19_DERIVING_METHODS.has(n.callee.property.name)) {
-      names.add(n.callee.object.name);
-    } else if (n.type === 'SpreadElement' && n.argument.type === 'Identifier') {
-      names.add(n.argument.name);
-    }
-  });
+  const fn = init.arguments[0];
+  if (fn && F19_FUNCTION_TYPES.has(fn.type)) f19CollectMemoNames(fn.body, new Set(), names);
   return names;
+}
+
+/** Inline sink arrays are skipped right away; identifier sinks seed the derivation walk. */
+function f19SinkFrontier(scan, skip) {
+  const frontier = [];
+  for (const { expr, scope } of scan.sinks) {
+    const inline = f19UnwrapArray(expr);
+    if (inline) skip.add(inline);
+    else if (expr.type === 'Identifier') frontier.push({ name: expr.name, scope });
+  }
+  return frontier;
+}
+
+/** Resolve each frontier name, skip its array literal, and return the names it derives from. */
+function f19FollowHop(scan, frontier, skip, seen) {
+  const next = [];
+  for (const { name, scope } of frontier) {
+    const decl = f19Resolve(scan, name, scope);
+    if (!decl?.init || seen.has(decl.init)) continue;
+    seen.add(decl.init);
+    const arr = f19UnwrapArray(decl.init);
+    if (arr) skip.add(arr);
+    for (const derived of f19DerivedNames(decl.init)) next.push({ name: derived, scope: decl.scope });
+  }
+  return next;
 }
 
 /**
@@ -1576,26 +1668,10 @@ function f19DerivedNames(init) {
 function collectGridViewColumnArrays(ast) {
   const scan = f19Scan(ast);
   const skip = new Set(scan.signature);
-
-  let frontier = [];
-  for (const { expr, scope } of scan.sinks) {
-    const inline = f19UnwrapArray(expr);
-    if (inline) skip.add(inline);
-    else if (expr.type === 'Identifier') frontier.push({ name: expr.name, scope });
-  }
-
-  const seen = new Set(); // "<declaring init node start>" guard against cycles
+  const seen = new Set(); // init nodes already followed (cycle guard)
+  let frontier = f19SinkFrontier(scan, skip);
   for (let hop = 0; hop <= F19_GRID_VIEW_MAX_HOPS && frontier.length > 0; hop++) {
-    const next = [];
-    for (const { name, scope } of frontier) {
-      const decl = f19Resolve(scan, name, scope);
-      if (!decl?.init || seen.has(decl.init)) continue;
-      seen.add(decl.init);
-      const arr = f19UnwrapArray(decl.init);
-      if (arr) skip.add(arr);
-      for (const derived of f19DerivedNames(decl.init)) next.push({ name: derived, scope: decl.scope });
-    }
-    frontier = next;
+    frontier = f19FollowHop(scan, frontier, skip, seen);
   }
   return skip;
 }
