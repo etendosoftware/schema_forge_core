@@ -399,6 +399,9 @@ const FIELD_HINTS_POST_GRID = [
   // ETP-6148 — `editInPlace`: an always-editable amount cell with reset (resolve-curated's
   // applyColumnEditInPlace). Tail position, for the same byte-identity reason.
   ['editInPlace', Boolean],
+  // ETP-6148 — `optionBadge`: a badge on the form selector's options (resolve-curated's
+  // applyOptionBadge). Tail position, for the same byte-identity reason.
+  ['optionBadge', Boolean],
 ];
 
 // Entity-level opt-in/opt-out flags carried from the curated entity onto the

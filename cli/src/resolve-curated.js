@@ -393,6 +393,7 @@ function applyFieldDecisionProps(field, fieldDecision) {
   applyMinDate(field, fieldDecision);
   applyColumnLink(field, fieldDecision);
   applyColumnEditInPlace(field, fieldDecision);
+  applyOptionBadge(field, fieldDecision);
   copyTruthyDecisionProps(field, fieldDecision, FIELD_DECISION_COPY_PROPS);
 }
 
@@ -431,6 +432,25 @@ function applyColumnEditInPlace(field, fieldDecision) {
     throw new Error(`decisions.json: field "${name}" has editInPlace ${JSON.stringify(config)}; expected { resetToField?, maxField? } naming at least one sibling field`);
   }
   field.editInPlace = config;
+}
+
+// ETP-6148 — `optionBadge` on a selector field: each option of the form's searchable selector shows
+// a small badge (`labelKey`, an i18n key) when the selector item's `field` equals `equals` — e.g.
+// remittance's Cuenta marks the accounts whose `ibanValid` is false with «Sin IBAN». The item key
+// must be served by the selector; nothing is computed in the SPA. A malformed config is a
+// decisions error, thrown rather than dropped.
+function applyOptionBadge(field, fieldDecision) {
+  const badge = fieldDecision.optionBadge;
+  if (badge == null) return;
+  const name = fieldDecision.name || field.name;
+  const scalar = ['boolean', 'string', 'number'].includes(typeof badge?.equals);
+  const valid = typeof badge === 'object' && !Array.isArray(badge) && isNonEmptyString(badge.field)
+    && isNonEmptyString(badge.labelKey) && scalar
+    && Object.keys(badge).every((key) => ['field', 'equals', 'labelKey'].includes(key));
+  if (!valid) {
+    throw new Error(`decisions.json: field "${name}" has optionBadge ${JSON.stringify(badge)}; expected { field, equals, labelKey } with a scalar equals`);
+  }
+  field.optionBadge = badge;
 }
 
 function isNonEmptyString(value) {

@@ -1847,3 +1847,55 @@ describe('resolveCurated — column editInPlace', () => {
     });
   }
 });
+
+// ─── selector field `optionBadge` ─────────────────────────────────────────────
+describe('resolveCurated — selector optionBadge', () => {
+  const schemaRaw = {
+    window: { id: '700', name: 'Remittance' },
+    entities: [{
+      name: 'remittance', tableName: 'REM_Remittance', tabId: 'T1',
+      fields: [
+        { name: 'financialAccount', columnName: 'FIN_Financial_Account_ID', label: 'Account', type: 'foreignKey', visibility: 'editable', mandatory: true },
+        { name: 'name', columnName: 'Name', label: 'Name', type: 'string', visibility: 'editable', mandatory: true },
+      ],
+    }],
+  };
+  const resolveWith = (fields) => resolveCurated(structuredClone(schemaRaw), { rules: [] },
+    { version: 2, window: { name: 'Remittance' }, rules: {}, entities: { remittance: { fields } } });
+  const fieldNamed = (schema, name) => schema.entities[0].fields.find(x => x.name === name);
+
+  for (const [label, equals] of [['boolean false', false], ['boolean true', true], ['string', 'N'], ['number', 0], ['empty string', '']]) {
+    it(`carries an optionBadge whose equals is a ${label}`, async () => {
+      const optionBadge = { field: 'ibanValid', equals, labelKey: 'remittanceAccountNoIban' };
+      const { schema } = await resolveWith({ financialAccount: { optionBadge } });
+      assert.deepEqual(fieldNamed(schema, 'financialAccount').optionBadge, optionBadge);
+    });
+  }
+
+  it('emits no optionBadge when none is declared, also on siblings', async () => {
+    const { schema } = await resolveWith({
+      financialAccount: { optionBadge: { field: 'ibanValid', equals: false, labelKey: 'remittanceAccountNoIban' } },
+      name: {},
+    });
+    assert.equal(Object.hasOwn(fieldNamed(schema, 'name'), 'optionBadge'), false);
+  });
+
+  for (const [label, optionBadge] of [
+    ['a missing field', { equals: false, labelKey: 'remittanceAccountNoIban' }],
+    ['a blank field', { field: ' ', equals: false, labelKey: 'remittanceAccountNoIban' }],
+    ['a missing labelKey', { field: 'ibanValid', equals: false }],
+    ['a blank labelKey', { field: 'ibanValid', equals: false, labelKey: '' }],
+    ['a missing equals', { field: 'ibanValid', labelKey: 'remittanceAccountNoIban' }],
+    ['a null equals', { field: 'ibanValid', equals: null, labelKey: 'remittanceAccountNoIban' }],
+    ['an object equals', { field: 'ibanValid', equals: { value: false }, labelKey: 'remittanceAccountNoIban' }],
+    ['an array equals', { field: 'ibanValid', equals: [false], labelKey: 'remittanceAccountNoIban' }],
+    ['an unknown key', { field: 'ibanValid', equals: false, labelKey: 'remittanceAccountNoIban', tone: 'warning' }],
+    ['a string optionBadge', 'remittanceAccountNoIban'],
+    ['a boolean optionBadge', true],
+    ['an array optionBadge', [{ field: 'ibanValid', equals: false, labelKey: 'remittanceAccountNoIban' }]],
+  ]) {
+    it(`throws on ${label}`, async () => {
+      await assert.rejects(resolveWith({ financialAccount: { optionBadge } }), /field "financialAccount" has optionBadge/);
+    });
+  }
+});

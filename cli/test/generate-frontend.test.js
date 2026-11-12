@@ -3384,3 +3384,44 @@ describe('generateTableComponent — column editInPlace', () => {
     assert.deepEqual(changed, [quantityColumn(withIt.join('\n'))]);
   });
 });
+
+describe('generateFormComponent — selector optionBadge', () => {
+  const BADGE = { field: 'ibanValid', equals: false, labelKey: 'remittanceAccountNoIban' };
+  const contractWith = (optionBadge, minDate) => {
+    const c = structuredClone(masterDetailContract);
+    const warehouse = c.frontendContract.entities.order.fields.find(f => f.name === 'warehouse');
+    if (optionBadge !== undefined) warehouse.optionBadge = optionBadge;
+    if (minDate) c.frontendContract.entities.order.fields.push({
+      name: 'dueDate', column: 'Duedate', type: 'date', tsType: 'string', visibility: 'editable',
+      required: false, grid: true, form: true, minDate, optionBadge,
+    });
+    return c;
+  };
+  const lineOf = (code, key) => code.split('\n').find(l => l.includes(`key: '${key}'`));
+
+  it('appends optionBadge as JSON at the tail of the form field line', () => {
+    const line = lineOf(generateFormComponent('order', contractWith(BADGE)), 'warehouse');
+    assert.match(line, /, optionBadge: \{"field":"ibanValid","equals":false,"labelKey":"remittanceAccountNoIban"\} \},$/);
+  });
+
+  it('emits it after minDate when both are declared', () => {
+    const line = lineOf(generateFormComponent('order', contractWith(BADGE, 'today')), 'dueDate');
+    assert.match(line, /, minDate: 'today', optionBadge: \{[^}]*\} \},$/);
+  });
+
+  it('is byte-identical when undeclared, and changes only the declared field when set', () => {
+    const base = generateFormComponent('order', masterDetailContract);
+    assert.doesNotMatch(base, /optionBadge/);
+    assert.equal(generateFormComponent('order', contractWith()), base);
+    const withIt = generateFormComponent('order', contractWith(BADGE)).split('\n');
+    const changed = withIt.filter((l, i) => l !== base.split('\n')[i]);
+    assert.deepEqual(changed, [lineOf(withIt.join('\n'), 'warehouse')]);
+  });
+
+  it('leaves the grid column of the same field untouched', () => {
+    assert.equal(
+      generateTableComponent('order', contractWith(BADGE)),
+      generateTableComponent('order', masterDetailContract),
+    );
+  });
+});

@@ -3285,3 +3285,43 @@ describe('generateFrontendContract — column editInPlace', () => {
     assert.deepEqual(entity.fields.find(f => f.name === 'amount').editInPlace, EIP);
   });
 });
+
+describe('generateFrontendContract — selector optionBadge', () => {
+  const BADGE = { field: 'ibanValid', equals: false, labelKey: 'remittanceAccountNoIban' };
+  const schemaWith = (optionBadge) => ({
+    version: '0.1.0',
+    window: { id: '700', name: 'Remittance', primaryEntity: 'remittance', category: 'finance' },
+    entities: [{
+      name: 'remittance', tableName: 'REM_Remittance', tabId: 'T1', level: 'header',
+      fields: [
+        { name: 'financialAccount', column: 'FIN_Financial_Account_ID', type: 'foreignKey', visibility: 'editable', required: true,
+          searchable: false, grid: false, form: true, ...(optionBadge === undefined ? {} : { optionBadge }) },
+        { name: 'name', column: 'Name', type: 'string', visibility: 'editable', required: true,
+          searchable: true, grid: true, form: true },
+      ],
+    }],
+  });
+  const feField = (schema, name) => generateFrontendContract(schema).entities.remittance.fields.find(f => f.name === name);
+
+  it('carries a declared optionBadge onto the frontend field', () => {
+    assert.deepEqual(feField(schemaWith(BADGE), 'financialAccount').optionBadge, BADGE);
+  });
+
+  it('emits no optionBadge key when undeclared, also on siblings', () => {
+    assert.equal('optionBadge' in feField(schemaWith(), 'financialAccount'), false);
+    assert.equal('optionBadge' in feField(schemaWith(BADGE), 'name'), false);
+  });
+
+  it('survives decisions.json → resolveCurated → contract', async () => {
+    const schemaRaw = {
+      window: { id: '700', name: 'Remittance' },
+      entities: [{ name: 'remittance', tableName: 'REM_Remittance', tabId: 'T1',
+        fields: [{ name: 'financialAccount', columnName: 'FIN_Financial_Account_ID', label: 'Account', type: 'foreignKey', visibility: 'editable', mandatory: true }] }],
+    };
+    const decisions = { version: 2, window: { name: 'Remittance' }, rules: {},
+      entities: { remittance: { fields: { financialAccount: { optionBadge: BADGE } } } } };
+    const { schema } = await resolveCurated(schemaRaw, { rules: [] }, decisions);
+    const entity = Object.values(generateFrontendContract(schema).entities)[0];
+    assert.deepEqual(entity.fields.find(f => f.name === 'financialAccount').optionBadge, BADGE);
+  });
+});
