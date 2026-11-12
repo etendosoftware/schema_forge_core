@@ -239,6 +239,14 @@ export function LoginStep({ config, stepData, onNext, onBack, goToStep, setToken
     }
   };
 
+  const openForgotPassword = () => {
+    setLoginError(null);
+    setForgotEmail(loginForm.email);
+    setForgotSent(false);
+    setForgotError(null);
+    setView('forgot-password');
+  };
+
   const handleForgotPassword = async (e) => {
     e?.preventDefault();
     setForgotError(null);
@@ -610,17 +618,24 @@ export function LoginStep({ config, stepData, onNext, onBack, goToStep, setToken
 
           <button
             type="button"
-            onClick={() => {
-              setLoginError(null);
-              setForgotEmail(loginForm.email);
-              setForgotSent(false);
-              setForgotError(null);
-              setView('forgot-password');
-            }}
+            onClick={openForgotPassword}
             className="self-start text-sm font-medium leading-5 text-[#121217] underline underline-offset-4 transition hover:text-slate-700"
           >
             {ui('onboardingForgotPasswordAction')}
           </button>
+          {/* ETP-6081 — an account created without a password signs in by its emailed link; to use
+              a password it creates one through the same flow, which mails a "create" link. */}
+          <p className="text-sm leading-5 text-slate-500" data-testid="login-no-password-hint">
+            {ui('onboardingNoPasswordHintPrefix')}{' '}
+            <button
+              type="button"
+              onClick={openForgotPassword}
+              data-testid="login-no-password-action"
+              className="font-medium text-[#121217] underline underline-offset-4 transition hover:text-slate-700"
+            >
+              {ui('onboardingNoPasswordHintAction')}
+            </button>
+          </p>
         </div>
 
         {loginError && (

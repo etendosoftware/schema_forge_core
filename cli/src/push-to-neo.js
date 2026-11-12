@@ -287,6 +287,7 @@ export async function pushToNeo(windowName, options = {}) {
   const specName = windowName;
   const fieldDefaultExprs = buildFieldDefaultExprMap(decisionsData);
   const fieldAgentPrompts = buildFieldAgentPromptMap(decisionsData);
+  const fieldGridOrders = buildFieldGridOrderMap(contract.frontendContract);
   const entityPreconditions = buildEntityPreconditionsMap(decisionsData);
   const entityAgentPrompts = buildEntityAgentPromptMap(decisionsData);
   const specAgentPrompt = normalizeAgentPrompt(decisionsData.window?.agentPrompt);
@@ -306,6 +307,7 @@ export async function pushToNeo(windowName, options = {}) {
     allFields,
     fieldDefaultExprs,
     fieldAgentPrompts,
+    fieldGridOrders,
     entityPreconditions,
     entityAgentPrompts,
     specAgentPrompt,
@@ -355,13 +357,19 @@ function resolveWindowId(schemaRawData, contract, options) {
   return schemaRawData.window.id;
 }
 
-function buildFieldDefaultExprMap(decisionsData) {
+/**
+ * Build a `entityName.fieldName` -> defaultExpr map from decisions.json. The field part is the
+ * name the contract pushes the field under: its `name` when decisions renames it (purchase-order
+ * `salesRepresentative` → `companyAgent`), else the decisions key. Keyed by the decisions key
+ * alone, a renamed field never matched and its value was silently not pushed (ETP-6036).
+ */
+export function buildFieldDefaultExprMap(decisionsData) {
   const map = {};
   for (const [entityKey, entityConf] of Object.entries(decisionsData.entities || {})) {
     const entityName = entityConf.name || entityKey;
     for (const [fieldName, fieldConf] of Object.entries(entityConf.fields || {})) {
       if (fieldConf.defaultExpr != null) {
-        map[`${entityName}.${fieldName}`] = fieldConf.defaultExpr;
+        map[`${entityName}.${fieldConf.name || fieldName}`] = fieldConf.defaultExpr;
       }
     }
   }
@@ -371,7 +379,8 @@ function buildFieldDefaultExprMap(decisionsData) {
 /**
  * Build a `entityName.fieldName` -> agentPrompt map from decisions.json.
  * Mirrors buildFieldDefaultExprMap so the per-field agent guidance flows to
- * etendo_schema the same way default expressions flow to the contract.
+ * etendo_schema the same way default expressions flow to the contract, keyed by
+ * the field's pushed name (its `name` when renamed) like that map.
  */
 export function buildFieldAgentPromptMap(decisionsData) {
   const map = {};
@@ -379,8 +388,33 @@ export function buildFieldAgentPromptMap(decisionsData) {
     const entityName = entityConf.name || entityKey;
     for (const [fieldName, fieldConf] of Object.entries(entityConf.fields || {})) {
       if (Object.hasOwn(fieldConf, 'agentPrompt')) {
-        map[`${entityName}.${fieldName}`] = normalizeAgentPrompt(fieldConf.agentPrompt);
+        map[`${entityName}.${fieldConf.name || fieldName}`] =
+          normalizeAgentPrompt(fieldConf.agentPrompt);
       }
+    }
+  }
+  return map;
+}
+
+/**
+ * ETP-5848: an `entityName.fieldName` -> grid position map, from the frontend contract — the
+ * columns the window's list shows, in its order. Written into ETGO_SF_FIELD.GRID_SEQNO so the
+ * MCP's etendo_list returns those columns when the agent names none, instead of every field.
+ * A grid field without `gridOrder` goes after the ordered ones, in contract order. A field
+ * that is not in the grid is absent (stored as NULL).
+ *
+ * @param {object} frontendContract - contract.frontendContract
+ * @returns {Record<string, number>}
+ */
+export function buildFieldGridOrderMap(frontendContract) {
+  const map = {};
+  for (const [entityName, entity] of Object.entries(frontendContract?.entities || {})) {
+    const grid = (entity.fields || []).filter((f) => f.grid === true);
+    const ordered = grid.filter((f) => Number.isFinite(f.gridOrder));
+    const maxOrder = ordered.reduce((max, f) => Math.max(max, f.gridOrder), 0);
+    let next = maxOrder;
+    for (const f of grid) {
+      map[`${entityName}.${f.name}`] = Number.isFinite(f.gridOrder) ? f.gridOrder : ++next;
     }
   }
   return map;
@@ -466,6 +500,9 @@ export function buildFieldUpdateParams(f, ctx, fieldId, entityId) {
     fieldParams.agentPrompt = fieldKey in ctx.fieldAgentPrompts
       ? ctx.fieldAgentPrompts[fieldKey]
       : null;
+  }
+  if (ctx.fieldGridOrders) {
+    fieldParams.gridSeqNo = ctx.fieldGridOrders[fieldKey] ?? null;
   }
   // When the camelCase field key differs from the AD column name (e.g.
   // "documentAction" vs "DocAction"), store the key as java_qualifier so

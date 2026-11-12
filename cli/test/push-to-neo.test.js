@@ -14,6 +14,7 @@ import {
   pushReportToNeo,
   dumpDelta,
   buildFieldAgentPromptMap,
+  buildFieldDefaultExprMap,
   buildEntityPreconditionsMap,
   buildEntityAgentPromptMap,
   normalizePreconditions,
@@ -73,6 +74,38 @@ describe('buildFieldAgentPromptMap', () => {
     assert.deepEqual(buildFieldAgentPromptMap(decisions), {
       'Order.blank': null,
       'Order.real': 'pick nearest warehouse',
+    });
+  });
+
+  // ETP-6036: the contract pushes a renamed field under its `name`, so the map must too.
+  it('keys a renamed field by its contract name, not the decisions key', () => {
+    const decisions = {
+      entities: {
+        header: { fields: { salesRepresentative: { name: 'companyAgent', agentPrompt: 'the buyer' } } },
+      },
+    };
+    assert.deepEqual(buildFieldAgentPromptMap(decisions), { 'header.companyAgent': 'the buyer' });
+  });
+});
+
+describe('buildFieldDefaultExprMap', () => {
+  // ETP-6036: purchase-order `salesRepresentative` is pushed as `companyAgent`; keyed by the
+  // decisions key, its defaultExpr never matched and ETGO_SF_FIELD.defaultvalue stayed empty.
+  it('keys a renamed field by its contract name, and the rest by their decisions key', () => {
+    const decisions = {
+      entities: {
+        header: {
+          fields: {
+            salesRepresentative: { name: 'companyAgent', defaultExpr: '@#AD_User_ID@' },
+            grandTotalAmount: { defaultExpr: '0' },
+            note: {},
+          },
+        },
+      },
+    };
+    assert.deepEqual(buildFieldDefaultExprMap(decisions), {
+      'header.companyAgent': '@#AD_User_ID@',
+      'header.grandTotalAmount': '0',
     });
   });
 });

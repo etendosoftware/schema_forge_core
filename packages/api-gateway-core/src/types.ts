@@ -1,12 +1,9 @@
 export type FieldDirection = 'in' | 'out' | 'inout';
-export type FieldMappingType = 'passthrough' | 'custom';
 
 export interface PublicApiField {
   publicApi: true;
   direction: FieldDirection;
   internalPath: string;
-  type: FieldMappingType;
-  handlerId: string | null;
 }
 
 export interface PublicApiEntity {

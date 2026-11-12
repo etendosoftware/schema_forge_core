@@ -34,6 +34,9 @@ export function OnboardingFlow({ steps = [], config = {} }) {
   // `docs/plans/2026-10-20-etp-5806-structured-address-plan.md` — frontend never evaluates a
   // backend-only flag directly).
   const [capabilities, setCapabilities] = useState({});
+  // ETP-6082 — the account has no business sector yet (an SSO sign-up never sees the register
+  // form): the company step asks it then.
+  const [sectorMissing, setSectorMissing] = useState(false);
   const [draftNotice, setDraftNotice] = useState(false);
   const [draftSaveWarning, setDraftSaveWarning] = useState(false);
   const [environments, setEnvironments] = useState([]);
@@ -111,6 +114,8 @@ export function OnboardingFlow({ steps = [], config = {} }) {
     const id = account?.id || null;
     if (!id) return;
     if (account?.email) setAccountEmail(account.email);
+    // ETP-6082 — /session, /me and the sign-in answers all say it; a payload without it keeps it.
+    if (typeof account.sectorMissing === 'boolean') setSectorMissing(account.sectorMissing);
     if (accountIdRef.current === id) return;
     accountIdRef.current = id;
     bindOnboardingAccount(id);
@@ -547,6 +552,8 @@ export function OnboardingFlow({ steps = [], config = {} }) {
       setAccountName={setAccountName}
       accountEmail={accountEmail}
       capabilities={capabilities}
+      // Not `askSector`: every step gets these props, and RegisterStep already has one by that name.
+      accountSectorMissing={sectorMissing}
       draftNotice={draftNotice}
       setDraftNotice={setDraftNotice}
       draftSaveWarning={draftSaveWarning}

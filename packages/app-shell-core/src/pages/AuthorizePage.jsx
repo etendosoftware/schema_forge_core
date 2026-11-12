@@ -9,11 +9,11 @@ import { Tabs, TabsList, TabsTrigger, TabsContent } from '../components/ui/tabs.
 import { CopyBlock } from '../components/ui/copy-button.jsx';
 import { Shield, CheckCircle2, XCircle, Loader2, Plug, Download, Sparkles } from 'lucide-react';
 import { useUI } from '../i18n/index.js';
-import { buildMcpClients, deriveServerName } from '../lib/mcpClients.js';
+import { buildMcpClients, deriveServerName, mcpUrlFor } from '../lib/mcpClients.js';
 import { useObservability } from '../observability/index.js';
 
 function detectMcpUrl() {
-  return window.location.origin + '/mcp';
+  return mcpUrlFor(window.location.origin);
 }
 
 const SCOPE_LABELS = {

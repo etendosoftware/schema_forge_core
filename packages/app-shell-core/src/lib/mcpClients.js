@@ -22,6 +22,25 @@
 
 const BASE_SERVER_NAME = 'etendo-mcp';
 
+/** The legacy production host and the official one the production MCP server announces. */
+const LEGACY_PRODUCTION_HOST = 'app.etendo.software';
+const OFFICIAL_PRODUCTION_HOST = 'app.etendo.ai';
+
+/**
+ * The MCP URL to give the user for the app origin they are on (ETP-5852). Production announces
+ * `https://app.etendo.ai/mcp` as its OAuth resource, so a URL on the legacy production host
+ * `app.etendo.software` fails the client's resource check; a user who opened the app there gets
+ * the `app.etendo.ai` URL instead. Every other origin is used as is.
+ * @param {string} origin the page origin, e.g. `window.location.origin`.
+ */
+export function mcpUrlFor(origin) {
+  const url = new URL(origin);
+  if (url.hostname === LEGACY_PRODUCTION_HOST) {
+    url.hostname = OFFICIAL_PRODUCTION_HOST;
+  }
+  return `${url.origin}/mcp`;
+}
+
 /**
  * Derives the MCP server alias from the environment encoded in the URL, so devs
  * can tell their connections apart at a glance and it is obvious which

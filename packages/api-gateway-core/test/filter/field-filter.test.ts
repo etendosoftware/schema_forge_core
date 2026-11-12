@@ -8,8 +8,8 @@ const productEntity: PublicApiEntity = {
   specName: 'product',
   operations: ['GET', 'LIST'],
   fields: {
-    name: { publicApi: true, direction: 'out', internalPath: 'name', type: 'passthrough', handlerId: null },
-    searchKey: { publicApi: true, direction: 'out', internalPath: 'searchKey', type: 'passthrough', handlerId: null },
+    name: { publicApi: true, direction: 'out', internalPath: 'name' },
+    searchKey: { publicApi: true, direction: 'out', internalPath: 'searchKey' },
   },
 };
 

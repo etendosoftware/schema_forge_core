@@ -1,6 +1,7 @@
 import { sessionUnavailableError, whenSessionRevokeSettles } from '@etendosoftware/app-shell-core/auth/api';
 import { ACCOUNT_HEADER } from '@etendosoftware/app-shell-core/auth/sessionCredentials.js';
 import { isAccountMismatchText } from '@etendosoftware/app-shell-core/auth/sessionConflict.js';
+import { isBusinessSector } from './businessSectors.js';
 
 export const ONBOARDING_ERROR_CODES = {
   registerFailed: 'onboardingRegisterFailed',
@@ -15,6 +16,7 @@ export const ONBOARDING_ERROR_CODES = {
   missingResult: 'onboardingMissingResult',
   emailVerifyFailed: 'onboardingEmailVerifyFailed',
   loginLinkFailed: 'onboardingLoginLinkInvalid',
+  termsUnavailable: 'onboardingTermsUnavailable',
 };
 
 // ETP-4664 — maps the stable, SCREAMING_SNAKE `error.code` returned by the
@@ -198,7 +200,26 @@ export async function loginAccount(fetchImpl, baseUrl, form) {
   return readJsonResponse(response, ONBOARDING_ERROR_CODES.invalidCredentials);
 }
 
-export async function loginWithSsoProvider(fetchImpl, baseUrl, provider, payload) {
+/**
+ * ETP-6081 — the terms and conditions in force, in the requested language (English when that
+ * language has none): `{ version, language, content, publishedAt }`.
+ *
+ * Unauthenticated on purpose: the register screen shows them before any account exists. No
+ * `credentials` for the same reason verifyEmail takes none.
+ */
+export async function fetchTermsAndConditions(fetchImpl, baseUrl, language) {
+  const query = language ? `?language=${encodeURIComponent(language)}` : '';
+  const response = await fetchImpl(`${baseUrl}/sws/go/terms${query}`, { method: 'GET' });
+  return readJsonResponse(response, ONBOARDING_ERROR_CODES.termsUnavailable);
+}
+
+/**
+ * @param {object} [extra] fields the backend reads besides the provider's own credential, for
+ *   recorded when this sign-in creates the account (ETP-6081): `termsVersion`, the terms version
+ *   the register screen showed, and `marketingConsent`, whether promotional mail may be sent
+ *   (sent only when it is a boolean).
+ */
+export async function loginWithSsoProvider(fetchImpl, baseUrl, provider, payload, extra = {}) {
   const normalizedProvider = String(provider || '').trim().toLowerCase();
   const buildPayload = SSO_PAYLOAD_BUILDERS[normalizedProvider];
   if (!buildPayload) {
@@ -210,7 +231,11 @@ export async function loginWithSsoProvider(fetchImpl, baseUrl, provider, payload
     method: 'POST',
     credentials: 'include',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(buildPayload(payload)),
+    body: JSON.stringify({
+      ...buildPayload(payload),
+      ...(extra.termsVersion ? { termsVersion: extra.termsVersion } : {}),
+      ...(typeof extra.marketingConsent === 'boolean' ? { marketingConsent: extra.marketingConsent } : {}),
+    }),
   });
   return readJsonResponse(response, ONBOARDING_ERROR_CODES.ssoFailed);
 }
@@ -410,7 +435,11 @@ export async function runOnboardingStream(fetchImpl, baseUrl, csrfToken, form, o
       // as a legacy fallback for any caller still sending free text.
       ...(form.address ? { address: form.address } : {}),
       ...(form.streetName ? { streetName: form.streetName } : {}),
-      ...(form.buildingNumber ? { buildingNumber: form.buildingNumber } : {}),
+      // ETP-5806 — Number is optional for the user; once Street has content we fall back to
+      // "s/n" (same criterion as LocationEditorModal's popup) instead of omitting the field.
+      ...(form.streetName
+        ? { buildingNumber: form.buildingNumber || 's/n' }
+        : (form.buildingNumber ? { buildingNumber: form.buildingNumber } : {})),
       ...(form.buildingName ? { buildingName: form.buildingName } : {}),
       // ETP-5806 — City, mandatory together with streetName/buildingNumber once the address
       // block is started.
@@ -423,6 +452,8 @@ export async function runOnboardingStream(fetchImpl, baseUrl, csrfToken, form, o
       // ETP-5426: sent only when the user ticked "include sample data"; the backend defaults the
       // absent key to false.
       ...(form.includeSampleData === true ? { includeSampleData: true } : {}),
+      // ETP-6082: the business sector the Company step asked an account that had none.
+      ...(isBusinessSector(form.sector) ? { sector: form.sector } : {}),
     }),
   });
 

@@ -83,9 +83,3 @@ test('AuthorizePage declares labels for all supported scopes', async () => {
   assert.match(src, /'etendo:report'/);
   assert.match(src, /'etendo:\*'/);
 });
-
-test('AuthorizePage derives the MCP URL from the window origin', async () => {
-  const src = await readSource();
-  assert.match(src, /detectMcpUrl\(\)/);
-  assert.match(src, /window\.location\.origin\s*\+\s*'\/mcp'/);
-});

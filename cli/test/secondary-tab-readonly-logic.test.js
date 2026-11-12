@@ -1,3 +1,5 @@
+// @covers cli/src/generate-contract.js
+// @covers cli/src/generate-frontend.js
 // Tests that secondaryTabs.<key>.readOnlyLogic is compiled into a runtime
 // `readOnlyLogic: (record) => ...` arrow function in the generated HeaderPage,
 // using the same translator (convertLogicToJs) used for field-level logic.
@@ -98,5 +100,62 @@ describe('secondaryTabs.readOnlyLogic — compiled arrow function', () => {
     const columnMap = { DocumentStatus: 'documentStatus' };
     const js = convertLogicToJs("@DocumentStatus@!='DR'", columnMap, []);
     assert.equal(js, "record['documentStatus'] !== 'DR'");
+  });
+});
+
+describe('convertLogicToJs — contextVars option (visibleWhenLogic)', () => {
+  const columnMap = { C_Currency_ID: 'currency', DocumentStatus: 'documentStatus', Posted: 'posted' };
+  const on = { contextVars: true };
+
+  it('resolves token-vs-token with a # operand to ctx and keeps && composition', () => {
+    const js = convertLogicToJs("@C_Currency_ID@!'' & @C_Currency_ID@!@#OrgCurrencyId@", columnMap, [], on);
+    assert.equal(
+      js,
+      "(record['currency'] != null && record['currency'] !== '') && record['currency'] !== ctx['OrgCurrencyId']",
+    );
+  });
+
+  it('maps = to === and ! / != to !==', () => {
+    assert.equal(convertLogicToJs('@C_Currency_ID@=@#Org@', columnMap, [], on), "record['currency'] === ctx['Org']");
+    assert.equal(convertLogicToJs('@C_Currency_ID@!=@#Org@', columnMap, [], on), "record['currency'] !== ctx['Org']");
+    assert.equal(convertLogicToJs('@C_Currency_ID@!@#Org@', columnMap, [], on), "record['currency'] !== ctx['Org']");
+  });
+
+  it('supports two record columns and a ctx variable on the left', () => {
+    assert.equal(convertLogicToJs('@DocumentStatus@=@Posted@', columnMap, [], on), "record['documentStatus'] === record['posted']");
+    assert.equal(convertLogicToJs('@#Org@!@C_Currency_ID@', columnMap, [], on), "ctx['Org'] !== record['currency']");
+  });
+
+  it('resolves a bare @#Name@ against a literal to ctx', () => {
+    assert.equal(convertLogicToJs("@#IsSOTrx@='Y'", columnMap, [], on), "ctx['IsSOTrx'] === 'Y'");
+    assert.equal(convertLogicToJs("@#IsSOTrx@!'Y'", columnMap, [], on), "ctx['IsSOTrx'] !== 'Y'");
+  });
+
+  it('tolerates whitespace around the comparison operator', () => {
+    assert.equal(convertLogicToJs('@C_Currency_ID@  !  @#Org@', columnMap, [], on), "record['currency'] !== ctx['Org']");
+  });
+
+  it('flag OFF: output is byte-identical to the pre-contextVars converter for every existing form', () => {
+    // Expected strings captured from the converter as of HEAD before the option existed.
+    const cases = [
+      ["@DocumentStatus@!='DR'", "record['documentStatus'] !== 'DR'"],
+      ["@DocumentStatus@='DR' | @Posted@='Y'", "record['documentStatus'] === 'DR' || (record['posted'] === true || record['posted'] === 'Y')"],
+      ["@C_Currency_ID@!'' & @DocumentStatus@='CO'", "(record['currency'] != null && record['currency'] !== '') && record['documentStatus'] === 'CO'"],
+      ["@C_Currency_ID@=''", "(record['currency'] == null || record['currency'] === '')"],
+      ['@Posted@!null', "record['posted'] != null"],
+      ['@Posted@>0', "Number(record['posted']) > 0"],
+      // Token-vs-token / ctx vars stay unresolved (unsupported) without the flag.
+      ['@C_Currency_ID@!@#OrgCurrencyId@', '@C_Currency_ID@!@#OrgCurrencyId@'],
+    ];
+    for (const [expr, expected] of cases) {
+      assert.equal(convertLogicToJs(expr, columnMap, ['posted']), expected, expr);
+      assert.equal(convertLogicToJs(expr, columnMap, ['posted'], {}), expected, expr);
+      assert.equal(convertLogicToJs(expr, columnMap, ['posted'], { contextVars: false }), expected, expr);
+    }
+  });
+
+  it('flag ON does not change field-only expressions', () => {
+    const e = "@DocumentStatus@='DR' | @Posted@='Y' & @C_Currency_ID@!''";
+    assert.equal(convertLogicToJs(e, columnMap, ['posted'], on), convertLogicToJs(e, columnMap, ['posted']));
   });
 });

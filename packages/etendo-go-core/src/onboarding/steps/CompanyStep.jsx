@@ -4,6 +4,7 @@ import { Button } from '@etendosoftware/app-shell-core/components/ui/button';
 import { Label } from '@etendosoftware/app-shell-core/components/ui/label';
 import { useUI } from '@etendosoftware/app-shell-core/i18n';
 import { isCompanyStepValid, isSampleDataOffered, isAddressBlockStarted } from '../state.js';
+import { BUSINESS_SECTORS, isBusinessSector } from '../businessSectors.js';
 import { ONBOARDING_FIELD_LIMITS, CLIENT_NAME_INPUT_MAX_LENGTH, exceedsLimit } from '../fieldLimits.js';
 import { trackOnboarding } from '../tracking.js';
 import { SetupShell } from '../components/SetupShell.jsx';
@@ -13,7 +14,7 @@ import { SetupField } from '../components/SetupField.jsx';
 import { SetupSelect } from '../components/SetupSelect.jsx';
 import { AddressCell } from '../components/AddressCell.jsx';
 
-export function CompanyStep({ config, stepData, onNext, onBack, goToStep, onChange, draftNotice, draftSaveWarning, setDraftNotice, accountName, token, onLogout, capabilities }) {
+export function CompanyStep({ config, stepData, onNext, onBack, goToStep, onChange, draftNotice, draftSaveWarning, setDraftNotice, accountName, token, onLogout, capabilities, accountSectorMissing = false }) {
   const ui = useUI();
   // ETP-5806 — backend-only `structured-address-for-sepa` flag (TTL 2026-11-15). `capabilities` is the
   // session-bootstrap signal (GET /sws/go/session, OnboardingFlow.jsx), never evaluated anywhere
@@ -45,7 +46,9 @@ export function CompanyStep({ config, stepData, onNext, onBack, goToStep, onChan
     buildingName: stepData.buildingName ?? config.defaultForm?.buildingName ?? '',
     // ETP-5806 — City, mandatory together with Street/Number once the address block is started.
     city: stepData.city ?? config.defaultForm?.city ?? '',
-    sector: stepData.sector ?? config.defaultForm?.sector ?? 'technology',
+    // ETP-6082: the register form's business sector, asked here only of an account that has none
+    // (an SSO sign-up never sees that form). A draft value from the old list is dropped.
+    sector: isBusinessSector(stepData.sector) ? stepData.sector : '',
     // ETP-5426: unticked by default, without exception — a tenant meant for real use must never
     // receive fictitious data nobody asked for. Restored from the draft when the user ticked it.
     includeSampleData: sampleDataOffered
@@ -77,20 +80,17 @@ export function CompanyStep({ config, stepData, onNext, onBack, goToStep, onChan
     onNext(form);
   };
 
-  const sectorOptions = (config.sectorCodes || ['technology', 'services', 'commerce', 'manufacturing']).map((code) => ({
-    value: code,
-    label: ui(`onboardingSector${code.charAt(0).toUpperCase()}${code.slice(1)}`),
-  }));
 
   // ETP-5806 — once the user starts the address block, Street and Number become mandatory
   // together; shown immediately (no blur/touched gating), same style as `clientNameTooLong`
   // below.
   const addressStarted = isAddressBlockStarted(form);
   const streetNameMissing = addressStarted && !form.streetName?.trim();
-  const buildingNumberMissing = addressStarted && !form.buildingNumber?.trim();
   const cityMissing = addressStarted && !form.city?.trim();
 
-  const isValid = isCompanyStepValid(form);
+  const askSector = accountSectorMissing;
+  const sectorMissing = askSector && !isBusinessSector(form.sector);
+  const isValid = isCompanyStepValid(form) && !sectorMissing;
   // Trim to match isCompanyStepValid, so the inline error and the Start button never disagree.
   const clientNameTooLong = exceedsLimit(form.clientName?.trim(), ONBOARDING_FIELD_LIMITS.clientName);
   const sessionAction = token && (
@@ -221,12 +221,11 @@ export function CompanyStep({ config, stepData, onNext, onBack, goToStep, onChan
                 <AddressCell
                   id="buildingNumber"
                   label={ui('buildingNumberLabel')}
-                  required={addressStarted}
                   value={form.buildingNumber}
                   onChange={e => updateField('buildingNumber', e.target.value)}
-                  placeholder={ui('buildingNumberPlaceholder')}
+                  placeholder={ui('buildingNumberEmptyPlaceholder')}
                   maxLength={ONBOARDING_FIELD_LIMITS.buildingNumber}
-                  error={buildingNumberMissing ? ui('fieldRequiredMessage') : null}
+                  error={null}
                   // The WHATWG autocomplete spec has no dedicated "house/door number" token —
                   // address-line1/2/3 are full line values, not line sub-fields — so there is no
                   // reasonable standard token to offer the browser for this field specifically.
@@ -261,16 +260,20 @@ export function CompanyStep({ config, stepData, onNext, onBack, goToStep, onChan
           </div>
           )}
 
-          <SetupSelect
-            id="sector"
-            label={ui('onboardingSectorLabel')}
-            value={form.sector}
-            onChange={e => updateField('sector', e.target.value)}
-            data-testid="SetupSelect__79cf84">
-            {sectorOptions.map((sector) => (
-              <option key={sector.value} value={sector.value}>{sector.label}</option>
-            ))}
-          </SetupSelect>
+          {askSector && (
+            <SetupSelect
+              id="sector"
+              label={ui('onboardingBusinessSectorLabel')}
+              required
+              value={form.sector}
+              onChange={e => updateField('sector', e.target.value)}
+              data-testid="SetupSelect__55c534">
+              <option value="" disabled>{ui('onboardingBusinessSectorPlaceholder')}</option>
+              {BUSINESS_SECTORS.map((sector) => (
+                <option key={sector.value} value={sector.value}>{ui(sector.labelKey)}</option>
+              ))}
+            </SetupSelect>
+          )}
 
           {sampleDataOffered && (
             <div className="flex items-start gap-3 rounded-lg border border-[#D1D4DB] bg-white px-4 py-3 shadow-[0_1px_2px_rgba(18,18,23,0.05)]">

@@ -24,7 +24,6 @@ const POSITIONAL_BINS = [
   'sf-test-report',
   'sf-gen-log',
   'sf-check-version',
-  'sf-generate-public-api-schema',
   'sf-menu-cache',
 ];
 

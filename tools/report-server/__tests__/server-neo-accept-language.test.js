@@ -161,11 +161,11 @@ describe('report-server NEO fetch — Accept-Language (ETP-5013)', () => {
         /fetchReportData\(reportId, \{ limit, session, params, locale \}\)/);
     });
 
-    it('deliberately does NOT pass a locale at the /data call site', () => {
-      // /data is a raw-data endpoint with no render/locale concept; the asymmetry
-      // is intentional and is what keeps the "absent key" branch alive in
-      // production, not just in this test file.
-      assert.match(SERVER_SRC, /fetchReportData\(reportId, \{ limit, session \}\)/);
+    it('has no locale-less fetchReportData call site left (GET /data removed, ETP-6080)', () => {
+      // /data was the one caller without a locale. With it gone every call
+      // site passes one; the conditional header spread above still guards an
+      // absent locale (e.g. a render request with no locale in its body).
+      assert.doesNotMatch(SERVER_SRC, /fetchReportData\(reportId, \{ limit, session \}\)/);
     });
 
     it('spreads session.forwardHeaders (Cookie, + Origin/Referer, + CSRF on unsafe methods) into the NEO headers literal, never a Bearer token', () => {

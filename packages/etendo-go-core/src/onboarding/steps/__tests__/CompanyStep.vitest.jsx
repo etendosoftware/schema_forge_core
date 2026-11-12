@@ -16,6 +16,8 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
  * the default, pre-launch state) the legacy single-line `address` field renders instead, exactly
  * as it did before this flag existed. The frontend never evaluates the flag itself, only the
  * boolean it is handed.
+ * ETP-6082 — the business sector (the register form's list) is asked here only of an account that
+ * has none, an SSO sign-up; then it is required. Everyone else never sees it.
  */
 
 vi.mock('@etendosoftware/app-shell-core/i18n', () => ({
@@ -38,13 +40,14 @@ const {
 
 const CONFIG = { apiBase: '', brandLabel: 'Etendo', defaultForm: {} };
 
-function renderCompanyStep(stepData = {}, capabilities) {
+function renderCompanyStep(stepData = {}, capabilities, askSector = false) {
   const onChange = vi.fn();
   const utils = render(
     <CompanyStep
       config={CONFIG}
       stepData={stepData}
       capabilities={capabilities}
+      accountSectorMissing={askSector}
       onChange={onChange}
       onNext={vi.fn()}
       onBack={vi.fn()} />,
@@ -199,7 +202,7 @@ describe('CompanyStep structured-address-for-sepa flag gating (ETP-5806)', () =>
     expect(container.querySelector('#city')).toBeTruthy();
   });
 
-  it('keeps Start disabled once the structured block is started until Street, Number and City are filled', () => {
+  it('keeps Start disabled once the structured block is started until Street and City are filled, Number not required (ETP-5806 follow-up)', () => {
     const { container } = renderCompanyStep(
       { businessType: 'company', clientName: 'Acme' },
       { structuredAddressForSepa: true },
@@ -207,12 +210,77 @@ describe('CompanyStep structured-address-for-sepa flag gating (ETP-5806)', () =>
 
     fireEvent.change(container.querySelector('#streetName'), { target: { value: 'Main St' } });
 
-    // Street alone started the block; Number and City are still missing.
+    // Street alone started the block; City is still missing.
     expect(startButton().disabled).toBe(true);
 
-    fireEvent.change(container.querySelector('#buildingNumber'), { target: { value: '42' } });
     fireEvent.change(container.querySelector('#city'), { target: { value: 'Madrid' } });
 
+    // Street + City filled, Number left empty: Start is enabled anyway.
     expect(startButton().disabled).toBe(false);
+    expect(container.querySelector('#buildingNumber').value).toBe('');
+  });
+
+  it('never marks Number as required or shows an inline error for it, unlike Street and City (ETP-5806 follow-up)', () => {
+    const { container } = renderCompanyStep(
+      { businessType: 'company', clientName: 'Acme' },
+      { structuredAddressForSepa: true },
+    );
+
+    // Start the address block via Street, leaving Number and City blank.
+    fireEvent.change(container.querySelector('#streetName'), { target: { value: 'Main St' } });
+
+    const numberCell = container.querySelector('label[for="buildingNumber"]').closest('div');
+    const cityCell = container.querySelector('label[for="city"]').closest('div');
+
+    // Street and City show the required-field asterisk once the block is started; Number never does.
+    expect(cityCell.textContent).toContain('*');
+    expect(numberCell.textContent).not.toContain('*');
+
+    // City is blank and the block is started, so its inline "required" error is showing;
+    // Number carries no such error regardless of being blank too.
+    expect(cityCell.querySelector('[data-testid="AddressCell-error__79cf84"]')?.textContent).toBe('fieldRequiredMessage');
+    expect(numberCell.querySelector('[data-testid="AddressCell-error__79cf84"]')).toBeNull();
+  });
+
+  it('uses the "empty" placeholder key for Number instead of the pre-ETP-5806-follow-up key', () => {
+    const { container } = renderCompanyStep(
+      { businessType: 'company', clientName: 'Acme' },
+      { structuredAddressForSepa: true },
+    );
+
+    // The i18n mock returns the key itself, so the rendered placeholder IS the key name.
+    expect(container.querySelector('#buildingNumber').placeholder).toBe('buildingNumberEmptyPlaceholder');
+  });
+
+  describe('business sector', () => {
+    it('is not asked of an account that chose it at sign-up', () => {
+      const { container } = renderCompanyStep({ businessType: 'company', clientName: 'Acme' });
+
+      expect(container.querySelector('#sector')).toBeNull();
+      expect(startButton().disabled).toBe(false);
+    });
+
+    it('is required of an account that has none, from the register form list', () => {
+      const { container, onChange } = renderCompanyStep(
+        { businessType: 'company', clientName: 'Acme' }, undefined, true);
+      const select = container.querySelector('#sector');
+
+      expect([...select.options].map((option) => option.value))
+        .toEqual(['', 'industria', 'distribución_logística', 'servicios', 'startups_tecnología', 'otro']);
+      expect(startButton().disabled).toBe(true);
+
+      fireEvent.change(select, { target: { value: 'servicios' } });
+
+      expect(onChange).toHaveBeenCalledWith({ sector: 'servicios' });
+      expect(startButton().disabled).toBe(false);
+    });
+
+    it('drops a draft value from the retired list', () => {
+      const { container } = renderCompanyStep(
+        { businessType: 'company', clientName: 'Acme', sector: 'technology' }, undefined, true);
+
+      expect(container.querySelector('#sector').value).toBe('');
+      expect(startButton().disabled).toBe(true);
+    });
   });
 });

@@ -199,6 +199,9 @@ const FIELD_DECISION_COPY_PROPS = [
   'gridLabelKey',
   'grow',
   'columnWidth',
+  // ETP-5978 — list-modal grid only: the widest a `columnWidth` column may grow to fit its value
+  // (px); past it the cell truncates.
+  'columnMaxWidth',
   'gridReadOnly',
   // ETP-4603 — composite list column. On a "host" grid field, an object that
   // absorbs sibling fields into one column: { subtitle, media: { field, kind,
@@ -208,6 +211,12 @@ const FIELD_DECISION_COPY_PROPS = [
   'multiField',
   'inlineToggle',
   'inlineEdit',
+  // Integer field rendered as NumberStepperInput (− / + inside the box), bounded by the
+  // field's flat `min` / `max`. Honored by EntityForm on every layout.
+  'stepper',
+  // i18n key shown under an integer stepper when a keystroke / paste is refused (a decimal
+  // separator, a sign, too many digits). Absent → the generic `fieldIntegerError`.
+  'stepperRejectedKey',
   'noTrailing',
   // ETP-5245 — sibling field name holding this column's currency, for grids whose
   // rows are not all in the same currency (M_Costing mixes EUR and USD). The
@@ -301,9 +310,9 @@ const FIELD_DECISION_COPY_PROPS = [
   // column's UUID. Filtering needs no suffix. Full rule and worked examples:
   // `docs/decisions-reference.md` in the functional repo.
   'backendSortKey',
-  // ETP-5345 — public API curation: { exposed, name, type, handlerId }. Copied
+  // ETP-5345 — public API curation: { exposed, name, readOnly? }. Copied
   // verbatim so generate-contract.js's mapFieldForContract can stamp it onto
-  // contract.json for the generate-public-api-schema.js resolver to read.
+  // contract.json, where the public API manifest generator reads it.
   'publicApi',
 ];
 

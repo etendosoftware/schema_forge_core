@@ -15,8 +15,6 @@ test('a resolved schema literal matches the PublicApiSchema shape', () => {
             publicApi: true,
             direction: 'out',
             internalPath: 'name',
-            type: 'passthrough',
-            handlerId: null,
           },
         },
       },

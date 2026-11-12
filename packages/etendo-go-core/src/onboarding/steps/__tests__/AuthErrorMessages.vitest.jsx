@@ -57,6 +57,8 @@ vi.mock('../../api.js', async (importOriginal) => {
     registerAccount: vi.fn(),
     loginAccount: vi.fn(),
     loginWithSsoProvider: vi.fn(),
+    // ETP-6081: the register screen loads the terms in force; no version keeps the payloads as before.
+    fetchTermsAndConditions: vi.fn(async () => ({ content: '' })),
     requestPasswordReset: vi.fn(),
     confirmPasswordReset: vi.fn(),
     fetchAccount: vi.fn(),
@@ -126,7 +128,6 @@ async function driveRegisterFailure(container, err) {
   api.registerAccount.mockRejectedValueOnce(err);
   typeInto(container, '#reg-name', 'Ada Lovelace');
   typeInto(container, '#reg-email', VALID_EMAIL);
-  typeInto(container, '#reg-password', STRONG_PASSWORD);
   submit(container, 'action-register-submit');
   await waitFor(() => expect(api.registerAccount).toHaveBeenCalledTimes(1));
 }
@@ -248,6 +249,19 @@ describe('the register screen resolves the failure by code (ETP-4664 / ETP-4665)
   });
 });
 
+describe('the login hint for an account created without a password (ETP-6081)', () => {
+  it('opens the same flow as forgot password, which lets that account create one', () => {
+    const { container } = renderLoginStep();
+    typeInto(container, '#login-email', VALID_EMAIL);
+
+    expect(screen.getByTestId('login-no-password-hint').textContent).toContain('onboardingNoPasswordHintPrefix');
+    fireEvent.click(screen.getByTestId('login-no-password-action'));
+
+    expect(screen.getByTestId('action-forgot-password-submit')).toBeTruthy();
+    expect(container.querySelector('#forgot-email').value).toBe(VALID_EMAIL);
+  });
+});
+
 describe('the forgot-password view resolves through resolveAuthErrorMessage (ETP-5258)', () => {
   async function openForgotView(container, err) {
     api.requestPasswordReset.mockRejectedValueOnce(err);
@@ -341,7 +355,8 @@ describe('the reset-password view resolves through resolveAuthErrorMessage (ETP-
 
 describe('every new-password screen shares the strength checklist (ETP-5258)', () => {
   it('shows the register checklist as the user types, and gates the register submit on it', () => {
-    const { container } = renderRegisterStep();
+    // ETP-6081: only a register screen that asks for a password (an invitation) has the checklist.
+    const { container } = renderRegisterStep({ askPassword: true });
     const submitButton = screen.getByTestId('action-register-submit');
 
     // Nothing typed yet: the checklist is not even present.
@@ -354,6 +369,7 @@ describe('every new-password screen shares the strength checklist (ETP-5258)', (
     expect(submitButton.disabled).toBe(true);
 
     typeInto(container, '#reg-password', STRONG_PASSWORD);
+    typeInto(container, '#reg-sector', 'servicios');
     ['minLength', 'uppercase', 'lowercase', 'number', 'special'].forEach((rule) => {
       expect(screen.getByTestId(`register-password-rule-${rule}`).dataset.met).toBe('true');
     });

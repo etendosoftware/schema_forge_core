@@ -3,6 +3,7 @@ import { readFileSync, writeFileSync, mkdirSync, readdirSync, existsSync } from 
 import { resolve, dirname } from 'node:path';
 import { exitOnHelp, isMainModule } from './utils.js';
 import { MARKERS } from './custom-section-markers.js';
+import { parseExpression } from '@babel/parser';
 import { convertLogicToJs } from './generate-contract.js';
 import { resolveEnumLabelKey } from './enum-label-key.js';
 
@@ -771,7 +772,10 @@ export function generateFormComponent(entityName, contract) {
     // ETP-4749: fixed chip rendered before the input (e.g. "https://"); see EntityForm's
     // renderInputField and recipientEdits.js's format validators.
     const inputPrefixPart = wrapIf(", inputPrefix: '", f.inputPrefix, "'");
-    const fieldLine = `  { key: '${f.name}', column: '${f.column}', type: '${type}'${labelsPart}${formLabelPart}${requiredPart}${lookupPart}${popupPart}${readOnlyPart}${inlinePart}${sectionPart}${referencePart}${inputModePart}${searchSelectPart}${allowCreatePart}${createPart}${dependsOnPart}${optionsPart}${valueTypePart}${defaultValuePart}${helpPart}${placeholderPart}${emptyOptionPart}${fieldGroupPart}${precisionPart}${minPart}${maxLengthPart}${integerPart}${displayLogicPart}${readOnlyLogicPart}${spanPart}${rowsPart}${clearablePart}${customRendererPart}${editModalPart}${inputPrefixPart} },`;
+    // ETP-5684: the same capability gate the list columns carry (ETP-4520); EntityForm hides the
+    // field when the role lacks it. Emitted only when declared, so other forms stay byte-for-byte.
+    const visibleWhenCapabilityPart = quotedProp('visibleWhenCapability', f.visibleWhenCapability);
+    const fieldLine = `  { key: '${f.name}', column: '${f.column}', type: '${type}'${labelsPart}${formLabelPart}${requiredPart}${lookupPart}${popupPart}${readOnlyPart}${inlinePart}${sectionPart}${referencePart}${inputModePart}${searchSelectPart}${allowCreatePart}${createPart}${dependsOnPart}${optionsPart}${valueTypePart}${defaultValuePart}${helpPart}${placeholderPart}${emptyOptionPart}${fieldGroupPart}${precisionPart}${minPart}${maxLengthPart}${integerPart}${displayLogicPart}${readOnlyLogicPart}${spanPart}${rowsPart}${clearablePart}${customRendererPart}${editModalPart}${inputPrefixPart}${visibleWhenCapabilityPart} },`;
     return [...slotLines, fieldLine].join('\n');
   }).join('\n');
 
@@ -1155,8 +1159,7 @@ export function getMenuActionsProp(menuActionsConfig, menuActionsFnParams) {
       }
       const labelKeyPart = a.labelKey ? `labelKey: '${a.labelKey}', ` : '';
       const successPart = getSuccessPart(a);
-      const preUnpostPart = a.preUnpost ? `preUnpost: true, ` : '';
-      return `          { key: '${a.key}', label: '${a.label}', ${destr}${vis}${labelKeyPart}${successPart}${preUnpostPart}${handler} }`;
+      return `          { key: '${a.key}', label: '${a.label}', ${destr}${vis}${labelKeyPart}${successPart}${handler} }`;
     }).join(',\n')}\n        ]}`;
   } else {
     menuActionsProp = '';
@@ -1648,7 +1651,18 @@ function buildListModalColumns(entity) {
     // ETP-5382 — same sort-key override as the standard DataTable columns, appended
     // right after backendFilterKey for the same byte-identity reason as above.
     const backendSortKeyPart = quotedProp('backendSortKey', f.backendSortKey);
-    return `  { key: '${f.name}', column: '${f.column}', type: '${type}'${labelPart}${labelKeyPart}${enumLabelsPart}${enumVariantsPart}${togglePart}${inlineEditPart}${badgePart}${displayPart}${cellTypePart}${subFieldPart}${subEmptyKeyPart}${kindFieldPart}${patternFieldPart}${kindLabelsPart}${tonesPart}${visibleWhenCapabilityPart}${filterModePart}${backendFilterKeyPart}${backendSortKeyPart} },`;
+    // ETP-5978 — boolean badge wording/colour and per-locale header labels, same shape as the
+    // standard DataTable columns. Appended at the tail so windows declaring none stay
+    // byte-identical.
+    const labelsPart = jsonWrapIf(', labels: ', f.labels);
+    const badgeLabelsPart = jsonWrapIf(', badgeLabels: ', f.badgeLabels);
+    const badgeVariantsPart = jsonWrapIf(', badgeVariants: ', f.badgeVariants);
+    // Fixed column width (`columnWidth`, emitted as `minWidth` like the standard DataTable
+    // literal) and its growth cap (`columnMaxWidth` → `maxWidth`). ListModalWindow gives a grid
+    // with widths an empty spacer column, so no data column stretches.
+    const minWidthPart = optProp('minWidth', f.columnWidth ?? undefined);
+    const maxWidthPart = optProp('maxWidth', f.columnMaxWidth ?? undefined);
+    return `  { key: '${f.name}', column: '${f.column}', type: '${type}'${labelPart}${labelKeyPart}${enumLabelsPart}${enumVariantsPart}${togglePart}${inlineEditPart}${badgePart}${displayPart}${cellTypePart}${subFieldPart}${subEmptyKeyPart}${kindFieldPart}${patternFieldPart}${kindLabelsPart}${tonesPart}${visibleWhenCapabilityPart}${filterModePart}${backendFilterKeyPart}${backendSortKeyPart}${labelsPart}${badgeLabelsPart}${badgeVariantsPart}${minWidthPart}${maxWidthPart} },`;
   }).join('\n');
 }
 
@@ -1702,7 +1716,16 @@ function buildListModalFields(formFields) {
     // modal body too (in place), instead of a plain checkbox.
     const togglePart = (type === 'checkbox' && (f.cellType === 'toggle' || f.inlineToggle))
       ? ', toggle: true' : '';
-    return `  { key: '${f.name}', column: '${f.column}', type: '${type}'${labelPart}${requiredPart}${lookupPart}${popupPart}${referencePart}${inputModePart}${searchSelectPart}${allowCreatePart}${createPart}${sectionPart}${optionsPart}${valueTypePart}${defaultValuePart}${helpPart}${placeholderPart}${emptyOptionPart}${spanPart}${rowsPart}${togglePart} },`;
+    // ETP-5978 — numeric bounds (read by getNumericFieldError / clampNumericFieldMax and the
+    // stepper buttons) and the stepper opt-in. Tail-appended: absent ⇒ byte-identical output.
+    const minPart = optProp('min', f.min);
+    const maxPart = optProp('max', f.max);
+    const integerPart = fragmentIf(f.integer === true, ', integer: true');
+    const stepperPart = fragmentIf(f.stepper, ', stepper: true');
+    const stepperRejectedKeyPart = quotedProp('stepperRejectedKey', f.stepperRejectedKey);
+    // Same DB-derived client hard stop the standard form emits (ETP-5323): text / textarea only.
+    const maxLengthPart = buildFormMaxLengthPart(type, f);
+    return `  { key: '${f.name}', column: '${f.column}', type: '${type}'${labelPart}${requiredPart}${lookupPart}${popupPart}${referencePart}${inputModePart}${searchSelectPart}${allowCreatePart}${createPart}${sectionPart}${optionsPart}${valueTypePart}${defaultValuePart}${helpPart}${placeholderPart}${emptyOptionPart}${spanPart}${rowsPart}${togglePart}${minPart}${maxPart}${integerPart}${stepperPart}${maxLengthPart}${stepperRejectedKeyPart} },`;
   }).join('\n');
 }
 
@@ -1715,6 +1738,15 @@ function buildListModalFields(formFields) {
  * CRUD endpoint and the i18n title/banner — so the same template serves any
  * catalog/master-data window that opts in.
  */
+// ETP-5978 — list-modal templateConfig keys passed through only when the window declares them.
+const LIST_MODAL_OPT_IN_KEYS = ['modalVariant', 'hideBackButton', 'hideSearch', 'newButtonVariant', 'rowClickEdit', 'listVariant'];
+
+function pickDefined(source, keys) {
+  const out = {};
+  for (const key of keys) if (source[key] !== undefined) out[key] = source[key];
+  return out;
+}
+
 export function generateListModalPage(headerEntity, contract) {
   const headerName = toJsIdentifier(headerEntity);
   const compName = `${headerName}Page`;
@@ -1801,6 +1833,10 @@ export function generateListModalPage(headerEntity, contract) {
     backLabelKey: tc.backLabelKey ?? null,
     backTo: tc.backTo ?? null,
     toolbarFilters: tc.toolbarFilters ?? [],
+    // ETP-5978 — opt-in look keys, emitted ONLY when declared so every existing list-modal
+    // page stays byte-identical: modalVariant ("compact"), hideBackButton, hideSearch,
+    // newButtonVariant ("primary"), rowClickEdit, listVariant ("compact").
+    ...pickDefined(tc, LIST_MODAL_OPT_IN_KEYS),
   }, null, 2);
 
   return `${reactImportLine}import { ListModalWindow } from '@/components/contract-ui';${windowAccessImport}
@@ -2011,9 +2047,52 @@ export function resolveSecondaryTabDefs(secondaryTabsDecl, contract, headerEntit
       const readOnlyLogicJs = cfg.readOnlyLogic
         ? convertLogicToJs(cfg.readOnlyLogic, headerColumnMap, headerBooleanFields)
         : null;
-      return { key, label: cfg.label ?? toLabel(key), isFormTab, isPanelTab, isCustomForm: !!cfg.customForm, isCustomTable: !!cfg.customTable, PanelName, FormName, TableName, addLineEntries, requireSavedRecord, maxDetailLines, isCustomAddModal: !!customAddModalName, CustomAddModalName: customAddModalName, readOnlyLogicJs, tabOrder: cfg.tabOrder, labelKey: cfg.labelKey ?? null, addLineLabelKey: cfg.addLineLabelKey ?? null, visibleWhenCapability: cfg.visibleWhenCapability ?? null };
+      const visibleWhenJs = cfg.visibleWhenLogic
+        ? compileVisibleWhenLogic(cfg.visibleWhenLogic, headerColumnMap, headerBooleanFields,
+          `${contract.frontendContract?.window?.name ?? headerEntity} / secondaryTabs.${key}`)
+        : null;
+      return { key, label: cfg.label ?? toLabel(key), isFormTab, isPanelTab, isCustomForm: !!cfg.customForm, isCustomTable: !!cfg.customTable, PanelName, FormName, TableName, addLineEntries, requireSavedRecord, maxDetailLines, isCustomAddModal: !!customAddModalName, CustomAddModalName: customAddModalName, readOnlyLogicJs, tabOrder: cfg.tabOrder, labelKey: cfg.labelKey ?? null, addLineLabelKey: cfg.addLineLabelKey ?? null, visibleWhenCapability: cfg.visibleWhenCapability ?? null, visibleWhenJs };
     });
 }
+
+/**
+ * Compile `secondaryTabs.<key>.visibleWhenLogic` (AD-style logic, `@#Name@` = context var)
+ * into a JS expression over `(record, ctx)`. Strict on purpose, unlike readOnlyLogic: any
+ * unresolved token, unknown column or unparsable result throws, naming window + tab, so a
+ * typo can never silently degrade into a camelCase guess. Each distinct context variable is
+ * guarded with `ctx['X'] != null &&` so the tab stays HIDDEN until the value has loaded.
+ */
+function compileVisibleWhenLogic(raw, columnMap, booleanFields, where) {
+  const fail = (msg) => { throw new Error(`visibleWhenLogic (${where}): ${msg} — "${raw}"`); };
+  // Literals are copied verbatim into generated JS: a backslash or a control char (newline,
+  // U+2028/U+2029, ...) can merge two literals and still parse, so reject them anywhere.
+  for (const ch of String(raw)) {
+    const c = ch.codePointAt(0);
+    if (ch === '\\' || c <= 0x1f || (c >= 0x7f && c <= 0x9f) || c === 0x2028 || c === 0x2029) {
+      fail('illegal character ' + JSON.stringify(ch) + ' (backslashes and control characters are not allowed)');
+    }
+  }
+  for (const [, tok] of String(raw).matchAll(/@(\w+)@/g)) {
+    if (!Object.prototype.hasOwnProperty.call(columnMap ?? {}, tok)) {
+      fail(`column '${tok}' is not a field of the header entity`);
+    }
+  }
+  let js = convertLogicToJs(String(raw), columnMap, booleanFields, { contextVars: true });
+  if (js.includes('@')) fail(`unsupported or unresolved token in compiled output '${js}'`);
+  const ctxNames = [...new Set([...String(raw).matchAll(/@#(\w+)@/g)].map(m => m[1]))];
+  if (ctxNames.length > 0) {
+    const guards = ctxNames.map(n => "ctx['" + n + "'] != null").join(' && ');
+    js = `${guards} && (${js})`;
+  }
+  try {
+    // Syntax check only — parse, never execute. A trailing token or statement is an error.
+    parseExpression(js);
+  } catch (e) {
+    fail(`compiled output is not valid JS (${e.message}): ${js}`);
+  }
+  return js;
+}
+
 
 function buildDetailTableAndFormProps(detailEntity, customLinesComp, hideDetailForm, detailName) {
   if (!detailEntity || customLinesComp) return '';
@@ -2081,18 +2160,24 @@ export function buildSecondaryTabPropEntry(t) {
   const visibleWhenCapabilityPart = t.visibleWhenCapability
     ? `, visibleWhenCapability: '${String(t.visibleWhenCapability).replace(/'/g, "\\'")}'`
     : '';
+  // `secondaryTabs.<key>.visibleWhenLogic` is the data-driven sibling of visibleWhenCapability:
+  // an AD-style logic string (`@Col@` = record field, `@#Name@` = context variable) compiled
+  // by compileVisibleWhenLogic into `visibleWhen: (record, ctx) => boolean`.
+  // visibleWhenLogic — AD-style logic compiled to `(record, ctx) => boolean` (see
+  // compileVisibleWhenLogic). Evaluated at runtime; absent => nothing emitted.
+  const visibleWhenPart = t.visibleWhenJs ? `, visibleWhen: (record, ctx) => ${t.visibleWhenJs}` : '';
   if (t.isFormTab) {
-    return `          { key: '${t.key}', label: '${t.label}', isFormTab: true, Form: ${t.FormName}${requireSavedPart}${readOnlyLogicPart}${tabOrderPart}${labelKeyPart}${visibleWhenCapabilityPart} },`;
+    return `          { key: '${t.key}', label: '${t.label}', isFormTab: true, Form: ${t.FormName}${requireSavedPart}${readOnlyLogicPart}${tabOrderPart}${labelKeyPart}${visibleWhenCapabilityPart}${visibleWhenPart} },`;
   }
   if (t.isPanelTab) {
-    return `          { key: '${t.key}', label: '${t.label}', Panel: ${t.PanelName}${requireSavedPart}${readOnlyLogicPart}${tabOrderPart}${labelKeyPart}${visibleWhenCapabilityPart} },`;
+    return `          { key: '${t.key}', label: '${t.label}', Panel: ${t.PanelName}${requireSavedPart}${readOnlyLogicPart}${tabOrderPart}${labelKeyPart}${visibleWhenCapabilityPart}${visibleWhenPart} },`;
   }
   const addLinePart = t.addLineEntries.length > 0
     ? `, addLineFields: { entry: [\n${t.addLineEntries.join(',\n')},\n          ], derived: [], hidden: [] }`
     : '';
   const customAddModalPart = wrapIf(', customAddModal: ', t.CustomAddModalName);
   const formProp = (t.isCustomAddModal && !t.isCustomForm) ? '' : `, Form: ${t.FormName}`;
-  return `          { key: '${t.key}', label: '${t.label}', Table: ${t.TableName}${formProp}${addLinePart}${customAddModalPart}${requireSavedPart}${readOnlyLogicPart}${maxDetailLinesPart}${tabOrderPart}${labelKeyPart}${addLineLabelKeyPart}${visibleWhenCapabilityPart} },`;
+  return `          { key: '${t.key}', label: '${t.label}', Table: ${t.TableName}${formProp}${addLinePart}${customAddModalPart}${requireSavedPart}${readOnlyLogicPart}${maxDetailLinesPart}${tabOrderPart}${labelKeyPart}${addLineLabelKeyPart}${visibleWhenCapabilityPart}${visibleWhenPart} },`;
 }
 
 function buildDetailProcessesForPage(detailEntity, contract, processOverrides) {

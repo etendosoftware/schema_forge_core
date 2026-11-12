@@ -25,7 +25,7 @@ vi.mock('../../auth/index.js', () => ({
   useAuth: mockUseAuth,
 }));
 
-import { CurrencyProvider, useCurrency } from '../useCurrency.jsx';
+import { CurrencyProvider, useCurrency, useCurrencyId } from '../useCurrency.jsx';
 
 function renderCurrency(props) {
   return renderHook(() => useCurrency(), {
@@ -177,5 +177,69 @@ describe('useCurrency', () => {
     // surface as a test failure) — the cancelled flag inside the effect
     // guards the setState call.
     expect(result.current).toBeNull();
+  });
+});
+
+describe('useCurrencyId', () => {
+  beforeEach(() => {
+    vi.restoreAllMocks();
+    mockUseAuth.mockReturnValue({ isAuthenticated: true, selectedOrg: { id: 'org-1' } });
+  });
+
+  const renderId = (props) => renderHook(() => ({ id: useCurrencyId(), code: useCurrency() }), {
+    wrapper: ({ children }) => <CurrencyProvider {...props}>{children}</CurrencyProvider>,
+  });
+
+  it('resolves the id from the session response alongside the code', async () => {
+    const fetcher = vi.fn().mockResolvedValue({
+      ok: true,
+      json: () => Promise.resolve({ currencyCode: 'EUR', currencyId: '102' }),
+    });
+    const { result } = renderId({ apiBaseUrl: '/sws/neo', fetcher });
+
+    await waitFor(() => {
+      expect(result.current.id).toBe('102');
+    });
+    expect(result.current.code).toBe('EUR');
+  });
+
+  it('is null while the session request is still pending', () => {
+    const fetcher = vi.fn().mockImplementation(() => new Promise(() => {}));
+    const { result } = renderId({ apiBaseUrl: '/sws/neo', fetcher });
+    expect(result.current.id).toBeNull();
+  });
+
+  it('stays null when the response has no currencyId (code still resolves)', async () => {
+    const fetcher = vi.fn().mockResolvedValue({
+      ok: true,
+      json: () => Promise.resolve({ currencyCode: 'EUR' }),
+    });
+    const { result } = renderId({ apiBaseUrl: '/sws/neo', fetcher });
+
+    await waitFor(() => {
+      expect(result.current.code).toBe('EUR');
+    });
+    expect(result.current.id).toBeNull();
+  });
+
+  it('stays null when the fetch fails or rejects', async () => {
+    const fetcher = vi.fn().mockRejectedValue(new Error('Network error'));
+    const { result } = renderId({ apiBaseUrl: '/sws/neo', fetcher });
+
+    await waitFor(() => {
+      expect(fetcher).toHaveBeenCalled();
+    });
+    expect(result.current.id).toBeNull();
+  });
+
+  it('stays null with the value override and never fetches', async () => {
+    const fetcher = vi.fn();
+    const { result } = renderId({ value: 'EUR', apiBaseUrl: '/sws/neo', fetcher });
+
+    await waitFor(() => {
+      expect(result.current.code).toBe('EUR');
+    });
+    expect(result.current.id).toBeNull();
+    expect(fetcher).not.toHaveBeenCalled();
   });
 });
