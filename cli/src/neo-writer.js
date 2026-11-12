@@ -359,18 +359,25 @@ export async function upsertField(client, params) {
   const gridSeqNo = params.gridSeqNo ?? null;
 
   const fieldId = generateId();
+  // ETP-6148 — PROPERTY_PATH is only named when the row has one, so a push of plain column
+  // fields keeps working against a database whose ETGO_SF_FIELD predates that column.
+  const propertyPath = params.propertyPath ?? null;
+  const pathColumn = propertyPath ? ', property_path' : '';
+  const pathPlaceholder = propertyPath ? ', $21' : '';
+  const values = [fieldId, entityId, columnId, moduleId,
+    isIncluded, isReadOnly, isBusinessCritical, defaultValue, javaQualifier, seqNo,
+    auditVals.ad_client_id, auditVals.ad_org_id, auditVals.isactive,
+    auditVals.created, auditVals.createdby, auditVals.updated, auditVals.updatedby,
+    agentPrompt, visibility, gridSeqNo];
+  if (propertyPath) values.push(propertyPath);
   await client.query(
     `INSERT INTO etgo_sf_field
      (etgo_sf_field_id, etgo_sf_entity_id, ad_column_id, ad_module_id,
       isincluded, isreadonly, isbusinesscritical, defaultvalue, java_qualifier, seqno,
       ad_client_id, ad_org_id, isactive, created, createdby, updated, updatedby,
-      agent_prompt, visibility, grid_seqno)
-     VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20)`,
-    [fieldId, entityId, columnId, moduleId,
-     isIncluded, isReadOnly, isBusinessCritical, defaultValue, javaQualifier, seqNo,
-     auditVals.ad_client_id, auditVals.ad_org_id, auditVals.isactive,
-     auditVals.created, auditVals.createdby, auditVals.updated, auditVals.updatedby,
-     agentPrompt, visibility, gridSeqNo],
+      agent_prompt, visibility, grid_seqno${pathColumn})
+     VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20${pathPlaceholder})`,
+    values,
   );
   return { fieldId, created: true };
 }

@@ -119,7 +119,10 @@ export function coalesceDuplicateColumnFields(fields) {
   const winners = new Map();
   const groups = new Map();
   for (const f of fields) {
-    const key = `${f.entityName}\u0000${f.column}`;
+    // ETP-6148 — a property-path field has no AD column of its own: its identity is the path.
+    const key = f.propertyPath
+      ? `${f.entityName}\u0000path:${f.propertyPath}`
+      : `${f.entityName}\u0000${f.column}`;
     if (!groups.has(key)) groups.set(key, []);
     groups.get(key).push(f);
     const current = winners.get(key);

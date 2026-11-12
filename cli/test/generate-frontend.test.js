@@ -20,6 +20,8 @@ import {
   buildHeaderLogicMaps,
   buildProcessesArray,
 } from '../src/generate-frontend.js';
+import { generateContract } from '../src/generate-contract.js';
+import { resolveCurated } from '../src/resolve-curated.js';
 
 // ---------------------------------------------------------------------------
 // Fixtures
@@ -1436,6 +1438,92 @@ describe('generateFormComponent - numeric constraints (min/integer)', () => {
     assert.ok(!line.includes('integer:'), 'plain field must not gain an integer prop');
     // type stays 'number' (validator reads min/integer, not type)
     assert.ok(line.includes("type: 'number'"));
+  });
+});
+
+// ---------------------------------------------------------------------------
+// minDate on date fields — header/line form literal and add-line entry
+// ---------------------------------------------------------------------------
+
+describe('generateFormComponent / generatePageComponent - minDate on date fields', () => {
+  const headerDate = (extra = {}) => ({
+    name: 'dueDate', column: 'Duedate', type: 'date', tsType: 'string',
+    visibility: 'editable', required: false, grid: true, form: true, ...extra,
+  });
+  const lineDate = (extra = {}) => ({
+    name: 'deliveryDate', column: 'DatePromised', type: 'date', tsType: 'string',
+    visibility: 'editable', required: false, grid: true, form: true, ...extra,
+  });
+  /** masterDetailContract with a date field on the header and on the lines. */
+  const withDates = (headerExtra, lineExtra) => {
+    const { entities } = masterDetailContract.frontendContract;
+    return {
+      ...masterDetailContract,
+      frontendContract: {
+        ...masterDetailContract.frontendContract,
+        entities: {
+          order: { ...entities.order, fields: [...entities.order.fields, headerDate(headerExtra)] },
+          orderLine: { ...entities.orderLine, fields: [...entities.orderLine.fields, lineDate(lineExtra)] },
+        },
+      },
+    };
+  };
+  const lineOf = (code, key) => code.split('\n').find(l => l.includes(`key: '${key}'`));
+  const entryArray = (code) => {
+    const m = code.match(/entry: \[([\s\S]*?)\]/);
+    assert.ok(m, 'addLineFields entry array not found');
+    return m[1];
+  };
+
+  it('emits minDate quoted, at the tail of the header form field line', () => {
+    const code = generateFormComponent('order', withDates({ minDate: 'today' }, {}));
+    assert.match(lineOf(code, 'dueDate'), /, minDate: 'today' \},$/);
+  });
+
+  it('emits a fixed YYYY-MM-DD minDate quoted on the header form field', () => {
+    const code = generateFormComponent('order', withDates({ minDate: '2026-12-01' }, {}));
+    assert.match(lineOf(code, 'dueDate'), /, minDate: '2026-12-01' \},$/);
+  });
+
+  it('emits minDate on the line form field', () => {
+    const code = generateFormComponent('orderLine', withDates({}, { minDate: 'today' }));
+    assert.match(lineOf(code, 'deliveryDate'), /, minDate: 'today' \},$/);
+  });
+
+  it('emits minDate on the add-line entry', () => {
+    const code = generatePageComponent('order', 'orderLine', withDates({}, { minDate: 'today' }));
+    assert.match(entryArray(code), /key: 'deliveryDate'[^}]*, minDate: 'today' \},/);
+  });
+
+  it('emits no minDate anywhere when no field declares it', () => {
+    const contract = withDates({}, {});
+    assert.doesNotMatch(generateFormComponent('order', contract), /minDate/);
+    assert.doesNotMatch(generateFormComponent('orderLine', contract), /minDate/);
+    assert.doesNotMatch(generatePageComponent('order', 'orderLine', contract), /minDate/);
+  });
+
+  it('a declared minDate changes only its own fragment: the rest of the output is byte-identical', () => {
+    const plain = withDates({}, {});
+    const bounded = withDates({ minDate: 'today' }, { minDate: 'today' });
+    const strip = (code) => code.replaceAll(", minDate: 'today'", '');
+    for (const gen of [
+      (c) => generateFormComponent('order', c),
+      (c) => generateFormComponent('orderLine', c),
+      (c) => generatePageComponent('order', 'orderLine', c),
+    ]) {
+      const withIt = gen(bounded);
+      assert.notEqual(withIt, gen(plain));
+      assert.equal(strip(withIt), gen(plain));
+    }
+  });
+
+  it('fields without minDate keep their pre-existing lines when a sibling declares it', () => {
+    const before = generateFormComponent('order', masterDetailContract);
+    const after = generateFormComponent('order', withDates({ minDate: 'today' }, {}));
+    for (const f of masterDetailContract.frontendContract.entities.order.fields.filter(x => x.form && x.visibility !== 'system')) {
+      const prev = lineOf(before, f.name);
+      if (prev) assert.equal(lineOf(after, f.name), prev, f.name);
+    }
   });
 });
 
@@ -3084,5 +3172,256 @@ describe('generatePageComponent — window.detailVisibleWhenCapability', () => {
   it('emits no prop when not declared', () => {
     const code = generatePageComponent('order', 'orderLine', masterDetailContract);
     assert.doesNotMatch(code, /detailVisibleWhenCapability/);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// propertyPath fields — generated as plain read-only fields
+// ---------------------------------------------------------------------------
+
+describe('generateAll — propertyPath fields', () => {
+  const DOCNO_PATH = 'paymentScheduleDetail.invoicePaymentSchedule.invoice.documentNo';
+  const schemaRaw = {
+    window: { id: '700', name: 'Remittance' },
+    entities: [
+      { name: 'remittance', tableName: 'REM_Remittance', tabId: 'T1', level: 'header',
+        fields: [{ name: 'documentNo', columnName: 'DocumentNo', label: 'Document No', type: 'string', visibility: 'editable', mandatory: true }] },
+      { name: 'lines', tableName: 'REM_Line', tabId: 'T2', level: 'line',
+        fields: [{ name: 'amount', columnName: 'Amount', label: 'Amount', type: 'amount', visibility: 'editable', mandatory: true }] },
+    ],
+  };
+  const decisionsWith = (invoiceDocumentNo) => ({
+    version: 2, window: { name: 'Remittance' }, rules: {},
+    entities: { lines: { fields: { invoiceDocumentNo } } },
+  });
+
+  async function filesFor(decisions) {
+    const { schema, rules } = await resolveCurated(structuredClone(schemaRaw), { rules: [] }, decisions);
+    const contract = generateContract(schema, rules, []);
+    return { contract, files: generateAll(contract) };
+  }
+
+  // A decisions-only field with no propertyPath is not synthesized, so the plain twin is declared
+  // as a raw field instead: same key, column, label, type and read-only visibility.
+  async function plainTwinFiles() {
+    const raw = structuredClone(schemaRaw);
+    raw.entities[1].fields.push({ name: 'invoiceDocumentNo', columnName: 'DocumentNo', label: 'Invoice',
+      type: 'string', visibility: 'readOnly', mandatory: false });
+    const { schema, rules } = await resolveCurated(raw, { rules: [] }, decisionsWith({ visibility: 'readOnly', grid: true }));
+    return generateAll(generateContract(schema, rules, []));
+  }
+
+  it('emits the path field in the generated output', async () => {
+    const { contract, files } = await filesFor(decisionsWith({ propertyPath: DOCNO_PATH, column: 'DocumentNo', label: 'Invoice', grid: true }));
+    const be = contract.backendContract.entities.lines.fields.find(f => f.name === 'invoiceDocumentNo');
+    assert.equal(be.propertyPath, DOCNO_PATH, 'precondition: the contract carries the path');
+    assert.match(files['LinesTable.jsx'], /invoiceDocumentNo/);
+  });
+
+  it('generates byte-identical files to a plain read-only field with the same key', async () => {
+    const { files } = await filesFor(decisionsWith({ propertyPath: DOCNO_PATH, column: 'DocumentNo', label: 'Invoice', grid: true }));
+    assert.deepEqual(files, await plainTwinFiles());
+  });
+
+  it('never writes the path into generated JSX', async () => {
+    const { files } = await filesFor(decisionsWith({ propertyPath: DOCNO_PATH, column: 'DocumentNo', grid: true }));
+    for (const [name, content] of Object.entries(files)) {
+      assert.ok(!content.includes(DOCNO_PATH), `${name} must not mention the DAL path`);
+      assert.ok(!content.includes('propertyPath'), `${name} must not mention propertyPath`);
+    }
+  });
+});
+
+// ---------------------------------------------------------------------------
+// window.hideDetailForm — row click opens no line form
+// ---------------------------------------------------------------------------
+
+describe('generatePageComponent — hideDetailForm', () => {
+  const withWindow = (extra) => ({
+    ...masterDetailContract,
+    frontendContract: {
+      ...masterDetailContract.frontendContract,
+      window: { ...masterDetailContract.frontendContract.window, ...extra },
+    },
+  });
+
+  it('passes DetailForm to DetailView by default', () => {
+    const code = generatePageComponent('order', 'orderLine', masterDetailContract);
+    assert.match(code, /DetailTable=\{OrderLineTable\}\s*DetailForm=\{OrderLineForm\}/);
+  });
+
+  it('omits DetailForm but keeps DetailTable when hideDetailForm is true', () => {
+    const code = generatePageComponent('order', 'orderLine', withWindow({ hideDetailForm: true }));
+    assert.match(code, /DetailTable=\{OrderLineTable\}/);
+    assert.doesNotMatch(code, /DetailForm=/);
+  });
+
+  it('treats hideDetailForm: false like the default', () => {
+    assert.equal(
+      generatePageComponent('order', 'orderLine', withWindow({ hideDetailForm: false })),
+      generatePageComponent('order', 'orderLine', masterDetailContract),
+    );
+  });
+});
+
+describe('generateAll — property-path fields carry no write semantics', () => {
+  // payment.status: NOT NULL with an RPAP default on its anchor column. As a plain writable line
+  // field it is an add-line entry with that default and a required column; once its decision opts
+  // in with propertyPath it must be neither.
+  const schemaRaw = {
+    window: { id: '700', name: 'Remittance' },
+    entities: [
+      { name: 'remittance', tableName: 'REM_Remittance', tabId: 'T1', level: 'header',
+        fields: [{ name: 'documentNo', columnName: 'DocumentNo', label: 'Document No', type: 'string', visibility: 'editable', mandatory: true }] },
+      { name: 'lines', tableName: 'REM_Line', tabId: 'T2', level: 'line',
+        fields: [
+          { name: 'amount', columnName: 'Amount', label: 'Amount', type: 'amount', visibility: 'editable', mandatory: true },
+          { name: 'status', apiKey: 'status', columnName: 'Status', label: 'Status', type: 'enum', visibility: 'editable',
+            mandatory: true, defaultValue: 'RPAP', adPropertyPath: 'payment.status' },
+        ] },
+    ],
+  };
+  async function filesFor(statusDecision) {
+    const decisions = { version: 2, window: { name: 'Remittance' }, rules: {}, entities: { lines: { fields: { status: statusDecision } } } };
+    const { schema, rules } = await resolveCurated(structuredClone(schemaRaw), { rules: [] }, decisions);
+    return generateAll(generateContract(schema, rules, []));
+  }
+  const addLineBlock = (page, part) => page.match(new RegExp(`addLineFields = \\{[\\s\\S]*?\\n {2}${part}: \\[([\\s\\S]*?)\\n {2}\\],`))[1];
+  const statusLine = (block) => block.split('\n').find((l) => l.includes("key: 'status'"));
+  const statusColumn = (table) => table.split('\n').find((l) => l.includes("key: 'status'"));
+
+  it('without the opt-in, the field is an add-line entry with its default and a required column', async () => {
+    const files = await filesFor({ visibility: 'editable', grid: true });
+    const entry = statusLine(addLineBlock(files['RemittancePage.jsx'], 'entry'));
+    assert.ok(entry, 'status is an add-line entry');
+    assert.match(entry, /defaultValue: 'RPAP'/);
+    assert.match(entry, /required: true/);
+    assert.match(statusColumn(files['LinesTable.jsx']), /required: true/);
+  });
+
+  it('opted in, the path field is in neither addLineFields.entry nor .hidden, and its column is not required', async () => {
+    const files = await filesFor({ propertyPath: 'payment.status', visibility: 'readOnly', grid: true });
+    const page = files['RemittancePage.jsx'];
+    assert.equal(statusLine(addLineBlock(page, 'entry')), undefined);
+    assert.equal(statusLine(addLineBlock(page, 'hidden')), undefined);
+    assert.ok(statusColumn(files['LinesTable.jsx']), 'the path field is a grid column');
+    assert.doesNotMatch(statusColumn(files['LinesTable.jsx']), /required: true/);
+  });
+});
+
+describe('generateTableComponent — column link and rowEditDisabled', () => {
+  const LINK = { idField: 'invoice', window: 'sales-invoice' };
+  const contractWith = ({ link, rowEdit } = {}) => {
+    const c = structuredClone(masterDetailContract);
+    const lines = c.frontendContract.entities.orderLine;
+    if (rowEdit !== undefined) lines.rowEdit = rowEdit;
+    if (link) lines.fields.find(f => f.name === 'product').link = link;
+    return c;
+  };
+  const productColumn = (code) => code.split('\n').find(l => l.includes("key: 'product'"));
+
+  it('appends the link at the tail of the column literal', () => {
+    const line = productColumn(generateTableComponent('orderLine', contractWith({ link: LINK })));
+    assert.match(line, /, link: \{"idField":"invoice","window":"sales-invoice"\} \},$/);
+  });
+
+  it('emits a per-row window link as JSON', () => {
+    const link = { idField: 'invoice', window: { field: 'invoiceSalesTransaction', values: { true: 'sales-invoice', false: 'purchase-invoice' } } };
+    const line = productColumn(generateTableComponent('orderLine', contractWith({ link })));
+    assert.ok(line.includes(`link: ${JSON.stringify(link)}`), line);
+  });
+
+  it('passes rowEditDisabled to both InlineLinesPanel renders when rowEdit is false', () => {
+    const code = generateTableComponent('orderLine', contractWith({ rowEdit: false }));
+    assert.match(code, /<InlineLinesPanel ref=\{ref\} columns=\{columns\} \{\.\.\.props\} rowEditDisabled addRow=\{undefined\} \/>/);
+    assert.match(code, /return <InlineLinesPanel ref=\{ref\} columns=\{columns\} \{\.\.\.props\} rowEditDisabled \/>;/);
+    assert.doesNotMatch(code, /<DataTable[^>]*rowEditDisabled/);
+  });
+
+  it('is byte-identical when neither option is declared (or rowEdit is true)', () => {
+    const base = generateTableComponent('orderLine', masterDetailContract);
+    assert.doesNotMatch(base, /rowEditDisabled|link:/);
+    assert.equal(generateTableComponent('orderLine', contractWith()), base);
+    assert.equal(generateTableComponent('orderLine', contractWith({ rowEdit: true })), base);
+  });
+
+  it('changes only the declared column and the panel props', () => {
+    const base = generateTableComponent('orderLine', masterDetailContract).split('\n');
+    const withBoth = generateTableComponent('orderLine', contractWith({ link: LINK, rowEdit: false })).split('\n');
+    assert.equal(withBoth.length, base.length);
+    const changed = withBoth.filter((l, i) => l !== base[i]);
+    assert.equal(changed.length, 3, changed.join('\n'));
+  });
+});
+
+describe('generateTableComponent — column editInPlace', () => {
+  const contractWith = (editInPlace, link) => {
+    const c = structuredClone(masterDetailContract);
+    const qty = c.frontendContract.entities.orderLine.fields.find(f => f.name === 'quantity');
+    if (editInPlace !== undefined) qty.editInPlace = editInPlace;
+    if (link) qty.link = link;
+    return c;
+  };
+  const quantityColumn = (code) => code.split('\n').find(l => l.includes("key: 'quantity'"));
+
+  it('appends editInPlace as JSON at the tail of the column literal', () => {
+    const line = quantityColumn(generateTableComponent('orderLine', contractWith({ resetToField: 'lineNetAmount', maxField: 'lineNetAmount' })));
+    assert.match(line, /, editInPlace: \{"resetToField":"lineNetAmount","maxField":"lineNetAmount"\} \},$/);
+  });
+
+  it('emits it after link when both are declared', () => {
+    const line = quantityColumn(generateTableComponent('orderLine',
+      contractWith({ maxField: 'lineNetAmount' }, { idField: 'product', window: 'product' })));
+    assert.match(line, /, link: \{[^}]*\}, editInPlace: \{"maxField":"lineNetAmount"\} \},$/);
+  });
+
+  it('is byte-identical when undeclared, and changes only the declared column when set', () => {
+    const base = generateTableComponent('orderLine', masterDetailContract);
+    assert.doesNotMatch(base, /editInPlace/);
+    assert.equal(generateTableComponent('orderLine', contractWith()), base);
+    const withIt = generateTableComponent('orderLine', contractWith({ maxField: 'lineNetAmount' })).split('\n');
+    const changed = withIt.filter((l, i) => l !== base.split('\n')[i]);
+    assert.deepEqual(changed, [quantityColumn(withIt.join('\n'))]);
+  });
+});
+
+describe('generateFormComponent — selector optionBadge', () => {
+  const BADGE = { field: 'ibanValid', equals: false, labelKey: 'remittanceAccountNoIban' };
+  const contractWith = (optionBadge, minDate) => {
+    const c = structuredClone(masterDetailContract);
+    const warehouse = c.frontendContract.entities.order.fields.find(f => f.name === 'warehouse');
+    if (optionBadge !== undefined) warehouse.optionBadge = optionBadge;
+    if (minDate) c.frontendContract.entities.order.fields.push({
+      name: 'dueDate', column: 'Duedate', type: 'date', tsType: 'string', visibility: 'editable',
+      required: false, grid: true, form: true, minDate, optionBadge,
+    });
+    return c;
+  };
+  const lineOf = (code, key) => code.split('\n').find(l => l.includes(`key: '${key}'`));
+
+  it('appends optionBadge as JSON at the tail of the form field line', () => {
+    const line = lineOf(generateFormComponent('order', contractWith(BADGE)), 'warehouse');
+    assert.match(line, /, optionBadge: \{"field":"ibanValid","equals":false,"labelKey":"remittanceAccountNoIban"\} \},$/);
+  });
+
+  it('emits it after minDate when both are declared', () => {
+    const line = lineOf(generateFormComponent('order', contractWith(BADGE, 'today')), 'dueDate');
+    assert.match(line, /, minDate: 'today', optionBadge: \{[^}]*\} \},$/);
+  });
+
+  it('is byte-identical when undeclared, and changes only the declared field when set', () => {
+    const base = generateFormComponent('order', masterDetailContract);
+    assert.doesNotMatch(base, /optionBadge/);
+    assert.equal(generateFormComponent('order', contractWith()), base);
+    const withIt = generateFormComponent('order', contractWith(BADGE)).split('\n');
+    const changed = withIt.filter((l, i) => l !== base.split('\n')[i]);
+    assert.deepEqual(changed, [lineOf(withIt.join('\n'), 'warehouse')]);
+  });
+
+  it('leaves the grid column of the same field untouched', () => {
+    assert.equal(
+      generateTableComponent('order', contractWith(BADGE)),
+      generateTableComponent('order', masterDetailContract),
+    );
   });
 });

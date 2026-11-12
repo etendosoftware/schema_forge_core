@@ -1,7 +1,7 @@
 // @covers cli/src/resolve-curated.js
 import { describe, it } from 'node:test';
 import { strict as assert } from 'node:assert';
-import { resolveCurated } from '../src/resolve-curated.js';
+import { resolveCurated, applyMinDate } from '../src/resolve-curated.js';
 
 describe('resolveCurated', () => {
   it('applies entity, field, window, draft mode, and explicit rule decisions', async () => {
@@ -997,6 +997,72 @@ describe('resolveCurated — max field constraint (ETP-4277)', () => {
 });
 
 // ─── ETP-4555 — declarative validation constraint propagation ─────────────────
+describe('resolveCurated — minDate on date fields', () => {
+  const schemaRaw = {
+    window: { id: '810', name: 'Remittance' },
+    entities: [{
+      name: 'header',
+      tableName: 'REM_Remittance',
+      tabId: '30',
+      tabName: 'Header',
+      fields: [
+        { name: 'dueDate', columnName: 'Duedate', label: 'Due Date', type: 'date', visibility: 'editable' },
+        { name: 'dateTrx', columnName: 'DateTrx', label: 'Date', type: 'date', visibility: 'editable' },
+      ],
+    }],
+  };
+  const decide = (dueDate) => ({
+    version: 2,
+    window: { name: 'Remittance' },
+    entities: { header: { name: 'header', fields: { dueDate, dateTrx: {} } } },
+    rules: {},
+  });
+  const resolve = async (dueDate) => {
+    const { schema } = await resolveCurated(schemaRaw, { rules: [] }, decide(dueDate));
+    return schema.entities[0].fields;
+  };
+
+  it('carries minDate "today" to the curated field', async () => {
+    const fields = await resolve({ minDate: 'today' });
+    assert.equal(fields.find(f => f.name === 'dueDate').minDate, 'today');
+  });
+
+  it('carries a fixed YYYY-MM-DD minDate to the curated field', async () => {
+    const fields = await resolve({ minDate: '2026-12-01' });
+    assert.equal(fields.find(f => f.name === 'dueDate').minDate, '2026-12-01');
+  });
+
+  it('leaves minDate unset on a field that does not declare it', async () => {
+    const fields = await resolve({ minDate: 'today' });
+    assert.equal('minDate' in fields.find(f => f.name === 'dateTrx'), false);
+  });
+
+  for (const absent of [undefined, null, false]) {
+    it(`treats minDate ${String(absent)} as "no bound" (no key, no throw)`, async () => {
+      const fields = await resolve({ minDate: absent });
+      assert.equal('minDate' in fields.find(f => f.name === 'dueDate'), false);
+    });
+  }
+
+  for (const bad of ['tomorrow', 'TODAY', '2026/12/01', '01-12-2026', '2026-12-01T00:00:00Z', '', 20261201, true, {}]) {
+    it(`throws, naming the field, on minDate ${JSON.stringify(bad)}`, async () => {
+      await assert.rejects(resolve({ minDate: bad }), (err) => {
+        assert.match(err.message, /field "dueDate"/);
+        assert.match(err.message, /minDate/);
+        assert.match(err.message, /"today" or "YYYY-MM-DD"/);
+        return true;
+      });
+    });
+  }
+
+  it('applyMinDate: sets a valid value and throws on an invalid one with the field name', () => {
+    const field = { name: 'startDate' };
+    applyMinDate(field, { minDate: 'today' });
+    assert.equal(field.minDate, 'today');
+    assert.throws(() => applyMinDate({ name: 'startDate' }, { minDate: 'next week' }), /field "startDate" has minDate "next week"/);
+  });
+});
+
 describe('resolveCurated — validation constraint object (ETP-4555)', () => {
   function rawSchema(fieldExtra = {}, textFieldExtra = {}) {
     return {
@@ -1427,4 +1493,409 @@ describe('resolveCurated — columnMaxWidth passthrough', () => {
     const { schema } = await resolveCurated(schemaRaw, { rules: [] }, decisions({ name: { columnMaxWidth: 240 }, netDays: {} }));
     assert.equal(schema.entities[0].fields.find(x => x.name === 'netDays').columnMaxWidth, undefined);
   });
+});
+
+// ─── propertyPath — per-field opt-in path fields (Classic AD_Field.Property + decisions-only) ───
+describe('resolveCurated — propertyPath fields', () => {
+  const INVOICE_PATH = 'paymentScheduleDetail.invoicePaymentSchedule.invoice';
+  const DOCNO_PATH = 'paymentScheduleDetail.invoicePaymentSchedule.invoice.documentNo';
+
+  // Shape of extract-fields.js output for an AD_Field with Property set: the legacy field (key and
+  // classification from the target column) plus the AD path recorded as `adPropertyPath`.
+  const schemaRaw = {
+    window: { id: '700', name: 'Remittance' },
+    entities: [{
+      name: 'lines',
+      tableName: 'REM_Line',
+      tabId: 'T2',
+      fields: [
+        { name: 'amount', columnName: 'Amount', label: 'Amount', type: 'amount', visibility: 'editable', mandatory: true },
+        { name: 'invoice', apiKey: 'invoice', columnName: 'C_Invoice_ID', label: 'Invoice', type: 'foreignKey',
+          visibility: 'editable', mandatory: true, adPropertyPath: INVOICE_PATH },
+      ],
+    }],
+  };
+  const withoutAdPath = () => {
+    const raw = structuredClone(schemaRaw);
+    delete raw.entities[0].fields[1].adPropertyPath;
+    return raw;
+  };
+  const decisions = (fields) => ({ version: 2, window: { name: 'Remittance' }, entities: { lines: { fields } }, rules: {} });
+  const fieldNamed = (schema, name) => schema.entities[0].fields.find(x => x.name === name);
+
+  describe('Classic path field without the opt-in (no decision propertyPath)', () => {
+    for (const [label, fields] of [
+      ['no decision', {}],
+      ['a decision without propertyPath', { invoice: { visibility: 'readOnly', label: 'Factura', grid: true } }],
+      ['an editable decision', { invoice: { visibility: 'editable' } }],
+    ]) {
+      it(`keeps the legacy treatment exactly with ${label}`, async () => {
+        const withPath = await resolveCurated(structuredClone(schemaRaw), { rules: [] }, decisions(fields));
+        const legacy = await resolveCurated(withoutAdPath(), { rules: [] }, decisions(fields));
+        assert.deepEqual(withPath, legacy);
+        assert.equal(Object.hasOwn(fieldNamed(withPath.schema, 'invoice'), 'propertyPath'), false);
+      });
+    }
+
+    it('keeps the legacy key, visibility and required', async () => {
+      const { schema } = await resolveCurated(schemaRaw, { rules: [] }, decisions({}));
+      const f = fieldNamed(schema, 'invoice');
+      assert.equal(f.visibility, 'editable');
+      assert.equal(f.required, true);
+      assert.equal(Object.hasOwn(f, 'adPropertyPath'), false, 'the AD path is never copied to the curated field');
+    });
+  });
+
+  describe('Classic path field opted in (decision declares propertyPath)', () => {
+    it('becomes a read-only path field', async () => {
+      const { schema } = await resolveCurated(schemaRaw, { rules: [] }, decisions({
+        invoice: { propertyPath: INVOICE_PATH, visibility: 'readOnly' },
+      }));
+      const f = fieldNamed(schema, 'invoice');
+      assert.equal(f.visibility, 'readOnly');
+      assert.equal(f.propertyPath, INVOICE_PATH);
+      assert.equal(f.column, 'C_Invoice_ID');
+      assert.equal(f.type, 'foreignKey');
+      assert.equal(f.required, false);
+    });
+
+    it('collapses an explicit editable decision to readOnly', async () => {
+      const { schema } = await resolveCurated(schemaRaw, { rules: [] }, decisions({
+        invoice: { propertyPath: INVOICE_PATH, visibility: 'editable' },
+      }));
+      assert.equal(fieldNamed(schema, 'invoice').visibility, 'readOnly');
+    });
+
+    it('collapses an editable raw classification to readOnly when the decision gives no visibility', async () => {
+      const { schema } = await resolveCurated(schemaRaw, { rules: [] }, decisions({ invoice: { propertyPath: INVOICE_PATH } }));
+      assert.equal(fieldNamed(schema, 'invoice').visibility, 'readOnly');
+    });
+
+    it('honours an explicit discarded decision', async () => {
+      const { schema } = await resolveCurated(schemaRaw, { rules: [] }, decisions({
+        invoice: { propertyPath: INVOICE_PATH, visibility: 'discarded' },
+      }));
+      assert.equal(fieldNamed(schema, 'invoice').visibility, 'discarded');
+    });
+
+    it('keeps the decision key when the decision renames it', async () => {
+      const { schema } = await resolveCurated(schemaRaw, { rules: [] }, decisions({
+        invoice: { propertyPath: INVOICE_PATH, visibility: 'readOnly', name: 'sourceInvoice' },
+      }));
+      assert.equal(fieldNamed(schema, 'invoice'), undefined);
+      const f = fieldNamed(schema, 'sourceInvoice');
+      assert.equal(f.propertyPath, INVOICE_PATH);
+      assert.equal(f.visibility, 'readOnly');
+    });
+
+    it('throws on a malformed decision path instead of dropping it', async () => {
+      await assert.rejects(
+        resolveCurated(schemaRaw, { rules: [] }, decisions({ invoice: { propertyPath: 'invoice' } })),
+        /field "invoice" has propertyPath/,
+      );
+    });
+
+    it('leaves a plain field without a decision untouched', async () => {
+      const { schema } = await resolveCurated(schemaRaw, { rules: [] }, decisions({ invoice: { propertyPath: INVOICE_PATH } }));
+      const f = fieldNamed(schema, 'amount');
+      assert.equal(f.visibility, 'editable');
+      assert.equal(Object.hasOwn(f, 'propertyPath'), false);
+    });
+  });
+
+  describe('write semantics stripped from path fields', () => {
+    // payment.status: the raw anchor column is NOT NULL with an RPAP default and a computed
+    // derivation. A path field is never written, so none of that may survive.
+    const writeSchemaRaw = {
+      window: { id: '700', name: 'Remittance' },
+      entities: [{
+        name: 'lines', tableName: 'REM_Line', tabId: 'T2',
+        fields: [
+          { name: 'status', apiKey: 'status', columnName: 'Status', label: 'Status', type: 'enum',
+            visibility: 'readOnly', mandatory: true, defaultValue: 'RPAP',
+            derivation: { type: 'computed', expression: 'RPAP' }, adPropertyPath: 'payment.status' },
+          { name: 'lineStatus', columnName: 'Status', label: 'Status', type: 'enum',
+            visibility: 'editable', mandatory: true, defaultValue: 'RPAP',
+            derivation: { type: 'computed', expression: 'RPAP' } },
+        ],
+      }],
+    };
+    const writeFields = (fields) => resolveCurated(writeSchemaRaw, { rules: [] }, decisions(fields))
+      .then(({ schema }) => schema.entities[0].fields);
+    const assertNoWriteSemantics = (f) => {
+      assert.equal(f.required, false);
+      assert.equal(Object.hasOwn(f, 'sourceRequired'), false, 'sourceRequired');
+      assert.equal(Object.hasOwn(f, 'defaultValue'), false, 'defaultValue');
+      assert.equal(Object.hasOwn(f, 'derivation'), false, 'derivation');
+      assert.notEqual(f.validation?.required, true, 'validation.required');
+    };
+    const assertWriteSemantics = (f) => {
+      assert.equal(f.required, true);
+      assert.equal(f.sourceRequired, true);
+      assert.equal(f.defaultValue, 'RPAP');
+      assert.deepEqual(f.derivation, { type: 'computed', expression: 'RPAP' });
+    };
+
+    it('strips required, sourceRequired, defaultValue and derivation from an opted-in Classic path field', async () => {
+      const fields = await writeFields({ status: { propertyPath: 'payment.status', visibility: 'readOnly' } });
+      const f = fields.find(x => x.name === 'status');
+      assert.equal(f.visibility, 'readOnly');
+      assertNoWriteSemantics(f);
+    });
+
+    it('overrides an explicit required: true decision on a path field', async () => {
+      const fields = await writeFields({ status: { propertyPath: 'payment.status', visibility: 'readOnly', required: true } });
+      assertNoWriteSemantics(fields.find(x => x.name === 'status'));
+    });
+
+    it('strips a decision-declared defaultValue and derivation from a decisions-only path field', async () => {
+      const fields = await writeFields({
+        paymentStatus: { propertyPath: 'payment.status', type: 'enum', column: 'Status', required: true,
+          defaultValue: 'RPAP', derivation: { type: 'computed', expression: 'RPAP' } },
+      });
+      assertNoWriteSemantics(fields.find(x => x.name === 'paymentStatus'));
+    });
+
+    it('keeps the write semantics of a Classic path field that does not opt in', async () => {
+      const fields = await writeFields({ status: { visibility: 'readOnly' } });
+      assertWriteSemantics(fields.find(x => x.name === 'status'));
+    });
+
+    it('keeps the write semantics of a plain field with the same raw metadata', async () => {
+      const fields = await writeFields({ status: { propertyPath: 'payment.status', visibility: 'readOnly' } });
+      assertWriteSemantics(fields.find(x => x.name === 'lineStatus'));
+    });
+  });
+
+  describe('decisions-only path field', () => {
+    it('is synthesized and included read-only by default', async () => {
+      const { schema } = await resolveCurated(schemaRaw, { rules: [] }, decisions({
+        invoiceDocumentNo: { propertyPath: DOCNO_PATH, column: 'DocumentNo', label: 'Invoice' },
+      }));
+      const f = fieldNamed(schema, 'invoiceDocumentNo');
+      assert.ok(f, 'the decisions-only field is part of the curated entity');
+      assert.equal(f.visibility, 'readOnly');
+      assert.equal(f.propertyPath, DOCNO_PATH);
+      assert.equal(f.column, 'DocumentNo');
+      assert.equal(f.label, 'Invoice');
+      assert.equal(f.type, 'string', 'type defaults to string');
+      assert.equal(f.required, false);
+    });
+
+    it('keeps the declared type and collapses editable to readOnly', async () => {
+      const { schema } = await resolveCurated(schemaRaw, { rules: [] }, decisions({
+        businessPartner: { propertyPath: 'paymentScheduleDetail.businessPartner', type: 'foreignKey',
+          column: 'C_BPartner_ID', visibility: 'editable' },
+      }));
+      const f = fieldNamed(schema, 'businessPartner');
+      assert.equal(f.type, 'foreignKey');
+      assert.equal(f.visibility, 'readOnly');
+    });
+
+    it('falls back to the field key for column and label when the decision omits them', async () => {
+      const { schema } = await resolveCurated(schemaRaw, { rules: [] }, decisions({
+        paymentStatus: { propertyPath: 'payment.status' },
+      }));
+      const f = fieldNamed(schema, 'paymentStatus');
+      assert.equal(f.column, 'paymentStatus');
+      assert.equal(f.label, 'paymentStatus');
+    });
+
+    it('honours an explicit discarded visibility', async () => {
+      const { schema } = await resolveCurated(schemaRaw, { rules: [] }, decisions({
+        paymentStatus: { propertyPath: 'payment.status', visibility: 'discarded' },
+      }));
+      assert.equal(fieldNamed(schema, 'paymentStatus').visibility, 'discarded');
+    });
+
+    it('does not duplicate a raw field whose decision also declares propertyPath', async () => {
+      const { schema } = await resolveCurated(schemaRaw, { rules: [] }, decisions({
+        invoice: { propertyPath: INVOICE_PATH, visibility: 'readOnly' },
+      }));
+      assert.equal(schema.entities[0].fields.filter(x => x.name === 'invoice').length, 1);
+    });
+
+    it('throws on a malformed path instead of dropping it', async () => {
+      for (const propertyPath of ['status', 'a..b', 'a.b c']) {
+        await assert.rejects(
+          resolveCurated(schemaRaw, { rules: [] }, decisions({ broken: { propertyPath } })),
+          /field "broken" has propertyPath/,
+          `expected a rejection for ${JSON.stringify(propertyPath)}`,
+        );
+      }
+    });
+  });
+});
+
+// ─── column `link` + entity `rowEdit` ─────────────────────────────────────────
+describe('resolveCurated — column link and entity rowEdit', () => {
+  const schemaRaw = {
+    window: { id: '700', name: 'Remittance' },
+    entities: [{
+      name: 'lines', tableName: 'REM_Line', tabId: 'T2',
+      fields: [
+        { name: 'invoiceDocumentNo', columnName: 'DocumentNo', label: 'Invoice', type: 'string', visibility: 'readOnly', mandatory: false },
+        { name: 'amount', columnName: 'Amount', label: 'Amount', type: 'amount', visibility: 'editable', mandatory: true },
+      ],
+    }],
+  };
+  const decisions = (fields, entityExtra = {}) => ({
+    version: 2, window: { name: 'Remittance' }, rules: {}, entities: { lines: { ...entityExtra, fields } },
+  });
+  const resolveWith = (fields, entityExtra) => resolveCurated(structuredClone(schemaRaw), { rules: [] }, decisions(fields, entityExtra));
+  const fieldNamed = (schema, name) => schema.entities[0].fields.find(x => x.name === name);
+
+  it('carries a link with a fixed window', async () => {
+    const link = { idField: 'invoice', window: 'sales-invoice' };
+    const { schema } = await resolveWith({ invoiceDocumentNo: { link } });
+    assert.deepEqual(fieldNamed(schema, 'invoiceDocumentNo').link, link);
+  });
+
+  it('carries a link whose window is picked per row', async () => {
+    const link = { idField: 'invoice', window: { field: 'invoiceSalesTransaction', values: { true: 'sales-invoice', false: 'purchase-invoice' } } };
+    const { schema } = await resolveWith({ invoiceDocumentNo: { link } });
+    assert.deepEqual(fieldNamed(schema, 'invoiceDocumentNo').link, link);
+  });
+
+  it('emits no link when none is declared, also on siblings', async () => {
+    const { schema } = await resolveWith({ invoiceDocumentNo: { link: { idField: 'invoice', window: 'sales-invoice' } }, amount: {} });
+    assert.equal(Object.hasOwn(fieldNamed(schema, 'amount'), 'link'), false);
+  });
+
+  for (const [label, link] of [
+    ['a missing idField', { window: 'sales-invoice' }],
+    ['a blank idField', { idField: '  ', window: 'sales-invoice' }],
+    ['a missing window', { idField: 'invoice' }],
+    ['a blank window', { idField: 'invoice', window: '' }],
+    ['a numeric window', { idField: 'invoice', window: 7 }],
+    ['a window object without field', { idField: 'invoice', window: { values: { true: 'sales-invoice' } } }],
+    ['a window object without values', { idField: 'invoice', window: { field: 'invoiceSalesTransaction' } }],
+    ['empty values', { idField: 'invoice', window: { field: 'invoiceSalesTransaction', values: {} } }],
+    ['a blank target in values', { idField: 'invoice', window: { field: 'invoiceSalesTransaction', values: { true: 'sales-invoice', false: '' } } }],
+    ['a string link', 'sales-invoice'],
+    ['an array link', [{ idField: 'invoice', window: 'sales-invoice' }]],
+  ]) {
+    it(`throws on ${label}`, async () => {
+      await assert.rejects(resolveWith({ invoiceDocumentNo: { link } }), /field "invoiceDocumentNo" has link/);
+    });
+  }
+
+  it('names the renamed key in the error', async () => {
+    await assert.rejects(resolveWith({ invoiceDocumentNo: { name: 'invoiceNo', link: { idField: 'invoice' } } }), /field "invoiceNo" has link/);
+  });
+
+  it('carries entities.<name>.rowEdit: false', async () => {
+    const { schema } = await resolveWith({}, { rowEdit: false });
+    assert.equal(schema.entities[0].rowEdit, false);
+  });
+
+  it('emits nothing when rowEdit is absent or true', async () => {
+    for (const extra of [{}, { rowEdit: true }]) {
+      const { schema } = await resolveWith({}, extra);
+      assert.equal(Object.hasOwn(schema.entities[0], 'rowEdit'), false, JSON.stringify(extra));
+    }
+  });
+});
+
+// ─── column `editInPlace` ─────────────────────────────────────────────────────
+describe('resolveCurated — column editInPlace', () => {
+  const schemaRaw = {
+    window: { id: '700', name: 'Remittance' },
+    entities: [{
+      name: 'lines', tableName: 'REM_Line', tabId: 'T2',
+      fields: [
+        { name: 'amount', columnName: 'Amount', label: 'Amount', type: 'amount', visibility: 'editable', mandatory: true },
+        { name: 'invoiceOutstanding', columnName: 'OutstandingAmt', label: 'Outstanding', type: 'amount', visibility: 'readOnly', mandatory: false },
+      ],
+    }],
+  };
+  const resolveWith = (fields) => resolveCurated(structuredClone(schemaRaw), { rules: [] },
+    { version: 2, window: { name: 'Remittance' }, rules: {}, entities: { lines: { fields } } });
+  const fieldNamed = (schema, name) => schema.entities[0].fields.find(x => x.name === name);
+
+  for (const [label, editInPlace] of [
+    ['both keys', { resetToField: 'invoiceOutstanding', maxField: 'invoiceOutstanding' }],
+    ['only resetToField', { resetToField: 'invoiceOutstanding' }],
+    ['only maxField', { maxField: 'invoiceOutstanding' }],
+  ]) {
+    it(`carries editInPlace with ${label}`, async () => {
+      const { schema } = await resolveWith({ amount: { editInPlace } });
+      assert.deepEqual(fieldNamed(schema, 'amount').editInPlace, editInPlace);
+    });
+  }
+
+  it('emits no editInPlace when none is declared, also on siblings', async () => {
+    const { schema } = await resolveWith({ amount: { editInPlace: { maxField: 'invoiceOutstanding' } }, invoiceOutstanding: {} });
+    assert.equal(Object.hasOwn(fieldNamed(schema, 'invoiceOutstanding'), 'editInPlace'), false);
+  });
+
+  for (const [label, editInPlace] of [
+    // Alex review N3: an empty object declares nothing to reset to or bound by.
+    ['an empty object', {}],
+    ['an unknown key', { resetToField: 'invoiceOutstanding', minField: 'x' }],
+    ['a numeric value', { maxField: 3 }],
+    ['a blank value', { resetToField: '  ' }],
+    ['a null value', { maxField: null }],
+    ['an object value', { maxField: { field: 'invoiceOutstanding' } }],
+    ['a boolean editInPlace', true],
+    ['a false editInPlace', false],
+    ['a string editInPlace', 'invoiceOutstanding'],
+    ['an array editInPlace', ['invoiceOutstanding']],
+  ]) {
+    it(`throws on ${label}`, async () => {
+      await assert.rejects(resolveWith({ amount: { editInPlace } }), /field "amount" has editInPlace/);
+    });
+  }
+});
+
+// ─── selector field `optionBadge` ─────────────────────────────────────────────
+describe('resolveCurated — selector optionBadge', () => {
+  const schemaRaw = {
+    window: { id: '700', name: 'Remittance' },
+    entities: [{
+      name: 'remittance', tableName: 'REM_Remittance', tabId: 'T1',
+      fields: [
+        { name: 'financialAccount', columnName: 'FIN_Financial_Account_ID', label: 'Account', type: 'foreignKey', visibility: 'editable', mandatory: true },
+        { name: 'name', columnName: 'Name', label: 'Name', type: 'string', visibility: 'editable', mandatory: true },
+      ],
+    }],
+  };
+  const resolveWith = (fields) => resolveCurated(structuredClone(schemaRaw), { rules: [] },
+    { version: 2, window: { name: 'Remittance' }, rules: {}, entities: { remittance: { fields } } });
+  const fieldNamed = (schema, name) => schema.entities[0].fields.find(x => x.name === name);
+
+  for (const [label, equals] of [['boolean false', false], ['boolean true', true], ['string', 'N'], ['number', 0], ['empty string', '']]) {
+    it(`carries an optionBadge whose equals is a ${label}`, async () => {
+      const optionBadge = { field: 'ibanValid', equals, labelKey: 'remittanceAccountNoIban' };
+      const { schema } = await resolveWith({ financialAccount: { optionBadge } });
+      assert.deepEqual(fieldNamed(schema, 'financialAccount').optionBadge, optionBadge);
+    });
+  }
+
+  it('emits no optionBadge when none is declared, also on siblings', async () => {
+    const { schema } = await resolveWith({
+      financialAccount: { optionBadge: { field: 'ibanValid', equals: false, labelKey: 'remittanceAccountNoIban' } },
+      name: {},
+    });
+    assert.equal(Object.hasOwn(fieldNamed(schema, 'name'), 'optionBadge'), false);
+  });
+
+  for (const [label, optionBadge] of [
+    ['a missing field', { equals: false, labelKey: 'remittanceAccountNoIban' }],
+    ['a blank field', { field: ' ', equals: false, labelKey: 'remittanceAccountNoIban' }],
+    ['a missing labelKey', { field: 'ibanValid', equals: false }],
+    ['a blank labelKey', { field: 'ibanValid', equals: false, labelKey: '' }],
+    ['a missing equals', { field: 'ibanValid', labelKey: 'remittanceAccountNoIban' }],
+    ['a null equals', { field: 'ibanValid', equals: null, labelKey: 'remittanceAccountNoIban' }],
+    ['an object equals', { field: 'ibanValid', equals: { value: false }, labelKey: 'remittanceAccountNoIban' }],
+    ['an array equals', { field: 'ibanValid', equals: [false], labelKey: 'remittanceAccountNoIban' }],
+    ['an unknown key', { field: 'ibanValid', equals: false, labelKey: 'remittanceAccountNoIban', tone: 'warning' }],
+    ['a string optionBadge', 'remittanceAccountNoIban'],
+    ['a boolean optionBadge', true],
+    ['an array optionBadge', [{ field: 'ibanValid', equals: false, labelKey: 'remittanceAccountNoIban' }]],
+  ]) {
+    it(`throws on ${label}`, async () => {
+      await assert.rejects(resolveWith({ financialAccount: { optionBadge } }), /field "financialAccount" has optionBadge/);
+    });
+  }
 });

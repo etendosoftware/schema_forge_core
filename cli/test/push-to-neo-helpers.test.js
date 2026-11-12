@@ -1,3 +1,5 @@
+// @covers cli/src/push-to-neo.js
+// @covers cli/src/lib/field-visibility.js
 import { describe, it, before, after } from 'node:test';
 import { strict as assert } from 'node:assert';
 import { writeFileSync, mkdirSync, rmSync } from 'node:fs';
@@ -14,7 +16,12 @@ import {
   buildFieldUpdateParams,
   coalesceDuplicateColumnFields,
   buildFieldGridOrderMap,
+  buildPathFieldParams,
+  upsertPathField,
 } from '../src/push-to-neo.js';
+import { resolveCurated } from '../src/resolve-curated.js';
+import { generateBackendContract } from '../src/generate-contract.js';
+import { computeWindowDelta } from '../src/lib/neo-delta.js';
 
 function updateParams(visibility) {
   return buildFieldUpdateParams(
@@ -790,5 +797,259 @@ describe('coalesceDuplicateColumnFields (ETP-5399)', () => {
       field('accountType2', 'system'),
     ]);
     assert.deepEqual(fields.map((f) => f.fieldName), ['accountType2']);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Property-path fields — ETGO_SF_FIELD rows with PROPERTY_PATH and no AD column
+// ---------------------------------------------------------------------------
+
+describe('extractFieldsFromContract — propertyPath', () => {
+  const contract = {
+    entities: {
+      lines: {
+        tabId: 'T2',
+        fields: [
+          { name: 'amount', column: 'Amount', visibility: 'editable' },
+          { name: 'status', column: 'Status', visibility: 'readOnly', propertyPath: 'payment.status' },
+        ],
+      },
+    },
+  };
+
+  it('carries propertyPath onto a path field', () => {
+    const [, status] = extractFieldsFromContract(contract);
+    assert.equal(status.propertyPath, 'payment.status');
+    assert.equal(status.fieldName, 'status');
+  });
+
+  it('adds no propertyPath key to a plain field', () => {
+    const [amount] = extractFieldsFromContract(contract);
+    assert.equal(Object.hasOwn(amount, 'propertyPath'), false);
+  });
+});
+
+describe('coalesceDuplicateColumnFields — propertyPath identity', () => {
+  const INV = 'paymentScheduleDetail.invoicePaymentSchedule.invoice.eTABAMBankaccount.displayedAccount';
+  const ORD = 'paymentScheduleDetail.orderPaymentSchedule.order.eTABAMBankaccount.displayedAccount';
+
+  it('keeps two paths that end on the same target column', () => {
+    const { fields, collapsed } = coalesceDuplicateColumnFields([
+      { entityName: 'lines', fieldName: 'displayedAccount', column: 'Displayedaccount', visibility: 'readOnly', propertyPath: INV },
+      { entityName: 'lines', fieldName: 'displayedAccount2', column: 'Displayedaccount', visibility: 'discarded', propertyPath: ORD },
+    ]);
+    assert.deepEqual(fields.map((f) => f.fieldName), ['displayedAccount', 'displayedAccount2']);
+    assert.deepEqual(collapsed, []);
+  });
+
+  it('does not merge a path field with a plain field of the same column name', () => {
+    const { fields } = coalesceDuplicateColumnFields([
+      { entityName: 'lines', fieldName: 'status', column: 'Status', visibility: 'discarded' },
+      { entityName: 'lines', fieldName: 'paymentStatus', column: 'Status', visibility: 'readOnly', propertyPath: 'payment.status' },
+    ]);
+    assert.equal(fields.length, 2);
+  });
+
+  it('still collapses two fields declaring the same path', () => {
+    const { fields, collapsed } = coalesceDuplicateColumnFields([
+      { entityName: 'lines', fieldName: 'status', column: 'Status', visibility: 'discarded', propertyPath: 'payment.status' },
+      { entityName: 'lines', fieldName: 'status2', column: 'Status', visibility: 'readOnly', propertyPath: 'payment.status' },
+    ]);
+    assert.deepEqual(fields.map((f) => f.fieldName), ['status2']);
+    assert.equal(collapsed.length, 1);
+  });
+});
+
+describe('buildPathFieldParams', () => {
+  const ctx = { moduleId: 'MOD1', fieldDefaultExprs: {}, auditOpts: {} };
+  const pathField = (visibility) => ({
+    entityName: 'lines', fieldName: 'displayedAccount', column: 'Displayedaccount', visibility,
+    propertyPath: 'paymentScheduleDetail.invoicePaymentSchedule.invoice.eTABAMBankaccount.displayedAccount',
+  });
+
+  it('builds an insert with PROPERTY_PATH, a null AD column and the apiKey as java qualifier', () => {
+    const params = buildPathFieldParams(pathField('readOnly'), ctx, null, 'ENT1');
+    assert.equal(params.propertyPath, 'paymentScheduleDetail.invoicePaymentSchedule.invoice.eTABAMBankaccount.displayedAccount');
+    assert.equal(params.columnId, null);
+    assert.equal(params.javaQualifier, 'displayedAccount');
+    assert.equal(params.entityId, 'ENT1');
+    assert.equal(params.fieldId, null);
+    assert.equal(params.isIncluded, 'Y');
+    assert.equal(params.isReadOnly, 'Y');
+    assert.equal(params.visibility, 'readOnly');
+  });
+
+  it('forces read-only and rewrites an editable visibility', () => {
+    const params = buildPathFieldParams(pathField('editable'), ctx, null, 'ENT1');
+    assert.equal(params.isReadOnly, 'Y');
+    assert.equal(params.visibility, 'readOnly');
+  });
+
+  it('sets the java qualifier even when the apiKey equals the column name', () => {
+    const params = buildPathFieldParams({ ...pathField('readOnly'), fieldName: 'status', column: 'status' }, ctx, null, 'ENT1');
+    assert.equal(params.javaQualifier, 'status');
+  });
+
+  it('closes a discarded field but keeps it read-only', () => {
+    const params = buildPathFieldParams(pathField('discarded'), ctx, 'FLD1', 'ENT1');
+    assert.equal(params.isIncluded, 'N');
+    assert.equal(params.isReadOnly, 'Y');
+    assert.equal(params.visibility, 'discarded');
+  });
+
+  it('never touches the AD column of an existing row', () => {
+    const params = buildPathFieldParams(pathField('readOnly'), ctx, 'FLD1', 'ENT1');
+    assert.equal(params.fieldId, 'FLD1');
+    assert.equal(Object.hasOwn(params, 'columnId'), false);
+  });
+});
+
+describe('upsertPathField', () => {
+  const PATH = 'paymentScheduleDetail.invoicePaymentSchedule.invoice.documentNo';
+  const ctx = { moduleId: 'MOD1', fieldDefaultExprs: {}, auditOpts: {} };
+  const field = (visibility) => ({
+    entityName: 'lines', fieldName: 'invoiceDocumentNo', column: 'DocumentNo', visibility, propertyPath: PATH,
+  });
+
+  // Fake pg client: the (entity, path) lookup returns `existingRows`; INSERTs and UPDATEs are recorded.
+  function fakeClient(existingRows = []) {
+    const calls = { lookups: [], inserts: [], updates: [] };
+    return {
+      calls,
+      query: async (sql, params) => {
+        const s = sql.replace(/\s+/g, ' ').trim();
+        if (s.startsWith('SELECT etgo_sf_field_id FROM etgo_sf_field')) {
+          calls.lookups.push({ sql: s, params });
+          return { rows: existingRows };
+        }
+        if (s.startsWith('INSERT INTO etgo_sf_field')) calls.inserts.push({ sql: s, params });
+        else if (s.startsWith('UPDATE etgo_sf_field')) calls.updates.push({ sql: s, params });
+        return { rows: [] };
+      },
+    };
+  }
+  const insertColumn = (insert, column) => {
+    const cols = insert.sql.slice(insert.sql.indexOf('(') + 1, insert.sql.indexOf(')')).split(',').map(c => c.trim());
+    assert.notEqual(cols.indexOf(column), -1, `${column} is in the INSERT`);
+    return insert.params[cols.indexOf(column)];
+  };
+
+  it('looks the row up by entity and path, not by column', async () => {
+    const client = fakeClient();
+    await upsertPathField(client, field('readOnly'), ctx, 'ENT1');
+    assert.equal(client.calls.lookups.length, 1);
+    assert.deepEqual(client.calls.lookups[0].params, ['ENT1', PATH]);
+    assert.match(client.calls.lookups[0].sql, /property_path = \$2/);
+    assert.doesNotMatch(client.calls.lookups[0].sql, /ad_column/);
+  });
+
+  it('inserts a new row with a null column, the path, the apiKey as qualifier, read-only', async () => {
+    const client = fakeClient();
+    const result = await upsertPathField(client, field('readOnly'), ctx, 'ENT1');
+    assert.equal(client.calls.inserts.length, 1);
+    assert.equal(client.calls.updates.length, 0);
+    const [insert] = client.calls.inserts;
+    assert.equal(insertColumn(insert, 'ad_column_id'), null);
+    assert.equal(insertColumn(insert, 'property_path'), PATH);
+    assert.equal(insertColumn(insert, 'java_qualifier'), 'invoiceDocumentNo');
+    assert.equal(insertColumn(insert, 'etgo_sf_entity_id'), 'ENT1');
+    assert.equal(insertColumn(insert, 'isincluded'), 'Y');
+    assert.equal(insertColumn(insert, 'isreadonly'), 'Y');
+    assert.equal(result.success, true);
+    assert.equal(result.propertyPath, PATH);
+  });
+
+  it('inserts an editable path field as read-only', async () => {
+    const client = fakeClient();
+    await upsertPathField(client, field('editable'), ctx, 'ENT1');
+    assert.equal(insertColumn(client.calls.inserts[0], 'isreadonly'), 'Y');
+    assert.equal(insertColumn(client.calls.inserts[0], 'visibility'), 'readOnly');
+  });
+
+  it('skips a discarded field that has no row yet', async () => {
+    const client = fakeClient();
+    const result = await upsertPathField(client, field('discarded'), ctx, 'ENT1');
+    assert.equal(client.calls.inserts.length, 0);
+    assert.equal(client.calls.updates.length, 0);
+    assert.equal(result.skipped, true);
+    assert.equal(result.success, true);
+  });
+
+  it('updates the matched row without rewriting its path or column', async () => {
+    const client = fakeClient([{ etgo_sf_field_id: 'PF1' }, { etgo_sf_field_id: 'PF2' }]);
+    await upsertPathField(client, field('readOnly'), ctx, 'ENT1');
+    assert.equal(client.calls.inserts.length, 0);
+    assert.equal(client.calls.updates.length, 1);
+    const [update] = client.calls.updates;
+    assert.equal(update.params.at(-1), 'PF1', 'the oldest matching row is the one updated');
+    assert.doesNotMatch(update.sql, /property_path/);
+    assert.doesNotMatch(update.sql, /ad_column_id/);
+    assert.match(update.sql, /java_qualifier = /);
+    assert.ok(update.params.includes('invoiceDocumentNo'));
+  });
+
+  it('closes an existing row when the field becomes discarded', async () => {
+    const client = fakeClient([{ etgo_sf_field_id: 'PF1' }]);
+    await upsertPathField(client, field('discarded'), ctx, 'ENT1');
+    assert.equal(client.calls.updates.length, 1);
+    const [update] = client.calls.updates;
+    // isincluded = $3, isreadonly = $4 in the partial UPDATE.
+    assert.equal(update.params[2], 'N');
+    assert.equal(update.params[3], 'Y');
+    assert.doesNotMatch(update.sql, /property_path/);
+  });
+});
+
+describe('property-path field key — decisions → contract → push', () => {
+  const PATH = 'paymentScheduleDetail.invoicePaymentSchedule.invoice.eTABAMBankaccount.displayedAccount';
+  const schemaRaw = {
+    window: { id: '700', name: 'Remittance' },
+    entities: [{
+      name: 'lines', tableName: 'REM_Line', tabId: 'T2',
+      fields: [{ name: 'displayedAccount', apiKey: 'displayedAccount', columnName: 'Displayedaccount', label: 'Account',
+        type: 'string', visibility: 'readOnly', mandatory: false, adPropertyPath: PATH }],
+    }],
+  };
+
+  async function pushedField(fieldDecision) {
+    const decisions = { version: 2, window: { name: 'Remittance' }, rules: {},
+      entities: { lines: { fields: { displayedAccount: { propertyPath: PATH, ...fieldDecision } } } } };
+    const { schema } = await resolveCurated(schemaRaw, { rules: [] }, decisions);
+    const backendContract = generateBackendContract(schema);
+    const [contractField] = backendContract.entities.lines.fields;
+    const [pushField] = extractFieldsFromContract(backendContract);
+    const params = buildPathFieldParams(pushField, { moduleId: 'MOD1', fieldDefaultExprs: {}, auditOpts: {} }, null, 'ENT1');
+    const delta = computeWindowDelta({
+      specName: 'remittance', windowId: 'W1', moduleId: 'MOD1', contract: { backendContract }, decisions: {},
+      adTabs: [{ ad_tab_id: 'T2', ad_table_id: 'TBL2', name: 'Lines' }], adColumns: [],
+      prevSnapshot: { spec: [], entity: [], field: [] },
+    });
+    const deltaRow = delta.tables.ETGO_SF_FIELD.upserts.find(r => r.PROPERTY_PATH === PATH);
+    return { contractField, params, deltaRow };
+  }
+
+  it('keeps a renamed key on the contract name, apiKey, push JAVA_QUALIFIER and delta row', async () => {
+    const { contractField, params, deltaRow } = await pushedField({ visibility: 'readOnly', name: 'bankAccount' });
+    assert.equal(contractField.name, 'bankAccount');
+    assert.equal(contractField.apiKey, 'bankAccount');
+    assert.equal(contractField.propertyPath, PATH);
+    assert.equal(params.javaQualifier, 'bankAccount');
+    assert.equal(params.propertyPath, PATH);
+    assert.equal(deltaRow.JAVA_QUALIFIER, 'bankAccount');
+  });
+
+  it('keeps the legacy extractor key when the decision does not rename it', async () => {
+    const { contractField, params, deltaRow } = await pushedField({ visibility: 'readOnly' });
+    assert.equal(contractField.name, 'displayedAccount');
+    assert.equal(contractField.apiKey, 'displayedAccount');
+    assert.equal(params.javaQualifier, 'displayedAccount');
+    assert.equal(deltaRow.JAVA_QUALIFIER, 'displayedAccount');
+  });
+
+  it('pushes an explicit editable decision as a read-only row', async () => {
+    const { contractField, params, deltaRow } = await pushedField({ visibility: 'editable' });
+    assert.equal(contractField.visibility, 'readOnly');
+    assert.equal(params.isReadOnly, 'Y');
+    assert.equal(deltaRow.ISREADONLY, 'Y');
   });
 });
