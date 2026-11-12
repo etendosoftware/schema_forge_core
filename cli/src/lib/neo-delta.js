@@ -115,6 +115,8 @@ function extractFieldsFromContract(backendContract) {
         fieldName: field.name,
         column: field.column,
         visibility: field.visibility,
+        // ETP-6148 — property-path field: keyed by its path, never by `column`.
+        ...(field.propertyPath ? { propertyPath: field.propertyPath } : {}),
       });
     }
   }
@@ -158,6 +160,7 @@ const FIELD_DEFAULTS = {
  *   SPEC   : <spec-name>           (already unique system-wide)
  *   ENTITY : <spec-name>/<ad_tab_id>
  *   FIELD  : <spec-name>/<ad_tab_id>/<ad_column_id>
+ *   PATH FIELD (ETP-6148, AD_COLUMN_ID null): <spec-name>/<ad_tab_id>/path:<PROPERTY_PATH>
  */
 export function specNaturalKey(specName) {
   return specName;
@@ -167,6 +170,9 @@ export function entityNaturalKey(specName, adTabId) {
 }
 export function fieldNaturalKey(specName, adTabId, adColumnId) {
   return `${specName}/${adTabId}/${adColumnId}`;
+}
+export function pathFieldNaturalKey(specName, adTabId, propertyPath) {
+  return `${specName}/${adTabId}/path:${propertyPath}`;
 }
 
 /**
@@ -331,6 +337,11 @@ export function computeWindowDelta(args) {
     closedEntityIds,
   });
 
+  // ---- ETP-6148 — property-path rows (mirrors push-to-neo upsertPathField) ----
+  fieldUpserts.push(...buildPathFieldUpserts({
+    specName, contract, entityIdByNK, prevFieldByNatural, moduleId, closedEntityIds,
+  }));
+
   // ---- Mirror live-push behaviour: never create NEW records with ISINCLUDED=N
   // stepExcludeNonContractFields only updates EXISTING rows; it never inserts
   // a fresh ETGO_SF_FIELD record for a field that was never in the DB.
@@ -473,6 +484,66 @@ function resolveEntityOverrides(tab, contract) {
   return { contractName: null, javaQualifier: undefined };
 }
 
+/**
+ * ETP-6148 — the ETGO_SF_FIELD rows of the contract's property-path fields: AD_COLUMN_ID absent,
+ * PROPERTY_PATH set, the apiKey in JAVA_QUALIFIER, always read-only. Same rows push-to-neo's
+ * upsertPathField writes; a discarded path field is only kept (closed) when it already exists,
+ * which the "never create NEW records with ISINCLUDED=N" prune below takes care of.
+ */
+function buildPathFieldUpserts({ specName, contract, entityIdByNK, prevFieldByNatural, moduleId, closedEntityIds }) {
+  const { fields } = coalesceDuplicateColumnFields(extractFieldsFromContract(contract.backendContract));
+  const rows = [];
+  const liveKeys = new Set();
+  for (const f of fields) {
+    if (!f.propertyPath || !f.tabId) continue;
+    const entityId = entityIdByNK.get(entityNaturalKey(specName, f.tabId));
+    if (!entityId) continue;
+    const naturalKey = pathFieldNaturalKey(specName, f.tabId, f.propertyPath);
+    liveKeys.add(naturalKey);
+    const prev = prevFieldByNatural.get(naturalKey);
+    const vis = mapVisibility(f.visibility);
+    const included = closedEntityIds.has(entityId) ? 'N' : vis.isIncluded;
+    rows.push({
+      _naturalKey: naturalKey,
+      ETGO_SF_FIELD_ID: prev ? prev.ETGO_SF_FIELD_ID : newEtendoId(),
+      ETGO_SF_ENTITY_ID: entityId,
+      AD_MODULE_ID: moduleId,
+      PROPERTY_PATH: f.propertyPath,
+      JAVA_QUALIFIER: f.fieldName,
+      ISINCLUDED: included,
+      ISREADONLY: 'Y',
+      ...FIELD_DEFAULTS,
+    });
+  }
+  rows.push(...closeStalePathRows(specName, prevFieldByNatural, liveKeys));
+  return rows;
+}
+
+/**
+ * ETP-6148 — a path row of this spec that the contract no longer declares is CLOSED, never
+ * deleted: push-to-neo's excludeNonContractPathFields sets ISINCLUDED='N' and keeps the row, so
+ * the offline delta keeps it too (same identity, same UUID) instead of predicting a delete.
+ */
+function closeStalePathRows(specName, prevFieldByNatural, liveKeys) {
+  const prefix = `${specName}/`;
+  const rows = [];
+  for (const [naturalKey, prev] of prevFieldByNatural) {
+    if (!naturalKey.startsWith(prefix) || !naturalKey.includes('/path:') || liveKeys.has(naturalKey)) continue;
+    rows.push({
+      _naturalKey: naturalKey,
+      ETGO_SF_FIELD_ID: prev.ETGO_SF_FIELD_ID,
+      ETGO_SF_ENTITY_ID: prev.ETGO_SF_ENTITY_ID,
+      AD_MODULE_ID: prev.AD_MODULE_ID,
+      PROPERTY_PATH: prev.PROPERTY_PATH,
+      ...(prev.JAVA_QUALIFIER ? { JAVA_QUALIFIER: prev.JAVA_QUALIFIER } : {}),
+      ISINCLUDED: 'N',
+      ISREADONLY: prev.ISREADONLY ?? 'Y',
+      ...FIELD_DEFAULTS,
+    });
+  }
+  return rows;
+}
+
 function indexPrevSnapshot(prevSnapshot) {
   const prevSpecByName = indexByNaturalKey(prevSnapshot.spec, (r) => r.NAME);
   // Entities & fields in prev-XML use NEO UUIDs for parent FKs, but we want
@@ -499,7 +570,9 @@ function indexPrevSnapshot(prevSnapshot) {
     prevSnapshot.field,
     (r) => {
       const parentNK = prevEntityIdToNatural.get(r.ETGO_SF_ENTITY_ID);
-      if (!parentNK || !r.AD_COLUMN_ID) return null;
+      if (!parentNK) return null;
+      // ETP-6148 — a property-path row has no AD column; its identity is the path.
+      if (!r.AD_COLUMN_ID) return r.PROPERTY_PATH ? `${parentNK}/path:${r.PROPERTY_PATH}` : null;
       // parentNK = "<spec>/<tabId>". Append columnId.
       return `${parentNK}/${r.AD_COLUMN_ID}`;
     },
@@ -543,7 +616,7 @@ function buildContractVisibilityIndex({
   }
   const result = new Map();
   for (const f of contractFields) {
-    if (!f.tabId) continue;
+    if (!f.tabId || f.propertyPath) continue;
     const tableId = tabIdToTableId.get(String(f.tabId));
     if (!tableId) continue;
     const adColumnId = colIdByTableAndName.get(
@@ -595,7 +668,9 @@ function applyContractVisibilityToFields({
   // entity. Case mismatches (`C_Orderline_ID` AD vs `C_OrderLine_ID`
   // contract) therefore intentionally fall through to "exclude". We mirror
   // that bug-for-bug so the offline delta matches what push-to-neo writes.
-  const contractColumnSet = new Set(contractFields.map((f) => String(f.column)));
+  // ETP-6148 — property-path fields have no AD column; their `column` names a column of
+  // another table and must not keep a same-named column of the tab table included.
+  const contractColumnSet = new Set(contractFields.filter((f) => !f.propertyPath).map((f) => String(f.column)));
 
   const contractFieldByEntityAndColumn = buildContractVisibilityIndex({
     specName,

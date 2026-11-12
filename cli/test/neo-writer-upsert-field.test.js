@@ -1,3 +1,4 @@
+// @covers cli/src/neo-writer.js
 /**
  * Tests for upsertField in neo-writer.js, focused on the agentPrompt and
  * visibility columns and the partial-update contract (only explicitly provided
@@ -189,5 +190,33 @@ describe('normalizeVisibility', () => {
 
   it('is case-sensitive — the vocabulary is camelCase', () => {
     assert.throws(() => normalizeVisibility('readonly'), /invalid visibility/);
+  });
+});
+
+describe('upsertField (propertyPath)', () => {
+  const PATH = 'paymentScheduleDetail.invoicePaymentSchedule.invoice.documentNo';
+
+  it('INSERTs property_path with a null AD column when the row has a path', async () => {
+    const client = createMockClient();
+    await upsertField(client, {
+      entityId: 'ENT1', moduleId: 'MOD1', columnId: null, propertyPath: PATH,
+      javaQualifier: 'invoiceDocumentNo', isIncluded: 'Y', isReadOnly: 'Y', visibility: 'readOnly',
+    });
+    assert.equal(client.inserts.length, 1);
+    const [insert] = client.inserts;
+    assert.equal(insertValue(insert, 'property_path'), PATH);
+    assert.equal(insertValue(insert, 'ad_column_id'), null);
+    assert.equal(insertValue(insert, 'java_qualifier'), 'invoiceDocumentNo');
+    assert.equal(insertValue(insert, 'isreadonly'), 'Y');
+    const placeholders = insert.sql.match(/\$\d+/g);
+    assert.equal(placeholders.length, insert.params.length, 'one placeholder per bound value');
+  });
+
+  it('does not name property_path in the INSERT of a plain column field', async () => {
+    const client = createMockClient();
+    await upsertField(client, { entityId: 'ENT1', moduleId: 'MOD1', columnId: 'COL1' });
+    const [insert] = client.inserts;
+    assert.doesNotMatch(insert.sql, /property_path/);
+    assert.equal(insert.params.length, 20);
   });
 });

@@ -1,3 +1,4 @@
+// @covers cli/src/push-to-neo.js
 import { describe, it, beforeEach } from 'node:test';
 import { strict as assert } from 'node:assert';
 import {
@@ -910,6 +911,75 @@ describe('stepExcludeNonContractFields', () => {
 
     const count = await stepExcludeNonContractFields(client, popResult, allFields, schemaRawData);
     assert.equal(count, 2);
+  });
+});
+
+describe('stepExcludeNonContractFields — property-path rows', () => {
+  const INV = 'paymentScheduleDetail.invoicePaymentSchedule.invoice.documentNo';
+
+  // Answers the column-field SELECT (JOIN ad_column) and the path-row SELECT (property_path IS NOT NULL)
+  // separately, and records every UPDATE.
+  function pathClient({ columnRows = [], pathRows = [], pathError = null } = {}) {
+    const updated = [];
+    return {
+      updated,
+      query: async (sql, params) => {
+        if (sql.includes('property_path IS NOT NULL')) {
+          if (pathError) throw pathError;
+          return { rows: pathRows };
+        }
+        if (sql.includes('SELECT')) return { rows: columnRows };
+        updated.push(params[0]);
+        return {};
+      },
+    };
+  }
+
+  it('closes a path row the contract no longer declares', async () => {
+    const client = pathClient({ pathRows: [{ etgo_sf_field_id: 'PF_OLD', property_path: 'payment.status' }] });
+    const count = await stepExcludeNonContractFields(client, { entities: [{ entityId: 'E1', tabId: 'T2' }] },
+      [{ column: 'DocumentNo', tabId: 'T2', propertyPath: INV }], { entities: [] });
+    assert.deepEqual(client.updated, ['PF_OLD']);
+    assert.equal(count, 1);
+  });
+
+  it('keeps a path row the contract declares on the same tab', async () => {
+    const client = pathClient({ pathRows: [{ etgo_sf_field_id: 'PF1', property_path: INV }] });
+    await stepExcludeNonContractFields(client, { entities: [{ entityId: 'E1', tabId: 'T2' }] },
+      [{ column: 'DocumentNo', tabId: 'T2', propertyPath: INV }], { entities: [] });
+    assert.deepEqual(client.updated, []);
+  });
+
+  it('closes a path row whose path is declared only on another tab', async () => {
+    const client = pathClient({ pathRows: [{ etgo_sf_field_id: 'PF1', property_path: INV }] });
+    await stepExcludeNonContractFields(client, { entities: [{ entityId: 'E1', tabId: 'T2' }] },
+      [{ column: 'DocumentNo', tabId: 'T9', propertyPath: INV }], { entities: [] });
+    assert.deepEqual(client.updated, ['PF1']);
+  });
+
+  it('does not let a path field keep a same-named tab column included', async () => {
+    // The tab's own DocumentNo column is extracted, not in the contract as a column field, and
+    // only a path field ending on another table's DocumentNo shares its name.
+    const client = pathClient({ columnRows: [{ etgo_sf_field_id: 'F_DOC', columnname: 'DocumentNo' }] });
+    await stepExcludeNonContractFields(client, { entities: [{ entityId: 'E1', tabId: 'T2' }] },
+      [{ column: 'DocumentNo', tabId: 'T2', propertyPath: INV }],
+      { entities: [{ fields: [{ columnName: 'DocumentNo' }] }] });
+    assert.deepEqual(client.updated, ['F_DOC']);
+  });
+
+  it('tolerates a database without ETGO_SF_FIELD.PROPERTY_PATH (42703)', async () => {
+    const client = pathClient({ pathError: Object.assign(new Error('column "property_path" does not exist'), { code: '42703' }) });
+    const count = await stepExcludeNonContractFields(client, { entities: [{ entityId: 'E1', tabId: 'T2' }] },
+      [{ column: 'Amount', tabId: 'T2' }], { entities: [] });
+    assert.equal(count, 0);
+  });
+
+  it('rethrows any other database error', async () => {
+    const client = pathClient({ pathError: Object.assign(new Error('boom'), { code: '08006' }) });
+    await assert.rejects(
+      stepExcludeNonContractFields(client, { entities: [{ entityId: 'E1', tabId: 'T2' }] }, [], { entities: [] }),
+      /boom/,
+    );
   });
 });
 
