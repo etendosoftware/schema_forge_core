@@ -1,3 +1,4 @@
+// @covers cli/src/validate-pipeline.js
 import { describe, it } from 'node:test';
 import { strict as assert } from 'node:assert';
 import { join } from 'node:path';
@@ -1365,4 +1366,45 @@ describe('Rule F19 — custom table required-flag drift', () => {
         'even though its required:true for "name" would conflict with this window\'s contract (required:false)',
     );
   });
+
+  // ─── Personal grid-view column lists are not required-flag lists (ETP-5835) ───
+  const gridViewCase = (name, fixture, expectViolation, why) => it(name, async () => {
+    const result = await runOnFixtures([fixture], { root: FIXTURES });
+    const f19 = result.violations.find(v => v.rule === 'F19');
+    if (expectViolation) assert.ok(f19, why);
+    else assert.ok(!f19, why);
+  });
+
+  gridViewCase('skips a list carrying sourceIndex (grid-view signature) despite a required mismatch',
+    'window-f19-gv-sourceindex', false, 'sourceIndex lists are grid-view lists');
+  gridViewCase('skips a def list derived via .map and fed to useFlaggedGridView({ columns })',
+    'window-f19-gv-org-style', false, 'one-hop derivation reaching useFlaggedGridView');
+  gridViewCase('skips a useMemo array passed directly to useGridView({ columns })',
+    'window-f19-gv-direct', false, 'direct useMemo binding passed to useGridView');
+  gridViewCase('skips a list passed as gridColumns to <GridViewControls>',
+    'window-f19-gv-controls', false, 'GridViewControls gridColumns prop');
+  gridViewCase('still reports a genuine column list with no grid-view usage',
+    'window-f19-gv-genuine', true, 'no grid-view usage means it is still checked');
+
+  it('only skips the grid-view array when a file also holds a genuine list', async () => {
+    const result = await runOnFixtures(['window-f19-gv-mixed'], { root: FIXTURES });
+    const f19 = result.violations.find(v => v.rule === 'F19');
+    assert.ok(f19, 'the genuine list must still be reported');
+    assert.match(f19.message, /'name'/);
+    assert.doesNotMatch(f19.message, /'searchKey'/);
+  });
+
+  gridViewCase('does not follow derivations beyond two hops (documented limit)',
+    'window-f19-gv-threehop', true, 'a three-hop derivation is not followed');
+
+  gridViewCase('same-named binding: a genuine list in a later function is still reported (grid-view one first)',
+    'window-f19-gv-scope-gridfirst', true, 'scope resolution must not skip the unrelated later list');
+  gridViewCase('same-named binding: a genuine list in an earlier function is still reported (grid-view one last)',
+    'window-f19-gv-scope-gridlast', true, 'scope resolution must not skip the unrelated earlier list');
+  gridViewCase('a list that only appears in a useMemo deps array is not treated as grid-view',
+    'window-f19-gv-deps', true, 'deps-array identifiers are not derivations');
+  gridViewCase('memo-body object keys do not link a module list to a grid-view binding',
+    'window-f19-gv-memokey', true, 'a non-computed object key named like a list is not a reference');
+  gridViewCase('memo-body inner-callback parameters shadow a same-named module list',
+    'window-f19-gv-memoshadow', true, 'a shadowing callback parameter is not a reference');
 });
