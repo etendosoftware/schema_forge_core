@@ -132,7 +132,7 @@ node cli/src/xml-apply-delta.js \
   --out-dir <out>/sourcedata
 ```
 
-Applies the upserts and deletes from the delta on top of the prev XML. Row alignment uses natural keys (`spec/tabId/columnId`) — not raw UUIDs — so existing rows keep their prev UUIDs.
+Applies the upserts and deletes from the delta on top of the prev XML. Row alignment uses natural keys (`spec/tabId/columnId`) — not raw UUIDs — so existing rows keep their prev UUIDs. A property-path field row (ETP-6148: `AD_COLUMN_ID` empty, `PROPERTY_PATH` set) aligns on `spec/tabId/path:<PROPERTY_PATH>`, the same key `lib/neo-delta.js` gives it. An aligned row merges with its upsert, so the columns the delta does not predict (`GRID_SEQNO`, for example) keep their prev values. The key is mirrored in both files, and a mismatch makes the check report drift that isn't real: before this was aligned, every path row was predicted twice under the same UUID, once without `VISIBILITY`, `GRID_SEQNO` and `ISBUSINESSCRITICAL`. For a path row the delta also predicts `VISIBILITY` (with `editable` forced to `readOnly`) and `ISBUSINESSCRITICAL`, the values `upsertPathField` writes.
 
 ### `xml-regeneration-check.js`
 

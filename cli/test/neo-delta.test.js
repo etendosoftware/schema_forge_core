@@ -471,6 +471,23 @@ describe('computeWindowDelta — property-path fields', () => {
     assert.equal(row.ISREADONLY, 'Y');
   });
 
+  // Same values push-to-neo's upsertPathField writes (buildFieldUpdateParams + buildPathFieldParams):
+  // VISIBILITY is the curated value with `editable` forced to `readOnly`, ISBUSINESSCRITICAL Y/N.
+  // Without them a brand-new path row is predicted without the columns the export will carry.
+  it('predicts VISIBILITY (editable forced to readOnly) and ISBUSINESSCRITICAL like the push', () => {
+    const rows = pathRows(deltaWith([
+      { name: 'displayedAccount', column: 'Displayedaccount', visibility: 'editable', propertyPath: INV_ACCOUNT },
+      { name: 'displayedAccount2', column: 'Displayedaccount', visibility: 'system', propertyPath: ORD_ACCOUNT, businessCritical: true },
+      { name: 'status', column: 'Status', visibility: 'readOnly', propertyPath: 'payment.status' },
+    ]));
+    const byQualifier = Object.fromEntries(rows.map((r) => [r.JAVA_QUALIFIER, r]));
+    assert.equal(byQualifier.displayedAccount.VISIBILITY, 'readOnly');
+    assert.equal(byQualifier.displayedAccount.ISBUSINESSCRITICAL, 'N');
+    assert.equal(byQualifier.displayedAccount2.VISIBILITY, 'system');
+    assert.equal(byQualifier.displayedAccount2.ISBUSINESSCRITICAL, 'Y');
+    assert.equal(byQualifier.status.VISIBILITY, 'readOnly');
+  });
+
   it('keeps two paths on the same target column as two rows', () => {
     const rows = pathRows(deltaWith([
       { name: 'displayedAccount', column: 'Displayedaccount', visibility: 'readOnly', propertyPath: INV_ACCOUNT },
