@@ -11,6 +11,7 @@ import {
   fetchEnvironments,
   fetchOnboardingDraft,
   fetchSession,
+  fetchTermsDocumentHtml,
   loginAccount,
   loginEnvironment,
   loginWithSsoProvider,
@@ -419,6 +420,32 @@ describe('onboarding session API — resource-access cluster (ETP-4576)', () => 
       });
 
       await assert.rejects(() => fetchSession(fetchImpl, '/etendo'), (error) => isSessionUnavailable(error));
+    });
+  });
+
+  describe('fetchTermsDocumentHtml (ETP-6244)', () => {
+    it('GETs the document of the exact version and language the terms body returned, without credentials', async () => {
+      const { calls, fetchImpl } = recordingFetch(jsonResponse({}, { ok: false, status: 404 }));
+
+      await assert.rejects(() => fetchTermsDocumentHtml(fetchImpl, '/etendo', { language: 'es_ES', version: '1.0 b' }));
+
+      assert.equal(calls.length, 1);
+      assert.equal(calls[0].url, '/etendo/sws/go/terms/document?language=es_ES&version=1.0%20b');
+      assert.equal(calls[0].options.method, 'GET');
+      assert.equal('credentials' in calls[0].options, false);
+    });
+
+    it('rejects with the termsUnavailable code when there is no document', async () => {
+      const { fetchImpl } = recordingFetch(jsonResponse({}, { ok: false, status: 404 }));
+
+      await assert.rejects(
+        () => fetchTermsDocumentHtml(fetchImpl, '/etendo', { language: 'es_ES', version: '1.0' }),
+        (error) => {
+          assert.equal(error.code, ONBOARDING_ERROR_CODES.termsUnavailable);
+          assert.equal(error.status, 404);
+          return true;
+        },
+      );
     });
   });
 

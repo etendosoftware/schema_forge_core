@@ -3,7 +3,10 @@ import { UserPlus, Mail, Lock, Eye, EyeOff, Check, AlertCircle, Loader2, Gift, P
 import { Button } from '@etendosoftware/app-shell-core/components/ui/button';
 import { Label } from '@etendosoftware/app-shell-core/components/ui/label';
 import { useUI, useLocaleSwitch } from '@etendosoftware/app-shell-core/i18n';
-import { registerAccount, loginWithSsoProvider, fetchTermsAndConditions, AUTH_ERROR_UI_KEYS } from '../api.js';
+import {
+  registerAccount, loginWithSsoProvider, fetchTermsAndConditions, fetchTermsDocumentHtml,
+  AUTH_ERROR_UI_KEYS,
+} from '../api.js';
 import { getConfiguredSsoProviders, renderSsoProviderButton } from '../sso.js';
 import { isStrongPassword } from '../passwordPolicy.js';
 import { ONBOARDING_FIELD_LIMITS } from '../fieldLimits.js';
@@ -84,6 +87,12 @@ export function RegisterStep({ config, stepData, onNext, onBack, goToStep, setTo
   useEffect(() => {
     loadTerms();
   }, [loadTerms]);
+
+  // ETP-6244 — a version can be a Word document attached in Classic: the dialog loads it on open.
+  const loadTermsDocument = useCallback(
+    termsBody => fetchTermsDocumentHtml(fetch, apiBase, termsBody),
+    [apiBase],
+  );
 
   const registerPasswordStrong = !askPassword || isStrongPassword(registerForm.password);
   const registerEmailTouched = registerForm.email.trim().length > 0;
@@ -488,6 +497,7 @@ export function RegisterStep({ config, stepData, onNext, onBack, goToStep, setTo
         loading={terms.loading}
         error={terms.error}
         onRetry={loadTerms}
+        loadDocument={loadTermsDocument}
         ui={ui}
         marketingConsent={marketingConsent}
         onMarketingConsentChange={askMarketingConsent ? setMarketingConsent : undefined}

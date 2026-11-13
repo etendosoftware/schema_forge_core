@@ -13,6 +13,7 @@ export {
   loginAccount,
   loginWithSsoProvider,
   fetchTermsAndConditions,
+  fetchTermsDocumentHtml,
   requestPasswordReset,
   confirmPasswordReset,
   changePassword,
