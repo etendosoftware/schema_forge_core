@@ -131,7 +131,7 @@ src/pages/OnboardingPage.jsx      becomes a thin assembler:
     localeCodes: ['es_ES', 'en_US'],
     countryCodes: ['ES'],
     sectorCodes: ['technology', 'services', 'commerce', 'manufacturing'],
-    businessTypeValues: ['company', 'freelancer', 'advisory'],
+    businessTypeValues: ['company', 'freelancer'],
     defaultForm: {
       currency: 'EUR', language: 'es_ES', countryCode: 'ES',
       fiscalIdType: 'NIF', businessType: 'company',
@@ -158,7 +158,7 @@ src/pages/OnboardingPage.jsx      AR assembler:
     localeCodes: ['es_AR', 'en_US'],
     countryCodes: ['AR'],
     sectorCodes: ['technology', 'services', 'commerce', 'manufacturing'],
-    businessTypeValues: ['company', 'freelancer', 'advisory'],
+    businessTypeValues: ['company', 'freelancer'],
     defaultForm: {
       currency: 'ARS', language: 'es_AR', countryCode: 'AR',
       fiscalIdType: 'CUIT', businessType: 'company',
@@ -193,6 +193,12 @@ All functions keep the same signature `(fetchImpl, baseUrl, ...)` — no breakin
 - `fetchOnboardingDraft` / `saveOnboardingDraft` — draft persistence
 - `runOnboardingStream` — SSE stream for AI setup progress
 - `ONBOARDING_ERROR_CODES` — error code constants
+
+`runOnboardingStream` sends the onboarding form's `businessType` when present, using the
+selected value from `OnboardingConfig.businessTypeValues` (for example `company` or
+`freelancer`). The onboarding backend must persist this value on the new
+organization so the Organization editor can restore the selection after setup. The field is
+omitted when unset to keep older callers compatible.
 
 Both ES and AR use the same endpoints against their respective `apiBase`.
 
