@@ -214,6 +214,27 @@ export async function fetchTermsAndConditions(fetchImpl, baseUrl, language) {
 }
 
 /**
+ * ETP-6244 — the Word document of a terms version (`terms.hasDocument`), converted to HTML.
+ *
+ * The `.docx` is attached in Classic to the version's row and served as-is; it is converted here
+ * with mammoth, loaded only when the dialog asks for it so the register screen does not pay for
+ * it. `language` and `version` are the ones the terms body returned, so the document is the one
+ * of the version the visitor is shown.
+ */
+export async function fetchTermsDocumentHtml(fetchImpl, baseUrl, { language, version }) {
+  const query = `?language=${encodeURIComponent(language || '')}&version=${encodeURIComponent(version || '')}`;
+  const response = await fetchImpl(`${baseUrl}/sws/go/terms/document${query}`, { method: 'GET' });
+  if (!response.ok) {
+    throw buildApiError({}, ONBOARDING_ERROR_CODES.termsUnavailable, response.status);
+  }
+  const arrayBuffer = await response.arrayBuffer();
+  const mammothModule = await import('mammoth/mammoth.browser.js');
+  const mammoth = mammothModule.default ?? mammothModule;
+  const { value } = await mammoth.convertToHtml({ arrayBuffer });
+  return value;
+}
+
+/**
  * @param {object} [extra] fields the backend reads besides the provider's own credential, for
  *   recorded when this sign-in creates the account (ETP-6081): `termsVersion`, the terms version
  *   the register screen showed, and `marketingConsent`, whether promotional mail may be sent

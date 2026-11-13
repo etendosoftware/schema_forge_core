@@ -17,8 +17,8 @@
     "./onboarding/password-strength-checklist": "./src/onboarding/components/PasswordStrengthChecklist.jsx",
     "./onboarding/oauth-return-to": "./src/onboarding/oauthReturnTo.js",
     "./onboarding/field-limits": "./src/onboarding/fieldLimits.js",
-    "./onboarding/error-messages": "./src/onboarding/errorMessages.js"
-    ,"./checkout": "./src/checkout/index.js"
+    "./onboarding/error-messages": "./src/onboarding/errorMessages.js",
+    "./checkout": "./src/checkout/index.js"
   },
   "files": [
     "src",
@@ -43,5 +43,8 @@
     "react": "^18.3.0",
     "react-dom": "^18.3.0",
     "react-router-dom": "^7.0.0"
+  },
+  "dependencies": {
+    "mammoth": "1.13.0"
   }
 }
