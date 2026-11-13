@@ -1,3 +1,4 @@
+// @covers cli/src/xml-apply-delta.js
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { mkdir, mkdtemp, readFile, writeFile, rm } from 'node:fs/promises';
@@ -145,6 +146,60 @@ test('conflicting PK with different natural key does not collapse rows', () => {
   assert.ok(cols.has('2070'));
   assert.ok(cols.has('4040'));
   assert.equal(out.field.filter(r => r.AD_COLUMN_ID === '4040').length, 1, 'only one row for the new natural key');
+});
+
+// ETP-6148 — a property-path field row has no AD_COLUMN_ID: its identity is (entity, PROPERTY_PATH),
+// the key neo-delta gives it (`<spec>/<ad_tab_id>/path:<PROPERTY_PATH>`). The prev row must be found
+// under that key so the upsert merges into it, exactly as a column row does; otherwise the prev row
+// survives untouched and the upsert is appended as a second row with the same PK, without the
+// columns only the real push writes (VISIBILITY, GRID_SEQNO, ISBUSINESSCRITICAL).
+test('upsert of a property-path field merges into its prev row instead of duplicating it', () => {
+  const prev = makePrev();
+  prev.field.push({
+    ETGO_SF_FIELD_ID: 'PATH-1', ETGO_SF_ENTITY_ID: 'ENT-1', AD_MODULE_ID: 'M1',
+    PROPERTY_PATH: 'payment.status', JAVA_QUALIFIER: 'status', ISINCLUDED: 'Y', ISREADONLY: 'Y',
+    VISIBILITY: 'readOnly', ISBUSINESSCRITICAL: 'N', GRID_SEQNO: '8',
+    AD_CLIENT_ID: '0', AD_ORG_ID: '0', ISACTIVE: 'Y',
+  });
+  const delta = {
+    spec: 'sales-order',
+    tables: {
+      ETGO_SF_SPEC:   { upserts: [{ _naturalKey: 'sales-order', ETGO_SF_SPEC_ID: 'SPEC-A', NAME: 'sales-order' }], deletes: [] },
+      ETGO_SF_ENTITY: { upserts: [{ _naturalKey: 'sales-order/187', ETGO_SF_ENTITY_ID: 'ENT-1', ETGO_SF_SPEC_ID: 'SPEC-A', AD_TAB_ID: '187', NAME: 'Header' }], deletes: [] },
+      ETGO_SF_FIELD:  { upserts: [
+        { _naturalKey: 'sales-order/187/2070', ETGO_SF_FIELD_ID: 'FLD-1', ETGO_SF_ENTITY_ID: 'ENT-1', AD_COLUMN_ID: '2070' },
+        { _naturalKey: 'sales-order/187/path:payment.status', ETGO_SF_FIELD_ID: 'PATH-1', ETGO_SF_ENTITY_ID: 'ENT-1',
+          AD_MODULE_ID: 'M1', PROPERTY_PATH: 'payment.status', JAVA_QUALIFIER: 'status', ISINCLUDED: 'Y', ISREADONLY: 'Y',
+          AD_CLIENT_ID: '0', AD_ORG_ID: '0', ISACTIVE: 'Y' },
+      ], deletes: [] },
+    },
+  };
+
+  const out = applyDelta(prev, delta);
+
+  const pathRows = out.field.filter((r) => r.ETGO_SF_FIELD_ID === 'PATH-1');
+  assert.equal(pathRows.length, 1, 'one row per PK: the upsert merges into the prev path row');
+  assert.equal(pathRows[0].PROPERTY_PATH, 'payment.status');
+  assert.equal(pathRows[0].VISIBILITY, 'readOnly', 'prev VISIBILITY kept');
+  assert.equal(pathRows[0].GRID_SEQNO, '8', 'prev GRID_SEQNO kept');
+  assert.equal(pathRows[0].ISBUSINESSCRITICAL, 'N', 'prev ISBUSINESSCRITICAL kept');
+});
+
+test('a path row without PROPERTY_PATH or a column still has no natural key and passes through', () => {
+  const prev = makePrev();
+  prev.field.push({ ETGO_SF_FIELD_ID: 'ORPHAN', ETGO_SF_ENTITY_ID: 'ENT-1', ISINCLUDED: 'N', ISREADONLY: 'Y' });
+  const delta = {
+    spec: 'sales-order',
+    tables: {
+      ETGO_SF_SPEC:   { upserts: [{ _naturalKey: 'sales-order', ETGO_SF_SPEC_ID: 'SPEC-A', NAME: 'sales-order' }], deletes: [] },
+      ETGO_SF_ENTITY: { upserts: [{ _naturalKey: 'sales-order/187', ETGO_SF_ENTITY_ID: 'ENT-1', ETGO_SF_SPEC_ID: 'SPEC-A', AD_TAB_ID: '187', NAME: 'Header' }], deletes: [] },
+      ETGO_SF_FIELD:  { upserts: [{ _naturalKey: 'sales-order/187/2070', ETGO_SF_FIELD_ID: 'FLD-1', ETGO_SF_ENTITY_ID: 'ENT-1', AD_COLUMN_ID: '2070' }], deletes: [] },
+    },
+  };
+
+  const out = applyDelta(prev, delta);
+
+  assert.equal(out.field.filter((r) => r.ETGO_SF_FIELD_ID === 'ORPHAN').length, 1, 'kept unchanged, once');
 });
 
 test('round-trip parse → applyDelta with no-op delta → serialize is canonically identical', async () => {
