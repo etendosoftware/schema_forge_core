@@ -94,7 +94,11 @@ function entityRowNaturalKey(row, ctx) {
 
 function fieldRowNaturalKey(row, ctx) {
   const parentNK = ctx.entityIdToNK.get(row.ETGO_SF_ENTITY_ID);
-  if (!parentNK || !row.AD_COLUMN_ID) return null;
+  if (!parentNK) return null;
+  // ETP-6148 — a property-path field has no AD column: it is identified by its PROPERTY_PATH, the
+  // same key neo-delta's pathFieldNaturalKey builds. Without it the prev row would not be found,
+  // survive untouched, and its upsert would be appended as a second row with the same PK.
+  if (!row.AD_COLUMN_ID) return row.PROPERTY_PATH ? `${parentNK}/path:${row.PROPERTY_PATH}` : null;
   return `${parentNK}/${row.AD_COLUMN_ID}`;
 }
 

@@ -117,6 +117,7 @@ function extractFieldsFromContract(backendContract) {
         visibility: field.visibility,
         // ETP-6148 — property-path field: keyed by its path, never by `column`.
         ...(field.propertyPath ? { propertyPath: field.propertyPath } : {}),
+        businessCritical: field.businessCritical || false,
       });
     }
   }
@@ -512,6 +513,10 @@ function buildPathFieldUpserts({ specName, contract, entityIdByNK, prevFieldByNa
       JAVA_QUALIFIER: f.fieldName,
       ISINCLUDED: included,
       ISREADONLY: 'Y',
+      // What upsertPathField writes (buildFieldUpdateParams + buildPathFieldParams): the curated
+      // visibility with `editable` forced to `readOnly`, and the business-critical flag.
+      VISIBILITY: f.visibility === 'editable' ? 'readOnly' : (f.visibility ?? null),
+      ISBUSINESSCRITICAL: f.businessCritical ? 'Y' : 'N',
       ...FIELD_DEFAULTS,
     });
   }
