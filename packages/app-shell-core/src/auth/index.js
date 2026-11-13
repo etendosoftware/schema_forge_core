@@ -17,6 +17,11 @@ export {
   DEFAULT_API_TIMEOUT_MS, NETWORK_ERROR_FALLBACK, NETWORK_ERROR_KEY, NetworkError,
   isNetworkError, registerErrorTranslator, resetErrorTranslatorForTests,
 } from './networkError.js';
+// ETP-5763 — the error apiFetch throws when a request belongs to a superseded session (the same
+// user in two tabs). Its message is localized through the SAME translator as the network error.
+export {
+  STALE_SESSION_ERROR_FALLBACK, STALE_SESSION_ERROR_KEY, staleSessionError,
+} from './staleSessionError.js';
 export {
   createLocalAuthStorage,
   createMemoryAuthStorage,
