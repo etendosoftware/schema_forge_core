@@ -51,7 +51,7 @@ describe('server.js — renderReport (POST /api/reports/:id/render) resolves the
     const renderFn = SERVER_SRC.slice(renderStart, renderEnd);
 
     const sessionCallIdx = renderFn.search(/await resolveReportSession\(req\.headers, \{ method: req\.method, etendoBase: ETENDO_URL \}\)/);
-    const fetchDataIdx = renderFn.indexOf('await fetchReportData(reportId, { limit, session, params, locale })');
+    const fetchDataIdx = renderFn.indexOf('await fetchReportData(reportId, { limit, session, params, locale, format })');
     assert.ok(sessionCallIdx >= 0, 'renderReport must call resolveReportSession');
     assert.ok(fetchDataIdx >= 0, 'renderReport must pass session (not authToken) into fetchReportData');
     assert.ok(sessionCallIdx < fetchDataIdx, 'the session must be resolved BEFORE any report data fetch (no DB/NEO access on an unauthenticated request)');
