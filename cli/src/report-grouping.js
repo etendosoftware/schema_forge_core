@@ -579,6 +579,129 @@ export function addVariation(rows, { compare = true, trend: withTrend = false } 
   });
 }
 
+/**
+ * ETP-6239: one period column's numbers: the amount in the period, and the
+ * same period last year (`sly`) / the previous period (`prev`), each with its
+ * variation. Built with `addVariation`, so a cell reads like a single report's
+ * row. `sign` is the row's effective branch sign (it drives `trend`).
+ */
+export function buildPeriodCell(amount, slyAmount, prevAmount, { sign, trend = false } = {}) {
+  const side = (ref) => {
+    const [r] = addVariation([{ amount, amount_ref: ref, sign }], { compare: true, trend });
+    return { amount: cleanAmount(ref), variationAmount: r.variationAmount, variationPct: r.variationPct, trend: r.trend };
+  };
+  return { amount: cleanAmount(amount), sly: side(slyAmount), prev: side(prevAmount) };
+}
+
+const COMPARE_MODES = ['none', 'sly', 'prev'];
+const cellShows = { none: () => 0, sly: (c) => c.sly.amount, prev: (c) => c.prev.amount };
+
+/** `periodRows` indexed `idx -> account_id -> row`. */
+function amountsByPeriodIdx(periodRows) {
+  const byPeriod = new Map();
+  for (const r of periodRows || []) {
+    const idx = Number(r.idx);
+    if (!byPeriod.has(idx)) byPeriod.set(idx, new Map());
+    byPeriod.get(idx).set(r.account_id, r);
+  }
+  return byPeriod;
+}
+
+/** Per period: the tree against same-period-last-year, and both trees' rows by node_id. */
+function runPeriodTrees(nodeRows, operandRows, periods, amountsByPeriod, treeOpts) {
+  return periods.map((period) => {
+    const amounts = amountsByPeriod.get(period.idx);
+    const feed = (refKey) => nodeRows.map((n) => {
+      const a = amounts?.get(n.node_id);
+      return { ...n, own_amt: a?.own_amt ?? 0, own_amt_ref: a?.[refKey] ?? 0 };
+    });
+    const byId = (rows) => new Map(rows.map((r) => [r.node_id, r]));
+    const sly = buildAccountReportTree(feed('own_amt_sly'), operandRows, treeOpts);
+    return { sly, slyById: byId(sly), prevById: byId(buildAccountReportTree(feed('own_amt_prev'), operandRows, treeOpts)) };
+  });
+}
+
+const isNonZero = (v) => Math.abs(v) > 0.005;
+
+/** `{none, sly, prev}`: whether a row shows in each comparison mode. */
+function visibilityByMode(cells, always) {
+  const visible = {};
+  for (const mode of COMPARE_MODES) {
+    visible[mode] = always || cells.some((c) => isNonZero(c.amount) || isNonZero(cellShows[mode](c)));
+  }
+  return visible;
+}
+
+/** The nearest ancestor of `row` visible in each mode (null when none). */
+function nearestVisibleParents(row, rowById) {
+  const parentIds = {};
+  for (const mode of COMPARE_MODES) {
+    let parent = row.parentId ? rowById.get(row.parentId) : null;
+    while (parent && !parent.visible[mode]) parent = parent.parentId ? rowById.get(parent.parentId) : null;
+    parentIds[mode] = parent ? parent.node_id : null;
+  }
+  return parentIds;
+}
+
+/**
+ * ETP-6239: the account tree with one column per period. For each period the
+ * existing `buildAccountReportTree` runs twice (amount vs same-period-last-year,
+ * amount vs previous period) fed with that period's own amounts from
+ * `periodRows` (`account_id`, `idx`, `own_amt`, `own_amt_sly`, `own_amt_prev`),
+ * so roll-ups, formulas and ShowValueCond behave exactly as in a single report.
+ * Rows are joined on `node_id` into `cells[]` (index = position in `periods`,
+ * the first one being the whole range).
+ *
+ * Which rows show depends on the comparison mode, so core answers it for all
+ * three: `visible = {none, sly, prev}` and `parentIds` (the nearest ancestor
+ * visible in that mode). A row is visible in a mode when one of its cells for
+ * that mode is non-zero or `isalwaysshown` is set (everything is visible when
+ * `showOnlyWithValue` is off). The client and the exports then pick a mode
+ * without asking again. `parentId` is the unfiltered listed parent.
+ *
+ * The top-level `amount` / `amount_ref` / variation fields are the first
+ * period's current / same-period-last-year values, so a reader of the old
+ * shape still gets the range total.
+ */
+export function buildPeriodAccountTree(nodeRows, operandRows, periodRows, opts = {}) {
+  const { periods = [], accountLevel = 'S', showOnlyWithValue = false, expandedNodeIds, trend = false } = opts;
+  const treeOpts = { accountLevel, showOnlyWithValue: false, expandedNodeIds };
+  const runs = runPeriodTrees(nodeRows, operandRows, periods, amountsByPeriodIdx(periodRows), treeOpts);
+  if (!runs.length) return [];
+
+  const alwaysShown = new Set(nodeRows.filter((n) => n.isalwaysshown === 'Y').map((n) => n.node_id));
+  const rows = runs[0].sly.map((base) => {
+    const cells = runs.map((run) => {
+      const s = run.slyById.get(base.node_id);
+      const p = run.prevById.get(base.node_id);
+      return buildPeriodCell(s.amount, s.amount_ref, p.amount_ref, { sign: base.sign, trend });
+    });
+    const visible = visibilityByMode(cells, !showOnlyWithValue || alwaysShown.has(base.node_id));
+    const [first] = cells;
+    return { ...base, amount: first.amount, amount_ref: first.sly.amount, variationAmount: first.sly.variationAmount,
+      variationPct: first.sly.variationPct, trend: first.sly.trend, cells, visible };
+  });
+
+  const rowById = new Map(rows.map((r) => [r.node_id, r]));
+  for (const row of rows) row.parentIds = nearestVisibleParents(row, rowById);
+  return rows;
+}
+
+/**
+ * ETP-6239: the rows of a period tree one comparison mode shows (the exports),
+ * parented to the nearest ancestor shown in that mode. The first row of a
+ * multi-group report keeps its group header.
+ */
+export function selectPeriodMode(rows, mode) {
+  const multiGroup = new Set(rows.map((r) => r.group)).size > 1;
+  let lastGroup;
+  return rows.filter((r) => r.visible[mode]).map((r, i) => {
+    const isGroupStart = i > 0 ? r.group !== lastGroup : multiGroup;
+    lastGroup = r.group;
+    return { ...r, parentId: r.parentIds[mode], isGroupStart };
+  });
+}
+
 /** The `expandedNodeIds` value for "no row open": the interactive view sends it when everything is collapsed. */
 export const NO_EXPANDED_NODES = 'none';
 
@@ -600,7 +723,19 @@ export function parseExpandedNodeIds(value) {
  * definition for both engines (dev plugin + report-server), so the printed
  * tree cannot drift from one to the other.
  */
-export function buildRenderAccountTree(rows, operandRows, params = {}, contract = {}) {
+export function buildRenderAccountTree(rows, operandRows, params = {}, contract = {}, period = null) {
+  if (period?.periodRows) {
+    // ETP-6239: columns by period. The rows shown are the ones the export's
+    // comparison mode shows; `cells[]` carries the per-period numbers.
+    const tree = buildPeriodAccountTree(rows, operandRows, period.periodRows, {
+      periods: period.spec.periods,
+      accountLevel: params.accountLevel || 'S',
+      showOnlyWithValue: params.showOnlyAccountsWithValue === 'true',
+      expandedNodeIds: parseExpandedNodeIds(params.expandedNodeIds),
+      trend: contract.trend === 'result',
+    });
+    return selectPeriodMode(tree, period.compareMode || 'none');
+  }
   const tree = buildAccountReportTree(rows, operandRows, {
     accountLevel: params.accountLevel || 'S',
     showOnlyWithValue: params.showOnlyAccountsWithValue === 'true',

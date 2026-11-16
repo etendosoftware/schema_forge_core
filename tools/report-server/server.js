@@ -33,6 +33,7 @@ import { filterAndTransformParams } from '../../cli/src/report-filters.js';
 import { hydrateDocumentBranding, resolveCompanyLogoDataUrl } from '../../cli/src/report-branding.js';
 import { resolveReportSession, reportAuthErrorBody, assertReportOrgAccess, assertReportAccess } from '../../cli/src/report-auth.js';
 import { handleReportQuery, runReportSql } from '../../cli/src/report-query.js';
+import { buildPeriodMeta, normalizeCompareMode, maxPeriodBucketsFor } from '../../cli/src/report-periods.js';
 
 const _require = createRequire(import.meta.url);
 const __dirname = dirname(fileURLToPath(import.meta.url));
@@ -130,7 +131,7 @@ function listReports() {
 // Data fetching
 // ---------------------------------------------------------------------------
 
-async function fetchReportData(reportId, { limit, session, params = {}, locale } = {}) {
+async function fetchReportData(reportId, { limit, session, params = {}, locale, format } = {}) {
   const contractPath = join(ARTIFACTS_DIR, reportId, 'report-contract.json');
   const contract = JSON.parse(readFileSync(contractPath, 'utf8'));
 
@@ -239,7 +240,8 @@ async function fetchReportData(reportId, { limit, session, params = {}, locale }
   try {
     // Main query plus Libro Mayor's openingQuery (ETP-4898) and Profit & Loss's
     // operandsQuery (ETP-4899): the same runner as `/query`, so they cannot drift.
-    const { rows, openingRows, operandRows } = await runReportSql(pool, contract, { clientId, params, locale, mainSql: sql });
+    // `periods` (ETP-6239) also returns periodRows/periodSpec; the cap depends on the format.
+    const { rows, openingRows, operandRows, periodRows, periodSpec } = await runReportSql(pool, contract, { clientId, params, locale, mainSql: sql, maxPeriodBuckets: maxPeriodBucketsFor(format) });
 
     // Company logo for listing reports (ETP-5013) — same shared orgId/clientId
     // lookup as report-api.js: no `header` object exists for listing reports,
@@ -250,7 +252,7 @@ async function fetchReportData(reportId, { limit, session, params = {}, locale }
       etendoBase: process.env.ETENDO_URL || 'http://localhost:8080/etendo',
     });
 
-    return { rows, contract, openingRows, operandRows, companyLogoDataUrl };
+    return { rows, contract, openingRows, operandRows, periodRows, periodSpec, companyLogoDataUrl };
   } finally {
     await pool.end();
   }
@@ -352,7 +354,8 @@ function resolveReportData(result, params, locale) {
   // nodes, account-level cutoff) is assembled here, replacing `rows` so
   // recordCount/totals and the Excel/CSV templates keep working unchanged.
   if (contract.sql?.operandsQuery !== undefined && Array.isArray(rows)) {
-    rows = buildRenderAccountTree(rows, operandRows, params, contract);
+    rows = buildRenderAccountTree(rows, operandRows, params, contract,
+      result.periodRows ? { periodRows: result.periodRows, spec: result.periodSpec, compareMode: normalizeCompareMode(params.compareMode) } : null);
   }
 
   const grouped = resolveGrouping(contract, params, rows, locale);
@@ -406,6 +409,12 @@ async function queryReport(queryMatch, req, res) {
 // Request handler
 // ---------------------------------------------------------------------------
 
+/** ETP-6239: a bad `periods` value is the caller's (400 + code), not a server failure. */
+function respondRenderError(res, e) {
+  if (e?.name === 'ReportPeriodsError') json(res, e.status, { error: e.message, code: e.code });
+  else json(res, 500, { error: e.message });
+}
+
 /**
  * Handles POST /api/reports/:id/render — resolves the report data, builds the
  * template data and either renders HTML locally or delegates to jsreport for
@@ -441,7 +450,7 @@ async function renderReport(renderMatch, req, res) {
   }
 
   try {
-    const result = await fetchReportData(reportId, { limit, session, params, locale });
+    const result = await fetchReportData(reportId, { limit, session, params, locale, format });
     const { contract, documentData, neoMeta = {}, companyLogoDataUrl } = result;
     const {
       rows, groupLabel, descriptionLabel, dimensionLabel, dimensionField, tbGroups, openingRows,
@@ -500,7 +509,7 @@ async function renderReport(renderMatch, req, res) {
     // controls only render that way when this is true — see report-*'s own
     // `{{#if meta.isInteractive}}` guard around each `.xxx-link` CSS rule.
     const isInteractive = format === 'html' || format === 'preview';
-    const templateData = buildTemplateData(documentData, css, { title, activeFilters, params, recordCount, totals, groupLabel, descriptionLabel, neoMeta, rows, locale, ui, labels, dimensionLabel, dimensionField, groups, tbGroups, companyLogoDataUrl, isInteractive });
+    const templateData = buildTemplateData(documentData, css, { title, activeFilters, params, recordCount, totals, groupLabel, descriptionLabel, neoMeta, rows, locale, ui, labels, dimensionLabel, dimensionField, groups, tbGroups, companyLogoDataUrl, isInteractive, periodMeta: buildPeriodMeta(result.periodSpec, { format, compareMode: params.compareMode }) });
     await injectDocumentQr(documentData, templateData);
     // HTML: render with Handlebars locally
     if (format === 'html') {
@@ -563,7 +572,7 @@ async function renderReport(renderMatch, req, res) {
 
   } catch (e) {
     console.error('[render]', e.message);
-    json(res, 500, { error: e.message });
+    respondRenderError(res, e);
   }
 }
 
@@ -636,7 +645,7 @@ server.listen(PORT, () => {
   console.log(`[report-server] ETENDO_URL=${ETENDO_URL}`);
   console.log(`[report-server] ARTIFACTS_DIR=${ARTIFACTS_DIR}`);
 });
-function buildTemplateData(documentData, css, { title, activeFilters, params, recordCount, totals, groupLabel, descriptionLabel, neoMeta, rows, locale, ui, labels, dimensionLabel, dimensionField, groups, tbGroups, companyLogoDataUrl, isInteractive }) {
+function buildTemplateData(documentData, css, { title, activeFilters, params, recordCount, totals, groupLabel, descriptionLabel, neoMeta, rows, locale, ui, labels, dimensionLabel, dimensionField, groups, tbGroups, companyLogoDataUrl, isInteractive, periodMeta }) {
   // `locale`/`ui`/`labels` go into BOTH branches on purpose: print-* document
   // reports render their own headings from meta.labels just like listings do,
   // and that branch is the easy one to forget.
@@ -646,7 +655,7 @@ function buildTemplateData(documentData, css, { title, activeFilters, params, re
   // companyLogoDataUrl (ETP-5013) only applies to this branch — document
   // reports carry their own logo on `header.companyLogoDataUrl` instead, set
   // above by hydrateDocumentBranding() before documentData was built.
-  return { css, meta: { title, generatedAt: new Date().toISOString(), recordCount, filters: activeFilters, params, locale, ui, labels, totals, groupLabel, descriptionLabel, dimensionLabel, dimensionField, groups, tbGroups, companyLogoDataUrl, isInteractive, ...neoMeta }, rows };
+  return { css, meta: { title, generatedAt: new Date().toISOString(), recordCount, filters: activeFilters, params, locale, ui, labels, totals, groupLabel, descriptionLabel, dimensionLabel, dimensionField, groups, tbGroups, companyLogoDataUrl, isInteractive, ...neoMeta, ...periodMeta }, rows };
 }
 
 
