@@ -72,10 +72,11 @@ function isPartial(idx, from, to, grain) {
     && (t.getUTCFullYear() - f.getUTCFullYear()) * 12 + t.getUTCMonth() - f.getUTCMonth() === span - 1);
 }
 
-function checkLengths(idx, grain, cur, other) {
+function checkLengths(idx, grain, cur, other, capRange) {
   const days = (r) => (r.to - r.from) / DAY_MS + 1;
-  // Bucket 0: up to 24 months + 1 day; a month or quarter bucket: 31 / 92 days. Compared ranges obey the same cap.
-  const tooBig = (r) => (idx === 0 ? r.to > addMonths(r.from, 24) : days(r) > GRAIN_MAX_DAYS[grain]);
+  // Bucket 0 is capped at 24 months + 1 day only for xlsx/csv (D5); on screen and in the PDF any range works.
+  // A month or quarter bucket: 31 / 92 days. Compared ranges obey the same cap.
+  const tooBig = (r) => (idx === 0 ? capRange && r.to > addMonths(r.from, 24) : days(r) > GRAIN_MAX_DAYS[grain]);
   if ([cur, ...other].some(tooBig)) throw tooLong('a period is longer than allowed');
   const slack = idx === 0 ? days(cur) : 0; // Total mode's "previous period" shifts by the range's own length
   for (const r of other) {
@@ -95,7 +96,7 @@ function checkLengths(idx, grain, cur, other) {
  * `grain` is the request's `columns` ('total' = exactly one bucket).
  * Throws ReportPeriodsError (400).
  */
-export function buildPeriodValues(raw, { maxBuckets = SCREEN_MAX_BUCKETS, grain = 'total', hiddenCount = 0 } = {}) {
+export function buildPeriodValues(raw, { maxBuckets = SCREEN_MAX_BUCKETS, grain = 'total', hiddenCount = 0, capRange = false } = {}) {
   if (typeof raw !== 'string' || !raw || raw.length > MAX_RAW_LENGTH) throw invalid('periods must be a non-empty string');
   if (!GRAINS.has(grain)) throw invalid('columns must be total, month or quarter');
   const hidden = Number(hiddenCount);
@@ -106,11 +107,14 @@ export function buildPeriodValues(raw, { maxBuckets = SCREEN_MAX_BUCKETS, grain 
   if (grain === 'total' && tuples.length !== 1) throw invalid('Total columns take exactly one period');
   if (grain !== 'total' && tuples.length < 2) throw invalid('a period grain needs the range plus its periods');
 
+  let bucket0 = null;
   const periods = tuples.map((tuple, idx) => {
     const ranges = tuple.split('|');
     if (ranges.length !== 3) throw invalid('a period is range|sly|prev');
     const [cur, sly, prev] = ranges.map(parseRange);
-    checkLengths(idx, grain, cur, [sly, prev]);
+    if (idx === 0) bucket0 = cur;
+    checkLengths(idx, grain, cur, [sly, prev], capRange);
+    if (idx > 0 && (cur.from < bucket0.from || cur.to > bucket0.to)) throw invalid('a period lies outside the range');
     const out = (r) => ({ from: iso(r.from), to: iso(r.to) });
     return { idx, dateFrom: iso(cur.from), dateTo: iso(cur.to), partial: isPartial(idx, cur.from, cur.to, grain), sly: out(sly), prev: out(prev) };
   });
@@ -126,18 +130,24 @@ export function buildPeriodValues(raw, { maxBuckets = SCREEN_MAX_BUCKETS, grain 
 
 /**
  * Substitutes the engine-built VALUES into `__PERIODS__`. Runs AFTER
- * `applyPlaceholders`. A query without the placeholder, or one still carrying it
- * afterwards, is refused (500): a literal `__PERIODS__` must never reach the DB.
+ * `applyPlaceholders`; a query without the placeholder is refused (500). A request
+ * value carrying the token is refused earlier (`assertNoPeriodsToken`), so a
+ * literal `__PERIODS__` can never come from the request.
  */
 export function substitutePeriods(sql, spec) {
   if (!sql.includes('__PERIODS__')) throw new Error('periods query has no __PERIODS__ placeholder');
-  const out = sql.replaceAll('__PERIODS__', () => spec.values);
-  if (out.includes('__PERIODS__')) throw new Error('__PERIODS__ placeholder left in the periods query');
-  return out;
+  return sql.replaceAll('__PERIODS__', () => spec.values);
+}
+
+/** A request value carrying the token would put engine SQL where a parameter belongs: refuse it (400). */
+export function assertNoPeriodsToken(params) {
+  for (const v of Object.values(params || {})) {
+    if (typeof v === 'string' && v.includes('__PERIODS__')) throw invalid('a parameter contains a reserved token');
+  }
 }
 
 /** Params for the period queries: the date hull, and no comparison (every range travels in `periods`). */
-export const hullParams = (params, spec) => ({ ...params, dateFrom: spec.hull.from, dateTo: spec.hull.to, compareTo: 'false' });
+export const hullParams = (params, spec) => ({ ...params, yearId: '', referenceYearId: '', dateFrom: spec.hull.from, dateTo: spec.hull.to, compareTo: 'false' });
 
 const COMPARE_MODES = new Set(['none', 'sly', 'prev']);
 /** The request's `compareMode` (exports): which set of rows and columns to print. */

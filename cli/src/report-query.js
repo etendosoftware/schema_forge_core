@@ -17,7 +17,7 @@ import { readFileSync, existsSync } from 'node:fs';
 import { join } from 'node:path';
 import { applyPlaceholders } from './report-sql.js';
 import { buildAccountReportTree, buildPeriodAccountTree, buildPeriodCell, addVariation, accountSignMultiplier, cleanAmount } from './report-grouping.js';
-import { buildPeriodValues, substitutePeriods, hasPeriods, hullParams, SCREEN_MAX_BUCKETS } from './report-periods.js';
+import { assertNoPeriodsToken, buildPeriodValues, substitutePeriods, hasPeriods, hullParams, SCREEN_MAX_BUCKETS } from './report-periods.js';
 import { resolveReportSession, reportAuthErrorBody, assertReportOrgAccess, assertReportAccess } from './report-auth.js';
 
 const REPORT_ID_SHAPE = /^[\w-]+$/;
@@ -37,7 +37,9 @@ function errorResult(status, code, error) {
  */
 function periodSpecFor(contract, params, queryKey, maxBuckets = SCREEN_MAX_BUCKETS) {
   if (!hasPeriods(params) || !contract.sql?.[queryKey]) return null;
-  return buildPeriodValues(params.periods, { maxBuckets, grain: params.columns || 'total', hiddenCount: params.hiddenCount || 0 });
+  assertNoPeriodsToken(params);
+  // Only the export formats (maxBuckets above the screen's) cap the length of the range itself (D5).
+  return buildPeriodValues(params.periods, { maxBuckets, capRange: maxBuckets > SCREEN_MAX_BUCKETS, grain: params.columns || 'total', hiddenCount: params.hiddenCount || 0 });
 }
 
 /** A period query filled: placeholders over the date hull first, then the engine-built `__PERIODS__`. */

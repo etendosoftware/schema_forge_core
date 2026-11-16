@@ -3,14 +3,15 @@ import { describe, it } from 'node:test';
 import { strict as assert } from 'node:assert';
 
 import {
-  buildPeriodValues, substitutePeriods, hullParams, hasPeriods, maxPeriodBucketsFor,
+  buildPeriodValues, substitutePeriods, assertNoPeriodsToken, hullParams, hasPeriods, maxPeriodBucketsFor,
   normalizeCompareMode, buildPeriodMeta, ReportPeriodsError, SCREEN_MAX_BUCKETS, EXPORT_MAX_BUCKETS,
 } from '../src/report-periods.js';
 
 const tuple = (cur, sly = '2025-01-01..2025-01-31', prev = '2025-12-01..2025-12-31') => `${cur}|${sly}|${prev}`;
 const JAN = tuple('2026-01-01..2026-01-31');
 const TOTAL = tuple('2026-01-01..2026-03-31', '2025-01-01..2025-03-31', '2025-10-01..2025-12-31');
-const MONTHS = (n) => [TOTAL, ...Array.from({ length: n - 1 }, (_, i) => {
+const WIDE = tuple('2026-01-01..2026-12-31', '2025-01-01..2025-12-31', '2025-01-01..2025-12-31');
+const MONTHS = (n) => [WIDE, ...Array.from({ length: n - 1 }, (_, i) => {
   const m = String((i % 12) + 1).padStart(2, '0');
   const end = (y) => `${y}-${m}-${String(new Date(Date.UTC(y, (i % 12) + 1, 0)).getUTCDate())}`;
   return tuple(`2026-${m}-01..${end(2026)}`, `2025-${m}-01..${end(2025)}`, `2025-${m}-01..${end(2025)}`);
@@ -80,15 +81,16 @@ describe('buildPeriodValues — length limits', () => {
 
   it('quarter bucket: 92 days ok, 93 days too long', () => {
     const q = tuple('2026-07-01..2026-09-30', '2025-07-01..2025-09-30', '2026-04-01..2026-06-30'); // 92 days
-    assert.doesNotThrow(() => buildPeriodValues(`${TOTAL},${q}`, { grain: 'quarter' }));
-    fails(`${TOTAL},${tuple('2026-07-01..2026-10-01', '2025-07-01..2025-09-30', '2026-04-01..2026-06-30')}`, { grain: 'quarter' }, 'PERIOD_RANGE_TOO_LONG');
+    assert.doesNotThrow(() => buildPeriodValues(`${WIDE},${q}`, { grain: 'quarter' }));
+    fails(`${WIDE},${tuple('2026-07-01..2026-10-01', '2025-07-01..2025-09-30', '2026-04-01..2026-06-30')}`, { grain: 'quarter' }, 'PERIOD_RANGE_TOO_LONG');
   });
 
-  it('bucket 0: 24 months + 1 day ok, one day more too long', () => {
+  it('bucket 0: 24 months + 1 day ok, one day more too long, in the export formats only (D5)', () => {
     const ok = tuple('2024-01-01..2026-01-01', '2023-01-01..2024-12-31', '2022-01-01..2023-12-31');
-    assert.doesNotThrow(() => buildPeriodValues(ok));
+    assert.doesNotThrow(() => buildPeriodValues(ok, { capRange: true }));
     const over = tuple('2024-01-01..2026-01-02', '2023-01-01..2024-12-31', '2022-01-01..2023-12-31');
-    fails(over, {}, 'PERIOD_RANGE_TOO_LONG');
+    fails(over, { capRange: true }, 'PERIOD_RANGE_TOO_LONG');
+    assert.doesNotThrow(() => buildPeriodValues(over));
   });
 
   it('a compared range 460 days away is accepted, 461 is refused', () => {
@@ -148,7 +150,7 @@ describe('buildPeriodValues — partial flags and hull', () => {
     const q1 = tuple('2026-01-01..2026-03-31', '2025-01-01..2025-03-31', '2025-10-01..2025-12-31');
     const q2partial = tuple('2026-04-01..2026-05-31', '2025-04-01..2025-06-30', '2026-01-01..2026-03-31');
     const midQ = tuple('2026-02-01..2026-03-31', '2025-02-01..2025-03-31', '2025-11-01..2025-12-31');
-    const q = buildPeriodValues(`${TOTAL},${q1},${q2partial},${midQ}`, { grain: 'quarter', maxBuckets: 7 });
+    const q = buildPeriodValues(`${WIDE},${q1},${q2partial},${midQ}`, { grain: 'quarter', maxBuckets: 7 });
     assert.deepEqual(q.periods.map((p) => p.partial), [false, false, true, true]);
 
     assert.equal(buildPeriodValues(TOTAL).periods[0].partial, false);
@@ -164,7 +166,7 @@ describe('buildPeriodValues — partial flags and hull', () => {
   it('hullParams: hull dates, compareTo false, other params kept, input untouched', () => {
     const spec = buildPeriodValues(TOTAL);
     const params = { orgId: 'O', dateFrom: 'x', dateTo: 'y', compareTo: 'true' };
-    assert.deepEqual(hullParams(params, spec), { orgId: 'O', dateFrom: '2025-01-01', dateTo: '2026-03-31', compareTo: 'false' });
+    assert.deepEqual(hullParams(params, spec), { orgId: 'O', dateFrom: '2025-01-01', dateTo: '2026-03-31', yearId: '', referenceYearId: '', compareTo: 'false' });
     assert.equal(params.compareTo, 'true');
   });
 });
@@ -182,8 +184,9 @@ describe('substitutePeriods', () => {
     assert.throws(() => substitutePeriods('SELECT 1', spec), /no __PERIODS__ placeholder/);
   });
 
-  it('refuses when a placeholder is left over after substituting', () => {
-    assert.throws(() => substitutePeriods('SELECT 1 __PERIODS__', { values: 'v__PERIODS__v' }), /left in the periods query/);
+  it('assertNoPeriodsToken refuses a request value carrying the token', () => {
+    assert.doesNotThrow(() => assertNoPeriodsToken({ orgId: 'O', periods: 'x' }));
+    assert.throws(() => assertNoPeriodsToken({ bPartnerId: 'a__PERIODS__b' }), (e) => e instanceof ReportPeriodsError && e.code === 'INVALID_PERIODS');
   });
 
   it('does not interpret `$&` or `$1` in the values', () => {
