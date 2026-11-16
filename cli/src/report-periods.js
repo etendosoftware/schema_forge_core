@@ -156,7 +156,7 @@ export const normalizeCompareMode = (v) => (COMPARE_MODES.has(v) ? v : 'none');
 /**
  * `meta.periods` / `meta.columnPages` / `meta.notes` for the templates, `{}`
  * without periods so a plain render's data stays as it was. `columnPages` (PDF
- * only) splits the period groups in pages: 2 per page with a comparison (the
+ * only, with its `columnPageSize`) splits the period groups in pages: 2 per page with a comparison (the
  * range counts as a group), all in one without.
  */
 export function buildPeriodMeta(spec, { format, compareMode } = {}) {
@@ -168,6 +168,7 @@ export function buildPeriodMeta(spec, { format, compareMode } = {}) {
   };
   if (format === 'pdf') {
     const size = normalizeCompareMode(compareMode) === 'none' ? idxs.length : 2;
+    meta.columnPageSize = size;
     meta.columnPages = [];
     for (let i = 0; i < idxs.length; i += size) meta.columnPages.push(idxs.slice(i, i + size));
   }

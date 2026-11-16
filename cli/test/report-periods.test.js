@@ -263,6 +263,12 @@ describe('buildPeriodMeta', () => {
     assert.deepEqual(buildPeriodMeta(spec(5), { format: 'pdf', compareMode: 'bogus' }).columnPages, [[0, 1, 2, 3, 4]]);
   });
 
+  it('pdf names its page size so a template never has to infer it', () => {
+    assert.equal(buildPeriodMeta(spec(5), { format: 'pdf', compareMode: 'sly' }).columnPageSize, 2);
+    assert.equal(buildPeriodMeta(spec(5), { format: 'pdf' }).columnPageSize, 5);
+    assert.equal('columnPageSize' in buildPeriodMeta(spec(3), { format: 'xlsx' }), false);
+  });
+
   it('has no columnPages outside pdf', () => {
     for (const format of ['html', 'xlsx', 'csv', undefined]) assert.equal('columnPages' in buildPeriodMeta(spec(3), { format }), false);
   });
