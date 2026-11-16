@@ -596,6 +596,53 @@ export function buildPeriodCell(amount, slyAmount, prevAmount, { sign, trend = f
 const COMPARE_MODES = ['none', 'sly', 'prev'];
 const cellShows = { none: () => 0, sly: (c) => c.sly.amount, prev: (c) => c.prev.amount };
 
+/** `periodRows` indexed `idx -> account_id -> row`. */
+function amountsByPeriodIdx(periodRows) {
+  const byPeriod = new Map();
+  for (const r of periodRows || []) {
+    const idx = Number(r.idx);
+    if (!byPeriod.has(idx)) byPeriod.set(idx, new Map());
+    byPeriod.get(idx).set(r.account_id, r);
+  }
+  return byPeriod;
+}
+
+/** Per period: the tree against same-period-last-year, and both trees' rows by node_id. */
+function runPeriodTrees(nodeRows, operandRows, periods, amountsByPeriod, treeOpts) {
+  return periods.map((period) => {
+    const amounts = amountsByPeriod.get(period.idx);
+    const feed = (refKey) => nodeRows.map((n) => {
+      const a = amounts?.get(n.node_id);
+      return { ...n, own_amt: a?.own_amt ?? 0, own_amt_ref: a?.[refKey] ?? 0 };
+    });
+    const byId = (rows) => new Map(rows.map((r) => [r.node_id, r]));
+    const sly = buildAccountReportTree(feed('own_amt_sly'), operandRows, treeOpts);
+    return { sly, slyById: byId(sly), prevById: byId(buildAccountReportTree(feed('own_amt_prev'), operandRows, treeOpts)) };
+  });
+}
+
+const isNonZero = (v) => Math.abs(v) > 0.005;
+
+/** `{none, sly, prev}`: whether a row shows in each comparison mode. */
+function visibilityByMode(cells, always) {
+  const visible = {};
+  for (const mode of COMPARE_MODES) {
+    visible[mode] = always || cells.some((c) => isNonZero(c.amount) || isNonZero(cellShows[mode](c)));
+  }
+  return visible;
+}
+
+/** The nearest ancestor of `row` visible in each mode (null when none). */
+function nearestVisibleParents(row, rowById) {
+  const parentIds = {};
+  for (const mode of COMPARE_MODES) {
+    let parent = row.parentId ? rowById.get(row.parentId) : null;
+    while (parent && !parent.visible[mode]) parent = parent.parentId ? rowById.get(parent.parentId) : null;
+    parentIds[mode] = parent ? parent.node_id : null;
+  }
+  return parentIds;
+}
+
 /**
  * ETP-6239: the account tree with one column per period. For each period the
  * existing `buildAccountReportTree` runs twice (amount vs same-period-last-year,
@@ -618,52 +665,25 @@ const cellShows = { none: () => 0, sly: (c) => c.sly.amount, prev: (c) => c.prev
  */
 export function buildPeriodAccountTree(nodeRows, operandRows, periodRows, opts = {}) {
   const { periods = [], accountLevel = 'S', showOnlyWithValue = false, expandedNodeIds, trend = false } = opts;
-  const amountsByPeriod = new Map();
-  for (const r of periodRows || []) {
-    const idx = Number(r.idx);
-    if (!amountsByPeriod.has(idx)) amountsByPeriod.set(idx, new Map());
-    amountsByPeriod.get(idx).set(r.account_id, r);
-  }
   const treeOpts = { accountLevel, showOnlyWithValue: false, expandedNodeIds };
-  const runs = periods.map((period) => {
-    const amounts = amountsByPeriod.get(period.idx);
-    const feed = (refKey) => nodeRows.map((n) => {
-      const a = amounts?.get(n.node_id);
-      return { ...n, own_amt: a?.own_amt ?? 0, own_amt_ref: a?.[refKey] ?? 0 };
-    });
-    const byId = (rows) => new Map(rows.map((r) => [r.node_id, r]));
-    const sly = buildAccountReportTree(feed('own_amt_sly'), operandRows, treeOpts);
-    return { sly, slyById: byId(sly), prevById: byId(buildAccountReportTree(feed('own_amt_prev'), operandRows, treeOpts)) };
-  });
+  const runs = runPeriodTrees(nodeRows, operandRows, periods, amountsByPeriodIdx(periodRows), treeOpts);
   if (!runs.length) return [];
 
   const alwaysShown = new Set(nodeRows.filter((n) => n.isalwaysshown === 'Y').map((n) => n.node_id));
-  const nonZero = (v) => Math.abs(v) > 0.005;
   const rows = runs[0].sly.map((base) => {
     const cells = runs.map((run) => {
       const s = run.slyById.get(base.node_id);
       const p = run.prevById.get(base.node_id);
       return buildPeriodCell(s.amount, s.amount_ref, p.amount_ref, { sign: base.sign, trend });
     });
-    const visible = {};
-    for (const mode of COMPARE_MODES) {
-      visible[mode] = !showOnlyWithValue || alwaysShown.has(base.node_id)
-        || cells.some((c) => nonZero(c.amount) || nonZero(cellShows[mode](c)));
-    }
+    const visible = visibilityByMode(cells, !showOnlyWithValue || alwaysShown.has(base.node_id));
     const [first] = cells;
     return { ...base, amount: first.amount, amount_ref: first.sly.amount, variationAmount: first.sly.variationAmount,
       variationPct: first.sly.variationPct, trend: first.sly.trend, cells, visible };
   });
 
   const rowById = new Map(rows.map((r) => [r.node_id, r]));
-  for (const row of rows) {
-    row.parentIds = {};
-    for (const mode of COMPARE_MODES) {
-      let parent = row.parentId ? rowById.get(row.parentId) : null;
-      while (parent && !parent.visible[mode]) parent = parent.parentId ? rowById.get(parent.parentId) : null;
-      row.parentIds[mode] = parent ? parent.node_id : null;
-    }
-  }
+  for (const row of rows) row.parentIds = nearestVisibleParents(row, rowById);
   return rows;
 }
 

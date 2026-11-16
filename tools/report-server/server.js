@@ -409,6 +409,12 @@ async function queryReport(queryMatch, req, res) {
 // Request handler
 // ---------------------------------------------------------------------------
 
+/** ETP-6239: a bad `periods` value is the caller's (400 + code), not a server failure. */
+function respondRenderError(res, e) {
+  if (e?.name === 'ReportPeriodsError') json(res, e.status, { error: e.message, code: e.code });
+  else json(res, 500, { error: e.message });
+}
+
 /**
  * Handles POST /api/reports/:id/render — resolves the report data, builds the
  * template data and either renders HTML locally or delegates to jsreport for
@@ -566,9 +572,7 @@ async function renderReport(renderMatch, req, res) {
 
   } catch (e) {
     console.error('[render]', e.message);
-    // ETP-6239: a bad `periods` value is the caller's, not a server failure.
-    if (e?.name === 'ReportPeriodsError') json(res, e.status, { error: e.message, code: e.code });
-    else json(res, 500, { error: e.message });
+    respondRenderError(res, e);
   }
 }
 
