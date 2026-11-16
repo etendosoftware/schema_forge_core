@@ -1,3 +1,4 @@
+// @covers tools/report-server/server.js
 /**
  * Tests for pure helper functions in report-server/server.js.
  * DB/HTTP/jsreport-dependent functions are skipped.

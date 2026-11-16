@@ -13,6 +13,7 @@ import { join } from 'node:path';
 
 import { handleReportQuery, buildQueryResponse, runReportSql } from '../src/report-query.js';
 import { buildAccountReportTree, ELEMENT_LEVEL_RANK } from '../src/report-grouping.js';
+import { maxPeriodBucketsFor } from '../src/report-periods.js';
 
 const COOKIE = '__Host-go_session=abc';
 const CSRF = 'csrf-ok';
@@ -396,6 +397,104 @@ describe('report-query — periods (ETP-6239)', () => {
     assert.deepEqual(res.body.periods.map((p) => p.idx), [0, 1, 2]);
     assert.ok(res.body.rows.every((r) => r.cells.length === 3));
     assert.equal(res.body.rows.find((r) => r.node_id === 'S1').cells[1].amount, 200);
+  });
+
+  describe('period request validation (before any SQL)', () => {
+    const LONG = '2023-01-01..2025-12-31|2022-01-01..2022-12-31|2020-01-01..2022-12-31';
+    const MONTH = '2024-02-01..2024-02-29|2023-02-01..2023-02-28|2024-01-01..2024-01-31';
+    const OUTSIDE = '2026-01-01..2026-01-31|2025-01-01..2025-01-31|2025-12-01..2025-12-31';
+    const longParams = (periods) => ({ dateFrom: '2023-01-01', columns: 'month', periods });
+    const YEAR = {
+      ...PL_PERIODS,
+      parameters: [...PL_PERIODS.parameters, { name: 'yearId' }, { name: 'referenceYearId' }, { name: 'bPartnerId' }],
+      sql: {
+        ...PL_PERIODS.sql,
+        query: "SELECT 'TREE' WHERE ('__YEARID__' = '' OR y = '__YEARID__') AND ('__BPARTNERID__' = '' OR bp = '__BPARTNERID__')",
+        periodQuery: "SELECT 'PERIODQ' FROM (VALUES __PERIODS__) b WHERE true AND ('__YEARID__' = '' OR y = '__YEARID__') AND ('__REFERENCEYEARID__' = '' OR ry = '__REFERENCEYEARID__')",
+        splitPeriodQuery: "SELECT 'SPLITP' FROM (VALUES __PERIODS__) b WHERE true AND ('__YEARID__' = '' OR y = '__YEARID__') AND n = '__SPLITNODEID__'",
+      },
+    };
+
+    it('a 3-year range is accepted on screen and in the PDF, refused with PERIOD_RANGE_TOO_LONG for xlsx and csv', async () => {
+      const params = longParams(`${LONG},${MONTH}`);
+      for (const maxPeriodBuckets of [undefined, 7]) {
+        const pool = fakePool();
+        await runReportSql(pool, PL_PERIODS, { clientId: 'C1', params, maxPeriodBuckets });
+        assert.equal(sql(pool, 'PERIODQ').length, 1);
+      }
+      for (const format of ['xlsx', 'csv']) {
+        const pool = fakePool();
+        await assert.rejects(
+          runReportSql(pool, PL_PERIODS, { clientId: 'C1', params, maxPeriodBuckets: maxPeriodBucketsFor(format) }),
+          (e) => e.name === 'ReportPeriodsError' && e.code === 'PERIOD_RANGE_TOO_LONG',
+        );
+        assert.equal(pool.queries.length, 0, 'no SQL for a refused period');
+      }
+    });
+
+    it('/query accepts the 3-year range (screen cap)', async () => {
+      const res = await call('profit-loss-periods', { body: { params: longParams(`${LONG},${MONTH}`) } });
+      assert.equal(res.status, 200);
+    });
+
+    it('a bucket outside bucket 0 is a 400 INVALID_PERIODS on /query, runReportSql and the split, with no SQL', async () => {
+      const params = longParams(`${LONG},${OUTSIDE}`);
+      const pool = fakePool();
+      const res = await call('profit-loss-periods', { pool, body: { params } });
+      assert.equal(res.status, 400);
+      assert.equal(res.body.code, 'INVALID_PERIODS');
+      assert.equal(sql(pool, "'TREE'").length + sql(pool, 'PERIODQ').length, 0);
+
+      await assert.rejects(runReportSql(fakePool(), PL_PERIODS, { clientId: 'C1', params }), (e) => e.code === 'INVALID_PERIODS');
+
+      const splitPool = fakePool();
+      const split = await call('profit-loss-periods', { pool: splitPool, body: { params: { ...params, splitBy: 'bpartner', splitNodeId: 'S1' } } });
+      assert.equal(split.status, 400);
+      assert.equal(split.body.code, 'INVALID_PERIODS');
+      assert.equal(sql(splitPool, 'SPLITP').length, 0);
+    });
+
+    it('yearId and referenceYearId sent with periods never reach the period query or the split period query', async () => {
+      const pool = fakePool();
+      const params = { ...PERIOD_PARAMS, yearId: 'YEAR-X', referenceYearId: 'REF-X' };
+      await runReportSql(pool, YEAR, { clientId: 'C1', params });
+      const [period] = sql(pool, 'PERIODQ');
+      assert.ok(!period.includes('YEAR-X') && !period.includes('REF-X'), 'the period query ignores both years');
+      assert.ok(!period.includes('y ='), 'the blank year clause is stripped');
+      assert.ok(sql(pool, "'TREE'")[0].includes("y = 'YEAR-X'"), 'the main query still reads yearId');
+
+      const splitPool = fakePool();
+      await call('profit-loss-periods', { pool: splitPool, body: { params: { ...params, splitBy: 'bpartner', splitNodeId: 'S1' } } });
+      assert.equal(sql(splitPool, 'SPLITP').length, 1);
+    });
+
+    it('the split period query ignores yearId too', async () => {
+      writeContract('profit-loss-year', YEAR);
+      const pool = fakePool();
+      await call('profit-loss-year', { pool, body: { params: { ...PERIOD_PARAMS, yearId: 'YEAR-X', splitBy: 'bpartner', splitNodeId: 'S1' } } });
+      const [q] = sql(pool, 'SPLITP');
+      assert.ok(q && !q.includes('YEAR-X'));
+    });
+
+    it('a request value carrying __PERIODS__ is a 400 INVALID_PERIODS on /query, runReportSql and the split, with no SQL', async () => {
+      writeContract('profit-loss-year', YEAR);
+      const evil = { ...PERIOD_PARAMS, bPartnerId: "x__PERIODS__' OR '1'='1" };
+      const pool = fakePool();
+      const res = await call('profit-loss-year', { pool, body: { params: evil } });
+      assert.equal(res.status, 400);
+      assert.equal(res.body.code, 'INVALID_PERIODS');
+      assert.equal(sql(pool, "'TREE'").length + sql(pool, 'PERIODQ').length, 0);
+
+      const renderPool = fakePool();
+      await assert.rejects(runReportSql(renderPool, YEAR, { clientId: 'C1', params: evil }), (e) => e.code === 'INVALID_PERIODS');
+      assert.equal(renderPool.queries.length, 0);
+
+      const splitPool = fakePool();
+      const split = await call('profit-loss-year', { pool: splitPool, body: { params: { ...evil, splitBy: 'bpartner', splitNodeId: 'S1' } } });
+      assert.equal(split.status, 400);
+      assert.equal(split.body.code, 'INVALID_PERIODS');
+      assert.equal(sql(splitPool, 'SPLITP').length, 0);
+    });
   });
 
   describe('split with periods', () => {

@@ -110,6 +110,47 @@ describe('buildPeriodValues — length limits', () => {
   });
 });
 
+describe('buildPeriodValues — long ranges and bucket containment', () => {
+  const LONG = '2023-01-01..2025-12-31'; // 3 years, 1096 days
+  const longTuple = tuple(LONG, '2022-01-01..2022-12-31', '2020-01-01..2022-12-31');
+  const MONTH_IN = tuple('2024-02-01..2024-02-29', '2023-02-01..2023-02-28', '2024-01-01..2024-01-31');
+  const QUARTER_IN = tuple('2024-04-01..2024-06-30', '2023-04-01..2023-06-30', '2024-01-01..2024-03-31');
+  const shifted = (days) => {
+    const d = (s) => new Date(Date.UTC(...s.split('-').map((n, i) => (i === 1 ? n - 1 : +n))) - days * 86_400_000).toISOString().slice(0, 10);
+    return tuple(LONG, `${d('2023-01-01')}..${d('2025-12-31')}`, '2022-01-01..2022-12-31');
+  };
+
+  it('a 3-year range is accepted for total, month and quarter without the export cap', () => {
+    assert.doesNotThrow(() => buildPeriodValues(longTuple, { grain: 'total' }));
+    assert.doesNotThrow(() => buildPeriodValues(`${longTuple},${MONTH_IN}`, { grain: 'month' }));
+    assert.doesNotThrow(() => buildPeriodValues(`${longTuple},${QUARTER_IN}`, { grain: 'quarter' }));
+  });
+
+  it('the same 3-year range is PERIOD_RANGE_TOO_LONG with the export cap, for every grain', () => {
+    fails(longTuple, { grain: 'total', capRange: true }, 'PERIOD_RANGE_TOO_LONG');
+    fails(`${longTuple},${MONTH_IN}`, { grain: 'month', capRange: true }, 'PERIOD_RANGE_TOO_LONG');
+    fails(`${longTuple},${QUARTER_IN}`, { grain: 'quarter', capRange: true }, 'PERIOD_RANGE_TOO_LONG');
+  });
+
+  it('a compared range of a long bucket 0 may sit 460 days plus the range length away, no further', () => {
+    assert.doesNotThrow(() => buildPeriodValues(shifted(460 + 1096)));
+    fails(shifted(460 + 1096 + 1), {}, 'INVALID_PERIODS', /too far/);
+  });
+
+  it('a bucket after the range that starts before it, ends after it, or lies elsewhere is INVALID_PERIODS', () => {
+    const before = tuple('2022-12-01..2022-12-31', '2021-12-01..2021-12-31', '2022-11-01..2022-11-30');
+    const after = tuple('2026-01-01..2026-01-31', '2025-01-01..2025-01-31', '2025-12-01..2025-12-31');
+    const straddle = tuple('2025-12-15..2026-01-14', '2024-12-15..2025-01-14', '2025-11-15..2025-12-14');
+    for (const bucket of [before, after, straddle]) fails(`${longTuple},${bucket}`, { grain: 'month' }, 'INVALID_PERIODS', /outside the range/);
+  });
+
+  it('a bucket on the very edges of the range is inside it', () => {
+    const first = tuple('2023-01-01..2023-01-31', '2022-01-01..2022-01-31', '2022-12-01..2022-12-31');
+    const last = tuple('2025-12-01..2025-12-31', '2024-12-01..2024-12-31', '2025-11-01..2025-11-30');
+    assert.doesNotThrow(() => buildPeriodValues(`${longTuple},${first},${last}`, { grain: 'month' }));
+  });
+});
+
 describe('buildPeriodValues — count limits and grain', () => {
   it('caps at 7 buckets for screen/pdf and 25 for xlsx/csv', () => {
     assert.equal(maxPeriodBucketsFor('pdf'), SCREEN_MAX_BUCKETS);

@@ -1,3 +1,4 @@
+// @covers tools/report-server/server.js
 /**
  * ETP-5013 — company-logo lookup for LISTING reports (report-general-ledger,
  * balance-sheet, tax-report, etc.). Unlike document (print-*) reports, a

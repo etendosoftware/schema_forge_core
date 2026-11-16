@@ -1,3 +1,4 @@
+// @covers tools/report-server/server.js
 /**
  * ETP-5013 — the render's locale must reach the NEO backend as `Accept-Language`.
  *
