@@ -9,7 +9,9 @@ Body: `{ params, locale, limit? }`. `params` are the contract's parameters, the 
 | Report kind | Answer |
 |---|---|
 | Account tree (contract with `sql.operandsQuery`) | `{ kind: 'tree', rows }`, every level at once, with variation fields when `compareTo: 'true'` |
+| Account tree with `periods` (needs `sql.periodQuery`, ETP-6239) | `{ kind: 'tree', rows, periods, hiddenCount }`, rows with `cells[]`, `visible`, `parentIds` (see *Columns by period*) |
 | Split (`splitBy` + `splitNodeId` + `splitSign`, needs `sql.splitQuery`) | `{ kind: 'split', rows }` |
+| Split with `periods` (needs `sql.splitPeriodQuery`, ETP-6239) | `{ kind: 'split', rows, periods, hiddenCount }`, rows with `cells[]` |
 | Listing (General Ledger, Journal Entries) | `{ kind: 'rows', rows, openingRows }` |
 
 Errors are `{ error, code }`:
@@ -24,6 +26,7 @@ Errors are `{ error, code }`:
 | 502 | `SESSION_BACKEND_UNAVAILABLE` | the session check failed |
 | 404 | `REPORT_NOT_FOUND` | unknown report id |
 | 400 | `QUERY_NOT_SUPPORTED`, `INVALID_LIMIT`, `SPLIT_NOT_SUPPORTED` | bad request for this report |
+| 400 | `INVALID_PERIODS`, `PERIOD_RANGE_TOO_LONG` | a bad `periods` value (ETP-6239); `/render` answers the same `{ error, code }` |
 | 500 | `QUERY_FAILED` | logged server-side; the SQL and the DB message never reach the client |
 
 ## One SQL runner
@@ -43,3 +46,76 @@ Errors are `{ error, code }`:
 Hidden report parameter, a comma-joined string of expanded tree row ids. Absent or blank means "not sent": the export keeps the `accountLevel` cutoff (the old viewer sends `''` for every parameter it has no value for). `'none'` (`NO_EXPANDED_NODES`) means nothing is open, so only the top rows print. Any other value prints exactly those rows.
 
 Functional reference for the first consumer: `docs/generated-custom-windows/profit-loss.md` in `etendo_schema_forge`.
+
+## Columns by period (ETP-6239)
+
+**Compatibility: without `periods`, nothing changes.** `runReportSql`, `handleReportQuery`, the render and every response are exactly what they were; the new code only runs when the request carries `periods` AND the contract declares the period query. A contract without `sql.periodQuery` / `sql.splitPeriodQuery` ignores `periods`. That is what lets this ship to core `main` alone, ahead of the functional change that sends it (the report-server runs core `main`).
+
+### Contract keys
+
+- `sql.periodQuery`: per-account amounts for each period, `account_id, idx, own_amt, own_amt_sly, own_amt_prev`. It reads `fact_acct` once over the date hull (grouped by account and day, `MATERIALIZED`), then joins the days to the periods.
+- `sql.splitPeriodQuery`: the same, grouped by `dimension_id, dimension_name, idx`, for the account split (`splitBy`/`splitNodeId`).
+- Both must contain `__PERIODS__`, the `VALUES` list `(idx, from, to, slyFrom, slyTo, prevFrom, prevTo)`, and keep the main query's predicates (a parity test per contract; Profit & Loss: `report-profit-loss-account-tree.test.js` in the functional repo). The existing `sql.query` / `sql.splitQuery` are never changed for this: other callers (the MCP handler) mirror them by hand.
+
+### `periods` and `__PERIODS__` (`cli/src/report-periods.js`)
+
+`periods` is a request value, **not a declared contract parameter**: `applyPlaceholders` pastes a declared one into the SQL raw. It is a string of tuples joined by commas, bucket 0 (the whole range) first:
+
+```
+2026-01-01..2026-03-31|2025-01-01..2025-03-31|2025-12-01..2026-02-28,2026-01-01..2026-01-31|2025-01-01..2025-01-31|2025-12-01..2025-12-31,...
+ range      |same period last year|previous period            (one tuple per bucket)
+```
+
+`buildPeriodValues(raw, { maxBuckets, grain, hiddenCount, capRange })` validates it and returns `{ values, hull, periods, hiddenCount, grain }`; every date that reaches the SQL is re-serialised from a parsed real day, so nothing from the request is concatenated. Rules (anything else is `400 INVALID_PERIODS`, except the length rules, `400 PERIOD_RANGE_TOO_LONG`):
+
+| Rule | Limit |
+|---|---|
+| Shape | non-empty string up to 2000 characters; each tuple is `range\|sly\|prev`, each range `yyyy-MM-dd..yyyy-MM-dd` and a real day (no 31 Feb) |
+| Order | `from <= to` in every range |
+| `columns` (`grain`) | `total`, `month` or `quarter`; `total` takes exactly one tuple, a grain takes the range plus at least one period |
+| Periods inside the range | every period after bucket 0 lies within bucket 0 |
+| Length | a month bucket and its compared ranges at most 31 days, a quarter 92 (`PERIOD_RANGE_TOO_LONG`) |
+| Compared range distance | its `from` and `to` at most 460 days from its period's (plus the range's own length for bucket 0, whose "previous period" shifts by it) |
+| Bucket count | at most `SCREEN_MAX_BUCKETS` = 7 on `/query` and for pdf/html; `EXPORT_MAX_BUCKETS` = 25 for xlsx/csv (`maxPeriodBucketsFor(format)`), else `PERIOD_RANGE_TOO_LONG` |
+| Range cap (`capRange`, xlsx/csv only) | bucket 0 and its compared ranges may not end after `from` + 24 months (`PERIOD_RANGE_TOO_LONG`); on screen and in the PDF any range works |
+| `hiddenCount` | integer 0-1000 (the earlier periods the screen left out) |
+| Reserved token | a parameter value containing `__PERIODS__` is refused (`assertNoPeriodsToken`) |
+
+**Substitution.** The `VALUES` text replaces `__PERIODS__` **after** `applyPlaceholders` (`substitutePeriods`), so the request can never inject it. `applyPlaceholders` runs over the **date hull** (`hullParams`: the earliest to the latest date of any range, `compareTo=false`, no year), which fills the main query's window clauses exactly. A period query without the placeholder is a contract bug: `500 QUERY_FAILED` (logged), never a literal sent to the database.
+
+### Response shapes
+
+`/query` with `periods`, **in every `columns` mode, `total` included** (one period):
+
+```json
+{ "kind": "tree",
+  "periods": [{ "idx": 0, "dateFrom": "2026-01-01", "dateTo": "2026-03-31", "partial": false },
+              { "idx": 1, "dateFrom": "2026-01-01", "dateTo": "2026-01-31", "partial": false }],
+  "hiddenCount": 0,
+  "rows": [{ "node_id": "...", "parentId": "...", "amount": 100, "amount_ref": 80,
+             "cells": [{ "amount": 100,
+                         "sly":  { "amount": 80, "variationAmount": 20, "variationPct": 25, "trend": "improves" },
+                         "prev": { "amount": 90, "variationAmount": 10, "variationPct": 11.1, "trend": "improves" } }],
+             "visible":   { "none": true, "sly": true, "prev": true },
+             "parentIds": { "none": "...", "sly": "...", "prev": null } }] }
+```
+
+- `cells[i]` belongs to `periods[i]`; `idx` 0 is the range. `sly` is the same period last year, `prev` the previous period, each with `addVariation`'s `variationAmount`, `variationPct` and `trend` (`trend` only when the contract declares `"trend": "result"`).
+- `visible` and `parentIds` answer, for each comparison mode, whether the row shows and its nearest ancestor that shows (`showOnlyAccountsWithValue`: a row shows in a mode when any of its cells, current or compared in that mode, is non-zero, or it is *always shown*). The client switches mode with no new request. `parentId` stays the unfiltered one.
+- The top-level `amount` / `amount_ref` / variation fields are bucket 0's current and same-period-last-year values.
+- Each period is the existing `buildAccountReportTree` run on that period's own amounts (`buildPeriodAccountTree`), so roll-ups, formulas and ShowValueCond behave as in a single-range report. Consequence: a clamped period need not add up to the clamped total for a *P/N* summary node; each column equals the report for its own range.
+- **Split** (`splitBy` + `splitNodeId`, with `periods`): `{ kind: 'split', rows, periods, hiddenCount }`, each row `{ node_id, name, sign, amount, amount_ref, cells }`, signed like the account and sorted by the range's absolute amount.
+
+### Render side (`/render`)
+
+Both engines pass `periodRows` and `periodSpec` from `runReportSql` into `buildRenderAccountTree(rows, operandRows, params, contract, period)`, which builds the same period tree and keeps the rows of the export's `compareMode` (`none`, `sly`, `prev`; anything else is `none`; `selectPeriodMode`). The `hiddenCount` / `columns` / `compareMode` params are read from the request like `periods`.
+
+`buildPeriodMeta(spec, { format, compareMode })` adds to the template data (`{}` without periods, so a plain render's data is unchanged):
+
+- `meta.periods`: `[{ idx, dateFrom, dateTo, partial }]`.
+- `meta.notes`: `{ hiddenCount, hasPartial }`.
+- `meta.columnPages` and `meta.columnPageSize` (PDF only): the period indexes cut in pages, 2 per page with a comparison (the range counts as a group), all in one page without. `columnPageSize` is that page size, which `periodPages` needs to re-cut the pages once it moves the range last.
+
+The templates read them through the canonical helpers in `templates/reports/helpers/report-html-helpers.js` (`createReportHelpers`, mirrored in `JSREPORT_HELPER_SOURCES` so they cross into the jsreport container; the parity test and `parity.json` guard it): `periodLabel(period, columns, locale, totalLabel)` (`sep 26`, `T3 26` / `Q3 26`, `*` when partial, the caller's label for the range), `periodOrder(periods)` (indexes with the range last, for Excel/CSV), `periodPages(columnPages, pageSize)` (the PDF pages with the range last, cut at `meta.columnPageSize`), `periodMode(value)` (`sly`/`prev`, else empty) and `periodSpan(groups, mode)` (columns a group header spans). Never write a second copy in a report's own `helpers.js`.
+
+Functional reference for the first consumer, with the client side (Columnas, the PDF pages, the 24-month export cap in the UI): `docs/generated-custom-windows/profit-loss.md` in `etendo_schema_forge`.

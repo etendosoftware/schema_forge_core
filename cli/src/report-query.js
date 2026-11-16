@@ -16,7 +16,8 @@
 import { readFileSync, existsSync } from 'node:fs';
 import { join } from 'node:path';
 import { applyPlaceholders } from './report-sql.js';
-import { buildAccountReportTree, addVariation, accountSignMultiplier, cleanAmount } from './report-grouping.js';
+import { buildAccountReportTree, buildPeriodAccountTree, buildPeriodCell, addVariation, accountSignMultiplier, cleanAmount } from './report-grouping.js';
+import { assertNoPeriodsToken, buildPeriodValues, substitutePeriods, hasPeriods, hullParams, SCREEN_MAX_BUCKETS } from './report-periods.js';
 import { resolveReportSession, reportAuthErrorBody, assertReportOrgAccess, assertReportAccess } from './report-auth.js';
 
 const REPORT_ID_SHAPE = /^[\w-]+$/;
@@ -30,6 +31,22 @@ function errorResult(status, code, error) {
 }
 
 /**
+ * ETP-6239: the validated `periods` of a request, or null when it carries none
+ * or the contract has no `queryKey` period query (the report then answers as it
+ * always did). Throws ReportPeriodsError, so a bad value fails before any SQL.
+ */
+function periodSpecFor(contract, params, queryKey, maxBuckets = SCREEN_MAX_BUCKETS) {
+  if (!hasPeriods(params) || !contract.sql?.[queryKey]) return null;
+  assertNoPeriodsToken(params);
+  // Only the export formats (maxBuckets above the screen's) cap the length of the range itself (D5).
+  return buildPeriodValues(params.periods, { maxBuckets, capRange: maxBuckets > SCREEN_MAX_BUCKETS, grain: params.columns || 'total', hiddenCount: params.hiddenCount || 0 });
+}
+
+/** A period query filled: placeholders over the date hull first, then the engine-built `__PERIODS__`. */
+const fillPeriodQuery = (contract, queryKey, spec, { clientId, params, locale }) =>
+  substitutePeriods(applyPlaceholders(contract.sql[queryKey], { clientId, params: hullParams(params, spec), contract, locale }), spec);
+
+/**
  * Runs a SQL contract's main query plus its optional secondary queries, with
  * the same placeholder rules as the render. The one place that does it: `/query`,
  * the report-server render and the dev plugin's render all call it (ETP-6080 W4).
@@ -37,8 +54,13 @@ function errorResult(status, code, error) {
  * SQL with its date filters and limit); without it, `sql.query` is used. `limit`
  * caps the main query only; it is spliced into the SQL text, so anything but a
  * positive safe integer throws.
+ * With `params.periods` (ETP-6239) and a contract `sql.periodQuery`, the per-period
+ * amounts come back as `periodRows` with their validated `periodSpec`;
+ * `maxPeriodBuckets` is the render format's cap. Without `periods` the result is
+ * exactly what it was.
  */
-export async function runReportSql(pool, contract, { clientId, params = {}, locale, limit, mainSql } = {}) {
+export async function runReportSql(pool, contract, { clientId, params = {}, locale, limit, mainSql, maxPeriodBuckets } = {}) {
+  const periodSpec = periodSpecFor(contract, params, 'periodQuery', maxPeriodBuckets);
   const apply = (sql) => applyPlaceholders(sql, { clientId, params, contract, locale });
   let main = mainSql ?? apply(contract.sql.query);
   if (limit !== undefined && limit !== null) {
@@ -48,7 +70,9 @@ export async function runReportSql(pool, contract, { clientId, params = {}, loca
   const { rows } = await pool.query(main);
   const openingRows = contract.sql?.openingQuery ? (await pool.query(apply(contract.sql.openingQuery))).rows : null;
   const operandRows = contract.sql?.operandsQuery ? (await pool.query(apply(contract.sql.operandsQuery))).rows : null;
-  return { rows, openingRows, operandRows };
+  if (!periodSpec) return { rows, openingRows, operandRows };
+  const periodRows = (await pool.query(fillPeriodQuery(contract, 'periodQuery', periodSpec, { clientId, params, locale }))).rows;
+  return { rows, openingRows, operandRows, periodRows, periodSpec };
 }
 
 /**
@@ -62,6 +86,8 @@ export async function runReportSql(pool, contract, { clientId, params = {}, loca
  * are read.
  */
 async function runSplit(pool, contract, { clientId, params, locale }) {
+  const periodSpec = periodSpecFor(contract, params, 'splitPeriodQuery');
+  if (periodSpec) return runPeriodSplit(pool, contract, { clientId, params, locale, periodSpec });
   const { rows } = await pool.query(applyPlaceholders(contract.sql.splitQuery, { clientId, params, contract, locale }));
   const sign = params.splitSign === 'C' ? 'C' : 'D';
   const multiplier = accountSignMultiplier(sign);
@@ -76,11 +102,50 @@ async function runSplit(pool, contract, { clientId, params, locale }) {
 }
 
 /**
+ * ETP-6239: the split with a value in every period (`sql.splitPeriodQuery`):
+ * each row carries `cells[]` like a tree row, and the answer says which periods
+ * they are. Same sign handling as the plain split.
+ */
+async function runPeriodSplit(pool, contract, { clientId, params, locale, periodSpec }) {
+  const { rows } = await pool.query(fillPeriodQuery(contract, 'splitPeriodQuery', periodSpec, { clientId, params, locale }));
+  const sign = params.splitSign === 'C' ? 'C' : 'D';
+  const multiplier = accountSignMultiplier(sign);
+  const trend = contract.trend === 'result';
+  const byDimension = new Map();
+  for (const r of rows) {
+    if (!byDimension.has(r.dimension_id)) byDimension.set(r.dimension_id, { name: r.dimension_name, byIdx: new Map() });
+    byDimension.get(r.dimension_id).byIdx.set(Number(r.idx), r);
+  }
+  const split = [...byDimension].map(([id, { name, byIdx }]) => {
+    const cells = periodSpec.periods.map((p) => {
+      const r = byIdx.get(p.idx);
+      const signed = (v) => (Number(v) || 0) * multiplier;
+      return buildPeriodCell(signed(r?.own_amt), signed(r?.own_amt_sly), signed(r?.own_amt_prev), { sign, trend });
+    });
+    return { node_id: id, name, sign, amount: cells[0].amount, amount_ref: cells[0].sly.amount, cells };
+  });
+  split.sort((a, b) => Math.abs(b.amount) - Math.abs(a.amount) || a.name.localeCompare(b.name));
+  return { rows: split, periods: periodSpec.periods.map(publicPeriod), hiddenCount: periodSpec.hiddenCount };
+}
+
+const publicPeriod = ({ idx, dateFrom, dateTo, partial }) => ({ idx, dateFrom, dateTo, partial });
+
+/**
  * Shapes the JSON answer. An account-tree report returns EVERY level (the
  * view folds on screen; `accountLevel` is only its initial expansion), with
  * variation; a listing report returns its rows as they come.
  */
-export function buildQueryResponse(contract, params, { rows, openingRows, operandRows }) {
+export function buildQueryResponse(contract, params, { rows, openingRows, operandRows, periodRows, periodSpec }) {
+  if (periodSpec && contract.sql.operandsQuery !== undefined) {
+    // ETP-6239: one column per period. `cells[]` and the per-mode `visible` / `parentIds` come back in EVERY mode (Total too).
+    const tree = buildPeriodAccountTree(rows, operandRows, periodRows, {
+      periods: periodSpec.periods,
+      accountLevel: 'S',
+      showOnlyWithValue: params.showOnlyAccountsWithValue === 'true',
+      trend: contract.trend === 'result',
+    });
+    return { kind: 'tree', rows: tree, periods: periodSpec.periods.map(publicPeriod), hiddenCount: periodSpec.hiddenCount };
+  }
   if (contract.sql.operandsQuery !== undefined) {
     const tree = buildAccountReportTree(rows, operandRows, {
       accountLevel: 'S',
@@ -158,11 +223,15 @@ export async function handleReportQuery({ reportId, headers, method, body = {} }
     pool = createPool();
     await assertReportOrgAccess(pool, session, { contract, params });
     const ctx = { clientId: session.clientId, params, locale: body.locale };
-    if (isSplit) return { status: 200, body: { kind: 'split', rows: await runSplit(pool, contract, ctx) } };
+    if (isSplit) {
+      const split = await runSplit(pool, contract, ctx);
+      return { status: 200, body: Array.isArray(split) ? { kind: 'split', rows: split } : { kind: 'split', ...split } };
+    }
     const result = await runReportSql(pool, contract, { ...ctx, limit });
     return { status: 200, body: buildQueryResponse(contract, params, result) };
   } catch (e) {
     if (e?.name === 'ReportAuthError') return reportAuthErrorBody(e);
+    if (e?.name === 'ReportPeriodsError') return errorResult(e.status, e.code, e.message);
     // Logged server-side only: the SQL text and DB messages never reach the client.
     console.error(`[report-query] ${reportId}:`, e?.message);
     return errorResult(500, 'QUERY_FAILED');

@@ -138,11 +138,13 @@ describe('registerReportHelpers whitelist stability contract', () => {
     'formatCurrency',
     'formatDate',
     'formatDateDisplay',
+    'formatDateLocale',
     'formatNumber',
     'ifCond',
     'isGroupBreak',
     'resetGroupTracking',
     'sumField',
+    'sumFieldWhere',
     // `sumFields` (ETP-4900) was never added here, so this guard has been red since
     // that helper shipped; `csvField` (ETP-5032) is the new entry. Both are listed now,
     // which is the whole point of a whitelist whose job is to be truthful.
@@ -150,6 +152,12 @@ describe('registerReportHelpers whitelist stability contract', () => {
     'csvField',
     'sumRowsByCategory',
     'translateDocType',
+    // ETP-6239: the period-column helpers, canonical in report-html-helpers.js.
+    'periodLabel',
+    'periodMode',
+    'periodOrder',
+    'periodPages',
+    'periodSpan',
   ].sort();
 
   it('registers exactly the documented canonical helper set', () => {

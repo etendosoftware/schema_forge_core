@@ -1,3 +1,4 @@
+// @covers tools/report-server/server.js
 /**
  * ETP-5013 — company-logo lookup for LISTING reports (report-general-ledger,
  * balance-sheet, tax-report, etc.). Unlike document (print-*) reports, a
@@ -72,7 +73,7 @@ describe('server.js — listing report company-logo lookup (ETP-5013)', () => {
     assert.match(SERVER_SRC, /return \{ rows, contract, neoMeta, companyLogoDataUrl \}/, 'NEO branch return');
     assert.match(
       SERVER_SRC,
-      /return \{ rows, contract, openingRows, operandRows, companyLogoDataUrl \}/,
+      /return \{ rows, contract, openingRows, operandRows, periodRows, periodSpec, companyLogoDataUrl \}/,
       'SQL/listing branch return',
     );
   });

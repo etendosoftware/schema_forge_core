@@ -16,6 +16,9 @@ import {
   addVariation,
   parseExpandedNodeIds,
   buildRenderAccountTree,
+  buildPeriodCell,
+  buildPeriodAccountTree,
+  selectPeriodMode,
   cleanAmount,
   TRIAL_BALANCE_AMOUNT_FIELDS,
 } from '../src/report-grouping.js';
@@ -861,5 +864,210 @@ describe('addVariation (ETP-6080)', () => {
     assert.equal(r.variationPct, null);
     assert.equal(r.trend, null);
     assert.equal(input[0].variationAmount, undefined);
+  });
+});
+
+// ETP-6239 — one column per period. The per-period numbers must be exactly what a
+// single-range report of that period would print, so the tests build the
+// expectation with the real single-range tree and addVariation.
+describe('buildPeriodAccountTree / selectPeriodMode / buildPeriodCell (ETP-6239)', () => {
+  const n = (id, parent, path, level, own = {}, extra = {}) => ({
+    node_id: id, parent_id: parent, sort_path: path, group_name: 'G1', value: id, name: `N ${id}`,
+    elementlevel: level, isalwaysshown: 'N', accountsign: 'C', own_amt: 0, own_amt_ref: 0, issummary: 'Y', ...extra,
+  });
+  // root > E1 > C1 > D1 > S1 (-500 / sly -400), S2 (zero everywhere); C2 > S3 (only in the previous side); F1 = C1 formula.
+  const NODES = [
+    n('root', null, '1', 'E'),
+    n('E1', 'root', '1.1', 'E'),
+    n('C1', 'E1', '1.1.1', 'C'),
+    n('D1', 'C1', '1.1.1.1', 'D'),
+    n('S1', 'D1', '1.1.1.1.1', 'S', {}, { issummary: 'N' }),
+    n('S2', 'D1', '1.1.1.1.2', 'S', {}, { issummary: 'N' }),
+    n('C2', 'E1', '1.1.2', 'C', {}, { isalwaysshown: 'N' }),
+    n('S3', 'C2', '1.1.2.1', 'S', {}, { issummary: 'N' }),
+    n('F1', 'E1', '1.1.3', 'C', {}, { issummary: 'N' }),
+    n('K1', 'E1', '1.1.4', 'C', {}, { issummary: 'N', isalwaysshown: 'Y' }),
+  ];
+  const OPS = [{ owner_id: 'F1', operand_id: 'C1', sign: 1 }];
+  const PERIODS = [{ idx: 0 }, { idx: 1 }, { idx: 2 }];
+  const A = (account_id, idx, own_amt, own_amt_sly, own_amt_prev) => ({ account_id, idx, own_amt, own_amt_sly, own_amt_prev });
+  const ROWS = [
+    A('S1', 0, -500, -400, -100), A('S1', 1, -200, -100, -500), A('S1', 2, -300, -300, -200),
+    A('S3', 0, 0, 0, 70), A('S3', 2, 0, 0, 70),
+    // accountsign 'C': the displayed amount is the raw one with the sign flipped.
+  ];
+  const byId = (rows) => Object.fromEntries(rows.map((r) => [r.node_id, r]));
+  const near = (a, b, msg) => assert.ok(Math.abs(a - b) < 0.005, `${msg}: ${a} vs ${b}`);
+
+  const single = (idx, refKey, extra = {}) => {
+    const feed = NODES.map((nd) => {
+      const r = ROWS.find((x) => x.account_id === nd.node_id && x.idx === idx);
+      return { ...nd, own_amt: r?.own_amt ?? 0, own_amt_ref: r?.[refKey] ?? 0 };
+    });
+    return byId(addVariation(buildAccountReportTree(feed, OPS, { accountLevel: 'S', showOnlyWithValue: false, ...extra }),
+      { compare: true, trend: true }));
+  };
+
+  it('every bucket and side equals a single-range tree plus addVariation', () => {
+    const tree = byId(buildPeriodAccountTree(NODES, OPS, ROWS, { periods: PERIODS, trend: true }));
+    for (const idx of [0, 1, 2]) {
+      for (const [side, key] of [['sly', 'own_amt_sly'], ['prev', 'own_amt_prev']]) {
+        const expected = single(idx, key);
+        for (const id of Object.keys(expected)) {
+          const cell = tree[id].cells[idx];
+          const exp = expected[id];
+          near(cell.amount, exp.amount, `${id}[${idx}].amount`);
+          near(cell[side].amount, exp.amount_ref, `${id}[${idx}].${side}.amount`);
+          near(cell[side].variationAmount, exp.variationAmount, `${id}[${idx}].${side}.variationAmount`);
+          assert.equal(cell[side].variationPct, exp.variationPct, `${id}[${idx}].${side}.variationPct`);
+          assert.equal(cell[side].trend, exp.trend, `${id}[${idx}].${side}.trend`);
+        }
+      }
+    }
+  });
+
+  it('keeps the old top-level fields as the first period / sly side, and rolls up and resolves formulas per bucket', () => {
+    const tree = byId(buildPeriodAccountTree(NODES, OPS, ROWS, { periods: PERIODS }));
+    assert.equal(tree.C1.amount, tree.C1.cells[0].amount);
+    assert.equal(tree.C1.amount_ref, tree.C1.cells[0].sly.amount);
+    assert.deepEqual(tree.C1.cells.map((c) => c.amount), [500, 200, 300]);
+    assert.deepEqual(tree.F1.cells.map((c) => c.amount), [500, 200, 300], 'formula = C1 in each bucket');
+    assert.equal(tree.root, undefined, 'the root is a container, never a row');
+  });
+
+  it('trend follows the contract: null unless asked', () => {
+    const off = byId(buildPeriodAccountTree(NODES, OPS, ROWS, { periods: PERIODS }));
+    assert.ok(off.S1.cells.every((c) => c.sly.trend === null && c.prev.trend === null));
+    const on = byId(buildPeriodAccountTree(NODES, OPS, ROWS, { periods: PERIODS, trend: true }));
+    assert.equal(on.S1.cells[0].sly.trend, 'improves'); // 500 vs 400 on a credit branch
+    assert.equal(on.S1.cells[1].sly.trend, 'improves');
+    assert.equal(on.S1.cells[2].sly.trend, null); // equal
+  });
+
+  it('visibility per mode: a row with value only on the previous side shows in prev, not in none/sly', () => {
+    const t = byId(buildPeriodAccountTree(NODES, OPS, ROWS, { periods: PERIODS, showOnlyWithValue: true }));
+    assert.deepEqual(t.S1.visible, { none: true, sly: true, prev: true });
+    assert.deepEqual(t.S3.visible, { none: false, sly: false, prev: true });
+    assert.deepEqual(t.C2.visible, { none: false, sly: false, prev: true }, 'a parent rolls up its child');
+    assert.deepEqual(t.S2.visible, { none: false, sly: false, prev: false });
+  });
+
+  it('isalwaysshown keeps a zero row visible in every mode', () => {
+    const t = byId(buildPeriodAccountTree(NODES, OPS, ROWS, { periods: PERIODS, showOnlyWithValue: true }));
+    assert.deepEqual(t.K1.visible, { none: true, sly: true, prev: true });
+  });
+
+  it('everything is visible in every mode when showOnlyWithValue is off', () => {
+    const rows = buildPeriodAccountTree(NODES, OPS, ROWS, { periods: PERIODS });
+    assert.ok(rows.every((r) => r.visible.none && r.visible.sly && r.visible.prev));
+    assert.ok(rows.every((r) => r.parentIds.none === (r.parentId || null)), 'parentIds are the plain parent');
+  });
+
+  it('parentIds point at the nearest visible ancestor per mode', () => {
+    const t = byId(buildPeriodAccountTree(NODES, OPS, ROWS, { periods: PERIODS, showOnlyWithValue: true }));
+    // D1 has value (S1): visible. S2 is hidden everywhere.
+    assert.deepEqual(t.S1.parentIds, { none: 'D1', sly: 'D1', prev: 'D1' });
+    // S3 is only visible in prev; in that mode its parent C2 is visible too.
+    assert.equal(t.S3.parentIds.prev, 'C2');
+    // Hide D1's value in prev via a tree where the only value sits two levels under E1.
+    const nodes = NODES.filter((x) => x.node_id !== 'S1');
+    const rows = byId(buildPeriodAccountTree(nodes, OPS, [A('S3', 0, 0, 0, 70)], { periods: [{ idx: 0 }], showOnlyWithValue: true }));
+    assert.equal(rows.S3.parentIds.none, null, 'no visible ancestor in none: top level');
+    assert.equal(rows.S3.parentIds.prev, 'C2');
+    assert.equal(rows.D1.visible.prev, false);
+  });
+
+  it('ShowValueCond P/N clamps each bucket on its own', () => {
+    const nodes = [
+      n('R', null, '1', 'E'),
+      n('P1', 'R', '1.1', 'C', {}, { showvaluecond: 'P' }),
+      n('X', 'P1', '1.1.1', 'S', {}, { issummary: 'N', accountsign: 'D' }),
+      n('N1', 'R', '1.2', 'C', {}, { showvaluecond: 'N' }),
+      n('Y', 'N1', '1.2.1', 'S', {}, { issummary: 'N', accountsign: 'D' }),
+    ];
+    const rows = [A('X', 0, -5, -5, -5), A('X', 1, 3, 3, -4), A('Y', 0, -9, 9, 0), A('Y', 1, 2, 0, 0)];
+    const t = byId(buildPeriodAccountTree(nodes, [], rows, { periods: [{ idx: 0 }, { idx: 1 }] }));
+    assert.deepEqual(t.P1.cells.map((c) => c.amount), [5, 0], 'P keeps positives, clamps the negative bucket to 0');
+    assert.deepEqual(t.P1.cells.map((c) => c.prev.amount), [5, 4]);
+    assert.deepEqual(t.N1.cells.map((c) => c.amount), [0, -2]);
+    assert.equal(t.N1.cells[0].sly.amount, -9);
+  });
+
+  it('answers [] for no periods, and for periods with no rows still has zero cells', () => {
+    assert.deepEqual(buildPeriodAccountTree(NODES, OPS, ROWS, { periods: [] }), []);
+    assert.deepEqual(buildPeriodAccountTree(NODES, OPS, ROWS), []);
+    const rows = buildPeriodAccountTree(NODES, OPS, [], { periods: [{ idx: 0 }] });
+    assert.ok(rows.length > 0 && rows.every((r) => r.cells.length === 1 && r.cells[0].amount === 0));
+    assert.equal(rows[0].cells[0].sly.variationPct, null);
+  });
+
+  it('buildPeriodCell: amount, both sides, null pct on a zero reference, trend only when asked', () => {
+    const c = buildPeriodCell(150, 100, 0, { sign: 'C', trend: true });
+    assert.deepEqual(c, {
+      amount: 150,
+      sly: { amount: 100, variationAmount: 50, variationPct: 50, trend: 'improves' },
+      prev: { amount: 0, variationAmount: 150, variationPct: null, trend: 'improves' },
+    });
+    assert.equal(buildPeriodCell(150, 100, 0, { sign: 'C' }).sly.trend, null);
+    assert.equal(buildPeriodCell(150, 100, 0, { sign: 'D', trend: true }).sly.trend, 'worsens');
+  });
+
+  describe('selectPeriodMode', () => {
+    const pt = () => buildPeriodAccountTree(NODES, OPS, ROWS, { periods: PERIODS, showOnlyWithValue: true });
+
+    it('keeps the rows visible in the mode and re-parents to the nearest shown ancestor', () => {
+      const none = selectPeriodMode(pt(), 'none');
+      const prev = selectPeriodMode(pt(), 'prev');
+      assert.ok(!none.some((r) => r.node_id === 'S3'));
+      assert.ok(prev.some((r) => r.node_id === 'S3'));
+      assert.equal(byId(prev).S3.parentId, 'C2');
+      assert.ok(none.every((r) => r.visible.none));
+    });
+
+    it('re-parents over a hidden ancestor', () => {
+      const rows = pt().map((r) => (r.node_id === 'D1' ? { ...r, visible: { ...r.visible, none: false } } : r));
+      const out = byId(selectPeriodMode(rows, 'none'));
+      assert.equal(out.D1, undefined);
+      assert.equal(out.S1.parentId, out.S1.parentIds.none);
+    });
+
+    it('isGroupStart: a single group has none; the first row of a multi-group tree has one', () => {
+      assert.ok(selectPeriodMode(pt(), 'none').every((r) => !r.isGroupStart));
+      const two = NODES.map((nd) => (['C2', 'S3'].includes(nd.node_id) ? { ...nd, group_name: 'G2' } : nd));
+      const rows = buildPeriodAccountTree(two, OPS, ROWS, { periods: PERIODS });
+      const out = selectPeriodMode(rows, 'none');
+      assert.equal(out[0].isGroupStart, true);
+      assert.deepEqual(out.filter((r) => r.isGroupStart).map((r) => r.node_id), [out[0].node_id, 'C2', 'F1']);
+    });
+
+    it('with a first-group header hidden in a mode, the new first row still starts its group in a multi-group report', () => {
+      const two = NODES.map((nd) => (['C2', 'S3'].includes(nd.node_id) ? { ...nd, group_name: 'G2' } : nd));
+      const out = selectPeriodMode(buildPeriodAccountTree(two, OPS, ROWS, { periods: PERIODS, showOnlyWithValue: true }), 'none');
+      assert.equal(out[0].isGroupStart, true);
+    });
+  });
+
+  describe('buildRenderAccountTree with a period argument', () => {
+    const PL_CONTRACT = { trend: 'result' };
+
+    it('without a period argument the output is exactly the single-range tree plus variation', () => {
+      const params = { accountLevel: 'S', showOnlyAccountsWithValue: 'true', compareTo: 'true' };
+      const feed = NODES.map((nd) => ({ ...nd, own_amt: nd.node_id === 'S1' ? -500 : 0, own_amt_ref: nd.node_id === 'S1' ? -400 : 0 }));
+      const expected = addVariation(buildAccountReportTree(feed, OPS, { accountLevel: 'S', showOnlyWithValue: true }), { compare: true, trend: true });
+      assert.deepEqual(buildRenderAccountTree(feed, OPS, params, PL_CONTRACT), expected);
+      assert.deepEqual(buildRenderAccountTree(feed, OPS, params, PL_CONTRACT, null), expected);
+      assert.equal(buildRenderAccountTree(feed, OPS, params, PL_CONTRACT).some((r) => 'cells' in r), false);
+    });
+
+    it('with a period argument it prints the rows of the compare mode, with cells', () => {
+      const period = (compareMode) => ({ periodRows: ROWS, spec: { periods: PERIODS }, compareMode });
+      const params = { showOnlyAccountsWithValue: 'true' };
+      const none = buildRenderAccountTree(NODES, OPS, params, PL_CONTRACT, period('none'));
+      const prev = buildRenderAccountTree(NODES, OPS, params, PL_CONTRACT, period('prev'));
+      assert.ok(none.every((r) => r.cells.length === 3));
+      assert.ok(!none.some((r) => r.node_id === 'S3'));
+      assert.ok(prev.some((r) => r.node_id === 'S3'));
+      assert.equal(buildRenderAccountTree(NODES, OPS, params, PL_CONTRACT, { ...period(undefined) }).length, none.length, 'no mode = none');
+    });
   });
 });
