@@ -435,6 +435,14 @@ describe('onboarding session API — resource-access cluster (ETP-4576)', () => 
       assert.equal('credentials' in calls[0].options, false);
     });
 
+    it('asks for the version of every language with an empty language', async () => {
+      const { calls, fetchImpl } = recordingFetch(jsonResponse({}, { ok: false, status: 404 }));
+
+      await assert.rejects(() => fetchTermsDocumentHtml(fetchImpl, '/etendo', { language: null, version: '1.0' }));
+
+      assert.equal(calls[0].url, '/etendo/sws/go/terms/document?language=&version=1.0');
+    });
+
     it('rejects with the termsUnavailable code when there is no document', async () => {
       const { fetchImpl } = recordingFetch(jsonResponse({}, { ok: false, status: 404 }));
 

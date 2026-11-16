@@ -1,12 +1,9 @@
 import React from 'react';
 
 /**
- * ETP-6244 — renders the text of the terms and conditions.
- *
- * The text is either plain text (`ETGO_TERMS.CONTENT`, e.g. the placeholder versions) or HTML:
- * the Word document attached in Classic, converted by mammoth (headings in bold, lists and
- * tables). The HTML is never
- * injected as markup: it is parsed and rebuilt as React elements from an allowlist of tags, with
+ * ETP-6244 — renders the text of the terms and conditions: the Word document attached in Classic,
+ * converted to HTML by mammoth (headings in bold, lists and tables). The HTML is never injected as
+ * markup: it is parsed and rebuilt as React elements from an allowlist of tags, with
  * every attribute dropped except a safe `href`. Anything outside the allowlist keeps its text and
  * loses its tag, so a script or an event handler cannot reach the page.
  */
@@ -25,7 +22,7 @@ const TAG_CLASSES = {
   h4: 'mb-2 mt-3 text-sm font-semibold text-slate-900',
   h5: 'mb-2 mt-3 text-sm font-semibold text-slate-900',
   h6: 'mb-2 mt-3 text-sm font-semibold text-slate-900',
-  // What the Classic Rich Text Area editor adds when the document is pasted from Word.
+  // Wrappers with no meaning of their own: their text is kept, their attributes dropped.
   div: null,
   span: null,
   s: 'line-through',
@@ -57,10 +54,6 @@ const VOID_TAGS = new Set(['br', 'hr']);
 const DROPPED_TAGS = new Set(['script', 'style', 'template', 'iframe', 'object', 'noscript']);
 
 const SAFE_HREF = /^(https?:|mailto:)/i;
-
-export function looksLikeHtml(content) {
-  return typeof content === 'string' && /<(p|div|ul|ol|table|strong|b|em|h[1-6]|br)\b/i.test(content);
-}
 
 function toReact(node, key, parentTag) {
   if (node.nodeType === 3) {
@@ -122,14 +115,7 @@ function normalizeHeaderOnlyTables(root) {
 }
 
 export function TermsContent({ content }) {
-  if (!looksLikeHtml(content) || typeof DOMParser === 'undefined') {
-    return (
-      <div className="whitespace-pre-line text-sm leading-6 text-slate-700" data-testid="terms-dialog-content">
-        {content}
-      </div>
-    );
-  }
-  const body = new DOMParser().parseFromString(content, 'text/html').body;
+  const body = new DOMParser().parseFromString(content || '', 'text/html').body;
   normalizeHeaderOnlyTables(body);
   return (
     <div className="text-sm leading-6 text-slate-700" data-testid="terms-dialog-content">

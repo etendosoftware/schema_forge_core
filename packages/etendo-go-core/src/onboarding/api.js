@@ -202,7 +202,8 @@ export async function loginAccount(fetchImpl, baseUrl, form) {
 
 /**
  * ETP-6081 — the terms and conditions in force, in the requested language (English when that
- * language has none): `{ version, language, content, publishedAt }`.
+ * language has none): `{ version, language, publishedAt }`, `language` null for a version shown in
+ * every language. Its text is the Word document `fetchTermsDocumentHtml` downloads.
  *
  * Unauthenticated on purpose: the register screen shows them before any account exists. No
  * `credentials` for the same reason verifyEmail takes none.
@@ -214,12 +215,12 @@ export async function fetchTermsAndConditions(fetchImpl, baseUrl, language) {
 }
 
 /**
- * ETP-6244 — the Word document of a terms version (`terms.hasDocument`), converted to HTML.
+ * ETP-6244 — the Word document of a terms version, converted to HTML.
  *
  * The `.docx` is attached in Classic to the version's row and served as-is; it is converted here
  * with mammoth, loaded only when the dialog asks for it so the register screen does not pay for
- * it. `language` and `version` are the ones the terms body returned, so the document is the one
- * of the version the visitor is shown.
+ * it. `language` and `version` are the ones the terms body returned (an empty `language` for a
+ * version of every language), so the document is the one of the version the visitor is shown.
  */
 export async function fetchTermsDocumentHtml(fetchImpl, baseUrl, { language, version }) {
   const query = `?language=${encodeURIComponent(language || '')}&version=${encodeURIComponent(version || '')}`;

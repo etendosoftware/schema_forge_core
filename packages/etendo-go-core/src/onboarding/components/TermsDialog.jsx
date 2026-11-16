@@ -16,10 +16,9 @@ import { useTermsDocument } from './useTermsDocument.js';
  * form is lost. Closes with its button, Escape or a click outside (the Radix dialog's own
  * behaviour).
  *
- * ETP-6244 — the text is `terms.content` (plain text, or HTML rebuilt from an allowlist by
- * `TermsContent`), or, when the version has a Word document attached in Classic
- * (`terms.hasDocument`), that document converted to HTML by `loadDocument` the first time the
- * dialog opens.
+ * ETP-6244 — the text is the Word document attached in Classic to the version, converted to HTML
+ * by `loadDocument` the first time the dialog opens and rebuilt from an allowlist by
+ * `TermsContent`.
  */
 /**
  * The terms and conditions of the register screen.
@@ -36,7 +35,7 @@ export function TermsDialog({
   const isLoading = loading || (!error && termsDocument.loading);
   const loadError = error || termsDocument.error;
   const retry = error ? onRetry : termsDocument.retry;
-  const content = termsDocument.applies ? termsDocument.html : terms?.content;
+  const content = termsDocument.html;
   return (
     <Dialog open={open} onOpenChange={onOpenChange} data-testid="Dialog__terms">
       <DialogContent

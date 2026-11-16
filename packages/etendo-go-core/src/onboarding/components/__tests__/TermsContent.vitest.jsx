@@ -4,7 +4,7 @@
 import React from 'react';
 import { cleanup, render, screen } from '@testing-library/react';
 import { afterEach, describe, expect, it } from 'vitest';
-import { TermsContent, looksLikeHtml } from '../TermsContent.jsx';
+import { TermsContent } from '../TermsContent.jsx';
 
 afterEach(cleanup);
 
@@ -16,23 +16,7 @@ const HTML_TERMS = [
   '<tbody>\n<tr><th>Canales</th><td>Chat</td></tr>\n</tbody>\n</table>',
 ].join('\n');
 
-describe('looksLikeHtml', () => {
-  it('tells the converted document from the plain-text placeholder', () => {
-    expect(looksLikeHtml(HTML_TERMS)).toBe(true);
-    expect(looksLikeHtml('First clause.\nSecond clause.')).toBe(false);
-    expect(looksLikeHtml('a < b and c > d')).toBe(false);
-    expect(looksLikeHtml(null)).toBe(false);
-  });
-});
-
 describe('TermsContent', () => {
-  it('keeps plain text as text, line breaks included', () => {
-    render(<TermsContent content={'First clause.\nSecond clause.'} />);
-    const content = screen.getByTestId('terms-dialog-content');
-    expect(content.textContent).toBe('First clause.\nSecond clause.');
-    expect(content.className).toContain('whitespace-pre-line');
-  });
-
   it('renders the bold headings, lists and tables of the document', () => {
     const { container } = render(<TermsContent content={HTML_TERMS} />);
     expect(container.querySelector('strong').textContent).toBe('1. Objeto');
