@@ -302,3 +302,153 @@ describe('runReportSql — limit', () => {
     assert.ok(!pool.queries[1].includes('LIMIT'));
   });
 });
+
+// ETP-6239 — columns by period. Without `periods` nothing changes; with them the
+// period queries run once over the hull, and a bad value is a 400 before any SQL.
+describe('report-query — periods (ETP-6239)', () => {
+  const PERIODS = [
+    '2026-01-01..2026-02-28|2025-01-01..2025-02-28|2025-11-01..2025-12-31',
+    '2026-01-01..2026-01-31|2025-01-01..2025-01-31|2025-12-01..2025-12-31',
+    '2026-02-01..2026-02-28|2025-02-01..2025-02-28|2026-01-01..2026-01-31',
+  ].join(',');
+  const PERIOD_PARAMS = { dateFrom: '2026-01-01', compareTo: 'true', columns: 'month', periods: PERIODS };
+  const PL_PERIODS = {
+    ...PL,
+    parameters: [...PL.parameters, { name: 'dateTo' }],
+    sql: {
+      ...PL.sql,
+      periodQuery: "SELECT 'PERIODQ' FROM (VALUES __PERIODS__) b WHERE ('__DATEFROM__' = '' OR d >= '__DATEFROM__') AND '__COMPARETO__' = 'false'",
+      splitPeriodQuery: "SELECT 'SPLITP' FROM (VALUES __PERIODS__) b WHERE n = '__SPLITNODEID__'",
+    },
+  };
+  const ROW = (account_id, idx, own_amt, own_amt_sly = 0, own_amt_prev = 0) => ({ account_id, idx, own_amt, own_amt_sly, own_amt_prev });
+  const sql = (pool, marker) => pool.queries.filter((q) => q.includes(marker));
+
+  before(() => {
+    writeContract('profit-loss-periods', PL_PERIODS);
+  });
+
+  it('runReportSql skips the period query when periods is absent, empty, or the contract has no periodQuery', async () => {
+    for (const [contract, params] of [[PL_PERIODS, {}], [PL_PERIODS, { periods: '' }], [PL_PERIODS, { periods: null }], [PL, PERIOD_PARAMS]]) {
+      const pool = fakePool();
+      const result = await runReportSql(pool, contract, { clientId: 'C1', params });
+      assert.equal(sql(pool, 'PERIODQ').length, 0);
+      assert.equal('periodRows' in result, false);
+      assert.equal('periodSpec' in result, false);
+    }
+  });
+
+  it('runs the period query once, over the hull dates with compareTo=false', async () => {
+    const pool = fakePool({ PERIODQ: [ROW('S1', 0, 1)] });
+    const result = await runReportSql(pool, PL_PERIODS, { clientId: 'C1', params: PERIOD_PARAMS });
+    const [q] = sql(pool, 'PERIODQ');
+    assert.equal(sql(pool, 'PERIODQ').length, 1);
+    assert.ok(q.includes("d >= '2025-01-01'"), 'the hull start replaces dateFrom');
+    assert.ok(q.includes("'false' = 'false'"), 'compareTo forced to false');
+    assert.ok(q.includes("(0, '2026-01-01'::date"), 'VALUES substituted');
+    assert.ok(!q.includes('__PERIODS__'));
+    assert.equal(result.periodRows.length, 1);
+    assert.equal(result.periodSpec.periods.length, 3);
+    assert.equal(result.periodSpec.grain, 'month');
+  });
+
+  it('honours the per-format bucket cap (maxPeriodBuckets)', async () => {
+    await assert.rejects(
+      runReportSql(fakePool(), PL_PERIODS, { clientId: 'C1', params: PERIOD_PARAMS, maxPeriodBuckets: 2 }),
+      (e) => e.name === 'ReportPeriodsError' && e.code === 'PERIOD_RANGE_TOO_LONG',
+    );
+  });
+
+  it('a bad periods value is a 400 with no report SQL at all', async () => {
+    const pool = fakePool();
+    const res = await call('profit-loss-periods', { pool, body: { params: { ...PERIOD_PARAMS, periods: "2026-01-01'..2026-02-01|a|b" } } });
+    assert.equal(res.status, 400);
+    assert.equal(res.body.code, 'INVALID_PERIODS');
+    assert.equal(sql(pool, "'TREE'").length, 0);
+    assert.equal(sql(pool, 'PERIODQ').length, 0);
+    assert.equal(pool.ended, true);
+  });
+
+  it('a bad columns value is a 400 INVALID_PERIODS', async () => {
+    const res = await call('profit-loss-periods', { body: { params: { ...PERIOD_PARAMS, columns: 'week' } } });
+    assert.equal(res.status, 400);
+    assert.equal(res.body.code, 'INVALID_PERIODS');
+  });
+
+  it('an unexpected error while running the period query is a 500 QUERY_FAILED', async () => {
+    const pool = fakePool({ "'TREE'": TREE_ROWS, "'OPERANDS'": OPERANDS });
+    const base = pool.query.bind(pool);
+    pool.query = async (q) => { if (q.includes('PERIODQ')) throw new Error('boom secret'); return base(q); };
+    const res = await call('profit-loss-periods', { pool, body: { params: PERIOD_PARAMS } });
+    assert.equal(res.status, 500);
+    assert.deepEqual(res.body, { error: 'QUERY_FAILED', code: 'QUERY_FAILED' });
+  });
+
+  it('answers a tree with periods, hiddenCount and cells[] on every row', async () => {
+    const pool = fakePool({
+      "'TREE'": TREE_ROWS, "'OPERANDS'": OPERANDS,
+      PERIODQ: [ROW('S1', 0, -500, -400), ROW('S1', 1, -200, -100), ROW('S1', 2, -300, -300)],
+    });
+    const res = await call('profit-loss-periods', { pool, body: { params: { ...PERIOD_PARAMS, hiddenCount: 2 } } });
+    assert.equal(res.status, 200);
+    assert.equal(res.body.kind, 'tree');
+    assert.equal(res.body.hiddenCount, 2);
+    assert.deepEqual(res.body.periods.map((p) => p.idx), [0, 1, 2]);
+    assert.ok(res.body.rows.every((r) => r.cells.length === 3));
+    assert.equal(res.body.rows.find((r) => r.node_id === 'S1').cells[1].amount, 200);
+  });
+
+  describe('split with periods', () => {
+    const splitBody = { params: { ...PERIOD_PARAMS, splitBy: 'bpartner', splitNodeId: 'S1', splitSign: 'C' } };
+    const SPLIT_ROWS = [
+      { dimension_id: 'B', dimension_name: 'Beta', idx: 0, own_amt: -100, own_amt_sly: -50, own_amt_prev: 0 },
+      { dimension_id: 'A', dimension_name: 'Alpha', idx: 0, own_amt: -300, own_amt_sly: -200, own_amt_prev: -100 },
+      { dimension_id: 'A', dimension_name: 'Alpha', idx: 2, own_amt: -10, own_amt_sly: 0, own_amt_prev: 0 },
+      { dimension_id: 'C', dimension_name: 'Aardvark', idx: 0, own_amt: -100, own_amt_sly: 0, own_amt_prev: 0 },
+    ];
+
+    it('uses splitPeriodQuery only, once, and not the plain splitQuery', async () => {
+      const pool = fakePool({ SPLITP: SPLIT_ROWS });
+      await call('profit-loss-periods', { pool, body: splitBody });
+      assert.equal(sql(pool, 'SPLITP').length, 1);
+      assert.equal(sql(pool, "'SPLIT'").length, 0);
+      assert.ok(sql(pool, 'SPLITP')[0].includes("n = 'S1'"));
+    });
+
+    it('signs the amounts (C positive, D flipped), zero-fills missing periods and keeps the period list', async () => {
+      const credit = (await call('profit-loss-periods', { pool: fakePool({ SPLITP: SPLIT_ROWS }), body: splitBody })).body;
+      assert.equal(credit.kind, 'split');
+      assert.deepEqual(credit.periods.map((p) => p.idx), [0, 1, 2]);
+      const alpha = credit.rows.find((r) => r.node_id === 'A');
+      assert.deepEqual(alpha.cells.map((c) => c.amount), [300, 0, 10]);
+      assert.equal(alpha.cells[0].sly.amount, 200);
+      assert.equal(alpha.cells[1].sly.amount, 0, 'a missing period is zero, not absent');
+      assert.equal(alpha.sign, 'C');
+      const debit = (await call('profit-loss-periods', {
+        pool: fakePool({ SPLITP: SPLIT_ROWS }), body: { params: { ...splitBody.params, splitSign: 'D' } },
+      })).body;
+      assert.equal(debit.rows.find((r) => r.node_id === 'A').cells[0].amount, -300);
+      assert.equal(debit.rows.find((r) => r.node_id === 'A').sign, 'D');
+    });
+
+    it('sorts by |amount| descending, ties by name', async () => {
+      const { rows } = (await call('profit-loss-periods', { pool: fakePool({ SPLITP: SPLIT_ROWS }), body: splitBody })).body;
+      assert.deepEqual(rows.map((r) => r.node_id), ['A', 'C', 'B']); // 300, then 100 (Aardvark before Beta)
+    });
+
+    it('a contract with no splitPeriodQuery ignores periods and answers the plain split', async () => {
+      const pool = fakePool({ "'SPLIT'": [{ dimension_id: 'BP1', dimension_name: 'Acme', own_amt: -300, own_amt_ref: -200 }] });
+      const res = await call('profit-loss', { pool, body: { params: { ...splitBody.params } } });
+      assert.equal(res.body.rows[0].amount, 300);
+      assert.equal(res.body.rows[0].cells, undefined);
+      assert.equal(res.body.periods, undefined);
+    });
+
+    it('a bad periods value on a split is a 400 before any SQL', async () => {
+      const pool = fakePool();
+      const res = await call('profit-loss-periods', { pool, body: { params: { ...splitBody.params, periods: 'nope' } } });
+      assert.equal(res.status, 400);
+      assert.equal(sql(pool, 'SPLITP').length, 0);
+    });
+  });
+});

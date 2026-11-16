@@ -589,3 +589,28 @@ describe('report i18n', () => {
     });
   });
 });
+
+// ETP-6239 — wiring contract: the engine only forwards period data to the
+// shared modules (behaviour is tested in cli/test/report-periods|query|grouping).
+// The dev plugin in etendo_schema_forge carries the mirror test, so the two
+// engines cannot drift on meta.periods / columnPages / notes, the bucket cap or the 400.
+describe('server.js — period columns wiring (ETP-6239)', () => {
+  it('runs the SQL with the cap of the render format (xlsx/csv 25, pdf/html 7)', () => {
+    assert.match(SERVER_SRC, /maxPeriodBuckets:\s*maxPeriodBucketsFor\(format\)/);
+    assert.match(SERVER_SRC, /fetchReportData\(reportId, \{[^}]*\bformat\b[^}]*\}\)/);
+  });
+
+  it('feeds periodRows/periodSpec and the normalised compareMode to buildRenderAccountTree, null otherwise', () => {
+    assert.match(SERVER_SRC, /const \{ rows, openingRows, operandRows, periodRows, periodSpec \} = await runReportSql/);
+    assert.match(SERVER_SRC, /result\.periodRows\s*\?\s*\{ periodRows: result\.periodRows, spec: result\.periodSpec, compareMode: normalizeCompareMode\(params\.compareMode\) \}\s*:\s*null/);
+  });
+
+  it('spreads buildPeriodMeta into meta last, so a plain render keeps its meta', () => {
+    assert.match(SERVER_SRC, /\.\.\.neoMeta, \.\.\.periodMeta \}/);
+    assert.match(SERVER_SRC, /periodMeta: buildPeriodMeta\(result\.periodSpec, \{ format, compareMode: params\.compareMode \}\)/);
+  });
+
+  it('answers a ReportPeriodsError as its own status and code, not 500', () => {
+    assert.match(SERVER_SRC, /e\?\.name === 'ReportPeriodsError'\) json\(res, e\.status, \{ error: e\.message, code: e\.code \}\)/);
+  });
+});
