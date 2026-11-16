@@ -38,6 +38,7 @@ vi.mock('../../api.js', () => ({
   registerAccount: vi.fn(),
   loginWithSsoProvider: vi.fn(),
   fetchTermsAndConditions: vi.fn(),
+  fetchTermsDocumentHtml: vi.fn(),
 }));
 
 const api = await import('../../api.js');
@@ -45,7 +46,9 @@ const api = await import('../../api.js');
 const { RegisterStep } = await import('../RegisterStep.jsx');
 const { ONBOARDING_FIELD_LIMITS } = await import('../../fieldLimits.js');
 
-const TERMS = { version: '2026-11', language: 'en_US', content: 'First clause.\nSecond clause.' };
+const TERMS = { version: '2026-11', language: null, publishedAt: 1000 };
+const TERMS_HTML = '<p>First clause.</p><p>Second clause.</p>';
+const TERMS_TEXT = 'First clause.Second clause.';
 const STRONG_PASSWORD = 'Str0ng!Pass';
 const VALID_EMAIL = 'ada@example.com';
 const INVALID_EMAIL = 'ada.example.com';
@@ -66,6 +69,7 @@ function typePassword(container, value) {
 
 beforeEach(() => {
   api.fetchTermsAndConditions.mockResolvedValue(TERMS);
+  api.fetchTermsDocumentHtml.mockResolvedValue(TERMS_HTML);
 });
 
 afterEach(() => {
@@ -190,7 +194,7 @@ describe('RegisterStep trial offer and terms and conditions (ETP-6081)', () => {
     fireEvent.click(screen.getByTestId('register-terms-link'));
 
     const content = await screen.findByTestId('terms-dialog-content');
-    expect(content.textContent).toBe(TERMS.content);
+    expect(content.textContent).toBe(TERMS_TEXT);
     expect(container.querySelector('#reg-email').value).toBe(VALID_EMAIL);
   });
 
@@ -221,7 +225,7 @@ describe('RegisterStep trial offer and terms and conditions (ETP-6081)', () => {
 
     fireEvent.click(await screen.findByTestId('terms-dialog-retry'));
 
-    expect((await screen.findByTestId('terms-dialog-content')).textContent).toBe(TERMS.content);
+    expect((await screen.findByTestId('terms-dialog-content')).textContent).toBe(TERMS_TEXT);
   });
 
   it('sends the terms version it showed with the registration', async () => {
