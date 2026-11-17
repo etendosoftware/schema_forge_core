@@ -18,7 +18,16 @@ const MAX_SHIFT_DAYS = 460; // a compared range sits at most ~1 year + 1 quarter
 const GRAIN_MAX_DAYS = { month: 31, quarter: 92 };
 const GRAINS = new Set(['total', 'month', 'quarter']);
 
-export const SCREEN_MAX_BUCKETS = 7; // the range + the last 6 months / 4 quarters, with room
+/**
+ * ETP-6239 — the periods (besides the range) the screen and the PDF show, per grain: `plain` without a
+ * comparison, `compared` with one (a comparison takes 4 columns per period, so fewer fit). The single
+ * source: `SCREEN_MAX_BUCKETS` and the comparison-mode row visibility derive from it, and the app
+ * reads the same numbers (`reportColumns.js`, whose copy a test pins to these).
+ */
+export const SCREEN_PERIODS = Object.freeze({ month: { plain: 12, compared: 6 }, quarter: { plain: 8, compared: 4 } });
+/** How many periods a comparison mode shows for a grain (Infinity for the Total grain, which has none). */
+export const comparedPeriodsFor = (grain) => SCREEN_PERIODS[grain]?.compared ?? Infinity;
+export const SCREEN_MAX_BUCKETS = 1 + Math.max(...Object.values(SCREEN_PERIODS).map((p) => p.plain)); // the range + the most periods any mode shows
 export const EXPORT_MAX_BUCKETS = 25; // the range + 24 months / 8 quarters
 
 /** Max buckets a render format may ask for: Excel/CSV print every period, screen and PDF the last N. */

@@ -399,6 +399,16 @@ describe('report-query — periods (ETP-6239)', () => {
     assert.equal(res.body.rows.find((r) => r.node_id === 'S1').cells[1].amount, 200);
   });
 
+  it('a comparison mode only looks at the last 6 months and the Total; none looks at every period (screen query)', async () => {
+    const months = ['01', '02', '03', '04', '05', '06', '07'].map((m) => `2026-${m}-01..2026-${m}-28|2025-${m}-01..2025-${m}-28|2025-${m}-01..2025-${m}-28`);
+    const periods = [`2026-01-01..2026-07-28|2025-01-01..2025-07-28|2025-01-01..2025-07-28`, ...months].join(',');
+    // S1 moves only in January (the oldest period, trimmed by a comparison) and nets to zero over the range.
+    const pool = fakePool({ "'TREE'": TREE_ROWS, "'OPERANDS'": OPERANDS, PERIODQ: [ROW('S1', 1, -80, -80, -80)] });
+    const res = await call('profit-loss-periods', { pool, body: { params: { ...PERIOD_PARAMS, periods, showOnlyAccountsWithValue: 'true' } } });
+    assert.equal(res.status, 200);
+    assert.deepEqual(res.body.rows.find((r) => r.node_id === 'S1').visible, { none: true, sly: false, prev: false });
+  });
+
   describe('period request validation (before any SQL)', () => {
     const LONG = '2023-01-01..2025-12-31|2022-01-01..2022-12-31|2020-01-01..2022-12-31';
     const MONTH = '2024-02-01..2024-02-29|2023-02-01..2023-02-28|2024-01-01..2024-01-31';

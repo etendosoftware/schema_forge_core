@@ -957,6 +957,26 @@ describe('buildPeriodAccountTree / selectPeriodMode / buildPeriodCell (ETP-6239)
     assert.deepEqual(t.K1.visible, { none: true, sly: true, prev: true });
   });
 
+  it('comparedPeriods: a comparison mode looks only at the range total and the last N periods; none at every one', () => {
+    const five = [{ idx: 0 }, { idx: 1 }, { idx: 2 }, { idx: 3 }, { idx: 4 }];
+    // S1 moves only in the oldest period (idx 1) and nets to zero over the range; S3 has a value in the last one.
+    const rows5 = [A('S1', 1, -50, -50, -50), A('S3', 4, -20, -20, -20)];
+    const opts = { periods: five, showOnlyWithValue: true };
+    const all = byId(buildPeriodAccountTree(NODES, OPS, rows5, opts));
+    assert.deepEqual(all.S1.visible, { none: true, sly: true, prev: true }, 'no limit: every period counts');
+    const t = byId(buildPeriodAccountTree(NODES, OPS, rows5, { ...opts, comparedPeriods: 2 }));
+    assert.deepEqual(t.S1.visible, { none: true, sly: false, prev: false }, 'idx 1 is trimmed: hidden with a comparison');
+    assert.deepEqual(t.S3.visible, { none: true, sly: true, prev: true }, 'idx 4 is shown');
+    assert.equal(t.D1.visible.sly, false, 'its parents roll up the shown periods too');
+    assert.notEqual(t.S1.parentIds.sly, 'D1', 'parentIds skip the hidden ancestor');
+    assert.equal(t.S3.parentIds.sly, 'C2');
+    // The range total (idx 0) always counts, even when the limit is smaller than the periods.
+    const total = byId(buildPeriodAccountTree(NODES, OPS, [A('S1', 0, -50, -50, -50)], { ...opts, comparedPeriods: 1 }));
+    assert.deepEqual(total.S1.visible, { none: true, sly: true, prev: true });
+    const alwaysOn = byId(buildPeriodAccountTree(NODES, OPS, rows5, { ...opts, comparedPeriods: 2 }));
+    assert.deepEqual(alwaysOn.K1.visible, { none: true, sly: true, prev: true });
+  });
+
   it('everything is visible in every mode when showOnlyWithValue is off', () => {
     const rows = buildPeriodAccountTree(NODES, OPS, ROWS, { periods: PERIODS });
     assert.ok(rows.every((r) => r.visible.none && r.visible.sly && r.visible.prev));
