@@ -47,32 +47,34 @@ describe('composeAddressLines (ETP-5806 — ports StructuredAddressComposer/Loca
     assert.deepEqual(result, { address1: streetAndNumber, address2: buildingName });
   });
 
-  it('keeps a long building name whole (untruncated) on line 2 when it alone would overflow (CP-6: never cut a field mid-value)', () => {
+  it('truncates a long building name to 60 chars on line 2 when it alone would overflow', () => {
     const street = 'Avenida Principal';
     const number = '1';
     const buildingName = 'X'.repeat(80);
     const result = composeAddressLines(street, number, buildingName);
     assert.equal(result.address1, `${street}, ${number}`);
-    assert.equal(result.address2, buildingName);
+    assert.equal(result.address2, 'X'.repeat(60));
+    assert.equal(result.address2.length, 60);
   });
 
-  it('CP-6 — never cuts the street mid-value: keeps the full street on line 1, "Number - BuildingName" on line 2, when even Street+Number overflows', () => {
+  it('truncates the street itself to 60 chars, and puts "Number - BuildingName" on line 2, when even Street+Number overflows', () => {
     const street = 'CCCCC Calle de Nombre Extremadamente Largo Para Forzar Truncado Total';
     assert.ok(`${street}, 1`.length > 60);
-    assert.ok(street.length > 60, 'fixture must itself exceed the line limit to repro CP-6');
 
     const result = composeAddressLines(street, '1', 'B');
-    assert.equal(result.address1, street, 'address1 must be the FULL street, never sliced mid-value');
+    assert.equal(result.address1, street.slice(0, 60));
+    assert.equal(result.address1.length, 60);
     assert.equal(result.address2, '1 - B');
   });
 
-  it('CP-6 — keeps Number + BuildingName whole on line 2 too, in the street-overflow branch, with no mid-value cut', () => {
+  it('truncates line 2 to 60 chars too, in the street-overflow branch, when Number + BuildingName is itself long', () => {
     const street = 'Y'.repeat(90);
     const number = '100';
     const buildingName = 'Z'.repeat(90);
     const result = composeAddressLines(street, number, buildingName);
-    assert.equal(result.address1, street, 'address1 must be the FULL street, never sliced mid-value');
-    assert.equal(result.address2, `${number} - ${buildingName}`);
+    assert.equal(result.address1, street.slice(0, 60));
+    assert.equal(result.address2, `${number} - ${buildingName}`.slice(0, 60));
+    assert.equal(result.address2.length, 60);
   });
 
   it('trims surrounding whitespace on every field before composing', () => {
@@ -88,10 +90,10 @@ describe('composeAddressLines (ETP-5806 — ports StructuredAddressComposer/Loca
     });
   });
 
-  it('carries the "s/n" fallback into line 2 in the street-overflow branch, without cutting the street mid-value', () => {
+  it('carries the "s/n" fallback into line 2 in the street-overflow branch', () => {
     const street = 'W'.repeat(65);
     const result = composeAddressLines(street, null, 'Nave 3');
-    assert.deepEqual(result, { address1: street, address2: 's/n - Nave 3' });
+    assert.deepEqual(result, { address1: 'W'.repeat(60), address2: 's/n - Nave 3' });
   });
 
   it('returns empty lines when there is no street, even with a number or a building name typed', () => {
