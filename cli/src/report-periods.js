@@ -22,7 +22,8 @@ const GRAINS = new Set(['total', 'month', 'quarter']);
  * ETP-6239 — the periods (besides the range) the screen and the PDF show, per grain: `plain` without a
  * comparison, `compared` with one (a comparison takes 4 columns per period, so fewer fit). The single
  * source: `SCREEN_MAX_BUCKETS` and the comparison-mode row visibility derive from it, and the app
- * reads the same numbers (`reportColumns.js`, whose copy a test pins to these).
+ * needs the same numbers: until it bumps to a release with this export it keeps a literal copy
+ * (`reportColumns.js`), after which it imports it from here.
  */
 export const SCREEN_PERIODS = Object.freeze({ month: { plain: 12, compared: 6 }, quarter: { plain: 8, compared: 4 } });
 /** How many periods a comparison mode shows for a grain (Infinity for the Total grain, which has none). */
