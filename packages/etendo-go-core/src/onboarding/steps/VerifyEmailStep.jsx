@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { MailCheck, Loader2 } from 'lucide-react';
+import { EnvelopeSimpleIcon, CircleNotchIcon } from '@phosphor-icons/react';
 import { Button } from '@etendosoftware/app-shell-core/components/ui/button';
 import { useUI } from '@etendosoftware/app-shell-core/i18n';
 import { resendVerifyEmail } from '../api.js';
@@ -126,7 +126,7 @@ export function VerifyEmailStep({ config, accountName, accountEmail, token, onLo
       data-testid="AuthShell__verify_email">
       <div data-testid="verify-email-step">
         <div className="mb-6 flex h-14 w-14 items-center justify-center rounded-2xl border border-slate-200 bg-white shadow-sm">
-          <MailCheck
+          <EnvelopeSimpleIcon
             className="h-6 w-6 text-slate-500"
             aria-hidden="true"
             data-testid="MailCheck__32ea2f" />
@@ -155,7 +155,7 @@ export function VerifyEmailStep({ config, accountName, accountEmail, token, onLo
             data-testid="verify-email-resend"
             className="h-12 rounded-lg px-6 text-base font-medium">
             {state === 'sending' && (
-              <Loader2
+              <CircleNotchIcon
                 className="mr-2 h-4 w-4 animate-spin"
                 aria-hidden="true"
                 data-testid="Loader2__32ea2f" />

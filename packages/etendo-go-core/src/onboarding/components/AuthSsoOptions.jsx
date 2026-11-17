@@ -1,5 +1,5 @@
 import React from 'react';
-import { Loader2 } from 'lucide-react';
+import { CircleNotchIcon } from '@phosphor-icons/react';
 
 export function AuthSsoOptions({ providers, buttonRef, error, loading, label, loadingLabel }) {
   if (!providers?.length) {
@@ -19,7 +19,7 @@ export function AuthSsoOptions({ providers, buttonRef, error, loading, label, lo
       </div>
       {loading && (
         <div className="flex items-center justify-center gap-2 text-sm font-medium text-slate-500">
-          <Loader2 className="h-4 w-4 animate-spin" data-testid="Loader2__79cf84" />
+          <CircleNotchIcon className="h-4 w-4 animate-spin" data-testid="Loader2__79cf84" />
           {loadingLabel}
         </div>
       )}

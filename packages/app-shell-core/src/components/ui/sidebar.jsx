@@ -2,7 +2,7 @@
 import * as React from "react"
 import { Slot } from "@radix-ui/react-slot"
 import { cva } from "class-variance-authority";
-import { PanelLeft } from "lucide-react"
+import { SidebarSimpleIcon } from "@phosphor-icons/react"
 
 import { useIsMobile } from "../../hooks/use-mobile.jsx"
 import { cn } from "../../lib/utils.js"
@@ -248,7 +248,7 @@ const SidebarTrigger = React.forwardRef(({ className, onClick, ...props }, ref) 
       }}
       data-testid="Button__83ee67"
       {...props}>
-      <PanelLeft data-testid="PanelLeft__83ee67" />
+      <SidebarSimpleIcon data-testid="PanelLeft__83ee67" />
       <span className="sr-only">Toggle Sidebar</span>
     </Button>
   );

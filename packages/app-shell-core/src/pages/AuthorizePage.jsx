@@ -7,7 +7,7 @@ import { Button } from '../components/ui/button.jsx';
 import { Badge } from '../components/ui/badge.jsx';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '../components/ui/tabs.jsx';
 import { CopyBlock } from '../components/ui/copy-button.jsx';
-import { Shield, CheckCircle2, XCircle, Loader2, Plug, Download, Sparkles } from 'lucide-react';
+import { ShieldIcon, CheckCircleIcon, XCircleIcon, CircleNotchIcon, PlugIcon, DownloadSimpleIcon, SparkleIcon } from '@phosphor-icons/react';
 import { useUI } from '../i18n/index.js';
 import { buildMcpClients, deriveServerName, mcpUrlFor } from '../lib/mcpClients.js';
 import { useObservability } from '../observability/index.js';
@@ -118,7 +118,7 @@ export default function AuthorizePage() {
         <CardContent className="pt-6" data-testid="CardContent__96270f">
           <div className="flex flex-col items-center gap-4">
             <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-primary/10">
-              <Shield className="h-7 w-7 text-primary" data-testid="Shield__96270f" />
+              <ShieldIcon className="h-7 w-7 text-primary" data-testid="Shield__96270f" />
             </div>
 
             <div className="text-center">
@@ -166,14 +166,14 @@ export default function AuthorizePage() {
 
             {status === 'error' && (
               <div className="flex w-full items-center gap-2 rounded-lg border border-destructive/30 bg-destructive/5 p-3 text-sm text-destructive">
-                <XCircle className="h-4 w-4 shrink-0" data-testid="XCircle__96270f" />
+                <XCircleIcon className="h-4 w-4 shrink-0" data-testid="XCircle__96270f" />
                 {errorMessage}
               </div>
             )}
 
             {status === 'success' ? (
               <div className="flex w-full items-center gap-2 rounded-lg border border-green-500/30 bg-green-50 p-3 text-sm text-green-700 dark:bg-green-950/30 dark:text-green-400">
-                <CheckCircle2 className="h-4 w-4 shrink-0" data-testid="CheckCircle2__96270f" />
+                <CheckCircleIcon className="h-4 w-4 shrink-0" data-testid="CheckCircle2__96270f" />
                 {ui('oauthAuthorizedRedirecting')}
               </div>
             ) : (
@@ -194,7 +194,7 @@ export default function AuthorizePage() {
                   data-testid="oauth-authorize-submit"
                 >
                   {status === 'authorizing' ? (
-                    <><Loader2 className="mr-2 h-4 w-4 animate-spin" data-testid="Loader2__96270f" /> {ui('oauthAuthorizing')}</>
+                    <><CircleNotchIcon className="mr-2 h-4 w-4 animate-spin" data-testid="Loader2__96270f" /> {ui('oauthAuthorizing')}</>
                   ) : (
                     ui('oauthAuthorize')
                   )}
@@ -231,7 +231,7 @@ function InstallButton({ href, label, testId }) {
       onClick={() => { window.location.href = href; }}
       data-testid={testId}
     >
-      <Download className="mr-2 h-4 w-4" data-testid="InstallButton__icon" />
+      <DownloadSimpleIcon className="mr-2 h-4 w-4" data-testid="InstallButton__icon" />
       {label}
     </Button>
   );
@@ -241,7 +241,7 @@ function AgentPromptBlock({ ui, mcpUrl, serverName, clientId }) {
   return (
     <div className="w-full space-y-2 rounded-lg border border-dashed p-3">
       <div className="flex items-center gap-1.5 text-sm font-medium">
-        <Sparkles className="h-4 w-4 text-primary" data-testid="AgentPromptBlock__icon" />
+        <SparkleIcon className="h-4 w-4 text-primary" data-testid="AgentPromptBlock__icon" />
         {ui('oauthConnectAgentPromptHeading')}
       </div>
       <CopyBlock
@@ -379,7 +379,7 @@ function ConnectionsLanding({ isEmbedded, ui }) {
         <CardContent className="pt-6" data-testid="CardContent__96270f">
           <div className="flex flex-col items-center gap-6">
             <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-primary/10">
-              <Plug className="h-7 w-7 text-primary" data-testid="Plug__96270f" />
+              <PlugIcon className="h-7 w-7 text-primary" data-testid="Plug__96270f" />
             </div>
 
             <div className="text-center">

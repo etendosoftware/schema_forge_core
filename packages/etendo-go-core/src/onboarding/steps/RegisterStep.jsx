@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
-import { UserPlus, Mail, Lock, Eye, EyeOff, Check, AlertCircle, Loader2, Gift, Phone } from 'lucide-react';
+import { UserPlusIcon, EnvelopeSimpleIcon, LockIcon, EyeIcon, EyeSlashIcon, CheckIcon, WarningCircleIcon, CircleNotchIcon, GiftIcon, PhoneIcon } from '@phosphor-icons/react';
 import { Button } from '@etendosoftware/app-shell-core/components/ui/button';
 import { Label } from '@etendosoftware/app-shell-core/components/ui/label';
 import { useUI, useLocaleSwitch } from '@etendosoftware/app-shell-core/i18n';
@@ -304,7 +304,7 @@ export function RegisterStep({ config, stepData, onNext, onBack, goToStep, setTo
       <div
         className="mb-6 flex items-center gap-2 rounded-2xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm font-medium text-emerald-700"
         data-testid="register-trial-banner">
-        <Gift className="h-4 w-4 shrink-0" aria-hidden="true" data-testid="Gift__79cf84" />
+        <GiftIcon className="h-4 w-4 shrink-0" aria-hidden="true" data-testid="Gift__79cf84" />
         {ui('onboardingTrialOfferBanner')}
       </div>
       <AuthSsoOptions
@@ -320,7 +320,7 @@ export function RegisterStep({ config, stepData, onNext, onBack, goToStep, setTo
           id="reg-name"
           type="text"
           label={ui('onboardingNameLabel')}
-          icon={UserPlus}
+          icon={UserPlusIcon}
           value={registerForm.name}
           onChange={e => setRegisterForm(f => ({ ...f, name: e.target.value }))}
           disabled={registerLoading}
@@ -334,7 +334,7 @@ export function RegisterStep({ config, stepData, onNext, onBack, goToStep, setTo
           id="reg-email"
           type="email"
           label={ui('onboardingEmailLabel')}
-          icon={Mail}
+          icon={EnvelopeSimpleIcon}
           value={registerForm.email}
           onChange={e => setRegisterForm(f => ({ ...f, email: e.target.value }))}
           disabled={registerLoading || emailReadOnly}
@@ -344,8 +344,8 @@ export function RegisterStep({ config, stepData, onNext, onBack, goToStep, setTo
           required
           trailing={registerEmailTouched ? (
             registerEmailValid
-              ? <Check className="h-5 w-5 text-emerald-500" data-testid="RegisterEmailValid__79cf84" />
-              : <AlertCircle className="h-5 w-5 text-rose-500" data-testid="RegisterEmailInvalid__79cf84" />
+              ? <CheckIcon className="h-5 w-5 text-emerald-500" data-testid="RegisterEmailValid__79cf84" />
+              : <WarningCircleIcon className="h-5 w-5 text-rose-500" data-testid="RegisterEmailInvalid__79cf84" />
           ) : null}
           data-testid="AuthField__79cf84" />
 
@@ -402,7 +402,7 @@ export function RegisterStep({ config, stepData, onNext, onBack, goToStep, setTo
                 id="reg-phone"
                 type="tel"
                 className="flex-1"
-                icon={Phone}
+                icon={PhoneIcon}
                 value={phoneNumber}
                 onChange={e => setPhoneNumber(e.target.value)}
                 disabled={registerLoading}
@@ -421,7 +421,7 @@ export function RegisterStep({ config, stepData, onNext, onBack, goToStep, setTo
               id="reg-password"
               type={showRegisterPassword ? 'text' : 'password'}
               label={ui('onboardingPasswordLabel')}
-              icon={Lock}
+              icon={LockIcon}
               value={registerForm.password}
               onChange={e => setRegisterForm(f => ({ ...f, password: e.target.value }))}
               disabled={registerLoading}
@@ -436,7 +436,7 @@ export function RegisterStep({ config, stepData, onNext, onBack, goToStep, setTo
                   onClick={() => setShowRegisterPassword(value => !value)}
                   className="rounded-full p-1 text-slate-400 transition hover:bg-slate-100 hover:text-slate-600"
                 >
-                  {showRegisterPassword ? <EyeOff className="h-5 w-5" data-testid="EyeOff__79cf84" /> : <Eye className="h-5 w-5" data-testid="Eye__79cf84" />}
+                  {showRegisterPassword ? <EyeSlashIcon className="h-5 w-5" data-testid="EyeOff__79cf84" /> : <EyeIcon className="h-5 w-5" data-testid="Eye__79cf84" />}
                 </button>
               )}
               data-testid="AuthField__79cf84" />
@@ -461,7 +461,7 @@ export function RegisterStep({ config, stepData, onNext, onBack, goToStep, setTo
           className="h-12 w-full rounded-lg bg-[#121217] text-base font-medium text-white hover:bg-accent-highlight hover:text-accent-highlight-foreground"
         >
           {registerLoading
-            ? <><Loader2 className="mr-2 h-5 w-5 animate-spin" data-testid="Loader2__79cf84" />{ui('onboardingCreatingAccount')}</>
+            ? <><CircleNotchIcon className="mr-2 h-5 w-5 animate-spin" data-testid="Loader2__79cf84" />{ui('onboardingCreatingAccount')}</>
             : ui('onboardingCreateAccountAction')}
         </Button>
       </form>

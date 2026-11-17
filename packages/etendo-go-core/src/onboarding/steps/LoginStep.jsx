@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
-import { Lock, Mail, Eye, EyeOff, Loader2, ArrowLeft, Check } from 'lucide-react';
+import { LockIcon, EnvelopeSimpleIcon, EyeIcon, EyeSlashIcon, CircleNotchIcon, ArrowLeftIcon, CheckIcon } from '@phosphor-icons/react';
 import { Button } from '@etendosoftware/app-shell-core/components/ui/button';
 import { useUI, useLocaleSwitch } from '@etendosoftware/app-shell-core/i18n';
 import { loginAccount, loginWithSsoProvider, requestPasswordReset, confirmPasswordReset, fetchAccount, fetchEnvironments, AUTH_ERROR_UI_KEYS, resolveAuthErrorMessage } from '../api.js';
@@ -317,7 +317,7 @@ export function LoginStep({ config, stepData, onNext, onBack, goToStep, setToken
         {resetSuccess ? (
           <div className="flex flex-col items-center text-center">
             <div className="mb-2 flex h-[52px] w-[52px] items-center justify-center rounded-full bg-[#26A95F]" data-testid="reset-success-icon">
-              <Check className="h-8 w-8 text-white" strokeWidth={3} data-testid="Check__79cf84" />
+              <CheckIcon className="h-8 w-8 text-white" data-testid="Check__79cf84" />
             </div>
             <h1 className="text-3xl font-semibold tracking-[-0.06em] text-slate-900 sm:text-[2.7rem] sm:leading-[1.04]">
               {ui('onboardingResetPasswordSuccessTitle')}
@@ -348,7 +348,7 @@ export function LoginStep({ config, stepData, onNext, onBack, goToStep, setToken
               id="reset-password"
               type={showResetPassword ? 'text' : 'password'}
               label={ui('onboardingNewPasswordLabel')}
-              icon={Lock}
+              icon={LockIcon}
               value={resetForm.password}
               onChange={e => setResetForm(f => ({ ...f, password: e.target.value }))}
               disabled={resetLoading}
@@ -362,7 +362,7 @@ export function LoginStep({ config, stepData, onNext, onBack, goToStep, setToken
                   onClick={() => setShowResetPassword(value => !value)}
                   className="rounded-full p-1 text-[#828FA3] transition hover:bg-slate-100 hover:text-slate-600"
                 >
-                  {showResetPassword ? <EyeOff className="h-6 w-6" data-testid="EyeOff__79cf84" /> : <Eye className="h-6 w-6" data-testid="Eye__79cf84" />}
+                  {showResetPassword ? <EyeSlashIcon className="h-6 w-6" data-testid="EyeOff__79cf84" /> : <EyeIcon className="h-6 w-6" data-testid="Eye__79cf84" />}
                 </button>
               )}
               data-testid="AuthField__79cf84" />
@@ -374,7 +374,7 @@ export function LoginStep({ config, stepData, onNext, onBack, goToStep, setToken
               id="reset-password-confirm"
               type={showResetPassword ? 'text' : 'password'}
               label={ui('onboardingConfirmPasswordLabel')}
-              icon={Lock}
+              icon={LockIcon}
               value={resetForm.confirmPassword}
               onChange={e => setResetForm(f => ({ ...f, confirmPassword: e.target.value }))}
               disabled={resetLoading}
@@ -394,7 +394,7 @@ export function LoginStep({ config, stepData, onNext, onBack, goToStep, setToken
               className="h-10 w-full rounded-lg bg-[#121217] text-sm font-medium leading-6 text-white hover:bg-accent-highlight hover:text-accent-highlight-foreground"
             >
               {resetLoading
-                ? <><Loader2 className="mr-2 h-5 w-5 animate-spin" data-testid="Loader2__79cf84" />{ui('onboardingSavingPassword')}</>
+                ? <><CircleNotchIcon className="mr-2 h-5 w-5 animate-spin" data-testid="Loader2__79cf84" />{ui('onboardingSavingPassword')}</>
                 : ui('onboardingSavePasswordAction')}
             </Button>
           </form>
@@ -445,7 +445,7 @@ export function LoginStep({ config, stepData, onNext, onBack, goToStep, setToken
                 className="h-10 w-full rounded-lg bg-[#121217] text-sm font-medium leading-6 text-white hover:bg-accent-highlight hover:text-accent-highlight-foreground"
               >
                 {forgotLoading
-                  ? <><Loader2 className="mr-2 h-5 w-5 animate-spin" data-testid="Loader2__79cf84" />{ui('onboardingSendingResetEmail')}</>
+                  ? <><CircleNotchIcon className="mr-2 h-5 w-5 animate-spin" data-testid="Loader2__79cf84" />{ui('onboardingSendingResetEmail')}</>
                   : ui('onboardingResendLinkAction')}
               </Button>
               <Button
@@ -459,7 +459,7 @@ export function LoginStep({ config, stepData, onNext, onBack, goToStep, setToken
                 className="h-10 w-full gap-1 rounded-lg border-[#D1D4DB] bg-white px-3 text-sm font-medium leading-6 text-[#121217] shadow-[0_1px_2px_rgba(18,18,23,0.05)] hover:bg-slate-50"
                 data-testid="action-forgot-password-back-to-login"
               >
-                <ArrowLeft className="h-7 w-7 text-[#828FA3]" data-testid="ArrowLeft__79cf84" />
+                <ArrowLeftIcon className="h-7 w-7 text-[#828FA3]" data-testid="ArrowLeft__79cf84" />
                 {ui('onboardingBackToLoginAction')}
               </Button>
             </div>
@@ -479,7 +479,7 @@ export function LoginStep({ config, stepData, onNext, onBack, goToStep, setToken
                 id="forgot-email"
                 type="email"
                 label={ui('onboardingEmailLabel')}
-                icon={Mail}
+                icon={EnvelopeSimpleIcon}
                 value={forgotEmail}
                 onChange={e => setForgotEmail(e.target.value)}
                 disabled={forgotLoading}
@@ -499,7 +499,7 @@ export function LoginStep({ config, stepData, onNext, onBack, goToStep, setToken
                 className="h-10 w-full rounded-lg bg-[#121217] text-sm font-medium leading-6 text-white hover:bg-accent-highlight hover:text-accent-highlight-foreground"
               >
                 {forgotLoading
-                  ? <><Loader2 className="mr-2 h-5 w-5 animate-spin" data-testid="Loader2__79cf84" />{ui('onboardingSendingResetEmail')}</>
+                  ? <><CircleNotchIcon className="mr-2 h-5 w-5 animate-spin" data-testid="Loader2__79cf84" />{ui('onboardingSendingResetEmail')}</>
                   : ui('onboardingSendResetEmailAction')}
               </Button>
               <Button
@@ -513,7 +513,7 @@ export function LoginStep({ config, stepData, onNext, onBack, goToStep, setToken
                 className="h-10 w-full gap-1 rounded-lg border-[#D1D4DB] bg-white px-3 text-sm font-medium leading-6 text-[#121217] shadow-[0_1px_2px_rgba(18,18,23,0.05)] hover:bg-slate-50"
                 data-testid="action-forgot-password-back-to-login"
               >
-                <ArrowLeft className="h-7 w-7 text-[#828FA3]" data-testid="ArrowLeft__79cf84" />
+                <ArrowLeftIcon className="h-7 w-7 text-[#828FA3]" data-testid="ArrowLeft__79cf84" />
                 {ui('onboardingBackToLoginAction')}
               </Button>
             </form>
@@ -575,7 +575,7 @@ export function LoginStep({ config, stepData, onNext, onBack, goToStep, setToken
           id="login-email"
           type="email"
           label={ui('onboardingEmailLabel')}
-          icon={Mail}
+          icon={EnvelopeSimpleIcon}
           value={loginForm.email}
           onChange={e => {
             setLoginForm(f => ({ ...f, email: e.target.value }));
@@ -593,7 +593,7 @@ export function LoginStep({ config, stepData, onNext, onBack, goToStep, setToken
             id="login-password"
             type={showLoginPassword ? 'text' : 'password'}
             label={ui('onboardingPasswordLabel')}
-            icon={Lock}
+            icon={LockIcon}
             value={loginForm.password}
             onChange={e => {
               setLoginForm(f => ({ ...f, password: e.target.value }));
@@ -611,7 +611,7 @@ export function LoginStep({ config, stepData, onNext, onBack, goToStep, setToken
                 onClick={() => setShowLoginPassword(value => !value)}
                 className="rounded-full p-1 text-[#828FA3] transition hover:bg-slate-100 hover:text-slate-600"
               >
-                {showLoginPassword ? <EyeOff className="h-6 w-6" data-testid="EyeOff__79cf84" /> : <Eye className="h-6 w-6" data-testid="Eye__79cf84" />}
+                {showLoginPassword ? <EyeSlashIcon className="h-6 w-6" data-testid="EyeOff__79cf84" /> : <EyeIcon className="h-6 w-6" data-testid="Eye__79cf84" />}
               </button>
             )}
             data-testid="AuthField__79cf84" />
@@ -651,7 +651,7 @@ export function LoginStep({ config, stepData, onNext, onBack, goToStep, setToken
           className="h-10 w-full rounded-lg bg-[#121217] text-sm font-medium leading-6 text-white hover:bg-accent-highlight hover:text-accent-highlight-foreground"
         >
           {loginLoading
-            ? <><Loader2 className="mr-2 h-5 w-5 animate-spin" data-testid="Loader2__79cf84" />{ui('onboardingSigningIn')}</>
+            ? <><CircleNotchIcon className="mr-2 h-5 w-5 animate-spin" data-testid="Loader2__79cf84" />{ui('onboardingSigningIn')}</>
             : ui('onboardingLoginAction')}
         </Button>
       </form>

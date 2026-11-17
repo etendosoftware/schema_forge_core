@@ -1,8 +1,4 @@
-import {
-  ChevronDown,
-  ChevronLeft,
-  ChevronRight,
-} from 'lucide-react';
+import { CaretDownIcon, CaretLeftIcon, CaretRightIcon } from '@phosphor-icons/react';
 import { cn } from '../../lib/utils.js';
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -28,7 +24,7 @@ export function HeaderRow({ label, onLabelClick, onPrev, onNext, showLabelChevro
       >
         <span>{label}</span>
         {showLabelChevron && (
-          <ChevronDown
+          <CaretDownIcon
             className="h-4 w-4 text-[#828FA3]"
             aria-hidden="true"
             data-testid="ChevronDown__d56af3" />
@@ -36,13 +32,13 @@ export function HeaderRow({ label, onLabelClick, onPrev, onNext, showLabelChevro
       </button>
       <div className="flex items-center gap-2">
         <NavButton onClick={onPrev} ariaLabel="prev" data-testid="NavButton__d56af3">
-          <ChevronLeft
+          <CaretLeftIcon
             className="h-5 w-5 text-[#828FA3]"
             aria-hidden="true"
             data-testid="ChevronLeft__d56af3" />
         </NavButton>
         <NavButton onClick={onNext} ariaLabel="next" data-testid="NavButton__d56af3">
-          <ChevronRight
+          <CaretRightIcon
             className="h-5 w-5 text-[#828FA3]"
             aria-hidden="true"
             data-testid="ChevronRight__d56af3" />

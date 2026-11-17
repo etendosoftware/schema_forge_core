@@ -93,11 +93,11 @@ describe('DateRangePopoverContent', () => {
       />,
     );
     // The active row gets the bg class. We can't reliably test the check icon presence
-    // without depending on lucide internals, so verify the preset's row exists and
+    // without depending on icon library internals, so verify the preset's row exists and
     // has the active background class.
     const row = screen.getByText('Últimos 30 días').closest('button');
     expect(row.className).toMatch(/bg-\[rgba\(18,18,23,0\.05\)\]/);
-    // Sanity check: at least one Check icon (svg with lucide-check class) is in DOM
+    // Sanity check: at least one Check icon (Phosphor svg) is in DOM
     expect(container.querySelector('svg')).toBeInTheDocument();
   });
 });

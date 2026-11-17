@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { toast } from 'sonner';
-import { Loader2 } from 'lucide-react';
+import { CircleNotchIcon } from '@phosphor-icons/react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '../ui/dialog.jsx';
 import { Button } from '../ui/button.jsx';
 import { ImportDropzone } from './ImportDropzone.jsx';
@@ -937,7 +937,7 @@ export function ImportDialog({ open, onOpenChange, config, token, postBatch, sim
               className="flex flex-col items-center justify-center gap-3 py-12 text-sm text-muted-foreground"
               data-testid="ImportDialog__reading"
             >
-              <Loader2 className="h-6 w-6 animate-spin" aria-hidden="true" data-testid="Loader2__ImportDialogReading" />
+              <CircleNotchIcon className="h-6 w-6 animate-spin" aria-hidden="true" data-testid="Loader2__ImportDialogReading" />
               <span>{text.reading}</span>
             </div>
           )}

@@ -21,9 +21,9 @@ describe('date-picker-chrome — exports and dependencies', () => {
     assert.match(src, /export function PickerGrid\(/);
   });
 
-  it('imports the chevron icons from lucide-react (Calendar icon stays in date-field.jsx)', () => {
-    assert.match(src, /ChevronDown[\s\S]*?ChevronLeft[\s\S]*?ChevronRight[\s\S]*?from\s+['"]lucide-react['"]/);
-    assert.doesNotMatch(src, /Calendar as CalendarIcon/);
+  it('imports the chevron icons from @phosphor-icons/react (Calendar icon stays in date-field.jsx)', () => {
+    assert.match(src, /CaretDownIcon[\s\S]*?CaretLeftIcon[\s\S]*?CaretRightIcon[\s\S]*?from\s+['"]@phosphor-icons\/react['"]/);
+    assert.doesNotMatch(src, /CalendarBlankIcon as CalendarIcon/);
   });
 
   it('imports cn from lib/utils.js', () => {
@@ -36,18 +36,18 @@ describe('HeaderRow — label + chevron + nav arrows', () => {
     assert.match(src, /function HeaderRow\(\{\s*label,\s*onLabelClick,\s*onPrev,\s*onNext,\s*showLabelChevron\s*\}\)/);
   });
 
-  it('renders the label and conditionally a ChevronDown next to it', () => {
+  it('renders the label and conditionally a CaretDownIcon next to it', () => {
     assert.match(src, /<span>\{label\}<\/span>/);
-    assert.match(src, /\{showLabelChevron\s*&&\s*\(\s*<ChevronDown/);
+    assert.match(src, /\{showLabelChevron\s*&&\s*\(\s*<CaretDownIcon/);
   });
 
   it('wires onLabelClick to the label button and capitalizes the (already locale-formatted) label', () => {
     assert.match(src, /<button[\s\S]*?onClick=\{onLabelClick\}[\s\S]*?capitalize/);
   });
 
-  it('delegates prev/next arrows to NavButton with ChevronLeft/ChevronRight children', () => {
-    assert.match(src, /<NavButton onClick=\{onPrev\}[\s\S]*?<ChevronLeft/);
-    assert.match(src, /<NavButton onClick=\{onNext\}[\s\S]*?<ChevronRight/);
+  it('delegates prev/next arrows to NavButton with CaretLeftIcon/CaretRightIcon children', () => {
+    assert.match(src, /<NavButton onClick=\{onPrev\}[\s\S]*?<CaretLeftIcon/);
+    assert.match(src, /<NavButton onClick=\{onNext\}[\s\S]*?<CaretRightIcon/);
   });
 });
 

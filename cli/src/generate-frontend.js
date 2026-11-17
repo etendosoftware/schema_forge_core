@@ -836,23 +836,47 @@ ${MARKERS.GENERATED_END(`component:${compName}`)}
 }
 
 /**
+ * Contracts name status-bar icons with the legacy Lucide identifiers (e.g. `CheckCircle2`).
+ * The generated code imports from Phosphor, the only icon library of the app, so the
+ * contract name is resolved to the Phosphor `*Icon` export. A name that is not listed
+ * is taken as a Phosphor name (with or without the `Icon` suffix).
+ */
+const LEGACY_ICON_TO_PHOSPHOR = {
+  Activity: 'PulseIcon', AlertCircle: 'WarningCircleIcon', AlertTriangle: 'WarningIcon',
+  BarChart3: 'ChartBarIcon', Bell: 'BellIcon', Briefcase: 'BriefcaseIcon', Building2: 'BuildingsIcon',
+  Calculator: 'CalculatorIcon', Calendar: 'CalendarBlankIcon', CalendarDays: 'CalendarDotsIcon',
+  Check: 'CheckIcon', CheckCircle: 'CheckCircleIcon', CheckCircle2: 'CheckCircleIcon',
+  ClipboardCheck: 'ClipboardTextIcon', Clock: 'ClockIcon', CreditCard: 'CreditCardIcon',
+  DollarSign: 'CurrencyDollarIcon', Eye: 'EyeIcon', FileCheck: 'FileTextIcon', FileText: 'FileTextIcon',
+  Package: 'PackageIcon', PieChart: 'ChartPieIcon', Receipt: 'ReceiptIcon', Settings: 'GearIcon',
+  Shield: 'ShieldIcon', ShoppingCart: 'ShoppingCartIcon', Star: 'StarIcon', Target: 'TargetIcon',
+  TrendingDown: 'TrendDownIcon', TrendingUp: 'TrendUpIcon', Truck: 'TruckIcon', User: 'UserIcon',
+  Users: 'UsersIcon', Wallet: 'WalletIcon', XCircle: 'XCircleIcon',
+};
+
+function phosphorIconName(name) {
+  if (LEGACY_ICON_TO_PHOSPHOR[name]) return LEGACY_ICON_TO_PHOSPHOR[name];
+  return name.endsWith('Icon') ? name : `${name}Icon`;
+}
+
+/**
  * Generate a StatusBar component for windows with a statusBar config.
- * Returns an object with { componentCode, lucideImports } strings.
+ * Returns an object with { componentCode, iconImports } strings.
  */
 function generateStatusBarComponent(headerEntity, statusBarConfig) {
   const headerName = toJsIdentifier(headerEntity);
   const { cards = [], progress } = statusBarConfig;
 
-  // Collect unique lucide icon names
+  // Collect unique icon names (as Phosphor exports)
   const iconNames = new Set();
   for (const card of cards) {
-    if (card.icon) iconNames.add(card.icon);
+    if (card.icon) iconNames.add(phosphorIconName(card.icon));
   }
-  if (progress?.completedIcon) iconNames.add(progress.completedIcon);
+  if (progress?.completedIcon) iconNames.add(phosphorIconName(progress.completedIcon));
   // The progress bar also uses a card icon as its "in-progress" icon
   // (matching the first card's icon or TrendingDown by convention)
-  if (progress && cards.length > 0 && cards[0].icon) iconNames.add(cards[0].icon);
-  const lucideImports = `import { ${[...iconNames].join(', ')} } from 'lucide-react';`;
+  if (progress && cards.length > 0 && cards[0].icon) iconNames.add(phosphorIconName(cards[0].icon));
+  const iconImports = `import { ${[...iconNames].join(', ')} } from '@phosphor-icons/react';`;
 
   // Build cards array literal
   const cardsLiteral = cards.map(card => {
@@ -871,7 +895,7 @@ function generateStatusBarComponent(headerEntity, statusBarConfig) {
       : `'${card.color}'`;
     // Label expression: i18n key via ui() or static string
     const labelExpr = card.labelKey ? `ui('${card.labelKey}')` : `'${card.label}'`;
-    return `    { label: ${labelExpr}, value: ${valueExpr}, color: ${colorExpr},  Icon: ${card.icon} },`;
+    return `    { label: ${labelExpr}, value: ${valueExpr}, color: ${colorExpr},  Icon: ${phosphorIconName(card.icon)} },`;
   }).join('\n');
 
   // Build progress section
@@ -879,13 +903,13 @@ function generateStatusBarComponent(headerEntity, statusBarConfig) {
   if (progress) {
     const { numerator, denominator, condition, label, color, completedColor, completedIcon } = progress;
     // Determine the in-progress icon (first card icon, or first icon in the set)
-    const inProgressIcon = (cards.length > 0 && cards[0].icon) ? cards[0].icon : [...iconNames][0];
+    const inProgressIcon = (cards.length > 0 && cards[0].icon) ? phosphorIconName(cards[0].icon) : [...iconNames][0];
     progressSection = `  const progressColor = pct === 100 ? '${completedColor}' : '${color}';
   const pc = colorMap[progressColor];`;
 
     const progressJsx = `      {pct !== null && (
         <div className={\`flex items-center gap-3 \${pc.bg} border-l-4 \${pc.border} rounded-lg px-4 py-2.5 min-w-[170px]\`}>
-          {pct === 100 ? <${completedIcon} size={18} className={pc.icon} /> : <${inProgressIcon} size={18} className={pc.icon} />}
+          {pct === 100 ? <${phosphorIconName(completedIcon)} size={18} className={pc.icon} /> : <${inProgressIcon} size={18} className={pc.icon} />}
           <div>
             <div className={\`text-lg font-semibold leading-tight \${pc.text}\`}>{pct}%</div>
             <div className={\`text-xs \${pc.sub} mt-0.5\`}>${label}</div>
@@ -934,7 +958,7 @@ ${progressJsx}
 }
 ${MARKERS.GENERATED_END(`statusBar:${headerEntity}`)}`;
 
-    return { componentCode, lucideImports };
+    return { componentCode, iconImports };
   }
 
   // No progress section
@@ -971,7 +995,7 @@ ${cardsLiteral}
 }
 ${MARKERS.GENERATED_END(`statusBar:${headerEntity}`)}`;
 
-  return { componentCode, lucideImports };
+  return { componentCode, iconImports };
 }
 
 /**
@@ -1373,7 +1397,7 @@ function getMenuActionsFnParams(menuActionsNeedsData) {
 
 function getStatusBarParts(statusBar, headerEntity, confirmModalName, specName, headerName, isGallery, isSidebar) {
   const statusBarResult = statusBar ? generateStatusBarComponent(headerEntity, statusBar) : null;
-  const statusBarImport = statusBarResult ? `\nimport { useUI } from '@/i18n';\n${statusBarResult.lucideImports}` : '';
+  const statusBarImport = statusBarResult ? `\nimport { useUI } from '@/i18n';\n${statusBarResult.iconImports}` : '';
   const confirmModalImport = confirmModalName
     ? `\nimport ${confirmModalName} from ${resolveCustomImport(specName || headerEntity, confirmModalName)};`
     : '';

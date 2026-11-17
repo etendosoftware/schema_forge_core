@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { ArrowRight, Building2, User, MessageCircle } from 'lucide-react';
+import { ArrowRightIcon, BuildingsIcon, UserIcon, ChatCircleIcon } from '@phosphor-icons/react';
 import { Button } from '@etendosoftware/app-shell-core/components/ui/button';
 import { Label } from '@etendosoftware/app-shell-core/components/ui/label';
 import { useUI, useLocaleSwitch } from '@etendosoftware/app-shell-core/i18n';
@@ -60,7 +60,7 @@ export function ProfileStep({ config, stepData, onNext, onBack, goToStep, accoun
   const businessTypeOptions = (config.businessTypeValues || ['company', 'freelancer', 'advisory']).map((value) => ({
     value,
     label: ui(`onboardingBusinessType${value.charAt(0).toUpperCase()}${value.slice(1)}`),
-    icon: value === 'company' ? Building2 : value === 'freelancer' ? User : MessageCircle,
+    icon: value === 'company' ? BuildingsIcon : value === 'freelancer' ? UserIcon : ChatCircleIcon,
   }));
 
   // Freelancers reuse this full name as their invoicing (client) name, which is
@@ -170,7 +170,7 @@ export function ProfileStep({ config, stepData, onNext, onBack, goToStep, accoun
             disabled={!isValid}
             className="h-12 rounded-lg bg-[#121217] px-6 text-base font-medium text-white hover:bg-accent-highlight hover:text-accent-highlight-foreground"
             data-testid="Button__79cf84">
-            {ui('onboardingContinueAction')} <ArrowRight className="ml-2 h-4 w-4" data-testid="ArrowRight__79cf84" />
+            {ui('onboardingContinueAction')} <ArrowRightIcon className="ml-2 h-4 w-4" data-testid="ArrowRight__79cf84" />
           </Button>
         </div>
       </div>

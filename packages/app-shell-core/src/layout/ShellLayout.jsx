@@ -1,5 +1,5 @@
 import { Outlet, NavLink } from 'react-router-dom';
-import { ChevronLeft, ChevronRight } from 'lucide-react';
+import { CaretLeftIcon, CaretRightIcon } from '@phosphor-icons/react';
 import { useState } from 'react';
 import { Button } from '../components/ui/button.jsx';
 import { cn } from '../lib/utils.js';
@@ -22,7 +22,7 @@ export function ShellMenu({ groups = [], expanded = true, onToggle }) {
           onClick={onToggle}
           aria-label="Toggle menu"
           data-testid="Button__69bf59">
-          {expanded ? <ChevronLeft className="h-4 w-4" data-testid="ChevronLeft__69bf59" /> : <ChevronRight className="h-4 w-4" data-testid="ChevronRight__69bf59" />}
+          {expanded ? <CaretLeftIcon className="h-4 w-4" data-testid="ChevronLeft__69bf59" /> : <CaretRightIcon className="h-4 w-4" data-testid="ChevronRight__69bf59" />}
         </Button>
       </div>
       <nav className="flex-1 overflow-auto px-2 py-3">

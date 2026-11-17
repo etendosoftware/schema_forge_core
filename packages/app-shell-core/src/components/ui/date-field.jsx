@@ -1,5 +1,5 @@
 import * as React from 'react';
-import { Calendar as CalendarIcon } from 'lucide-react';
+import { CalendarBlankIcon as CalendarIcon } from '@phosphor-icons/react';
 import { Popover, PopoverContent, PopoverTrigger } from './popover.jsx';
 import { Calendar } from './calendar.jsx';
 import { parseCalendarDate, formatCalendarDate } from '../../lib/dateOnly.js';
