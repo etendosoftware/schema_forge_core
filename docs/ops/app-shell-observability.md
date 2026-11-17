@@ -294,6 +294,12 @@ Payloads are normalized before providers receive them:
   `/sales-order/:recordId`.
 - Nested opaque IDs are emitted as `:id`.
 
+Common properties set with `setContext` ride on every later event until they are
+replaced or removed. Setting a key to `null` or `undefined` removes it from the
+gateway context (ETP-6072), so a value that belongs to the session, such as
+`role_groups` or `tenant_type`, must be cleared that way on sign-out; otherwise the
+next account's events would carry it.
+
 Do not pass free-form user-entered values to `track`, `page`, or future business
 events. Add new event fields to the allowlist only when they are stable,
 non-sensitive product metadata.
