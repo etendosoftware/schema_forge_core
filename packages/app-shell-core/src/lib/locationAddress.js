@@ -76,8 +76,15 @@ function appendPart(base, sep, part) {
  *   never composes one without it; a lone Number must not read as a complete address).
  * - Blank number with a street → composes as "s/n" (see `effectiveBuildingNumber`).
  * - `"Street, Number - Name"` when it fits in 60 chars; otherwise `"Street, Number"` on line 1 and
- *   the name (cut to 60) on line 2; when even `"Street, Number"` overflows, the street cut to 60 on
- *   line 1 and `"Number - Name"` cut to 60 on line 2.
+ *   the name on line 2; when even `"Street, Number"` overflows, the full street alone on line 1 and
+ *   `"Number - Name"` on line 2.
+ *
+ * Lines only ever split on field/separator boundaries — a single field's characters are NEVER cut
+ * mid-value (ETP-5806 CP-6). `Street` (up to 70 chars, `STREET_NAME_MAX_LENGTH`) is the only field
+ * that can exceed `ADDRESS_LINE_MAX_LENGTH` (60) on its own, so the overflow branch below may
+ * legitimately return an `address1` longer than 60 chars rather than lossily truncating it —
+ * `Number - Name` is at most 16 + 3 + 35 = 54 chars (`BUILDING_NUMBER_MAX_LENGTH` +
+ * " - ".length + `BUILDING_NAME_MAX_LENGTH`), so it always fits within the 60-char line on its own.
  *
  * @param {string|number|null|undefined} streetName
  * @param {string|number|null|undefined} buildingNumber
@@ -99,10 +106,10 @@ export function composeAddressLines(streetName, buildingNumber, buildingName) {
     return { address1: wholeAddress, address2: '' };
   }
   if (streetAndNumber.length <= ADDRESS_LINE_MAX_LENGTH) {
-    return { address1: streetAndNumber, address2: name.slice(0, ADDRESS_LINE_MAX_LENGTH) };
+    return { address1: streetAndNumber, address2: name };
   }
   return {
-    address1: street.slice(0, ADDRESS_LINE_MAX_LENGTH),
-    address2: appendPart(number, ' - ', name).slice(0, ADDRESS_LINE_MAX_LENGTH),
+    address1: street,
+    address2: appendPart(number, ' - ', name),
   };
 }
