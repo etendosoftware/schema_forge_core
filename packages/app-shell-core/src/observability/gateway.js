@@ -347,9 +347,19 @@ export function createTelemetryGateway({
     await dispatch(methodName, [key, id, safePayload, envelope()]);
   }
 
+  /**
+   * A key set to `null`/`undefined` REMOVES it (ETP-6072). Sanitizing drops empty values, so
+   * merging only the sanitized object kept a cleared key's last value on every later event:
+   * `role_groups` and `tenant_type` survived a sign-out and tagged the next account's events.
+   */
   function mergeContext(nextContext) {
+    if (!isRecord(nextContext)) return;
+    const cleared = new Set(Object.keys(nextContext).filter((key) => nextContext[key] == null));
+    const kept = cleared.size === 0
+      ? context
+      : Object.fromEntries(Object.entries(context).filter(([key]) => !cleared.has(key)));
     const safe = sanitize(nextContext);
-    if (isRecord(safe)) context = { ...context, ...safe };
+    context = isRecord(safe) ? { ...kept, ...safe } : kept;
   }
 
   return {
