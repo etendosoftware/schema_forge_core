@@ -623,11 +623,16 @@ function runPeriodTrees(nodeRows, operandRows, periods, amountsByPeriod, treeOpt
 
 const isNonZero = (v) => Math.abs(v) > 0.005;
 
-/** `{none, sly, prev}`: whether a row shows in each comparison mode. */
-function visibilityByMode(cells, always) {
+/**
+ * `{none, sly, prev}`: whether a row shows in each comparison mode. `none` looks at every cell; a
+ * comparison mode only at the cells in `shown` (the periods its columns show), so a row never
+ * appears with every visible column empty.
+ */
+function visibilityByMode(cells, always, shown) {
   const visible = {};
   for (const mode of COMPARE_MODES) {
-    visible[mode] = always || cells.some((c) => isNonZero(c.amount) || isNonZero(cellShows[mode](c)));
+    const seen = mode === 'none' ? cells : cells.filter((_, i) => shown.has(i));
+    visible[mode] = always || seen.some((c) => isNonZero(c.amount) || isNonZero(cellShows[mode](c)));
   }
   return visible;
 }
@@ -656,7 +661,10 @@ function nearestVisibleParents(row, rowById) {
  * three: `visible = {none, sly, prev}` and `parentIds` (the nearest ancestor
  * visible in that mode). A row is visible in a mode when one of its cells for
  * that mode is non-zero or `isalwaysshown` is set (everything is visible when
- * `showOnlyWithValue` is off). The client and the exports then pick a mode
+ * `showOnlyWithValue` is off). With `comparedPeriods` (the query's, for the screen) the
+ * comparison modes only look at the range total and that many last periods, the columns the
+ * screen shows with a comparison; without it (a render: the PDF asks for just those periods, and
+ * Excel / CSV print every one) every period counts. The client and the exports then pick a mode
  * without asking again. `parentId` is the unfiltered listed parent.
  *
  * The top-level `amount` / `amount_ref` / variation fields are the first
@@ -664,11 +672,13 @@ function nearestVisibleParents(row, rowById) {
  * shape still gets the range total.
  */
 export function buildPeriodAccountTree(nodeRows, operandRows, periodRows, opts = {}) {
-  const { periods = [], accountLevel = 'S', showOnlyWithValue = false, expandedNodeIds, trend = false } = opts;
+  const { periods = [], accountLevel = 'S', showOnlyWithValue = false, expandedNodeIds, trend = false, comparedPeriods = Infinity } = opts;
   const treeOpts = { accountLevel, showOnlyWithValue: false, expandedNodeIds };
   const runs = runPeriodTrees(nodeRows, operandRows, periods, amountsByPeriodIdx(periodRows), treeOpts);
   if (!runs.length) return [];
 
+  // Positions in `cells` (= in `periods`) the comparison modes look at: the range total and the last N periods.
+  const shown = new Set(periods.map((_, i) => i).filter((i) => i === 0 || i >= periods.length - comparedPeriods));
   const alwaysShown = new Set(nodeRows.filter((n) => n.isalwaysshown === 'Y').map((n) => n.node_id));
   const rows = runs[0].sly.map((base) => {
     const cells = runs.map((run) => {
@@ -676,7 +686,7 @@ export function buildPeriodAccountTree(nodeRows, operandRows, periodRows, opts =
       const p = run.prevById.get(base.node_id);
       return buildPeriodCell(s.amount, s.amount_ref, p.amount_ref, { sign: base.sign, trend });
     });
-    const visible = visibilityByMode(cells, !showOnlyWithValue || alwaysShown.has(base.node_id));
+    const visible = visibilityByMode(cells, !showOnlyWithValue || alwaysShown.has(base.node_id), shown);
     const [first] = cells;
     return { ...base, amount: first.amount, amount_ref: first.sly.amount, variationAmount: first.sly.variationAmount,
       variationPct: first.sly.variationPct, trend: first.sly.trend, cells, visible };
