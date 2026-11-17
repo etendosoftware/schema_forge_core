@@ -63,6 +63,19 @@ When a later push fixes all blockers, the workflow dismisses prior bot change re
 
 Exclusions: the duplicated-block check skips generated or data files, where repeated blocks are expected — `artifacts/`, `cli/cache/`, npm lockfiles (`package-lock.json`, `npm-shrinkwrap.json`), locale dictionaries (`<dir>/locales/*.json`) and versioned public API manifests (`public-api/*.vN.json`, e.g. `public-api/base.v1.json`). Hand-written JSON in `public-api/` (e.g. `overrides.json`) is still checked. It also skips the agent instruction mirrors at the repository root (`AGENTS.md`, `.agents/skills/`, `.codex/agents/`, `.opencode/agents/`, `.omp/agents/`): they carry the text of `CLAUDE.md` and `.claude/` for coding agents that only read their own folder, so every instruction change repeats there. `CLAUDE.md` and `.claude/` are still checked.
 
+Test classification recognizes `*.test.*`, `*.spec.*`, `*.vitest.*` and
+`*.e2e.*` with `.js`, `.jsx`, `.ts` or `.tsx` extensions. Test files must live
+under a test directory; an `e2e/` path segment is accepted alongside `test/`,
+`tests/` and `__tests__/`. For example, `gateway/e2e/reference-data.e2e.ts`
+is a test, while `src/reference-data.e2e.ts` raises `WRONG_DIRECTORY`.
+A directory such as `notes-e2e/` does not qualify as `e2e/`.
+
+`MISSING_TESTS` is evaluated for the whole PR: it is raised when the PR adds
+source files outside test directories and adds no recognized test file.
+Helpers under `e2e/` are excluded from that source-file check, but a helper
+without a test suffix does not itself count as an added test. This gate does
+not prove coverage for each source file; human review still needs to assess it.
+
 The goal is not to replace human review. The goal is to catch obvious architecture drift before review time is wasted.
 
 ## Operational notes
