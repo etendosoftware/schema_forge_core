@@ -17,7 +17,7 @@ import { readFileSync, existsSync } from 'node:fs';
 import { join } from 'node:path';
 import { applyPlaceholders } from './report-sql.js';
 import { buildAccountReportTree, buildPeriodAccountTree, buildPeriodCell, addVariation, accountSignMultiplier, cleanAmount } from './report-grouping.js';
-import { assertNoPeriodsToken, buildPeriodValues, substitutePeriods, hasPeriods, hullParams, SCREEN_MAX_BUCKETS } from './report-periods.js';
+import { assertNoPeriodsToken, buildPeriodValues, comparedPeriodsFor, substitutePeriods, hasPeriods, hullParams, SCREEN_MAX_BUCKETS } from './report-periods.js';
 import { resolveReportSession, reportAuthErrorBody, assertReportOrgAccess, assertReportAccess } from './report-auth.js';
 
 const REPORT_ID_SHAPE = /^[\w-]+$/;
@@ -143,6 +143,7 @@ export function buildQueryResponse(contract, params, { rows, openingRows, operan
       accountLevel: 'S',
       showOnlyWithValue: params.showOnlyAccountsWithValue === 'true',
       trend: contract.trend === 'result',
+      comparedPeriods: comparedPeriodsFor(params.columns || 'total'),
     });
     return { kind: 'tree', rows: tree, periods: periodSpec.periods.map(publicPeriod), hiddenCount: periodSpec.hiddenCount };
   }

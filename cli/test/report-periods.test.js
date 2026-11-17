@@ -4,7 +4,7 @@ import { strict as assert } from 'node:assert';
 
 import {
   buildPeriodValues, substitutePeriods, assertNoPeriodsToken, hullParams, hasPeriods, maxPeriodBucketsFor,
-  normalizeCompareMode, buildPeriodMeta, ReportPeriodsError, SCREEN_MAX_BUCKETS, EXPORT_MAX_BUCKETS,
+  normalizeCompareMode, buildPeriodMeta, ReportPeriodsError, SCREEN_MAX_BUCKETS, EXPORT_MAX_BUCKETS, SCREEN_PERIODS, comparedPeriodsFor,
 } from '../src/report-periods.js';
 
 const tuple = (cur, sly = '2025-01-01..2025-01-31', prev = '2025-12-01..2025-12-31') => `${cur}|${sly}|${prev}`;
@@ -151,14 +151,23 @@ describe('buildPeriodValues — long ranges and bucket containment', () => {
   });
 });
 
+describe('screen period limits (ETP-6239)', () => {
+  it('12 months / 8 quarters without a comparison, 6 / 4 with one; the bucket cap derives from them', () => {
+    assert.deepEqual(SCREEN_PERIODS, { month: { plain: 12, compared: 6 }, quarter: { plain: 8, compared: 4 } });
+    assert.equal(SCREEN_MAX_BUCKETS, 13);
+    assert.deepEqual([comparedPeriodsFor('month'), comparedPeriodsFor('quarter'), comparedPeriodsFor('total')], [6, 4, Infinity]);
+  });
+});
+
 describe('buildPeriodValues — count limits and grain', () => {
-  it('caps at 7 buckets for screen/pdf and 25 for xlsx/csv', () => {
+  it('caps at 13 buckets for screen/pdf and 25 for xlsx/csv', () => {
     assert.equal(maxPeriodBucketsFor('pdf'), SCREEN_MAX_BUCKETS);
-    assert.equal(maxPeriodBucketsFor('html'), 7);
+    assert.equal(maxPeriodBucketsFor('html'), 13);
     assert.equal(maxPeriodBucketsFor('xlsx'), EXPORT_MAX_BUCKETS);
     assert.equal(maxPeriodBucketsFor('csv'), 25);
     assert.doesNotThrow(() => buildPeriodValues(MONTHS(7), { grain: 'month' }));
-    fails(MONTHS(8), { grain: 'month' }, 'PERIOD_RANGE_TOO_LONG', /more than 7/);
+    fails(MONTHS(14), { grain: 'month' }, 'PERIOD_RANGE_TOO_LONG', /more than 13/);
+    assert.doesNotThrow(() => buildPeriodValues(MONTHS(13), { grain: 'month' }));
     assert.doesNotThrow(() => buildPeriodValues(MONTHS(25), { grain: 'month', maxBuckets: maxPeriodBucketsFor('xlsx') }));
     fails(MONTHS(26), { grain: 'month', maxBuckets: maxPeriodBucketsFor('xlsx') }, 'PERIOD_RANGE_TOO_LONG');
   });
