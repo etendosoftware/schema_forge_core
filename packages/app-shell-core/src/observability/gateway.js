@@ -348,7 +348,7 @@ export function createTelemetryGateway({
   }
 
   /**
-   * A key set to `null`/`undefined` REMOVES it (ETP-6072). Sanitizing drops empty values, so
+   * A key set to `null`/`undefined` REMOVES it (ETP-6072). Sanitizing drops `undefined`, so
    * merging only the sanitized object kept a cleared key's last value on every later event:
    * `role_groups` and `tenant_type` survived a sign-out and tagged the next account's events.
    */
@@ -358,8 +358,12 @@ export function createTelemetryGateway({
     const kept = cleared.size === 0
       ? context
       : Object.fromEntries(Object.entries(context).filter(([key]) => !cleared.has(key)));
+    // Sanitizing keeps a null value, so a cleared key is also left out of what is merged back.
     const safe = sanitize(nextContext);
-    context = isRecord(safe) ? { ...kept, ...safe } : kept;
+    const added = isRecord(safe)
+      ? Object.fromEntries(Object.entries(safe).filter(([key]) => !cleared.has(key)))
+      : {};
+    context = { ...kept, ...added };
   }
 
   return {
