@@ -268,6 +268,29 @@ describe('createTelemetryGateway — sanitizes before dispatch', () => {
     assert.deepEqual(trackCall[3], { context: { env: 'staging' } });
   });
 
+  it('setContext() with a null or undefined value removes the key from the context and later events', async () => {
+    const { adapter, calls } = mockAdapter('test');
+    const gw = createTelemetryGateway({ adapters: [adapter], allowedKeys: ['env', 'tenant_type', 'role_groups', 'action'] });
+
+    await gw.setContext({ env: 'prod', tenant_type: 'productive', role_groups: ['admin'] });
+    await gw.setContext({ tenant_type: undefined, role_groups: null });
+    await gw.track('ping', { action: 'x' });
+
+    assert.deepEqual(gw.getContext(), { env: 'prod' });
+    assert.deepEqual(calls.at(-2), ['setContext', { env: 'prod' }]);
+    assert.deepEqual(calls.at(-1)[3], { context: { env: 'prod' } });
+  });
+
+  it('setContext() ignores a non-object argument and keeps the context', async () => {
+    const { adapter } = mockAdapter('test');
+    const gw = createTelemetryGateway({ adapters: [adapter], allowedKeys: ['env'] });
+
+    await gw.setContext({ env: 'prod' });
+    await gw.setContext(null);
+
+    assert.deepEqual(gw.getContext(), { env: 'prod' });
+  });
+
   it('an adapter mutating the context it receives cannot change the gateway context', async () => {
     const mutating = { name: 'mut', setContext: (ctx) => { ctx.injected = `Bearer ${SECRET_TOKEN}`; } };
     const gw = createTelemetryGateway({ adapters: [mutating], allowedKeys: ['env'] });
