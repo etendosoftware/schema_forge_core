@@ -564,6 +564,36 @@ describe('AuthContext — session restore (ETP-4576)', () => {
       expect(result.current.account.id).toBe('member-account');
     });
 
+    it('resets the analytics ids to null on logout (ETP-6228)', async () => {
+      const restored = {
+        ok: true,
+        status: 200,
+        json: async () => ({
+          account: { id: 'member-account', name: 'Ada' },
+          environment: { userId: 'user-1', clientId: 'client-1', etgoAccountId: 'owner-account' },
+          roleList: [],
+          csrfToken: 'csrf',
+        }),
+      };
+      fetchStub.mockResolvedValue(restored);
+
+      const { result } = renderHook(() => useAuth(), {
+        wrapper: ({ children }) => (
+          <AuthProvider credentialMode={CREDENTIAL_MODES.cookie} storage={createMemoryAuthStorage()}>{children}</AuthProvider>
+        ),
+      });
+      await waitFor(() => {
+        expect(result.current.userId).toBe('user-1');
+      });
+
+      act(() => {
+        result.current.logout();
+      });
+
+      expect(result.current.userId).toBeNull();
+      expect(result.current.etgoAccountId).toBeNull();
+    });
+
     it('asks GET /sws/go/session with the cookie attached and never sends an Authorization/Bearer header', async () => {
       renderHook(() => useAuth(), {
         wrapper: ({ children }) => (

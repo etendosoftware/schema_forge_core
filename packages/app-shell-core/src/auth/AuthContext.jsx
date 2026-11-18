@@ -180,7 +180,7 @@ export function AuthProvider({
           setAccount(restoredAccount);
           const restored = mapRestoredSession(result);
           setEnvironmentIds({ userId: restored.userId, etgoAccountId: restored.etgoAccountId });
-          controller.replace(normalizeAuthSession(mapRestoredSession(result)), { refresh: false, persist: false });
+          controller.replace(normalizeAuthSession(restored), { refresh: false, persist: false });
           setStatus('authenticated');
           // ETP-5675 — tell the other tabs whose session the browser holds now. A tab still
           // showing another account raises its conflict screen before it sends anything.
