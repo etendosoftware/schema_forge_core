@@ -4,6 +4,9 @@ export interface PublicApiField {
   publicApi: true;
   direction: FieldDirection;
   internalPath: string;
+  // `false` when the field is not backed by a column of the entity (its handler adds it on read):
+  // the gateway refuses to filter or sort by it. Absent means queryable.
+  queryable?: boolean;
 }
 
 export interface PublicApiEntity {
