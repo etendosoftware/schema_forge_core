@@ -1,5 +1,5 @@
 import React, { useState, useCallback } from 'react';
-import { LogIn, Loader2 } from 'lucide-react';
+import { SignInIcon, CircleNotchIcon } from '@phosphor-icons/react';
 import { Button } from '@etendosoftware/app-shell-core/components/ui/button';
 import { useUI } from '@etendosoftware/app-shell-core/i18n';
 import { consumeLoginLink, resolveAuthErrorMessage } from '../api.js';
@@ -52,7 +52,7 @@ export function LoginLinkStep({ config, loginToken, goToStep, setToken, setAccou
       data-testid="AuthShell__login_link">
       <div data-testid="login-link-step">
         <div className="mb-6 flex h-14 w-14 items-center justify-center rounded-2xl border border-slate-200 bg-white shadow-sm">
-          <LogIn
+          <SignInIcon
             className="h-6 w-6 text-slate-500"
             aria-hidden="true"
             data-testid="LogIn__ef2b07" />
@@ -74,7 +74,7 @@ export function LoginLinkStep({ config, loginToken, goToStep, setToken, setAccou
             data-testid="login-link-enter"
             className="h-12 rounded-lg px-6 text-base font-medium">
             {state === 'entering' && (
-              <Loader2
+              <CircleNotchIcon
                 className="mr-2 h-4 w-4 animate-spin"
                 aria-hidden="true"
                 data-testid="Loader2__ef2b07" />

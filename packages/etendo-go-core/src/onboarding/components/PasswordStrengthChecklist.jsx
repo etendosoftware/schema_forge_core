@@ -1,5 +1,5 @@
 import React from 'react';
-import { Check } from 'lucide-react';
+import { CheckIcon } from '@phosphor-icons/react';
 import { useUI } from '@etendosoftware/app-shell-core/i18n';
 import { getPasswordChecks, PASSWORD_RULES } from '../passwordPolicy.js';
 
@@ -46,7 +46,7 @@ export function PasswordStrengthChecklist({ password, testIdPrefix = 'password',
             className={`flex items-center gap-2 ${met ? 'text-emerald-600' : 'text-slate-400'}`}
           >
             {met
-              ? <Check className="h-4 w-4 shrink-0" data-testid="Check__79cf84" />
+              ? <CheckIcon className="h-4 w-4 shrink-0" data-testid="Check__79cf84" />
               : <span className="h-1.5 w-1.5 shrink-0 rounded-full bg-slate-300" aria-hidden="true" />}
             <span>{ui(PASSWORD_RULE_LABELS[rule])}</span>
           </li>

@@ -1,14 +1,5 @@
 import React from 'react';
-// Non-menu / decorative chrome stays on lucide (same as the rest of the shell).
-import {
-  Headphones,
-  ChevronDown,
-  ChevronRight,
-  Search,
-  Calendar,
-  SlidersHorizontal,
-  PanelLeftClose,
-} from 'lucide-react';
+import { HeadphonesIcon, CaretDownIcon, CaretRightIcon, MagnifyingGlassIcon, CalendarBlankIcon, SlidersHorizontalIcon, SidebarSimpleIcon } from '@phosphor-icons/react';
 import {
   SKELETON_BG,
   ICON_COLOR,
@@ -89,13 +80,12 @@ export function SetupPreviewMockup({ userName, orgName, variant = 'profile', ...
                   : <span className={`inline-block h-2.5 w-[90px] rounded-full ${SKELETON_BG}`} />}
               </div>
               <span className={ICON_COLOR}>
-                <ChevronDown className="h-5 w-5" strokeWidth={1.7} data-testid="ChevronDown__7121d0" />
+                <CaretDownIcon className="h-5 w-5" data-testid="ChevronDown__7121d0" />
               </span>
             </div>
             <span className={`flex h-8 w-8 flex-none items-center justify-center rounded-md ${ICON_COLOR}`}>
-              <PanelLeftClose
+              <SidebarSimpleIcon
                 className="h-5 w-5"
-                strokeWidth={1.7}
                 data-testid="PanelLeftClose__7121d0" />
             </span>
           </div>
@@ -122,9 +112,8 @@ export function SetupPreviewMockup({ userName, orgName, variant = 'profile', ...
             <div className="flex flex-col gap-1 border-t border-[#E8EAEF] pt-2">
               <div className="flex h-8 items-center px-2">
                 <span className={`flex w-7 flex-none items-center pl-1 ${ICON_COLOR}`}>
-                  <Headphones
+                  <HeadphonesIcon
                     className="h-[18px] w-[18px]"
-                    strokeWidth={1.7}
                     data-testid="Headphones__7121d0" />
                 </span>
                 <span className="min-w-0 flex-1 px-2">
@@ -141,9 +130,8 @@ export function SetupPreviewMockup({ userName, orgName, variant = 'profile', ...
                 </span>
                 <span className="flex-1 truncate px-2 text-sm leading-6 text-[#121217]">{displayName}</span>
                 <span className={`flex w-7 flex-none items-center justify-center pr-1 ${ICON_COLOR}`}>
-                  <ChevronRight
+                  <CaretRightIcon
                     className="h-[18px] w-[18px]"
-                    strokeWidth={1.7}
                     data-testid="ChevronRight__7121d0" />
                 </span>
               </div>
@@ -160,9 +148,8 @@ export function SetupPreviewMockup({ userName, orgName, variant = 'profile', ...
             </div>
             <div className="flex h-10 w-[392px] items-center gap-2 rounded-full bg-white px-3">
               <span className={`flex-none ${ICON_COLOR}`}>
-                <Search
+                <MagnifyingGlassIcon
                   className="h-[18px] w-[18px]"
-                  strokeWidth={1.8}
                   data-testid="Search__7121d0" />
               </span>
               <span className={`inline-block h-3 w-44 rounded-full ${SKELETON_BG}`} />
@@ -173,23 +160,20 @@ export function SetupPreviewMockup({ userName, orgName, variant = 'profile', ...
               <div className="flex flex-none items-center gap-2 px-2 pb-2 pt-4">
                 <div className="flex h-10 flex-none items-center gap-1.5 rounded-lg border border-[#D1D4DB] bg-white px-3 shadow-[0px_1px_2px_rgba(18,18,23,0.05)]">
                   <Bar width={122} data-testid="Bar__7121d0" />
-                  <ChevronDown
+                  <CaretDownIcon
                     className={`h-[18px] w-[18px] ${ICON_COLOR}`}
-                    strokeWidth={1.7}
                     data-testid="ChevronDown__7121d0" />
                 </div>
                 <div className={`flex h-10 flex-none items-center gap-1.5 rounded-lg border border-[#D1D4DB] bg-white px-3 shadow-[0px_1px_2px_rgba(18,18,23,0.05)] ${ICON_COLOR}`}>
-                  <Calendar className="h-5 w-5" strokeWidth={1.7} data-testid="Calendar__7121d0" />
+                  <CalendarBlankIcon className="h-5 w-5" data-testid="Calendar__7121d0" />
                   <Bar width={122} data-testid="Bar__7121d0" />
-                  <ChevronDown
+                  <CaretDownIcon
                     className="h-[18px] w-[18px]"
-                    strokeWidth={1.7}
                     data-testid="ChevronDown__7121d0" />
                 </div>
                 <div className={`flex h-10 w-10 flex-none items-center justify-center rounded-lg border border-[#D1D4DB] bg-white shadow-[0px_1px_2px_rgba(18,18,23,0.05)] ${ICON_COLOR}`}>
-                  <SlidersHorizontal
+                  <SlidersHorizontalIcon
                     className="h-5 w-5"
-                    strokeWidth={1.7}
                     data-testid="SlidersHorizontal__7121d0" />
                 </div>
               </div>

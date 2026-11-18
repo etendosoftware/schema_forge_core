@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { Check, Copy } from 'lucide-react';
+import { CheckIcon, CopyIcon } from '@phosphor-icons/react';
 import { toast } from 'sonner';
 import { cn } from '../../lib/utils.js';
 import { useUI } from '../../i18n/index.js';
@@ -61,9 +61,9 @@ export function CopyButton({
       data-testid={dataTestId || 'CopyButton'}
     >
       {copied ? (
-        <Check className={cn('h-3.5 w-3.5 text-green-600 dark:text-green-400', iconClassName)} data-testid="CopyButton__check" />
+        <CheckIcon className={cn('h-3.5 w-3.5 text-green-600 dark:text-green-400', iconClassName)} data-testid="CopyButton__check" />
       ) : (
-        <Copy className={cn('h-3.5 w-3.5', iconClassName)} data-testid="CopyButton__copy" />
+        <CopyIcon className={cn('h-3.5 w-3.5', iconClassName)} data-testid="CopyButton__copy" />
       )}
       {label ? <span>{copied ? ui('copied') : label}</span> : null}
     </button>

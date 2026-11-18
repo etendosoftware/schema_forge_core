@@ -46,7 +46,7 @@ function writeFixtureFiles(tarballPath) {
       '@radix-ui/react-slot': '^1.2.4',
       'class-variance-authority': '^0.7.1',
       clsx: '^2.1.0',
-      'lucide-react': '^0.400.0',
+      '@phosphor-icons/react': '^2.1.0',
       react: '^18.3.0',
       'react-dom': '^18.3.0',
       'react-router-dom': '^7.0.0',

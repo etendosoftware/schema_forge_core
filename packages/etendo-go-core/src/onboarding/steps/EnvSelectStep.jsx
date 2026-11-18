@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Loader2, Building2, Plus, RefreshCw } from 'lucide-react';
+import { CircleNotchIcon, BuildingsIcon, PlusIcon, ArrowsClockwiseIcon } from '@phosphor-icons/react';
 import { Button } from '@etendosoftware/app-shell-core/components/ui/button';
 import { useUI } from '@etendosoftware/app-shell-core/i18n';
 import { loginEnvironment, fetchEnvironments } from '../api.js';
@@ -73,7 +73,7 @@ export function EnvSelectStep({ config, stepData, onNext, onBack, goToStep, toke
     if (loadingEnvs) {
       return (
         <div className="flex justify-center py-16">
-          <Loader2
+          <CircleNotchIcon
             className="h-6 w-6 animate-spin text-gray-400"
             data-testid="Loader2__79cf84" />
         </div>
@@ -84,7 +84,7 @@ export function EnvSelectStep({ config, stepData, onNext, onBack, goToStep, toke
       return (
         <div className="bg-white rounded-xl border border-gray-100 p-12 text-center">
           <div className="w-16 h-16 bg-gray-50 rounded-2xl flex items-center justify-center mx-auto mb-4">
-            <Building2 className="h-8 w-8 text-gray-300" data-testid="Building2__79cf84" />
+            <BuildingsIcon className="h-8 w-8 text-gray-300" data-testid="Building2__79cf84" />
           </div>
           <p className="text-lg font-medium text-gray-900 mb-1">{ui('onboardingNoEnvironments')}</p>
           <p className="text-gray-500 text-sm mb-6">{ui('onboardingCreateFirstEnvironment')}</p>
@@ -92,7 +92,7 @@ export function EnvSelectStep({ config, stepData, onNext, onBack, goToStep, toke
             onClick={() => { if (goToStep) goToStep('profile'); }}
             className="bg-amber-400 hover:bg-amber-500 text-white"
             data-testid="Button__79cf84">
-            <Plus className="h-4 w-4 mr-1" data-testid="Plus__79cf84" /> {ui('onboardingCreateEnvironment')}
+            <PlusIcon className="h-4 w-4 mr-1" data-testid="Plus__79cf84" /> {ui('onboardingCreateEnvironment')}
           </Button>
         </div>
       );
@@ -110,7 +110,7 @@ export function EnvSelectStep({ config, stepData, onNext, onBack, goToStep, toke
             >
               <div className="flex items-center gap-4">
                 <div className="w-10 h-10 bg-amber-50 rounded-lg flex items-center justify-center">
-                  <Building2 className="h-5 w-5 text-amber-600" data-testid="Building2__79cf84" />
+                  <BuildingsIcon className="h-5 w-5 text-amber-600" data-testid="Building2__79cf84" />
                 </div>
                 <div>
                   <p className="font-medium text-gray-900">{env.clientName}</p>
@@ -162,7 +162,7 @@ export function EnvSelectStep({ config, stepData, onNext, onBack, goToStep, toke
                 disabled={loadingEnvs}
                 className="text-gray-500"
                 data-testid="Button__79cf84">
-                <RefreshCw
+                <ArrowsClockwiseIcon
                   className={`h-4 w-4 ${loadingEnvs ? 'animate-spin' : ''}`}
                   data-testid="RefreshCw__79cf84" />
               </Button>
@@ -170,7 +170,7 @@ export function EnvSelectStep({ config, stepData, onNext, onBack, goToStep, toke
                 onClick={() => { if (goToStep) goToStep('profile'); }}
                 className="bg-amber-400 hover:bg-amber-500 text-white"
                 data-testid="Button__79cf84">
-                <Plus className="h-4 w-4 mr-1" data-testid="Plus__79cf84" /> {ui('onboardingNewEnvironment')}
+                <PlusIcon className="h-4 w-4 mr-1" data-testid="Plus__79cf84" /> {ui('onboardingNewEnvironment')}
               </Button>
             </div>
           </div>

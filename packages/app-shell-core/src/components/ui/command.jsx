@@ -1,6 +1,6 @@
 import * as React from "react";
 import { Command as CommandPrimitive } from "cmdk";
-import { Search } from "lucide-react";
+import { MagnifyingGlassIcon } from "@phosphor-icons/react";
 import { cn } from "../../lib/utils.js";
 import { Dialog, DialogContent, DialogTitle } from "./dialog.jsx";
 
@@ -35,7 +35,7 @@ const CommandDialog = ({ children, ...props }) => {
 
 const CommandInput = React.forwardRef(({ className, ...props }, ref) => (
   <div className="flex items-center border-b px-3" cmdk-input-wrapper="">
-    <Search className="mr-2 h-4 w-4 shrink-0 opacity-50" data-testid="Search__8e5d1a" />
+    <MagnifyingGlassIcon className="mr-2 h-4 w-4 shrink-0 opacity-50" data-testid="Search__8e5d1a" />
     <CommandPrimitive.Input
       ref={ref}
       className={cn(

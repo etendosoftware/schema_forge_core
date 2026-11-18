@@ -1,5 +1,5 @@
 import React from 'react';
-import { Sparkles } from 'lucide-react';
+import { SparkleIcon } from '@phosphor-icons/react';
 import AuthBrand from './AuthBrand.jsx';
 import AuthFeaturePill from './AuthFeaturePill.jsx';
 import AuthPreviewMockup from './AuthPreviewMockup.jsx';
@@ -38,7 +38,7 @@ export function AuthShell({ brandLabel, brandHref, switchPrompt, switchAction, s
           <div className="relative flex h-full flex-col">
             <div className="max-w-xl">
               <div className="mb-5 flex h-14 w-14 items-center justify-center rounded-2xl border border-slate-200 bg-white shadow-sm">
-                <Sparkles className="h-6 w-6 text-slate-500" data-testid="Sparkles__79cf84" />
+                <SparkleIcon className="h-6 w-6 text-slate-500" data-testid="Sparkles__79cf84" />
               </div>
               <h2 className="max-w-xl text-3xl font-semibold tracking-[-0.05em] text-slate-900 xl:text-[2.5rem] xl:leading-[1.08]">
                 {marketingTitle}

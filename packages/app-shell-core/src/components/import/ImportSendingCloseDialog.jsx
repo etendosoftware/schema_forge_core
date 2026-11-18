@@ -1,4 +1,4 @@
-import { TriangleAlert } from 'lucide-react';
+import { WarningIcon } from '@phosphor-icons/react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '../ui/dialog.jsx';
 import { Button } from '../ui/button.jsx';
 
@@ -39,7 +39,7 @@ export function ImportSendingCloseDialog({ open, onKeepWatching, onCloseAnyway, 
       <DialogContent className="max-w-md" data-testid="DialogContent__sendingClose">
         <DialogHeader data-testid="DialogHeader__sendingClose">
           <span className="flex h-10 w-10 items-center justify-center rounded-lg bg-amber-500/10 text-amber-600">
-            <TriangleAlert className="h-5 w-5" data-testid="TriangleAlert__sendingClose" />
+            <WarningIcon className="h-5 w-5" data-testid="TriangleAlert__sendingClose" />
           </span>
           <DialogTitle data-testid="ImportSendingCloseDialog__title">{text.title}</DialogTitle>
         </DialogHeader>

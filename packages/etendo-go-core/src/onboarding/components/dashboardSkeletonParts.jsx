@@ -13,9 +13,8 @@ import {
   Plug,
   Gear,
   Flask,
+  CaretDownIcon,
 } from '@phosphor-icons/react';
-// Non-menu / decorative chrome stays on lucide (same as the rest of the shell).
-import { ChevronDown } from 'lucide-react';
 
 // Figma-exact skeleton tokens (see docs/... onboarding right-panel mockup).
 export const SKELETON_BG = 'bg-[#E8EAEF]';
@@ -86,9 +85,8 @@ export function RailMenuItem({ icon: Icon, width, hasChevron }) {
         <Bar width={width} data-testid="Bar__870fc2" />
       </span>
       <span className={`flex w-7 flex-none items-center justify-center pr-1 ${ICON_COLOR}`}>
-        {hasChevron && <ChevronDown
+        {hasChevron && <CaretDownIcon
           className="h-[18px] w-[18px]"
-          strokeWidth={1.7}
           data-testid="ChevronDown__870fc2" />}
       </span>
     </div>

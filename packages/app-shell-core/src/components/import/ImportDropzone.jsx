@@ -1,5 +1,5 @@
 import { useCallback, useRef, useState } from 'react';
-import { Download } from 'lucide-react';
+import { DownloadSimpleIcon } from '@phosphor-icons/react';
 import { cn } from '../../lib/utils.js';
 import { acceptAttribute, formatNames } from '../../lib/import/importFormats.js';
 
@@ -78,12 +78,12 @@ export function ImportDropzone({ accept, formats, onFileSelected, labels, disabl
     >
       {/*
         SHELL-02 — the arrow follows the DATA, not the file: an import pulls records INTO
-        Etendo, so it is a Download, and that is the icon the toolbar button that opens this
+        Etendo, so it is a DownloadSimpleIcon, and that is the icon the toolbar button that opens this
         dialog already carries (`Download__ListViewImport`). The dropzone shipped with `Upload`
         — reading as "send a file out" — so the popup contradicted the button the user had just
         clicked. Same rule, one icon: do not flip this back to the file's direction.
       */}
-      <Download className="h-6 w-6 text-muted-foreground" data-testid="Download__ImportDropzone" />
+      <DownloadSimpleIcon className="h-6 w-6 text-muted-foreground" data-testid="Download__ImportDropzone" />
       <p className="text-sm font-medium text-foreground" data-testid="ImportDropzone__title">{text.dropHere}</p>
       <p className="text-xs text-muted-foreground" data-testid="ImportDropzone__hint">{hint}</p>
       <input
