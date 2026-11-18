@@ -87,16 +87,14 @@ describe('ImportDialog', () => {
     expect(screen.getByTestId('ImportColumnMapping__chip-Email').textContent).toContain('Email');
   });
 
-  it('opens a newly loaded file on the All rows tab', async () => {
+  it('opens a newly loaded file on the All rows tab, showing correct and erroring rows together', async () => {
     render(<ImportDialog open config={config} token="t" postBatch={vi.fn()} simSearchFn={vi.fn()} onImported={() => {}} />);
-    await uploadFile('Name,Email\nLucia,lucia@x.com');
+    await uploadFile('Name,Email\nLucia,lucia@x.com\n,andres@x.com');
 
-    // The happy path is the useful first view for a clean import. Errors are
-    // still counted and available through the Errors tab when a row needs
-    // correction.
-    expect(screen.getByTestId('ImportReviewQueue__statusFilter-all')).toBeDefined();
+    // Row 0 is correct, row 1 misses its required name; under 'ok' only row 0 would be listed.
     expect(screen.getByTestId('ImportReviewQueue__input-0-name')).toBeDefined();
-    expect(screen.queryByTestId('ImportReviewQueue__rowError-0')).toBeNull();
+    expect(screen.getByTestId('ImportReviewQueue__input-1-name')).toBeDefined();
+    expect(screen.getByTestId('ImportReviewQueue__fieldError-1-name')).toBeDefined();
   });
 
   it('regression: does not collapse distinct rows into duplicates of each other (config.dedupe.key, not a flat dedupeKeyTargets)', async () => {
@@ -214,6 +212,7 @@ describe('ImportDialog', () => {
     render(<ImportDialog open config={config} token="t" postBatch={postBatch} simSearchFn={vi.fn()} onImported={() => {}} />);
     await uploadFile('Name,Email\nLucia,lucia@x.com');
     fireEvent.click(screen.getByTestId('ImportDialog__importButton'));
+    await waitFor(() => expect(postBatch).toHaveBeenCalled());
     await waitFor(() => expect(screen.queryByTestId('ImportDialog__rowSummary')).toBeNull());
     expect(screen.queryByTestId('ImportSystemErrorDialog__title')).toBeNull();
   });
@@ -238,7 +237,7 @@ describe('ImportDialog', () => {
     await waitFor(() => expect(descriptorFn).toHaveBeenCalled());
     // Prove postBatch received the descriptor's own resolved two-op array, not a flat
     // one-op default and not an unresolved Promise serialized as "{}".
-    await waitFor(() => expect(screen.queryByTestId('ImportDialog__rowSummary')).toBeNull());
+    await waitFor(() => expect(postBatch).toHaveBeenCalled());
     const sentOps = postBatch.mock.calls[0][0];
     expect(Array.isArray(sentOps)).toBe(true);
     expect(sentOps).toHaveLength(2);
@@ -827,6 +826,10 @@ describe('ImportDialog — ETP-5348 file rejection', () => {
  * The re-check runs on the way to the confirm step, so the counts that step states are true.
  */
 describe('ImportDialog — ETP-5350 dedupe re-check after editing the key', () => {
+  registerImportDescriptor('etp5350-demo', async (row) => [
+    { id: 'row', spec: 'product', entity: 'product', body: row },
+  ]);
+
   const keyedConfig = {
     spec: 'product',
     entity: 'product',
@@ -856,7 +859,8 @@ describe('ImportDialog — ETP-5350 dedupe re-check after editing the key', () =
     const existingKeyFetchFn = vi.fn(async (criteria) => criteria.criteria
       .filter((term) => term.value === 'SKU-1001')
       .map((term) => ({ searchKey: term.value })));
-    render(<ImportDialog open config={keyedConfig} token="t" postBatch={vi.fn()}
+    const postBatch = vi.fn();
+    render(<ImportDialog open config={keyedConfig} token="t" postBatch={postBatch}
       simSearchFn={vi.fn()} existingKeyFetchFn={existingKeyFetchFn} onImported={() => {}} />);
     // Arrives with no key at all: nothing to look up, and nothing was looked up.
     await uploadTo('codigo,nombre\n,Tornillo');
@@ -870,8 +874,12 @@ describe('ImportDialog — ETP-5350 dedupe re-check after editing the key', () =
 
     await waitFor(() => screen.getByTestId('ImportDialog__rowSummary'));
     expect(askedKeys(existingKeyFetchFn)).toContain('SKU-1001');
-    // The count the confirm step states must already account for the row it just disqualified.
-    expect(screen.getByTestId('ImportDialog__rowSummary').textContent).toContain('0');
+    // The dialog stays on the review: the row is now Skipped, the counts account for it, and
+    // nothing was sent.
+    expect(screen.getByTestId('ImportReviewQueue__skippedLabel-0')).toBeDefined();
+    expect(screen.getByTestId('ImportDialog__rowSummary').textContent).toContain('0 records');
+    expect(screen.getByTestId('ImportDialog__importButton').disabled).toBe(true);
+    expect(postBatch).not.toHaveBeenCalled();
   });
 
   it('applies a verdict the lookup already gave when a row is edited ONTO a known key', async () => {
@@ -882,7 +890,8 @@ describe('ImportDialog — ETP-5350 dedupe re-check after editing the key', () =
     const existingKeyFetchFn = vi.fn(async (criteria) => criteria.criteria
       .filter((term) => term.value === 'SKU-1001')
       .map((term) => ({ searchKey: term.value })));
-    render(<ImportDialog open config={keyedConfig} token="t" postBatch={vi.fn()}
+    const postBatch = vi.fn();
+    render(<ImportDialog open config={keyedConfig} token="t" postBatch={postBatch}
       simSearchFn={vi.fn()} existingKeyFetchFn={existingKeyFetchFn} onImported={() => {}} />);
     // Row 1 arrives with no key, so it is an error row — which is also the only kind the queue
     // lets you edit: a clean cell is read-only until something is wrong with it.
@@ -897,7 +906,8 @@ describe('ImportDialog — ETP-5350 dedupe re-check after editing the key', () =
 
     await waitFor(() => screen.getByTestId('ImportDialog__rowSummary'));
     expect(existingKeyFetchFn.mock.calls.length).toBe(callsAfterUpload);
-    expect(screen.getByTestId('ImportDialog__rowSummary').textContent).toContain('0');
+    expect(screen.getByTestId('ImportDialog__rowSummary').textContent).toContain('0 records');
+    expect(postBatch).not.toHaveBeenCalled();
   });
 
   it('costs no extra request when nothing was edited', async () => {
@@ -913,7 +923,7 @@ describe('ImportDialog — ETP-5350 dedupe re-check after editing the key', () =
 
     fireEvent.click(screen.getByTestId('ImportDialog__importButton'));
 
-    await waitFor(() => expect(screen.queryByTestId('ImportDialog__rowSummary')).toBeNull());
+    await waitFor(() => expect(postBatch).toHaveBeenCalledTimes(2));
     expect(existingKeyFetchFn.mock.calls.length).toBe(callsAfterUpload);
   });
 
@@ -930,15 +940,16 @@ describe('ImportDialog — ETP-5350 dedupe re-check after editing the key', () =
     });
     fireEvent.click(screen.getByTestId('ImportDialog__importButton'));
 
-    await waitFor(() => expect(screen.queryByTestId('ImportDialog__rowSummary')).toBeNull());
+    await waitFor(() => expect(postBatch).toHaveBeenCalledTimes(1));
     expect(existingKeyFetchFn).not.toHaveBeenCalled();
   });
 
-  it('still reaches the confirm step when the re-check fails', async () => {
+  it('still sends when the re-check fails', async () => {
     // Unchanged posture: a pre-flight check that cannot reach the server must never block an
     // import the server would have accepted. Send-time duplicate handling stays the backstop.
     const existingKeyFetchFn = vi.fn(async () => { throw new Error('network down'); });
-    render(<ImportDialog open config={keyedConfig} token="t" postBatch={vi.fn()}
+    const postBatch = vi.fn().mockResolvedValue({});
+    render(<ImportDialog open config={keyedConfig} token="t" postBatch={postBatch}
       simSearchFn={vi.fn()} existingKeyFetchFn={existingKeyFetchFn} onImported={() => {}} />);
     await uploadTo('codigo,nombre\n,Tornillo');
 
@@ -948,8 +959,7 @@ describe('ImportDialog — ETP-5350 dedupe re-check after editing the key', () =
     });
     fireEvent.click(screen.getByTestId('ImportDialog__importButton'));
 
-    await waitFor(() => screen.getByTestId('ImportDialog__rowSummary'));
-    expect(screen.getByTestId('ImportDialog__rowSummary').textContent).toContain('1');
+    await waitFor(() => expect(postBatch).toHaveBeenCalledTimes(1));
   });
 });
 
@@ -1359,19 +1369,78 @@ describe('ImportDialog — onImportFinished summary', () => {
 });
 
 describe('ImportDialog — ETP-5417 review improvements', () => {
-  it('adds an empty row that lands in Errors until its required fields are filled', async () => {
-    render(<ImportDialog open config={config} token="t" postBatch={vi.fn()} simSearchFn={vi.fn()} onImported={() => {}} />);
+  const sentOk = () => vi.fn().mockResolvedValue({ committed: true, operations: [{ id: 'row', ok: true, recordId: 'REC-1' }] });
+  const mount = (postBatch = sentOk()) => {
+    render(<ImportDialog open config={config} token="t" postBatch={postBatch} simSearchFn={vi.fn()} onImported={() => {}} />);
+    return postBatch;
+  };
+  const count = (key) => screen.getByTestId(`ImportReviewQueue__statusFilterCount-${key}`).textContent;
+
+  it('keeps a row in Correctas and stores the change when a valid value is edited', async () => {
+    mount();
+    await uploadFile('Name,Email\nLucia,lucia@x.com');
+    fireEvent.change(screen.getByTestId('ImportReviewQueue__input-0-name'), { target: { value: 'Lucia B' } });
+    expect(screen.getByTestId('ImportReviewQueue__input-0-name').value).toBe('Lucia B');
+    expect(count('ok')).toBe('1');
+    expect(count('error')).toBe('0');
+  });
+
+  it('moves a correct row to Errors, with its message, when a required value is cleared', async () => {
+    mount();
+    await uploadFile('Name,Email\nLucia,lucia@x.com');
+    expect(count('error')).toBe('0');
+    fireEvent.change(screen.getByTestId('ImportReviewQueue__input-0-name'), { target: { value: '' } });
+    expect(count('error')).toBe('1');
+    expect(screen.getByTestId('ImportReviewQueue__fieldError-0-name').textContent).not.toBe('');
+  });
+
+  it('adds an empty row that stays in Errors until filled, then imports it with the file rows', async () => {
+    const postBatch = mount();
     await uploadFile('Name,Email\nLucia,lucia@x.com');
     fireEvent.click(screen.getByTestId('ImportReviewQueue__addRow'));
     await waitFor(() => screen.getByTestId('ImportReviewQueue__input-1-name'));
-    expect(screen.getByTestId('ImportReviewQueue__statusFilterCount-error').textContent).toBe('1');
+    expect(count('error')).toBe('1');
+    fireEvent.change(screen.getByTestId('ImportReviewQueue__input-1-name'), { target: { value: 'Andres' } });
+    expect(count('ok')).toBe('2');
+    expect(count('error')).toBe('0');
+    fireEvent.click(screen.getByTestId('ImportDialog__importButton'));
+    await waitFor(() => expect(postBatch).toHaveBeenCalledTimes(2));
+    const bodies = postBatch.mock.calls.map(([ops]) => JSON.stringify(ops));
+    expect(bodies.some((b) => b.includes('Lucia'))).toBe(true);
+    expect(bodies.some((b) => b.includes('Andres'))).toBe(true);
   });
 
-  it('moves a correct row to Errors when a required value is cleared', async () => {
-    render(<ImportDialog open config={config} token="t" postBatch={vi.fn()} simSearchFn={vi.fn()} onImported={() => {}} />);
+  it('keeps the counts beside Import in step with edits, skip and unskip, and disables Import at 0', async () => {
+    mount();
     await uploadFile('Name,Email\nLucia,lucia@x.com');
-    expect(screen.getByTestId('ImportReviewQueue__statusFilterCount-error').textContent).toBe('0');
-    fireEvent.change(screen.getByTestId('ImportReviewQueue__input-0-name'), { target: { value: '' } });
-    expect(screen.getByTestId('ImportReviewQueue__statusFilterCount-error').textContent).toBe('1');
+    const summary = () => screen.getByTestId('ImportDialog__rowSummary').textContent;
+    expect(summary()).toBe('1 records will be imported');
+    fireEvent.click(screen.getByTestId('ImportReviewQueue__addRow'));
+    await waitFor(() => screen.getByTestId('ImportReviewQueue__input-1-name'));
+    expect(summary()).toContain('1 rows will be skipped');
+    fireEvent.click(screen.getByTestId('ImportReviewQueue__skip-0'));
+    expect(summary()).toContain('0 records');
+    expect(screen.getByTestId('ImportDialog__importButton').disabled).toBe(true);
+    fireEvent.click(screen.getByTestId('ImportReviewQueue__unskip-0'));
+    expect(summary()).toContain('1 records');
+    expect(screen.getByTestId('ImportDialog__importButton').disabled).toBe(false);
+  });
+
+  it('shows visible Skip / Edit again text and no inputs on a skipped row', async () => {
+    mount();
+    await uploadFile('Name,Email\nLucia,lucia@x.com');
+    expect(screen.getByTestId('ImportReviewQueue__skip-0').textContent).toContain('Skip');
+    fireEvent.click(screen.getByTestId('ImportReviewQueue__skip-0'));
+    expect(screen.getByTestId('ImportReviewQueue__unskip-0').textContent).toContain('Edit again');
+    expect(screen.queryByTestId('ImportReviewQueue__input-0-name')).toBeNull();
+  });
+
+  it('opens the post-send queue on Errors after a failed send', async () => {
+    mount(vi.fn().mockResolvedValue({ message: 'boom-unrecognized' }));
+    await uploadFile('Name,Email\nLucia,lucia@x.com\nAndres,andres@x.com');
+    fireEvent.click(screen.getByTestId('ImportDialog__importButton'));
+    await waitFor(() => screen.getByTestId('ImportReviewQueue__rowError-0'));
+    // Imported/failed rows of the result queue are not editable on correct rows.
+    expect(screen.getByTestId('ImportReviewQueue__rowError-1')).toBeDefined();
   });
 });

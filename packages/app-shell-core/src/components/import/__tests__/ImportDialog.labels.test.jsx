@@ -47,12 +47,6 @@ vi.mock('../ImportReviewQueue.jsx', () => ({
   },
 }));
 
-vi.mock('../ImportConfirmStep.jsx', () => ({
-  ImportConfirmStep: (props) => {
-    captured.confirm = props;
-    return <button type="button" data-testid="mock-confirm" onClick={() => props.onConfirm()} />;
-  },
-}));
 
 vi.mock('../ImportProgressStep.jsx', () => ({
   ImportProgressStep: (props) => {
