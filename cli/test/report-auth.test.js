@@ -372,13 +372,18 @@ describe('assertReportOrgAccess (ETP-6080)', () => {
     for (let o = org; o; o = PARENT[o]) if (o === parent) return true;
     return false;
   };
-  // Answers the two queries assertReportOrgAccess runs, from PARENT.
+  const OTHER_CLIENT_ORG = 'Elsewhere'; // exists in ad_org, but under client C2
+  // Answers the queries assertReportOrgAccess runs, from PARENT.
   function treePool() {
     const calls = [];
     return {
       calls,
       async query(sql, params) {
         calls.push(sql);
+        if (sql.includes('FROM ad_org WHERE')) {
+          const [clientId, orgId] = params;
+          return { rows: clientId === 'C1' && orgId in PARENT ? [{ '?column?': 1 }] : [] };
+        }
         if (sql.includes('FROM ad_org o')) {
           const [, roleOrgIds] = params;
           const uncovered = Object.keys(PARENT).filter((o) => !roleOrgIds.some((r) => isIncluded(o, r)));
@@ -393,11 +398,23 @@ describe('assertReportOrgAccess (ETP-6080)', () => {
   const session = (roleOrgIds) => ({ clientId: 'C1', roleOrgIds });
   const denied = (err) => err instanceof ReportAuthError && err.status === 403 && err.code === 'ORG_ACCESS_DENIED';
 
-  it('lets a role with org 0 read any org, and an empty org, without querying', async () => {
+  it('lets a role with org 0 read an existing org of its client (one existence query)', async () => {
     const pool = treePool();
     await assertReportOrgAccess(pool, session(['0', 'Spain']), { contract: orgReport, params: { orgId: 'USA' } });
+    assert.equal(pool.calls.length, 1);
+  });
+
+  it('lets a role with org 0 read "every org" (empty or 0 orgId) without querying', async () => {
+    const pool = treePool();
     await assertReportOrgAccess(pool, session(['0']), { contract: orgReport, params: { orgId: '' } });
+    await assertReportOrgAccess(pool, session(['0']), { contract: orgReport, params: { orgId: '0' } });
+    await assertReportOrgAccess(pool, session(['0']), { contract: orgReport, params: {} });
     assert.equal(pool.calls.length, 0);
+  });
+
+  it('denies a role with org 0 an orgId that does not exist, or belongs to another client', async () => {
+    await assert.rejects(assertReportOrgAccess(treePool(), session(['0']), { contract: orgReport, params: { orgId: 'Nope' } }), denied);
+    await assert.rejects(assertReportOrgAccess(treePool(), session(['0']), { contract: orgReport, params: { orgId: OTHER_CLIENT_ORG } }), denied);
   });
 
   it('accepts a listed org and a descendant of one', async () => {
