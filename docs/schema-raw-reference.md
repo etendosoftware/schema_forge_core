@@ -132,7 +132,7 @@ From `validate-schema.js`:
 |------|----------------------|
 | `string` | String (10), Memo (34) |
 | `integer` | Integer (11) |
-| `decimal` | Number (22) |
+| `decimal` | Number (22), General Quantity (800019) |
 | `boolean` | Yes-No (20) |
 | `date` | Date (15) |
 | `dateTime` | DateTime (16) |
@@ -147,6 +147,13 @@ From `validate-schema.js`:
 | `quantity` | Quantity (29) |
 | `price` | CostPrice, Prices |
 | `number` | General Number |
+
+Window extraction resolves AD reference types through
+`cli/core-maps/ad-reference-map.json`; unmapped references fall back to `string`.
+General Quantity (800019), used for fields such as `MultiplyRate` and
+`DivideRate`, is mapped to `decimal`. Updating the map does not rewrite existing
+artifacts: re-extract affected windows before regenerating their contracts or
+consumer manifests. Regeneration that skips extraction retains the old raw type.
 
 ## Valid categories
 
