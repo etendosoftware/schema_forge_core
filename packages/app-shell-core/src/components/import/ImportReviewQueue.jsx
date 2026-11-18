@@ -692,7 +692,10 @@ export function ImportReviewQueue({
         <div className="flex items-center gap-2">
           {onAddRow && (
             <Button type="button" variant="outline" size="sm" onClick={onAddRow} data-testid="ImportReviewQueue__addRow">
-              <PlusIcon className="mr-1 h-3.5 w-3.5" aria-hidden="true" />
+              <PlusIcon
+                className="mr-1 h-3.5 w-3.5"
+                aria-hidden="true"
+                data-testid="PlusIcon__a73779" />
               {text.addRow}
             </Button>
           )}
