@@ -64,6 +64,7 @@ function mapRow(row, scoreMode) {
   const textScore = stripPercentSign(row.text_similarity_percent ?? row.textSimilarityPercent);
   const useText = scoreMode === 'text' && textScore !== undefined && textScore !== null;
   const exactMatch = row.exact_match ?? row.exactMatch;
+  const matchType = row.match_type ?? row.matchType;
   const mapped = {
     id: row.id,
     name: row.name || row._identifier || row.id,
@@ -72,7 +73,22 @@ function mapRow(row, scoreMode) {
   // Only present when the backend sent them, so an older backend yields the original shape.
   if (textScore !== undefined && textScore !== null) mapped.textSimilarityPercent = textScore;
   if (exactMatch !== undefined && exactMatch !== null) mapped.exactMatch = exactMatch;
+  if (matchType !== undefined && matchType !== null) mapped.matchType = matchType;
   return mapped;
+}
+
+const MATCH_RANK = new Map([['exact', 2], ['normalized', 1]]);
+
+/**
+ * How a candidate's name relates to the searched term (ETP-5895): 2 when it equals it ignoring
+ * case and whitespace (`matchType: 'exact'`), 1 when it equals it once accents are also ignored
+ * (`'normalized'`), 0 otherwise. A backend that predates `match_type` but sends `exact_match`
+ * still yields 2 for its exact rows.
+ */
+export function matchRank(candidate) {
+  const byType = MATCH_RANK.get(candidate?.matchType);
+  if (byType !== undefined) return byType;
+  return candidate?.exactMatch === true ? 2 : 0;
 }
 
 /**
@@ -103,12 +119,13 @@ export function parseSimSearchEnvelope(envelope, itemCount, scoreMode) {
       continue;
     }
     const candidates = data.map((row) => mapRow(row, scoreMode));
-    // The endpoint orders by its own score, which can disagree with the whole-string one (a name
-    // that contains the term at 100 / 52 sorts before one at 90 / 90). `classifyCandidates` reads
-    // the list best-first, so re-sort by the number it will actually compare. Stable, so ties keep
-    // the endpoint's order.
+    // The endpoint orders by match type, then its own score, which can disagree with the
+    // whole-string one (a name that contains the term at 100 / 52 sorts before one at 90 / 90).
+    // `classifyCandidates` reads the list best-first, so re-sort by the number it will actually
+    // compare, keeping exact names first. Stable, so ties keep the endpoint's order.
     if (scoreMode === 'text') {
-      candidates.sort((a, b) => Number(b.similarityPercent) - Number(a.similarityPercent));
+      candidates.sort((a, b) => (matchRank(b) - matchRank(a))
+        || (Number(b.similarityPercent) - Number(a.similarityPercent)));
     }
     results.push({ ...candidates[0], candidates });
   }

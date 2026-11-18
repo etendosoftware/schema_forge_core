@@ -1,7 +1,7 @@
 import { describe, it, beforeEach, afterEach } from 'node:test';
 import assert from 'node:assert/strict';
 import {
-  parseSimSearchEnvelope, simSearch, simSearchEveryLanguage, IMPORT_MATCH_LANGUAGES,
+  matchRank, parseSimSearchEnvelope, simSearch, simSearchEveryLanguage, IMPORT_MATCH_LANGUAGES,
 } from '../simSearch.js';
 import {
   CREDENTIAL_MODES,
@@ -401,6 +401,26 @@ describe('parseSimSearchEnvelope — whole-string similarity (ETP-5730)', () => 
     const [result] = parseSimSearchEnvelope(envelope, 1, 'text');
     assert.deepEqual(result.candidates.map((c) => c.name), ['IVA Normal', 'IVA Normal ISP']);
     assert.equal(result.name, 'IVA Normal');
+  });
+
+  it('exposes match_type as matchType and keeps an exact name first in text mode', () => {
+    // A name differing only by accents can have a lower whole-string score than one that merely
+    // contains the term; the text re-sort must not push it below.
+    const accents = { item_0: { data: [
+      { id: 'N', name: 'Camión', similarity_percent: '60.0000%', text_similarity_percent: '60.0000%', exact_match: false, match_type: 'normalized' },
+      { id: 'F', name: 'Camion grande', similarity_percent: '100.0000%', text_similarity_percent: '70.0000%', exact_match: false, match_type: 'fuzzy' },
+    ] } };
+    const [result] = parseSimSearchEnvelope(accents, 1, 'text');
+    assert.deepEqual(result.candidates.map((c) => [c.id, c.matchType]), [['N', 'normalized'], ['F', 'fuzzy']]);
+  });
+
+  it('matchRank reads matchType, falls back to exactMatch, and ignores unknown values', () => {
+    assert.equal(matchRank({ matchType: 'exact' }), 2);
+    assert.equal(matchRank({ matchType: 'normalized' }), 1);
+    assert.equal(matchRank({ matchType: 'fuzzy', exactMatch: false }), 0);
+    assert.equal(matchRank({ exactMatch: true }), 2);
+    assert.equal(matchRank({ matchType: 'constructor' }), 0);
+    assert.equal(matchRank(null), 0);
   });
 
   it('simSearch forwards scoreMode to the parser', async () => {
