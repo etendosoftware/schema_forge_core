@@ -858,12 +858,12 @@ describe('numeric column alignment (isNumeric)', () => {
   describe('value cell of an OK row', () => {
     it('right-aligns and tabularizes a numeric value', () => {
       renderQueue([okEntryNumeric]);
-      expectRightAligned(screen.getByTestId('ImportReviewQueue__value-0-amount'));
+      expectRightAligned(screen.getByTestId('ImportReviewQueue__input-0-amount'));
     });
 
     it('leaves a text value untouched', () => {
       renderQueue([okEntryNumeric]);
-      expectNotRightAligned(screen.getByTestId('ImportReviewQueue__value-0-name'));
+      expectNotRightAligned(screen.getByTestId('ImportReviewQueue__input-0-name'));
     });
   });
 
@@ -889,12 +889,12 @@ describe('numeric column alignment (isNumeric)', () => {
 
     it('right-aligns and tabularizes a non-failing numeric cell on the same row', () => {
       renderQueue([errorEntryNumeric]);
-      expectRightAligned(screen.getByTestId('ImportReviewQueue__value-0-quantity'));
+      expectRightAligned(screen.getByTestId('ImportReviewQueue__input-0-quantity'));
     });
 
     it('leaves a text cell on the same row untouched', () => {
       renderQueue([errorEntryNumeric]);
-      expectNotRightAligned(screen.getByTestId('ImportReviewQueue__value-0-name'));
+      expectNotRightAligned(screen.getByTestId('ImportReviewQueue__input-0-name'));
     });
 
     it('right-aligns every editable numeric input when a row-level error makes the whole row editable', () => {
@@ -1068,8 +1068,8 @@ describe('formatValue hook', () => {
   describe('without the prop (back-compat)', () => {
     it('renders raw values on an OK row', () => {
       renderQueue([okEntryFmt]);
-      expect(screen.getByTestId('ImportReviewQueue__value-0-amount').textContent).toBe('1.234');
-      expect(screen.getByTestId('ImportReviewQueue__value-0-name').textContent).toBe('Lucia');
+      expect(screen.getByTestId('ImportReviewQueue__input-0-amount').value).toBe('1.234');
+      expect(screen.getByTestId('ImportReviewQueue__input-0-name').value).toBe('Lucia');
     });
 
     it('renders raw values on a skipped row', () => {
@@ -1079,13 +1079,13 @@ describe('formatValue hook', () => {
 
     it('renders raw values in the error branch, span and input alike', () => {
       renderQueue([nameErrorEntryFmt]);
-      expect(screen.getByTestId('ImportReviewQueue__value-0-amount').textContent).toBe('1.234');
+      expect(screen.getByTestId('ImportReviewQueue__input-0-amount').value).toBe('1.234');
       expect(screen.getByTestId('ImportReviewQueue__input-0-name').value).toBe('Lucia');
     });
 
     it('renders a blank cell as empty rather than as "undefined"', () => {
       renderQueue([{ row: { name: 'Lucia' }, errors: [], status: 'pending' }]);
-      expect(screen.getByTestId('ImportReviewQueue__value-0-amount').textContent).toBe('');
+      expect(screen.getByTestId('ImportReviewQueue__input-0-amount').value).toBe('');
     });
   });
 });

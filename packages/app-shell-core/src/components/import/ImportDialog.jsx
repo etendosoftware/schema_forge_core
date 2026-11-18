@@ -149,11 +149,9 @@ export function ImportDialog({ open, onOpenChange, config, token, postBatch, sim
   const processingFileRef = useRef(false);
   // Two independent filters, not one shared value — the design spec is explicit that
   // the preview (pre-send) and result (post-send) review queues each remember their own
-  // filter state. 'ok' is the default so a newly loaded file opens on the happy
-  // path: users can immediately review the rows that will be imported. Errors
-  // remain available through the Errors tab and are still highlighted by the
-  // row validation state.
-  const [statusFilterPreSend, setStatusFilterPreSend] = useState('ok');
+  // filter state. 'all' is the default (ETP-5417) so a newly loaded file shows the
+  // correct and the erroring rows together.
+  const [statusFilterPreSend, setStatusFilterPreSend] = useState('all');
   const [statusFilterPostSend, setStatusFilterPostSend] = useState('error');
   // { done, total } of the running send. Percent and counter both derive from it. The engine
   // reports once per row; handleSend throttles the updates so a 2,000-row file re-renders the
@@ -482,7 +480,7 @@ export function ImportDialog({ open, onOpenChange, config, token, postBatch, sim
     try {
       // A new file starts a fresh review session. Do not carry a previous
       // Errors/All selection into the next upload.
-      setStatusFilterPreSend('ok');
+      setStatusFilterPreSend('all');
       // ETP-5348: the FIRST thing that happens to an upload is a format check, because nothing
       // downstream performs one. The dropzone's `accept` attribute only filters the OS picker's
       // default view — drag-and-drop bypasses it — and `parseDelimited` cannot refuse a binary
@@ -617,6 +615,15 @@ export function ImportDialog({ open, onOpenChange, config, token, postBatch, sim
     }));
   }, [fkResolutions, revalidate, simSearchFn, token]);
 
+  // ETP-5417: appends an empty row, validated like any other (required fields -> "Errors").
+  const handleAddRow = useCallback(() => {
+    setEntries((prev) => {
+      const row = Object.fromEntries((config.fields ?? []).map((f) => [f.target, '']));
+      const { valid, errors } = revalidate(row, fkResolutions);
+      return [...prev, { row, errors: valid ? [] : errors, status: 'pending' }];
+    });
+  }, [config.fields, revalidate, fkResolutions]);
+
   const handleSkipEntry = useCallback((index) => {
     setEntries((prev) => prev.map((e, i) => (i === index ? { ...e, status: 'skipped' } : e)));
   }, []);
@@ -653,9 +660,10 @@ export function ImportDialog({ open, onOpenChange, config, token, postBatch, sim
    * marked as existing may have been skipped by hand instead, and un-skipping rows behind the
    * user's back is a worse failure than leaving one they can un-skip themselves.
    */
+  const sendRef = useRef(() => {});
   const handleProceedToConfirm = useCallback(async () => {
     if (!dedupesAgainstDatabase || typeof existingKeyFetchFn !== 'function') {
-      setStep(STEP.CONFIRM);
+      sendRef.current();
       return;
     }
     const candidates = entries
@@ -701,10 +709,14 @@ export function ImportDialog({ open, onOpenChange, config, token, postBatch, sim
         }
         : entry)));
     }
-    setStep(STEP.CONFIRM);
+    // ETP-5417: no confirm step — the duplicate check above runs, then the rows are sent.
+    // The check only marks rows as skipped; sending reads the entries on the next tick.
+    setTimeout(() => sendRef.current(), 0);
   }, [dedupesAgainstDatabase, dedupeKeyTargets, entries, existingKeyFetchFn, labelFor]);
 
   const handleSend = useCallback(async () => {
+    // The duplicate re-check may have skipped every remaining row: nothing left to send.
+    if (!entries.some((e) => e.status === 'pending' && e.errors.length === 0)) return;
     setStep(STEP.SENDING);
     // A previous run's unanswered question must not resurface over this one.
     setPendingCloseWhileSending(false);
@@ -833,6 +845,7 @@ export function ImportDialog({ open, onOpenChange, config, token, postBatch, sim
       ));
     }
   }, [entries, operationsConfig, concurrency, maxRows, batchSize, postBatch, onImported, translate, localize, labelFor, localizeError, cancelProgressFlush, reportImportFinished]);
+  sendRef.current = handleSend;
 
   const handleRetryEntryPostSend = useCallback(async (index) => {
     const entry = entries[index];
@@ -999,6 +1012,7 @@ export function ImportDialog({ open, onOpenChange, config, token, postBatch, sim
                   statusFilter={statusFilterPreSend}
                   onStatusFilterChange={setStatusFilterPreSend}
                   onEditField={handleEditField}
+                  onAddRow={handleAddRow}
                   showRetry={false}
                   onSkipEntry={handleSkipEntry}
                   onUnskipEntry={handleUnskipEntry}
@@ -1010,7 +1024,11 @@ export function ImportDialog({ open, onOpenChange, config, token, postBatch, sim
                   token={token}
                   data-testid="ImportReviewQueue__38a6c3" />
               </div>
-              <div className="flex justify-end">
+              <div className="flex items-center justify-end gap-3">
+                <span className="text-sm text-muted-foreground" data-testid="ImportDialog__rowSummary">
+                  {(labels?.confirm?.willImport ?? ((n) => `${n} records will be imported`))(validCount)}
+                  {skipCount > 0 && ` · ${(labels?.confirm?.willSkip ?? ((n) => `${n} rows will be skipped due to errors`))(skipCount)}`}
+                </span>
                 <Button
                   type="button"
                   onClick={handleProceedToConfirm}
