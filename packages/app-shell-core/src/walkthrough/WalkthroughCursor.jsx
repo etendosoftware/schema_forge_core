@@ -1,4 +1,4 @@
-import { MousePointer2 } from 'lucide-react';
+import { CursorIcon } from '@phosphor-icons/react';
 import { cn } from '../lib/utils.js';
 
 /**
@@ -46,7 +46,7 @@ export function WalkthroughCursor({ visible, x, y, durationMs = 0, pressed = fal
             data-testid="walkthrough-cursor-ring"
           />
         )}
-        <MousePointer2
+        <CursorIcon
           className={cn(
             'relative h-12 w-12 fill-primary text-primary-foreground drop-shadow-md transition-transform',
             pressed && 'scale-90',

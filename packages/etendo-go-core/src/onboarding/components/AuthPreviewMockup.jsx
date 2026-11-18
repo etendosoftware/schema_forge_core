@@ -1,5 +1,5 @@
 import React from 'react';
-import { ChevronDown, PanelLeftClose, Search, Calendar, SlidersHorizontal } from 'lucide-react';
+import { CaretDownIcon, SidebarSimpleIcon, MagnifyingGlassIcon, CalendarBlankIcon, SlidersHorizontalIcon } from '@phosphor-icons/react';
 import {
   SKELETON_BG,
   ICON_COLOR,
@@ -32,13 +32,12 @@ export function AuthPreviewMockup(props) {
                 <span className={`inline-block h-2.5 w-[90px] rounded-full ${SKELETON_BG}`} />
               </div>
               <span className={ICON_COLOR}>
-                <ChevronDown className="h-5 w-5" strokeWidth={1.7} data-testid="ChevronDown__3ccc73" />
+                <CaretDownIcon className="h-5 w-5" data-testid="ChevronDown__3ccc73" />
               </span>
             </div>
             <span className={`flex h-8 w-8 flex-none items-center justify-center rounded-md ${ICON_COLOR}`}>
-              <PanelLeftClose
+              <SidebarSimpleIcon
                 className="h-5 w-5"
-                strokeWidth={1.7}
                 data-testid="PanelLeftClose__3ccc73" />
             </span>
           </div>
@@ -71,9 +70,8 @@ export function AuthPreviewMockup(props) {
             </div>
             <div className="flex h-10 w-full max-w-[392px] items-center gap-2 rounded-full bg-white px-3">
               <span className={`flex-none ${ICON_COLOR}`}>
-                <Search
+                <MagnifyingGlassIcon
                   className="h-[18px] w-[18px]"
-                  strokeWidth={1.8}
                   data-testid="Search__3ccc73" />
               </span>
               <span className={`inline-block h-3 w-44 rounded-full ${SKELETON_BG}`} />
@@ -84,23 +82,20 @@ export function AuthPreviewMockup(props) {
               <div className="flex flex-none items-center gap-2 px-2 pb-2 pt-4">
                 <div className="flex h-10 flex-none items-center gap-1.5 rounded-lg border border-[#D1D4DB] bg-white px-3 shadow-[0px_1px_2px_rgba(18,18,23,0.05)]">
                   <Bar width={122} data-testid="Bar__3ccc73" />
-                  <ChevronDown
+                  <CaretDownIcon
                     className={`h-[18px] w-[18px] ${ICON_COLOR}`}
-                    strokeWidth={1.7}
                     data-testid="ChevronDown__3ccc73" />
                 </div>
                 <div className={`flex h-10 flex-none items-center gap-1.5 rounded-lg border border-[#D1D4DB] bg-white px-3 shadow-[0px_1px_2px_rgba(18,18,23,0.05)] ${ICON_COLOR}`}>
-                  <Calendar className="h-5 w-5" strokeWidth={1.7} data-testid="Calendar__3ccc73" />
+                  <CalendarBlankIcon className="h-5 w-5" data-testid="Calendar__3ccc73" />
                   <Bar width={122} data-testid="Bar__3ccc73" />
-                  <ChevronDown
+                  <CaretDownIcon
                     className="h-[18px] w-[18px]"
-                    strokeWidth={1.7}
                     data-testid="ChevronDown__3ccc73" />
                 </div>
                 <div className={`flex h-10 w-10 flex-none items-center justify-center rounded-lg border border-[#D1D4DB] bg-white shadow-[0px_1px_2px_rgba(18,18,23,0.05)] ${ICON_COLOR}`}>
-                  <SlidersHorizontal
+                  <SlidersHorizontalIcon
                     className="h-5 w-5"
-                    strokeWidth={1.7}
                     data-testid="SlidersHorizontal__3ccc73" />
                 </div>
               </div>

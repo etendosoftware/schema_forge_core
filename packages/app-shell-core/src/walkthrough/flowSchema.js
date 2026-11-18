@@ -372,7 +372,7 @@ export function normalizeFlow(raw) {
     schemaVersion: WALKTHROUGH_SCHEMA_VERSION,
     titleKey: raw.titleKey,
     descriptionKey: isNonEmptyString(raw.descriptionKey) ? raw.descriptionKey : null,
-    // Free-form hint for the host's launcher UI (e.g. a lucide icon name). The
+    // Free-form hint for the host's launcher UI (e.g. a Phosphor icon name). The
     // engine never reads it — it exists so the flow list can be presented
     // without the host having to keep a parallel table keyed by flow id.
     icon: isNonEmptyString(raw.icon) ? raw.icon : null,

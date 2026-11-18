@@ -18,11 +18,11 @@ describe('DateField — exports and dependencies', () => {
     assert.match(src, /export default DateField/);
   });
 
-  it('imports only the Calendar icon from lucide-react (chevrons now live in date-picker-chrome.jsx, ETP-4771)', () => {
-    assert.match(src, /Calendar as CalendarIcon[\s\S]*?from\s+['"]lucide-react['"]/);
-    assert.doesNotMatch(src, /ChevronDown/);
-    assert.doesNotMatch(src, /ChevronLeft/);
-    assert.doesNotMatch(src, /ChevronRight/);
+  it('imports only the Calendar icon from @phosphor-icons/react (chevrons now live in date-picker-chrome.jsx, ETP-4771)', () => {
+    assert.match(src, /CalendarBlankIcon as CalendarIcon[\s\S]*?from\s+['"]@phosphor-icons\/react['"]/);
+    assert.doesNotMatch(src, /CaretDown/);
+    assert.doesNotMatch(src, /CaretLeft/);
+    assert.doesNotMatch(src, /CaretRight/);
   });
 
   it('imports HeaderRow, PillButton, PickerTabs and PickerGrid from the shared date-picker-chrome.jsx (ETP-4771)', () => {

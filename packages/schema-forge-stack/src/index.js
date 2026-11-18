@@ -7,6 +7,7 @@ export const STACK_PACKAGES = [
 ];
 
 export const APP_SHELL_PEERS = [
+  '@phosphor-icons/react',
   '@radix-ui/react-collapsible',
   '@radix-ui/react-dialog',
   '@radix-ui/react-dropdown-menu',
@@ -21,7 +22,6 @@ export const APP_SHELL_PEERS = [
   'clsx',
   'cmdk',
   'date-fns',
-  'lucide-react',
   'next-themes',
   'react',
   'react-day-picker',

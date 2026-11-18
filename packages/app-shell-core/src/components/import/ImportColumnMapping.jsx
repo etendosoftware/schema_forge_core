@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { AlertTriangle } from 'lucide-react';
+import { WarningIcon } from '@phosphor-icons/react';
 import { Button } from '../ui/button.jsx';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '../ui/dialog.jsx';
 import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from '../ui/select.jsx';
@@ -177,7 +177,7 @@ export function ImportColumnMapping({ headers, importFields, mapping, onApplyMap
       <div className="flex items-center justify-between gap-2">
         <div className="flex items-center gap-1.5 text-xs text-muted-foreground" data-testid="ImportColumnMapping__summaryCount">
           {mappedCount < importFields.length && (
-            <AlertTriangle className="h-3.5 w-3.5 text-amber-600" aria-hidden="true" data-testid="ImportColumnMapping__summaryWarning" />
+            <WarningIcon className="h-3.5 w-3.5 text-amber-600" aria-hidden="true" data-testid="ImportColumnMapping__summaryWarning" />
           )}
           {formatTemplate(text.mappedSummary, { mapped: mappedCount, total: importFields.length })}
         </div>

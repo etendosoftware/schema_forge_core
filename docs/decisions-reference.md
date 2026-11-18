@@ -189,7 +189,7 @@ Generates a `{WindowName}StatusBar` component inside `@sf-generated` markers. Th
 | `label` | string | Label shown below the percentage. |
 | `color` | string | Color when progress is incomplete (e.g., `orange`). |
 | `completedColor` | string | Color when progress reaches 100% (e.g., `green`). |
-| `completedIcon` | string | Lucide icon shown at 100% (e.g., `CheckCircle2`). |
+| `completedIcon` | string | Icon shown at 100% (e.g., `CheckCircle2`; legacy Lucide names are mapped to their Phosphor equivalent). |
 
 The generator emits `headerContent={(data) => <{WindowName}StatusBar data={data} />}` on the DetailView prop automatically.
 

@@ -32,16 +32,16 @@ vi.mock('../../components/ui/badge.jsx', () => ({
   Badge: ({ children, ...props }) => <span {...props} data-testid="badge">{children}</span>,
 }));
 
-vi.mock('lucide-react', () => ({
-  Shield: () => <span>Shield</span>,
-  CheckCircle2: () => <span>CheckCircle2</span>,
-  XCircle: () => <span>XCircle</span>,
-  Loader2: () => <span>Loader2</span>,
-  Plug: () => <span>Plug</span>,
-  Download: () => <span>Download</span>,
-  Sparkles: () => <span>Sparkles</span>,
-  Copy: () => <span>Copy</span>,
-  Check: () => <span>Check</span>,
+vi.mock('@phosphor-icons/react', () => ({
+  ShieldIcon: () => <span>Shield</span>,
+  CheckCircleIcon: () => <span>CheckCircle2</span>,
+  XCircleIcon: () => <span>XCircle</span>,
+  CircleNotchIcon: () => <span>Loader2</span>,
+  PlugIcon: () => <span>Plug</span>,
+  DownloadSimpleIcon: () => <span>Download</span>,
+  SparkleIcon: () => <span>Sparkles</span>,
+  CopyIcon: () => <span>Copy</span>,
+  CheckIcon: () => <span>Check</span>,
 }));
 
 vi.mock('sonner', () => ({

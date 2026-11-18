@@ -118,16 +118,15 @@ describe('dashboardSkeletonParts — RailMenuItem (ETP-4662)', () => {
     expect(bar.style.width).toBe('78px');
     expect(bar.className).toContain(SKELETON_BG);
 
-    // The trailing chevron is lucide (24px grid), the menu icon is phosphor (256px grid).
-    const chevrons = Array.from(item.querySelectorAll('svg')).filter((svg) => svg.getAttribute('viewBox') === '0 0 24 24');
-    expect(chevrons).toHaveLength(1);
+    // Both the menu icon and the trailing chevron are Phosphor (256px grid).
+    const svgs = Array.from(item.querySelectorAll('svg'));
+    expect(svgs).toHaveLength(2);
+    expect(svgs.every((svg) => svg.getAttribute('viewBox') === '0 0 256 256')).toBe(true);
   });
 
   it('omits the chevron for items that do not expand', () => {
     const { container } = render(<RailMenuItem icon={Phosphor.House} width={52} hasChevron={false} />);
 
-    const chevrons = Array.from(container.querySelectorAll('svg')).filter((svg) => svg.getAttribute('viewBox') === '0 0 24 24');
-    expect(chevrons).toHaveLength(0);
     expect(container.querySelectorAll('svg')).toHaveLength(1);
   });
 });

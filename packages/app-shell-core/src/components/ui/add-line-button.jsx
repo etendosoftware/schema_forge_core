@@ -1,4 +1,4 @@
-import { Plus, ChevronDown } from 'lucide-react';
+import { PlusIcon, CaretDownIcon } from '@phosphor-icons/react';
 import {
   DropdownMenu,
   DropdownMenuTrigger,
@@ -78,7 +78,7 @@ export function AddLineButton({ onClick, label, disabled = false, menuActions, h
       onMouseLeave={hoverOut(disabled)}
       style={{ ...PRIMARY_STYLE, borderRadius: radius, ...(disabled ? DISABLED_OVERLAY : null) }}
     >
-      <Plus size={20} color={ICON_COLOR} strokeWidth={2} data-testid="Plus__9424df" />
+      <PlusIcon size={20} color={ICON_COLOR} data-testid="Plus__9424df" />
       <span>{label}</span>
     </button>
   );
@@ -99,10 +99,9 @@ export function AddLineButton({ onClick, label, disabled = false, menuActions, h
       style={{ ...CHEVRON_STYLE, ...(disabled ? DISABLED_OVERLAY : null) }}
       aria-label="More actions"
     >
-      <ChevronDown
+      <CaretDownIcon
         size={20}
         color={ICON_COLOR}
-        strokeWidth={2}
         data-testid="ChevronDown__9424df" />
     </button>
   );
