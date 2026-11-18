@@ -169,7 +169,8 @@ function reportFiltersByOrg(contract) {
  * others by changing, blanking or omitting `orgId`).
  *
  * Rule — Etendo's readable orgs (`OBContext.setReadableOrganizations`):
- *   - org `0` in the role's access → every org of the client passes;
+ *   - org `0` in the role's access → every org of the client passes, but a
+ *     requested org must exist in the session's client (else denied);
  *   - otherwise the requested org must be one of the role's orgs or a
  *     descendant of one. Unlike OBContext, an ANCESTOR is rejected: the report
  *     SQL expands `orgId` to its whole subtree, so a parent would expose
@@ -198,10 +199,21 @@ export async function assertReportOrgAccess(pool, session, { contract, params = 
   if (ambiguous) throw denied(); // two declared params fill __ORGID__: refuse rather than guess
 
   const roleOrgIds = session?.roleOrgIds || [];
-  if (roleOrgIds.includes('0')) return;
+  const requested = orgId !== '0' ? orgId : '';
+  if (roleOrgIds.includes('0')) {
+    // Org 0 reads every org of the client, but a requested org must exist in it:
+    // an unknown one would otherwise answer 200 with all-zero figures.
+    if (requested) {
+      const { rows } = await pool.query(
+        'SELECT 1 FROM ad_org WHERE ad_client_id = $1 AND ad_org_id = $2',
+        [session.clientId, requested],
+      );
+      if (!rows.length) throw denied();
+    }
+    return;
+  }
   if (!roleOrgIds.length) throw denied();
 
-  const requested = orgId !== '0' ? orgId : '';
   if (requested) {
     const { rows } = await pool.query(
       `SELECT 1 FROM unnest($1::varchar[]) AS r(org_id)
