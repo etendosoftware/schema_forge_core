@@ -1378,3 +1378,68 @@ describe('ImportDialog — onImportFinished summary', () => {
   });
 });
 
+describe('backend field validation errors land on their column (ETP-6225)', () => {
+  const phoneConfig = {
+    ...config,
+    fields: [...config.fields, { target: 'etgoPhone', label: 'Phone', isPhone: true }],
+  };
+  const fieldFailure = (errors) => ({
+    committed: false,
+    failedAt: { index: 0, id: 'row' },
+    error: { status: 400, message: "Operation 'row' rejected by server", detail: { response: { status: -4, errors } } },
+  });
+
+  it('marks the Phone and Email cells with the server messages after a failed send', async () => {
+    const postBatch = vi.fn().mockResolvedValue(fieldFailure({ etgoPhone: 'Bad phone from server', email: 'Bad email from server' }));
+    render(<ImportDialog open config={phoneConfig} token="t" postBatch={postBatch} simSearchFn={vi.fn()} onImported={() => {}} />);
+    await uploadFile('Name,Email,Phone\nLucia,lucia@x.com,+34 910 565 400');
+    fireEvent.click(screen.getByTestId('ImportDialog__importButton'));
+    fireEvent.click(screen.getByTestId('ImportConfirmStep__confirm'));
+    await waitFor(() => screen.getByTestId('ImportReviewQueue__fieldError-0-etgoPhone'));
+    expect(screen.getByTestId('ImportReviewQueue__fieldError-0-etgoPhone').textContent).toMatch(/Bad phone from server/);
+    expect(screen.getByTestId('ImportReviewQueue__fieldError-0-email').textContent).toMatch(/Bad email from server/);
+  });
+
+  it('sends the phone without spaces', async () => {
+    const postBatch = vi.fn().mockResolvedValue({ committed: true, operations: [{ id: 'row', ok: true, recordId: 'R' }] });
+    render(<ImportDialog open config={phoneConfig} token="t" postBatch={postBatch} simSearchFn={vi.fn()} onImported={() => {}} />);
+    await uploadFile('Name,Email,Phone\nLucia,lucia@x.com,+34 910 565 400');
+    fireEvent.click(screen.getByTestId('ImportDialog__importButton'));
+    fireEvent.click(screen.getByTestId('ImportConfirmStep__confirm'));
+    await waitFor(() => expect(postBatch).toHaveBeenCalled());
+    expect(postBatch.mock.calls[0][0][0].body.etgoPhone).toBe('+34910565400');
+  });
+
+  it('flags a leading-apostrophe phone in the review queue before sending', async () => {
+    const postBatch = vi.fn();
+    render(<ImportDialog open config={phoneConfig} token="t" postBatch={postBatch} simSearchFn={vi.fn()} onImported={() => {}} />);
+    await uploadFile("Name,Email,Phone\nLucia,lucia@x.com,'+34 910 565 400");
+    fireEvent.click(screen.getByTestId('ImportReviewQueue__statusFilter-error'));
+    await waitFor(() => screen.getByTestId('ImportReviewQueue__fieldError-0-etgoPhone'));
+    expect(screen.getByTestId('ImportReviewQueue__fieldError-0-etgoPhone').textContent).toMatch(/phone number can only contain/i);
+    expect(postBatch).not.toHaveBeenCalled();
+  });
+
+  it('keeps the column error after an inline retry and does not open the system-error dialog', async () => {
+    const postBatch = vi.fn().mockResolvedValue(fieldFailure({ etgoPhone: 'Bad phone from server' }));
+    render(<ImportDialog open config={phoneConfig} token="t" postBatch={postBatch} simSearchFn={vi.fn()} onImported={() => {}} />);
+    await uploadFile('Name,Email,Phone\nLucia,lucia@x.com,+34 910 565 400');
+    fireEvent.click(screen.getByTestId('ImportDialog__importButton'));
+    fireEvent.click(screen.getByTestId('ImportConfirmStep__confirm'));
+    await waitFor(() => screen.getByTestId('ImportReviewQueue__fieldError-0-etgoPhone'));
+    postBatch.mockResolvedValue(fieldFailure({ etgoPhone: 'Still bad phone' }));
+    fireEvent.click(screen.getByTestId('ImportReviewQueue__retry-0'));
+    await waitFor(() => expect(screen.getByTestId('ImportReviewQueue__fieldError-0-etgoPhone').textContent).toMatch(/Still bad phone/));
+    expect(screen.queryByTestId('ImportSystemErrorDialog__title')).toBeNull();
+  });
+
+  it('keeps a message for an unmatched field key as a row-level error beside the column error', async () => {
+    const postBatch = vi.fn().mockResolvedValue(fieldFailure({ etgoPhone: 'Bad phone from server', unknownField: 'Odd rule' }));
+    render(<ImportDialog open config={phoneConfig} token="t" postBatch={postBatch} simSearchFn={vi.fn()} onImported={() => {}} />);
+    await uploadFile('Name,Email,Phone\nLucia,lucia@x.com,+34 910 565 400');
+    fireEvent.click(screen.getByTestId('ImportDialog__importButton'));
+    fireEvent.click(screen.getByTestId('ImportConfirmStep__confirm'));
+    await waitFor(() => screen.getByTestId('ImportReviewQueue__fieldError-0-etgoPhone'));
+    expect(screen.getByTestId('ImportReviewQueue__rowError-0').textContent).toMatch(/unknownField: Odd rule/);
+  });
+});
