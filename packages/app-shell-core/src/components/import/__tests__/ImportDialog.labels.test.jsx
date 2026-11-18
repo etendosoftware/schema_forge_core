@@ -47,7 +47,6 @@ vi.mock('../ImportReviewQueue.jsx', () => ({
   },
 }));
 
-
 vi.mock('../ImportProgressStep.jsx', () => ({
   ImportProgressStep: (props) => {
     captured.progress = props;
@@ -174,6 +173,8 @@ describe('ImportDialog — label forwarding to every child', () => {
     // on the real Import button, proving importButton() is called with the count, not a constant.
     expect(captured.reviewQueue.retryLabel).toBeUndefined();
     expect(screen.getByTestId('ImportDialog__importButton').textContent).toBe('L_import_1');
+    // labels.confirm.willImport / willSkip feed the counts beside the Import button.
+    expect(screen.getByTestId('ImportDialog__rowSummary').textContent).toContain('L_willImport_1');
   });
 
   it('forwards labels.progress to ImportProgressStep while a send is in flight', async () => {

@@ -30,7 +30,7 @@ import { runImportRowValidator } from '../../lib/import/rowValidators.js';
 import { findExistingKeys, buildLookupKey } from '../../lib/import/existingRecordLookup.js';
 
 // Root-level labels for ImportDialog's own chrome. `importButton` is a function of the
-// valid-row count, mirroring the (n) => string labels the confirm step already uses, so the
+// valid-row count, mirroring the other (n) => string labels, so the
 // whole flow's button text is translatable rather than the hardcoded `Import ${n}` it was.
 const DEFAULT_LABELS = { title: 'Import', reading: 'Reading file…', revalidating: 'Revalidating rows…', downloadTemplate: 'Download CSV template', downloadTemplateCsv: 'Download CSV template', downloadTemplateXlsx: 'Download Excel template', importButton: (n) => `Import ${n}`, willImport: (n) => `${n} records will be imported`, willSkip: (n) => `${n} rows will be skipped due to errors` };
 
@@ -39,15 +39,15 @@ const DEFAULT_LABELS = { title: 'Import', reading: 'Reading file…', revalidati
  * there is nothing for the user to fix — so these carry their own wording, separate from
  * the validation messages in `validateRows.js`.
  */
-// A row the send will include: not skipped, no outstanding error.
-const isSendable = (e) => e.status === 'pending' && e.errors.length === 0;
-
 const PROGRESS_THROTTLE_MS = 150;
 
 const SKIP_MESSAGES = {
   duplicateInFile: { key: 'importSkipDuplicateInFile', fallback: 'Duplicate row (already in file).' },
   alreadyExists: { key: 'importSkipAlreadyExists', fallback: 'This record already exists and will not be imported again.' },
 };
+
+// A row the send will include: not skipped, no outstanding error.
+const isSendable = (e) => e.status === 'pending' && e.errors.length === 0;
 
 /**
  * Shape of the optional `labels` prop — a NESTED object: root-level keys for this dialog's
@@ -639,17 +639,16 @@ export function ImportDialog({ open, onOpenChange, config, token, postBatch, sim
     setEntries((prev) => prev.map((e, i) => (i === index ? { ...e, status: 'pending' } : e)));
   }, []);
 
-  const validCount = entries.filter((e) => e.status === 'pending' && e.errors.length === 0).length;
+  const validCount = entries.filter(isSendable).length;
   const skipCount = entries.length - validCount;
 
-  const handleSend = useCallback(async (rowsToSend = entries.filter(isSendable)) => {
+  const handleSend = useCallback(async (toSend = entries.filter(isSendable)) => {
     // Nothing left to send (e.g. the duplicate re-check skipped every remaining row).
-    if (rowsToSend.length === 0) return;
+    if (toSend.length === 0) return;
     setStep(STEP.SENDING);
     // A previous run's unanswered question must not resurface over this one.
     setPendingCloseWhileSending(false);
     closedWhileSendingRef.current = false;
-    const toSend = rowsToSend;
     // Every send — the first one and a resend of fixed rows from the result step — starts its
     // counter at zero over ITS OWN rows. (The engine caps a run at `maxRows`.)
     setProgress({ done: 0, total: Math.min(toSend.length, maxRows) });
@@ -801,7 +800,7 @@ export function ImportDialog({ open, onOpenChange, config, token, postBatch, sim
     }
     const candidates = entries
       .map((entry, index) => ({ entry, index, key: buildLookupKey(entry.row, dedupeKeyTargets) }))
-      .filter(({ entry, key }) => key !== null && entry.status === 'pending' && entry.errors.length === 0);
+      .filter(({ entry, key }) => key !== null && isSendable(entry));
 
     const { checked, existing } = lookupCacheRef.current;
     const unasked = candidates.filter(({ key }) => !checked.has(key));
@@ -821,7 +820,7 @@ export function ImportDialog({ open, onOpenChange, config, token, postBatch, sim
       } catch {
         // The initial lookup has always been best-effort: an unavailable server must not
         // turn a reviewable file into an impossible import. Keep that posture for the
-        // pre-confirm re-check too. Send-time duplicate handling remains the backstop.
+        // pre-send re-check too. Send-time duplicate handling remains the backstop.
       } finally {
         setIsRevalidating(false);
       }

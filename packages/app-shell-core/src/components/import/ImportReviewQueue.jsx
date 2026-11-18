@@ -417,6 +417,134 @@ export function buildErrorsCsv(entries, headers, mapping, errorHeader = 'Error',
   return lines.join('\n');
 }
 
+/**
+ * Per-column widths (px) for the review grid, adjustable by dragging a header handle or with
+ * the arrow keys on it. Widths live only as long as the grid and are never below
+ * MIN_DATA_COLUMN_WIDTH. The listeners of a drag in progress are detached on unmount.
+ */
+function useColumnResize() {
+  const [columnWidths, setColumnWidths] = useState({});
+  const dragCleanupRef = useRef(null);
+  useEffect(() => () => dragCleanupRef.current?.(), []);
+  const setColumnWidth = (target, width) => {
+    setColumnWidths((prev) => ({ ...prev, [target]: Math.max(MIN_DATA_COLUMN_WIDTH, Math.round(width)) }));
+  };
+  const startResize = (e, target) => {
+    e.preventDefault();
+    const startX = e.clientX;
+    const startWidth = e.currentTarget.parentElement.getBoundingClientRect().width || DEFAULT_DATA_COLUMN_WIDTH;
+    const onMove = (ev) => setColumnWidth(target, startWidth + ev.clientX - startX);
+    const stop = () => {
+      document.removeEventListener('mousemove', onMove);
+      document.removeEventListener('mouseup', stop);
+      dragCleanupRef.current = null;
+    };
+    dragCleanupRef.current = stop;
+    document.addEventListener('mousemove', onMove);
+    document.addEventListener('mouseup', stop);
+  };
+  const resizeByKey = (e, target) => {
+    if (e.key !== 'ArrowLeft' && e.key !== 'ArrowRight') return;
+    e.preventDefault();
+    const current = columnWidths[target] ?? DEFAULT_DATA_COLUMN_WIDTH;
+    setColumnWidth(target, current + (e.key === 'ArrowRight' ? RESIZE_KEY_STEP : -RESIZE_KEY_STEP));
+  };
+  return { columnWidths, startResize, resizeByKey };
+}
+
+/**
+ * One data cell of a live (not skipped) review row: the FK-mismatch picker, the editable
+ * input, or the read-only value.
+ *
+ * ETP-5417: every cell of a row is editable while `editAll` is on (the pre-send review). When
+ * the caller formats values for display, a clean cell shows that rendering until it is
+ * clicked, so the interpretation stays visible, and clicking swaps in the input on the raw
+ * text. `editAll` is off for the post-send queue, where rows already imported must not become
+ * editable. A module-level component (not an inline closure) so an input keeps its identity,
+ * and its focus, when the row moves between "Correctas" and "Errores".
+ */
+function EditableDataCell({
+  entry, index, field, rowLevelError, editAll, formatValue, focusedCell, setFocusedCell,
+  onEditField, cellRef, onFkSelect, simSearchFn, token, text,
+}) {
+  const fieldError = entry.errors.find((e) => e.target === field.target);
+  const isFocusedCell = focusedCell?.index === index && focusedCell?.target === field.target;
+  const formatted = typeof formatValue === 'function';
+  const isEditable = Boolean((editAll && !formatted) || rowLevelError || fieldError || isFocusedCell);
+  // Only the FK-lookup validator attaches `candidates` (possibly empty) —
+  // that's the signal this is a "pick the right record" error rather than
+  // a plain required/format error that just needs retyping.
+  const isFkMismatch = fieldError && !rowLevelError && fieldError.candidates !== undefined;
+  const focusCell = editAll ? () => setFocusedCell({ index, target: field.target }) : undefined;
+  const blurCell = () => setFocusedCell((prev) => (
+    prev?.index === index && prev?.target === field.target ? null : prev
+  ));
+  const autoFocusInput = formatted && isFocusedCell && !fieldError && !rowLevelError;
+  return (
+    <TableCell key={field.target} ref={cellRef} data-testid={"TableCell__" + field.id}>
+      {isFkMismatch ? (
+        <FkMismatchCell
+          index={index}
+          field={field}
+          value={entry.row[field.target] ?? ''}
+          error={fieldError}
+          onSelect={onFkSelect}
+          simSearchFn={simSearchFn}
+          token={token}
+          text={text}
+          data-testid={"FkMismatchCell__" + field.id} />
+      ) : isEditable ? (
+        <div className="flex flex-col gap-1">
+          {fieldError && !rowLevelError && (
+            <span
+              // ETP-5223: this was `truncate`, so "Falta un campo obligatorio."
+              // rendered as "Falta un campo obligat…" in a narrow column and the
+              // only way to read it was to find the native title tooltip.
+              //
+              // `whitespace-normal` is what actually makes it wrap, and it is NOT
+              // redundant with `break-words`: since ETP-5281 every `TableCell`
+              // carries `whitespace-nowrap overflow-hidden text-ellipsis`, and
+              // `break-words` only chooses WHERE a long word may break — it does
+              // nothing while an ancestor forbids line breaks at all. Dropping
+              // `truncate` therefore fixed nothing on its own; the message stayed
+              // clipped, in every language, and the class-list test still passed.
+              // `title` stays as a belt-and-braces for anything still too long.
+              className="whitespace-normal break-words text-xs text-destructive"
+              title={fieldError.message}
+              data-testid={`ImportReviewQueue__fieldError-${index}-${field.target}`}
+            >
+              {fieldError.message}
+            </span>
+          )}
+          <Input
+            value={entry.row[field.target] ?? ''}
+            onChange={(e) => onEditField(index, field.target, e.target.value)}
+            onFocus={focusCell}
+            onBlur={() => setFocusedCell((prev) => (
+              prev?.index === index && prev?.target === field.target ? null : prev
+            ))}
+            autoFocus={autoFocusInput}
+            className={`h-8${numericCellClass(field)}`}
+            data-testid={`ImportReviewQueue__input-${index}-${field.target}`}
+          />
+        </div>
+      ) : (
+        <span
+          className={TRUNCATE_CLASS + numericCellClass(field)}
+          title={entry.row[field.target] ?? ''}
+          tabIndex={focusCell ? 0 : undefined}
+          onClick={focusCell}
+          onFocus={focusCell}
+          data-testid={`ImportReviewQueue__value-${index}-${field.target}`}
+        >
+          {displayValue(formatValue, field, entry.row[field.target])}
+        </span>
+      )}
+    </TableCell>
+
+  );
+}
+
 export function ImportReviewQueue({
   entries,
   fields = [],
@@ -459,34 +587,8 @@ export function ImportReviewQueue({
   // silently dropped focus with no visible destination). Both `visibleEntries` and the OK
   // vs. error branch choice below exempt the focused row until it blurs.
   const [focusedCell, setFocusedCell] = useState(null);
-  // ETP-5417: per-column widths in px, set by dragging a header's right edge.
-  const [columnWidths, setColumnWidths] = useState({});
-  // The listeners of a drag in progress, so unmounting mid-drag detaches them.
-  const dragCleanupRef = useRef(null);
-  useEffect(() => () => dragCleanupRef.current?.(), []);
-  const setColumnWidth = (target, width) => {
-    setColumnWidths((prev) => ({ ...prev, [target]: Math.max(MIN_DATA_COLUMN_WIDTH, Math.round(width)) }));
-  };
-  const startResize = (e, target) => {
-    e.preventDefault();
-    const startX = e.clientX;
-    const startWidth = e.currentTarget.parentElement.getBoundingClientRect().width || DEFAULT_DATA_COLUMN_WIDTH;
-    const onMove = (ev) => setColumnWidth(target, startWidth + ev.clientX - startX);
-    const stop = () => {
-      document.removeEventListener('mousemove', onMove);
-      document.removeEventListener('mouseup', stop);
-      dragCleanupRef.current = null;
-    };
-    dragCleanupRef.current = stop;
-    document.addEventListener('mousemove', onMove);
-    document.addEventListener('mouseup', stop);
-  };
-  const resizeByKey = (e, target) => {
-    if (e.key !== 'ArrowLeft' && e.key !== 'ArrowRight') return;
-    e.preventDefault();
-    const current = columnWidths[target] ?? DEFAULT_DATA_COLUMN_WIDTH;
-    setColumnWidth(target, current + (e.key === 'ArrowRight' ? RESIZE_KEY_STEP : -RESIZE_KEY_STEP));
-  };
+  // ETP-5417: per-column widths, set by dragging (or arrow keys on) a header's right edge.
+  const { columnWidths, startResize, resizeByKey } = useColumnResize();
   const visibleEntries = entries
     .map((entry, index) => ({ entry, index }))
     .filter(({ entry, index }) => {
@@ -719,85 +821,25 @@ export function ImportReviewQueue({
             const rowLevelError = entry.errors.find((e) => !e.target);
             const rowColumns = dataColumns ?? entry.errors.map((e) => ({ target: e.target, label: e.target }));
 
-            const dataCells = rowColumns.map((field) => {
-              const fieldError = entry.errors.find((e) => e.target === field.target);
-              const isFocusedCell = focusedCell?.index === index && focusedCell?.target === field.target;
-              // Every cell of a live row is editable (ETP-5417). When the caller formats values for
-              // display, a clean cell shows that rendering until it is clicked, so the
-              // interpretation stays visible; clicking swaps in the input on the raw text.
-              // `editAll` is off for the post-send queue, where rows already imported must not
-              // become editable.
-              const isEditable = Boolean(
-                (editAll && typeof formatValue !== 'function') || rowLevelError || fieldError || isFocusedCell,
-              );
-              // Only the FK-lookup validator attaches `candidates` (possibly empty) —
-              // that's the signal this is a "pick the right record" error rather than
-              // a plain required/format error that just needs retyping.
-              const isFkMismatch = fieldError && !rowLevelError && fieldError.candidates !== undefined;
-              return (
-                <TableCell key={field.target} ref={registerCellRef(index, field.target)} data-testid={"TableCell__" + field.id}>
-                  {isFkMismatch ? (
-                    <FkMismatchCell
-                      index={index}
-                      field={field}
-                      value={entry.row[field.target] ?? ''}
-                      error={fieldError}
-                      onSelect={(value, resolvedId) => handleFkValueSelected(index, field, value, resolvedId)}
-                      simSearchFn={simSearchFn}
-                      token={token}
-                      text={text}
-                      data-testid={"FkMismatchCell__" + field.id} />
-                  ) : isEditable ? (
-                    <div className="flex flex-col gap-1">
-                      {fieldError && !rowLevelError && (
-                        <span
-                          // ETP-5223: this was `truncate`, so "Falta un campo obligatorio."
-                          // rendered as "Falta un campo obligat…" in a narrow column and the
-                          // only way to read it was to find the native title tooltip.
-                          //
-                          // `whitespace-normal` is what actually makes it wrap, and it is NOT
-                          // redundant with `break-words`: since ETP-5281 every `TableCell`
-                          // carries `whitespace-nowrap overflow-hidden text-ellipsis`, and
-                          // `break-words` only chooses WHERE a long word may break — it does
-                          // nothing while an ancestor forbids line breaks at all. Dropping
-                          // `truncate` therefore fixed nothing on its own; the message stayed
-                          // clipped, in every language, and the class-list test still passed.
-                          // `title` stays as a belt-and-braces for anything still too long.
-                          className="whitespace-normal break-words text-xs text-destructive"
-                          title={fieldError.message}
-                          data-testid={`ImportReviewQueue__fieldError-${index}-${field.target}`}
-                        >
-                          {fieldError.message}
-                        </span>
-                      )}
-                      <Input
-                        value={entry.row[field.target] ?? ''}
-                        onChange={(e) => onEditField(index, field.target, e.target.value)}
-                        onFocus={() => setFocusedCell({ index, target: field.target })}
-                        onBlur={() => setFocusedCell((prev) => (
-                          prev?.index === index && prev?.target === field.target ? null : prev
-                        ))}
-                        autoFocus={typeof formatValue === 'function' && isFocusedCell && !fieldError && !rowLevelError}
-                        className={`h-8${numericCellClass(field)}`}
-                        data-testid={`ImportReviewQueue__input-${index}-${field.target}`}
-                      />
-                    </div>
-                  ) : (
-                    <span
-                      className={TRUNCATE_CLASS + numericCellClass(field)}
-                      title={entry.row[field.target] ?? ''}
-                      tabIndex={editAll ? 0 : undefined}
-                      onClick={editAll ? () => setFocusedCell({ index, target: field.target }) : undefined}
-                      onFocus={editAll ? () => setFocusedCell({ index, target: field.target }) : undefined}
-                      data-testid={`ImportReviewQueue__value-${index}-${field.target}`}
-                    >
-                      {displayValue(formatValue, field, entry.row[field.target])}
-                    </span>
-                  )}
-                </TableCell>
-              );
-
-            });
+            const dataCells = rowColumns.map((field) => (
+              <EditableDataCell
+                key={field.target}
+                entry={entry}
+                index={index}
+                field={field}
+                rowLevelError={rowLevelError}
+                editAll={editAll}
+                formatValue={formatValue}
+                focusedCell={focusedCell}
+                setFocusedCell={setFocusedCell}
+                onEditField={onEditField}
+                cellRef={registerCellRef(index, field.target)}
+                onFkSelect={(value, resolvedId) => handleFkValueSelected(index, field, value, resolvedId)}
+                simSearchFn={simSearchFn}
+                token={token}
+                text={text}
+                data-testid={"EditableDataCell__" + field.id} />
+            ));
 
             if (entry.errors.length === 0) {
               return (

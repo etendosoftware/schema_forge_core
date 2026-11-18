@@ -823,7 +823,7 @@ describe('ImportDialog — ETP-5348 file rejection', () => {
  * typed in. The contacts dedupe key is `taxID`, which is also a required column, so the real
  * shape of the bug is: the row lands in Errores for the missing key, the user fills it, the row
  * turns Correcta, and it is imported as new however many copies of it the database already has.
- * The re-check runs on the way to the confirm step, so the counts that step states are true.
+ * The re-check runs when Import is pressed, before anything is sent, so the counts are true.
  */
 describe('ImportDialog — ETP-5350 dedupe re-check after editing the key', () => {
   registerImportDescriptor('etp5350-demo', async (row) => [
@@ -894,7 +894,7 @@ describe('ImportDialog — ETP-5350 dedupe re-check after editing the key', () =
     render(<ImportDialog open config={keyedConfig} token="t" postBatch={postBatch}
       simSearchFn={vi.fn()} existingKeyFetchFn={existingKeyFetchFn} onImported={() => {}} />);
     // Row 1 arrives with no key, so it is an error row — which is also the only kind the queue
-    // lets you edit: a clean cell is read-only until something is wrong with it.
+    // lets you edit: a clean cell was read-only until ETP-5417; this row is the one that needs a key anyway.
     await uploadTo('codigo,nombre\nSKU-1001,Existente\n,Sin clave');
     const callsAfterUpload = existingKeyFetchFn.mock.calls.length;
 
@@ -1435,12 +1435,33 @@ describe('ImportDialog — ETP-5417 review improvements', () => {
     expect(screen.queryByTestId('ImportReviewQueue__input-0-name')).toBeNull();
   });
 
-  it('opens the post-send queue on Errors after a failed send', async () => {
-    mount(vi.fn().mockResolvedValue({ message: 'boom-unrecognized' }));
+  it('opens the post-send queue on Errors, listing only the failed row (sent rows leave the queue)', async () => {
+    const postBatch = vi.fn()
+      .mockResolvedValueOnce({ committed: true, operations: [{ id: 'row', ok: true, recordId: 'REC-1' }] })
+      .mockResolvedValueOnce({ message: 'boom-unrecognized' });
+    mount(postBatch);
     await uploadFile('Name,Email\nLucia,lucia@x.com\nAndres,andres@x.com');
     fireEvent.click(screen.getByTestId('ImportDialog__importButton'));
     await waitFor(() => screen.getByTestId('ImportReviewQueue__rowError-0'));
-    // Imported/failed rows of the result queue are not editable on correct rows.
-    expect(screen.getByTestId('ImportReviewQueue__rowError-1')).toBeDefined();
+    expect(screen.queryByTestId('ImportReviewQueue__lineNumber-1')).toBeNull();
+    expect(screen.getByTestId('ImportReviewQueue__statusFilterCount-all').textContent).toBe('1');
+    // The Errors pill is the selected one (the 'default' variant; the others are 'ghost').
+    expect(screen.getByTestId('ImportReviewQueue__statusFilter-error').className).not.toContain('hover:bg-accent');
+    expect(screen.getByTestId('ImportReviewQueue__statusFilter-all').className).toContain('hover:bg-accent');
+    fireEvent.click(screen.getByTestId('ImportReviewQueue__statusFilter-ok'));
+    expect(screen.queryByTestId('ImportReviewQueue__rowError-0')).toBeNull();
+  });
+
+  it('resets the filter to All when a second file is loaded', async () => {
+    const csv = 'Name,Email\nLucia,lucia@x.com\n,andres@x.com';
+    const props = { open: true, config, token: 't', postBatch: vi.fn(), simSearchFn: vi.fn(), onImported: () => {} };
+    const first = makeFile(csv, 'one.csv');
+    const view = render(<ImportDialog {...props} initialFile={first} />);
+    await waitFor(() => screen.getByTestId('ImportReviewQueue__input-1-name'));
+    fireEvent.click(screen.getByTestId('ImportReviewQueue__statusFilter-ok'));
+    expect(screen.queryByTestId('ImportReviewQueue__input-1-name')).toBeNull();
+    view.rerender(<ImportDialog {...props} initialFile={makeFile(csv, 'two.csv')} />);
+    await waitFor(() => screen.getByTestId('ImportReviewQueue__input-1-name'));
+    expect(screen.getByTestId('ImportReviewQueue__input-0-name')).toBeDefined();
   });
 });
