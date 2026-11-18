@@ -538,6 +538,32 @@ describe('AuthContext — session restore (ETP-4576)', () => {
       expect(result.current.isAuthenticated).toBe(true);
     });
 
+    it('exposes the environment user and owner account of the restored session (ETP-6228)', async () => {
+      fetchStub.mockResolvedValue({
+        ok: true,
+        status: 200,
+        json: async () => ({
+          account: { id: 'member-account', name: 'Ada' },
+          environment: { userId: 'user-1', clientId: 'client-1', etgoAccountId: 'owner-account' },
+          roleList: [],
+          csrfToken: 'csrf',
+        }),
+      });
+
+      const { result } = renderHook(() => useAuth(), {
+        wrapper: ({ children }) => (
+          <AuthProvider credentialMode={CREDENTIAL_MODES.cookie} storage={createMemoryAuthStorage()}>{children}</AuthProvider>
+        ),
+      });
+
+      await waitFor(() => {
+        expect(result.current.status).toBe('authenticated');
+      });
+      expect(result.current.userId).toBe('user-1');
+      expect(result.current.etgoAccountId).toBe('owner-account');
+      expect(result.current.account.id).toBe('member-account');
+    });
+
     it('asks GET /sws/go/session with the cookie attached and never sends an Authorization/Bearer header', async () => {
       renderHook(() => useAuth(), {
         wrapper: ({ children }) => (
