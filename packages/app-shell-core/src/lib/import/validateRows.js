@@ -1,4 +1,5 @@
 import { isInvalidImportNumber } from './parseImportNumber.js';
+import { isInvalidPhone } from './normalizePhone.js';
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
@@ -18,6 +19,7 @@ function isBlank(value) {
 const VALIDATION_FALLBACKS = {
   importErrorRequiredGeneric: () => 'Required field is missing.',
   importErrorInvalidEmail: () => 'Not a valid email address.',
+  importErrorInvalidPhone: () => 'The phone number can only contain digits and the + ( ) - . characters, up to 15 characters.',
   importErrorNotANumber: (p) => `"${p.value}" is not a valid number. Use 1234.56 or 1,234.56.`,
   importErrorFkUnmatched: (p) => `"${p.value}" could not be matched to an existing record.`,
 };
@@ -44,6 +46,7 @@ export function validateRow(row, {
   requiredTargets = [],
   emailTargets = [],
   numericTargets = [],
+  phoneTargets = [],
   fkTargets = [],
   fkResolutions = new Map(),
   extraErrors = [],
@@ -61,6 +64,12 @@ export function validateRow(row, {
     const value = row[target];
     if (!isBlank(value) && !EMAIL_RE.test(String(value).trim())) {
       errors.push({ target, message: message('importErrorInvalidEmail', {}, translate) });
+    }
+  }
+
+  for (const target of phoneTargets) {
+    if (isInvalidPhone(row[target])) {
+      errors.push({ target, message: message('importErrorInvalidPhone', {}, translate) });
     }
   }
 

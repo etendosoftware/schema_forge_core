@@ -74,3 +74,17 @@ describe('buildOperations', () => {
     assert.equal(ops[0].body.name, 'Acme');
   });
 });
+
+describe('buildOperations phone normalization (ETP-6225)', () => {
+  it('sends the phone without spaces', async () => {
+    const ops = await buildOperations(
+      { name: 'Acme', phone: '+34 910 565 400' },
+      { spec: 'contacts', entity: 'bp', targets: ['name', 'phone'], phoneTargets: ['phone'] },
+    );
+    assert.equal(ops[0].body.phone, '+34910565400');
+  });
+  it('leaves the phone alone when no target is declared', async () => {
+    const ops = await buildOperations({ phone: '1 2' }, { spec: 's', entity: 'e', targets: ['phone'] });
+    assert.equal(ops[0].body.phone, '1 2');
+  });
+});
