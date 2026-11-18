@@ -25,7 +25,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '../ui/dropdown-menu.jsx';
-import { Trash2, Plus, Save, SlidersHorizontal, ChevronDown, Check, Bookmark, Loader2 } from 'lucide-react';
+import { TrashIcon, PlusIcon, FloppyDiskIcon, SlidersHorizontalIcon, CaretDownIcon, CheckIcon, BookmarkSimpleIcon, CircleNotchIcon } from '@phosphor-icons/react';
 import { useUI, useLabel, useLocale, useLocaleSwitch } from '../../i18n/index.js';
 import { resolveFilterMode, getDisplayText } from '../../lib/gridQuery.js';
 import { useDistinctValues } from '../../hooks/useDistinctValues.js';
@@ -486,7 +486,7 @@ export function AdvancedFilterBuilder({
   return (
     <div className={`flex w-max max-w-[min(90vw,60rem)] flex-col gap-3 ${hasBetween ? 'min-w-[38rem]' : 'min-w-[32rem]'}`}>
       <div className="flex items-center gap-2 text-sm font-semibold">
-        <SlidersHorizontal className="h-4 w-4 text-primary" data-testid="SlidersHorizontal__4eedf1" />
+        <SlidersHorizontalIcon className="h-4 w-4 text-primary" data-testid="SlidersHorizontal__4eedf1" />
         {ui('advancedFilterTitle')}
       </div>
       <div className="flex flex-col gap-2">
@@ -612,7 +612,7 @@ export function AdvancedFilterBuilder({
                 className="h-9 w-9 shrink-0 flex items-center justify-center text-muted-foreground hover:text-foreground transition-colors"
                 aria-label="Remove condition"
               >
-                <Trash2 className="h-4 w-4" data-testid="Trash2__4eedf1" />
+                <TrashIcon className="h-4 w-4" data-testid="Trash2__4eedf1" />
               </button>
             </div>
           );
@@ -623,7 +623,7 @@ export function AdvancedFilterBuilder({
         onClick={addRow}
         className="self-start flex items-center gap-1 text-xs font-medium text-primary hover:underline"
       >
-        <Plus className="h-3.5 w-3.5" data-testid="Plus__4eedf1" />
+        <PlusIcon className="h-3.5 w-3.5" data-testid="Plus__4eedf1" />
         {ui('advancedFilterAddCondition')}
       </button>
       <div className="flex items-center justify-between pt-2 border-t border-border/60">
@@ -635,9 +635,9 @@ export function AdvancedFilterBuilder({
                 className="flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground transition-colors"
                 data-testid="advanced-filter-presets-menu"
               >
-                <Bookmark className="h-3.5 w-3.5" data-testid="Bookmark__4eedf1" />
+                <BookmarkSimpleIcon className="h-3.5 w-3.5" data-testid="Bookmark__4eedf1" />
                 {ui('filterPresetsButton')}
-                <ChevronDown className="h-3 w-3" data-testid="ChevronDown__4eedf1" />
+                <CaretDownIcon className="h-3 w-3" data-testid="ChevronDown__4eedf1" />
               </button>
             </DropdownMenuTrigger>
             <DropdownMenuContent
@@ -663,7 +663,7 @@ export function AdvancedFilterBuilder({
                       className="h-6 w-6 flex items-center justify-center rounded text-muted-foreground hover:text-destructive hover:bg-destructive/10"
                       title={ui('filterPresetDelete')}
                     >
-                      <Trash2 className="h-3.5 w-3.5" data-testid="Trash2__4eedf1" />
+                      <TrashIcon className="h-3.5 w-3.5" data-testid="Trash2__4eedf1" />
                     </button>
                   )}
                 </DropdownMenuItem>
@@ -676,7 +676,7 @@ export function AdvancedFilterBuilder({
                     disabled={!canSavePreset}
                     className="flex items-center gap-2"
                     data-testid="advanced-filter-save-preset">
-                    <Plus className="h-3.5 w-3.5" data-testid="Plus__4eedf1" />
+                    <PlusIcon className="h-3.5 w-3.5" data-testid="Plus__4eedf1" />
                     <span className="flex-1">{ui('filterPresetSaveCurrent')}</span>
                   </DropdownMenuItem>
                   {/* A disabled item with no explanation is a dead end — say why. */}
@@ -699,7 +699,7 @@ export function AdvancedFilterBuilder({
             title={ui('advancedFilterSaveComingSoon')}
             className="flex items-center gap-1.5 text-xs text-muted-foreground/60 cursor-not-allowed"
           >
-            <Save className="h-3.5 w-3.5" data-testid="Save__4eedf1" />
+            <FloppyDiskIcon className="h-3.5 w-3.5" data-testid="Save__4eedf1" />
             {ui('advancedFilterSave')}
           </button>
         )}
@@ -1125,7 +1125,7 @@ function IdentifierMultiPicker({ col, entity, apiBaseUrl, rows, value, onChange,
       // get `shrink-0` so they don't get squeezed instead of the label.
       (<span className="flex w-full min-w-0 items-center gap-1">
         {firstSelected?.pending
-          ? <Loader2 className="h-3 w-3 shrink-0 animate-spin" data-testid="Loader2__4eedf1" />
+          ? <CircleNotchIcon className="h-3 w-3 shrink-0 animate-spin" data-testid="Loader2__4eedf1" />
           : <span className="min-w-0 truncate">{firstSelected?.label}</span>}
         {selected.length > 1 && <span className="shrink-0">{`+${selected.length - 1}`}</span>}
       </span>)
@@ -1151,11 +1151,11 @@ function IdentifierMultiPicker({ col, entity, apiBaseUrl, rows, value, onChange,
              covers "loading" when a selected value's name isn't known yet —
              suppress this generic one then, or the two render side by side. */}
           {distinct.loading && !firstSelected?.pending && (
-            <Loader2
+            <CircleNotchIcon
               className="h-3.5 w-3.5 animate-spin text-muted-foreground shrink-0 ml-1"
               data-testid="Loader2__4eedf1" />
           )}
-          <ChevronDown
+          <CaretDownIcon
             className="h-3.5 w-3.5 opacity-50 shrink-0 ml-1"
             data-testid="ChevronDown__4eedf1" />
         </button>
@@ -1192,11 +1192,11 @@ function IdentifierMultiPicker({ col, entity, apiBaseUrl, rows, value, onChange,
                     isSelected ? 'bg-primary border-primary text-primary-foreground' : 'border-input',
                   ].join(' ')}
                 >
-                  {isSelected && <Check className="h-3 w-3" data-testid="Check__4eedf1" />}
+                  {isSelected && <CheckIcon className="h-3 w-3" data-testid="Check__4eedf1" />}
                 </span>
                 <span className="flex-1 truncate">
                   {opt.pending
-                    ? <Loader2 className="h-3 w-3 animate-spin text-muted-foreground" data-testid="Loader2__4eedf1" />
+                    ? <CircleNotchIcon className="h-3 w-3 animate-spin text-muted-foreground" data-testid="Loader2__4eedf1" />
                     : opt.label}
                 </span>
               </button>
@@ -1204,13 +1204,13 @@ function IdentifierMultiPicker({ col, entity, apiBaseUrl, rows, value, onChange,
           })}
           {listLoading && listOptions.length === 0 && (
             <div className="flex items-center justify-center py-4 text-muted-foreground">
-              <Loader2 className="h-4 w-4 animate-spin" data-testid="Loader2__4eedf1" />
+              <CircleNotchIcon className="h-4 w-4 animate-spin" data-testid="Loader2__4eedf1" />
             </div>
           )}
           {distinct.hasMore && (
             <div ref={sentinelRef} className="flex items-center justify-center py-2">
               {distinct.loadingMore && (
-                <Loader2
+                <CircleNotchIcon
                   className="h-4 w-4 animate-spin text-muted-foreground"
                   data-testid="Loader2__4eedf1" />
               )}
@@ -1446,10 +1446,10 @@ function DistinctEnumPicker({ col, entity, apiBaseUrl, rows, value, onChange, ui
             {activeLabel || ui('advancedFilterSelectValue')}
           </span>
           <span className="flex items-center gap-1 shrink-0">
-            {distinct.loading && <Loader2
+            {distinct.loading && <CircleNotchIcon
               className="h-3.5 w-3.5 animate-spin text-muted-foreground"
               data-testid="Loader2__4eedf1" />}
-            <ChevronDown className="h-3.5 w-3.5" data-testid="ChevronDown__4eedf1" />
+            <CaretDownIcon className="h-3.5 w-3.5" data-testid="ChevronDown__4eedf1" />
           </span>
         </Button>
       </PopoverTrigger>

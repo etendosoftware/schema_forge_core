@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
-import { Loader2, Check, Sparkles, Building2, Settings } from 'lucide-react';
+import { CircleNotchIcon, CheckIcon, SparkleIcon, BuildingsIcon, GearIcon } from '@phosphor-icons/react';
 import { useUI } from '@etendosoftware/app-shell-core/i18n';
 import { runOnboardingStream, fetchEnvironments, isSessionLostError, loginEnvironment } from '../api.js';
 import { initialSetupSteps, applyProgressMessage, rememberEnvironment } from '../state.js';
@@ -315,9 +315,8 @@ export function SetupProgressStep({ config, stepData, onNext, onBack, goToStep, 
       description: sampleDataWarned
         ? ui('onboardingSampleDataWarning')
         : ui('onboardingSuccessDescription'),
-      leading: <Check
+      leading: <CheckIcon
         className="h-8 w-8 text-[#54b56a]"
-        strokeWidth={3}
         data-testid="Check__79cf84" />,
       statusLabel: ui('onboardingCompleted'),
       success: true,
@@ -337,7 +336,7 @@ export function SetupProgressStep({ config, stepData, onNext, onBack, goToStep, 
       progress: 35,
       title: ui('onboardingPreparingTitle'),
       description: ui('onboardingPreparingActivatingDescription'),
-      leading: <Sparkles className="h-8 w-8 text-slate-400" data-testid="Sparkles__79cf84" />,
+      leading: <SparkleIcon className="h-8 w-8 text-slate-400" data-testid="Sparkles__79cf84" />,
       statusLabel: ui('loading'),
       success: false,
     };
@@ -346,7 +345,7 @@ export function SetupProgressStep({ config, stepData, onNext, onBack, goToStep, 
       progress: 50,
       title: ui('onboardingPreparingTitle'),
       description: ui('onboardingPreparingConfiguringDescription'),
-      leading: <Building2 className="h-8 w-8 text-slate-400" data-testid="Building2__79cf84" />,
+      leading: <BuildingsIcon className="h-8 w-8 text-slate-400" data-testid="Building2__79cf84" />,
       statusLabel: ui('loading'),
       success: false,
     };
@@ -355,7 +354,7 @@ export function SetupProgressStep({ config, stepData, onNext, onBack, goToStep, 
       progress: 65,
       title: ui('onboardingPreparingTitle'),
       description: ui('onboardingPreparingDataDescription'),
-      leading: <Building2 className="h-8 w-8 text-slate-400" data-testid="Building2__79cf84" />,
+      leading: <BuildingsIcon className="h-8 w-8 text-slate-400" data-testid="Building2__79cf84" />,
       statusLabel: ui('loading'),
       success: false,
     };
@@ -364,7 +363,7 @@ export function SetupProgressStep({ config, stepData, onNext, onBack, goToStep, 
       progress: 85,
       title: ui('onboardingPreparingTitle'),
       description: ui('onboardingPreparingSequencesDescription'),
-      leading: <Settings className="h-8 w-8 text-slate-400" data-testid="Settings__79cf84" />,
+      leading: <GearIcon className="h-8 w-8 text-slate-400" data-testid="Settings__79cf84" />,
       statusLabel: ui('loading'),
       success: false,
     };
@@ -373,7 +372,7 @@ export function SetupProgressStep({ config, stepData, onNext, onBack, goToStep, 
       progress: 90,
       title: ui('onboardingPreparingTitle'),
       description: ui('onboardingPreparingSampleDataDescription'),
-      leading: <Building2 className="h-8 w-8 text-slate-400" data-testid="Building2__79cf84" />,
+      leading: <BuildingsIcon className="h-8 w-8 text-slate-400" data-testid="Building2__79cf84" />,
       statusLabel: ui('loading'),
       success: false,
     };
@@ -382,9 +381,8 @@ export function SetupProgressStep({ config, stepData, onNext, onBack, goToStep, 
       progress: 92,
       title: ui('onboardingPreparingTitle'),
       description: ui('onboardingPreparingFinishingDescription'),
-      leading: <Check
+      leading: <CheckIcon
         className="h-8 w-8 text-slate-400"
-        strokeWidth={3}
         data-testid="Check__79cf84" />,
       statusLabel: ui('loading'),
       success: false,
@@ -394,7 +392,7 @@ export function SetupProgressStep({ config, stepData, onNext, onBack, goToStep, 
       progress: 15,
       title: ui('onboardingPreparingTitle'),
       description: ui('onboardingPreparingConfiguringDescription'),
-      leading: <Settings className="h-8 w-8 text-slate-400" data-testid="Settings__79cf84" />,
+      leading: <GearIcon className="h-8 w-8 text-slate-400" data-testid="Settings__79cf84" />,
       statusLabel: ui('loading'),
       success: false,
     };

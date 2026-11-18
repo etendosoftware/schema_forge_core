@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react';
-import { CalendarDays, Check, ChevronDown, ChevronLeft, ChevronRight } from 'lucide-react';
+import { CalendarDotsIcon, CheckIcon, CaretDownIcon, CaretLeftIcon, CaretRightIcon } from '@phosphor-icons/react';
 import { Popover, PopoverContent, PopoverTrigger } from './popover.jsx';
 import { Calendar } from './calendar.jsx';
 import { useLocaleSwitch, useUI } from '../../i18n/index.js';
@@ -107,7 +107,7 @@ export function DateRangePopoverContent({ value, onChange, onClose }) {
               )}
             >
               <span className="flex-1">{preset.label}</span>
-              {active ? <Check className="mr-3 h-4 w-4 shrink-0" data-testid="Check__482ed1" /> : null}
+              {active ? <CheckIcon className="mr-3 h-4 w-4 shrink-0" data-testid="Check__482ed1" /> : null}
             </button>
           );
         })}
@@ -120,7 +120,7 @@ export function DateRangePopoverContent({ value, onChange, onClose }) {
           )}
         >
           <span className="flex-1">{ui('dateRangeCustom')}</span>
-          {customMode ? <Check className="mr-3 h-4 w-4 shrink-0" data-testid="Check__482ed1" /> : null}
+          {customMode ? <CheckIcon className="mr-3 h-4 w-4 shrink-0" data-testid="Check__482ed1" /> : null}
         </button>
       </div>
       {/* Calendars + footer */}
@@ -197,11 +197,11 @@ export function DateRangePopover({ value, onChange, placeholder }) {
           type="button"
           className="inline-flex h-10 items-center justify-between gap-1.5 rounded-lg border border-border bg-white px-3 text-sm font-medium leading-6 text-[#121217] transition-colors hover:bg-[#F5F7F9]"
         >
-          <CalendarDays
+          <CalendarDotsIcon
             className="h-5 w-5 shrink-0 text-[#828FA3]"
             data-testid="CalendarDays__482ed1" />
           <span className="mx-1 truncate text-left">{triggerLabel}</span>
-          <ChevronDown
+          <CaretDownIcon
             className="h-4 w-4 shrink-0 text-[#828FA3]"
             data-testid="ChevronDown__482ed1" />
         </button>
@@ -334,20 +334,20 @@ function CalendarWithPicker({ month, onMonthChange, selected, onSelect, modifier
           className="inline-flex items-center gap-2 rounded-md px-2 py-1 text-sm font-medium capitalize text-[#121217] hover:bg-[rgba(18,18,23,0.05)]"
         >
           <span>{headerLabel}</span>
-          <ChevronDown
+          <CaretDownIcon
             className="h-3.5 w-3.5 text-[#6B7280]"
             aria-hidden="true"
             data-testid="ChevronDown__482ed1" />
         </button>
         <div className="flex items-center gap-2">
           <FilterNavBtn onClick={navPrev} data-testid="FilterNavBtn__482ed1">
-            <ChevronLeft
+            <CaretLeftIcon
               className="h-4 w-4 text-[#828FA3]"
               aria-hidden="true"
               data-testid="ChevronLeft__482ed1" />
           </FilterNavBtn>
           <FilterNavBtn onClick={navNext} data-testid="FilterNavBtn__482ed1">
-            <ChevronRight
+            <CaretRightIcon
               className="h-4 w-4 text-[#828FA3]"
               aria-hidden="true"
               data-testid="ChevronRight__482ed1" />

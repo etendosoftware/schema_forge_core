@@ -1,5 +1,5 @@
 import { useCallback, useRef, useState } from 'react';
-import { RotateCw, Ban, AlertCircle, ChevronDown, Check } from 'lucide-react';
+import { ArrowClockwiseIcon, ProhibitIcon, WarningCircleIcon, CaretDownIcon, CheckIcon } from '@phosphor-icons/react';
 import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from '../ui/table.jsx';
 import { Input } from '../ui/input.jsx';
 import { Button } from '../ui/button.jsx';
@@ -297,7 +297,7 @@ function FkMismatchCell({ index, field, value, error, onSelect, simSearchFn, tok
           data-testid={`ImportReviewQueue__fieldError-${index}-${field.target}`}
         >
           <span className="truncate">{value || '—'}</span>
-          <ChevronDown
+          <CaretDownIcon
             className="h-3.5 w-3.5 shrink-0 opacity-70"
             aria-hidden="true"
             data-testid={"ChevronDown__" + field.id} />
@@ -620,7 +620,7 @@ export function ImportReviewQueue({
                             data-testid={`ImportReviewQueue__unskip-${index}`}
                             title={text.unskip}
                           >
-                            <Check className="h-3 w-3" aria-hidden="true" data-testid="Check__a73779" />
+                            <CheckIcon className="h-3 w-3" aria-hidden="true" data-testid="Check__a73779" />
                             <span className="sr-only">{text.unskip}</span>
                           </Button>
                         )}
@@ -671,7 +671,7 @@ export function ImportReviewQueue({
                             data-testid={`ImportReviewQueue__retry-${index}`}
                             title={retryLabel}
                           >
-                            <RotateCw className="h-3 w-3" aria-hidden="true" data-testid="RotateCw__a73779" />
+                            <ArrowClockwiseIcon className="h-3 w-3" aria-hidden="true" data-testid="RotateCw__a73779" />
                             <span className="sr-only">{retryLabel}</span>
                           </Button>
                         )}
@@ -684,7 +684,7 @@ export function ImportReviewQueue({
                           onClick={() => onSkipEntry(index)}
                           title={text.skip}
                         >
-                          <Ban className="h-3 w-3" aria-hidden="true" data-testid="Ban__a73779" />
+                          <ProhibitIcon className="h-3 w-3" aria-hidden="true" data-testid="Ban__a73779" />
                           <span className="sr-only">{text.skip}</span>
                         </Button>
                       </div>
@@ -732,14 +732,14 @@ export function ImportReviewQueue({
                             onClick={() => handleJumpToFirstError(index, rowColumns, entry)}
                             data-testid={`ImportReviewQueue__jumpToFirstError-${index}`}
                           >
-                            <AlertCircle
+                            <WarningCircleIcon
                               className="h-3.5 w-3.5"
                               aria-hidden="true"
                               title={errorTooltip}
                               data-testid="AlertCircle__a73779" />
                           </button>
                         ) : (
-                          <AlertCircle
+                          <WarningCircleIcon
                             className="h-3.5 w-3.5"
                             aria-hidden="true"
                             data-testid="AlertCircle__a73779" />
@@ -756,7 +756,7 @@ export function ImportReviewQueue({
                             data-testid={`ImportReviewQueue__retry-${index}`}
                             title={retryLabel}
                           >
-                            <RotateCw className="h-3 w-3" aria-hidden="true" data-testid="RotateCw__a73779" />
+                            <ArrowClockwiseIcon className="h-3 w-3" aria-hidden="true" data-testid="RotateCw__a73779" />
                             <span className="sr-only">{retryLabel}</span>
                           </Button>
                         )}
@@ -769,7 +769,7 @@ export function ImportReviewQueue({
                           onClick={() => onSkipEntry(index)}
                           title={text.skip}
                         >
-                          <Ban className="h-3 w-3" aria-hidden="true" data-testid="Ban__a73779" />
+                          <ProhibitIcon className="h-3 w-3" aria-hidden="true" data-testid="Ban__a73779" />
                           <span className="sr-only">{text.skip}</span>
                         </Button>
                       </div>

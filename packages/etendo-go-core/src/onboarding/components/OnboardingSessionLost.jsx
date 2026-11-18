@@ -1,5 +1,5 @@
 import React from 'react';
-import { LogIn } from 'lucide-react';
+import { SignInIcon } from '@phosphor-icons/react';
 import { Button } from '@etendosoftware/app-shell-core/components/ui/button';
 import { useUI } from '@etendosoftware/app-shell-core/i18n';
 import { AuthShell } from './AuthShell.jsx';
@@ -28,7 +28,7 @@ export function OnboardingSessionLost({ config = {}, accountEmail, onSignInAgain
       data-testid="AuthShell__session_lost">
       <div className="text-center" data-testid="onboarding-session-lost">
         <div className="mx-auto mb-5 flex h-[52px] w-[52px] items-center justify-center rounded-full bg-amber-100 text-amber-700">
-          <LogIn className="h-7 w-7" data-testid="onboarding-session-lost-icon" />
+          <SignInIcon className="h-7 w-7" data-testid="onboarding-session-lost-icon" />
         </div>
         <h1 className="text-3xl font-semibold tracking-[-0.06em] text-slate-900 sm:text-[2.4rem] sm:leading-[1.04]">
           {ui('onboardingSessionLostTitle')}

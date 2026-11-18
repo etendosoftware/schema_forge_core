@@ -1,4 +1,4 @@
-import { Loader2 } from 'lucide-react';
+import { CircleNotchIcon } from '@phosphor-icons/react';
 import { useMemo, useState } from 'react';
 
 export function buildReportUrl({ baseUrl = '', reportId, params = {}, format = 'pdf' }) {
@@ -22,7 +22,7 @@ export function ReportViewerFrame({ baseUrl = '', reportId, params, format = 'pd
         <h2 className="truncate text-sm font-semibold text-foreground">{title}</h2>
         {loading && (
           <span className="flex items-center gap-2 text-xs text-muted-foreground">
-            <Loader2 className="h-3.5 w-3.5 animate-spin" data-testid="Loader2__7dcb78" />
+            <CircleNotchIcon className="h-3.5 w-3.5 animate-spin" data-testid="Loader2__7dcb78" />
             Loading
           </span>
         )}

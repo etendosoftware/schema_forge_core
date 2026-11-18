@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { ArrowRight } from 'lucide-react';
+import { ArrowRightIcon } from '@phosphor-icons/react';
 import { Button } from '@etendosoftware/app-shell-core/components/ui/button';
 import { Label } from '@etendosoftware/app-shell-core/components/ui/label';
 import { useUI } from '@etendosoftware/app-shell-core/i18n';
@@ -318,7 +318,7 @@ export function CompanyStep({ config, stepData, onNext, onBack, goToStep, onChan
             disabled={!isValid}
             className="h-12 rounded-lg bg-[#121217] px-6 text-base font-medium text-white hover:bg-accent-highlight hover:text-accent-highlight-foreground disabled:bg-slate-200 disabled:text-slate-500"
             data-testid="Button__79cf84">
-            <><ArrowRight className="mr-2 h-4 w-4" data-testid="ArrowRight__79cf84" />{ui('onboardingStartAction')}</>
+            <><ArrowRightIcon className="mr-2 h-4 w-4" data-testid="ArrowRight__79cf84" />{ui('onboardingStartAction')}</>
           </Button>
         </div>
       </div>

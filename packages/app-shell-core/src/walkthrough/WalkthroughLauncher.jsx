@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { Check, GraduationCap, Package, Play, ShoppingCart, UserPlus } from 'lucide-react';
+import { CheckIcon, GraduationCapIcon, PackageIcon, PlayIcon, ShoppingCartIcon, UserPlusIcon } from '@phosphor-icons/react';
 import { useStepText } from './useStepText.js';
 import { useWalkthrough } from './WalkthroughProvider.jsx';
 import { useUI } from '../i18n/useUI.js';
@@ -21,12 +21,12 @@ import {
 } from './walkthroughProgress.js';
 
 /**
- * Icons a flow's free-form `icon` name may resolve to. These are lucide
- * identifiers, not domain concepts: a flow names one and an unknown value falls
+ * Icons a flow's free-form `icon` name may resolve to. These are Phosphor
+ * icon names (without the `Icon` suffix), not domain concepts: a flow names one and an unknown value falls
  * back to a generic glyph, so adding a flow never needs a code change here.
  * A host with its own set passes `icons` to merge into this.
  */
-const DEFAULT_FLOW_ICONS = { UserPlus, Package, ShoppingCart };
+const DEFAULT_FLOW_ICONS = { UserPlus: UserPlusIcon, Package: PackageIcon, ShoppingCart: ShoppingCartIcon };
 
 /**
  * Per-status badge rendering. `completed` gets a mute check rather than a
@@ -151,7 +151,7 @@ export function WalkthroughLauncher({ icons }) {
               data-testid="topbar-walkthroughs"
               className="relative flex h-10 w-10 items-center justify-center rounded-lg text-topbar-icon transition-colors hover:bg-muted hover:text-foreground"
             >
-              <GraduationCap className="h-5 w-5" data-testid="GraduationCap__wtl" />
+              <GraduationCapIcon className="h-5 w-5" data-testid="GraduationCap__wtl" />
               {/* The dot is lit while ANY tutorial is unfinished -- never
                   started, left half-way, or revised since it was completed. It
                   does NOT go out when the menu is opened: the reminder is about
@@ -182,7 +182,7 @@ export function WalkthroughLauncher({ icons }) {
         </DropdownMenuLabel>
         <DropdownMenuSeparator data-testid="DropdownMenuSeparator__wtl" />
         {flows.map((flow) => {
-          const Icon = flowIcons[flow.icon] ?? Play;
+          const Icon = flowIcons[flow.icon] ?? PlayIcon;
           const description = stepText(flow.descriptionKey, { warn: false });
           const status = progress.statuses[flow.id] ?? FLOW_STATUS.UNSEEN;
           const badge = STATUS_BADGES[status];
@@ -211,7 +211,7 @@ export function WalkthroughLauncher({ icons }) {
                   {ui(badge.labelKey)}
                 </span>
               ) : (
-                <Check
+                <CheckIcon
                   className="mt-0.5 h-3.5 w-3.5 shrink-0 text-muted-foreground/60"
                   aria-label={ui('walkthroughBadgeCompleted')}
                   data-testid={`walkthrough-status-${flow.id}`}

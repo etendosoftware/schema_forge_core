@@ -1,5 +1,5 @@
 import { useEffect, useRef } from 'react';
-import { Check, Loader2 } from 'lucide-react';
+import { CheckIcon, CircleNotchIcon } from '@phosphor-icons/react';
 
 /**
  * Shared dropdown list used by filters that pick one value out of the set of
@@ -59,7 +59,7 @@ export function DistinctValuesList({
     ? <CheckboxBox checked={active} data-testid="CheckboxBox__55c679" />
     : (
       <span className="w-4 shrink-0">
-        {active && <Check className="h-3.5 w-3.5" data-testid="Check__55c679" />}
+        {active && <CheckIcon className="h-3.5 w-3.5" data-testid="Check__55c679" />}
       </span>
     ));
 
@@ -115,7 +115,7 @@ export function DistinctValuesList({
         ))}
         {isLoading && codes.length === 0 && (
           <div className="flex items-center justify-center py-4 text-muted-foreground">
-            <Loader2 className="h-4 w-4 animate-spin" data-testid="Loader2__55c679" />
+            <CircleNotchIcon className="h-4 w-4 animate-spin" data-testid="Loader2__55c679" />
           </div>
         )}
         {/* An empty list must SAY it is empty (ETP-5119). The picker used to
@@ -131,7 +131,7 @@ export function DistinctValuesList({
         {distinct.hasMore && (
           <div ref={sentinelRef} className="flex items-center justify-center py-2">
             {distinct.loadingMore && (
-              <Loader2
+              <CircleNotchIcon
                 className="h-4 w-4 animate-spin text-muted-foreground"
                 data-testid="Loader2__55c679" />
             )}

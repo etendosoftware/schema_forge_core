@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
-import { ArrowLeft, ArrowRight, Check, Loader2, TriangleAlert, X } from 'lucide-react';
+import { ArrowLeftIcon, ArrowRightIcon, CheckIcon, CircleNotchIcon, WarningIcon, XIcon } from '@phosphor-icons/react';
 import { Button } from '../components/ui/button.jsx';
 import { useLocale, useUI } from '../i18n/index.js';
 import { cn } from '../lib/utils.js';
@@ -298,7 +298,7 @@ function WalkthroughCardBody({ engine, ui, title, body, flowTitle, nextFlowTitle
             variant={hasNextFlow ? 'outline' : 'default'}
             onClick={engine.stop}
             data-testid="walkthrough-finish">
-            <Check className="mr-1.5 h-3.5 w-3.5" data-testid="Check__wt" />
+            <CheckIcon className="mr-1.5 h-3.5 w-3.5" data-testid="Check__wt" />
             {ui('walkthroughFinish')}
           </Button>
           {hasNextFlow && (
@@ -307,7 +307,7 @@ function WalkthroughCardBody({ engine, ui, title, body, flowTitle, nextFlowTitle
               onClick={() => engine.start(engine.nextFlow.id)}
               data-testid="walkthrough-next-flow">
               {ui('walkthroughStartNextFlow')}
-              <ArrowRight className="ml-1.5 h-3.5 w-3.5" data-testid="ArrowRight__wt" />
+              <ArrowRightIcon className="ml-1.5 h-3.5 w-3.5" data-testid="ArrowRight__wt" />
             </Button>
           )}
         </div>
@@ -326,7 +326,7 @@ function WalkthroughCardBody({ engine, ui, title, body, flowTitle, nextFlowTitle
           title={ui('walkthroughErrorTitle')}
           onClose={engine.stop}
           closeLabel={ui('walkthroughClose')}
-          icon={TriangleAlert}
+          icon={WarningIcon}
           data-testid="CardHeader__wt" />
         <p className="mt-1 text-sm text-muted-foreground" data-testid="walkthrough-error-message">
           {ui(messageKey)}
@@ -390,7 +390,7 @@ function WalkthroughCardBody({ engine, ui, title, body, flowTitle, nextFlowTitle
           className="mt-1 flex items-center gap-2 text-sm text-muted-foreground"
           data-testid="walkthrough-waiting-message"
         >
-          <Loader2 className="h-3.5 w-3.5 animate-spin" data-testid="Loader2__wt" />
+          <CircleNotchIcon className="h-3.5 w-3.5 animate-spin" data-testid="Loader2__wt" />
           {ui(waitingKey)}
         </p>
         <div className="mt-4 flex justify-end">
@@ -473,7 +473,7 @@ function WalkthroughCardBody({ engine, ui, title, body, flowTitle, nextFlowTitle
               variant="outline"
               onClick={engine.previous}
               data-testid="walkthrough-previous">
-              <ArrowLeft className="mr-1.5 h-3.5 w-3.5" data-testid="ArrowLeft__wt" />
+              <ArrowLeftIcon className="mr-1.5 h-3.5 w-3.5" data-testid="ArrowLeft__wt" />
               {ui('walkthroughPrevious')}
             </Button>
           )}
@@ -483,7 +483,7 @@ function WalkthroughCardBody({ engine, ui, title, body, flowTitle, nextFlowTitle
               onClick={engine.finish}
               disabled={nextDisabled}
               data-testid="walkthrough-finish">
-              <Check className="mr-1.5 h-3.5 w-3.5" data-testid="Check__wt" />
+              <CheckIcon className="mr-1.5 h-3.5 w-3.5" data-testid="Check__wt" />
               {ui('walkthroughFinish')}
             </Button>
           ) : (
@@ -494,7 +494,7 @@ function WalkthroughCardBody({ engine, ui, title, body, flowTitle, nextFlowTitle
               disabled={nextDisabled}
               data-testid="walkthrough-next">
               {ui('walkthroughNext')}
-              <ArrowRight className="ml-1.5 h-3.5 w-3.5" data-testid="ArrowRight__wt" />
+              <ArrowRightIcon className="ml-1.5 h-3.5 w-3.5" data-testid="ArrowRight__wt" />
             </Button>
           )}
         </div>
@@ -524,7 +524,7 @@ function CardHeader({ eyebrow, title, onClose, closeLabel, icon: Icon }) {
         className="-mr-1 -mt-1 flex h-7 w-7 shrink-0 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
         data-testid="walkthrough-close"
       >
-        <X className="h-4 w-4" data-testid="X__wt" />
+        <XIcon className="h-4 w-4" data-testid="X__wt" />
       </button>
     </div>
   );

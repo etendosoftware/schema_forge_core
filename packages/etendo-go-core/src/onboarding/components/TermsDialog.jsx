@@ -1,5 +1,5 @@
 import React from 'react';
-import { Loader2 } from 'lucide-react';
+import { CircleNotchIcon } from '@phosphor-icons/react';
 import {
   Dialog,
   DialogContent,
@@ -50,7 +50,7 @@ export function TermsDialog({
         <div className="min-h-0 flex-1 overflow-y-auto pr-2" data-testid="terms-dialog-body">
           {isLoading && (
             <div className="flex items-center gap-2 text-sm text-slate-500">
-              <Loader2 className="h-4 w-4 animate-spin" data-testid="Loader2__terms" />
+              <CircleNotchIcon className="h-4 w-4 animate-spin" data-testid="Loader2__terms" />
               {ui('onboardingTermsLoading')}
             </div>
           )}

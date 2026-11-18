@@ -2,6 +2,15 @@
 import React from 'react';
 import { cleanup, render, within } from '@testing-library/react';
 import { afterEach, describe, expect, it } from 'vitest';
+import {
+  CalendarBlankIcon,
+  CaretDownIcon,
+  CaretRightIcon,
+  HeadphonesIcon,
+  MagnifyingGlassIcon,
+  SidebarSimpleIcon,
+  SlidersHorizontalIcon,
+} from '@phosphor-icons/react';
 import { SetupPreviewMockup } from '../SetupPreviewMockup.jsx';
 import { MENU_GROUPS, SKELETON_BG } from '../dashboardSkeletonParts.jsx';
 
@@ -29,11 +38,24 @@ function iconSignature(Icon) {
   return signature;
 }
 
-/** The phosphor icons the preview renders, in document (and therefore menu) order. */
+/** Decorative chrome of the preview (header, search, filters, footer), not menu items. */
+const CHROME_ICONS = [
+  CalendarBlankIcon,
+  CaretDownIcon,
+  CaretRightIcon,
+  HeadphonesIcon,
+  MagnifyingGlassIcon,
+  SidebarSimpleIcon,
+  SlidersHorizontalIcon,
+];
+
+/** The phosphor menu icons the preview renders, in document (and therefore menu) order. */
 function renderedPhosphorIcons(container) {
+  const chrome = new Set(CHROME_ICONS.map(iconSignature));
   return Array.from(container.querySelectorAll('svg'))
     .filter((svg) => svg.getAttribute('viewBox') === PHOSPHOR_VIEW_BOX)
-    .map(pathsOf);
+    .map(pathsOf)
+    .filter((signature) => !chrome.has(signature));
 }
 
 function rail(container) {

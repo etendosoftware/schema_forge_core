@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
-import { Loader2 } from 'lucide-react';
+import { CircleNotchIcon } from '@phosphor-icons/react';
 import { useUI } from '@etendosoftware/app-shell-core/i18n';
 import {
   SESSION_RECHECK_INTERVAL_MS, announceSessionAccount, compareLiveSessionAccount, deleteCookieSession,
@@ -524,7 +524,7 @@ export function OnboardingFlow({ steps = [], config = {} }) {
   if (stepIndex === -1 || !currentStep) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <Loader2
+        <CircleNotchIcon
           className="h-6 w-6 animate-spin text-gray-400"
           data-testid="Loader2__79cf84" />
       </div>

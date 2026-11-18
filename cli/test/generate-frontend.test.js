@@ -1165,6 +1165,28 @@ describe('generatePageComponent — requiredHeaderFields add-lines guard', () =>
 // ---------------------------------------------------------------------------
 
 describe('generateIndexComponent', () => {
+  it('page imports the status bar icons from Phosphor, mapping legacy Lucide names (ETP-6155)', () => {
+    const contract = {
+      ...masterDetailContract,
+      frontendContract: {
+        ...masterDetailContract.frontendContract,
+        window: {
+          ...masterDetailContract.frontendContract?.window,
+          statusBar: {
+          cards: [{ label: 'Total', field: 'total', color: 'blue', icon: 'FileText' }],
+          progress: {
+            numerator: 'done', denominator: 'total', label: 'Done', color: 'blue',
+            completedColor: 'green', completedIcon: 'CheckCircle2',
+          },
+          },
+        },
+      },
+    };
+    const code = generatePageComponent('order', 'orderLine', contract);
+    assert.match(code, /import \{ FileTextIcon, CheckCircleIcon \} from '@phosphor-icons\/react';/);
+    assert.ok(!code.includes('lucide-react'));
+  });
+
   it('generates entry point with token, apiBaseUrl, and window props for master-detail', () => {
     const code = generateIndexComponent('order', 'orderLine', masterDetailContract);
     assert.ok(code.includes('token'));
