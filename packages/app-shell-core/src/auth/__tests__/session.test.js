@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import {
   createLocalAuthStorage, createMemoryAuthStorage, normalizeAuthSession,
   decodeJwtPayload, decodeJwtRole, decodeJwtUser,
-  mapRestoredSession, purgeLegacyAuthStorage,
+  isSameEnvironment, mapRestoredSession, purgeLegacyAuthStorage,
 } from '../session.js';
 
 /**
@@ -381,4 +381,35 @@ test('decodeJwtUser returns null for an undecodable token', () => {
 
 test('decodeJwtUser returns null when the user claim is absent from an otherwise-valid payload', () => {
   assert.equal(decodeJwtUser(makeToken({ role: 'R1' })), null);
+});
+
+// ETP-6228 — analytics identity of the restored session.
+test('mapRestoredSession maps the environment user and the owner account for analytics', () => {
+  const mapped = mapRestoredSession({
+    account: { id: 'member-account', name: 'Ada' },
+    environment: { userId: 'user-1', clientId: 'client-1', etgoAccountId: 'owner-account' },
+  });
+
+  assert.equal(mapped.userId, 'user-1');
+  // The owner of the environment, never the signed-in person's own account.
+  assert.equal(mapped.etgoAccountId, 'owner-account');
+});
+
+test('mapRestoredSession leaves both ids null when the payload has none', () => {
+  for (const restored of [{ environment: null }, { environment: { clientId: 'client-1' } }, {}]) {
+    const mapped = mapRestoredSession(restored);
+    assert.equal(mapped.userId, null);
+    assert.equal(mapped.etgoAccountId, null);
+  }
+});
+
+test('the analytics ids are not stored with the session and do not make an environment change', () => {
+  const before = mapRestoredSession({ account: { name: 'Ada' }, environment: { userId: 'u', clientId: 'c' } });
+  const after = mapRestoredSession({
+    account: { name: 'Ada' }, environment: { userId: 'u', clientId: 'c', etgoAccountId: 'owner-account' },
+  });
+
+  assert.equal(isSameEnvironment(before, after), true);
+  assert.equal('etgoAccountId' in normalizeAuthSession(after), false);
+  assert.equal('userId' in normalizeAuthSession(after), false);
 });

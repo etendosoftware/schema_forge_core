@@ -103,6 +103,9 @@ export function AuthProvider({
   // shared by every tab of the browser profile, so this is what tells "still my session" apart
   // from "another tab signed the browser in as someone else". In memory only, like the proof.
   const [account, setAccount] = useState(null);
+  // ETP-6228 — `{ userId, etgoAccountId }` of the restored session's environment, for analytics. In
+  // memory only, replaced with the session and cleared wherever the account is.
+  const [environmentIds, setEnvironmentIds] = useState(null);
   const accountRef = useRef(null);
   accountRef.current = account;
   const sessionConflict = useSyncExternalStore(subscribeSessionConflict, getSessionConflict,
@@ -175,7 +178,9 @@ export function AuthProvider({
           setCsrfToken(result.csrfToken ?? null);
           const restoredAccount = toAccount(result.account);
           setAccount(restoredAccount);
-          controller.replace(normalizeAuthSession(mapRestoredSession(result)), { refresh: false, persist: false });
+          const restored = mapRestoredSession(result);
+          setEnvironmentIds({ userId: restored.userId, etgoAccountId: restored.etgoAccountId });
+          controller.replace(normalizeAuthSession(restored), { refresh: false, persist: false });
           setStatus('authenticated');
           // ETP-5675 — tell the other tabs whose session the browser holds now. A tab still
           // showing another account raises its conflict screen before it sends anything.
@@ -194,6 +199,7 @@ export function AuthProvider({
           setIsReconnecting(false);
           setCsrfToken(null);
           setAccount(null);
+          setEnvironmentIds(null);
           controller.logout();
           setStatus('anonymous');
         });
@@ -402,6 +408,7 @@ export function AuthProvider({
       onUnauthorized: () => {
         setCsrfToken(null);
         setAccount(null);
+        setEnvironmentIds(null);
         setStatus('anonymous');
         controller.logout();
       },
@@ -477,6 +484,7 @@ export function AuthProvider({
     if (liveAccountId === null) {
       setCsrfToken(null);
       setAccount(null);
+      setEnvironmentIds(null);
       setStatus('anonymous');
       controller.logout();
     } else if (liveAccountId !== mine) {
@@ -564,6 +572,7 @@ export function AuthProvider({
       purgeLegacyAuthStorage();
       setCsrfToken(null);
       setAccount(null);
+      setEnvironmentIds(null);
       setStatus('anonymous');
       controller.logout();
     },
@@ -591,6 +600,8 @@ export function AuthProvider({
     // ETP-5675 — `{ id, email, name }` of the account this tab is signed in as, and the recorded
     // cross-tab conflict (`{ reason, accountId }` or null) a host renders its conflict screen from.
     account,
+    userId: environmentIds?.userId ?? null,
+    etgoAccountId: environmentIds?.etgoAccountId ?? null,
     sessionConflict,
     isSessionReady: state.isSessionReady,
     isRefreshingSession: state.isRefreshingSession,
@@ -607,7 +618,7 @@ export function AuthProvider({
     capabilities: state.capabilities,
     menuAccess: state.menuAccess,
     ...actions,
-  }), [state, actions, csrfToken, status, isReconnecting, account, sessionConflict]);
+  }), [state, actions, csrfToken, status, isReconnecting, account, environmentIds, sessionConflict]);
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 }

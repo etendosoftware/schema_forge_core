@@ -84,6 +84,11 @@ export function mapRestoredSession(restored = {}) {
   return {
     username: account?.name || account?.email || null,
     clientId: environment?.clientId || null,
+    // ETP-6228 — analytics identity: the AD_User of the session and the ETGO_Account that OWNS the
+    // environment (not `account.id`, the person signed in, who may be an invited member). Not part
+    // of the stored session (`normalizeAuthSession` drops them) nor of `isSameEnvironment`.
+    userId: environment?.userId || null,
+    etgoAccountId: environment?.etgoAccountId || null,
     roleList: roles,
     selectedRole,
     selectedOrg,
