@@ -41,6 +41,7 @@ function fakePool(answers = {}) {
     ended: false,
     async query(sql) {
       pool.queries.push(sql);
+      if (sql.includes('FROM ad_org WHERE')) return { rows: [{ '?column?': 1 }] }; // the fixture's orgs exist
       if (sql.includes('FROM ad_org o') || sql.includes('unnest(')) return { rows: [] };
       for (const [marker, rows] of Object.entries(answers)) {
         if (sql.includes(marker)) return { rows: typeof rows === 'function' ? rows(sql) : rows };
@@ -128,6 +129,18 @@ describe('handleReportQuery — access', () => {
     assert.equal(res.body.code, 'ORG_ACCESS_DENIED');
     assert.ok(pool.queries.every((q) => !q.includes("'TREE'")), 'report SQL ran after a denied org check');
     assert.equal(pool.ended, true);
+  });
+
+  it('403 ORG_ACCESS_DENIED for a role with org 0 asking for an org that does not exist', async () => {
+    const pool = {
+      queries: [], ended: false,
+      async query(sql) { this.queries.push(sql); return { rows: [] }; },
+      async end() { this.ended = true; },
+    };
+    const res = await call('profit-loss', { body: { params: { orgId: 'GHOST' } }, roleOrgs: ['0'], pool });
+    assert.equal(res.status, 403);
+    assert.equal(res.body.code, 'ORG_ACCESS_DENIED');
+    assert.ok(pool.queries.every((q) => !q.includes("'TREE'")));
   });
 
   it('400 INVALID_LIMIT for a limit that is not a positive integer, before opening a pool', async () => {
