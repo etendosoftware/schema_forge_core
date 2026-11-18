@@ -1,3 +1,5 @@
+import { normalizePhoneTargets } from './normalizePhone.js';
+
 const descriptors = new Map();
 
 /**
@@ -35,7 +37,8 @@ export function buildDefaultOperations(row, { spec, entity, targets }) {
 // properties) — sent to /batch as `{"operations":{}}` and rejected outright. Declaring
 // this function itself `async` makes every call site `await` it uniformly regardless of
 // which path (sync default builder or async descriptor) actually ran.
-export async function buildOperations(row, config) {
+export async function buildOperations(inputRow, config) {
+  const row = normalizePhoneTargets(inputRow, config.phoneTargets);
   if (!config.descriptorName) {
     return buildDefaultOperations(row, config);
   }
