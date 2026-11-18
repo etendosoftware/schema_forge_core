@@ -1206,6 +1206,18 @@ describe('ETP-5417 review editing, actions and column resizing', () => {
     expect(document.activeElement).toBe(input);
   });
 
+  it('keeps the focused input of a failed row when editAll is off and its errors clear (post-send queue)', () => {
+    const failed = { row: { name: 'Lucia', email: 'x' }, errors: [{ target: '', message: 'Rejected' }], status: 'pending' };
+    const props = { ...baseProps, editAll: false, statusFilter: 'error' };
+    const view = render(<ImportReviewQueue {...props} entries={[failed]} />);
+    const input = screen.getByTestId('ImportReviewQueue__input-0-name');
+    input.focus();
+    const fixed = { ...failed, errors: [] };
+    view.rerender(<ImportReviewQueue {...props} entries={[fixed]} />);
+    expect(screen.getByTestId('ImportReviewQueue__input-0-name')).toBe(input);
+    expect(document.activeElement).toBe(input);
+  });
+
   it('shows visible text on the Skip action', () => {
     render(<ImportReviewQueue {...baseProps} entries={[okEntry]} />);
     expect(screen.getByTestId('ImportReviewQueue__skip-0').textContent).toBe('Skip');

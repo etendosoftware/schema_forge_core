@@ -475,7 +475,10 @@ function EditableDataCell({
   // that's the signal this is a "pick the right record" error rather than
   // a plain required/format error that just needs retyping.
   const isFkMismatch = fieldError && !rowLevelError && fieldError.candidates !== undefined;
-  const focusCell = editAll ? () => setFocusedCell({ index, target: field.target }) : undefined;
+  // Always recorded when an input takes focus (the focused-row exemption relies on it, also in
+  // the post-send queue); only the read-only span's click/tab-to-edit is gated on `editAll`.
+  const markFocused = () => setFocusedCell({ index, target: field.target });
+  const focusCell = editAll ? markFocused : undefined;
   const blurCell = () => setFocusedCell((prev) => (
     prev?.index === index && prev?.target === field.target ? null : prev
   ));
@@ -519,10 +522,8 @@ function EditableDataCell({
           <Input
             value={entry.row[field.target] ?? ''}
             onChange={(e) => onEditField(index, field.target, e.target.value)}
-            onFocus={focusCell}
-            onBlur={() => setFocusedCell((prev) => (
-              prev?.index === index && prev?.target === field.target ? null : prev
-            ))}
+            onFocus={markFocused}
+            onBlur={blurCell}
             autoFocus={autoFocusInput}
             className={`h-8${numericCellClass(field)}`}
             data-testid={`ImportReviewQueue__input-${index}-${field.target}`}

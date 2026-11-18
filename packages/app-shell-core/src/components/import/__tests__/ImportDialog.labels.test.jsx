@@ -179,7 +179,7 @@ describe('ImportDialog — label forwarding to every child', () => {
 
   it('forwards labels.progress to ImportProgressStep while a send is in flight', async () => {
     // A postBatch that never resolves pins the dialog on the SENDING step so the progress
-    // child is deterministically observable (not a transient flash between confirm and result).
+    // child is deterministically observable (not a transient flash between review and result).
     const postBatch = vi.fn(() => new Promise(() => {}));
     renderDialog({ postBatch });
     await driveToMapping();

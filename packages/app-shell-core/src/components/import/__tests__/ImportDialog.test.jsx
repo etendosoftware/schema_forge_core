@@ -893,8 +893,7 @@ describe('ImportDialog — ETP-5350 dedupe re-check after editing the key', () =
     const postBatch = vi.fn();
     render(<ImportDialog open config={keyedConfig} token="t" postBatch={postBatch}
       simSearchFn={vi.fn()} existingKeyFetchFn={existingKeyFetchFn} onImported={() => {}} />);
-    // Row 1 arrives with no key, so it is an error row — which is also the only kind the queue
-    // lets you edit: a clean cell was read-only until ETP-5417; this row is the one that needs a key anyway.
+    // Row 1 arrives with no key, so it is an error row, edited below onto the key row 0 holds.
     await uploadTo('codigo,nombre\nSKU-1001,Existente\n,Sin clave');
     const callsAfterUpload = existingKeyFetchFn.mock.calls.length;
 
@@ -913,7 +912,7 @@ describe('ImportDialog — ETP-5350 dedupe re-check after editing the key', () =
   it('costs no extra request when nothing was edited', async () => {
     const postBatch = vi.fn().mockResolvedValue({});
     // The lookup is ~136 requests for a full file (ETP-5374). Re-asking about keys the first
-    // pass already answered would double that on every confirm, for nothing.
+    // pass already answered would double that on every press of Import, for nothing.
     const existingKeyFetchFn = vi.fn(async () => []);
     render(<ImportDialog open config={keyedConfig} token="t" postBatch={postBatch}
       simSearchFn={vi.fn()} existingKeyFetchFn={existingKeyFetchFn} onImported={() => {}} />);
