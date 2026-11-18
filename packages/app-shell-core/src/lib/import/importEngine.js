@@ -262,7 +262,11 @@ export async function sendRow(operations, { postBatch, translate } = {}) {
   // The raw text stays on `error.raw` for the console/telemetry and the system-error
   // dialog's collapsible report, so nothing diagnostic is lost — it just isn't the bubble.
   const message = friendlyImportMessage(classification, translate);
-  return { status, error: { ...error, message, raw } };
+  // Field-keyed validation messages (`detail.response.errors`) travel on the error so the
+  // review queue can mark the matching column instead of a row-level bubble (ETP-6225).
+  const validationErrors = error.detail?.response?.errors;
+  const fieldErrors = validationErrors && typeof validationErrors === 'object' ? { ...validationErrors } : undefined;
+  return { status, error: { ...error, message, raw, ...(fieldErrors ? { fieldErrors } : {}) } };
 }
 
 /** Upper bound on rows per `/batch` request, whatever a window's decisions.json asks for. */
