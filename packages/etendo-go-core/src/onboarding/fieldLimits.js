@@ -64,13 +64,23 @@ export const FISCAL_ID_MAX_LENGTH = 20;
 export const ADDRESS_MAX_LENGTH = 60;
 
 /**
- * ETP-5806 — structured address fields added to the onboarding company step, matching
- * `org.openbravo.sepa.iso20022`'s `AD_COLUMN.FIELDLENGTH` for
- * `EM_OBSEPA_StrtNm`/`BldgNb`/`BldgNm`. Keep in sync with
- * `@etendosoftware/app-shell-core/lib/locationAddress.js` and the Java-side
+ * ETP-5806 — structured address fields added to the onboarding company step.
+ * `BUILDING_NUMBER_MAX_LENGTH`/`BUILDING_NAME_MAX_LENGTH` match
+ * `org.openbravo.sepa.iso20022`'s `AD_COLUMN.FIELDLENGTH` for `EM_OBSEPA_BldgNb`/`BldgNm`
+ * (VARCHAR(16)/(35)).
+ *
+ * `STREET_NAME_MAX_LENGTH` is deliberately NOT the matching 70 of `EM_OBSEPA_StrtNm` (that column
+ * stays VARCHAR(70) — it is the real SEPA field, legitimately up to 70 for other SEPA consumers).
+ * This onboarding form also feeds server-side Address1/Address2 composition via the same
+ * `StructuredAddressComposer`, so capping it at 60 — the width of `C_Location.Address1`/`Address2`
+ * — keeps the composer's street-truncation branch structurally unreachable here too: QA (Isa,
+ * Pasada 2) confirmed a 70-char street produced a mid-word cut in the composed preview, so a
+ * street over 60 chars is now rejected up front instead of silently truncated.
+ *
+ * Keep in sync with `@etendosoftware/app-shell-core/lib/locationAddress.js` and the Java-side
  * `StructuredAddressComposer`.
  */
-export const STREET_NAME_MAX_LENGTH = 70;
+export const STREET_NAME_MAX_LENGTH = 60;
 export const BUILDING_NUMBER_MAX_LENGTH = 16;
 export const BUILDING_NAME_MAX_LENGTH = 35;
 

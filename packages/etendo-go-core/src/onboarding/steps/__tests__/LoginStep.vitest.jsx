@@ -1,3 +1,5 @@
+// @covers packages/etendo-go-core/src/onboarding/steps/LoginStep.jsx
+// @covers packages/etendo-go-core/src/onboarding/postAuth.js
 import React from 'react';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
@@ -190,5 +192,141 @@ describe('LoginStep authentication continuation (ETP-4958)', () => {
     expect(ssoCaller.mock.calls).toEqual(passwordCaller.mock.calls);
     expect(sso.routeByEnvironments).not.toHaveBeenCalled();
     expect(password.routeByEnvironments).not.toHaveBeenCalled();
+  });
+});
+
+// ---------------------------------------------------------------------------
+// ETP-5806 — `setCapabilities` refresh after a successful login/SSO sign-in.
+// Before this, `capabilities` was only ever populated by OnboardingFlow's
+// mount-time session fetch, which 401s for a brand-new visitor and never runs
+// again — so a login that routes back into onboarding (e.g. an account with no
+// environment yet) kept reading the pre-session `{}` default for the rest of
+// the flow. Now both `completeAuthentication` call sites (password, SSO) pass
+// the login response's `capabilities` through to `handleAuthSuccess`, which
+// forwards it to `setCapabilities`, defaulting to `{}` when the backend omits it.
+// ---------------------------------------------------------------------------
+describe('LoginStep capabilities propagation (ETP-5806)', () => {
+  beforeEach(() => {
+    ssoHandlers = null;
+    globalThis.localStorage.clear();
+  });
+
+  afterEach(() => {
+    vi.clearAllMocks();
+  });
+
+  it('forwards the capabilities the backend returned after a password login', async () => {
+    const { loginAccount } = await import('../../api.js');
+    loginAccount.mockResolvedValueOnce({
+      token: TOKEN,
+      account: ACCOUNT,
+      capabilities: { structuredAddressForSepa: true },
+    });
+    const setCapabilities = vi.fn();
+    const { container } = renderLoginStep({ setCapabilities });
+
+    await submitPasswordLogin(container);
+
+    await waitFor(() => expect(setCapabilities).toHaveBeenCalledWith({ structuredAddressForSepa: true }));
+  });
+
+  it('forwards the capabilities the backend returned after an SSO login', async () => {
+    const { loginWithSsoProvider } = await import('../../api.js');
+    loginWithSsoProvider.mockResolvedValueOnce({
+      token: TOKEN,
+      account: ACCOUNT,
+      capabilities: { structuredAddressForSepa: true },
+    });
+    const setCapabilities = vi.fn();
+    renderLoginStep({ setCapabilities });
+
+    await completeSsoCredential();
+
+    await waitFor(() => expect(setCapabilities).toHaveBeenCalledWith({ structuredAddressForSepa: true }));
+  });
+
+  it('defaults to an empty object when the password login response omits capabilities', async () => {
+    const setCapabilities = vi.fn();
+    const { container } = renderLoginStep({ setCapabilities });
+
+    await submitPasswordLogin(container);
+
+    await waitFor(() => expect(setCapabilities).toHaveBeenCalledWith({}));
+  });
+
+  it('defaults to an empty object when the SSO login response omits capabilities', async () => {
+    const setCapabilities = vi.fn();
+    renderLoginStep({ setCapabilities });
+
+    await completeSsoCredential();
+
+    await waitFor(() => expect(setCapabilities).toHaveBeenCalledWith({}));
+  });
+
+  // An explicit `{}` is distinct from an omitted field (`undefined`): both must
+  // reach `setCapabilities` as `{}`, but only the omitted case exercises the
+  // `??` operator's short-circuit — this one proves the non-nullish branch is
+  // passed through rather than being overwritten.
+  it('passes an explicit empty capabilities object through unchanged after a password login', async () => {
+    const { loginAccount } = await import('../../api.js');
+    loginAccount.mockResolvedValueOnce({
+      token: TOKEN,
+      account: ACCOUNT,
+      capabilities: {},
+    });
+    const setCapabilities = vi.fn();
+    const { container } = renderLoginStep({ setCapabilities });
+
+    await submitPasswordLogin(container);
+
+    await waitFor(() => expect(setCapabilities).toHaveBeenCalledWith({}));
+  });
+
+  it('passes an explicit empty capabilities object through unchanged after an SSO login', async () => {
+    const { loginWithSsoProvider } = await import('../../api.js');
+    loginWithSsoProvider.mockResolvedValueOnce({
+      token: TOKEN,
+      account: ACCOUNT,
+      capabilities: {},
+    });
+    const setCapabilities = vi.fn();
+    renderLoginStep({ setCapabilities });
+
+    await completeSsoCredential();
+
+    await waitFor(() => expect(setCapabilities).toHaveBeenCalledWith({}));
+  });
+
+  // `null` is nullish (unlike `{}`), so the `??` operator must catch it exactly
+  // like `undefined` does and default to `{}` — this is the other half of the
+  // `capabilities ?? {}` contract the omitted-field tests above don't exercise.
+  it('defaults an explicit null capabilities to an empty object after a password login', async () => {
+    const { loginAccount } = await import('../../api.js');
+    loginAccount.mockResolvedValueOnce({
+      token: TOKEN,
+      account: ACCOUNT,
+      capabilities: null,
+    });
+    const setCapabilities = vi.fn();
+    const { container } = renderLoginStep({ setCapabilities });
+
+    await submitPasswordLogin(container);
+
+    await waitFor(() => expect(setCapabilities).toHaveBeenCalledWith({}));
+  });
+
+  it('defaults an explicit null capabilities to an empty object after an SSO login', async () => {
+    const { loginWithSsoProvider } = await import('../../api.js');
+    loginWithSsoProvider.mockResolvedValueOnce({
+      token: TOKEN,
+      account: ACCOUNT,
+      capabilities: null,
+    });
+    const setCapabilities = vi.fn();
+    renderLoginStep({ setCapabilities });
+
+    await completeSsoCredential();
+
+    await waitFor(() => expect(setCapabilities).toHaveBeenCalledWith({}));
   });
 });

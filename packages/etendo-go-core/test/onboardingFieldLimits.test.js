@@ -38,8 +38,9 @@ describe('onboarding field limits (ETP-4665)', () => {
       clientName: 40,   // AD_CLIENT.VALUE / AD_ORG.VALUE (tighter than NAME's 60)
       fiscalId: 20,     // C_BPARTNER.TAXID / AD_ORGINFO.TAXID
       address: 60,      // C_LOCATION.ADDRESS1 (legacy free text, superseded below)
-      // ETP-5806 — structured address fields, EM_OBSEPA_StrtNm/BldgNb/BldgNm
-      streetName: 70,
+      // ETP-5806 — structured address fields. streetName is Etendo Go's own
+      // stricter cap (60, not EM_OBSEPA_StrtNm's 70) — see fieldLimits.js.
+      streetName: 60,
       buildingNumber: 16,
       buildingName: 35,
       // ETP-5806 — City, C_LOCATION.CITY (plain AD column, not a SEPA field)
@@ -177,7 +178,7 @@ describe('isAddressBlockStarted / isCompanyStepValid — structured address bloc
 
   it('rejects a structured field past its AD column length', () => {
     const base = { clientName: 'Acme', streetName: 'Av. Corrientes', buildingNumber: '1234', city: 'Madrid' };
-    assert.equal(isCompanyStepValid({ ...base, streetName: 'a'.repeat(71) }), false);
+    assert.equal(isCompanyStepValid({ ...base, streetName: 'a'.repeat(61) }), false);
     assert.equal(isCompanyStepValid({ ...base, buildingNumber: 'a'.repeat(17) }), false);
     assert.equal(isCompanyStepValid({ ...base, buildingName: 'a'.repeat(36) }), false);
     assert.equal(isCompanyStepValid({ ...base, city: 'a'.repeat(61) }), false);
