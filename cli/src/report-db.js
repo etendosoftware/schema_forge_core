@@ -57,7 +57,10 @@ export function getSharedPool(PoolClass, baseConfig, ClientClass) {
   return sharedPool;
 }
 
-/** Tests only: forget the shared pool. */
+/**
+ * Tests only: forget the shared pool.
+ * @returns {void}
+ */
 export function resetSharedPool() {
   sharedPool = undefined;
   cancelConfig = undefined;
@@ -92,8 +95,8 @@ export class ReportCancelledError extends Error {
 /**
  * Postgres 57014 query_canceled: the statement timeout or a cancel request.
  * The SQLSTATE is language-independent; the message is not.
- * @param {Error} e
- * @returns {boolean}
+ * @param {Error} e the error a query rejected with
+ * @returns {boolean} whether it carries SQLSTATE 57014
  */
 export function isQueryCanceled(e) {
   return e?.code === '57014';
@@ -103,8 +106,8 @@ export function isQueryCanceled(e) {
  * Whether `e` is a statement timeout. Only our own abort sends a cancel, and
  * callers check the abort first, so any other 57014 is the timeout (matching
  * the English message would miss databases running with another `lc_messages`).
- * @param {Error} e
- * @returns {boolean}
+ * @param {Error} e the error a query rejected with
+ * @returns {boolean} whether it is a statement timeout
  */
 export function isStatementTimeout(e) {
   return isQueryCanceled(e);
@@ -150,42 +153,83 @@ async function cancelBackend(pool, pid) {
 export async function withReportClient(pool, signal, fn, { statementTimeoutMs } = {}) {
   if (signal?.aborted) throw new ReportCancelledError();
   const client = await pool.connect();
+  const watch = watchAbort(pool, client, signal);
   let discard = false;
-  let onAbort;
   try {
     if (signal?.aborted) throw new ReportCancelledError();
-    onAbort = () => {
-      const pid = client.processID;
-      if (pid == null) return;
-      cancelBackend(pool, pid).catch((e) => console.error('[report-db] cancel failed:', e?.message));
-    };
-    signal?.addEventListener('abort', onAbort, { once: true });
-    if (statementTimeoutMs) {
-      await client.query(`SET statement_timeout = ${Math.trunc(Number(statementTimeoutMs))}`);
-    }
-    const db = {
-      query: (...args) => {
-        if (signal?.aborted) throw new ReportCancelledError();
-        return client.query(...args);
-      },
-    };
-    return await fn(db);
+    watch.start();
+    if (statementTimeoutMs) await client.query(`SET statement_timeout = ${Math.trunc(Number(statementTimeoutMs))}`);
+    return await fn(guardedDb(client, signal));
   } catch (e) {
-    if (e instanceof ReportCancelledError) throw e;
-    if (isQueryCanceled(e)) {
-      discard = true;
-      throw signal?.aborted ? new ReportCancelledError() : new ReportTimeoutError();
-    }
-    throw e;
+    discard = isQueryCanceled(e);
+    throw mapQueryError(e, signal);
   } finally {
-    if (onAbort) signal?.removeEventListener('abort', onAbort);
-    // A cancelled connection, or one whose timeout was overridden and cannot be reset, is not trusted back.
-    if (signal?.aborted) discard = true;
-    if (!discard && statementTimeoutMs) {
-      try { await client.query('RESET statement_timeout'); } catch { discard = true; }
-    }
-    client.release(discard ? true : undefined);
+    watch.stop();
+    // A connection that was sent a cancel, or whose timeout cannot be reset, is not trusted back.
+    if (!discard && statementTimeoutMs) discard = !(await resetStatementTimeout(client));
+    client.release(discard || watch.cancelSent() ? true : undefined);
   }
+}
+
+/**
+ * The error `withReportClient` rejects with. Our own abort comes first: only
+ * it sends a cancel, so after it a 57014 is a cancel, never a timeout.
+ * @param {Error} e what the work threw
+ * @param {AbortSignal|undefined} signal
+ * @returns {Error} ReportCancelledError, ReportTimeoutError, or `e` itself
+ */
+function mapQueryError(e, signal) {
+  if (e instanceof ReportCancelledError) return e;
+  if (!isQueryCanceled(e)) return e;
+  return signal?.aborted ? new ReportCancelledError() : new ReportTimeoutError();
+}
+
+/**
+ * The query surface handed to the work: it refuses to start a statement once
+ * the request was aborted, so an abort between two statements stops the next.
+ * @param {object} client pg client
+ * @param {AbortSignal|undefined} signal
+ * @returns {{query: Function}}
+ * @throws {ReportCancelledError} (from `query`) when aborted
+ */
+function guardedDb(client, signal) {
+  return {
+    query: (...args) => {
+      if (signal?.aborted) throw new ReportCancelledError();
+      return client.query(...args);
+    },
+  };
+}
+
+/**
+ * Listener that cancels the backend query when `signal` aborts. It is only
+ * registered by `start()`, after the connection is ready.
+ * @param {object} pool
+ * @param {object} client pg client (its processID names the backend)
+ * @param {AbortSignal|undefined} signal
+ * @returns {{start: () => void, stop: () => void, cancelSent: () => boolean}}
+ */
+function watchAbort(pool, client, signal) {
+  let sent = false;
+  const onAbort = () => {
+    if (client.processID == null) return;
+    sent = true;
+    cancelBackend(pool, client.processID).catch((e) => console.error('[report-db] cancel failed:', e?.message));
+  };
+  return {
+    start: () => signal?.addEventListener('abort', onAbort, { once: true }),
+    stop: () => signal?.removeEventListener('abort', onAbort),
+    cancelSent: () => sent,
+  };
+}
+
+/**
+ * Puts the pool's statement timeout back on a connection that had an override.
+ * @param {object} client pg client
+ * @returns {Promise<boolean>} whether the connection can go back to the pool
+ */
+async function resetStatementTimeout(client) {
+  return client.query('RESET statement_timeout').then(() => true, () => false);
 }
 
 /**
@@ -243,14 +287,20 @@ export async function acquireTenantSlot(clientId, signal, limit = intEnv('REPORT
   return release; // the slot was handed over by the releaser
 }
 
-/** Tests only: slots in use across every tenant (0 when nothing leaked). */
+/**
+ * Tests only: slots in use across every tenant.
+ * @returns {number} 0 when nothing leaked
+ */
 export function activeTenantSlots() {
   let n = 0;
   for (const st of tenantState.values()) n += st.active;
   return n;
 }
 
-/** Tests only: forget every tenant's slots. */
+/**
+ * Tests only: forget every tenant's slots.
+ * @returns {void}
+ */
 export function resetTenantSlots() {
   tenantState.clear();
 }

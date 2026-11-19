@@ -212,11 +212,13 @@ export async function handleReportQuery({ reportId, headers, method, body = {} }
     const deps = { etendoBase, ...(fetchImpl ? { fetchImpl } : {}) };
     // The access check needs only the cookie and Origin, so it runs alongside
     // the session lookup; a session failure still wins over an access one.
+    // Without a session cookie resolveReportSession throws NO_SESSION first,
+    // so the access check below is never awaited with a null session.
     const early = accessCheckSession(headers);
     const accessP = early ? assertReportAccess(early, reportId, deps) : null;
     accessP?.catch(() => {});
     session = await resolveReportSession(headers, { method, ...deps });
-    await (accessP ?? assertReportAccess(session, reportId, deps));
+    await accessP;
   } catch (e) {
     return reportAuthErrorBody(e);
   }

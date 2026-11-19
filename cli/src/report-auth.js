@@ -127,11 +127,7 @@ export async function resolveReportSession(headers, {
     throw new ReportAuthError(401, 'NO_SESSION', 'Session has no resolvable clientId');
   }
 
-  const forwardHeaders = { Cookie: sessionCookie };
-  const origin = getHeader(headers, 'origin');
-  const referer = getHeader(headers, 'referer');
-  if (origin) forwardHeaders.Origin = origin;
-  else if (referer) forwardHeaders.Referer = referer;
+  const { forwardHeaders } = accessCheckSession(headers);
 
   const isUnsafe = !SAFE_METHODS.has(String(method).toUpperCase());
   if (isUnsafe) {

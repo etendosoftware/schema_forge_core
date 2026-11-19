@@ -131,7 +131,7 @@ describe('withReportClient', () => {
     const pool = { connect: async () => { ac.abort(); return client; } };
     await assert.rejects(withReportClient(pool, ac.signal, async () => assert.fail('ran')), ReportCancelledError);
     assert.deepEqual(client.queries, []);
-    assert.deepEqual(client.released, [true]);
+    assert.deepEqual(client.released, [undefined]); // no cancel was sent: the clean connection is reused
   });
 
   it('an abort between two statements stops the second one', async () => {
