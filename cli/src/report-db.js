@@ -264,7 +264,10 @@ export async function acquireTenantSlot(clientId, signal, limit = intEnv('REPORT
   if (signal?.aborted) throw new ReportCancelledError();
   const key = String(clientId ?? '');
   let st = tenantState.get(key);
-  if (!st) tenantState.set(key, (st = { active: 0, waiters: [] }));
+  if (!st) {
+    st = { active: 0, waiters: [] };
+    tenantState.set(key, st);
+  }
   const release = () => {
     const next = st.waiters.shift();
     if (next) next();
