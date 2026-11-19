@@ -14,7 +14,7 @@ import {
 describe('composeAddressLines (ETP-5806 — ports StructuredAddressComposer/LocationSEPA.fillAddressLines)', () => {
   it('exposes the DB column length constants mirrored from the Java side', () => {
     assert.equal(ADDRESS_LINE_MAX_LENGTH, 60);
-    assert.equal(STREET_NAME_MAX_LENGTH, 70);
+    assert.equal(STREET_NAME_MAX_LENGTH, 60);
     assert.equal(BUILDING_NUMBER_MAX_LENGTH, 16);
     assert.equal(BUILDING_NAME_MAX_LENGTH, 35);
   });
