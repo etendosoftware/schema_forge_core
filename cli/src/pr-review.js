@@ -28,11 +28,13 @@ function isSourceFile(path) {
 }
 
 function isTestFile(path) {
-  return /\.(test|spec|vitest)\.(js|jsx|ts|tsx)$/.test(path);
+  // `*.e2e.*` covers end-to-end suites (e.g. `gateway/e2e/reference-data.e2e.ts`).
+  return /\.(test|spec|vitest|e2e)\.(js|jsx|ts|tsx)$/.test(path);
 }
 
 function isTestDirectory(path) {
-  return /(test\/|tests\/|__tests__\/)/.test(path);
+  // An `e2e/` path segment holds end-to-end suites and their helpers.
+  return /(test\/|tests\/|__tests__\/|(^|\/)e2e\/)/.test(path);
 }
 
 function isGeneratedDependencyManifest(path) {

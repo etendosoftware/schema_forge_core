@@ -18,5 +18,6 @@
   "32": "image",
   "35": "productAttribute",
   "800008": "price",
+  "800019": "decimal",
   "95E2A8B50A254B2AAE6774B8C2F28120": "foreignKey"
 }

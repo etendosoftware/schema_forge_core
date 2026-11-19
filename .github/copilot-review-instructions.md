@@ -80,6 +80,14 @@ The project has two distinct test layers — do not conflate them:
 
 A file named `*.vitest.js` or `*.vitest.jsx` inside `tools/app-shell/` **is** a test file. Do not flag it as missing tests.
 
+The deterministic gate also recognizes `*.e2e.js`, `*.e2e.jsx`, `*.e2e.ts`
+and `*.e2e.tsx` as test files. An `e2e/` path segment is a valid test
+directory, so `gateway/e2e/reference-data.e2e.ts` must not be flagged as
+untested source or misplaced. A test file outside a test directory still
+raises `WRONG_DIRECTORY`; a directory such as `notes-e2e/` does not qualify.
+See [the review gate detection scope](../docs/ops/copilot-pr-review.md#detection-scope)
+for the PR-level `MISSING_TESTS` rule and its coverage limits.
+
 - Every new feature must include tests.
 - Every process must declare at least 3 edge cases.
 - Every kept business rule must have a behavioral test.
