@@ -1,3 +1,4 @@
+// @covers packages/etendo-go-core/src/onboarding/postAuth.js
 import { describe, it } from 'node:test';
 import assert from 'node:assert/strict';
 import {
@@ -138,6 +139,90 @@ describe('Post-authentication continuation (ETP-4958)', () => {
         assert.equal(withCaller.calls[0].options.route, false);
       });
     }
+  });
+
+  // ETP-5806 — `completeAuthentication` forwards whatever `capabilities` the caller passed
+  // straight into `persistAuth`'s options, unchanged. `LoginStep`/`RegisterStep`'s own
+  // `handleAuthSuccess` (persistAuth here) is what applies the `?? {}` default before handing
+  // the value to `setCapabilities` — this function itself does not default anything, it is a
+  // pure pass-through.
+  describe('capabilities forwarding (ETP-5806)', () => {
+    it('forwards the caller-supplied capabilities object into persistAuth unchanged', async () => {
+      const { calls, persistAuth } = makeRecorder();
+      const capabilities = { structuredAddressForSepa: true };
+
+      await completeAuthentication({
+        token: TOKEN,
+        account: ACCOUNT,
+        authMethod: 'password',
+        capabilities,
+        persistAuth,
+      });
+
+      assert.deepEqual(calls[0].options.capabilities, capabilities);
+    });
+
+    it('forwards undefined as-is when the caller supplies no capabilities (no manufactured default)', async () => {
+      const { calls, persistAuth } = makeRecorder();
+
+      await completeAuthentication({
+        token: TOKEN,
+        account: ACCOUNT,
+        authMethod: 'password',
+        persistAuth,
+      });
+
+      assert.equal(calls[0].options.capabilities, undefined);
+    });
+
+    for (const authMethod of ['password', 'sso']) {
+      it(`forwards capabilities identically for the ${authMethod} branch`, async () => {
+        const { calls, persistAuth } = makeRecorder();
+        const capabilities = { structuredAddressForSepa: false };
+
+        await completeAuthentication({
+          token: TOKEN,
+          account: ACCOUNT,
+          authMethod,
+          capabilities,
+          persistAuth,
+        });
+
+        assert.deepEqual(calls[0].options.capabilities, capabilities);
+      });
+    }
+
+    // `completeAuthentication` itself applies no `??` default — it is a pure
+    // pass-through, and `{}`/`null` are the two values that distinguish "passed
+    // through unchanged" from "defaulted" once `LoginStep`/`RegisterStep`'s own
+    // `capabilities ?? {}` runs on the other side of `persistAuth`.
+    it('forwards an explicit empty capabilities object into persistAuth unchanged', async () => {
+      const { calls, persistAuth } = makeRecorder();
+
+      await completeAuthentication({
+        token: TOKEN,
+        account: ACCOUNT,
+        authMethod: 'password',
+        capabilities: {},
+        persistAuth,
+      });
+
+      assert.deepEqual(calls[0].options.capabilities, {});
+    });
+
+    it('forwards an explicit null capabilities into persistAuth unchanged (no manufactured default)', async () => {
+      const { calls, persistAuth } = makeRecorder();
+
+      await completeAuthentication({
+        token: TOKEN,
+        account: ACCOUNT,
+        authMethod: 'password',
+        capabilities: null,
+        persistAuth,
+      });
+
+      assert.equal(calls[0].options.capabilities, null);
+    });
   });
 });
 

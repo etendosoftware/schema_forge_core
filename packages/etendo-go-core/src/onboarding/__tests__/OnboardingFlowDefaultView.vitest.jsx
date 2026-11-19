@@ -44,9 +44,23 @@ function RegisterStandIn() {
 }
 
 // ETP-5806 — captures whatever `capabilities` OnboardingFlow hands down, so the test can assert on
-// it without relying on a real step's own rendering of the flag.
-function ProfileStandIn({ capabilities }) {
-  return <div data-testid="profile-step" data-capabilities={JSON.stringify(capabilities)}>profile</div>;
+// it without relying on a real step's own rendering of the flag. Also exposes `setCapabilities`
+// via a button, so a test can drive the same refresh LoginStep/RegisterStep's `handleAuthSuccess`
+// performs after a successful login/register/SSO response, and observe that OnboardingFlow's own
+// `capabilities` state (and therefore what every step receives) updates in response.
+function ProfileStandIn({ capabilities, setCapabilities }) {
+  return (
+    <div data-testid="profile-step" data-capabilities={JSON.stringify(capabilities)}>
+      profile
+      <button
+        type="button"
+        data-testid="profile-step-refresh-capabilities"
+        onClick={() => setCapabilities({ structuredAddressForSepa: true })}
+      >
+        refresh
+      </button>
+    </div>
+  );
 }
 
 const STEPS = [
@@ -209,5 +223,24 @@ describe('OnboardingFlow capabilities threading (ETP-5806)', () => {
 
     const profileStep = await screen.findByTestId('profile-step');
     expect(JSON.parse(profileStep.dataset.capabilities)).toEqual({});
+  });
+
+  // ETP-5806 follow-up — `setCapabilities` (not just the read-only `capabilities` snapshot) must
+  // also reach every step, so LoginStep/RegisterStep's `handleAuthSuccess` can refresh the flag
+  // right after a login/register/SSO response, instead of the flow only ever learning it once at
+  // the mount-time session bootstrap (which never re-runs for the rest of the session).
+  it('forwards a working setCapabilities down to the step, and a call to it updates what every step receives', async () => {
+    sessionStatus = 200;
+    sessionCapabilities = { structuredAddressForSepa: false };
+
+    render(<OnboardingFlow steps={STEPS} config={{ apiBase: '' }} />);
+
+    const profileStep = await screen.findByTestId('profile-step');
+    expect(JSON.parse(profileStep.dataset.capabilities)).toEqual({ structuredAddressForSepa: false });
+
+    fireEvent.click(screen.getByTestId('profile-step-refresh-capabilities'));
+
+    expect(JSON.parse(screen.getByTestId('profile-step').dataset.capabilities))
+      .toEqual({ structuredAddressForSepa: true });
   });
 });
