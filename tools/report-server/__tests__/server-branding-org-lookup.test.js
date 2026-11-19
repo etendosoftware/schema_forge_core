@@ -87,3 +87,19 @@ describe('server.js — listing report company-logo lookup (ETP-5013)', () => {
     assert.match(SERVER_SRC, /const header = await hydrateDocumentBranding\(headerResult\.rows\[0\] \|\| \{\}/);
   });
 });
+
+describe('server.js — /query cancel-on-close wiring (ETP-6146)', () => {
+  const slice = SERVER_SRC.slice(SERVER_SRC.indexOf('async function queryReport'), SERVER_SRC.indexOf('Request handler'));
+
+  it('aborts the SQL on close, writes nothing after an abort and removes the listener', () => {
+    assert.match(slice, /abortOnClose\(res\)/);
+    assert.match(slice, /pool: await getPool\(\), signal/);
+    assert.match(slice, /if \(!signal\.aborted\) json\(res/);
+    assert.match(slice, /finally \{\s*\n\s*dispose\(\);/);
+  });
+
+  it('closes the shared pool on SIGTERM/SIGINT', () => {
+    assert.match(SERVER_SRC, /\['SIGTERM', 'SIGINT'\]/);
+    assert.match(SERVER_SRC, /closeSharedPool\(\)/);
+  });
+});

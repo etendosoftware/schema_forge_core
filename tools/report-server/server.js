@@ -33,7 +33,7 @@ import { filterAndTransformParams } from '../../cli/src/report-filters.js';
 import { hydrateDocumentBranding, resolveCompanyLogoDataUrl } from '../../cli/src/report-branding.js';
 import { resolveReportSession, reportAuthErrorBody, assertReportOrgAccess, assertReportAccess } from '../../cli/src/report-auth.js';
 import { handleReportQuery, runReportSql } from '../../cli/src/report-query.js';
-import { getSharedPool } from '../../cli/src/report-db.js';
+import { getSharedPool, withReportClient, closeSharedPool, abortOnClose, getRenderStatementTimeoutMs, ReportTimeoutError } from '../../cli/src/report-db.js';
 import { buildPeriodMeta, normalizeCompareMode, maxPeriodBucketsFor } from '../../cli/src/report-periods.js';
 
 const _require = createRequire(import.meta.url);
@@ -83,7 +83,16 @@ function getDbConfig() {
 /** ETP-6146: the one pool every route shares (capped, with statement timeout). */
 async function getPool() {
   const pg = await import('pg');
-  return getSharedPool(pg.default.Pool, getDbConfig());
+  return getSharedPool(pg.default.Pool, getDbConfig(), pg.default.Client);
+}
+
+/**
+ * ETP-6146: runs `fn(db)` on a shared-pool connection under the render
+ * statement timeout, which is larger than the interactive `/query` one
+ * (exports of large reports take longer). A timeout is a ReportTimeoutError.
+ */
+async function withRenderDb(fn) {
+  return withReportClient(await getPool(), undefined, fn, { statementTimeoutMs: getRenderStatementTimeoutMs() });
 }
 
 // ---------------------------------------------------------------------------
@@ -184,8 +193,7 @@ async function fetchReportData(reportId, { limit, session, params = {}, locale, 
 
   // Document type (header + lines + taxes)
   if (contract.type === 'document' && contract.sql?.header) {
-    const pool = await getPool();
-    {
+    return withRenderDb(async (pool) => {
       const clientId = session.clientId;
       // Company logo (ETP-4998 / ETP-5013 follow-up) — this branch used to
       // read the header SQL as-is, with no org_logo_id and no branding call
@@ -215,7 +223,7 @@ async function fetchReportData(reportId, { limit, session, params = {}, locale, 
         taxes = taxResult.rows;
       }
       return { rows: lines, contract, documentData: { header, lines, taxes } };
-    }
+    });
   }
 
   // SQL / Jasper path
@@ -230,8 +238,7 @@ async function fetchReportData(reportId, { limit, session, params = {}, locale, 
   // another's data.
   const clientId = session.clientId;
 
-  const pool = await getPool();
-  {
+  return withRenderDb(async (pool) => {
     // Main query plus Libro Mayor's openingQuery (ETP-4898) and Profit & Loss's
     // operandsQuery (ETP-4899): the same runner as `/query`, so they cannot drift.
     // `periods` (ETP-6239) also returns periodRows/periodSpec; the cap depends on the format.
@@ -247,7 +254,7 @@ async function fetchReportData(reportId, { limit, session, params = {}, locale, 
     });
 
     return { rows, contract, openingRows, operandRows, periodRows, periodSpec, companyLogoDataUrl };
-  }
+  });
 }
 
 function applyLimitToSql(limit, sql) {
@@ -385,13 +392,16 @@ async function queryReport(queryMatch, req, res) {
     return;
   }
   // ETP-6146: cancel the running SQL when the browser aborts (a newer filter change).
-  const ac = new AbortController();
-  res.on('close', () => { if (!res.writableEnded) ac.abort(); });
-  const result = await handleReportQuery(
-    { reportId: queryMatch[1], headers: req.headers, method: req.method, body },
-    { artifactsDir: ARTIFACTS_DIR, etendoBase: ETENDO_URL, pool: await getPool(), signal: ac.signal },
-  );
-  if (!ac.signal.aborted) json(res, result.status, result.body);
+  const { signal, dispose } = abortOnClose(res);
+  try {
+    const result = await handleReportQuery(
+      { reportId: queryMatch[1], headers: req.headers, method: req.method, body },
+      { artifactsDir: ARTIFACTS_DIR, etendoBase: ETENDO_URL, pool: await getPool(), signal },
+    );
+    if (!signal.aborted) json(res, result.status, result.body);
+  } finally {
+    dispose();
+  }
 }
 
 // ---------------------------------------------------------------------------
@@ -401,6 +411,7 @@ async function queryReport(queryMatch, req, res) {
 /** ETP-6239: a bad `periods` value is the caller's (400 + code), not a server failure. */
 function respondRenderError(res, e) {
   if (e?.name === 'ReportPeriodsError') json(res, e.status, { error: e.message, code: e.code });
+  else if (e instanceof ReportTimeoutError) json(res, 504, { error: 'REPORT_TIMEOUT', code: 'REPORT_TIMEOUT' });
   else json(res, 500, { error: e.message });
 }
 
@@ -634,6 +645,16 @@ server.listen(PORT, () => {
   console.log(`[report-server] ETENDO_URL=${ETENDO_URL}`);
   console.log(`[report-server] ARTIFACTS_DIR=${ARTIFACTS_DIR}`);
 });
+
+// Stop taking requests, then close the shared DB pool (ETP-6146).
+for (const sig of ['SIGTERM', 'SIGINT']) {
+  process.on(sig, () => {
+    server.close(() => {
+      closeSharedPool().catch((e) => console.error('[report-server] pool close:', e?.message)).finally(() => process.exit(0));
+    });
+  });
+}
+
 function buildTemplateData(documentData, css, { title, activeFilters, params, recordCount, totals, groupLabel, descriptionLabel, neoMeta, rows, locale, ui, labels, dimensionLabel, dimensionField, groups, tbGroups, companyLogoDataUrl, isInteractive, periodMeta }) {
   // `locale`/`ui`/`labels` go into BOTH branches on purpose: print-* document
   // reports render their own headings from meta.labels just like listings do,
@@ -763,12 +784,10 @@ async function fetchReportSelectors(selectorMatch, url, req, res) {
 
     const fullFromWhere = whereFragments.join(' ');
     const pool = await getPool();
-    {
-      const countResult = await pool.query(`SELECT COUNT(*)::int AS total ${fullFromWhere}`, values);
-      const totalCount = countResult.rows[0]?.total ?? 0;
-      const { rows } = await pool.query(`${queryCfg.select} ${fullFromWhere} ${queryCfg.orderBy} LIMIT $${values.length + 1} OFFSET $${values.length + 2}`, [...values, limit, offset]);
-      json(res, 200, { items: rows, totalCount, hasMore: offset + rows.length < totalCount });
-    }
+    const countResult = await pool.query(`SELECT COUNT(*)::int AS total ${fullFromWhere}`, values);
+    const totalCount = countResult.rows[0]?.total ?? 0;
+    const { rows } = await pool.query(`${queryCfg.select} ${fullFromWhere} ${queryCfg.orderBy} LIMIT $${values.length + 1} OFFSET $${values.length + 2}`, [...values, limit, offset]);
+    json(res, 200, { items: rows, totalCount, hasMore: offset + rows.length < totalCount });
   } catch (e) {
     console.error('[selector]', e.message);
     json(res, 500, { error: e.message });

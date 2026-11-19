@@ -131,7 +131,10 @@ Functional reference for the first consumer, with the client side (Columnas, the
 | `REPORT_DB_POOL_MAX` | 10 | max connections |
 | `REPORT_DB_CONNECT_TIMEOUT_MS` | 10000 | wait for a connection |
 | `REPORT_DB_IDLE_TIMEOUT_MS` | 30000 | idle connection lifetime |
-| `REPORT_STATEMENT_TIMEOUT_MS` | 30000 | `statement_timeout` of every connection; past it `/query` answers `504 REPORT_TIMEOUT` |
+| `REPORT_STATEMENT_TIMEOUT_MS` | 30000 | `statement_timeout` of the pool's connections (`/query`, selectors); past it `/query` answers `504 REPORT_TIMEOUT` |
+| `REPORT_RENDER_STATEMENT_TIMEOUT_MS` | 120000 | `statement_timeout` for `/render` (large PDF/XLSX/CSV exports), set on its connection and reset afterwards; past it `/render` answers `504 REPORT_TIMEOUT` |
 | `REPORT_TENANT_CONCURRENCY` | 2 | in-flight `/query` per `ad_client_id`; the rest wait |
 
-`/query` checks out one connection per request. When the browser aborts (`res` closes before the answer), the backend query is cancelled with `pg_cancel_backend(processID)` and the connection is destroyed instead of reused. The cancel runs on the shared pool, so it waits if every connection is busy.
+`/query` checks out one connection per request. When the browser aborts (`res` closes before the answer is finished), the backend query is cancelled with `pg_cancel_backend(processID)` and the connection is destroyed instead of reused. An abort before the connection is ready, or between the statements of one report, stops the next statement from running. The cancel goes over a short-lived dedicated connection (application_name `etendo-report-cancel`), not the pool, so it works when the pool is saturated: the connection budget is `REPORT_DB_POOL_MAX` plus one transient connection per cancel in flight. A 57014 (SQLSTATE, language independent) after our own abort is `REPORT_CANCELLED`; any other 57014 is `REPORT_TIMEOUT`. The pool logs an idle-client error instead of crashing, and is closed on SIGTERM/SIGINT.
+
+The session lookup and the report-access check of `/query` run in parallel; a session failure still wins over an access one.

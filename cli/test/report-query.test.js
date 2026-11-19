@@ -102,6 +102,41 @@ function call(reportId, { body = {}, headers = { cookie: COOKIE, 'x-go-csrf': CS
   ).then((res) => ({ ...res, pool }));
 }
 
+describe('handleReportQuery — session and access in parallel (ETP-6146)', () => {
+  const okSession = { ok: true, status: 200, json: async () => ({ environment: { clientId: 'C1', orgId: 'O1', roleId: 'R1', userId: 'U1' }, roleList: [{ id: 'R1', orgList: [{ id: '0' }] }], csrfToken: CSRF }) };
+  const okAccess = { ok: true, status: 200, json: async () => ({ result: JSON.stringify({ governed: [], reportAccess: {} }) }) };
+  const run = (fetchImpl) => handleReportQuery(
+    { reportId: 'profit-loss', headers: { cookie: COOKIE, 'x-go-csrf': CSRF }, method: 'POST', body: {} },
+    { artifactsDir, etendoBase: 'x', createPool: () => fakePool(), fetchImpl },
+  );
+
+  it('starts both Tomcat calls before either resolves', async () => {
+    const started = [];
+    const release = [];
+    const fetchImpl = (url) => new Promise((resolve) => {
+      started.push(String(url));
+      release.push(() => resolve(String(url).endsWith('/sws/neo/myreportaccess') ? okAccess : okSession));
+    });
+    const done = run(fetchImpl);
+    await new Promise((r) => setImmediate(r));
+    assert.equal(started.length, 2, 'both calls in flight');
+    release.forEach((r) => r());
+    assert.equal((await done).status, 200);
+  });
+
+  it('an error from the session lookup is still answered', async () => {
+    const res = await run(async (url) => (String(url).endsWith('/sws/neo/myreportaccess') ? okAccess : { ok: false, status: 401, json: async () => ({}) }));
+    assert.equal(res.status, 401);
+    assert.equal(res.body.code, 'NO_SESSION');
+  });
+
+  it('an error from the access check is still answered', async () => {
+    const res = await run(async (url) => (String(url).endsWith('/sws/neo/myreportaccess') ? { ok: false, status: 500, json: async () => ({}) } : okSession));
+    assert.equal(res.status, 502);
+    assert.equal(res.body.code, 'REPORT_ACCESS_UNAVAILABLE');
+  });
+});
+
 describe('handleReportQuery — shared pool (ETP-6146)', () => {
   const sharedPool = (queryImpl) => {
     const client = { processID: 7, released: [], query: queryImpl, release: (a) => client.released.push(a) };

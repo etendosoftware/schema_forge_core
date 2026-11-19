@@ -19,7 +19,7 @@ import { applyPlaceholders } from './report-sql.js';
 import { buildAccountReportTree, buildPeriodAccountTree, buildPeriodCell, addVariation, accountSignMultiplier, cleanAmount } from './report-grouping.js';
 import { assertNoPeriodsToken, buildPeriodValues, comparedPeriodsFor, substitutePeriods, hasPeriods, hullParams, SCREEN_MAX_BUCKETS } from './report-periods.js';
 import { withReportClient, acquireTenantSlot, isStatementTimeout, ReportTimeoutError, ReportCancelledError } from './report-db.js';
-import { resolveReportSession, reportAuthErrorBody, assertReportOrgAccess, assertReportAccess } from './report-auth.js';
+import { resolveReportSession, reportAuthErrorBody, assertReportOrgAccess, assertReportAccess, accessCheckSession } from './report-auth.js';
 
 const REPORT_ID_SHAPE = /^[\w-]+$/;
 const SPLIT_DIMENSIONS = new Set(['org', 'bpartner', 'product']);
@@ -210,8 +210,13 @@ export async function handleReportQuery({ reportId, headers, method, body = {} }
   let session;
   try {
     const deps = { etendoBase, ...(fetchImpl ? { fetchImpl } : {}) };
+    // The access check needs only the cookie and Origin, so it runs alongside
+    // the session lookup; a session failure still wins over an access one.
+    const early = accessCheckSession(headers);
+    const accessP = early ? assertReportAccess(early, reportId, deps) : null;
+    accessP?.catch(() => {});
     session = await resolveReportSession(headers, { method, ...deps });
-    await assertReportAccess(session, reportId, deps);
+    await (accessP ?? assertReportAccess(session, reportId, deps));
   } catch (e) {
     return reportAuthErrorBody(e);
   }

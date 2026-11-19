@@ -280,6 +280,23 @@ export async function assertReportAccess(session, reportId, { etendoBase, fetchI
 }
 
 /**
+ * The headers `assertReportAccess` needs, built from the request alone so the
+ * access check can start without waiting for the session lookup (ETP-6146).
+ * @param {object} headers incoming request headers
+ * @returns {{forwardHeaders: object}|null} null when there is no session cookie
+ */
+export function accessCheckSession(headers) {
+  const sessionCookie = extractSessionCookie(getHeader(headers, 'cookie'));
+  if (!sessionCookie) return null;
+  const forwardHeaders = { Cookie: sessionCookie };
+  const origin = getHeader(headers, 'origin');
+  const referer = getHeader(headers, 'referer');
+  if (origin) forwardHeaders.Origin = origin;
+  else if (referer) forwardHeaders.Referer = referer;
+  return { forwardHeaders };
+}
+
+/**
  * Maps any error thrown by `resolveReportSession` (or an unexpected one, as
  * a safe default) to an HTTP status + JSON body an engine's route handler
  * can respond with directly. A non-`ReportAuthError` defaults to 502, never
