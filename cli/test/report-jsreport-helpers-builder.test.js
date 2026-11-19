@@ -448,6 +448,11 @@ describe('buildJsreportHelpersString — behavioural parity between the emitted 
     periodComparedHeader: [
       ['Comparado', '2026-01-01..2026-03-31|2025-01-01..2025-03-31|2025-10-01..2025-12-31,2026-03-01..2026-03-31|2025-03-01..2025-03-31|2026-02-01..2026-02-28', 1, 'sly', 'month', 'es_ES'], ['Compared', '2026-01-01..2026-03-31|2025-01-01..2025-03-31|2025-10-01..2025-12-31,2026-03-01..2026-03-31|2025-03-01..2025-03-31|2026-02-01..2026-02-28', 0, 'prev', 'total', 'en_US'], ['Comparado', undefined, 1, 'sly', 'month', 'es_ES'],
     ],
+    // ETP-6084: Excel/CSV number cells. Blank and non-finite are an empty cell, never 0.
+    round2: [[1e-12], [-1e-12], [-0.005], [0.005], [12.345], [-12.345], ['12.345'], [1.005], [2.675], [1234.5], [0], [-0], ['0'],
+      [NaN], [Infinity], [-Infinity], [null], [undefined], [''], ['abc'], [1e21], [-3]],
+    numCellType: [[0], [12.5], ['12.5'], [NaN], [Infinity], [-Infinity], [null], [undefined], [''], ['abc']],
+    fixed2: [[1e-12], [-0.005], [12.345], ['12.3'], [5], [NaN], [Infinity], [null], [undefined], [''], [1234567.891]],
     parseJson: [['[1,2]'], ['{"a":1}'], ['nope'], [''], [null], [undefined], [{ a: 1 }], [5]],
     periodSpan: [[2, 'sly'], [2, 'prev'], [7, 'none'], [1, undefined], [0, 'sly']],
   };
@@ -723,5 +728,44 @@ describe('report helper modules — cross-repo parity contract (ETP-4910)', () =
       'report-html-helpers.js must import report-i18n from ../../../cli/src/report-i18n.js in this repo',
     );
     assert.ok(!raw.includes(PARITY_MANIFEST.importLine.schema_forge));
+  });
+});
+
+describe('canonical round2 / numCellType / fixed2 (ETP-6084)', () => {
+  const h = createReportHelpers();
+  const built = evalBuiltHelpers(buildJsreportHelpersString(), ['round2', 'numCellType', 'fixed2']);
+  for (const [label, api] of [['live', h], ['emitted', built]]) {
+    it(`${label}: round2 caps at 2 decimals, half away from zero, no -0, blank and non-finite are an empty cell`, () => {
+      assert.equal(api.round2(1e-12), 0);
+      assert.equal(Object.is(api.round2(-0.005), -0), false);
+      assert.equal(api.round2(-0.005), -0.01);
+      assert.equal(Object.is(api.round2(-1e-12), -0), false);
+      assert.equal(api.round2('12.345'), 12.35);
+      assert.equal(api.round2(-12.345), -12.35);
+      assert.equal(api.round2(1.005), 1.01);
+      for (const blank of [NaN, Infinity, -Infinity, null, undefined, '', 'abc']) assert.equal(api.round2(blank), '');
+      assert.equal(api.round2(0), 0);
+    });
+
+    it(`${label}: numCellType is number only when there is a finite number`, () => {
+      for (const v of [0, 12.5, '12.5', -3]) assert.equal(api.numCellType(v), 'number');
+      for (const v of [NaN, Infinity, -Infinity, null, undefined, '', 'abc']) assert.equal(api.numCellType(v), 'string');
+    });
+
+    it(`${label}: fixed2 is always 2 decimals with a dot, '' for no value`, () => {
+      assert.equal(api.fixed2(5), '5.00');
+      assert.equal(api.fixed2('12.3'), '12.30');
+      assert.equal(api.fixed2(12.345), '12.35');
+      assert.equal(api.fixed2(1e-12), '0.00');
+      assert.equal(api.fixed2(1234567.891), '1234567.89');
+      for (const v of [NaN, Infinity, null, undefined, '']) assert.equal(api.fixed2(v), '');
+    });
+  }
+
+  it('a per-report helpers.js declaring round2 / numCellType / fixed2 is stripped: the canonical one wins', () => {
+    const out = buildJsreportHelpersString('function round2(v) { return 0; }\nfunction numCellType() { return "x"; }\nfunction fixed2() { return "x"; }\nfunction mine() { return 1; }');
+    for (const n of ['round2', 'numCellType', 'fixed2']) assert.equal((out.match(new RegExp(`function ${n}\\(`, 'g')) || []).length, 1, n);
+    assert.match(out, /function mine\(/);
+    assert.equal(evalBuiltHelpers(out, ['round2']).round2(NaN), '');
   });
 });

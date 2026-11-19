@@ -273,3 +273,15 @@ describe('listReportDescriptors', () => {
     }
   });
 });
+
+describe('buildReportDescriptor — chart tree markers (ETP-6084)', () => {
+  const base = { reportId: 'r', title: 't', type: 'listing', outputs: ['pdf'] };
+  it('forwards tree and amountColumns only when the contract declares them', () => {
+    const cols = [{ name: 'opening', compare: 'always' }];
+    const d = buildReportDescriptor({ ...base, tree: 'chart', amountColumns: cols });
+    assert.equal(d.tree, 'chart');
+    assert.deepEqual(d.amountColumns, cols);
+    const plain = buildReportDescriptor(base);
+    assert.ok(!('tree' in plain) && !('amountColumns' in plain));
+  });
+});
