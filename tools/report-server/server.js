@@ -33,6 +33,7 @@ import { filterAndTransformParams } from '../../cli/src/report-filters.js';
 import { hydrateDocumentBranding, resolveCompanyLogoDataUrl } from '../../cli/src/report-branding.js';
 import { resolveReportSession, reportAuthErrorBody, assertReportOrgAccess, assertReportAccess } from '../../cli/src/report-auth.js';
 import { handleReportQuery, runReportSql } from '../../cli/src/report-query.js';
+import { getSharedPool, withReportClient, closeSharedPool, abortOnClose, getRenderStatementTimeoutMs, ReportTimeoutError } from '../../cli/src/report-db.js';
 import { buildPeriodMeta, normalizeCompareMode, maxPeriodBucketsFor } from '../../cli/src/report-periods.js';
 
 const _require = createRequire(import.meta.url);
@@ -71,13 +72,27 @@ function getDbConfig() {
     user: process.env.BBDD_USER,
     password: process.env.BBDD_PASSWORD,
     database: process.env.BBDD_SID,
-    max: 3,
   };
   // RDS requires SSL; skip certificate verification (self-signed RDS cert)
   if (process.env.BBDD_HOST?.includes('rds.amazonaws.com')) {
     cfg.ssl = { rejectUnauthorized: false };
   }
   return cfg;
+}
+
+/** ETP-6146: the one pool every route shares (capped, with statement timeout). */
+async function getPool() {
+  const pg = await import('pg');
+  return getSharedPool(pg.default.Pool, getDbConfig(), pg.default.Client);
+}
+
+/**
+ * ETP-6146: runs `fn(db)` on a shared-pool connection under the render
+ * statement timeout, which is larger than the interactive `/query` one
+ * (exports of large reports take longer). A timeout is a ReportTimeoutError.
+ */
+async function withRenderDb(fn) {
+  return withReportClient(await getPool(), undefined, fn, { statementTimeoutMs: getRenderStatementTimeoutMs() });
 }
 
 // ---------------------------------------------------------------------------
@@ -167,28 +182,18 @@ async function fetchReportData(reportId, { limit, session, params = {}, locale, 
     // DB access at all (NEO does the data fetch remotely), so the SQL/Jasper
     // branch's orgId-based lookup below never ran for the 4 NEO-sourced
     // listing reports (Aging of Payables/Receivables, Tax Report, Inventory
-    // Stock Report) — the logo silently never resolved for any of them. Opens
-    // a short-lived pool just for this lookup, same per-request-Pool pattern
-    // every other branch already uses.
-    const pg = await import('pg');
-    const logoPool = new pg.default.Pool(getDbConfig());
-    let companyLogoDataUrl;
-    try {
-      companyLogoDataUrl = await resolveCompanyLogoDataUrl(logoPool, {
-        clientId: session.clientId, orgId: params.orgId, authHeaders: session.forwardHeaders, etendoBase: ETENDO_URL,
-      });
-    } finally {
-      await logoPool.end();
-    }
+    // Stock Report) — the logo silently never resolved for any of them. Uses
+    // the shared pool (ETP-6146).
+    const companyLogoDataUrl = await resolveCompanyLogoDataUrl(await getPool(), {
+      clientId: session.clientId, orgId: params.orgId, authHeaders: session.forwardHeaders, etendoBase: ETENDO_URL,
+    });
 
     return { rows, contract, neoMeta, companyLogoDataUrl };
   }
 
   // Document type (header + lines + taxes)
   if (contract.type === 'document' && contract.sql?.header) {
-    const pg = await import('pg');
-    const pool = new pg.default.Pool(getDbConfig());
-    try {
+    return withRenderDb(async (pool) => {
       const clientId = session.clientId;
       // Company logo (ETP-4998 / ETP-5013 follow-up) — this branch used to
       // read the header SQL as-is, with no org_logo_id and no branding call
@@ -218,9 +223,7 @@ async function fetchReportData(reportId, { limit, session, params = {}, locale, 
         taxes = taxResult.rows;
       }
       return { rows: lines, contract, documentData: { header, lines, taxes } };
-    } finally {
-      await pool.end();
-    }
+    });
   }
 
   // SQL / Jasper path
@@ -235,9 +238,7 @@ async function fetchReportData(reportId, { limit, session, params = {}, locale, 
   // another's data.
   const clientId = session.clientId;
 
-  const pg = await import('pg');
-  const pool = new pg.default.Pool(getDbConfig());
-  try {
+  return withRenderDb(async (pool) => {
     // Main query plus Libro Mayor's openingQuery (ETP-4898) and Profit & Loss's
     // operandsQuery (ETP-4899): the same runner as `/query`, so they cannot drift.
     // `periods` (ETP-6239) also returns periodRows/periodSpec; the cap depends on the format.
@@ -253,9 +254,7 @@ async function fetchReportData(reportId, { limit, session, params = {}, locale, 
     });
 
     return { rows, contract, openingRows, operandRows, periodRows, periodSpec, companyLogoDataUrl };
-  } finally {
-    await pool.end();
-  }
+  });
 }
 
 function applyLimitToSql(limit, sql) {
@@ -370,21 +369,16 @@ function resolveReportData(result, params, locale) {
 async function checkRenderOrgAccess(reportId, session, params) {
   const contractPath = join(ARTIFACTS_DIR, reportId, 'report-contract.json');
   if (!existsSync(contractPath)) return null;
-  let pool;
   try {
     const contract = JSON.parse(readFileSync(contractPath, 'utf8'));
     if (!contract.sql) return null; // NEO / jrxml reports: nothing reads __ORGID__ here
-    const pg = await import('pg');
-    pool = new pg.default.Pool(getDbConfig());
-    await assertReportOrgAccess(pool, session, { contract, params });
+    await assertReportOrgAccess(await getPool(), session, { contract, params });
     return null;
   } catch (e) {
     if (e?.name === 'ReportAuthError') return reportAuthErrorBody(e);
     // Same as /query: the DB message stays in the server log.
     console.error(`[report-server] org check ${reportId}:`, e?.message);
     return { status: 500, body: { error: 'ORG_CHECK_FAILED', code: 'ORG_CHECK_FAILED' } };
-  } finally {
-    await pool?.end();
   }
 }
 
@@ -397,12 +391,17 @@ async function queryReport(queryMatch, req, res) {
     json(res, 400, { error: 'Invalid JSON body', code: 'INVALID_BODY' });
     return;
   }
-  const pg = await import('pg');
-  const result = await handleReportQuery(
-    { reportId: queryMatch[1], headers: req.headers, method: req.method, body },
-    { artifactsDir: ARTIFACTS_DIR, etendoBase: ETENDO_URL, createPool: () => new pg.default.Pool(getDbConfig()) },
-  );
-  json(res, result.status, result.body);
+  // ETP-6146: cancel the running SQL when the browser aborts (a newer filter change).
+  const { signal, dispose } = abortOnClose(res);
+  try {
+    const result = await handleReportQuery(
+      { reportId: queryMatch[1], headers: req.headers, method: req.method, body },
+      { artifactsDir: ARTIFACTS_DIR, etendoBase: ETENDO_URL, pool: await getPool(), signal },
+    );
+    if (!signal.aborted) json(res, result.status, result.body);
+  } finally {
+    dispose();
+  }
 }
 
 // ---------------------------------------------------------------------------
@@ -412,6 +411,7 @@ async function queryReport(queryMatch, req, res) {
 /** ETP-6239: a bad `periods` value is the caller's (400 + code), not a server failure. */
 function respondRenderError(res, e) {
   if (e?.name === 'ReportPeriodsError') json(res, e.status, { error: e.message, code: e.code });
+  else if (e instanceof ReportTimeoutError) json(res, 504, { error: 'REPORT_TIMEOUT', code: 'REPORT_TIMEOUT' });
   else json(res, 500, { error: e.message });
 }
 
@@ -645,6 +645,16 @@ server.listen(PORT, () => {
   console.log(`[report-server] ETENDO_URL=${ETENDO_URL}`);
   console.log(`[report-server] ARTIFACTS_DIR=${ARTIFACTS_DIR}`);
 });
+
+// Stop taking requests, then close the shared DB pool (ETP-6146).
+for (const sig of ['SIGTERM', 'SIGINT']) {
+  process.on(sig, () => {
+    server.close(() => {
+      closeSharedPool().catch((e) => console.error('[report-server] pool close:', e?.message)).finally(() => process.exit(0));
+    });
+  });
+}
+
 function buildTemplateData(documentData, css, { title, activeFilters, params, recordCount, totals, groupLabel, descriptionLabel, neoMeta, rows, locale, ui, labels, dimensionLabel, dimensionField, groups, tbGroups, companyLogoDataUrl, isInteractive, periodMeta }) {
   // `locale`/`ui`/`labels` go into BOTH branches on purpose: print-* document
   // reports render their own headings from meta.labels just like listings do,
@@ -773,14 +783,11 @@ async function fetchReportSelectors(selectorMatch, url, req, res) {
     }
 
     const fullFromWhere = whereFragments.join(' ');
-    const pg = await import('pg');
-    const pool = new pg.default.Pool(getDbConfig());
-    try {
-      const countResult = await pool.query(`SELECT COUNT(*)::int AS total ${fullFromWhere}`, values);
-      const totalCount = countResult.rows[0]?.total ?? 0;
-      const { rows } = await pool.query(`${queryCfg.select} ${fullFromWhere} ${queryCfg.orderBy} LIMIT $${values.length + 1} OFFSET $${values.length + 2}`, [...values, limit, offset]);
-      json(res, 200, { items: rows, totalCount, hasMore: offset + rows.length < totalCount });
-    } finally { await pool.end(); }
+    const pool = await getPool();
+    const countResult = await pool.query(`SELECT COUNT(*)::int AS total ${fullFromWhere}`, values);
+    const totalCount = countResult.rows[0]?.total ?? 0;
+    const { rows } = await pool.query(`${queryCfg.select} ${fullFromWhere} ${queryCfg.orderBy} LIMIT $${values.length + 1} OFFSET $${values.length + 2}`, [...values, limit, offset]);
+    json(res, 200, { items: rows, totalCount, hasMore: offset + rows.length < totalCount });
   } catch (e) {
     console.error('[selector]', e.message);
     json(res, 500, { error: e.message });

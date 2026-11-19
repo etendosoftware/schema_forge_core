@@ -102,6 +102,83 @@ function call(reportId, { body = {}, headers = { cookie: COOKIE, 'x-go-csrf': CS
   ).then((res) => ({ ...res, pool }));
 }
 
+describe('handleReportQuery — session and access in parallel (ETP-6146)', () => {
+  const okSession = { ok: true, status: 200, json: async () => ({ environment: { clientId: 'C1', orgId: 'O1', roleId: 'R1', userId: 'U1' }, roleList: [{ id: 'R1', orgList: [{ id: '0' }] }], csrfToken: CSRF }) };
+  const okAccess = { ok: true, status: 200, json: async () => ({ result: JSON.stringify({ governed: [], reportAccess: {} }) }) };
+  const run = (fetchImpl) => handleReportQuery(
+    { reportId: 'profit-loss', headers: { cookie: COOKIE, 'x-go-csrf': CSRF }, method: 'POST', body: {} },
+    { artifactsDir, etendoBase: 'x', createPool: () => fakePool(), fetchImpl },
+  );
+
+  it('starts both Tomcat calls before either resolves', async () => {
+    const started = [];
+    const release = [];
+    const fetchImpl = (url) => new Promise((resolve) => {
+      started.push(String(url));
+      release.push(() => resolve(String(url).endsWith('/sws/neo/myreportaccess') ? okAccess : okSession));
+    });
+    const done = run(fetchImpl);
+    await new Promise((r) => setImmediate(r));
+    assert.equal(started.length, 2, 'both calls in flight');
+    release.forEach((r) => r());
+    assert.equal((await done).status, 200);
+  });
+
+  it('an error from the session lookup is still answered', async () => {
+    const res = await run(async (url) => (String(url).endsWith('/sws/neo/myreportaccess') ? okAccess : { ok: false, status: 401, json: async () => ({}) }));
+    assert.equal(res.status, 401);
+    assert.equal(res.body.code, 'NO_SESSION');
+  });
+
+  it('an error from the access check is still answered', async () => {
+    const res = await run(async (url) => (String(url).endsWith('/sws/neo/myreportaccess') ? { ok: false, status: 500, json: async () => ({}) } : okSession));
+    assert.equal(res.status, 502);
+    assert.equal(res.body.code, 'REPORT_ACCESS_UNAVAILABLE');
+  });
+});
+
+describe('handleReportQuery — shared pool (ETP-6146)', () => {
+  const sharedPool = (queryImpl) => {
+    const client = { processID: 7, released: [], query: queryImpl, release: (a) => client.released.push(a) };
+    return { client, connect: async () => client, query: async () => ({ rows: [] }), end: () => assert.fail('shared pool ended') };
+  };
+  const run = (pool, signal) => handleReportQuery(
+    { reportId: 'profit-loss', headers: { cookie: COOKIE, 'x-go-csrf': CSRF }, method: 'POST', body: {} },
+    { artifactsDir, etendoBase: 'x', pool, signal, fetchImpl: sessionFetch() },
+  );
+
+  it('uses a client of the shared pool, releases it and never ends the pool', async () => {
+    const pool = sharedPool(async () => ({ rows: [] }));
+    const res = await run(pool);
+    assert.equal(res.status, 200);
+    assert.deepEqual(pool.client.released, [undefined]);
+  });
+
+  it('a statement timeout answers 504 REPORT_TIMEOUT', async () => {
+    const pool = sharedPool(async (sql) => {
+      if (sql.includes('ad_org')) return { rows: [{ '?column?': 1 }] };
+      throw Object.assign(new Error('canceling statement due to statement timeout'), { code: '57014' });
+    });
+    const res = await run(pool);
+    assert.deepEqual(res, { status: 504, body: { error: 'REPORT_TIMEOUT', code: 'REPORT_TIMEOUT' } });
+  });
+
+  it('an abort during the SQL cancels the backend and answers REPORT_CANCELLED', async () => {
+    const ac = new AbortController();
+    const cancels = [];
+    const pool = sharedPool(async (sql) => {
+      if (sql.includes('ad_org')) return { rows: [{ '?column?': 1 }] };
+      ac.abort();
+      throw Object.assign(new Error('canceling statement due to user request'), { code: '57014' });
+    });
+    pool.query = async (sql, args) => { cancels.push([sql, args]); return { rows: [] }; };
+    const res = await run(pool, ac.signal);
+    assert.equal(res.body.code, 'REPORT_CANCELLED');
+    assert.deepEqual(cancels, [['SELECT pg_cancel_backend($1)', [7]]]);
+    assert.deepEqual(pool.client.released, [true]);
+  });
+});
+
 describe('handleReportQuery — access', () => {
   it('401 without a session, and never opens a pool', async () => {
     let created = false;
