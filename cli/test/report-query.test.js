@@ -102,6 +102,48 @@ function call(reportId, { body = {}, headers = { cookie: COOKIE, 'x-go-csrf': CS
   ).then((res) => ({ ...res, pool }));
 }
 
+describe('handleReportQuery — shared pool (ETP-6146)', () => {
+  const sharedPool = (queryImpl) => {
+    const client = { processID: 7, released: [], query: queryImpl, release: (a) => client.released.push(a) };
+    return { client, connect: async () => client, query: async () => ({ rows: [] }), end: () => assert.fail('shared pool ended') };
+  };
+  const run = (pool, signal) => handleReportQuery(
+    { reportId: 'profit-loss', headers: { cookie: COOKIE, 'x-go-csrf': CSRF }, method: 'POST', body: {} },
+    { artifactsDir, etendoBase: 'x', pool, signal, fetchImpl: sessionFetch() },
+  );
+
+  it('uses a client of the shared pool, releases it and never ends the pool', async () => {
+    const pool = sharedPool(async () => ({ rows: [] }));
+    const res = await run(pool);
+    assert.equal(res.status, 200);
+    assert.deepEqual(pool.client.released, [undefined]);
+  });
+
+  it('a statement timeout answers 504 REPORT_TIMEOUT', async () => {
+    const pool = sharedPool(async (sql) => {
+      if (sql.includes('ad_org')) return { rows: [{ '?column?': 1 }] };
+      throw Object.assign(new Error('canceling statement due to statement timeout'), { code: '57014' });
+    });
+    const res = await run(pool);
+    assert.deepEqual(res, { status: 504, body: { error: 'REPORT_TIMEOUT', code: 'REPORT_TIMEOUT' } });
+  });
+
+  it('an abort during the SQL cancels the backend and answers REPORT_CANCELLED', async () => {
+    const ac = new AbortController();
+    const cancels = [];
+    const pool = sharedPool(async (sql) => {
+      if (sql.includes('ad_org')) return { rows: [{ '?column?': 1 }] };
+      ac.abort();
+      throw Object.assign(new Error('canceling statement due to user request'), { code: '57014' });
+    });
+    pool.query = async (sql, args) => { cancels.push([sql, args]); return { rows: [] }; };
+    const res = await run(pool, ac.signal);
+    assert.equal(res.body.code, 'REPORT_CANCELLED');
+    assert.deepEqual(cancels, [['SELECT pg_cancel_backend($1)', [7]]]);
+    assert.deepEqual(pool.client.released, [true]);
+  });
+});
+
 describe('handleReportQuery — access', () => {
   it('401 without a session, and never opens a pool', async () => {
     let created = false;
