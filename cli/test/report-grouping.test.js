@@ -1262,6 +1262,26 @@ describe('buildChartAccountTree (ETP-6084)', () => {
   });
 
   describe('buildRenderChartTree', () => {
+    it('visibleNodeIds emits exactly those rows in tree order, re-indented, ignoring expandedNodeIds', () => {
+      const out = buildRenderChartTree(CHART, { visibleNodeIds: 'E1,S1,S3', expandedNodeIds: 'none' });
+      assert.deepEqual(out.rows.map((r) => r.node_id), ['E1', 'S1', 'S3']); // C1 is folded away
+      assert.deepEqual(out.rows.map((r) => r.indent), [0, 1, 1]);
+      assert.equal(out.rows[1].parentId, 'E1');
+      assert.equal(out.rows[0].debit, 60); // values are those of the full tree
+    });
+
+    it('visibleNodeIds accepts dimension rows by their composite node_id', () => {
+      const withDim = [...CHART, D('S1', 'bp1', 'Alfa', A(100, 50, 20))];
+      const out = buildRenderChartTree(withDim, { visibleNodeIds: 'E1,C1,S1,S1|bp1' });
+      assert.deepEqual(out.rows.map((r) => r.node_id), ['E1', 'C1', 'S1', 'S1|bp1']);
+      assert.equal(out.rows[3].indent, 3);
+    });
+
+    it('forwards compareMovements into the meta as a boolean', () => {
+      assert.equal(buildRenderChartTree(CHART, { expandedNodeIds: 'E1', compareMovements: 'true' }).meta.compareMovements, true);
+      assert.equal(buildRenderChartTree(CHART, { expandedNodeIds: 'E1' }).meta.compareMovements, false);
+    });
+
     it('returns the rows of the comparison mode, parented to the nearest shown row, and the meta', () => {
       const out = buildRenderChartTree(CHART, { expandedNodeIds: 'E1,C1', showOnlyAccountsWithValue: 'true' });
       assert.ok(out.rows.some((r) => r.node_id === 'S1'));

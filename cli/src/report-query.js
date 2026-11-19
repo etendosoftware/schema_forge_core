@@ -25,7 +25,8 @@ const REPORT_ID_SHAPE = /^[\w-]+$/;
 /** A contract that declares `tree: 'chart'` is answered from `sql.treeQuery` as a chart-of-accounts tree (ETP-6084). */
 export const isChartTree = (contract) => contract?.tree === 'chart';
 /** /render only takes the chart tree path when the interactive view sends its expanded nodes; any other request keeps the `sql.query` path unchanged. */
-export const isChartTreeRender = (contract, params) => isChartTree(contract) && parseExpandedNodeIds(params?.expandedNodeIds) !== undefined;
+export const isChartTreeRender = (contract, params) => isChartTree(contract)
+  && (parseExpandedNodeIds(params?.expandedNodeIds) !== undefined || parseExpandedNodeIds(params?.visibleNodeIds) !== undefined);
 const SPLIT_DIMENSIONS = new Set(['org', 'bpartner', 'product']);
 
 /** A row cap goes into the SQL text, so only a positive safe integer is one. */

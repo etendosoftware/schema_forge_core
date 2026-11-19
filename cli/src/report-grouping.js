@@ -963,13 +963,33 @@ export function buildChartAccountTree(treeRows, periodRows, opts = {}) {
  * (per period) and `chartBalance`.
  */
 export function buildRenderChartTree(rows, params = {}, period = null) {
+  // `visibleNodeIds` (comma-joined node_ids, as /query returned them): the exact rows the screen shows,
+  // which `expandedNodeIds` cannot express (a level fold shows nested same-level nodes and folds deeper
+  // children). It wins over `expandedNodeIds` for row selection.
+  const visible = parseExpandedNodeIds(params.visibleNodeIds);
   const tree = buildChartAccountTree(rows, period?.periodRows ?? null, {
     periods: period?.spec?.periods,
-    expandedNodeIds: parseExpandedNodeIds(params.expandedNodeIds),
+    expandedNodeIds: visible ? undefined : parseExpandedNodeIds(params.expandedNodeIds),
     showOnlyWithValue: params.showOnlyAccountsWithValue === 'true',
   });
-  return {
-    rows: selectPeriodMode(tree.rows, period?.periodRows ? (period.compareMode || 'none') : 'none'),
-    meta: { chartTotals: tree.totals, chartBalance: tree.balance },
+  const meta = { chartTotals: tree.totals, chartBalance: tree.balance, compareMovements: params.compareMovements === 'true' };
+  if (visible) return { rows: pickVisibleNodes(tree.rows, new Set(visible)), meta };
+  return { rows: selectPeriodMode(tree.rows, period?.periodRows ? (period.compareMode || 'none') : 'none'), meta };
+}
+
+/** The rows whose node_id is in `ids`, in tree order, parented (and indented) to the nearest row kept. */
+function pickVisibleNodes(rows, ids) {
+  const byId = new Map(rows.map((r) => [r.node_id, r]));
+  const depth = new Map();
+  const nearest = (r) => {
+    let p = r.parentId ? byId.get(r.parentId) : null;
+    while (p && !ids.has(p.node_id)) p = p.parentId ? byId.get(p.parentId) : null;
+    return p;
   };
+  return rows.filter((r) => ids.has(r.node_id)).map((r) => {
+    const parent = nearest(r);
+    const indent = parent ? depth.get(parent.node_id) + 1 : 0;
+    depth.set(r.node_id, indent);
+    return { ...r, parentId: parent ? parent.node_id : null, indent, indentClass: `ind-${Math.min(indent, 6)}` };
+  });
 }

@@ -720,6 +720,7 @@ describe('report-query — chart tree (ETP-6084)', () => {
     assert.equal(isChartTreeRender(TB, { expandedNodeIds: 'E1' }), true);
     assert.equal(isChartTreeRender(TB, { expandedNodeIds: 'none' }), true);
     assert.equal(isChartTreeRender(TB, { expandedNodeIds: '' }), false); // the old viewer sends '' for what it has none of
+    assert.equal(isChartTreeRender(TB, { visibleNodeIds: 'E1,S1' }), true);
     assert.equal(isChartTreeRender(TB, {}), false);
     assert.equal(isChartTreeRender({ ...TB, tree: undefined }, { expandedNodeIds: 'E1' }), false);
   });
