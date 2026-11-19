@@ -18,7 +18,8 @@ import { join } from 'node:path';
 import { applyPlaceholders } from './report-sql.js';
 import { buildAccountReportTree, buildPeriodAccountTree, buildPeriodCell, addVariation, accountSignMultiplier, cleanAmount } from './report-grouping.js';
 import { assertNoPeriodsToken, buildPeriodValues, comparedPeriodsFor, substitutePeriods, hasPeriods, hullParams, SCREEN_MAX_BUCKETS } from './report-periods.js';
-import { resolveReportSession, reportAuthErrorBody, assertReportOrgAccess, assertReportAccess } from './report-auth.js';
+import { withReportClient, acquireTenantSlot, isStatementTimeout, ReportTimeoutError, ReportCancelledError } from './report-db.js';
+import { resolveReportSession, reportAuthErrorBody, assertReportOrgAccess, assertReportAccess, accessCheckSession } from './report-auth.js';
 
 const REPORT_ID_SHAPE = /^[\w-]+$/;
 const SPLIT_DIMENSIONS = new Set(['org', 'bpartner', 'product']);
@@ -198,16 +199,26 @@ function parseQueryRequest(rawBody, contract) {
  * @param {object} deps
  * @param {string} deps.artifactsDir where `<reportId>/report-contract.json` lives
  * @param {string} deps.etendoBase   for the session lookup
- * @param {Function} deps.createPool returns a pg Pool; ended here
+ * @param {Function} [deps.createPool] returns a pg Pool; ended here (dev engine)
+ * @param {object} [deps.pool] shared pg Pool (ETP-6146): never ended here; one
+ *   connection is checked out per request, its SQL is cancelled on `signal`
+ * @param {AbortSignal} [deps.signal] aborts when the client disconnects
  * @param {Function} [deps.fetchImpl] session lookup fetch (tests)
  * @returns {Promise<{status: number, body: object}>}
  */
-export async function handleReportQuery({ reportId, headers, method, body = {} }, { artifactsDir, etendoBase, createPool, fetchImpl }) {
+export async function handleReportQuery({ reportId, headers, method, body = {} }, { artifactsDir, etendoBase, createPool, pool: sharedPool, signal, fetchImpl }) {
   let session;
   try {
     const deps = { etendoBase, ...(fetchImpl ? { fetchImpl } : {}) };
+    // The access check needs only the cookie and Origin, so it runs alongside
+    // the session lookup; a session failure still wins over an access one.
+    // Without a session cookie resolveReportSession throws NO_SESSION first,
+    // so the access check below is never awaited with a null session.
+    const early = accessCheckSession(headers);
+    const accessP = early ? assertReportAccess(early, reportId, deps) : null;
+    accessP?.catch(() => {});
     session = await resolveReportSession(headers, { method, ...deps });
-    await assertReportAccess(session, reportId, deps);
+    await accessP;
   } catch (e) {
     return reportAuthErrorBody(e);
   }
@@ -220,23 +231,34 @@ export async function handleReportQuery({ reportId, headers, method, body = {} }
   // Every failure from here on (no DB config, DB down, bad SQL) is an answer,
   // never a throw: the dev engine's middleware has no outer catch.
   let pool;
+  let releaseSlot;
   try {
-    pool = createPool();
-    await assertReportOrgAccess(pool, session, { contract, params });
-    const ctx = { clientId: session.clientId, params, locale: body.locale };
-    if (isSplit) {
-      const split = await runSplit(pool, contract, ctx);
-      return { status: 200, body: Array.isArray(split) ? { kind: 'split', rows: split } : { kind: 'split', ...split } };
+    const work = async (db) => {
+      await assertReportOrgAccess(db, session, { contract, params });
+      const ctx = { clientId: session.clientId, params, locale: body.locale };
+      if (isSplit) {
+        const split = await runSplit(db, contract, ctx);
+        return { status: 200, body: Array.isArray(split) ? { kind: 'split', rows: split } : { kind: 'split', ...split } };
+      }
+      const result = await runReportSql(db, contract, { ...ctx, limit });
+      return { status: 200, body: buildQueryResponse(contract, params, result) };
+    };
+    if (sharedPool) {
+      releaseSlot = await acquireTenantSlot(session.clientId, signal);
+      return await withReportClient(sharedPool, signal, work);
     }
-    const result = await runReportSql(pool, contract, { ...ctx, limit });
-    return { status: 200, body: buildQueryResponse(contract, params, result) };
+    pool = createPool();
+    return await work(pool);
   } catch (e) {
     if (e?.name === 'ReportAuthError') return reportAuthErrorBody(e);
     if (e?.name === 'ReportPeriodsError') return errorResult(e.status, e.code, e.message);
+    if (e instanceof ReportTimeoutError || isStatementTimeout(e)) return errorResult(504, 'REPORT_TIMEOUT');
+    if (e instanceof ReportCancelledError) return errorResult(499, 'REPORT_CANCELLED');
     // Logged server-side only: the SQL text and DB messages never reach the client.
     console.error(`[report-query] ${reportId}:`, e?.message);
     return errorResult(500, 'QUERY_FAILED');
   } finally {
+    releaseSlot?.();
     await pool?.end();
   }
 }

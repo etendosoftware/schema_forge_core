@@ -27,6 +27,8 @@ Errors are `{ error, code }`:
 | 404 | `REPORT_NOT_FOUND` | unknown report id |
 | 400 | `QUERY_NOT_SUPPORTED`, `INVALID_LIMIT`, `SPLIT_NOT_SUPPORTED` | bad request for this report |
 | 400 | `INVALID_PERIODS`, `PERIOD_RANGE_TOO_LONG` | a bad `periods` value (ETP-6239); `/render` answers the same `{ error, code }` |
+| 504 | `REPORT_TIMEOUT` | the query ran past the statement timeout (ETP-6146); the UI shows a translated message |
+| 499 | `REPORT_CANCELLED` | the client disconnected; the SQL was cancelled (nobody reads this answer) |
 | 500 | `QUERY_FAILED` | logged server-side; the SQL and the DB message never reach the client |
 
 ## One SQL runner
@@ -119,3 +121,20 @@ Both engines pass `periodRows` and `periodSpec` from `runReportSql` into `buildR
 The templates read them through the canonical helpers in `templates/reports/helpers/report-html-helpers.js` (`createReportHelpers`, mirrored in `JSREPORT_HELPER_SOURCES` so they cross into the jsreport container; the parity test and `parity.json` guard it): `periodLabel(period, columns, locale, totalLabel)` (`sep 26`, `T3 26` / `Q3 26`, `*` when partial, the caller's label for the range), `periodOrder(periods)` (indexes with the range last, for Excel/CSV), `periodPages(columnPages, pageSize)` (the PDF pages with the range last, cut at `meta.columnPageSize`), `periodCompared(periodsParam, idx, mode, columns, locale)` (what a Comparado group is compared against: `ene 25`, `T1 25` or the compared dates) and `periodComparedHeader(caption, ...)` (`Comparado (ene 25)`, for the single Excel / CSV header cell), `periodMode(value)` (`sly`/`prev`, else empty) and `periodSpan(groups, mode)` (columns a group header spans). Never write a second copy in a report's own `helpers.js`.
 
 Functional reference for the first consumer, with the client side (Columnas, the PDF pages, the 24-month export cap in the UI): `docs/generated-custom-windows/profit-loss.md` in `etendo_schema_forge`.
+
+## Shared DB pool, timeout and cancel (ETP-6146)
+
+`cli/src/report-db.js`. The report server (`tools/report-server/server.js`) keeps one module-level pool for `/render`, `/query`, the logo lookup and the selectors, so the DB never sees more than `REPORT_DB_POOL_MAX` connections from it. `handleReportQuery` takes `pool` (shared, never ended) instead of `createPool` (per request, ended: the dev engine); `createPool` still works.
+
+| Env | Default | Meaning |
+|---|---|---|
+| `REPORT_DB_POOL_MAX` | 10 | max connections |
+| `REPORT_DB_CONNECT_TIMEOUT_MS` | 10000 | wait for a connection |
+| `REPORT_DB_IDLE_TIMEOUT_MS` | 30000 | idle connection lifetime |
+| `REPORT_STATEMENT_TIMEOUT_MS` | 30000 | `statement_timeout` of the pool's connections (`/query`, selectors); past it `/query` answers `504 REPORT_TIMEOUT` |
+| `REPORT_RENDER_STATEMENT_TIMEOUT_MS` | 120000 | `statement_timeout` for `/render` (large PDF/XLSX/CSV exports), set on its connection and reset afterwards; past it `/render` answers `504 REPORT_TIMEOUT` |
+| `REPORT_TENANT_CONCURRENCY` | 2 | in-flight `/query` per `ad_client_id`; the rest wait |
+
+`/query` checks out one connection per request. When the browser aborts (`res` closes before the answer is finished), the backend query is cancelled with `pg_cancel_backend(processID)` and the connection is destroyed instead of reused. An abort before the connection is ready, or between the statements of one report, stops the next statement from running. The cancel goes over a short-lived dedicated connection (application_name `etendo-report-cancel`), not the pool, so it works when the pool is saturated: the connection budget is `REPORT_DB_POOL_MAX` plus one transient connection per cancel in flight. A 57014 (SQLSTATE, language independent) after our own abort is `REPORT_CANCELLED`; any other 57014 is `REPORT_TIMEOUT`. The pool logs an idle-client error instead of crashing, and is closed on SIGTERM/SIGINT.
+
+The session lookup and the report-access check of `/query` run in parallel; a session failure still wins over an access one.
