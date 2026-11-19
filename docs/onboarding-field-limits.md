@@ -37,7 +37,7 @@ user saw that literal string on screen with no indication of which field was at 
 | 3 | Company name | **40** | `AD_CLIENT.VALUE` / `AD_ORG.VALUE` NVARCHAR(40) — `InitialSetupUtility.insertClient` writes the same string to `NAME`(60) *and* `VALUE`(40), so the search key binds first |
 | 3 | Tax ID (NIF) | 20 | `C_BPARTNER.TAXID` / `AD_ORGINFO.TAXID` VARCHAR(20) — **preventive**: today the tax id is only persisted in the onboarding draft and never reaches the AD |
 | 3 | Address *(legacy; only field when `structured-address-for-sepa` is off, kept as a fallback for a stale caller when the flag is on)* | 60 | `C_LOCATION.ADDRESS1` NVARCHAR(60) |
-| 3 | Calle (Street) *(only when `structured-address-for-sepa` is on, see below)* | **70** | `EM_OBSEPA_StrtNm` (`org.openbravo.sepa.iso20022`) — ETP-5806 |
+| 3 | Calle (Street) *(only when `structured-address-for-sepa` is on, see below)* | **60** | `EM_OBSEPA_StrtNm` (`org.openbravo.sepa.iso20022`) is VARCHAR(70), but Etendo Go's own onboarding business rule caps it tighter, at 60 — ETP-5806 |
 | 3 | Número (Building Number) *(idem)* | **16** | `EM_OBSEPA_BldgNb` — ETP-5806 |
 | 3 | Nombre de edificio (Building Name, optional) *(idem)* | **35** | `EM_OBSEPA_BldgNm` — ETP-5806 |
 | 3 | Ciudad (City) *(idem)* | **60** | `C_LOCATION.CITY` (DAL `cityName`) NVARCHAR(60) — ETP-5806 |
@@ -71,7 +71,7 @@ same fallback criterion as `LocationEditorModal`'s popup in the functional repo 
 `docs/neo-headless.md` → "`buildingNumber` fallback, now consistent across every channel"). Building
 Name stays optional in every case. The limits live in `ONBOARDING_FIELD_LIMITS` (`fieldLimits.js`) and must stay in sync
 with `@etendosoftware/app-shell-core/lib/locationAddress.js` and the Java-side
-`StructuredAddressComposer` (`com.etendoerp.go`) — same 70/16/35 lengths, same composition
+`StructuredAddressComposer` (`com.etendoerp.go`) — same 60/16/35 lengths, same composition
 algorithm for the Address Line 1/2 the backend ultimately writes to `C_LOCATION`. That core module is the
 canonical browser copy of the rule: it exports the length constants, `effectiveBuildingNumber`
 (the `"s/n"` fallback, `EMPTY_BUILDING_NUMBER_FALLBACK`) and `composeAddressLines` (empty lines
