@@ -11,7 +11,7 @@ import { mkdtempSync, mkdirSync, writeFileSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 
-import { handleReportQuery, buildQueryResponse, runReportSql } from '../src/report-query.js';
+import { handleReportQuery, buildQueryResponse, runReportSql, isChartTreeRender } from '../src/report-query.js';
 import { buildAccountReportTree, ELEMENT_LEVEL_RANK } from '../src/report-grouping.js';
 import { maxPeriodBucketsFor } from '../src/report-periods.js';
 
@@ -649,5 +649,84 @@ describe('report-query — periods (ETP-6239)', () => {
       assert.equal(res.status, 400);
       assert.equal(sql(pool, 'SPLITP').length, 0);
     });
+  });
+});
+
+describe('report-query — chart tree (ETP-6084)', () => {
+  const TB = {
+    tree: 'chart',
+    parameters: [{ name: 'orgId' }, { name: 'dateFrom' }, { name: 'dateTo' }, { name: 'compareTo' }, { name: 'showOnlyAccountsWithValue' }],
+    sql: {
+      query: "SELECT 'OLDQ' WHERE ('__DATEFROM__' = '' OR d >= '__DATEFROM__')",
+      treeQuery: "SELECT 'TREEQ' WHERE ('__DATEFROM__' = '' OR d >= '__DATEFROM__') AND ('__DATETO__' = '' OR d <= '__DATETO__') AND '__COMPARETO__' = 'false'",
+      periodQuery: "SELECT 'PERIODQ' FROM (VALUES __PERIODS__) b WHERE '__DATEFROM__' <> '' AND '__DATETO__' <> ''",
+    },
+  };
+  const CHART = (id, parent, amounts = {}) => ({
+    node_id: id, parent_id: parent, sort_path: id, value: id, name: id, elementlevel: parent ? 'S' : 'E', account_id: id, dimension_id: null,
+    opening_balance: 0, activity_debit: 0, activity_credit: 0, closing_balance: 0, ...amounts,
+  });
+  const TREE = [CHART('E1', null), CHART('S1', 'E1', { activity_debit: 10, closing_balance: 10 }), CHART('S2', 'E1', { activity_credit: 10, closing_balance: -10 })];
+  const PERIODS = '2026-01-01..2026-02-28|2025-01-01..2025-02-28|2025-11-01..2025-12-31';
+
+  before(() => {
+    writeContract('trial-balance-chart', TB);
+    writeContract('trial-balance-old', { ...TB, tree: undefined });
+  });
+
+  it('/query runs sql.treeQuery (not sql.query) and answers a tree with rows, totals and the balance check', async () => {
+    const pool = fakePool({ TREEQ: TREE });
+    const { status, body } = await call('trial-balance-chart', { pool, body: { params: { dateFrom: '2026-01-01', dateTo: '2026-02-28' } } });
+    assert.equal(status, 200);
+    assert.equal(body.kind, 'tree');
+    assert.ok(pool.queries.some((q) => q.includes('TREEQ')));
+    assert.ok(!pool.queries.some((q) => q.includes('OLDQ')));
+    assert.deepEqual(body.rows.map((r) => r.node_id), ['E1', 'S1', 'S2']);
+    assert.equal(body.totals[0].debit.amount, 10);
+    assert.equal(body.balance.balanced, true);
+  });
+
+  it('a contract without tree: chart still runs sql.query as before', async () => {
+    const pool = fakePool({ OLDQ: [{ a: 1 }] });
+    const { body } = await call('trial-balance-old', { pool, body: { params: {} } });
+    assert.equal(body.kind, 'rows');
+    assert.ok(!pool.queries.some((q) => q.includes('TREEQ')));
+  });
+
+  it('with periods it runs periodQuery on the date hull and treeQuery on the hull too, without comparison', async () => {
+    const pool = fakePool({ TREEQ: TREE, PERIODQ: [{ idx: 0, account_id: 'S1', dimension_id: null, activity_debit: 10, closing_balance: 10 }] });
+    const params = { dateFrom: '2026-01-01', dateTo: '2026-02-28', compareTo: 'true', columns: 'total', periods: PERIODS };
+    const { body } = await call('trial-balance-chart', { pool, body: { params } });
+    const tree = pool.queries.find((q) => q.includes('TREEQ'));
+    assert.ok(tree.includes("d >= '2025-01-01'") && tree.includes("d <= '2026-02-28'")); // hull of every range
+    assert.ok(tree.includes("'false' = 'false'"));
+    assert.ok(pool.queries.find((q) => q.includes('PERIODQ')).includes('(0, '));
+    assert.equal(body.periods.length, 1);
+    assert.equal(body.rows.find((r) => r.node_id === 'S1').cells[0].debit.amount, 10);
+    assert.equal(body.totals[0].debit.amount, 10);
+  });
+
+  it('does not cap treeQuery with the limit (a cap would drop chart nodes)', async () => {
+    const pool = fakePool({ TREEQ: TREE });
+    await runReportSql(pool, TB, { clientId: 'C', params: {}, limit: 5, chartTree: true });
+    assert.ok(!pool.queries.some((q) => /LIMIT/.test(q)));
+  });
+
+  it('refuses a chart tree contract with no treeQuery', async () => {
+    await assert.rejects(runReportSql(fakePool(), { tree: 'chart', sql: { query: 'SELECT 1' } }, { clientId: 'C', chartTree: true }), /treeQuery/);
+  });
+
+  it('/render takes the tree path only for a chart contract with expandedNodeIds', () => {
+    assert.equal(isChartTreeRender(TB, { expandedNodeIds: 'E1' }), true);
+    assert.equal(isChartTreeRender(TB, { expandedNodeIds: 'none' }), true);
+    assert.equal(isChartTreeRender(TB, { expandedNodeIds: '' }), false); // the old viewer sends '' for what it has none of
+    assert.equal(isChartTreeRender(TB, {}), false);
+    assert.equal(isChartTreeRender({ ...TB, tree: undefined }, { expandedNodeIds: 'E1' }), false);
+  });
+
+  it('buildQueryResponse leaves the PyG answer untouched', () => {
+    const out = buildQueryResponse({ sql: { operandsQuery: 'x' } }, {}, { rows: TREE_ROWS, operandRows: OPERANDS });
+    assert.equal(out.kind, 'tree');
+    assert.equal(out.totals, undefined);
   });
 });

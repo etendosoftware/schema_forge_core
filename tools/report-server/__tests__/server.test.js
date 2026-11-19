@@ -615,3 +615,17 @@ describe('server.js — period columns wiring (ETP-6239)', () => {
     assert.match(SERVER_SRC, /e\?\.name === 'ReportPeriodsError'\) json\(res, e\.status, \{ error: e\.message, code: e\.code \}\)/);
   });
 });
+
+describe('server.js — chart tree render wiring (ETP-6084)', () => {
+  it('runs sql.treeQuery only when isChartTreeRender says so (expandedNodeIds on a tree: chart contract)', () => {
+    assert.match(SERVER_SRC, /chartTree: isChartTreeRender\(contract, params\)/);
+  });
+
+  it('takes the chart path before the PyG tree and the groupBy fold, and returns early so those stay unchanged', () => {
+    const chart = SERVER_SRC.indexOf('if (isChartTreeRender(contract, params)');
+    assert.ok(chart > 0);
+    assert.ok(chart < SERVER_SRC.indexOf('contract.sql?.operandsQuery !== undefined && Array.isArray(rows)'));
+    assert.match(SERVER_SRC, /buildRenderChartTree\(rows, params,/);
+    assert.match(SERVER_SRC, /neoMeta: chartMeta \? \{ \.\.\.neoMeta, \.\.\.chartMeta \} : neoMeta/);
+  });
+});
