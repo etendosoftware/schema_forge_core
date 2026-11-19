@@ -20,7 +20,12 @@
  * @param {string} params.token           Session token returned by the backend.
  * @param {object} [params.account]       Authenticated account payload.
  * @param {'password'|'sso'} params.authMethod  How the session was obtained.
- * @param {(token: string, account: object, options: {route: boolean, authMethod: string}) => Promise<void>} params.persistAuth
+ * @param {object} [params.capabilities]  ETP-5806 — the `capabilities` map the same backend
+ *        response carries (now populated on login/register/SSO too, not only on session
+ *        restore). Forwarded to `persistAuth` so the onboarding flow's `capabilities` state is
+ *        refreshed right after authenticating, instead of staying stuck at its pre-session `{}`
+ *        default for the rest of the flow (e.g. the structured-address decision in CompanyStep).
+ * @param {(token: string, account: object, options: {route: boolean, authMethod: string, capabilities: object}) => Promise<void>} params.persistAuth
  *        Persists auth state and performs the default environment routing.
  * @param {'cookie'|'bearer'} [params.scheme] Which credential the backend issued —
  *        see {@link credentialSchemeFromLoginResponse}. Forwarded to the caller so it
@@ -79,12 +84,14 @@ export async function completeAuthentication({
   account,
   authMethod,
   scheme,
+  capabilities,
   persistAuth,
   onAuthenticated,
 }) {
   await persistAuth(token, account, {
     route: !onAuthenticated,
     authMethod,
+    capabilities,
   });
 
   if (onAuthenticated) {

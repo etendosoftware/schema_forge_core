@@ -32,7 +32,7 @@ export const MARKETING_CONSENT_DEFAULT = true;
 
 const AUTH_FEATURE_KEYS = ['onboardingAuthFeatureNoCard', 'onboardingAuthFeatureTrial', 'onboardingAuthFeatureInstantAccess'];
 
-export function RegisterStep({ config, stepData, onNext, onBack, goToStep, setToken, setAccountName, handleRegisterSuccess, initialName, initialEmail, emailReadOnly = false, registerHandler, onRegistered, askPhone = true, askPassword = false, askMarketingConsent = askPhone, askSector = askPhone }) {
+export function RegisterStep({ config, stepData, onNext, onBack, goToStep, setToken, setAccountName, setCapabilities, handleRegisterSuccess, initialName, initialEmail, emailReadOnly = false, registerHandler, onRegistered, askPhone = true, askPassword = false, askMarketingConsent = askPhone, askSector = askPhone }) {
   const ui = useUI();
   const { locale, setLocale } = useLocaleSwitch();
 
@@ -98,17 +98,21 @@ export function RegisterStep({ config, stepData, onNext, onBack, goToStep, setTo
   const registerEmailTouched = registerForm.email.trim().length > 0;
   const registerEmailValid = isValidEmailFormat(registerForm.email);
 
-  const handleAuthSuccess = useCallback((csrfToken, account, { route = true, authMethod = 'password' } = {}) => {
+  const handleAuthSuccess = useCallback((csrfToken, account, { route = true, authMethod = 'password', capabilities } = {}) => {
     persistAuthMethod(authMethod);
     if (setToken) setToken(csrfToken);
     if (setAccountName) setAccountName(account?.name || account?.email || null);
+    // ETP-5806 — the register/SSO response now carries `capabilities` (same backend field
+    // session-restore already populated); without this, CompanyStep kept reading the
+    // pre-session `{}` default for the rest of onboarding, regardless of the flag's real value.
+    if (setCapabilities) setCapabilities(capabilities ?? {});
     setShowRegisterPassword(false);
     setSsoError(null);
     setSsoLoadingProvider(null);
     if (route && handleRegisterSuccess) {
       handleRegisterSuccess(csrfToken, account);
     }
-  }, [setToken, setAccountName, handleRegisterSuccess]);
+  }, [setToken, setAccountName, setCapabilities, handleRegisterSuccess]);
 
   const handleSsoProviderLogin = useCallback(async (provider, payload) => {
     trackOnboarding(config, 'onboarding_auth_submitted', {
@@ -133,7 +137,7 @@ export function RegisterStep({ config, stepData, onNext, onBack, goToStep, setTo
           provider,
           status: 'success',
         });
-        handleAuthSuccess(ssoCredential, data.account, { authMethod: 'sso' });
+        handleAuthSuccess(ssoCredential, data.account, { authMethod: 'sso', capabilities: data.capabilities });
       } else {
         trackOnboarding(config, 'onboarding_auth_failed', {
           action: 'sso',
@@ -235,7 +239,7 @@ export function RegisterStep({ config, stepData, onNext, onBack, goToStep, setTo
           action: 'register',
           status: 'success',
         });
-        handleAuthSuccess(credential, data.account, { route: !onRegistered });
+        handleAuthSuccess(credential, data.account, { route: !onRegistered, capabilities: data.capabilities });
         if (onRegistered) await onRegistered(credential, data.account);
       } else {
         trackOnboarding(config, 'onboarding_auth_failed', {
