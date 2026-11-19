@@ -57,16 +57,16 @@ describe('server.js — listing report company-logo lookup (ETP-5013)', () => {
     // in just one of them.
     assert.match(
       SERVER_SRC,
-      /companyLogoDataUrl = await resolveCompanyLogoDataUrl\(logoPool, \{\s*\n\s*clientId: session\.clientId, orgId: params\.orgId, authHeaders: session\.forwardHeaders, etendoBase: ETENDO_URL,/,
+      /companyLogoDataUrl = await resolveCompanyLogoDataUrl\(await getPool\(\), \{\s*\n\s*clientId: session\.clientId, orgId: params\.orgId, authHeaders: session\.forwardHeaders, etendoBase: ETENDO_URL,/,
     );
   });
 
-  it('opens its own short-lived pool for the NEO branch lookup and always closes it', () => {
+  it('uses the shared pool for the NEO branch lookup (ETP-6146)', () => {
     const neoBranchStart = SERVER_SRC.indexOf('Company logo (ETP-5013) — missed in the first pass');
     assert.ok(neoBranchStart >= 0, 'could not locate the NEO-branch company logo comment');
     const neoBranchSlice = SERVER_SRC.slice(neoBranchStart, neoBranchStart + 1000);
-    assert.match(neoBranchSlice, /const logoPool = new pg\.default\.Pool\(getDbConfig\(\)\)/);
-    assert.match(neoBranchSlice, /finally \{\s*\n\s*await logoPool\.end\(\);/);
+    assert.match(neoBranchSlice, /resolveCompanyLogoDataUrl\(await getPool\(\)/);
+    assert.doesNotMatch(neoBranchSlice, /new pg\.default\.Pool/);
   });
 
   it('returns companyLogoDataUrl out of fetchReportData for both the NEO and SQL/listing branches', () => {
@@ -85,5 +85,21 @@ describe('server.js — listing report company-logo lookup (ETP-5013)', () => {
 
   it('resolves document-branch branding via hydrateDocumentBranding directly on the header row, not resolveCompanyLogoDataUrl', () => {
     assert.match(SERVER_SRC, /const header = await hydrateDocumentBranding\(headerResult\.rows\[0\] \|\| \{\}/);
+  });
+});
+
+describe('server.js — /query cancel-on-close wiring (ETP-6146)', () => {
+  const slice = SERVER_SRC.slice(SERVER_SRC.indexOf('async function queryReport'), SERVER_SRC.indexOf('Request handler'));
+
+  it('aborts the SQL on close, writes nothing after an abort and removes the listener', () => {
+    assert.match(slice, /abortOnClose\(res\)/);
+    assert.match(slice, /pool: await getPool\(\), signal/);
+    assert.match(slice, /if \(!signal\.aborted\) json\(res/);
+    assert.match(slice, /finally \{\s*\n\s*dispose\(\);/);
+  });
+
+  it('closes the shared pool on SIGTERM/SIGINT', () => {
+    assert.match(SERVER_SRC, /\['SIGTERM', 'SIGINT'\]/);
+    assert.match(SERVER_SRC, /closeSharedPool\(\)/);
   });
 });
