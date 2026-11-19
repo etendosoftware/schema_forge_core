@@ -831,6 +831,8 @@ export const CHART_AMOUNT_FIELDS = Object.freeze({
 const CHART_AMOUNTS = Object.keys(CHART_AMOUNT_FIELDS);
 const CHART_ROOT_ID = '__chart_root__';
 const BALANCE_TOLERANCE = 0.005;
+/** A sum of many roots can leave float noise (1.8e-12) that `cleanAmount` keeps: below a millionth it is zero. */
+const denoise = (v) => cleanAmount(Math.abs(v) < 1e-6 ? 0 : v);
 
 const isDimensionRow = (r) => r.dimension_id !== undefined && r.dimension_id !== null;
 /** Composite id of a dimension row: unique per (S leaf, dimension value); a missing value ('') is its own row. */
@@ -924,7 +926,7 @@ export function buildChartAccountTree(treeRows, periodRows, opts = {}) {
   const runs = Object.fromEntries(CHART_AMOUNTS.map((a) => [a, runPeriodTrees(nodes, [], periods, feeds[a], treeOpts)]));
   const totals = periods.map((p) => Object.fromEntries(CHART_AMOUNTS.map((a) => {
     const sum = (k) => [...feeds[a].get(p.idx).values()].reduce((acc, v) => acc + v[k], 0);
-    return [a, buildPeriodCell(sum('own_amt'), sum('own_amt_sly'), sum('own_amt_prev'), { sign: 'D', trend })];
+    return [a, buildPeriodCell(denoise(sum('own_amt')), denoise(sum('own_amt_sly')), denoise(sum('own_amt_prev')), { sign: 'D', trend })];
   })));
 
   const shown = new Set(periods.map((_, i) => i).filter((i) => i === 0 || i >= periods.length - comparedPeriods));

@@ -1146,6 +1146,15 @@ describe('buildChartAccountTree (ETP-6084)', () => {
     assert.equal(buildChartAccountTree(CHART, null).totals[0].opening.amount, 7); // S5 counts although it has no ancestor
   });
 
+  it('totals carry no float noise: roots summing to ~1e-12 are exactly 0, variation included', () => {
+    const noisy = [C('E1', '0', 'E', {}), C('E2', '0', 'E', {}), C('E3', '0', 'E', {}),
+      C('S1', 'E1', 'S', A(0.1, 0, 0)), C('S2', 'E2', 'S', A(0.2, 0, 0)), C('S3', 'E3', 'S', A(-0.3, 0, 0))];
+    const { totals } = buildChartAccountTree(noisy, null);
+    assert.equal(totals[0].opening.amount, 0);
+    assert.equal(totals[0].closing.amount, 0);
+    assert.equal(Object.is(totals[0].closing.sly.variationAmount, 0), true);
+  });
+
   it('puts dimension rows under their S leaf with composite ids, and they add up to the leaf', () => {
     const rows = [
       ...CHART.filter((r) => r.node_id !== 'S1'),
