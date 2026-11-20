@@ -7,7 +7,7 @@ import { afterEach } from 'vitest';
 afterEach(cleanup);
 
 // The hook imports auth via its own relative specifiers (`../auth/AuthContext.jsx`
-// and `../auth/api.js`). vitest matches vi.mock by RESOLVED module id, so from
+// and `../auth/useApiFetch.js`). vitest matches vi.mock by RESOLVED module id, so from
 // this test dir (`hooks/__tests__/`) `../../auth/...` resolves to the exact same
 // files the hook imports — the mocks intercept the hook's internal useAuth call.
 //
@@ -25,8 +25,30 @@ vi.mock('../../auth/AuthContext.jsx', () => ({
   useAuth: mockUseAuth,
 }));
 
-vi.mock('../../auth/api.js', () => ({
-  buildHeaders: () => ({}),
+// `useApiFetch` is replaced by a spy that hands back ONE stable function per base URL (the real
+// hook memoizes on `baseUrl`, and the hook under test lists it as an effect dependency, so a
+// fresh function per render would re-fire the fetch effect). The function delegates to the
+// spied global fetch, so the tests keep asserting on the wire call, and the spy records the
+// base URL the hook asked for. A 401 is routed to `mockUnauthorized`, standing in for the
+// logout handler the real `createApiFetch` calls (its own 401 path is covered by api tests).
+const { mockUnauthorized, mockUseApiFetch } = vi.hoisted(() => {
+  const unauthorized = vi.fn();
+  const byBase = new Map();
+  const use = vi.fn((baseUrl) => {
+    if (!byBase.has(baseUrl)) {
+      byBase.set(baseUrl, async (path, init) => {
+        const res = await globalThis.fetch(`${baseUrl}${path}`, init);
+        if (res?.status === 401) unauthorized();
+        return res;
+      });
+    }
+    return byBase.get(baseUrl);
+  });
+  return { mockUnauthorized: unauthorized, mockUseApiFetch: use };
+});
+
+vi.mock('../../auth/useApiFetch.js', () => ({
+  useApiFetch: mockUseApiFetch,
 }));
 
 import { useDistinctValues } from '../useDistinctValues.js';
@@ -34,6 +56,32 @@ import { useDistinctValues } from '../useDistinctValues.js';
 describe('useDistinctValues', () => {
   beforeEach(() => {
     vi.restoreAllMocks();
+    mockUnauthorized.mockClear();
+    mockUseApiFetch.mockClear();
+  });
+
+  it('goes through apiFetch with the caller apiBaseUrl and a bare path', async () => {
+    const fetchSpy = vi.spyOn(globalThis, 'fetch').mockResolvedValue({
+      ok: true,
+      json: () => Promise.resolve({ response: { data: [], hasMore: false } }),
+    });
+    renderHook(() => useDistinctValues('orderLine', 'product', { apiBaseUrl: '/api' }));
+    await waitFor(() => expect(fetchSpy).toHaveBeenCalledTimes(1));
+    expect(mockUseApiFetch).toHaveBeenCalledWith('/api');
+    const url = fetchSpy.mock.calls[0][0];
+    expect(url.startsWith('/api/orderLine?')).toBe(true);
+    expect(url).not.toContain('/api/api');
+  });
+
+  it('reports a 401 to the unauthorized handler and ends in the error state', async () => {
+    vi.spyOn(globalThis, 'fetch').mockResolvedValue({ ok: false, status: 401 });
+    const { result } = renderHook(() =>
+      useDistinctValues('entity', 'field', { apiBaseUrl: '/api' }),
+    );
+    await waitFor(() => expect(result.current.error).toBeTruthy());
+    expect(mockUnauthorized).toHaveBeenCalledTimes(1);
+    expect(result.current.initialLoading).toBe(false);
+    expect(result.current.values).toEqual([]);
   });
 
   it('returns initial empty state', () => {

@@ -1,4 +1,6 @@
 import '@testing-library/jest-dom/vitest';
+import { configure } from '@testing-library/react';
+import { beforeEach } from 'vitest';
 import { JSDOM } from 'jsdom';
 
 // jsdom doesn't implement scroll APIs — stub them so components that
@@ -29,3 +31,27 @@ if (typeof globalThis.localStorage === 'undefined') {
     get: () => storageDom.window.localStorage,
   });
 }
+
+// ETP-5138 — ported from the functional setup (npm-only parts).
+// Grid state is snapshotted into sessionStorage and shared by every test in a file's jsdom
+// realm; clear it between tests so one test's filters never seed the next.
+beforeEach(() => {
+  try {
+    globalThis.sessionStorage?.clear();
+  } catch {
+    /* no sessionStorage in this environment — nothing to reset */
+  }
+});
+
+// scroll-pane observes size via ResizeObserver, which jsdom does not implement.
+if (!globalThis.ResizeObserver) {
+  globalThis.ResizeObserver = class {
+    observe() { /* no-op: size never changes under jsdom */ }
+    unobserve() { /* no-op: nothing is ever observed */ }
+    disconnect() { /* no-op: nothing is ever observed */ }
+  };
+}
+
+// testing-library's `waitFor` window defaults to 1s, which a loaded fork pool can starve;
+// 5s matches the functional setup and stays well below the test timeout.
+configure({ asyncUtilTimeout: 5000 });
