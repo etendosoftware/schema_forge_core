@@ -120,7 +120,7 @@ describe('resolveTemplateFiles edge cases', () => {
   it('constructs correct shared template paths', () => {
     const files = resolveTemplateFiles('/project', 'any', 'listing');
     assert.ok(files.css.includes('templates/reports/base.css'));
-    assert.ok(files.helpers.includes('templates/reports/helpers/common.js'));
+    assert.ok(files.helpers.includes('cli/src/report-helpers/common.js'));
   });
 });
 

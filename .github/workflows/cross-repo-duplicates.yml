@@ -4,6 +4,12 @@ on:
   pull_request:
     types: [opened, synchronize]
     branches: [main, develop, 'epic/**']
+  # A fix that lands only in schema_forge (the ETP-4898 scenario) never touches a core PR,
+  # so also check the two default branches daily. The matching workflow in schema_forge is
+  # a follow-up in that repo's PR; it needs a read secret for this repo there.
+  schedule:
+    - cron: '17 5 * * *'
+  workflow_dispatch:
 
 jobs:
   check:

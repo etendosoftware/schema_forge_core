@@ -1,7 +1,6 @@
 // @covers cli/src/report-html-helpers.js
 import { describe, it } from 'node:test';
 import assert from 'node:assert/strict';
-import { createHash } from 'node:crypto';
 import { readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { buildJsreportHelpersString, createReportHelpers } from '../src/report-html-helpers.js';
@@ -659,57 +658,6 @@ describe('buildJsreportHelpersString — source guard against the minification-u
     // loses the explanation of WHY. Kept as a canary, not as a hard rule.
     assert.match(fnSrc, /toString/);
   });
-});
-
-// ─────────────────────────────────────────────────────────────────────────────
-// ETP-4910 — cross-repo parity contract for the report helper modules.
-//
-// `templates/` is not a published package, so `templates/reports/helpers/*.js`
-// exists as one physical copy per repo: the canonical one in
-// `etendosoftware/etendo_schema_forge` (the copy the assembled report-server
-// image carries — see that repo's `scripts/assemble-report-server-context.sh`)
-// and this mirror. They drifted silently once already: ETP-4908 synced them,
-// then ETP-5107 added the HALF_UP rounding to the canonical copy only, so this
-// one kept rendering half-cent amounts a cent lower for ~2.5 months.
-//
-// The contract is `templates/reports/helpers/parity.json`, committed with
-// identical bytes in both repos and regenerated ONLY by
-// `make sync-report-helpers` in the canonical repo: one canonical sha256 per
-// module. This check is deliberately self-contained (it reads this repo's own
-// copy and its own manifest, never the sibling checkout), so it also runs in a
-// standalone core CI checkout. Applying the recorded import-line normalisation
-// means a copy that differs from the canonical one by anything else — the
-// HALF_UP rule, a comment, a whole function — fails here.
-// ─────────────────────────────────────────────────────────────────────────────
-
-const PARITY_MANIFEST_PATH = fileURLToPath(
-  new URL('../../templates/reports/helpers/parity.json', import.meta.url),
-);
-const PARITY_MANIFEST = JSON.parse(readFileSync(PARITY_MANIFEST_PATH, 'utf8'));
-
-/** sha256 of this repo's copy of a helper module, . */
-function mirrorDigest(moduleName) {
-  const raw = readFileSync(fileURLToPath(new URL(`../../templates/reports/helpers/${moduleName}`, import.meta.url)), 'utf8');
-  const canonical = raw.replace(/\r\n/g, '\n');
-  return createHash('sha256').update(canonical, 'utf8').digest('hex');
-}
-
-describe('report helper modules — cross-repo parity contract (ETP-4910)', () => {
-  it('the manifest lists the mirrored modules and both import specifiers', () => {
-    assert.deepEqual(PARITY_MANIFEST.modules, ['common.js', 'jsreport-helpers.js']);
-  });
-
-  for (const moduleName of PARITY_MANIFEST.modules) {
-    it(`${moduleName} matches the canonical digest in parity.json`, () => {
-      assert.equal(
-        mirrorDigest(moduleName),
-        PARITY_MANIFEST.sha256[moduleName],
-        `${moduleName} no longer matches the canonical copy in etendo_schema_forge. `
-        + 'In that repo run `make sync-report-helpers` (it rewrites this repo\'s copy and both '
-        + 'parity.json files) and commit the result in BOTH repos.',
-      );
-    });
-  }
 });
 
 describe('canonical round2 / numCellType / fixed2 (ETP-6084)', () => {

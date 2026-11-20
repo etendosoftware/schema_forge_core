@@ -537,18 +537,22 @@ schema_forge/
 
 ### `templates/` — the one tree that must stay in sync with the other repo
 
-`report-html-helpers.js` lives in `cli/src/report-html-helpers.js`, shipped by the
-published `@etendosoftware/schema-forge-cli` package, so `etendo_schema_forge` imports it
-from the package instead of keeping a copy (ETP-4980). `common.js` and `jsreport-helpers.js`
-under `templates/reports/helpers/` still exist once per repo; they stay byte-identical,
-guarded by `templates/reports/helpers/parity.json` and
-`cli/test/report-jsreport-helpers-builder.test.js`.
+The shared report helpers live in the published `@etendosoftware/schema-forge-cli` package:
+`cli/src/report-html-helpers.js`, `cli/src/report-helpers/common.js` and
+`cli/src/report-helpers/jsreport-helpers.js`. `etendo_schema_forge` imports them from the
+package instead of keeping copies (ETP-4980), once it pins a release that contains them. The
+report-server image is assembled from a core checkout (`cli/src` is copied whole), so it
+does not depend on that pin. Until `etendo_schema_forge` drops its remaining copies under
+`templates/reports/helpers/`, the check below compares them with the moved modules. Do not run
+`make sync-report-helpers` there in the meantime: it would recreate the helpers and
+`parity.json` under core's `templates/`.
 
-More generally, `scripts/check-cross-repo-duplicates.mjs <schema_forge checkout>` (CI:
-`cross-repo-duplicates.yml`) fails when a source path exists in both repos and is not
-registered in `scripts/cross-repo-duplicates.json`, or when a registered divergent copy
-changes state. Never fix a divergence by copying a whole file over the other: port the
-missing hunk, or move the module into a published package.
+`scripts/check-cross-repo-duplicates.mjs <schema_forge checkout>` (CI:
+`cross-repo-duplicates.yml`, on core PRs and daily) fails when a source path exists in both
+repos and is not registered in `scripts/cross-repo-duplicates.json`. Divergent pairs are
+pinned by per-side sha256, so any further change on either side needs a reviewed registry
+update. Never fix a divergence by copying a whole file over the other: port the missing
+hunk, or move the module into a published package.
 
 ## Documentation
 
