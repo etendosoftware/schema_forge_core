@@ -10,11 +10,17 @@ import { CopyBlock } from '../components/ui/copy-button.jsx';
 import { ShieldIcon, CheckCircleIcon, XCircleIcon, CircleNotchIcon, PlugIcon, DownloadSimpleIcon, SparkleIcon } from '@phosphor-icons/react';
 import { useUI } from '../i18n/index.js';
 import { buildMcpClients, deriveServerName, mcpUrlFor } from '../lib/mcpClients.js';
+import { parseSafeUrl } from '../lib/safeUrl.js';
 import { useObservability } from '../observability/index.js';
 
 function detectMcpUrl() {
   return mcpUrlFor(window.location.origin);
 }
+
+// http: stays allowed only because OAuth native/loopback clients redirect to
+// http://127.0.0.1:<port>/cb (RFC 8252); custom schemes cover MCP client deep links.
+// javascript:/data:/etc. are always rejected by parseSafeUrl.
+const REDIRECT_POLICY = { allowedProtocols: ['https:', 'http:'], allowCustomSchemes: true };
 
 const SCOPE_LABELS = {
   'etendo:read': { labelKey: 'oauthReadData', descriptionKey: 'oauthReadDataDesc' },
@@ -46,6 +52,9 @@ export default function AuthorizePage() {
   const responseType = searchParams.get('response_type');
 
   const scopes = scope.split(/\s+/).filter(Boolean);
+  // ETP-4561 — redirect_uri comes from the query string (untrusted): only http(s) and
+  // app deep-link schemes may be navigated to; javascript:/data: etc. are rejected.
+  const safeRedirectUri = parseSafeUrl(redirectUri, REDIRECT_POLICY);
   const isOAuthFlow = !!(clientId && redirectUri && codeChallenge && responseType === 'code');
 
   async function handleAuthorize() {
@@ -76,10 +85,14 @@ export default function AuthorizePage() {
       }
 
       const data = await res.json();
-      if (data.redirect_url) {
+      const safeRedirectUrl = parseSafeUrl(data.redirect_url, REDIRECT_POLICY);
+      if (data.redirect_url && !safeRedirectUrl) {
+        throw new Error('Invalid redirect URL received');
+      }
+      if (safeRedirectUrl) {
         setStatus('success');
         setTimeout(() => {
-          window.location.href = data.redirect_url;
+          window.location.href = safeRedirectUrl;
         }, 1000);
       } else {
         throw new Error('No redirect URL received');
@@ -93,10 +106,19 @@ export default function AuthorizePage() {
   }
 
   function handleDeny() {
-    if (redirectUri) {
-      const sep = redirectUri.includes('?') ? '&' : '?';
-      window.location.href = `${redirectUri}${sep}error=access_denied&error_description=User+denied+the+request${state ? `&state=${state}` : ''}`;
+    if (!redirectUri) return;
+    if (!safeRedirectUri) {
+      setStatus('error');
+      setErrorMessage('Invalid redirect URL received');
+      return;
     }
+    // Build with URLSearchParams so a hostile `state` (`x&error=foo`, `x#y`) cannot
+    // inject or truncate parameters, and so a `#fragment` in the URI stays last.
+    const url = new URL(safeRedirectUri);
+    url.searchParams.set('error', 'access_denied');
+    url.searchParams.set('error_description', 'User denied the request');
+    if (state) url.searchParams.set('state', state);
+    window.location.href = url.href;
   }
 
   // No OAuth params — show the connections landing page
