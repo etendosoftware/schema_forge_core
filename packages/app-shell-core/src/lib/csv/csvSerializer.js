@@ -7,7 +7,7 @@
  * The normative contract is `com.etendoerp.go/docs/security/csv-neutralization-fixtures.md`,
  * mirrored as executable data in `./csvNeutralizationFixtures.js`. Every implementation
  * (this module, `NeoCsvExportService.java`, and the jsreport `csvField` source text in
- * `templates/reports/helpers/report-html-helpers.js`) must satisfy that same table.
+ * `cli/src/report-html-helpers.js`) must satisfy that same table.
  * When a trigger is added, it goes into the fixture table FIRST, then into every
  * implementation.
  */

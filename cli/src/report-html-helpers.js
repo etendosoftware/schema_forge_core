@@ -1,4 +1,4 @@
-import { RETURN_LABELS, DOC_TYPE_LABEL_OVERRIDES } from '../../../cli/src/report-i18n.js';
+import { RETURN_LABELS, DOC_TYPE_LABEL_OVERRIDES } from './report-i18n.js';
 
 /**
  * Neutralizes one spreadsheet cell value against formula injection (CWE-1236).

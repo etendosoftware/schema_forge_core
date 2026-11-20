@@ -1,0 +1,24 @@
+{
+  "description": "Source paths that exist in both schema_forge_core and schema_forge (ETP-4980). `divergent` lists copies that already drifted and are NOT yet consolidated: each needs an owner decision and a call-site migration, never a whole-file copy. `identical` lists copies that are still byte-equal and are kept in sync only by the check in scripts/check-cross-repo-duplicates.mjs. Remove an entry when the file is consolidated; the check fails on stale entries.",
+  "divergent": {
+    "cli/src/db.js": "divergent API: core adds sweepCache/getCacheDrift/reportCacheDrift/resolveCacheDir/applyCacheModeFromEnv and renames DEFAULT_CACHE_PATH to DEFAULT_CACHE_DIR; schema_forge call sites must migrate",
+    "cli/src/lib/ad-cache.js": "divergent API: companion of cli/src/db.js",
+    "cli/src/data-fixes/run.js": "divergent: schema_forge has features core lacks and vice versa; needs owner decision",
+    "cli/src/data-fixes/tui.js": "divergent: needs owner decision",
+    "cli/src/data-fixes/parse-fix.js": "divergent: needs owner decision",
+    "scripts/add-data-testid.cjs": "divergent: needs owner decision",
+    "cli/test/db.test.js": "follows cli/src/db.js",
+    "cli/test/slice-labels.test.js": "divergent: needs owner decision",
+    "cli/test/data-fixes-parse-fix.test.js": "follows cli/src/data-fixes/parse-fix.js",
+    "cli/test/data-fixes-run.test.js": "follows cli/src/data-fixes/run.js"
+  },
+  "identical": {
+    "cli/src/data-fixes/lib/sampledata-xml.js": "pending move into the published CLI package",
+    "cli/test/data-fixes-sampledata-xml.test.js": "follows sampledata-xml.js",
+    "scripts/etp-4177-tax-migration/gen-obtl-inserts.cjs": "one-off migration script, run from the repo checkout",
+    "scripts/run-sequence-generator-cloud.mjs": "operational script, run from the repo checkout",
+    "scripts/selector-inventory.js": "operational script, run from the repo checkout",
+    "templates/reports/helpers/common.js": "guarded by templates/reports/helpers/parity.json",
+    "templates/reports/helpers/jsreport-helpers.js": "guarded by templates/reports/helpers/parity.json"
+  }
+}

@@ -1,12 +1,12 @@
-// @covers templates/reports/helpers/report-html-helpers.js
+// @covers cli/src/report-html-helpers.js
 import { describe, it } from 'node:test';
 import assert from 'node:assert/strict';
 import { createHash } from 'node:crypto';
 import { readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
-import { buildJsreportHelpersString, createReportHelpers } from '../../templates/reports/helpers/report-html-helpers.js';
+import { buildJsreportHelpersString, createReportHelpers } from '../src/report-html-helpers.js';
 
-const MODULE_PATH = fileURLToPath(new URL('../../templates/reports/helpers/report-html-helpers.js', import.meta.url));
+const MODULE_PATH = fileURLToPath(new URL('../src/report-html-helpers.js', import.meta.url));
 
 // The jsreport PDF/XLSX render path (`report-api.js`) sends a `helpers` STRING
 // over HTTP to the jsreport Docker container, which evaluates it in its own,
@@ -687,21 +687,16 @@ const PARITY_MANIFEST_PATH = fileURLToPath(
 );
 const PARITY_MANIFEST = JSON.parse(readFileSync(PARITY_MANIFEST_PATH, 'utf8'));
 
-/** sha256 of this repo's copy of a helper module, reduced to the canonical form. */
+/** sha256 of this repo's copy of a helper module, . */
 function mirrorDigest(moduleName) {
   const raw = readFileSync(fileURLToPath(new URL(`../../templates/reports/helpers/${moduleName}`, import.meta.url)), 'utf8');
-  const canonical = raw
-    .replace(/\r\n/g, '\n')
-    .split(PARITY_MANIFEST.importLine.schema_forge_core)
-    .join(PARITY_MANIFEST.importLine.schema_forge);
+  const canonical = raw.replace(/\r\n/g, '\n');
   return createHash('sha256').update(canonical, 'utf8').digest('hex');
 }
 
 describe('report helper modules — cross-repo parity contract (ETP-4910)', () => {
   it('the manifest lists the mirrored modules and both import specifiers', () => {
-    assert.deepEqual(PARITY_MANIFEST.modules, ['common.js', 'jsreport-helpers.js', 'report-html-helpers.js']);
-    assert.ok(PARITY_MANIFEST.importLine.schema_forge);
-    assert.ok(PARITY_MANIFEST.importLine.schema_forge_core);
+    assert.deepEqual(PARITY_MANIFEST.modules, ['common.js', 'jsreport-helpers.js']);
   });
 
   for (const moduleName of PARITY_MANIFEST.modules) {
@@ -715,20 +710,6 @@ describe('report helper modules — cross-repo parity contract (ETP-4910)', () =
       );
     });
   }
-
-  it('the mirrored helper module imports report-i18n relatively, as the contract records', () => {
-    // The one allowed difference: this repo ships report-i18n inside cli/src, the
-    // canonical repo imports it from the published CLI package.
-    const raw = readFileSync(
-      fileURLToPath(new URL('../../templates/reports/helpers/report-html-helpers.js', import.meta.url)),
-      'utf8',
-    );
-    assert.ok(
-      raw.includes(PARITY_MANIFEST.importLine.schema_forge_core),
-      'report-html-helpers.js must import report-i18n from ../../../cli/src/report-i18n.js in this repo',
-    );
-    assert.ok(!raw.includes(PARITY_MANIFEST.importLine.schema_forge));
-  });
 });
 
 describe('canonical round2 / numCellType / fixed2 (ETP-6084)', () => {

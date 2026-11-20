@@ -1,0 +1,26 @@
+name: Cross-repo Duplicates
+
+on:
+  pull_request:
+    types: [opened, synchronize]
+    branches: [main, develop, 'epic/**']
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/checkout@v4
+        with:
+          repository: etendosoftware/etendo_schema_forge
+          # Needs read access to the sibling private repo (the default GITHUB_TOKEN is scoped to this one).
+          token: ${{ secrets.CROSS_REPO_READ_TOKEN }}
+          path: schema_forge
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Fail on cross-repo source divergence
+        run: node scripts/check-cross-repo-duplicates.mjs schema_forge

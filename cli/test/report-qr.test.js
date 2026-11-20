@@ -3,7 +3,7 @@ import { strict as assert } from 'node:assert';
 import {
   buildDocumentQrText,
   computeDocumentQrDataUrl,
-} from '../../templates/reports/helpers/report-html-helpers.js';
+} from '../src/report-html-helpers.js';
 
 describe('buildDocumentQrText', () => {
   const fullHeader = {
