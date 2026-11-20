@@ -25,8 +25,10 @@ vi.mock('../../auth/AuthContext.jsx', () => ({
   useAuth: mockUseAuth,
 }));
 
-vi.mock('../../auth/api.js', () => ({
-  buildHeaders: () => ({}),
+// apiFetch is stubbed to delegate to the spied global fetch, so the tests keep
+// asserting on the wire call; the 401 handling itself is covered by api.js tests.
+vi.mock('../../auth/useApiFetch.js', () => ({
+  useApiFetch: (baseUrl) => (path, init) => globalThis.fetch(`${baseUrl}${path}`, init),
 }));
 
 import { useDistinctValues } from '../useDistinctValues.js';
