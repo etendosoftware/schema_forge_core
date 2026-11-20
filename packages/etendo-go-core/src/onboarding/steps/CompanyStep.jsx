@@ -76,6 +76,12 @@ export function CompanyStep({ config, stepData, onNext, onBack, goToStep, onChan
   };
 
   const handleStart = () => {
+    // ETP-6363: the second step of marketing's onboarding funnel, as ProfileStep reports the first.
+    trackOnboarding(config, 'onboarding_setup_step_completed', {
+      action: 'continue',
+      status: 'success',
+      type: 'company',
+    });
     if (setDraftNotice) setDraftNotice(false);
     onNext(form);
   };
