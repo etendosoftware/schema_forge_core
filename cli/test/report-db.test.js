@@ -125,6 +125,75 @@ describe('withReportClient', () => {
     await assert.rejects(withReportClient({ connect: () => assert.fail('connected') }, ac.signal, async () => {}), ReportCancelledError);
   });
 
+  it('holds the checked-out connection until its dedicated cancel has finished', async () => {
+    let finishCancel;
+    let cancelEnded = false;
+    let config;
+    class C {
+      constructor(cfg) { config = cfg; }
+      async connect() {}
+      query() { return new Promise((resolve) => { finishCancel = resolve; }); }
+      async end() { cancelEnded = true; }
+    }
+    const client = fakeClient();
+    const pool = fakePool(client);
+    class P { constructor() { return pool; } }
+    getSharedPool(P, {}, C);
+    const ac = new AbortController();
+    const work = withReportClient(pool, ac.signal, async () => { ac.abort(); throw pgError('canceled'); });
+    const rejected = assert.rejects(work, ReportCancelledError);
+    await tick();
+    assert.deepEqual(client.released, [], 'releasing early permits another request and another cancel connection');
+    finishCancel({ rows: [] });
+    await rejected;
+    assert.equal(cancelEnded, true);
+    assert.deepEqual(client.released, [true]);
+    assert.equal(config.statement_timeout, getPoolLimits().connectionTimeoutMillis);
+    assert.equal(config.query_timeout, getPoolLimits().connectionTimeoutMillis);
+  });
+
+  it('releases a saturated pool slot before waiting for a cancel sent through the pool fallback', async () => {
+    let finishCancel;
+    let cancelFinished = false;
+    const client = fakeClient();
+    client.release = (arg) => { client.released.push(arg); finishCancel(); };
+    const pool = {
+      connect: async () => client,
+      query: () => new Promise((resolve) => { finishCancel = () => { cancelFinished = true; resolve({ rows: [] }); }; }),
+    };
+    const ac = new AbortController();
+    await assert.rejects(withReportClient(pool, ac.signal, async () => {
+      ac.abort();
+      throw pgError('canceled');
+    }), ReportCancelledError);
+    assert.equal(cancelFinished, true);
+    assert.deepEqual(client.released, [true]);
+  });
+
+  for (const stage of ['connect', 'query']) {
+    it(`destroys the pooled connection and closes the dedicated client when cancel ${stage} fails`, async (t) => {
+      const logged = t.mock.method(console, 'error', () => {});
+      let ended = false;
+      class C {
+        async connect() { if (stage === 'connect') throw new Error('connect timeout'); }
+        async query() { throw new Error('Query read timeout'); }
+        async end() { ended = true; }
+      }
+      const client = fakeClient();
+      const pool = fakePool(client);
+      class P { constructor() { return pool; } }
+      getSharedPool(P, {}, C);
+      const ac = new AbortController();
+      await assert.rejects(withReportClient(pool, ac.signal, async () => {
+        ac.abort();
+        throw pgError('canceled');
+      }), ReportCancelledError);
+      assert.equal(ended, true);
+      assert.deepEqual(client.released, [true]);
+      assert.equal(logged.mock.callCount(), 1);
+    });
+  }
+
   it('an abort while waiting for the connection runs no SQL and releases the client', async () => {
     const client = fakeClient();
     const ac = new AbortController();
@@ -226,6 +295,29 @@ describe('acquireTenantSlot', () => {
     const r2 = await other;
     assert.equal(got, true);
     r2();
+  });
+
+  it('times out a queued request without taking a slot or blocking the next waiter', async (t) => {
+    t.mock.timers.enable({ apis: ['setTimeout'] });
+    const previous = process.env.REPORT_TENANT_WAIT_TIMEOUT_MS;
+    process.env.REPORT_TENANT_WAIT_TIMEOUT_MS = '50';
+    const release = await acquireTenantSlot('slow', undefined, 1);
+    const ac = new AbortController();
+    try {
+      const timedOut = assert.rejects(acquireTenantSlot('slow', ac.signal, 1), ReportTimeoutError);
+      t.mock.timers.tick(50);
+      await timedOut;
+      let nextStarted = false;
+      const next = acquireTenantSlot('slow', undefined, 1).then((r) => { nextStarted = true; return r; });
+      await tick();
+      assert.equal(nextStarted, false);
+      ac.abort(); // a late abort of the timed-out request must not remove the next waiter
+      release();
+      (await next)();
+    } finally {
+      if (previous === undefined) delete process.env.REPORT_TENANT_WAIT_TIMEOUT_MS;
+      else process.env.REPORT_TENANT_WAIT_TIMEOUT_MS = previous;
+    }
   });
 
   it('the slot count returns to 0 after success, error, timeout and abort', async () => {
