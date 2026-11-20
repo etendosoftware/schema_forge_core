@@ -175,30 +175,39 @@ export const REGISTRY_VERSION = 3;
 /** Fields a contribution may not declare: the header owns the flag's lifecycle. */
 const HEADER_ONLY_FIELDS = ['ttl', 'ttlNote', 'defaultValue', 'flag'];
 
+function pathProblems(entry) {
+  if (entry.paths === undefined || Array.isArray(entry.paths)) return [];
+  return [`${entry.id}: "paths" must be a flat list (v3 has no per-root paths)`];
+}
+
+function specRootProblems(entry) {
+  const specs = entry.testSpecs || {};
+  return [...(specs.unit || []), ...(specs.e2e || [])]
+    .filter((spec) => spec && typeof spec === 'object' && spec.root !== undefined)
+    .map((spec) => `${entry.id}: testSpec ${spec.path} declares "root" (v3 has a single implicit root)`);
+}
+
+function scopeProblems(entry) {
+  const scope = entry.flag && entry.flag.scope;
+  if (scope === undefined || scope === 'backend') return [];
+  return [`${entry.id}: flag.scope must be absent or "backend" (got ${JSON.stringify(scope)})`];
+}
+
+function contributionProblems(entry) {
+  if (!isContribution(entry)) return [];
+  return HEADER_ONLY_FIELDS
+    .filter((field) => entry[field] !== undefined)
+    .map((field) => `${entry.id}: a contribution may not declare "${field}" — the header owns it`);
+}
+
 function entryProblems(entry) {
   if (!entry.id) return ['every feature needs an "id"'];
-  const problems = [];
-  if (entry.paths !== undefined && !Array.isArray(entry.paths)) {
-    problems.push(`${entry.id}: "paths" must be a flat list (v3 has no per-root paths)`);
-  }
-  const specs = entry.testSpecs || {};
-  for (const spec of [...(specs.unit || []), ...(specs.e2e || [])]) {
-    if (spec && typeof spec === 'object' && spec.root !== undefined) {
-      problems.push(`${entry.id}: testSpec ${spec.path} declares "root" (v3 has a single implicit root)`);
-    }
-  }
-  const scope = entry.flag && entry.flag.scope;
-  if (scope !== undefined && scope !== 'backend') {
-    problems.push(`${entry.id}: flag.scope must be absent or "backend" (got ${JSON.stringify(scope)})`);
-  }
-  if (isContribution(entry)) {
-    for (const field of HEADER_ONLY_FIELDS) {
-      if (entry[field] !== undefined) {
-        problems.push(`${entry.id}: a contribution may not declare "${field}" — the header owns it`);
-      }
-    }
-  }
-  return problems;
+  return [
+    ...pathProblems(entry),
+    ...specRootProblems(entry),
+    ...scopeProblems(entry),
+    ...contributionProblems(entry),
+  ];
 }
 
 /** Every reason a parsed registry is not a valid v3 registry. */
@@ -288,8 +297,7 @@ const unique = (list) => [...new Set(list)];
  *   flagKeyMismatches  a contribution naming a different flag than its header
  *   unverifiable       checkouts that are absent, so their slices are missing
  */
-export function mergeRegistries(loaded) {
-  const issues = { orphans: [], duplicateHeaders: [], flagKeyMismatches: [], unverifiable: [] };
+function groupById(loaded, issues) {
   const byId = new Map();
   for (const { source, registry } of loaded) {
     if (!registry) {
@@ -301,35 +309,44 @@ export function mergeRegistries(loaded) {
       byId.get(entry.id).push({ source, entry });
     }
   }
+  return byId;
+}
 
-  const features = [];
-  for (const [id, group] of byId) {
-    const headers = group.filter(({ entry }) => !entry.contribution);
-    const contributions = group.filter(({ entry }) => entry.contribution);
-    if (headers.length === 0) {
-      issues.orphans.push({ id, sources: contributions.map(({ source }) => source.name) });
-      continue;
-    }
-    if (headers.length > 1) {
-      issues.duplicateHeaders.push({ id, sources: headers.map(({ source }) => source.name) });
-    }
-    const [header] = headers;
-    for (const { source, entry } of contributions) {
-      if (entry.flagKey && header.entry.key && entry.flagKey !== header.entry.key) {
-        issues.flagKeyMismatches.push({
-          id, source: source.name, flagKey: entry.flagKey, headerKey: header.entry.key,
-        });
-      }
-    }
-    const members = [header, ...contributions];
-    features.push({
-      ...header.entry,
-      symbols: unique(members.flatMap(({ entry }) => entry.symbols || [])),
-      deferredItems: members.flatMap(({ entry }) => entry.deferredItems || []),
-      parts: members.map(({ source, entry }) => partOf(entry, source)),
-      contributedBy: contributions.map(({ source }) => source.name),
-    });
+function flagKeyMismatches(id, header, contributions) {
+  return contributions
+    .filter(({ entry }) => entry.flagKey && header.entry.key && entry.flagKey !== header.entry.key)
+    .map(({ source, entry }) => ({
+      id, source: source.name, flagKey: entry.flagKey, headerKey: header.entry.key,
+    }));
+}
+
+function mergeGroup(id, group, issues) {
+  const headers = group.filter(({ entry }) => !entry.contribution);
+  const contributions = group.filter(({ entry }) => entry.contribution);
+  if (headers.length === 0) {
+    issues.orphans.push({ id, sources: contributions.map(({ source }) => source.name) });
+    return null;
   }
+  if (headers.length > 1) {
+    issues.duplicateHeaders.push({ id, sources: headers.map(({ source }) => source.name) });
+  }
+  const [header] = headers;
+  issues.flagKeyMismatches.push(...flagKeyMismatches(id, header, contributions));
+  const members = [header, ...contributions];
+  return {
+    ...header.entry,
+    symbols: unique(members.flatMap(({ entry }) => entry.symbols || [])),
+    deferredItems: members.flatMap(({ entry }) => entry.deferredItems || []),
+    parts: members.map(({ source, entry }) => partOf(entry, source)),
+    contributedBy: contributions.map(({ source }) => source.name),
+  };
+}
+
+export function mergeRegistries(loaded) {
+  const issues = { orphans: [], duplicateHeaders: [], flagKeyMismatches: [], unverifiable: [] };
+  const features = [...groupById(loaded, issues)]
+    .map(([id, group]) => mergeGroup(id, group, issues))
+    .filter(Boolean);
   return { features, issues };
 }
 
@@ -967,7 +984,7 @@ function renderFeatureHeading(flag) {
   // The flag is presented as an attribute of the feature — when it is gone,
   // the feature keeps its line and simply reads "shipped".
   let flagMeta = 'shipped — no flag';
-  if (flag.contribution) flagMeta = `contribution${flag.key ? ` · flag ${flag.key}` : ''}`;
+  if (flag.contribution) flagMeta = flag.key ? `contribution · flag ${flag.key}` : 'contribution';
   else if (flag.hasFlag) flagMeta = `flag ${flag.key} · default ${flag.defaultValue}`;
   const meta = [flag.jira, `owner ${flag.owner}`, flagMeta].filter(Boolean).join(' · ');
   return [`${flag.id}  (${meta})`, `  ${flag.description}`, ''];
