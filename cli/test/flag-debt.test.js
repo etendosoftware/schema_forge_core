@@ -9,7 +9,11 @@ import {
   POINTS,
   REGISTRY_FILENAME,
   loadRegistry,
-  resolveRoots,
+  registryProblems,
+  describeSource,
+  mergeRegistries,
+  isContribution,
+  REGISTRY_VERSION,
   walkFiles,
   findSymbolHits,
   matchesPath,
@@ -67,10 +71,10 @@ const FLAG = {
   ttl: '2026-10-25',
   defaultValue: false,
   symbols: ['tenant-upgrade', 'TENANT_UPGRADE'],
-  paths: { frontend: ['app/upgrade/'], backend: ['src/payment/'] },
+  paths: ['app/upgrade/'],
   testSpecs: {
-    unit: [{ root: 'frontend', path: 'app/__tests__/upgrade.test.js' }],
-    e2e: [{ root: 'frontend', path: 'e2e/upgrade.spec.js', expected: true }],
+    unit: [{ path: 'app/__tests__/upgrade.test.js' }],
+    e2e: [{ path: 'e2e/upgrade.spec.js', expected: true }],
   },
 };
 
@@ -87,10 +91,15 @@ function nest(flat) {
   };
 }
 
+/** The fixture flag as a normalized feature, for building merged features by hand. */
+function nestedFeature() {
+  return normalizeFeature(nest(FLAG));
+}
+
 function registryFile(flags = [FLAG]) {
   return {
-    version: 2,
-    roots: { frontend: '.', backend: 'modules/backend' },
+    version: 3,
+    sonarProject: 'schema-forge-core',
     conventions: { frameworkPaths: ['app/lib/flags/'] },
     features: flags.map(nest),
   };
@@ -102,14 +111,11 @@ function normalizedRegistry(flags = [FLAG]) {
   return { ...raw, features: raw.features.map(normalizeFeature) };
 }
 
-/**
- * `backend` defaults to the NESTED module root, mirroring the real repo where
- * the backend checkout sits inside the frontend one. Pass `{ backend: null }`
- * for the cases that are specifically about an unavailable root.
- */
-function context({ flags = [FLAG], backend = undefined } = {}) {
+/** A single-registry context: one implicit root, the repo being scored. */
+function context({ flags = [FLAG] } = {}) {
   return {
-    roots: { frontend: root, backend: backend === undefined ? join(root, 'modules/backend') : backend },
+    root,
+    sonarProject: 'schema-forge-core',
     frameworkPaths: registryFile(flags).conventions.frameworkPaths,
     repoRoot: root,
     now: NOW,
@@ -141,9 +147,6 @@ before(() => {
   write('app/upgrade/generated/out.js', 'const x = "tenant-upgrade";\n');
   write('app/image.png', 'tenant-upgrade');
 
-  // A nested root: the backend module lives INSIDE the frontend root. Its own
-  // owned file must not be counted a second time as a frontend touch point.
-  write('modules/backend/src/payment/Paywall.java', '// tenant-upgrade paywall\n');
 
   writeFileSync(join(root, REGISTRY_FILENAME), JSON.stringify(registryFile(), null, 2));
 });
@@ -162,7 +165,7 @@ describe('loadRegistry', () => {
 
   it('rejects a registry with no flags array', () => {
     const bad = join(root, 'bad-registry.json');
-    writeFileSync(bad, JSON.stringify({ version: 1 }));
+    writeFileSync(bad, JSON.stringify({ version: 3 }));
     assert.throws(() => loadRegistry(bad), /expected a "features" array/);
   });
 
@@ -170,31 +173,6 @@ describe('loadRegistry', () => {
     const broken = join(root, 'broken-registry.json');
     writeFileSync(broken, '{ not json');
     assert.throws(() => loadRegistry(broken));
-  });
-});
-
-describe('resolveRoots', () => {
-  it('resolves the frontend root relative to the repo root', () => {
-    assert.equal(resolveRoots(registryFile(), { repoRoot: root, env: {} }).frontend, root);
-  });
-
-  it('resolves a declared backend that exists on disk', () => {
-    const resolved = resolveRoots(registryFile(), { repoRoot: root, env: {} });
-    assert.equal(resolved.backend, join(root, 'modules/backend'));
-    assert.equal(resolved.backendUnavailableReason, null);
-  });
-
-  it('reports a missing backend instead of failing', () => {
-    const absent = { ...registryFile(), roots: { frontend: '.', backend: 'modules/absent' } };
-    const resolved = resolveRoots(absent, { repoRoot: root, env: {} });
-    assert.equal(resolved.backend, null);
-    assert.match(resolved.backendUnavailableReason, /backend module not found/);
-  });
-
-  it('prefers an explicit ETENDO_GO_MODULE', () => {
-    const resolved = resolveRoots(registryFile(), { repoRoot: root, env: { ETENDO_GO_MODULE: root } });
-    assert.equal(resolved.backend, root);
-    assert.equal(resolved.backendUnavailableReason, null);
   });
 });
 
@@ -217,6 +195,7 @@ describe('walkFiles', () => {
 
   it('blocks an absolute directory named in skipPaths', () => {
     const nested = join(root, 'modules/backend');
+    write('modules/backend/src/payment/Paywall.java', '// nested checkout\n');
     assert.ok([...walkFiles(root)].some(f => f.includes('Paywall.java')),
       'precondition: the nested file is walked by default');
     assert.ok(![...walkFiles(root, { skipPaths: [nested] })].some(f => f.includes('Paywall.java')));
@@ -225,6 +204,7 @@ describe('walkFiles', () => {
   it('leaves everything outside skipPaths alone', () => {
     const found = [...walkFiles(root, { skipPaths: [join(root, 'modules/backend')] })];
     assert.ok(found.includes('app/routes.jsx'));
+    rmSync(join(root, 'modules'), { recursive: true, force: true });
   });
 });
 
@@ -319,36 +299,58 @@ describe('dimension 1 — touch points', () => {
     rmSync(join(root, 'app/extra-b.jsx'));
   });
 
-  it('records which roots it could and could not scan', () => {
-    const touchPoints = collectTouchPoints(FLAG, context({ backend: null }));
-    assert.deepEqual(touchPoints.scannedRoots, ['frontend']);
-    assert.deepEqual(touchPoints.skippedRoots, ['backend']);
+  it('records which checkouts it scanned and which it could not', () => {
+    const absent = { name: 'backend', root: null, sonarProject: null };
+    const touchPoints = collectTouchPoints(FLAG, {
+      ...context(),
+      sources: [{ name: 'repo', root, sonarProject: null }, absent],
+      root: undefined,
+    });
+    // A lone-registry feature scores over the first source only.
+    assert.deepEqual(touchPoints.scannedSources, ['repo']);
+    assert.deepEqual(touchPoints.skippedSources, []);
   });
 
-  // Roots nest: the backend module sits inside the repo. Without the skip, its
-  // owned files are visited twice — once correctly under their own root, and
-  // once under the outer root where the backend's owned-path declarations do
-  // not apply, turning owned code into a phantom touch point.
-  it('does not charge a nested root\'s owned file as an outer-root touch point', () => {
-    const paths = collectTouchPoints(FLAG, context()).files.map(f => f.path);
+  it('reports a merged feature\'s absent checkout as skipped', () => {
+    const absent = { name: 'backend', root: null, sonarProject: null };
+    const merged = { ...nestedFeature(), parts: [
+      { source: { name: 'repo', root, sonarProject: null }, paths: ['app/upgrade/'], testSpecs: {}, symbols: FLAG.symbols },
+      { source: absent, paths: [], testSpecs: {}, symbols: [] },
+    ] };
+    const touchPoints = collectTouchPoints(merged, context());
+    assert.deepEqual(touchPoints.scannedSources, ['repo']);
+    assert.deepEqual(touchPoints.skippedSources, ['backend']);
+  });
+
+  // Checkouts nest: one repo sits inside another. Without the skip, the inner
+  // repo's owned files are visited twice — once correctly under their own root,
+  // and once under the outer root where its owned-path declarations do not
+  // apply, turning owned code into a phantom touch point.
+  it('does not charge a nested checkout\'s owned file as an outer touch point', () => {
+    write('modules/backend/src/payment/Paywall.java', '// tenant-upgrade paywall\n');
+    const inner = join(root, 'modules/backend');
+    const merged = { ...nestedFeature(), parts: [
+      { source: { name: 'repo', root, sonarProject: null }, paths: ['app/upgrade/'], testSpecs: {}, symbols: FLAG.symbols },
+      { source: { name: 'backend', root: inner, sonarProject: null }, paths: ['src/payment/'], testSpecs: {}, symbols: [] },
+    ] };
+    const paths = collectTouchPoints(merged, context()).files.map(f => f.path);
     assert.ok(!paths.some(p => p.includes('Paywall.java')),
-      `nested backend file leaked into the frontend touch points: ${paths.join(', ')}`);
+      `nested file leaked into the outer touch points: ${paths.join(', ')}`);
     assert.deepEqual(paths.sort(), ['app/menu.jsx', 'app/routes.jsx']);
-  });
 
-  it('does charge it when that root is not declared — the skip is what prevents it', () => {
-    const paths = collectTouchPoints(FLAG, context({ backend: null })).files.map(f => f.path);
-    assert.ok(paths.some(p => p.includes('Paywall.java')),
-      'expected the undeclared nested file to be walked as ordinary frontend source');
+    // Without the inner checkout as a source, the skip does not apply.
+    const alone = collectTouchPoints(FLAG, context()).files.map(f => f.path);
+    assert.ok(alone.some(p => p.includes('Paywall.java')), 'the skip is what prevents the leak');
+    rmSync(join(root, 'modules'), { recursive: true, force: true });
   });
 });
 
 describe('dimension 2 — declared test specs', () => {
   it('normalises both the string and object spec shapes', () => {
     assert.deepEqual(normalizeSpec('a/b.test.js'),
-      { path: 'a/b.test.js', root: 'frontend', expected: false, acceptedDebt: false, note: null });
-    assert.deepEqual(normalizeSpec({ path: 'x.java', root: 'backend', expected: true }),
-      { path: 'x.java', root: 'backend', expected: true, acceptedDebt: false, note: null });
+      { path: 'a/b.test.js', expected: false, acceptedDebt: false, note: null });
+    assert.deepEqual(normalizeSpec({ path: 'x.java', expected: true }),
+      { path: 'x.java', expected: true, acceptedDebt: false, note: null });
   });
 
   it('carries a declared note through normalisation', () => {
@@ -451,20 +453,25 @@ describe('dimension 2 — declared test specs', () => {
     assert.equal(spec.note, 'missing');
   });
 
-  it('marks a spec unverifiable when its root is unavailable', () => {
-    const backendSpec = {
-      ...FLAG,
-      testSpecs: { unit: [{ root: 'backend', path: 'src-test/Foo.java' }], e2e: [] },
-    };
-    const spec = checkTestSpecs(backendSpec, context({ backend: null })).kinds.unit.specs[0];
-    assert.equal(spec.unverifiable, true);
-    assert.equal(spec.exists, false);
+  it('marks a spec unverifiable, and does not charge it, when its checkout is absent', () => {
+    const merged = { ...nestedFeature(), parts: [{
+      source: { name: 'backend', root: null, sonarProject: null },
+      paths: [],
+      testSpecs: { unit: [{ path: 'src-test/Foo.java', expected: true }], e2e: [] },
+      symbols: [],
+    }] };
+    const unit = checkTestSpecs(merged, context()).kinds.unit;
+    assert.equal(unit.specs[0].unverifiable, true);
+    assert.equal(unit.specs[0].exists, false);
+    assert.equal(unit.unverifiable.length, 1);
+    assert.equal(unit.pending.length, 0);
+    assert.equal(unit.points, 0, 'the score must not depend on which checkouts are present');
   });
 });
 
 describe('dimension 3 — coverage', () => {
   it('expands owned directories into individual source files', () => {
-    const files = expandOwnedFiles(FLAG, { frontend: root, backend: null }).map(f => f.path);
+    const files = expandOwnedFiles(FLAG, context()).map(f => f.path);
     assert.deepEqual(files, ['app/upgrade/api.js', 'app/upgrade/page.jsx']);
   });
 
@@ -883,14 +890,13 @@ describe('scoreFlag and buildReport', () => {
     assert.match(output, /shipped — no flag/);
   });
 
-  it('scores every flag and records the backend warning', () => {
-    const report = buildReport(normalizedRegistry(), {
-      ...context(),
-      backendUnavailableReason: 'backend module not found',
-    });
+  it('scores every flag and records the sources', () => {
+    const report = buildReport(normalizedRegistry(), context());
     assert.equal(report.features.length, 1);
-    assert.equal(report.version, 2);
-    assert.match(report.roots.backendUnavailableReason, /backend module not found/);
+    assert.equal(report.version, 3);
+    assert.equal(report.rollup, null);
+    assert.equal(report.sources.length, 1);
+    assert.equal(report.sources[0].root, root);
     assert.match(report.generatedAt, /^\d{4}-\d{2}-\d{2}T/);
   });
 });
@@ -1060,6 +1066,302 @@ describe('parseArgs', () => {
   });
 });
 
+describe('registry format v3', () => {
+  const entry = { id: 'f', description: 'd' };
+
+  it('accepts a registry with one implicit root and flat paths', () => {
+    assert.deepEqual(registryProblems(registryFile()), []);
+  });
+
+  it('rejects a registry that is not v3', () => {
+    assert.match(registryProblems({ version: 2, features: [] }).join(), /"version": 3/);
+  });
+
+  it('rejects the roots block, which v3 dropped', () => {
+    assert.match(registryProblems({ version: 3, roots: { frontend: '.' }, features: [] }).join(), /"roots" block is gone/);
+  });
+
+  it('rejects per-root paths and a root: field on a testSpec', () => {
+    const problems = registryProblems({
+      version: 3,
+      features: [{ ...entry, paths: { frontend: ['a/'] }, testSpecs: { unit: [{ path: 'x.js', root: 'backend' }] } }],
+    }).join();
+    assert.match(problems, /"paths" must be a flat list/);
+    assert.match(problems, /declares "root"/);
+  });
+
+  it('rejects a non-string sonarProject', () => {
+    assert.match(registryProblems({ version: 3, sonarProject: 7, features: [] }).join(), /sonarProject/);
+  });
+
+  it('loads an empty registry — the empty core registry scores nothing', () => {
+    const empty = join(root, 'empty-registry.json');
+    writeFileSync(empty, JSON.stringify({ version: REGISTRY_VERSION, sonarProject: 'schema-forge-core', features: [] }));
+    assert.deepEqual(loadRegistry(empty).features, []);
+  });
+
+  it('reads sonarProject into the source description', () => {
+    const registry = registryFile();
+    const source = describeSource(join(root, REGISTRY_FILENAME), { registry });
+    assert.equal(source.sonarProject, 'schema-forge-core');
+    assert.equal(source.root, root);
+    assert.equal(describeSource(join(root, REGISTRY_FILENAME), { available: false }).root, null);
+  });
+});
+
+describe('contributions', () => {
+  const contribution = {
+    id: 'tenant-upgrade-feature',
+    flagKey: 'tenant-upgrade',
+    symbols: ['TENANT_UPGRADE'],
+    paths: ['src/payment/'],
+    testSpecs: { unit: [{ path: 'src-test/PaywallTest.java', expected: true }], e2e: [] },
+  };
+
+  it('recognises a contribution by flagKey, or by the marker kept after retirement', () => {
+    assert.equal(isContribution(contribution), true);
+    assert.equal(isContribution({ id: 'x', contribution: true }), true);
+    assert.equal(isContribution({ id: 'x', flag: { key: 'k' } }), false);
+  });
+
+  it('forbids ttl, ttlNote, defaultValue and a flag object in a contribution', () => {
+    for (const field of ['ttl', 'ttlNote', 'defaultValue', 'flag']) {
+      const problems = registryProblems({ version: 3, features: [{ ...contribution, [field]: 'x' }] }).join();
+      assert.match(problems, new RegExp(`may not declare "${field}"`), field);
+    }
+  });
+
+  it('makes the local validator reject it on load', () => {
+    const bad = join(root, 'bad-contribution.json');
+    writeFileSync(bad, JSON.stringify({ version: 3, features: [{ ...contribution, ttl: '2026-10-25' }] }));
+    assert.throws(() => loadRegistry(bad), /may not declare "ttl"/);
+    rmSync(bad);
+  });
+
+  it('scores its local dimensions and leaves the lifecycle to the header', () => {
+    write('src-test/placeholder.txt', 'x');
+    const scored = scoreFlag(normalizeFeature({ ...contribution, symbols: ['tenant-upgrade'] }), context());
+    assert.equal(scored.contribution, true);
+    assert.equal(scored.key, 'tenant-upgrade');
+    assert.equal(scored.lifecycle.governedByHeader, true);
+    assert.equal(scored.lifecycle.points, 0);
+    assert.equal(scored.tests.points, POINTS.missingUnitSpecs);
+    const output = renderConsole(buildReport({ version: 3, features: [normalizeFeature(contribution)] }, context()));
+    assert.match(output, /TTL governed by the header/);
+    assert.match(output, /contribution · flag tenant-upgrade/);
+    assert.match(renderHtml(buildReport({ version: 3, features: [normalizeFeature(contribution)] }, context())), /TTL on header/);
+  });
+
+  it('keeps scoring after the flag is retired and flagKey is dropped', () => {
+    const { flagKey, ...retired } = { ...contribution, contribution: true };
+    const scored = scoreFlag(normalizeFeature(retired), context());
+    assert.equal(scored.key, null);
+    assert.equal(scored.contribution, true);
+    assert.equal(scored.tests.points, POINTS.missingUnitSpecs);
+  });
+});
+
+describe('rollup — merge, then score', () => {
+  let other;
+
+  before(() => {
+    other = mkdtempSync(join(tmpdir(), 'flag-debt-other-'));
+    mkdirSync(join(other, 'src/payment'), { recursive: true });
+    writeFileSync(join(other, 'src/payment/Paywall.java'), '// tenant-upgrade owned\n');
+    writeFileSync(join(other, 'Elsewhere.java'), '// tenant-upgrade touch\n');
+  });
+
+  after(() => rmSync(other, { recursive: true, force: true }));
+
+  const header = () => normalizeFeature(nest(FLAG));
+  const contributionOf = (specs) => normalizeFeature({
+    id: 'tenant-upgrade-feature',
+    flagKey: 'tenant-upgrade',
+    symbols: ['tenant-upgrade'],
+    paths: ['src/payment/'],
+    testSpecs: specs,
+    deferredItems: [{ id: 'backend-gap', kind: 'open' }],
+  });
+  const sourceOf = (name, dir, sonarProject = null) => ({ name, root: dir, sonarProject, registryPath: `${name}/r.json` });
+
+  function rollup(specs = { unit: [], e2e: [] }, otherDir = other) {
+    const loaded = [
+      { source: sourceOf('repo', root, 'schema-forge-core'), registry: { features: [header()] } },
+      { source: sourceOf('backend', otherDir, 'etendo-go'), registry: { features: [contributionOf(specs)] } },
+    ];
+    return { loaded, ...mergeRegistries(loaded) };
+  }
+
+  it('folds a header and its contribution into one feature', () => {
+    const { features, issues } = rollup();
+    assert.equal(features.length, 1);
+    assert.deepEqual(features[0].contributedBy, ['backend']);
+    assert.equal(features[0].parts.length, 2);
+    assert.deepEqual(features[0].deferredItems.map(i => i.id), ['backend-gap']);
+    assert.deepEqual(issues, { orphans: [], duplicateHeaders: [], flagKeyMismatches: [], unverifiable: [] });
+  });
+
+  it('scans each checkout with the union of the symbols and its own owned paths', () => {
+    const { features } = rollup();
+    const touch = collectTouchPoints(features[0], { ...context(), sources: undefined });
+    const paths = touch.files.map(f => `${f.source}:${f.path}`).sort();
+    assert.deepEqual(paths, ['backend:Elsewhere.java', 'repo:app/menu.jsx', 'repo:app/routes.jsx']);
+  });
+
+  it('charges a flat spec penalty once, not once per repo', () => {
+    const missing = { unit: [{ path: 'src-test/NopeTest.java', expected: true }], e2e: [] };
+    const { features } = rollup(missing);
+    const merged = checkTestSpecs(features[0], context());
+    // The header's own unit spec exists; the contribution's is pending. One flat charge.
+    assert.equal(merged.kinds.unit.points, POINTS.missingUnitSpecs);
+
+    // Summing per-repo scores would charge it again for the repo that is already clean.
+    const headerOnly = checkTestSpecs(header(), context()).kinds.unit.points;
+    const contributionOnly = checkTestSpecs(contributionOf(missing), { ...context(), root: other }).kinds.unit.points;
+    assert.equal(headerOnly + contributionOnly, POINTS.missingUnitSpecs);
+    const bothMissing = { unit: [{ path: 'a.test.js', expected: true }], e2e: [] };
+    const twoRepos = { ...header(), testSpecs: bothMissing, parts: undefined };
+    const both = { ...twoRepos, parts: [
+      { source: sourceOf('repo', root), paths: [], testSpecs: bothMissing, symbols: [] },
+      { source: sourceOf('backend', other), paths: [], testSpecs: bothMissing, symbols: [] },
+    ] };
+    assert.equal(checkTestSpecs(both, context()).kinds.unit.points, POINTS.missingUnitSpecs);
+  });
+
+  it('takes the lifecycle from the header', () => {
+    const { features } = rollup();
+    const scored = scoreFlag({ ...features[0], ttl: '2000-01-01' }, { ...context(), now: NOW });
+    assert.ok(scored.lifecycle.points > 0);
+    assert.equal(scored.contribution, false);
+  });
+
+  it('reports an orphan contribution and does not score it', () => {
+    const merged = mergeRegistries([
+      { source: sourceOf('backend', other), registry: { features: [contributionOf({})] } },
+    ]);
+    assert.deepEqual(merged.features, []);
+    assert.deepEqual(merged.issues.orphans, [{ id: 'tenant-upgrade-feature', sources: ['backend'] }]);
+  });
+
+  it('reports duplicate headers and keeps the first', () => {
+    const merged = mergeRegistries([
+      { source: sourceOf('a', root), registry: { features: [header()] } },
+      { source: sourceOf('b', other), registry: { features: [header()] } },
+    ]);
+    assert.equal(merged.features.length, 1);
+    assert.deepEqual(merged.issues.duplicateHeaders, [{ id: 'tenant-upgrade-feature', sources: ['a', 'b'] }]);
+  });
+
+  it('reports a contribution naming a different flag than its header', () => {
+    const wrong = { ...contributionOf({}), flagKey: 'other-flag' };
+    const merged = mergeRegistries([
+      { source: sourceOf('a', root), registry: { features: [header()] } },
+      { source: sourceOf('b', other), registry: { features: [wrong] } },
+    ]);
+    assert.equal(merged.issues.flagKeyMismatches.length, 1);
+  });
+
+  it('reports an absent checkout as unverifiable instead of guessing', () => {
+    const merged = mergeRegistries([
+      { source: sourceOf('a', root), registry: { features: [header()] } },
+      { source: { ...sourceOf('go', null), root: null }, registry: null },
+    ]);
+    assert.deepEqual(merged.issues.unverifiable, [{ source: 'go', registry: 'go/r.json' }]);
+    const output = renderConsole(buildReport({ version: 3, features: merged.features }, {
+      ...context(), rollup: merged.issues,
+    }));
+    assert.match(output, /unverifiable: checkout go not found/);
+  });
+
+  it('gives the same score whether or not a checkout holding only specs is present', () => {
+    // Absent: its pending spec is unverifiable and free. The old behaviour charged it.
+    const specs = { unit: [{ path: 'src-test/NopeTest.java', expected: true }], e2e: [] };
+    const { features } = rollup(specs);
+    const absent = { ...features[0], parts: features[0].parts.map(part => (
+      part.source.name === 'backend' ? { ...part, source: { ...part.source, root: null } } : part)) };
+    assert.equal(checkTestSpecs(absent, context()).kinds.unit.points, 0);
+  });
+
+  it('runs coverage per source with that source\'s own sonarProject', () => {
+    const { features } = rollup();
+    const calls = [];
+    write('cli/sonar-coverage.sh', '#!/bin/sh\n');
+    collectCoverage(features[0], {
+      ...context(),
+      env: { SONAR_TOKEN: 'squ_x' },
+      runner: ({ cwd, file, project }) => { calls.push({ cwd, file, project }); return { uncovered: 0 }; },
+      repoRoot: root,
+    });
+    assert.deepEqual(calls.map(c => c.project).sort(), ['etendo-go', 'schema-forge-core', 'schema-forge-core']);
+    assert.ok(calls.some(c => c.cwd === other && c.file === 'src/payment/Paywall.java'));
+    rmSync(join(root, 'cli'), { recursive: true, force: true });
+  });
+
+  it('does not run coverage for a source that declares no sonarProject', () => {
+    write('cli/sonar-coverage.sh', '#!/bin/sh\n');
+    const feature = { ...header(), parts: [
+      { source: sourceOf('repo', root, null), paths: ['app/upgrade/'], testSpecs: {}, symbols: [] },
+    ] };
+    const coverage = collectCoverage(feature, {
+      ...context(), env: { SONAR_TOKEN: 'squ_x' }, repoRoot: root,
+      runner: () => { throw new Error('must not run'); },
+    });
+    assert.equal(coverage.status, 'unavailable');
+    assert.match(coverage.files[0].note, /no sonarProject declared/);
+    rmSync(join(root, 'cli'), { recursive: true, force: true });
+  });
+});
+
+describe('the CLI --rollup', () => {
+  let goDir;
+  let sfDir;
+
+  before(() => {
+    sfDir = mkdtempSync(join(tmpdir(), 'flag-debt-rollup-sf-'));
+    goDir = mkdtempSync(join(tmpdir(), 'flag-debt-rollup-go-'));
+    writeFileSync(join(sfDir, REGISTRY_FILENAME), JSON.stringify({
+      version: 3,
+      features: [{ id: 'paid', description: 'paid tenant', flag: { key: 'paid-flag', ttl: '2999-01-01', symbols: ['paid-flag'] } }],
+    }));
+    writeFileSync(join(goDir, REGISTRY_FILENAME), JSON.stringify({
+      version: 3,
+      sonarProject: 'etendo-go',
+      features: [
+        { id: 'paid', flagKey: 'paid-flag', testSpecs: { unit: [{ path: 'NoTest.java', expected: true }], e2e: [] } },
+        { id: 'stray', flagKey: 'stray-flag' },
+      ],
+    }));
+  });
+
+  after(() => {
+    rmSync(sfDir, { recursive: true, force: true });
+    rmSync(goDir, { recursive: true, force: true });
+  });
+
+  const capture = () => {
+    const chunks = [];
+    return { write: chunk => chunks.push(chunk), get text() { return chunks.join(''); } };
+  };
+
+  it('parses every registry after --rollup up to the next option', () => {
+    const options = parseArgs(['--rollup', '/a/r.json', '/b/r.json', '--json']);
+    assert.deepEqual(options.rollup, ['/a/r.json', '/b/r.json']);
+    assert.equal(options.json, true);
+    assert.throws(() => parseArgs(['--rollup']), /needs at least one registry/);
+  });
+
+  it('merges by id, flags the orphan, and reports the absent checkout', () => {
+    const stdout = capture();
+    const missing = join(tmpdir(), 'flag-debt-no-such-checkout', REGISTRY_FILENAME);
+    const report = main(['--rollup', join(sfDir, REGISTRY_FILENAME), join(goDir, REGISTRY_FILENAME), missing], { stdout });
+    assert.equal(report.features.length, 1);
+    assert.equal(report.features[0].tests.points, POINTS.missingUnitSpecs);
+    assert.deepEqual(report.features[0].contributedBy, [report.sources[1].name]);
+    assert.match(stdout.text, /orphan contribution: stray/);
+    assert.match(stdout.text, /unverifiable: checkout flag-debt-no-such-checkout not found/);
+  });
+});
+
 describe('the CLI', () => {
   /** Collects everything main() writes, standing in for process.stdout. */
   function capture() {
@@ -1146,8 +1448,7 @@ describe('the CLI — real process, real symlink (npm-bin regression, ETP-4686)'
     // above), so it deliberately does not reuse the shared `root` fixture.
     repoRoot = mkdtempSync(join(tmpdir(), 'flag-debt-cli-repo-'));
     writeFileSync(join(repoRoot, REGISTRY_FILENAME), JSON.stringify({
-      version: 2,
-      roots: { frontend: '.' },
+      version: 3,
       features: [{ id: 'smoke-feature', flag: { key: 'smoke-flag', symbols: ['smoke-flag'] } }],
     }, null, 2));
   });

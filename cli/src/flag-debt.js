@@ -18,6 +18,15 @@
  *
  * v0 is report-only: the process always exits 0. Thresholds and CI gating are
  * deliberately out of scope. See docs/flag-debt.md.
+ *
+ * Registry format v3 (ETP-4697): each repo owns ONE registry whose root is the
+ * directory it sits in — no `roots` block, flat `paths`, no `root:` on a spec.
+ * A flag that spans repos is a HEADER entry in one registry (id, description,
+ * flag object with ttl/defaultValue) plus a CONTRIBUTION entry in every other
+ * repo (id, flagKey, its own symbols/paths/testSpecs/deferredItems). A single
+ * registry scores its local dimensions; `--rollup <registry...>` merges entries
+ * by feature id and THEN scores, so a flat penalty is charged once per feature
+ * and never once per repo.
  */
 
 import fs from 'node:fs';
@@ -114,6 +123,15 @@ const MS_PER_DAY = 24 * 60 * 60 * 1000;
 // ── Registry ────────────────────────────────────────────────────────────────
 
 /**
+ * True for a contribution entry: a repo's own slice of a feature whose header
+ * lives in another registry. `flagKey` marks a live flag; `contribution: true`
+ * keeps the marker once the flag is retired and `flagKey` is dropped.
+ */
+export function isContribution(entry) {
+  return entry.contribution === true || entry.flagKey !== undefined;
+}
+
+/**
  * Flattens a feature entry into the shape the scoring internals consume.
  *
  * The registry's unit of accounting is the FEATURE; the flag is a temporary
@@ -123,8 +141,23 @@ const MS_PER_DAY = 24 * 60 * 60 * 1000;
  * dimensions already treat correctly: no symbols → nothing to grep as a touch
  * point, no ttl → lifecycle scores 0. Retirement therefore LOWERS the score
  * without deleting the accounting — the incentive the inversion exists for.
+ *
+ * A contribution never carries ttl/defaultValue — the header governs those —
+ * and keeps its symbols at the top level next to `flagKey`.
  */
 export function normalizeFeature(entry) {
+  if (isContribution(entry)) {
+    return {
+      ...entry,
+      contribution: true,
+      flag: null,
+      key: entry.flagKey ?? null,
+      defaultValue: null,
+      ttl: undefined,
+      ttlNote: null,
+      symbols: entry.symbols || [],
+    };
+  }
   const flag = entry.flag || null;
   return {
     ...entry,
@@ -137,48 +170,163 @@ export function normalizeFeature(entry) {
   };
 }
 
+export const REGISTRY_VERSION = 3;
+
+/** Fields a contribution may not declare: the header owns the flag's lifecycle. */
+const HEADER_ONLY_FIELDS = ['ttl', 'ttlNote', 'defaultValue', 'flag'];
+
+function entryProblems(entry) {
+  if (!entry.id) return ['every feature needs an "id"'];
+  const problems = [];
+  if (entry.paths !== undefined && !Array.isArray(entry.paths)) {
+    problems.push(`${entry.id}: "paths" must be a flat list (v3 has no per-root paths)`);
+  }
+  const specs = entry.testSpecs || {};
+  for (const spec of [...(specs.unit || []), ...(specs.e2e || [])]) {
+    if (spec && typeof spec === 'object' && spec.root !== undefined) {
+      problems.push(`${entry.id}: testSpec ${spec.path} declares "root" (v3 has a single implicit root)`);
+    }
+  }
+  if (isContribution(entry)) {
+    for (const field of HEADER_ONLY_FIELDS) {
+      if (entry[field] !== undefined) {
+        problems.push(`${entry.id}: a contribution may not declare "${field}" — the header owns it`);
+      }
+    }
+  }
+  return problems;
+}
+
+/** Every reason a parsed registry is not a valid v3 registry. */
+export function registryProblems(registry) {
+  if (!Array.isArray(registry.features)) {
+    return ['expected a "features" array (v3 registry — the feature owns the entry, the flag is nested)'];
+  }
+  const problems = [];
+  if (registry.version !== REGISTRY_VERSION) {
+    problems.push(`expected "version": ${REGISTRY_VERSION} (got ${JSON.stringify(registry.version)})`);
+  }
+  if (registry.roots !== undefined) {
+    problems.push('the "roots" block is gone in v3 — a registry has one implicit root, the directory it sits in');
+  }
+  if (registry.sonarProject !== undefined && typeof registry.sonarProject !== 'string') {
+    problems.push('"sonarProject" must be a string');
+  }
+  for (const entry of registry.features) problems.push(...entryProblems(entry));
+  return problems;
+}
+
 export function loadRegistry(registryPath) {
   const raw = fs.readFileSync(registryPath, 'utf8');
   const registry = JSON.parse(raw);
-  if (!Array.isArray(registry.features)) {
-    throw new Error(`${registryPath}: expected a "features" array (v2 registry — the feature owns the entry, the flag is nested)`);
-  }
-  for (const feature of registry.features) {
-    if (!feature.id) throw new Error(`${registryPath}: every feature needs an "id"`);
+  const problems = registryProblems(registry);
+  if (problems.length > 0) {
+    throw new Error(`${registryPath}: ${problems.join('; ')}`);
   }
   registry.features = registry.features.map(normalizeFeature);
   return registry;
 }
 
 /**
- * Resolves the on-disk root for each declared repo root.
- *
- * The backend module is a separate, git-ignored checkout, so it is absent from
- * a worktree. Candidates, in order: an explicit ETENDO_GO_MODULE, the path
- * under the repo root, then the same path under the main checkout (a worktree
- * lives at <main>/.worktrees/<name>). Missing backend is reported, never fatal.
+ * Describes where a registry's repo lives. `root` is null for a checkout that
+ * is not on this machine; the rollup reports it instead of guessing.
  */
-export function resolveRoots(registry, { repoRoot = DEFAULT_REPO_ROOT, env = process.env } = {}) {
-  const declared = registry.roots || {};
-  const frontend = path.resolve(repoRoot, declared.frontend || '.');
-
-  const backendRelative = declared.backend;
-  const candidates = [];
-  if (env.ETENDO_GO_MODULE) candidates.push(path.resolve(env.ETENDO_GO_MODULE));
-  if (backendRelative) {
-    candidates.push(path.resolve(repoRoot, backendRelative));
-    candidates.push(path.resolve(repoRoot, '..', '..', backendRelative));
-  }
-  const backend = candidates.find((dir) => isDirectory(dir)) || null;
-
+export function describeSource(registryPath, { registry = null, available = true } = {}) {
+  const root = path.dirname(path.resolve(registryPath));
   return {
-    frontend,
-    backend,
-    backendUnavailableReason: backend
-      ? null
-      : `backend module not found (looked in: ${candidates.join(', ') || 'nothing declared'}). `
-        + 'Set ETENDO_GO_MODULE to scan it.',
+    name: path.basename(root),
+    registryPath: path.resolve(registryPath),
+    root: available ? root : null,
+    sonarProject: (registry && registry.sonarProject) || null,
   };
+}
+
+/** One feature's slice in one repo: what a single registry entry declares. */
+function partOf(entry, source) {
+  return {
+    source,
+    paths: entry.paths || [],
+    testSpecs: entry.testSpecs || {},
+    symbols: entry.symbols || [],
+  };
+}
+
+/**
+ * The per-repo slices a feature is scored over. A merged (rollup) feature
+ * carries them; a lone registry entry is one slice over the context's source.
+ */
+export function partsOf(feature, context) {
+  if (feature.parts) return feature.parts;
+  return [partOf(feature, sourcesOf(context)[0])];
+}
+
+function sourcesOf(context) {
+  if (context.sources) return context.sources;
+  return [{
+    name: path.basename(context.root || '') || '.',
+    root: context.root || null,
+    sonarProject: context.sonarProject || null,
+  }];
+}
+
+const unique = (list) => [...new Set(list)];
+
+/**
+ * Merges registries by feature id — the first half of merge-then-score.
+ *
+ * `loaded` is `[{ source, registry }]`, `registry` null when the checkout is
+ * absent. Per id: exactly one header and any number of contributions fold into
+ * one feature scored over all the repos' slices. Anomalies are returned, never
+ * thrown, so one broken registry does not hide the rest of the scorecard:
+ *
+ *   orphans            contributions with no header anywhere (not scored)
+ *   duplicateHeaders   an id with several headers (first one wins)
+ *   flagKeyMismatches  a contribution naming a different flag than its header
+ *   unverifiable       checkouts that are absent, so their slices are missing
+ */
+export function mergeRegistries(loaded) {
+  const issues = { orphans: [], duplicateHeaders: [], flagKeyMismatches: [], unverifiable: [] };
+  const byId = new Map();
+  for (const { source, registry } of loaded) {
+    if (!registry) {
+      issues.unverifiable.push({ source: source.name, registry: source.registryPath });
+      continue;
+    }
+    for (const entry of registry.features) {
+      if (!byId.has(entry.id)) byId.set(entry.id, []);
+      byId.get(entry.id).push({ source, entry });
+    }
+  }
+
+  const features = [];
+  for (const [id, group] of byId) {
+    const headers = group.filter(({ entry }) => !entry.contribution);
+    const contributions = group.filter(({ entry }) => entry.contribution);
+    if (headers.length === 0) {
+      issues.orphans.push({ id, sources: contributions.map(({ source }) => source.name) });
+      continue;
+    }
+    if (headers.length > 1) {
+      issues.duplicateHeaders.push({ id, sources: headers.map(({ source }) => source.name) });
+    }
+    const [header] = headers;
+    for (const { source, entry } of contributions) {
+      if (entry.flagKey && header.entry.key && entry.flagKey !== header.entry.key) {
+        issues.flagKeyMismatches.push({
+          id, source: source.name, flagKey: entry.flagKey, headerKey: header.entry.key,
+        });
+      }
+    }
+    const members = [header, ...contributions];
+    features.push({
+      ...header.entry,
+      symbols: unique(members.flatMap(({ entry }) => entry.symbols || [])),
+      deferredItems: members.flatMap(({ entry }) => entry.deferredItems || []),
+      parts: members.map(({ source, entry }) => partOf(entry, source)),
+      contributedBy: contributions.map(({ source }) => source.name),
+    });
+  }
+  return { features, issues };
 }
 
 function isDirectory(target) {
@@ -324,37 +472,40 @@ export function classifyReference(relative, { ownedPaths, frameworkPaths, specPa
 
 // ── Dimension 1: touch points ───────────────────────────────────────────────
 
-export function collectTouchPoints(flag, { roots, frameworkPaths }) {
+export function collectTouchPoints(flag, context) {
+  const { frameworkPaths } = context;
   const buckets = { code: [], docs: [], tests: [] };
-  const scannedRoots = [];
-  const skippedRoots = [];
+  const scannedSources = [];
+  const skippedSources = [];
+  const parts = partsOf(flag, context);
+  const symbols = flag.symbols || [];
 
-  for (const [rootName, rootDir] of Object.entries(roots)) {
-    if (!rootDir) {
-      skippedRoots.push(rootName);
+  for (const part of parts) {
+    const { source } = part;
+    if (!source.root) {
+      skippedSources.push(source.name);
       continue;
     }
-    scannedRoots.push(rootName);
-    const ownedPaths = (flag.paths && flag.paths[rootName]) || [];
-    const specPaths = allSpecs(flag)
-      .filter((spec) => spec.root === rootName)
-      .map((spec) => spec.path);
+    scannedSources.push(source.name);
+    const specPaths = specsOf(part).map((spec) => spec.path);
 
-    const nestedRoots = Object.entries(roots)
-      .filter(([name, dir]) => name !== rootName && dir)
-      .map(([, dir]) => dir);
+    // Checkouts can nest; a file under the inner one must not be visited a
+    // second time under the outer one, where its owned paths do not apply.
+    const nestedRoots = parts
+      .map((other) => other.source.root)
+      .filter((dir) => dir && dir !== source.root);
 
-    for (const relative of walkFiles(rootDir, { skipPaths: nestedRoots })) {
-      const hits = findSymbolHits(path.join(rootDir, relative), flag.symbols || []);
+    for (const relative of walkFiles(source.root, { skipPaths: nestedRoots })) {
+      const hits = findSymbolHits(path.join(source.root, relative), symbols);
       if (hits.length === 0) continue;
-      const bucket = classifyReference(relative, { ownedPaths, frameworkPaths, specPaths });
+      const bucket = classifyReference(relative, { ownedPaths: part.paths, frameworkPaths, specPaths });
       if (bucket === 'owned' || bucket === 'framework') continue;
-      buckets[bucket].push({ root: rootName, path: toPosix(relative), hits });
+      buckets[bucket].push({ source: source.name, path: toPosix(relative), hits });
     }
   }
 
   for (const list of Object.values(buckets)) {
-    list.sort((a, b) => `${a.root}/${a.path}`.localeCompare(`${b.root}/${b.path}`));
+    list.sort((a, b) => `${a.source}/${a.path}`.localeCompare(`${b.source}/${b.path}`));
   }
 
   const extra = Math.max(0, buckets.code.length - POINTS.freeTouchPoints);
@@ -364,8 +515,8 @@ export function collectTouchPoints(flag, { roots, frameworkPaths }) {
     testReferences: buckets.tests,
     freeAllowance: POINTS.freeTouchPoints,
     extraFiles: extra,
-    scannedRoots,
-    skippedRoots,
+    scannedSources,
+    skippedSources,
     points: extra * POINTS.perExtraTouchPoint,
   };
 }
@@ -375,11 +526,10 @@ export function collectTouchPoints(flag, { roots, frameworkPaths }) {
 /** Normalises both spec shapes (a bare string or an object) into objects. */
 export function normalizeSpec(spec) {
   if (typeof spec === 'string') {
-    return { path: spec, root: 'frontend', expected: false, acceptedDebt: false, note: null };
+    return { path: spec, expected: false, acceptedDebt: false, note: null };
   }
   return {
     path: spec.path,
-    root: spec.root || 'frontend',
     expected: Boolean(spec.expected),
     acceptedDebt: Boolean(spec.acceptedDebt),
     note: spec.note || null,
@@ -408,33 +558,46 @@ const DEFAULT_SPEC_NOTE = {
   'accepted-debt': 'accepted debt — deliberately not written',
   pending: 'pending Tester',
   missing: 'missing',
+  unverifiable: 'checkout not available — not scored',
 };
 
-function allSpecs(flag) {
-  const specs = flag.testSpecs || {};
+/** Every spec one slice declares, both kinds, normalised. */
+function specsOf(part) {
+  const specs = part.testSpecs || {};
   return [...(specs.unit || []), ...(specs.e2e || [])].map(normalizeSpec);
 }
 
-export function checkTestSpecs(flag, { roots }) {
+/**
+ * Scores the declared specs over ALL of a feature's slices at once: the flat
+ * penalty is per feature and kind, so a feature split across repos pays it once.
+ * A spec in a checkout that is not on this machine is `unverifiable` — listed,
+ * never charged, so the score does not depend on which checkouts are present.
+ */
+export function checkTestSpecs(flag, context) {
   const kinds = { unit: POINTS.missingUnitSpecs, e2e: POINTS.missingE2eSpecs };
   const result = { kinds: {}, points: 0 };
+  const parts = partsOf(flag, context);
 
   for (const [kind, penalty] of Object.entries(kinds)) {
-    const specs = ((flag.testSpecs || {})[kind] || []).map(normalizeSpec);
-    const checked = specs.map((spec) => {
-      const rootDir = roots[spec.root];
-      const exists = rootDir ? isFile(path.join(rootDir, spec.path)) : false;
-      const status = specStatus(spec, exists);
-      return {
-        ...spec,
-        exists,
-        status,
-        unverifiable: !rootDir,
-        // A declared note wins over the status default.
-        note: exists ? null : (spec.note || DEFAULT_SPEC_NOTE[status]),
-      };
-    });
-    const missing = checked.filter((spec) => !spec.exists);
+    const checked = parts.flatMap((part) => ((part.testSpecs || {})[kind] || [])
+      .map(normalizeSpec)
+      .map((spec) => {
+        const { source } = part;
+        const exists = source.root ? isFile(path.join(source.root, spec.path)) : false;
+        const unverifiable = !source.root;
+        const status = unverifiable ? 'unverifiable' : specStatus(spec, exists);
+        return {
+          ...spec,
+          source: source.name,
+          exists,
+          status,
+          unverifiable,
+          // A declared note wins over the status default.
+          note: exists ? null : (spec.note || DEFAULT_SPEC_NOTE[status]),
+        };
+      }));
+    const missing = checked.filter((spec) => !spec.exists && !spec.unverifiable);
+    const unverifiable = checked.filter((spec) => spec.unverifiable);
     const acceptedDebt = missing.filter((spec) => spec.status === 'accepted-debt');
     const pending = missing.filter((spec) => spec.status !== 'accepted-debt');
 
@@ -443,7 +606,7 @@ export function checkTestSpecs(flag, { roots }) {
     const points = flatPoints + acceptedDebtPoints;
 
     result.kinds[kind] = {
-      specs: checked, missing, pending, acceptedDebt,
+      specs: checked, missing, pending, acceptedDebt, unverifiable,
       declared: checked.length, flatPoints, acceptedDebtPoints, points,
     };
     result.points += points;
@@ -452,8 +615,6 @@ export function checkTestSpecs(flag, { roots }) {
 }
 
 // ── Dimension 3: coverage ───────────────────────────────────────────────────
-
-const SONAR_PROJECT_BY_ROOT = { frontend: 'schema-forge', backend: 'etendo-go' };
 
 /** The script ships with the published CLI; a local core checkout wins. */
 export function resolveCoverageScript(repoRoot) {
@@ -465,25 +626,24 @@ export function resolveCoverageScript(repoRoot) {
 }
 
 /** Expands one declared path — a file or a directory — into owned entries. */
-function expandDeclaredPath(rootName, rootDir, declared) {
-  const absolute = path.join(rootDir, declared);
+function expandDeclaredPath(source, declared) {
+  const absolute = path.join(source.root, declared);
   if (isFile(absolute)) {
     if (!COVERAGE_EXTENSIONS.has(path.extname(absolute))) return [];
-    return [{ root: rootName, path: toPosix(declared) }];
+    return [{ source, path: toPosix(declared) }];
   }
   if (!isDirectory(absolute)) return [];
   return [...walkFiles(absolute, { extensions: COVERAGE_EXTENSIONS })]
-    .map((relative) => ({ root: rootName, path: toPosix(path.join(declared, relative)) }));
+    .map((relative) => ({ source, path: toPosix(path.join(declared, relative)) }));
 }
 
 /** Owned source files, expanded from the declared paths (dirs included). */
-export function expandOwnedFiles(flag, roots) {
+export function expandOwnedFiles(flag, context) {
   const files = [];
-  for (const [rootName, rootDir] of Object.entries(roots)) {
-    if (!rootDir) continue;
-    const declaredPaths = (flag.paths && flag.paths[rootName]) || [];
-    for (const declared of declaredPaths) {
-      files.push(...expandDeclaredPath(rootName, rootDir, declared));
+  for (const part of partsOf(flag, context)) {
+    if (!part.source.root) continue;
+    for (const declared of part.paths) {
+      files.push(...expandDeclaredPath(part.source, declared));
     }
   }
   return files.sort((a, b) => a.path.localeCompare(b.path));
@@ -524,8 +684,9 @@ export function parseUncoveredLines(output) {
   return null;
 }
 
-export function collectCoverage(flag, { roots, repoRoot, env = process.env, runner = runCoverageScript }) {
-  const ownedFiles = expandOwnedFiles(flag, roots);
+export function collectCoverage(flag, context) {
+  const { repoRoot, env = process.env, runner = runCoverageScript } = context;
+  const ownedFiles = expandOwnedFiles(flag, context);
 
   if (!env.SONAR_TOKEN) {
     return { status: 'unavailable', reason: 'SONAR_TOKEN not set', files: [], points: 0 };
@@ -538,14 +699,20 @@ export function collectCoverage(flag, { roots, repoRoot, env = process.env, runn
   const files = [];
   let points = 0;
   for (const owned of ownedFiles) {
-    const outcome = runner({ script, cwd: roots[owned.root], file: owned.path, project: SONAR_PROJECT_BY_ROOT[owned.root], env });
+    const { source } = owned;
+    const entry = { source: source.name, path: owned.path };
+    if (!source.sonarProject) {
+      files.push({ ...entry, uncovered: null, points: 0, note: `no sonarProject declared for ${source.name}` });
+      continue;
+    }
+    const outcome = runner({ script, cwd: source.root, file: owned.path, project: source.sonarProject, env });
     if (outcome.uncovered === null) {
-      files.push({ ...owned, uncovered: null, points: 0, note: outcome.reason || 'no analysis' });
+      files.push({ ...entry, uncovered: null, points: 0, note: outcome.reason || 'no analysis' });
       continue;
     }
     const filePoints = Math.floor(outcome.uncovered / POINTS.uncoveredLinesPerPoint);
     points += filePoints;
-    files.push({ ...owned, uncovered: outcome.uncovered, points: filePoints, note: null });
+    files.push({ ...entry, uncovered: outcome.uncovered, points: filePoints, note: null });
   }
 
   const measured = files.filter((file) => file.uncovered !== null);
@@ -574,6 +741,13 @@ function runCoverageScript({ script, cwd, file, project, env }) {
 // ── Dimension 4: lifecycle ──────────────────────────────────────────────────
 
 export function scoreLifecycle(flag, now = new Date()) {
+  if (flag.contribution) {
+    // TTL and staleness belong to the header; a contribution has nothing to age.
+    return {
+      ttl: null, daysRemaining: null, weeksOverdue: 0, points: 0,
+      note: 'governed by the header', governedByHeader: true,
+    };
+  }
   if (!flag.ttl) {
     return { ttl: null, daysRemaining: null, weeksOverdue: 0, points: 0, note: 'no TTL declared' };
   }
@@ -670,7 +844,9 @@ export function scoreFlag(flag, context) {
   return {
     id: flag.id,
     key: flag.key,
-    hasFlag: Boolean(flag.flag),
+    hasFlag: Boolean(flag.flag) || Boolean(flag.contribution && flag.key),
+    contribution: Boolean(flag.contribution),
+    contributedBy: flag.contributedBy || [],
     description: flag.description || '',
     owner: flag.owner || 'unassigned',
     jira: flag.jira || null,
@@ -687,15 +863,16 @@ export function scoreFlag(flag, context) {
   };
 }
 
+/**
+ * `rollup` is null for a lone registry and the merge anomalies for a rollup;
+ * `sources` lists every checkout that took part, absent ones included.
+ */
 export function buildReport(registry, context) {
   return {
     generatedAt: (context.now || new Date()).toISOString(),
     version: registry.version ?? null,
-    roots: {
-      frontend: context.roots.frontend,
-      backend: context.roots.backend,
-      backendUnavailableReason: context.backendUnavailableReason || null,
-    },
+    sources: sourcesOf(context),
+    rollup: context.rollup || null,
     features: registry.features.map((feature) => scoreFlag(feature, context)),
   };
 }
@@ -727,7 +904,7 @@ function renderTouchPointLines(touchPoints) {
   const lines = [];
   for (const file of touchPoints.files) {
     const where = file.hits.map((hit) => hit.line).join(',');
-    lines.push(`      ${file.root}: ${file.path}:${where}`);
+    lines.push(`      ${file.source}: ${file.path}:${where}`);
   }
   if (touchPoints.docReferences.length > 0) {
     lines.push(`      documentation references (not scored): ${touchPoints.docReferences.length} file(s)`);
@@ -741,7 +918,7 @@ function renderTouchPointLines(touchPoints) {
 function renderSpecLines(tests) {
   const lines = [];
   for (const [kind, result] of Object.entries(tests.kinds)) {
-    const present = result.declared - result.missing.length;
+    const present = result.declared - result.missing.length - result.unverifiable.length;
     const summary = [`${present}/${result.declared} present`];
     if (result.pending.length > 0) {
       summary.push(`${result.pending.length} pending (+${result.flatPoints})`);
@@ -749,12 +926,16 @@ function renderSpecLines(tests) {
     if (result.acceptedDebt.length > 0) {
       summary.push(`${result.acceptedDebt.length} accepted debt (+${result.acceptedDebtPoints})`);
     }
+    if (result.unverifiable.length > 0) summary.push(`${result.unverifiable.length} unverifiable`);
     lines.push(`      ${kind}: ${summary.join(' · ')}`);
     for (const spec of result.pending) {
-      lines.push(`        pending — ${spec.root}: ${spec.path} (${spec.note})`);
+      lines.push(`        pending — ${spec.source}: ${spec.path} (${spec.note})`);
     }
     for (const spec of result.acceptedDebt) {
-      lines.push(`        accepted debt — ${spec.root}: ${spec.path} (${spec.note})`);
+      lines.push(`        accepted debt — ${spec.source}: ${spec.path} (${spec.note})`);
+    }
+    for (const spec of result.unverifiable) {
+      lines.push(`        unverifiable — ${spec.source}: ${spec.path} (${spec.note})`);
     }
   }
   return lines;
@@ -770,9 +951,9 @@ function dimensionLine(label, points, detail = '') {
 function renderFeatureHeading(flag) {
   // The flag is presented as an attribute of the feature — when it is gone,
   // the feature keeps its line and simply reads "shipped".
-  const flagMeta = flag.hasFlag
-    ? `flag ${flag.key} · default ${flag.defaultValue}`
-    : 'shipped — no flag';
+  let flagMeta = 'shipped — no flag';
+  if (flag.contribution) flagMeta = `contribution${flag.key ? ` · flag ${flag.key}` : ''}`;
+  else if (flag.hasFlag) flagMeta = `flag ${flag.key} · default ${flag.defaultValue}`;
   const meta = [flag.jira, `owner ${flag.owner}`, flagMeta].filter(Boolean).join(' · ');
   return [`${flag.id}  (${meta})`, `  ${flag.description}`, ''];
 }
@@ -789,6 +970,7 @@ function renderCoverageSection(cov) {
 }
 
 function lifecycleSummary(life) {
+  if (life.governedByHeader) return 'TTL governed by the header';
   if (life.ttl === null) return 'no TTL declared';
   if (life.daysRemaining >= 0) {
     return `ttl ${life.ttl} · ${life.daysRemaining} day(s) remaining`;
@@ -866,12 +1048,30 @@ function renderSummaryTable(report) {
   return [header, ...rows];
 }
 
+/** One line per rollup anomaly; empty for a lone registry. */
+export function rollupWarnings(report) {
+  const issues = report.rollup;
+  if (!issues) return [];
+  const lines = [];
+  for (const item of issues.unverifiable) {
+    lines.push(`  unverifiable: checkout ${item.source} not found (${item.registry}) — its contributions are not in this score`);
+  }
+  for (const item of issues.orphans) {
+    lines.push(`  orphan contribution: ${item.id} in ${item.sources.join(', ')} has no header in any registry (not scored)`);
+  }
+  for (const item of issues.duplicateHeaders) {
+    lines.push(`  duplicate header: ${item.id} declared in ${item.sources.join(', ')} (first one used)`);
+  }
+  for (const item of issues.flagKeyMismatches) {
+    lines.push(`  flag key mismatch: ${item.id} in ${item.source} names ${item.flagKey}, header has ${item.headerKey}`);
+  }
+  return lines;
+}
+
 export function renderConsole(report) {
   const heading = `Feature debt scorecard — ${report.features.length} feature(s) — ${report.generatedAt}`;
   const lines = ['', heading];
-  if (report.roots.backendUnavailableReason) {
-    lines.push(`  warning: ${report.roots.backendUnavailableReason}`);
-  }
+  lines.push(...rollupWarnings(report));
   lines.push('');
   for (const flag of report.features) lines.push(...renderFeatureBlock(flag));
   lines.push(...renderSummaryTable(report));
@@ -905,7 +1105,7 @@ function htmlTouchPointDetail(tp) {
   const summary = `${tp.files.length} file(s), ${tp.extraFiles} beyond the ${tp.freeAllowance} expected`;
   const fileItems = tp.files.map((file) => {
     const lineNumbers = escapeHtml(file.hits.map((hit) => hit.line).join(', '));
-    const location = `${escapeHtml(file.root)}: ${escapeHtml(file.path)}`;
+    const location = `${escapeHtml(file.source)}: ${escapeHtml(file.path)}`;
     return `<li><code>${location}</code> <span class="muted">lines ${lineNumbers}</span></li>`;
   });
   const parts = [summary, htmlList(fileItems)];
@@ -920,7 +1120,7 @@ function htmlTouchPointDetail(tp) {
 
 function htmlSpecList(specs, label) {
   const items = specs.map((spec) => {
-    const location = `${escapeHtml(spec.root)}: ${escapeHtml(spec.path)}`;
+    const location = `${escapeHtml(spec.source)}: ${escapeHtml(spec.path)}`;
     return `<li><span class="tag">${escapeHtml(label)}</span> <code>${location}</code>`
       + ` <span class="muted">${escapeHtml(spec.note)}</span></li>`;
   });
@@ -929,8 +1129,9 @@ function htmlSpecList(specs, label) {
 
 function htmlTestDetail(tests) {
   return Object.entries(tests.kinds).map(([kind, result]) => {
-    const present = result.declared - result.missing.length;
+    const present = result.declared - result.missing.length - result.unverifiable.length;
     const summary = [`${present}/${result.declared} present`];
+    if (result.unverifiable.length > 0) summary.push(`${result.unverifiable.length} unverifiable`);
     if (result.pending.length > 0) summary.push(`${result.pending.length} pending (+${result.flatPoints})`);
     if (result.acceptedDebt.length > 0) {
       summary.push(`${result.acceptedDebt.length} accepted debt (+${result.acceptedDebtPoints})`);
@@ -938,7 +1139,8 @@ function htmlTestDetail(tests) {
     const headline = escapeHtml(summary.join(' · '));
     return `<p><strong>${escapeHtml(kind)}</strong>: ${headline}</p>`
       + htmlSpecList(result.pending, 'pending')
-      + htmlSpecList(result.acceptedDebt, 'accepted debt');
+      + htmlSpecList(result.acceptedDebt, 'accepted debt')
+      + htmlSpecList(result.unverifiable, 'unverifiable');
   }).join('');
 }
 
@@ -956,6 +1158,7 @@ function htmlCoverageDetail(cov) {
 function htmlLifecycleDetail(flag) {
   const life = flag.lifecycle;
   const note = flag.ttlNote ? `<p class="muted">${escapeHtml(flag.ttlNote)}</p>` : '';
+  if (life.governedByHeader) return '<span class="muted">TTL governed by the header</span>';
   if (life.ttl === null) return `<span class="muted">no TTL declared</span>${note}`;
   const ttl = escapeHtml(life.ttl);
   const state = life.daysRemaining >= 0
@@ -1030,6 +1233,7 @@ function renderComposition(carried) {
 
 /** The TTL chip in the metadata row: countdown, overdue, or no TTL at all. */
 function ttlChip(life) {
+  if (life.governedByHeader) return 'TTL on header';
   if (life.ttl === null) return 'no TTL';
   if (life.daysRemaining >= 0) return `TTL in ${life.daysRemaining}d`;
   return `TTL ${-life.daysRemaining}d overdue`;
@@ -1187,7 +1391,7 @@ export function renderHtml(report) {
 <main>
   <h1>Flag debt scorecard <span class="muted">v0</span></h1>
   <p class="muted">Generated ${escapeHtml(report.generatedAt)} · ${report.features.length} feature(s)${
-    report.roots.backendUnavailableReason ? ` · ${escapeHtml(report.roots.backendUnavailableReason)}` : ''
+    rollupWarnings(report).map((line) => ` · ${escapeHtml(line.trim())}`).join('')
   }</p>
   ${report.features.map(htmlFlagCard).join('\n')}
   <footer>Higher is worse. Report only — v0 never fails a build. Scale and rules: docs/flag-debt.md</footer>
@@ -1214,6 +1418,17 @@ const VALUE_ARGS = new Map([
   ['--registry', { key: 'registry', parse: (value) => path.resolve(value) }],
 ]);
 
+/** `--rollup` takes every following argument up to the next option. */
+function readRollupArg(argv, index, options) {
+  const registries = [];
+  for (let i = index + 1; i < argv.length && !argv[i].startsWith('-'); i += 1) {
+    registries.push(path.resolve(argv[i]));
+  }
+  if (registries.length === 0) throw new Error('--rollup needs at least one registry path');
+  options.rollup = registries;
+  return 1 + registries.length;
+}
+
 /**
  * Reads a value option at `index`, returning how many argv entries it consumed.
  *
@@ -1223,6 +1438,7 @@ const VALUE_ARGS = new Map([
  */
 function readValueArg(argv, index, options) {
   const arg = argv[index];
+  if (arg === '--rollup') return readRollupArg(argv, index, options);
   const inline = arg.indexOf('=');
   if (inline !== -1) {
     const spec = VALUE_ARGS.get(arg.slice(0, inline));
@@ -1240,7 +1456,7 @@ function readValueArg(argv, index, options) {
 
 export function parseArgs(argv) {
   const options = {
-    json: false, html: false, flag: null, repoRoot: DEFAULT_REPO_ROOT, registry: null, help: false,
+    json: false, html: false, flag: null, repoRoot: DEFAULT_REPO_ROOT, registry: null, rollup: null, help: false,
   };
   let i = 0;
   while (i < argv.length) {
@@ -1266,13 +1482,55 @@ Usage: node cli/src/flag-debt.js [options]
   --json             Also write flag-debt.json (git-ignored)
   --html             Also write flag-debt.html (git-ignored)
   --registry <path>  Registry file (default: <repo>/flags-registry.json)
+  --rollup <reg...>  Merge several repos' registries by feature id, then score.
+                     A path that does not exist is an absent checkout: reported
+                     as unverifiable, never guessed. The first registry's repo
+                     is the report root (JSON/HTML output, coverage script).
   --root <path>      Repo root (default: inferred from this script)
   -h, --help         Show this help
 
-Env: SONAR_TOKEN / SONAR_HOST_URL enable the coverage dimension.
-     ETENDO_GO_MODULE points at the com.etendoerp.go checkout.
+Env: SONAR_TOKEN / SONAR_HOST_URL enable the coverage dimension; each registry
+     names its Sonar project in "sonarProject".
 Docs: docs/flag-debt.md
 `;
+
+function loadSingle(options) {
+  const registryPath = options.registry || path.join(options.repoRoot, REGISTRY_FILENAME);
+  const registry = loadRegistry(registryPath);
+  const source = describeSource(registryPath, { registry });
+  return {
+    registry,
+    label: registryPath,
+    context: {
+      sources: [source],
+      frameworkPaths: (registry.conventions && registry.conventions.frameworkPaths) || [],
+      repoRoot: source.root,
+    },
+  };
+}
+
+/** Loads each registry that exists, marks the rest absent, and merges by id. */
+function loadRollup(registryPaths) {
+  const loaded = registryPaths.map((registryPath) => {
+    if (!isFile(registryPath)) {
+      return { source: describeSource(registryPath, { available: false }), registry: null };
+    }
+    const registry = loadRegistry(registryPath);
+    return { source: describeSource(registryPath, { registry }), registry };
+  });
+  const { features, issues } = mergeRegistries(loaded);
+  const present = loaded.filter(({ registry }) => registry);
+  return {
+    registry: { version: REGISTRY_VERSION, features },
+    label: registryPaths.join(', '),
+    context: {
+      sources: loaded.map(({ source }) => source),
+      frameworkPaths: unique(present.flatMap(({ registry }) => (registry.conventions && registry.conventions.frameworkPaths) || [])),
+      repoRoot: (present[0] && present[0].source.root) || DEFAULT_REPO_ROOT,
+      rollup: issues,
+    },
+  };
+}
 
 /**
  * Runs the scorer and returns the report, or `null` when there was nothing to
@@ -1289,34 +1547,27 @@ export function main(argv = process.argv.slice(2), { stdout = process.stdout } =
     return null;
   }
 
-  const registryPath = options.registry || path.join(options.repoRoot, REGISTRY_FILENAME);
-  const registry = loadRegistry(registryPath);
+  const { registry, context, label } = options.rollup
+    ? loadRollup(options.rollup)
+    : loadSingle(options);
   if (options.flag) {
     registry.features = registry.features.filter((feature) => feature.id === options.flag || feature.key === options.flag);
     if (registry.features.length === 0) {
-      stdout.write(`No feature or flag "${options.flag}" in ${registryPath}\n`);
+      stdout.write(`No feature or flag "${options.flag}" in ${label}\n`);
       return null;
     }
   }
-
-  const { frontend, backend, backendUnavailableReason } = resolveRoots(registry, { repoRoot: options.repoRoot });
-  const report = buildReport(registry, {
-    roots: { frontend, backend },
-    backendUnavailableReason,
-    frameworkPaths: (registry.conventions && registry.conventions.frameworkPaths) || [],
-    repoRoot: options.repoRoot,
-    now: new Date(),
-  });
+  const report = buildReport(registry, { ...context, now: new Date() });
 
   stdout.write(renderConsole(report));
 
   if (options.json) {
-    const target = path.join(options.repoRoot, 'flag-debt.json');
+    const target = path.join(report.sources[0].root || options.repoRoot, 'flag-debt.json');
     fs.writeFileSync(target, `${JSON.stringify(report, null, 2)}\n`);
     stdout.write(`  JSON written to ${target}\n`);
   }
   if (options.html) {
-    const target = path.join(options.repoRoot, 'flag-debt.html');
+    const target = path.join(report.sources[0].root || options.repoRoot, 'flag-debt.html');
     fs.writeFileSync(target, renderHtml(report));
     stdout.write(`  HTML written to ${target}\n`);
   }

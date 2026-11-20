@@ -2,8 +2,10 @@
 # sonar-coverage.sh — Report which lines of a source file are NOT covered by tests,
 # straight from SonarQube's existing analysis on the server (no scan is run).
 #
-# Works for files in BOTH repos: schema_forge (JS/JSX) and com.etendoerp.go (Java).
-# The repo + project key for each file are auto-detected from its location on disk.
+# Works for every repo in the project roster: schema_forge_core and schema_forge (JS/JSX)
+# and com.etendoerp.go (Java). The repo + project key for each file are auto-detected from
+# its location on disk. A repo joins the roster when its root holds a sonar-project.properties
+# with a sonar.projectKey; extra repos can be added through SONAR_PROJECT_ROOTS.
 #
 # Usage:
 #   ./cli/sonar-coverage.sh [options] <file> [<file> ...]
@@ -11,8 +13,10 @@
 #   ./cli/sonar-coverage.sh --project etendo-go src/com/etendoerp/go/schemaforge/NeoServlet.java
 #
 # Options:
-#   --project schema-forge|etendo-go   Force the project (skip auto-detect; lets you
-#                                       query a file that is not checked out locally).
+#   --project <name>      Force the project by roster name — schema-forge-core,
+#                         schema-forge, etendo-go, or one named in SONAR_PROJECT_ROOTS
+#                         (skip auto-detect; lets you query a file that is not checked
+#                         out locally).
 #   --new-only            Show only lines where isNew==true ("coverage dropped in this PR").
 #   --branch NAME         Read a specific branch analysis (default: main/default branch).
 #   --pull-request KEY    Read a pull-request analysis (branch name, not origin/<name>).
@@ -20,6 +24,8 @@
 #   --partial             Also list partially-covered lines (some branches untested).
 #   -q, --quiet           Only print the ranges, no headers.
 #   -h, --help            Show this help.
+#
+# Optional: SONAR_PROJECT_ROOTS="name=/path/to/repo,name2=/path2" extends the roster.
 #
 # Required: SONAR_TOKEN and SONAR_HOST_URL (from ~/.zshrc / ~/.bashrc or env).
 # SONAR_TOKEN must be a User Token (squ_...) with Browse permission on the project.
@@ -35,8 +41,41 @@ export PATH="${PATH%:}"
 
 # ── Resolve repo locations relative to this script ────────────────────────────
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-SF_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"                       # schema_forge git root
+SF_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"                       # schema_forge_core git root
 GO_ROOT="$(cd "$SF_ROOT/../modules/com.etendoerp.go" 2>/dev/null && pwd || echo "")"
+FN_ROOT="$(cd "$SF_ROOT/../schema_forge" 2>/dev/null && pwd || echo "")"  # schema_forge (functional)
+
+# ── Project roster: logical name → repo root ──────────────────────────────────
+# The whitelist for --project. Names match the `sonarProject` a flags-registry.json
+# declares; the Sonar key itself is always read from the repo's sonar-project.properties.
+PROJECT_NAMES=()
+PROJECT_ROOTS=()
+register_project() {
+  # register_project <name> <root> — skipped when the root is missing or has no key.
+  local name="$1" root="$2"
+  [[ -n "$root" && -f "$root/sonar-project.properties" ]] || return 0
+  grep -q '^sonar.projectKey=' "$root/sonar-project.properties" || return 0
+  PROJECT_NAMES+=("$name")
+  PROJECT_ROOTS+=("$root")
+}
+register_project schema-forge-core "$SF_ROOT"
+register_project etendo-go "$GO_ROOT"
+register_project schema-forge "$FN_ROOT"
+if [[ -n "${SONAR_PROJECT_ROOTS:-}" ]]; then
+  IFS=',' read -r -a EXTRA_PROJECTS <<<"$SONAR_PROJECT_ROOTS"
+  for entry in "${EXTRA_PROJECTS[@]}"; do
+    register_project "${entry%%=*}" "${entry#*=}"
+  done
+fi
+
+root_of_project() {
+  # root_of_project <name> → echoes the repo root, non-zero when not in the roster.
+  local i
+  for i in "${!PROJECT_NAMES[@]}"; do
+    if [[ "${PROJECT_NAMES[$i]}" == "$1" ]]; then echo "${PROJECT_ROOTS[$i]}"; return 0; fi
+  done
+  return 1
+}
 
 # ── Defaults ──────────────────────────────────────────────────────────────────
 FILES=()
@@ -90,8 +129,8 @@ command -v python3 &>/dev/null || errors+=("python3 is not installed.")
 if [[ -n "$BRANCH" && -n "$PR_KEY" ]]; then
   errors+=("--branch and --pull-request are mutually exclusive.")
 fi
-if [[ -n "$FORCE_PROJECT" && "$FORCE_PROJECT" != "schema-forge" && "$FORCE_PROJECT" != "etendo-go" ]]; then
-  errors+=("--project must be 'schema-forge' or 'etendo-go' (got: $FORCE_PROJECT).")
+if [[ -n "$FORCE_PROJECT" ]] && ! root_of_project "$FORCE_PROJECT" >/dev/null; then
+  errors+=("--project must be one of: ${PROJECT_NAMES[*]:-none found} (got: $FORCE_PROJECT).")
 fi
 if [[ ${#errors[@]} -gt 0 ]]; then
   echo "Error: Prerequisites not met:" >&2
@@ -136,7 +175,7 @@ resolve_file() {
 
   if [[ -n "$FORCE_PROJECT" ]]; then
     proj_name="$FORCE_PROJECT"
-    if [[ "$proj_name" == "schema-forge" ]]; then root="$SF_ROOT"; else root="$GO_ROOT"; fi
+    root="$(root_of_project "$proj_name" || true)"
   fi
 
   # Resolve to an absolute path when the file exists on disk.
@@ -154,12 +193,15 @@ resolve_file() {
       echo "Error: File not found: $file (pass --project to query a file not on disk)." >&2
       return 1
     fi
-    if [[ -n "$GO_ROOT" && "$abs" == "$GO_ROOT/"* ]]; then
-      proj_name="etendo-go"; root="$GO_ROOT"
-    elif [[ "$abs" == "$SF_ROOT/"* ]]; then
-      proj_name="schema-forge"; root="$SF_ROOT"
-    else
-      echo "Error: $file is not inside schema_forge or com.etendoerp.go." >&2
+    local i
+    for i in "${!PROJECT_NAMES[@]}"; do
+      if [[ "$abs" == "${PROJECT_ROOTS[$i]}/"* ]]; then
+        proj_name="${PROJECT_NAMES[$i]}"; root="${PROJECT_ROOTS[$i]}"
+        break
+      fi
+    done
+    if [[ -z "${proj_name:-}" ]]; then
+      echo "Error: $file is not inside a roster repo (${PROJECT_NAMES[*]:-none found})." >&2
       return 1
     fi
   fi
