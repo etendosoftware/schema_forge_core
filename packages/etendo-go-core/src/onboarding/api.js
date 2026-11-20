@@ -2,6 +2,7 @@ import { sessionUnavailableError, whenSessionRevokeSettles } from '@etendosoftwa
 import { ACCOUNT_HEADER } from '@etendosoftware/app-shell-core/auth/sessionCredentials.js';
 import { isAccountMismatchText } from '@etendosoftware/app-shell-core/auth/sessionConflict.js';
 import { isBusinessSector } from './businessSectors.js';
+import { readHubSpotContext } from './hubspotAttribution.js';
 
 export const ONBOARDING_ERROR_CODES = {
   registerFailed: 'onboardingRegisterFailed',
@@ -180,12 +181,18 @@ export async function fetchSession(fetchImpl, baseUrl) {
   }
 }
 
+/** ETP-6363 — the lead attribution a sign-up carries, when there is any (see hubspotAttribution.js). */
+function withHubSpotContext(body) {
+  const hubspotContext = readHubSpotContext();
+  return hubspotContext ? { ...body, hubspotContext } : body;
+}
+
 export async function registerAccount(fetchImpl, baseUrl, form) {
   const response = await fetchImpl(`${baseUrl}/sws/go/session/register`, {
     method: 'POST',
     credentials: 'include',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(form),
+    body: JSON.stringify(withHubSpotContext(form)),
   });
   return readJsonResponse(response, ONBOARDING_ERROR_CODES.registerFailed);
 }
@@ -253,11 +260,14 @@ export async function loginWithSsoProvider(fetchImpl, baseUrl, provider, payload
     method: 'POST',
     credentials: 'include',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({
+    // ETP-6363: the attribution too. The provider signs in without leaving the page, so the cookie
+    // and the address are still the visitor's; the backend keeps them only when this sign-in
+    // creates the account.
+    body: JSON.stringify(withHubSpotContext({
       ...buildPayload(payload),
       ...(extra.termsVersion ? { termsVersion: extra.termsVersion } : {}),
       ...(typeof extra.marketingConsent === 'boolean' ? { marketingConsent: extra.marketingConsent } : {}),
-    }),
+    })),
   });
   return readJsonResponse(response, ONBOARDING_ERROR_CODES.ssoFailed);
 }

@@ -133,6 +133,9 @@ describe('RegisterStep email format validation (ETP-4664)', () => {
     // ETP-6082: the business sector is required too.
     expect(submit.disabled).toBe(true);
     fireEvent.change(container.querySelector('#reg-sector'), { target: { value: 'servicios' } });
+    // ETP-6363: and so is the country.
+    expect(submit.disabled).toBe(true);
+    fireEvent.change(screen.getByTestId('country-select'), { target: { value: 'ES' } });
     expect(submit.disabled).toBe(false);
   });
 });
@@ -283,12 +286,13 @@ describe('RegisterStep optional phone (ETP-6081)', () => {
     typeEmail(container, VALID_EMAIL);
   }
 
-  it('preselects the Spanish prefix and shows each option as code and dialling code', () => {
+  it('shows no dialling code until a country is chosen, then the country\'s', () => {
     renderRegisterStep();
-    const select = screen.getByTestId('phone-prefix-select');
 
-    expect(select.value).toBe('ES');
-    expect(select.querySelector('option[value="ES"]').textContent).toContain('ES +34');
+    expect(screen.queryByTestId('reg-phone-leading')).toBeNull();
+    fireEvent.change(screen.getByTestId('country-select'), { target: { value: 'AR' } });
+
+    expect(screen.getByTestId('reg-phone-leading').textContent).toBe('+54');
   });
 
   it('registers without a phone and sends none', async () => {
@@ -302,11 +306,11 @@ describe('RegisterStep optional phone (ETP-6081)', () => {
     expect(api.registerAccount.mock.calls[0][2]).not.toHaveProperty('phone');
   });
 
-  it('sends the phone with the prefix of the chosen country', async () => {
+  it('sends the phone with the dialling code of the chosen country', async () => {
     api.registerAccount.mockResolvedValue({ csrfToken: 'csrf', account: { name: 'Ada' } });
     const { container } = renderRegisterStep({ handleRegisterSuccess: vi.fn() });
     fillValidForm(container);
-    fireEvent.change(screen.getByTestId('phone-prefix-select'), { target: { value: 'AR' } });
+    fireEvent.change(screen.getByTestId('country-select'), { target: { value: 'AR' } });
     fireEvent.change(container.querySelector('#reg-phone'), { target: { value: '11 4567 8901' } });
 
     fireEvent.submit(container.querySelector('form'));
@@ -325,11 +329,74 @@ describe('RegisterStep optional phone (ETP-6081)', () => {
     expect(screen.getByTestId('action-register-submit').disabled).toBe(true);
   });
 
-  it('does not ask for the phone when askPhone is off (a company invitation)', () => {
+  it('does not ask for the phone nor the country when askPhone is off (a company invitation)', () => {
     const { container } = renderRegisterStep({ askPhone: false });
 
-    expect(screen.queryByTestId('phone-prefix-select')).toBeNull();
+    expect(screen.queryByTestId('country-select')).toBeNull();
     expect(container.querySelector('#reg-phone')).toBeNull();
+  });
+});
+
+describe('RegisterStep required country (ETP-6363)', () => {
+  function fillValidForm(container) {
+    fireEvent.change(container.querySelector('#reg-name'), { target: { value: 'Ada' } });
+    typeEmail(container, VALID_EMAIL);
+    fireEvent.change(container.querySelector('#reg-sector'), { target: { value: 'servicios' } });
+  }
+
+  it('starts empty and keeps account creation disabled until a country is chosen', () => {
+    const { container } = renderRegisterStep();
+    fillValidForm(container);
+    const select = screen.getByTestId('country-select');
+    const submit = screen.getByTestId('action-register-submit');
+
+    expect(select.value).toBe('');
+    expect(select.required).toBe(true);
+    expect(submit.disabled).toBe(true);
+
+    fireEvent.change(select, { target: { value: 'AR' } });
+    expect(submit.disabled).toBe(false);
+  });
+
+  it('lists every country by its full name, sorted by it, and shows only flag and code once chosen', () => {
+    renderRegisterStep();
+    const select = screen.getByTestId('country-select');
+    const display = screen.getByTestId('country-select-display');
+    const names = [...select.querySelectorAll('option:not([value=""])')]
+      .map(option => option.textContent.replace(/^\S+ /, ''));
+
+    expect(select.querySelector('option[value="ES"]').textContent).toContain('Spain');
+    expect(names).toEqual([...names].sort((a, b) => a.localeCompare(b, 'en-US')));
+    expect(display.textContent).toBe('onboardingCountryPlaceholder');
+
+    fireEvent.change(select, { target: { value: 'ES' } });
+    expect(display.textContent).toMatch(/ ES$/);
+    expect(display.textContent).not.toContain('Spain');
+  });
+
+  it('sends the chosen country with the registration, even without a phone', async () => {
+    api.registerAccount.mockResolvedValue({ csrfToken: 'csrf', account: { name: 'Ada' } });
+    const { container } = renderRegisterStep({ handleRegisterSuccess: vi.fn() });
+    fillValidForm(container);
+    fireEvent.change(screen.getByTestId('country-select'), { target: { value: 'MX' } });
+
+    fireEvent.submit(container.querySelector('form'));
+
+    await waitFor(() => expect(api.registerAccount).toHaveBeenCalled());
+    expect(api.registerAccount.mock.calls[0][2]).toMatchObject({ countryCode: 'MX' });
+    expect(api.registerAccount.mock.calls[0][2]).not.toHaveProperty('phone');
+  });
+
+  it('sends no country to a host register handler (a company invitation)', async () => {
+    const registerHandler = vi.fn().mockResolvedValue({ token: 'bearer', account: { name: 'Ada' } });
+    const { container } = renderRegisterStep({ askPhone: false, registerHandler, onRegistered: vi.fn() });
+    fireEvent.change(container.querySelector('#reg-name'), { target: { value: 'Ada' } });
+    typeEmail(container, VALID_EMAIL);
+
+    fireEvent.submit(container.querySelector('form'));
+
+    await waitFor(() => expect(registerHandler).toHaveBeenCalled());
+    expect(registerHandler.mock.calls[0][0]).not.toHaveProperty('countryCode');
   });
 });
 
@@ -417,8 +484,9 @@ describe('RegisterStep without a password (ETP-6081)', () => {
   function fillNameAndEmail(container) {
     fireEvent.change(container.querySelector('#reg-name'), { target: { value: 'Ada' } });
     typeEmail(container, VALID_EMAIL);
-    // ETP-6082: the business sector is required too.
+    // ETP-6082 / ETP-6363: the business sector and the country are required too.
     fireEvent.change(container.querySelector('#reg-sector'), { target: { value: 'servicios' } });
+    fireEvent.change(screen.getByTestId('country-select'), { target: { value: 'ES' } });
   }
 
   it('asks for no password and lets the account be created with name and email alone', () => {
