@@ -31,7 +31,7 @@ for (const [name, info] of Object.entries({ ...SCOPE_LABELS })) {
 }
 
 export default function AuthorizePage() {
-  const { username, csrfToken } = useAuth();
+  const { username, csrfToken, refreshToken } = useAuth();
   const [searchParams] = useSearchParams();
   const [status, setStatus] = useState('idle'); // idle | authorizing | success | error
   const [errorMessage, setErrorMessage] = useState('');
@@ -78,6 +78,10 @@ export default function AuthorizePage() {
       const data = await res.json();
       if (data.redirect_url) {
         setStatus('success');
+        // ETP-5386 — the link just changed what this account can reach; reload the cached
+        // grant/role maps now instead of leaving the UI on the pre-link snapshot ("no access
+        // to the window") until a manual reload. Best effort: a failed refresh keeps the session.
+        Promise.resolve(refreshToken?.()).catch(() => {});
         setTimeout(() => {
           window.location.href = data.redirect_url;
         }, 1000);

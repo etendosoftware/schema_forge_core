@@ -12,8 +12,9 @@ vi.mock('../../i18n/index.js', () => ({
 // In core, both useAuth and createApiFetch come from the auth barrel.
 // AuthorizePage no longer destructures `token`/`logout` (cookie-session migration,
 // ADR-0001) — the mock reflects the new useAuth() contract: username + csrfToken.
+const mockRefreshToken = vi.fn(() => Promise.resolve());
 vi.mock('../../auth/index.js', () => ({
-  useAuth: () => ({ username: 'testuser', csrfToken: 'test-csrf-token' }),
+  useAuth: () => ({ username: 'testuser', csrfToken: 'test-csrf-token', refreshToken: mockRefreshToken }),
   createApiFetch: vi.fn(() => vi.fn()),
 }));
 
@@ -213,6 +214,8 @@ describe('AuthorizePage', () => {
       await waitFor(() => {
         expect(screen.getByText('oauthAuthorizedRedirecting')).toBeInTheDocument();
       });
+      // ETP-5386 — the grant state is refreshed once the link completes.
+      expect(mockRefreshToken).toHaveBeenCalledTimes(1);
 
       window.location = originalLocation;
     });
