@@ -16,7 +16,7 @@
 import { readFileSync, existsSync } from 'node:fs';
 import { join } from 'node:path';
 import { applyPlaceholders } from './report-sql.js';
-import { buildAccountReportTree, buildChartAccountTree, parseExpandedNodeIds, buildPeriodAccountTree, buildPeriodCell, addVariation, accountSignMultiplier, cleanAmount } from './report-grouping.js';
+import { buildAccountReportTree, buildChartAccountTree, parseExpandedNodeIds, buildPeriodAccountTree, buildPeriodCell, addVariation, accountSignMultiplier, cleanAmount, resultSplit, resultFields, balanceFields, hasResult } from './report-grouping.js';
 import { assertNoPeriodsToken, buildPeriodValues, comparedPeriodsFor, substitutePeriods, hasPeriods, hullParams, SCREEN_MAX_BUCKETS } from './report-periods.js';
 import { withReportClient, acquireTenantSlot, isStatementTimeout, ReportTimeoutError, ReportCancelledError } from './report-db.js';
 import { resolveReportSession, reportAuthErrorBody, assertReportOrgAccess, assertReportAccess, accessCheckSession } from './report-auth.js';
@@ -128,6 +128,7 @@ async function runSplit(pool, contract, { clientId, params, locale }) {
     amount: cleanAmount((Number(r.own_amt) || 0) * multiplier),
     amount_ref: cleanAmount((Number(r.own_amt_ref) || 0) * multiplier),
     sign,
+    ...resultFields(r, cleanAmount((Number(r.own_amt) || 0) * multiplier), cleanAmount((Number(r.own_amt_ref) || 0) * multiplier), multiplier),
   }));
   return addVariation(split, { compare: params.compareTo === 'true', trend: contract.trend === 'result' });
 }
@@ -151,7 +152,12 @@ async function runPeriodSplit(pool, contract, { clientId, params, locale, period
     const cells = periodSpec.periods.map((p) => {
       const r = byIdx.get(p.idx);
       const signed = (v) => (Number(v) || 0) * multiplier;
-      return buildPeriodCell(signed(r?.own_amt), signed(r?.own_amt_sly), signed(r?.own_amt_prev), { sign, trend });
+      const cell = buildPeriodCell(signed(r?.own_amt), signed(r?.own_amt_sly), signed(r?.own_amt_prev), { sign, trend });
+      if (hasResult(r?.own_result)) { // ETP-6083: the income-summary node's on-the-fly part
+        const part = (key, amount) => (hasResult(r[key]) ? resultSplit(amount, r[key], multiplier) : { onTheFly: 0, posted: amount });
+        cell.result = { ...resultSplit(cell.amount, r.own_result, multiplier), sly: part('own_result_sly', cell.sly.amount), prev: part('own_result_prev', cell.prev.amount) };
+      }
+      return cell;
     });
     return { node_id: id, name, sign, amount: cells[0].amount, amount_ref: cells[0].sly.amount, cells };
   });
@@ -185,14 +191,15 @@ export function buildQueryResponse(contract, params, { rows, openingRows, operan
       trend: contract.trend === 'result',
       comparedPeriods: comparedPeriodsFor(params.columns || 'total'),
     });
-    return { kind: 'tree', rows: tree, periods: periodSpec.periods.map(publicPeriod), hiddenCount: periodSpec.hiddenCount };
+    return { kind: 'tree', rows: tree, ...balanceFields(contract, tree, { periods: true }), periods: periodSpec.periods.map(publicPeriod), hiddenCount: periodSpec.hiddenCount };
   }
   if (contract.sql.operandsQuery !== undefined) {
     const tree = buildAccountReportTree(rows, operandRows, {
       accountLevel: 'S',
       showOnlyWithValue: params.showOnlyAccountsWithValue === 'true',
     });
-    return { kind: 'tree', rows: addVariation(tree, { compare: params.compareTo === 'true', trend: contract.trend === 'result' }) };
+    const compare = params.compareTo === 'true';
+    return { kind: 'tree', rows: addVariation(tree, { compare, trend: contract.trend === 'result' }), ...balanceFields(contract, tree, { compare }) };
   }
   return { kind: 'rows', rows, openingRows };
 }
