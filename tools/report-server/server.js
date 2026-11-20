@@ -27,12 +27,12 @@ import { fileURLToPath } from 'node:url';
 import { registerReportHelpers, computeDocumentQrDataUrl, buildJsreportHelpersString } from '../../templates/reports/helpers/report-html-helpers.js';
 import { listReportDescriptors } from '../../cli/src/report-descriptor.js';
 import { pickLabel, pickUiStrings, buildContractLabels } from '../../cli/src/report-i18n.js';
-import { resolveGrouping, buildNestedGroups, buildRenderAccountTree } from '../../cli/src/report-grouping.js';
+import { resolveGrouping, buildNestedGroups, buildRenderAccountTree, buildRenderChartTree } from '../../cli/src/report-grouping.js';
 import { applyPlaceholders } from '../../cli/src/report-sql.js';
 import { filterAndTransformParams } from '../../cli/src/report-filters.js';
 import { hydrateDocumentBranding, resolveCompanyLogoDataUrl } from '../../cli/src/report-branding.js';
 import { resolveReportSession, reportAuthErrorBody, assertReportOrgAccess, assertReportAccess } from '../../cli/src/report-auth.js';
-import { handleReportQuery, runReportSql } from '../../cli/src/report-query.js';
+import { handleReportQuery, runReportSql, isChartTreeRender } from '../../cli/src/report-query.js';
 import { getSharedPool, withReportClient, closeSharedPool, abortOnClose, getRenderStatementTimeoutMs, ReportTimeoutError } from '../../cli/src/report-db.js';
 import { buildPeriodMeta, normalizeCompareMode, maxPeriodBucketsFor } from '../../cli/src/report-periods.js';
 
@@ -242,7 +242,7 @@ async function fetchReportData(reportId, { limit, session, params = {}, locale, 
     // Main query plus Libro Mayor's openingQuery (ETP-4898) and Profit & Loss's
     // operandsQuery (ETP-4899): the same runner as `/query`, so they cannot drift.
     // `periods` (ETP-6239) also returns periodRows/periodSpec; the cap depends on the format.
-    const { rows, openingRows, operandRows, periodRows, periodSpec } = await runReportSql(pool, contract, { clientId, params, locale, mainSql: sql, maxPeriodBuckets: maxPeriodBucketsFor(format) });
+    const { rows, openingRows, operandRows, periodRows, periodSpec } = await runReportSql(pool, contract, { clientId, params, locale, mainSql: sql, maxPeriodBuckets: maxPeriodBucketsFor(format), chartTree: isChartTreeRender(contract, params) });
 
     // Company logo for listing reports (ETP-5013) — same shared orgId/clientId
     // lookup as report-api.js: no `header` object exists for listing reports,
@@ -347,6 +347,15 @@ function extractRowsFromData(data, contract, limit) {
 function resolveReportData(result, params, locale) {
   let { rows } = result;
   const { contract, operandRows, openingRows } = result;
+
+  // ETP-6084: a chart-tree report (Trial Balance) asked for the interactive view's tree. The rows are the
+  // ones its comparison mode shows; the totals and the balance check travel in `chartMeta` (-> `meta`).
+  // Without `expandedNodeIds` this block is skipped and the report renders exactly as before.
+  if (isChartTreeRender(contract, params) && Array.isArray(rows)) {
+    const chart = buildRenderChartTree(rows, params, result.periodRows
+      ? { periodRows: result.periodRows, spec: result.periodSpec, compareMode: normalizeCompareMode(params.compareMode) } : null);
+    return { ...resolveGrouping(contract, { ...params, groupBy: '' }, null, locale), rows: chart.rows, openingRows, chartMeta: chart.meta };
+  }
 
   // Account-report tree reports (ETP-4899 — Profit & Loss, Balance Sheet): the
   // SQL returns the FLAT node list, and the indented tree (roll-up, formula
@@ -453,7 +462,7 @@ async function renderReport(renderMatch, req, res) {
     const result = await fetchReportData(reportId, { limit, session, params, locale, format });
     const { contract, documentData, neoMeta = {}, companyLogoDataUrl } = result;
     const {
-      rows, groupLabel, descriptionLabel, dimensionLabel, dimensionField, tbGroups, openingRows,
+      rows, chartMeta, groupLabel, descriptionLabel, dimensionLabel, dimensionField, tbGroups, openingRows,
     } = resolveReportData(result, params, locale);
 
     const activeFilters = filterAndTransformParams(params, contract, locale);
@@ -509,7 +518,7 @@ async function renderReport(renderMatch, req, res) {
     // controls only render that way when this is true — see report-*'s own
     // `{{#if meta.isInteractive}}` guard around each `.xxx-link` CSS rule.
     const isInteractive = format === 'html' || format === 'preview';
-    const templateData = buildTemplateData(documentData, css, { title, activeFilters, params, recordCount, totals, groupLabel, descriptionLabel, neoMeta, rows, locale, ui, labels, dimensionLabel, dimensionField, groups, tbGroups, companyLogoDataUrl, isInteractive, periodMeta: buildPeriodMeta(result.periodSpec, { format, compareMode: params.compareMode }) });
+    const templateData = buildTemplateData(documentData, css, { title, activeFilters, params, recordCount, totals, groupLabel, descriptionLabel, neoMeta: chartMeta ? { ...neoMeta, ...chartMeta } : neoMeta, rows, locale, ui, labels, dimensionLabel, dimensionField, groups, tbGroups, companyLogoDataUrl, isInteractive, periodMeta: buildPeriodMeta(result.periodSpec, { format, compareMode: params.compareMode }) });
     await injectDocumentQr(documentData, templateData);
     // HTML: render with Handlebars locally
     if (format === 'html') {

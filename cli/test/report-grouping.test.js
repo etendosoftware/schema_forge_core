@@ -19,8 +19,13 @@ import {
   buildPeriodCell,
   buildPeriodAccountTree,
   selectPeriodMode,
+  buildBalanceBlock,
+  balanceFields,
   cleanAmount,
   TRIAL_BALANCE_AMOUNT_FIELDS,
+  buildChartAccountTree,
+  buildRenderChartTree,
+  hasTrialBalanceActivity,
 } from '../src/report-grouping.js';
 
 const DIMENSION_CONTRACT = {
@@ -1089,5 +1094,306 @@ describe('buildPeriodAccountTree / selectPeriodMode / buildPeriodCell (ETP-6239)
       assert.ok(prev.some((r) => r.node_id === 'S3'));
       assert.equal(buildRenderAccountTree(NODES, OPS, params, PL_CONTRACT, { ...period(undefined) }).length, none.length, 'no mode = none');
     });
+  });
+});
+
+describe('buildChartAccountTree (ETP-6084)', () => {
+  const C = (node_id, parent_id, level, amounts = {}, extra = {}) => ({
+    node_id, parent_id, sort_path: node_id, value: node_id, name: `N ${node_id}`, elementlevel: level,
+    account_id: node_id, dimension_id: null, opening_balance: 0, activity_debit: 0, activity_credit: 0, closing_balance: 0,
+    ...amounts, ...extra,
+  });
+  const D = (account_id, dimension_id, name, amounts) => ({
+    node_id: null, account_id, dimension_id, dimension_name: name, opening_balance: 0, activity_debit: 0, activity_credit: 0, closing_balance: 0, ...amounts,
+  });
+  const A = (opening, debit, credit) => ({ opening_balance: opening, activity_debit: debit, activity_credit: credit, closing_balance: opening + debit - credit });
+  // E1 > C1 > S1 (own), S2 (own); E1 > S3 (E>S mixed); E2 > E3 > S4 (E>E nesting); S5 has no parent in the set.
+  const CHART = [
+    C('E1', '0', 'E'), C('C1', 'E1', 'C'), C('S1', 'C1', 'S', A(100, 50, 20)), C('S2', 'C1', 'S', A(-100, 0, 0)),
+    C('S3', 'E1', 'S', A(0, 10, 30)), C('E2', null, 'E'), C('E3', 'E2', 'E'), C('S4', 'E3', 'S', A(0, 5, 0)),
+    C('S5', 'missing', 'S', A(7, 0, 0)),
+  ];
+  const byId = (rows) => Object.fromEntries(rows.map((r) => [r.node_id, r]));
+
+  it('never lists the synthetic root, and rolls the four amounts up by parent_id (mixed levels)', () => {
+    const { rows } = buildChartAccountTree(CHART, null);
+    assert.ok(!rows.some((r) => String(r.node_id).startsWith('__chart_root__')));
+    const r = byId(rows);
+    assert.equal(r.C1.opening, 0);
+    assert.equal(r.C1.debit, 50);
+    assert.equal(r.C1.credit, 20);
+    assert.equal(r.C1.closing, 30);
+    assert.equal(r.E1.debit, 60); // C1 (50) + the S3 child that sits directly under the Epígrafe
+    assert.equal(r.E1.credit, 50);
+    assert.equal(r.E2.debit, 5); // E>E nesting
+    assert.equal(r.S5.parentId, null); // an unknown parent hangs from the root
+  });
+
+  it('keeps the chart amounts untouched: debit and credit are raw sums, never flipped by a sign', () => {
+    const { rows } = buildChartAccountTree([C('E1', '0', 'E'), C('S1', 'E1', 'S', A(0, -40, 15))], null);
+    assert.equal(byId(rows).S1.debit, -40);
+    assert.equal(byId(rows).E1.debit, -40);
+    assert.equal(byId(rows).E1.closing, -55);
+  });
+
+  it('totals are the sum of the roots and the balance check compares debit with credit and closing with 0', () => {
+    const balanced = [C('E1', '0', 'E'), C('S1', 'E1', 'S', A(0, 100, 0)), C('S2', 'E1', 'S', A(0, 0, 100))];
+    const ok = buildChartAccountTree(balanced, null);
+    assert.equal(ok.totals[0].debit.amount, 100);
+    assert.equal(ok.totals[0].closing.amount, 0);
+    assert.deepEqual(ok.balance, { balanced: true, debitCreditDiff: 0, closingDiff: 0 });
+    const partial = buildChartAccountTree([C('E1', '0', 'E'), C('S1', 'E1', 'S', A(0, 100, 0))], null);
+    assert.equal(partial.balance.balanced, false);
+    assert.equal(partial.balance.debitCreditDiff, 100);
+    assert.equal(buildChartAccountTree(CHART, null).totals[0].opening.amount, 7); // S5 counts although it has no ancestor
+  });
+
+  it('totals carry no float noise: roots summing to ~1e-12 are exactly 0, variation included', () => {
+    const noisy = [C('E1', '0', 'E', {}), C('E2', '0', 'E', {}), C('E3', '0', 'E', {}),
+      C('S1', 'E1', 'S', A(0.1, 0, 0)), C('S2', 'E2', 'S', A(0.2, 0, 0)), C('S3', 'E3', 'S', A(-0.3, 0, 0))];
+    const { totals } = buildChartAccountTree(noisy, null);
+    assert.equal(totals[0].opening.amount, 0);
+    assert.equal(totals[0].closing.amount, 0);
+    assert.equal(Object.is(totals[0].closing.sly.variationAmount, 0), true);
+  });
+
+  it('puts dimension rows under their S leaf with composite ids, and they add up to the leaf', () => {
+    const rows = [
+      ...CHART.filter((r) => r.node_id !== 'S1'),
+      C('S1', 'C1', 'S', A(100, 50, 20)),
+      D('S1', 'bp1', 'Zeta', A(40, 50, 0)), D('S1', 'bp2', 'Alfa', A(60, 0, 20)), D('S1', '', '', A(0, 0, 0)),
+    ];
+    const { rows: out } = buildChartAccountTree(rows, null);
+    const kids = out.filter((r) => r.parentId === 'S1');
+    assert.deepEqual(kids.map((k) => k.node_id), ['S1|', 'S1|bp2', 'S1|bp1']); // by name: '' < Alfa < Zeta
+    assert.ok(kids.every((k) => k.isDimension && k.account_id === 'S1' && k.account_value === 'S1'));
+    assert.equal(kids.reduce((a, k) => a + k.debit, 0), 50);
+    const leaf = byId(out).S1;
+    assert.equal(leaf.opening, 100); // the leaf now rolls up its children
+    assert.equal(leaf.isDimension, false);
+    assert.equal(byId(out).E1.debit, 60); // not counted twice (leaf own + children)
+  });
+
+  it('keeps opening-only rows and hides all-zero rows when showOnlyWithValue is on', () => {
+    const chart = [C('E1', '0', 'E'), C('S1', 'E1', 'S', A(25, 0, 0)), C('S2', 'E1', 'S', A(0, 0, 0)),
+      C('S3', 'E1', 'S', { opening_balance: 0, activity_debit: 0, activity_credit: 0, closing_balance: 0 })];
+    const { rows } = buildChartAccountTree(chart, null, { showOnlyWithValue: true });
+    assert.equal(byId(rows).S1.visible.none, true);
+    assert.equal(byId(rows).S2.visible.none, false);
+    assert.equal(buildChartAccountTree(chart, null).rows.every((r) => r.visible.none), true);
+    assert.equal(hasTrialBalanceActivity({ opening_balance: 25, activity_debit: 0, activity_credit: 0 }), true);
+  });
+
+  describe('with periods (comparison)', () => {
+    const periods = [{ idx: 0 }];
+    const P = (account_id, cur, sly, prev, dim = {}) => {
+      const out = { idx: 0, account_id, dimension_id: null, ...dim };
+      for (const [key, [o, d, c]] of Object.entries({ cur, sly, prev })) {
+        const sfx = key === 'cur' ? '' : `_${key}`;
+        out[`opening_balance${sfx}`] = o; out[`activity_debit${sfx}`] = d; out[`activity_credit${sfx}`] = c; out[`closing_balance${sfx}`] = o + d - c;
+      }
+      return out;
+    };
+    const chart = [C('E1', '0', 'E'), C('S1', 'E1', 'S'), C('S2', 'E1', 'S'), C('S3', 'E1', 'S')];
+    const periodRows = [P('S1', [10, 5, 0], [8, 2, 0], [0, 0, 0]), P('S2', [0, 0, 0], [3, 4, 1], [0, 0, 0]), P('S3', [0, 0, 0], [0, 0, 0], [0, 0, 0])];
+    const run = (extra = {}) => buildChartAccountTree(chart, periodRows, { periods, showOnlyWithValue: true, ...extra });
+
+    it('an account active only last year shows in sly mode, not in none', () => {
+      const r = byId(run().rows);
+      assert.equal(r.S2.visible.none, false);
+      assert.equal(r.S2.visible.sly, true);
+      assert.equal(r.S2.visible.prev, false);
+      assert.equal(r.S3.visible.sly, false);
+      assert.equal(r.E1.visible.none, true);
+    });
+
+    it('computes variation on every amount (closing, debit, credit): abs(ref) denominator, no trend', () => {
+      const [cell] = byId(run().rows).S1.cells;
+      assert.equal(cell.closing.amount, 15);
+      assert.equal(cell.closing.sly.amount, 10);
+      assert.equal(cell.closing.sly.variationAmount, 5);
+      assert.equal(cell.closing.sly.variationPct, 50);
+      assert.equal(cell.debit.sly.variationAmount, 3);
+      assert.equal(cell.credit.sly.variationPct, null); // zero reference: never infinite
+      assert.equal(cell.closing.sly.trend, null);
+      assert.equal(byId(run({ trend: true }).rows).S1.cells[0].closing.sly.trend, 'worsens'); // only when the contract asks for it
+      const neg = buildChartAccountTree([C('E1', '0', 'E'), C('S1', 'E1', 'S')], [P('S1', [-1500, 0, 0], [-1000, 0, 0], [0, 0, 0])], { periods });
+      assert.equal(neg.rows[1].cells[0].closing.sly.variationPct, -50); // mathematical sign
+    });
+
+    it('builds dimension nodes from the union of the ranges (a contact active only last year exists)', () => {
+      const dims = [
+        P('S1', [10, 5, 0], [0, 0, 0], [0, 0, 0], { dimension_id: 'bp1', dimension_name: 'Alfa' }),
+        P('S1', [0, 0, 0], [8, 2, 0], [0, 0, 0], { dimension_id: 'bp2', dimension_name: 'Beta' }),
+      ];
+      const { rows, totals } = buildChartAccountTree(chart, dims, { periods, showOnlyWithValue: true });
+      const kids = rows.filter((r) => r.parentId === 'S1');
+      assert.deepEqual(kids.map((k) => k.node_id), ['S1|bp1', 'S1|bp2']);
+      assert.equal(byId(rows).S1.cells[0].closing.amount, 15);
+      assert.equal(byId(rows).S1.cells[0].closing.sly.amount, 10); // sum of the children's sly
+      assert.equal(byId(rows)['S1|bp2'].visible.none, false);
+      assert.equal(byId(rows)['S1|bp2'].visible.sly, true);
+      assert.equal(totals[0].closing.sly.amount, 10);
+    });
+
+    it('one entry per period: cells follow the periods list and the first one is the range', () => {
+      const two = [{ idx: 0 }, { idx: 1 }];
+      const rowsTwo = [P('S1', [0, 9, 0], [0, 0, 0], [0, 0, 0]), { ...P('S1', [0, 4, 0], [0, 0, 0], [0, 0, 0]), idx: 1 }];
+      const { rows, totals } = buildChartAccountTree(chart, rowsTwo, { periods: two });
+      const s1 = byId(rows).S1;
+      assert.equal(s1.cells.length, 2);
+      assert.equal(s1.cells[1].debit.amount, 4);
+      assert.equal(s1.debit, 9);
+      assert.equal(totals[1].debit.amount, 4);
+    });
+  });
+
+  it('honours expandedNodeIds (collapsed parents hide their children, values unchanged)', () => {
+    const { rows } = buildChartAccountTree(CHART, null, { expandedNodeIds: ['E1'] });
+    assert.ok(byId(rows).C1);
+    assert.ok(!byId(rows).S1);
+    assert.equal(byId(rows).C1.debit, 50);
+  });
+
+  it('T1 parity: the tree folded to the leaves equals the old foldAggregateRows per account', () => {
+    const fine = [
+      { account_no: 'S1', account_id: 'S1', account_name: 'N', bpartner: 'a', ...A(40, 50, 0) },
+      { account_no: 'S1', account_id: 'S1', account_name: 'N', bpartner: 'b', ...A(60, 0, 20) },
+      { account_no: 'S2', account_id: 'S2', account_name: 'N', bpartner: '', ...A(-100, 0, 0) },
+    ];
+    const old = foldAggregateRows(fine, null, null);
+    const dimRows = fine.map((f) => D(f.account_id, f.bpartner, f.bpartner, f));
+    const chart = [C('E1', '0', 'E'), C('S1', 'E1', 'S'), C('S2', 'E1', 'S'), ...dimRows];
+    const { rows } = buildChartAccountTree(chart, null, { showOnlyWithValue: true });
+    for (const o of old) {
+      const t = byId(rows)[o.account_no];
+      assert.deepEqual([t.opening, t.debit, t.credit, t.closing],
+        [o.opening_balance, o.activity_debit, o.activity_credit, o.closing_balance], o.account_no);
+    }
+  });
+
+  describe('buildRenderChartTree', () => {
+    it('visibleNodeIds emits exactly those rows in tree order, re-indented, ignoring expandedNodeIds', () => {
+      const out = buildRenderChartTree(CHART, { visibleNodeIds: 'E1,S1,S3', expandedNodeIds: 'none' });
+      assert.deepEqual(out.rows.map((r) => r.node_id), ['E1', 'S1', 'S3']); // C1 is folded away
+      assert.deepEqual(out.rows.map((r) => r.indent), [0, 1, 1]);
+      assert.equal(out.rows[1].parentId, 'E1');
+      assert.equal(out.rows[0].debit, 60); // values are those of the full tree
+    });
+
+    it('visibleNodeIds accepts dimension rows by their composite node_id', () => {
+      const withDim = [...CHART, D('S1', 'bp1', 'Alfa', A(100, 50, 20))];
+      const out = buildRenderChartTree(withDim, { visibleNodeIds: 'E1,C1,S1,S1|bp1' });
+      assert.deepEqual(out.rows.map((r) => r.node_id), ['E1', 'C1', 'S1', 'S1|bp1']);
+      assert.equal(out.rows[3].indent, 3);
+    });
+
+    it('forwards compareMovements into the meta as a boolean', () => {
+      assert.equal(buildRenderChartTree(CHART, { expandedNodeIds: 'E1', compareMovements: 'true' }).meta.compareMovements, true);
+      assert.equal(buildRenderChartTree(CHART, { expandedNodeIds: 'E1' }).meta.compareMovements, false);
+    });
+
+    it('returns the rows of the comparison mode, parented to the nearest shown row, and the meta', () => {
+      const out = buildRenderChartTree(CHART, { expandedNodeIds: 'E1,C1', showOnlyAccountsWithValue: 'true' });
+      assert.ok(out.rows.some((r) => r.node_id === 'S1'));
+      assert.ok(!out.rows.some((r) => r.node_id === 'S4')); // E3 is not expanded
+      assert.equal(out.meta.chartTotals.length, 1);
+      assert.equal(typeof out.meta.chartBalance.balanced, 'boolean');
+    });
+  });
+});
+
+describe('Balance Sheet: result split and balance block (ETP-6083)', () => {
+  const n = (id, parent, path, group, sign, extra = {}) => ({
+    node_id: id, parent_id: parent, sort_path: path, group_name: group, value: id, name: `N ${id}`,
+    elementlevel: parent ? 'C' : 'E', isalwaysshown: 'N', accountsign: sign, own_amt: 0, own_amt_ref: 0, issummary: parent ? 'N' : 'Y', ...extra,
+  });
+  // Activo (debit-normal): cash 1000; Pasivo/PN (credit-normal): capital -700 raw (700 shown) + 129 (raw -300, of which -120 on the fly).
+  const NODES = [
+    n('RA', null, '0', 'Activo', 'D'), // one container per side (never a row) carries the side's sign
+    n('A', 'RA', '1', 'Activo', 'D'),
+    n('cash', 'A', '1.1', 'Activo', 'D', { own_amt: 1000, own_amt_ref: 800 }),
+    n('RP', null, '2', 'PN', 'C'),
+    n('P', 'RP', '2.0', 'PN', 'C'),
+    n('cap', 'P', '2.1', 'PN', 'C', { own_amt: -700, own_amt_ref: -600 }),
+    n('r129', 'P', '2.2', 'PN', 'C', { own_amt: -300, own_amt_ref: -200, result_onthefly: -120, result_onthefly_ref: -50 }),
+  ];
+  const byId = (rows) => Object.fromEntries(rows.map((r) => [r.node_id, r]));
+
+  it('adds result { onTheFly, posted } in displayed sign to the account row only', () => {
+    const t = byId(buildAccountReportTree(NODES, [], {}));
+    assert.deepEqual(t.r129.result, { onTheFly: 120, posted: 180 });
+    assert.deepEqual(t.r129.resultRef, { onTheFly: 50, posted: 150 });
+    assert.equal(t.P.result, undefined, 'a summary parent carries no result');
+    assert.equal(t.cap.result, undefined);
+  });
+
+  it('adds cells[i].result with sly and prev for a period answer', () => {
+    const periodRows = [
+      { account_id: 'r129', idx: 0, own_amt: -300, own_amt_sly: -200, own_amt_prev: -100, own_result: -120, own_result_sly: -50, own_result_prev: null },
+      { account_id: 'cap', idx: 0, own_amt: -700, own_amt_sly: -600, own_amt_prev: -600 },
+      { account_id: 'cash', idx: 0, own_amt: 1000, own_amt_sly: 800, own_amt_prev: 700 },
+    ];
+    const t = byId(buildPeriodAccountTree(NODES, [], periodRows, { periods: [{ idx: 0 }] }));
+    assert.deepEqual(t.r129.cells[0].result, {
+      onTheFly: 120, posted: 180, sly: { onTheFly: 50, posted: 150 }, prev: { onTheFly: 0, posted: 100 },
+    });
+    assert.equal(t.cap.cells[0].result, undefined);
+    assert.equal(t.P.cells[0].result, undefined);
+  });
+
+  it('a contract without result columns is unchanged: no result anywhere', () => {
+    const plain = NODES.map(({ result_onthefly, result_onthefly_ref, ...rest }) => rest);
+    for (const r of buildAccountReportTree(plain, [], {})) assert.ok(!('result' in r) && !('resultRef' in r));
+    const rows = buildPeriodAccountTree(plain, [], [{ account_id: 'cap', idx: 0, own_amt: -1, own_amt_sly: 0, own_amt_prev: 0 }], { periods: [{ idx: 0 }] });
+    for (const r of rows) assert.ok(!('result' in r) && !('result' in r.cells[0]));
+  });
+
+  it('balance block: balanced, unbalanced and not-two-groups', () => {
+    const tree = buildAccountReportTree(NODES, [], {});
+    assert.deepEqual(buildBalanceBlock(tree), { balanced: true, activo: 1000, pnPasivo: 1000, diff: 0 });
+    const off = buildAccountReportTree(NODES.map((x) => (x.node_id === 'cash' ? { ...x, own_amt: 1000.5 } : x)), [], {});
+    assert.deepEqual(buildBalanceBlock(off), { balanced: false, activo: 1000.5, pnPasivo: 1000, diff: 0.5 });
+    assert.equal(buildBalanceBlock(tree.filter((r) => r.group === 'Activo')), null);
+    assert.equal(buildBalanceBlock([]), null);
+  });
+
+  it('balance block uses a side\'s TOTAL formula row instead of summing it with its siblings (real chart shape)', () => {
+    // Real chart: under each side's container the groups AND a TOTAL formula over them (A -> A.A, A.B, A.TOTAL).
+    const nodes = (cap) => [
+      n('RA', null, '0', 'Activo', 'D'),
+      n('A.A', 'RA', '0.1', 'Activo', 'D', { own_amt: 0 }),
+      n('A.B', 'RA', '0.2', 'Activo', 'D', { own_amt: 25849 }),
+      n('A.TOTAL', 'RA', '0.3', 'Activo', 'D'),
+      n('RP', null, '1', 'PN', 'C'),
+      n('P.A', 'RP', '1.1', 'PN', 'C', { own_amt: -22500 }),
+      n('P.C', 'RP', '1.2', 'PN', 'C', { own_amt: -cap }),
+      n('P.TOTAL', 'RP', '1.3', 'PN', 'C'),
+    ];
+    const ops = [
+      { owner_id: 'A.TOTAL', operand_id: 'A.A', sign: 1 }, { owner_id: 'A.TOTAL', operand_id: 'A.B', sign: 1 },
+      { owner_id: 'P.TOTAL', operand_id: 'P.A', sign: 1 }, { owner_id: 'P.TOTAL', operand_id: 'P.C', sign: 1 },
+    ];
+    const ok = buildBalanceBlock(buildAccountReportTree(nodes(3349), ops, {}));
+    assert.deepEqual(ok, { balanced: true, activo: 25849, pnPasivo: 25849, diff: 0 });
+    const off = buildBalanceBlock(buildAccountReportTree(nodes(3000), ops, {}));
+    assert.deepEqual(off, { balanced: false, activo: 25849, pnPasivo: 25500, diff: 349 });
+  });
+
+  it('balanceFields: opt-in only; plain ref only with compare; period tree gives sly / prev', () => {
+    const tree = buildAccountReportTree(NODES, [], {});
+    assert.deepEqual(balanceFields({}, tree), {});
+    assert.deepEqual(Object.keys(balanceFields({ balanceCheck: true }, tree)), ['balance']);
+    const withRef = balanceFields({ balanceCheck: true }, tree, { compare: true });
+    assert.deepEqual(withRef.balanceRef, { balanced: true, activo: 800, pnPasivo: 800, diff: 0 });
+    const periodRows = [
+      { account_id: 'cash', idx: 0, own_amt: 1000, own_amt_sly: 800, own_amt_prev: 500 },
+      { account_id: 'cap', idx: 0, own_amt: -1000, own_amt_sly: -800, own_amt_prev: -400 },
+    ];
+    const pt = buildPeriodAccountTree(NODES, [], periodRows, { periods: [{ idx: 0 }] });
+    const f = balanceFields({ balanceCheck: true }, pt, { periods: true });
+    assert.equal(f.balance.balanced, true);
+    assert.equal(f.balanceRef.sly.balanced, true);
+    assert.deepEqual(f.balanceRef.prev, { balanced: false, activo: 500, pnPasivo: 400, diff: 100 });
   });
 });

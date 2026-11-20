@@ -148,6 +148,11 @@ export function buildNestedGroups(rows, dimensionField, openingRows) {
   return groups;
 }
 
+/** Classic's "has activity" criterion for a Trial Balance row (opening-only rows stay, ETP-4898). One definition: the old fold and the chart tree share it. */
+export function hasTrialBalanceActivity(a) {
+  return Math.abs(a.opening_balance) > 1e-9 || Math.abs(a.activity_debit) > 1e-9 || Math.abs(a.activity_credit) > 1e-9;
+}
+
 export const TRIAL_BALANCE_AMOUNT_FIELDS = ['opening_balance', 'activity_debit', 'activity_credit', 'closing_balance'];
 
 /**
@@ -209,8 +214,7 @@ export function foldAggregateRows(rows, dimensionField, dimensionIdField) {
     // activity alone silently drops it, and since a Trial Balance must always net
     // to zero across all accounts, dropping it also broke the opening/closing
     // column totals (they stopped summing to 0).
-    .filter(a => Math.abs(a.opening_balance) > 1e-9
-      || Math.abs(a.activity_debit) > 1e-9 || Math.abs(a.activity_credit) > 1e-9)
+    .filter(hasTrialBalanceActivity)
     // Account FIRST, dimension second — matches Classic's real Trial Balance
     // layout (ReportTrialBalanceAdvancedView.jrxml): one block PER ACCOUNT,
     // with that account's dimension breakdown nested inside and the account
@@ -287,6 +291,62 @@ export const ELEMENT_LEVEL_RANK = { E: 0, C: 1, D: 2, S: 3 };
 // `own_amt` is always the raw debit - credit; this multiplier is what flips it.
 export function accountSignMultiplier(sign) {
   return sign === 'C' ? -1 : 1;
+}
+
+export const hasResult = (v) => v !== undefined && v !== null && v !== '';
+
+/**
+ * ETP-6083: the on-the-fly / posted split of an amount that includes an unregularized result (the
+ * income-summary account of a Balance Sheet). `onTheFlyRaw` is the raw debit - credit the query
+ * reports; the split is in DISPLAYED sign (`multiplier`, the row's), and `posted = amount - onTheFly`.
+ */
+export function resultSplit(amount, onTheFlyRaw, multiplier) {
+  const onTheFly = cleanAmount((Number(onTheFlyRaw) || 0) * multiplier);
+  return { onTheFly, posted: cleanAmount((Number(amount) || 0) - onTheFly) };
+}
+
+/** `{ result, resultRef }` for a row whose query carried `result_onthefly` / `result_onthefly_ref`; `{}` otherwise (P&L et al. unchanged). */
+export function resultFields(row, amount, amountRef, multiplier) {
+  const out = {};
+  if (hasResult(row.result_onthefly)) out.result = resultSplit(amount, row.result_onthefly, multiplier);
+  if (hasResult(row.result_onthefly_ref)) out.resultRef = resultSplit(amountRef, row.result_onthefly_ref, multiplier);
+  return out;
+}
+
+/**
+ * ETP-6083: the balance check of a two-sided report (Balance Sheet): the roots of each report group
+ * summed in the displayed sign, the first group (Activo) against the second (Patrimonio Neto y
+ * Pasivo; named `activo` / `pnPasivo` for the UI, they are just the first / second group). A group's top
+ * formula row (its TOTAL) is the side's value when there is one. `pick(row)` reads the amount to total. Not exactly two root groups -> null.
+ * Structural: names no report.
+ */
+export function buildBalanceBlock(rows, pick = (r) => r.amount) {
+  const byGroup = new Map();
+  for (const r of (rows || []).filter((x) => !x.parentId)) {
+    if (!byGroup.has(r.group)) byGroup.set(r.group, { formula: 0, hasFormula: false, plain: 0 });
+    const g = byGroup.get(r.group);
+    const v = Number(pick(r)) || 0;
+    // A side's top rows may include its own TOTAL (a formula over its siblings): that row IS the side, summing both would double it.
+    if (r.isFormula) { g.formula += v; g.hasFormula = true; } else g.plain += v;
+  }
+  if (byGroup.size !== 2) return null;
+  const [activo, pnPasivo] = [...byGroup.values()].map((g) => cleanAmount(g.hasFormula ? g.formula : g.plain));
+  const diff = cleanAmount(activo - pnPasivo);
+  return { balanced: Math.abs(diff) < 0.005, activo, pnPasivo, diff };
+}
+
+/**
+ * ETP-6083: `{ balance, balanceRef }` for a tree answer, only for a contract with `balanceCheck: true`
+ * (`{}` otherwise). A period tree reads bucket 0: `balance` = current, `balanceRef` = `{ sly, prev }`;
+ * a plain tree's `balanceRef` is the comparison period's, present only with a comparison.
+ */
+export function balanceFields(contract, rows, { periods = false, compare = false } = {}) {
+  if (!contract?.balanceCheck) return {};
+  if (periods) {
+    return { balance: buildBalanceBlock(rows, (r) => r.cells[0].amount),
+      balanceRef: { sly: buildBalanceBlock(rows, (r) => r.cells[0].sly.amount), prev: buildBalanceBlock(rows, (r) => r.cells[0].prev.amount) } };
+  }
+  return { balance: buildBalanceBlock(rows), ...(compare ? { balanceRef: buildBalanceBlock(rows, (r) => r.amount_ref) } : {}) };
 }
 
 /**
@@ -498,6 +558,7 @@ export function buildAccountReportTree(nodeRows, operandRows, options = {}) {
         // the branch's effective sign the amounts were computed with.
         parentId: visibleParentId,
         sign: node.sign,
+        ...resultFields(node, amount, amountRef, accountSignMultiplier(node.sign)),
       });
       childParentId = node.node_id;
     }
@@ -613,7 +674,8 @@ function runPeriodTrees(nodeRows, operandRows, periods, amountsByPeriod, treeOpt
     const amounts = amountsByPeriod.get(period.idx);
     const feed = (refKey) => nodeRows.map((n) => {
       const a = amounts?.get(n.node_id);
-      return { ...n, own_amt: a?.own_amt ?? 0, own_amt_ref: a?.[refKey] ?? 0 };
+      return { ...n, own_amt: a?.own_amt ?? 0, own_amt_ref: a?.[refKey] ?? 0,
+        result_onthefly: a?.own_result ?? null, result_onthefly_ref: a?.[`own_result${refKey.slice('own_amt'.length)}`] ?? null };
     });
     const byId = (rows) => new Map(rows.map((r) => [r.node_id, r]));
     const sly = buildAccountReportTree(feed('own_amt_sly'), operandRows, treeOpts);
@@ -622,17 +684,18 @@ function runPeriodTrees(nodeRows, operandRows, periods, amountsByPeriod, treeOpt
 }
 
 const isNonZero = (v) => Math.abs(v) > 0.005;
+const defaultCellActive = (c, mode) => isNonZero(c.amount) || isNonZero(cellShows[mode](c));
 
 /**
  * `{none, sly, prev}`: whether a row shows in each comparison mode. `none` looks at every cell; a
  * comparison mode only at the cells in `shown` (the periods its columns show), so a row never
  * appears with every visible column empty.
  */
-function visibilityByMode(cells, always, shown) {
+function visibilityByMode(cells, always, shown, active = defaultCellActive) {
   const visible = {};
   for (const mode of COMPARE_MODES) {
     const seen = mode === 'none' ? cells : cells.filter((_, i) => shown.has(i));
-    visible[mode] = always || seen.some((c) => isNonZero(c.amount) || isNonZero(cellShows[mode](c)));
+    visible[mode] = always || seen.some((c) => active(c, mode));
   }
   return visible;
 }
@@ -684,7 +747,12 @@ export function buildPeriodAccountTree(nodeRows, operandRows, periodRows, opts =
     const cells = runs.map((run) => {
       const s = run.slyById.get(base.node_id);
       const p = run.prevById.get(base.node_id);
-      return buildPeriodCell(s.amount, s.amount_ref, p.amount_ref, { sign: base.sign, trend });
+      const cell = buildPeriodCell(s.amount, s.amount_ref, p.amount_ref, { sign: base.sign, trend });
+      // ETP-6083: the result split of the income-summary account, per comparison.
+      if (s.result) {
+        cell.result = { ...s.result, sly: s.resultRef ?? { onTheFly: 0, posted: s.amount_ref }, prev: p.resultRef ?? { onTheFly: 0, posted: p.amount_ref } };
+      }
+      return cell;
     });
     const visible = visibilityByMode(cells, !showOnlyWithValue || alwaysShown.has(base.node_id), shown);
     const [first] = cells;
@@ -813,4 +881,180 @@ export function resolveGrouping(contract, params, rows, locale = 'en_US') {
   }
 
   return { groupLabel, descriptionLabel, dimensionLabel, dimensionField, tbGroups, rows };
+}
+
+// ---------------------------------------------------------------------------
+// ETP-6084: the chart-of-accounts tree (Trial Balance), 4 amounts per row.
+// ---------------------------------------------------------------------------
+
+/** The 4 Trial Balance amounts: the name on a cell / row -> the SQL column (current side; `_sly` / `_prev` for the compared ones). */
+export const CHART_AMOUNT_FIELDS = Object.freeze({
+  opening: 'opening_balance', debit: 'activity_debit', credit: 'activity_credit', closing: 'closing_balance',
+});
+const CHART_AMOUNTS = Object.keys(CHART_AMOUNT_FIELDS);
+const CHART_ROOT_ID = '__chart_root__';
+const BALANCE_TOLERANCE = 0.005;
+/** A sum of many roots can leave float noise (1.8e-12) that `cleanAmount` keeps: below a millionth it is zero. */
+const denoise = (v) => cleanAmount(Math.abs(v) < 1e-6 ? 0 : v);
+
+const isDimensionRow = (r) => r.dimension_id !== undefined && r.dimension_id !== null;
+/** Composite id of a dimension row: unique per (S leaf, dimension value); a missing value ('') is its own row. */
+export const chartDimensionNodeId = (accountId, dimensionId) => `${accountId}|${dimensionId ?? ''}`;
+
+/** Per period idx, node_id -> `{own_amt, own_amt_sly, own_amt_prev}` for one amount (the shape `runPeriodTrees` reads). */
+function chartFeed(sources, field, periods) {
+  const byPeriod = new Map(periods.map((p) => [p.idx, new Map()]));
+  for (const { idx, target, row } of sources) {
+    byPeriod.get(idx)?.set(target, {
+      own_amt: Number(row[field]) || 0, own_amt_sly: Number(row[`${field}_sly`]) || 0, own_amt_prev: Number(row[`${field}_prev`]) || 0,
+    });
+  }
+  return byPeriod;
+}
+
+/**
+ * Nodes for `buildAccountReportTree`: chart rows (a `parent_id` that is null, '0' or unknown hangs from a
+ * synthetic container root, which the walk never lists), `accountsign` forced to 'D' (raw dr - cr), no
+ * operands, no ShowValueCond; plus one child per dimension row under its S leaf, with a composite id.
+ * `extras` is what `listNode` drops, re-attached by node_id.
+ */
+function chartNodes(chartRows, dimensionRows) {
+  const ids = new Set(chartRows.map((r) => r.node_id));
+  const nodes = [{ node_id: CHART_ROOT_ID, parent_id: null, sort_path: '', accountsign: 'D', issummary: 'Y', elementlevel: 'E' }];
+  const extras = new Map();
+  for (const r of chartRows) {
+    const parentKnown = r.parent_id && r.parent_id !== '0' && ids.has(r.parent_id);
+    nodes.push({ node_id: r.node_id, parent_id: parentKnown ? r.parent_id : CHART_ROOT_ID, sort_path: r.sort_path ?? '',
+      value: r.value, name: r.name, elementlevel: r.elementlevel, accountsign: 'D', issummary: 'N', isalwaysshown: 'N' });
+    extras.set(r.node_id, { account_id: r.account_id || r.node_id, account_value: r.value, isDimension: false, dimension_id: null });
+  }
+  const byId = new Map(chartRows.map((r) => [r.node_id, r]));
+  for (const r of dimensionRows) {
+    const parent = byId.get(r.account_id);
+    const id = chartDimensionNodeId(r.account_id, r.dimension_id);
+    if (!parent || extras.has(id)) continue; // an amount on a node the chart does not list cannot be shown
+    const name = r.dimension_name || '';
+    nodes.push({ node_id: id, parent_id: r.account_id, sort_path: `${name.toLowerCase()}\u0000${id}`, value: '', name,
+      elementlevel: 'DIM', accountsign: 'D', issummary: 'N', isalwaysshown: 'N' });
+    extras.set(id, { account_id: r.account_id, account_value: parent.value, isDimension: true,
+      dimension_id: r.dimension_id || '', dimension_name: name });
+  }
+  return { nodes, extras };
+}
+
+/**
+ * ETP-6084: the Trial Balance tree over the chart of accounts (`tree: 'chart'` contracts).
+ *
+ * Not a new tree builder: `buildAccountReportTree` runs once per amount (opening, debit, credit,
+ * closing) through the same `runPeriodTrees` the period tree uses (current vs same period last year,
+ * and vs previous period) with `showOnlyWithValue: false`, and the runs are joined on `node_id`.
+ * Roll-up is by `parent_id` only, so mixed-level charts (E>S, C>S, D>D...) work. The has-activity rule
+ * (`hasTrialBalanceActivity`: opening, debit or credit; opening-only rows stay) is applied once, after
+ * the join, per comparison mode, like the period tree does for Profit & Loss. A parent whose own
+ * rolled-up figures cancel is hidden and its visible children re-parent to the nearest visible ancestor.
+ *
+ * Input rows (the row contract of `sql.treeQuery` / `sql.periodQuery`, see report-query.js):
+ *  - `treeRows`: chart rows (`node_id`, `parent_id`, `value`, `name`, `elementlevel`, `sort_path`,
+ *    `dimension_id` null) with their OWN amounts, plus, with a grouping active, dimension rows
+ *    (`account_id` = the S leaf, `dimension_id` (may be ''), `dimension_name`). A leaf that has dimension
+ *    rows takes its amounts from them (they must add up to it).
+ *  - `periodRows` (optional): `idx`, `account_id`, `dimension_id` (null = no grouping), `dimension_name`,
+ *    and each amount column plus `_sly` / `_prev`. Without them: one range, no comparison. Dimension nodes
+ *    are the union of the periods' rows, so a contact active only in a compared range still exists.
+ *
+ * Returns `{rows, totals, balance}`. Each row: `opening` / `debit` / `credit` / `closing` (the first
+ * period's), `cells[i]` = `{opening, debit, credit, closing}` each a `buildPeriodCell`, `visible` /
+ * `parentIds` per mode, `account_id`, `account_value`, `isDimension`, `dimension_id`, `dimension_name`.
+ * `totals[i]` = the sum of the roots as cells; `balance` checks the first period (sum debit = sum credit,
+ * sum closing = 0).
+ */
+export function buildChartAccountTree(treeRows, periodRows, opts = {}) {
+  const { periods: given, showOnlyWithValue = false, expandedNodeIds, trend = false, comparedPeriods = Infinity } = opts;
+  const periods = given?.length ? given : [{ idx: 0 }];
+  const all = treeRows || [];
+  const dimSource = (periodRows || all).filter(isDimensionRow);
+  const { nodes, extras } = chartNodes(all.filter((r) => !isDimensionRow(r)), dimSource);
+  const withDims = new Set(dimSource.map((r) => r.account_id));
+
+  // Where each amount row lands: a dimension row on its composite node; a chart row on its node unless dimensions replace it.
+  const sources = [];
+  for (const row of periodRows || all) {
+    const dim = isDimensionRow(row);
+    const target = dim ? chartDimensionNodeId(row.account_id, row.dimension_id) : (row.account_id || row.node_id);
+    if (extras.has(target) && (dim || !withDims.has(target))) sources.push({ idx: periodRows ? Number(row.idx) : 0, target, row });
+  }
+
+  const treeOpts = { accountLevel: 'S', showOnlyWithValue: false, expandedNodeIds };
+  const feeds = Object.fromEntries(CHART_AMOUNTS.map((a) => [a, chartFeed(sources, CHART_AMOUNT_FIELDS[a], periods)]));
+  const runs = Object.fromEntries(CHART_AMOUNTS.map((a) => [a, runPeriodTrees(nodes, [], periods, feeds[a], treeOpts)]));
+  const totals = periods.map((p) => Object.fromEntries(CHART_AMOUNTS.map((a) => {
+    const sum = (k) => [...feeds[a].get(p.idx).values()].reduce((acc, v) => acc + v[k], 0);
+    return [a, buildPeriodCell(denoise(sum('own_amt')), denoise(sum('own_amt_sly')), denoise(sum('own_amt_prev')), { sign: 'D', trend })];
+  })));
+
+  const shown = new Set(periods.map((_, i) => i).filter((i) => i === 0 || i >= periods.length - comparedPeriods));
+  const pickers = { none: (c) => c.amount, sly: (c) => c.sly.amount, prev: (c) => c.prev.amount };
+  const activeIn = (cell, pick) => hasTrialBalanceActivity({
+    opening_balance: pick(cell.opening), activity_debit: pick(cell.debit), activity_credit: pick(cell.credit) });
+  const active = (cell, mode) => activeIn(cell, pickers.none) || (mode !== 'none' && activeIn(cell, pickers[mode]));
+
+  const rows = runs.closing[0].sly.map((base) => {
+    const cells = periods.map((_, i) => Object.fromEntries(CHART_AMOUNTS.map((a) => {
+      const s = runs[a][i].slyById.get(base.node_id);
+      const p = runs[a][i].prevById.get(base.node_id);
+      return [a, buildPeriodCell(s.amount, s.amount_ref, p.amount_ref, { sign: 'D', trend })];
+    })));
+    const row = { ...base, ...extras.get(base.node_id) };
+    delete row.amount; // the closing run's: every amount lives in `cells`
+    delete row.amount_ref;
+    const [first] = cells;
+    return { ...row, opening: first.opening.amount, debit: first.debit.amount, credit: first.credit.amount,
+      closing: first.closing.amount, cells, visible: visibilityByMode(cells, !showOnlyWithValue, shown, active) };
+  });
+  const rowById = new Map(rows.map((r) => [r.node_id, r]));
+  for (const row of rows) row.parentIds = nearestVisibleParents(row, rowById);
+
+  const debitCreditDiff = cleanAmount(totals[0].debit.amount - totals[0].credit.amount);
+  const closingDiff = totals[0].closing.amount;
+  const balanced = Math.abs(debitCreditDiff) < BALANCE_TOLERANCE && Math.abs(closingDiff) < BALANCE_TOLERANCE;
+  return { rows, totals, balance: { balanced, debitCreditDiff, closingDiff } };
+}
+
+/**
+ * ETP-6084: what a /render prints for a `tree: 'chart'` report when the interactive view sends its
+ * expanded nodes (the counterpart of `buildRenderAccountTree`; one definition for both engines).
+ * `period` is `{periodRows, spec, compareMode}` or null. Returns the rows the comparison mode shows
+ * (parented to the nearest row shown in it) and the `meta` the template needs: `chartTotals`
+ * (per period) and `chartBalance`.
+ */
+export function buildRenderChartTree(rows, params = {}, period = null) {
+  // `visibleNodeIds` (comma-joined node_ids, as /query returned them): the exact rows the screen shows,
+  // which `expandedNodeIds` cannot express (a level fold shows nested same-level nodes and folds deeper
+  // children). It wins over `expandedNodeIds` for row selection.
+  const visible = parseExpandedNodeIds(params.visibleNodeIds);
+  const tree = buildChartAccountTree(rows, period?.periodRows ?? null, {
+    periods: period?.spec?.periods,
+    expandedNodeIds: visible ? undefined : parseExpandedNodeIds(params.expandedNodeIds),
+    showOnlyWithValue: params.showOnlyAccountsWithValue === 'true',
+  });
+  const meta = { chartTotals: tree.totals, chartBalance: tree.balance, compareMovements: params.compareMovements === 'true' };
+  if (visible) return { rows: pickVisibleNodes(tree.rows, new Set(visible)), meta };
+  return { rows: selectPeriodMode(tree.rows, period?.periodRows ? (period.compareMode || 'none') : 'none'), meta };
+}
+
+/** The rows whose node_id is in `ids`, in tree order, parented (and indented) to the nearest row kept. */
+function pickVisibleNodes(rows, ids) {
+  const byId = new Map(rows.map((r) => [r.node_id, r]));
+  const depth = new Map();
+  const nearest = (r) => {
+    let p = r.parentId ? byId.get(r.parentId) : null;
+    while (p && !ids.has(p.node_id)) p = p.parentId ? byId.get(p.parentId) : null;
+    return p;
+  };
+  return rows.filter((r) => ids.has(r.node_id)).map((r) => {
+    const parent = nearest(r);
+    const indent = parent ? depth.get(parent.node_id) + 1 : 0;
+    depth.set(r.node_id, indent);
+    return { ...r, parentId: parent ? parent.node_id : null, indent, indentClass: `ind-${Math.min(indent, 6)}` };
+  });
 }

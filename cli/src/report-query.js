@@ -16,12 +16,17 @@
 import { readFileSync, existsSync } from 'node:fs';
 import { join } from 'node:path';
 import { applyPlaceholders } from './report-sql.js';
-import { buildAccountReportTree, buildPeriodAccountTree, buildPeriodCell, addVariation, accountSignMultiplier, cleanAmount } from './report-grouping.js';
+import { buildAccountReportTree, buildChartAccountTree, parseExpandedNodeIds, buildPeriodAccountTree, buildPeriodCell, addVariation, accountSignMultiplier, cleanAmount, resultSplit, resultFields, balanceFields, hasResult } from './report-grouping.js';
 import { assertNoPeriodsToken, buildPeriodValues, comparedPeriodsFor, substitutePeriods, hasPeriods, hullParams, SCREEN_MAX_BUCKETS } from './report-periods.js';
 import { withReportClient, acquireTenantSlot, isStatementTimeout, ReportTimeoutError, ReportCancelledError } from './report-db.js';
 import { resolveReportSession, reportAuthErrorBody, assertReportOrgAccess, assertReportAccess, accessCheckSession } from './report-auth.js';
 
 const REPORT_ID_SHAPE = /^[\w-]+$/;
+/** A contract that declares `tree: 'chart'` is answered from `sql.treeQuery` as a chart-of-accounts tree (ETP-6084). */
+export const isChartTree = (contract) => contract?.tree === 'chart';
+/** /render only takes the chart tree path when the interactive view sends its expanded nodes; any other request keeps the `sql.query` path unchanged. */
+export const isChartTreeRender = (contract, params) => isChartTree(contract)
+  && (parseExpandedNodeIds(params?.expandedNodeIds) !== undefined || parseExpandedNodeIds(params?.visibleNodeIds) !== undefined);
 const SPLIT_DIMENSIONS = new Set(['org', 'bpartner', 'product']);
 
 /** A row cap goes into the SQL text, so only a positive safe integer is one. */
@@ -59,12 +64,37 @@ const fillPeriodQuery = (contract, queryKey, spec, { clientId, params, locale })
  * amounts come back as `periodRows` with their validated `periodSpec`;
  * `maxPeriodBuckets` is the render format's cap. Without `periods` the result is
  * exactly what it was.
+ *
+ * `chartTree: true` (ETP-6084, a `tree: 'chart'` contract) runs `sql.treeQuery` as the main query
+ * instead of `sql.query` / `mainSql`, with no row cap (a cap would drop chart nodes). With periods,
+ * `treeQuery` is filled with the date hull like `periodQuery`, so its nodes cover every range.
+ *
+ * Chart tree row contract (the report's SQL must follow it; `buildChartAccountTree` reads it):
+ *  - `treeQuery`: every chart node with a posted descendant on or before `__DATETO__`, as
+ *    `node_id, parent_id (null or '0' for a root), value, name, elementlevel, sort_path, account_id (= node_id),
+ *    dimension_id (NULL)`, with its OWN amounts `opening_balance, activity_debit, activity_credit,
+ *    closing_balance` (raw: debit and credit are sums, a node with no posting of its own has 0). With a
+ *    grouping active it adds one row per (S leaf, dimension value): `account_id` = the leaf's node_id,
+ *    `dimension_id` (the value's id, '' for none), `dimension_name`, the leaf's amounts split by value.
+ *  - `periodQuery` (when the request carries `periods`): `WITH buckets(idx, f, t, sf, st, pf, pt) AS
+ *    (VALUES __PERIODS__)`, one row per (idx, account_id[, dimension_id]) with the amounts as
+ *    `opening_balance, activity_debit, activity_credit, closing_balance` for the bucket's own range
+ *    (f..t) and the same four with suffix `_sly` (sf..st) and `_prev` (pf..pt). `dimension_id` is NULL with
+ *    no grouping, the value's id ('' for none) with one, plus `dimension_name`. The placeholders around
+ *    it are the date HULL (`hullParams`): `__DATEFROM__` / `__DATETO__` are the earliest / latest date of
+ *    any range and `__COMPARETO__` is 'false', so they are NOT a range's own dates. Per range the query
+ *    must use the bucket's dates: opening = everything dated before the range's start (plus the
+ *    opening entries ON that day when `__OPENINGENTRYAMOUNT__`), debit/credit within it, closing
+ *    = everything up to its end. It must read `fact_acct` up to the hull's end with NO lower bound.
  */
-export async function runReportSql(pool, contract, { clientId, params = {}, locale, limit, mainSql, maxPeriodBuckets } = {}) {
+export async function runReportSql(pool, contract, { clientId, params = {}, locale, limit, mainSql, maxPeriodBuckets, chartTree = false } = {}) {
   const periodSpec = periodSpecFor(contract, params, 'periodQuery', maxPeriodBuckets);
   const apply = (sql) => applyPlaceholders(sql, { clientId, params, contract, locale });
-  let main = mainSql ?? apply(contract.sql.query);
-  if (limit !== undefined && limit !== null) {
+  if (chartTree && !contract.sql?.treeQuery) throw new Error('chart tree report has no sql.treeQuery');
+  let main = chartTree
+    ? applyPlaceholders(contract.sql.treeQuery, { clientId, params: periodSpec ? hullParams(params, periodSpec) : params, contract, locale })
+    : mainSql ?? apply(contract.sql.query);
+  if (!chartTree && limit !== undefined && limit !== null) {
     if (!isValidLimit(limit)) throw new TypeError(`runReportSql: invalid limit ${JSON.stringify(limit)}`);
     main = `${main.replace(/;\s*$/, '')} LIMIT ${limit}`;
   }
@@ -98,6 +128,7 @@ async function runSplit(pool, contract, { clientId, params, locale }) {
     amount: cleanAmount((Number(r.own_amt) || 0) * multiplier),
     amount_ref: cleanAmount((Number(r.own_amt_ref) || 0) * multiplier),
     sign,
+    ...resultFields(r, cleanAmount((Number(r.own_amt) || 0) * multiplier), cleanAmount((Number(r.own_amt_ref) || 0) * multiplier), multiplier),
   }));
   return addVariation(split, { compare: params.compareTo === 'true', trend: contract.trend === 'result' });
 }
@@ -121,7 +152,12 @@ async function runPeriodSplit(pool, contract, { clientId, params, locale, period
     const cells = periodSpec.periods.map((p) => {
       const r = byIdx.get(p.idx);
       const signed = (v) => (Number(v) || 0) * multiplier;
-      return buildPeriodCell(signed(r?.own_amt), signed(r?.own_amt_sly), signed(r?.own_amt_prev), { sign, trend });
+      const cell = buildPeriodCell(signed(r?.own_amt), signed(r?.own_amt_sly), signed(r?.own_amt_prev), { sign, trend });
+      if (hasResult(r?.own_result)) { // ETP-6083: the income-summary node's on-the-fly part
+        const part = (key, amount) => (hasResult(r[key]) ? resultSplit(amount, r[key], multiplier) : { onTheFly: 0, posted: amount });
+        cell.result = { ...resultSplit(cell.amount, r.own_result, multiplier), sly: part('own_result_sly', cell.sly.amount), prev: part('own_result_prev', cell.prev.amount) };
+      }
+      return cell;
     });
     return { node_id: id, name, sign, amount: cells[0].amount, amount_ref: cells[0].sly.amount, cells };
   });
@@ -137,6 +173,15 @@ const publicPeriod = ({ idx, dateFrom, dateTo, partial }) => ({ idx, dateFrom, d
  * variation; a listing report returns its rows as they come.
  */
 export function buildQueryResponse(contract, params, { rows, openingRows, operandRows, periodRows, periodSpec }) {
+  if (isChartTree(contract)) {
+    // ETP-6084: the chart-of-accounts tree with 4 amounts per row, totals and the balance check.
+    const periods = periodSpec?.periods;
+    const tree = buildChartAccountTree(rows, periodSpec ? periodRows : null, {
+      periods, showOnlyWithValue: params.showOnlyAccountsWithValue === 'true',
+      comparedPeriods: comparedPeriodsFor(params.columns || 'total'),
+    });
+    return { kind: 'tree', ...tree, ...(periodSpec ? { periods: periods.map(publicPeriod), hiddenCount: periodSpec.hiddenCount } : {}) };
+  }
   if (periodSpec && contract.sql.operandsQuery !== undefined) {
     // ETP-6239: one column per period. `cells[]` and the per-mode `visible` / `parentIds` come back in EVERY mode (Total too).
     const tree = buildPeriodAccountTree(rows, operandRows, periodRows, {
@@ -146,14 +191,15 @@ export function buildQueryResponse(contract, params, { rows, openingRows, operan
       trend: contract.trend === 'result',
       comparedPeriods: comparedPeriodsFor(params.columns || 'total'),
     });
-    return { kind: 'tree', rows: tree, periods: periodSpec.periods.map(publicPeriod), hiddenCount: periodSpec.hiddenCount };
+    return { kind: 'tree', rows: tree, ...balanceFields(contract, tree, { periods: true }), periods: periodSpec.periods.map(publicPeriod), hiddenCount: periodSpec.hiddenCount };
   }
   if (contract.sql.operandsQuery !== undefined) {
     const tree = buildAccountReportTree(rows, operandRows, {
       accountLevel: 'S',
       showOnlyWithValue: params.showOnlyAccountsWithValue === 'true',
     });
-    return { kind: 'tree', rows: addVariation(tree, { compare: params.compareTo === 'true', trend: contract.trend === 'result' }) };
+    const compare = params.compareTo === 'true';
+    return { kind: 'tree', rows: addVariation(tree, { compare, trend: contract.trend === 'result' }), ...balanceFields(contract, tree, { compare }) };
   }
   return { kind: 'rows', rows, openingRows };
 }
@@ -240,7 +286,7 @@ export async function handleReportQuery({ reportId, headers, method, body = {} }
         const split = await runSplit(db, contract, ctx);
         return { status: 200, body: Array.isArray(split) ? { kind: 'split', rows: split } : { kind: 'split', ...split } };
       }
-      const result = await runReportSql(db, contract, { ...ctx, limit });
+      const result = await runReportSql(db, contract, { ...ctx, limit, chartTree: isChartTree(contract) });
       return { status: 200, body: buildQueryResponse(contract, params, result) };
     };
     if (sharedPool) {

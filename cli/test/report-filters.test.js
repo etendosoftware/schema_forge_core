@@ -1,3 +1,4 @@
+// @covers cli/src/report-filters.js
 import { describe, it } from 'node:test';
 import { strict as assert } from 'node:assert';
 
@@ -239,5 +240,24 @@ describe('filterAndTransformParams — section-level excludeFromSummary (ETP-512
     };
     const out = filterAndTransformParams({ bPartnerId: 'x' }, noSectionsContract, 'es_ES');
     assert.deepEqual(out, [{ label: 'Contacto', value: 'x' }]);
+  });
+});
+
+describe('filterAndTransformParams — param-level excludeFromSummary', () => {
+  const contract = {
+    parameters: [
+      { name: 'dateFrom', type: 'date', label: { en_US: 'From' }, excludeFromSummary: true },
+      { name: 'dateTo', type: 'date', label: { en_US: 'To' } },
+    ],
+  };
+
+  it('drops only the flagged param, keeping its siblings', () => {
+    const out = filterAndTransformParams({ dateFrom: '2026-01-01', dateTo: '2026-12-31' }, contract, 'en_US');
+    assert.deepEqual(out.map((f) => f.label), ['To']);
+  });
+
+  it('keeps the param when the flag is absent or false', () => {
+    const c = { parameters: [{ name: 'dateFrom', label: { en_US: 'From' }, excludeFromSummary: false }] };
+    assert.equal(filterAndTransformParams({ dateFrom: 'x' }, c, 'en_US').length, 1);
   });
 });
