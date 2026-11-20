@@ -7,6 +7,7 @@ import {
   resolveFilterMode,
   buildAdvancedFilterCriteria,
   getFilteredKey,
+  extractQueryParamConditions,
 } from '../gridQuery.js';
 
 // ---------------------------------------------------------------------------
@@ -1529,5 +1530,145 @@ describe('parseUserFilter — invertEnumLabels edge cases', () => {
     const col = { key: 's', type: 'status', enumLabels: 'not-an-object' };
     // invertEnumLabels returns empty map → no matches → null
     expect(parseUserFilter(col, 'anything')).toBeNull();
+  });
+});
+// ETP-5188 — extractQueryParamConditions
+// ---------------------------------------------------------------------------
+
+describe('extractQueryParamConditions', () => {
+  const roleFilterColumn = {
+    key: 'roleFilter',
+    type: 'custom',
+    toQueryParams: (row) => (row.operator === 'equals' ? `RoleIds=${row.value}` : null),
+  };
+  const nameColumn = { key: 'name', type: 'string' };
+
+  it('returns the original advancedFilter unchanged and null extraParams when advancedFilter has no conditions', () => {
+    expect(extractQueryParamConditions({ conditions: [] }, [roleFilterColumn]))
+      .toEqual({ conditions: { conditions: [] }, extraParams: null });
+    expect(extractQueryParamConditions(null, [roleFilterColumn]))
+      .toEqual({ conditions: null, extraParams: null });
+    expect(extractQueryParamConditions(undefined, [roleFilterColumn]))
+      .toEqual({ conditions: undefined, extraParams: null });
+  });
+
+  it('returns the original advancedFilter unchanged when columns is not an array', () => {
+    const filter = { conditions: [{ field: 'roleFilter', operator: 'equals', value: 'role-1' }] };
+    expect(extractQueryParamConditions(filter, null)).toEqual({ conditions: filter, extraParams: null });
+    expect(extractQueryParamConditions(filter, undefined)).toEqual({ conditions: filter, extraParams: null });
+  });
+
+  it('is a byte-identical no-op when no condition\'s column declares toQueryParams (e.g. Purchase Invoice)', () => {
+    const filter = {
+      rowOperator: 'and',
+      conditions: [
+        { field: 'name', operator: 'iContains', value: 'juan' },
+      ],
+    };
+    expect(extractQueryParamConditions(filter, [nameColumn])).toEqual({ conditions: filter, extraParams: null });
+  });
+
+  it('strips a toQueryParams condition out of `conditions` and returns its segment as extraParams', () => {
+    const filter = {
+      conditions: [{ field: 'roleFilter', operator: 'equals', value: 'role-1' }],
+    };
+    const result = extractQueryParamConditions(filter, [roleFilterColumn]);
+    expect(result.conditions.conditions).toEqual([]);
+    expect(result.extraParams).toBe('RoleIds=role-1');
+  });
+
+  it('splits mixed conditions correctly: keeps the generic one, strips and translates the toQueryParams one', () => {
+    const filter = {
+      rowOperator: 'and',
+      conditions: [
+        { field: 'name', operator: 'iContains', value: 'juan' },
+        { field: 'roleFilter', operator: 'equals', value: 'role-1' },
+      ],
+    };
+    const result = extractQueryParamConditions(filter, [nameColumn, roleFilterColumn]);
+    expect(result.conditions).toEqual({
+      rowOperator: 'and',
+      conditions: [{ field: 'name', operator: 'iContains', value: 'juan' }],
+    });
+    expect(result.extraParams).toBe('RoleIds=role-1');
+  });
+
+  it('joins multiple toQueryParams segments with "&"', () => {
+    const secondRoleFilterLikeColumn = {
+      key: 'other',
+      toQueryParams: () => 'OtherParam=1',
+    };
+    const filter = {
+      conditions: [
+        { field: 'roleFilter', operator: 'equals', value: 'role-1' },
+        { field: 'other', operator: 'equals', value: 'x' },
+      ],
+    };
+    const result = extractQueryParamConditions(filter, [roleFilterColumn, secondRoleFilterLikeColumn]);
+    expect(result.extraParams).toBe('RoleIds=role-1&OtherParam=1');
+  });
+
+  it('still strips the row when the toQueryParams hook returns null for that operator (must not leak back into conditions)', () => {
+    // roleFilterColumn's hook above only translates 'equals' — every other operator
+    // returns null. The ETP-5188 fix requires the row to be stripped from `conditions`
+    // regardless, and `extraParams` to be null when NO intercepted row produced a segment.
+    const filter = {
+      conditions: [{ field: 'roleFilter', operator: 'notEqual', value: 'role-1' }],
+    };
+    const result = extractQueryParamConditions(filter, [roleFilterColumn]);
+    expect(result.conditions.conditions).toEqual([]);
+    expect(result.extraParams).toBeNull();
+  });
+
+  it('mixes a stripped-but-segment-less toQueryParams row with a kept generic row', () => {
+    const filter = {
+      conditions: [
+        { field: 'name', operator: 'iContains', value: 'juan' },
+        { field: 'roleFilter', operator: 'isNull', value: null },
+      ],
+    };
+    const result = extractQueryParamConditions(filter, [nameColumn, roleFilterColumn]);
+    expect(result.conditions.conditions).toEqual([{ field: 'name', operator: 'iContains', value: 'juan' }]);
+    expect(result.extraParams).toBeNull();
+  });
+});
+// ---------------------------------------------------------------------------
+// ETP-4712 — S5852 regex rewrites: parsed results must not change
+// ---------------------------------------------------------------------------
+
+describe('operator/range parsing with the S5852-safe regexes', () => {
+  const numCol = { key: 'qty', type: 'number' };
+  const dateCol = { key: 'd', type: 'date', filterMode: 'date' };
+
+  it.each([
+    ['> 5', '>', 5],
+    ['>=  5', '>=', 5],
+    ['<= 1,000', '<=', 1000],
+    ['=   7', '=', 7],
+  ])('numeric %j keeps op %s and value %s despite leading whitespace', (input, op, value) => {
+    expect(parseUserFilter(numCol, input)).toMatchObject({ op, value });
+  });
+
+  it('parses a date operator followed by spaces', () => {
+    expect(parseUserFilter(dateCol, '>  2024-01-01')).toMatchObject({ mode: 'date', op: '>' });
+    expect(parseUserFilter(dateCol, '<= 01/04/2026')).toMatchObject({ mode: 'date', op: '<=' });
+  });
+
+  it('parses date ranges, with or without surrounding spaces', () => {
+    const tight = parseUserFilter(dateCol, '01/04/2026..15/04/2026');
+    const loose = parseUserFilter(dateCol, ' 01/04/2026 .. 15/04/2026 ');
+    expect(tight).toMatchObject({ mode: 'date', op: 'range' });
+    expect(loose.value).toEqual(tight.value);
+  });
+
+  it('does not crash or hang on strings with several ".." runs', () => {
+    for (const input of ['a..b..c', '1...5', '..'.repeat(2000) + 'x']) {
+      expect(() => parseUserFilter(dateCol, input)).not.toThrow();
+    }
+    expect(parseUserFilter(dateCol, 'a..b..c')).toBeNull();
+  });
+
+  it('input starting with "..." yields no range (pins the one edge that differs from the old lazy regex)', () => {
+    expect(parseUserFilter(dateCol, '...01/04/2026')).toBeNull();
   });
 });

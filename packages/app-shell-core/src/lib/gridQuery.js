@@ -23,6 +23,18 @@
  *   backendFilterKey: string,  // explicit backend field for filtering (e.g. 'bp$_identifier')
  *   enumLabels: { [rawCode]: displayLabel },
  *   badgeLabels: { true: string, false: string },
+ *   buildCriteria: (row) => criteria[] | null,
+ *     // Per-column override of buildRowCriteria's default field-based criteria —
+ *     // return null to drop the condition from the criteria array entirely.
+ *   toQueryParams: (row) => string | null,
+ *     // ETP-5188 — opts a column's condition OUT of `criteria=` altogether (see
+ *     // `extractQueryParamConditions` below), translating it into a raw
+ *     // `key=value` query-string segment instead — for a synthetic field with no
+ *     // backend property the generic criteria layer can resolve against (e.g. a
+ *     // role selector sent as dedicated query params). Also requires
+ *     // `filterable: true` (`isFilterableColumn`'s `type: 'custom'` opt-in) and,
+ *     // when the column must not render as an actual grid cell,
+ *     // `filterOnly: true`.
  *
  *   // Sort config
  *   sortMode: 'raw' | 'identifier' | 'enumLabel' | 'booleanLabel',
@@ -90,7 +102,11 @@ function parseDateString(input) {
  */
 function parseNumericExpression(input) {
   const trimmed = input.trim();
-  const match = /^(>=|<=|>|<|=)\s*(.+)$/.exec(trimmed);
+  // No `\s*` before the value group: it would sit next to `.+` as a second
+  // quantified construct with overlapping charset (Sonar S5852). `.+` alone
+  // already captures any leading spaces, and `Number.parseFloat` ignores
+  // leading whitespace on its own, so the result is unchanged.
+  const match = /^(>=|<=|>|<|=)(.+)$/.exec(trimmed);
   if (match) return { op: match[1], value: Number.parseFloat(match[2].replaceAll(',', '')) };
   const plain = Number.parseFloat(trimmed.replaceAll(',', ''));
   if (!Number.isNaN(plain)) return { op: '=', value: plain };
@@ -211,14 +227,25 @@ function parseByMode(mode, trimmed, col) {
 
 function parseDateFilter(trimmed) {
   // Range: "01/04/2026..15/04/2026"
-  const rangeMatch = /^(.+?)\.\.(.+)$/.exec(trimmed);
+  // Group 1 excludes literal ".." runs (via the negative lookahead) instead of
+  // relying on an unbounded lazy `.+?` to find the delimiter by backtracking.
+  // A lazy-then-greedy split on a 2-char literal is vulnerable to O(n^2)
+  // backtracking when the string contains many ".." occurrences and a
+  // character `.` cannot match (line terminator) appears later on, since
+  // every candidate split point forces the greedy second group to re-scan
+  // for `$` (Sonar S5852). This form has exactly one valid split point per
+  // position, so there is nothing left to backtrack into.
+  const rangeMatch = /^((?:[^.]|\.(?!\.))+)\.\.(.+)$/.exec(trimmed);
   if (rangeMatch) {
     const from = parseDateString(rangeMatch[1].trim());
     const to = parseDateString(rangeMatch[2].trim());
     if (from && to) return { mode: 'date', op: 'range', value: [from, to] };
   }
 
-  const opMatch = /^(>=|<=|>|<|=)\s*(.+)$/.exec(trimmed);
+  // No `\s*` before the value group here either (see parseNumericExpression):
+  // `.+` alone already captures any leading spaces, and parseDateString()
+  // trims its input internally, so the result is unchanged.
+  const opMatch = /^(>=|<=|>|<|=)(.+)$/.exec(trimmed);
   if (opMatch) {
     const parsed = parseDateString(opMatch[2]);
     return parsed ? { mode: 'date', op: opMatch[1], value: parsed } : null;
@@ -475,7 +502,77 @@ export function buildAdvancedFilterCriteria(advancedFilter, columns) {
   return items;
 }
 
-const TEXTUAL_IDENTIFIER_OPS = new Set(['iContains', 'iNotContains', 'iStartsWith', 'iEquals', 'iNotEqual']);
+/**
+ * ETP-5188 — splits an advanced-filter draft into (a) the conditions that
+ * still flow through the generic `buildAdvancedFilterCriteria` path and
+ * (b) a raw query-string segment built from any condition whose column
+ * declares `col.toQueryParams` — a per-column hook symmetric to the
+ * existing `col.buildCriteria` override above (see `buildRowCriteria`),
+ * for a field that must never reach `criteria=` at all because it has no
+ * backing AD column the backend HQL layer can resolve (e.g. a role selector
+ * the backend expects as dedicated query params).
+ *
+ * A condition whose column declares `toQueryParams` is ALWAYS stripped out
+ * of the returned `conditions`, regardless of what (or whether) the hook
+ * returns — the "never reaches the generic criteria array" guarantee does
+ * not depend on the hook producing a usable param string for every
+ * operator/value combination. (This was actually violated until ETP-5188's
+ * fix: the "nothing to add" early-return used to key off whether any segment
+ * was produced rather than off whether any row was intercepted, so a hook
+ * returning `null` for a given operator silently let its condition back into
+ * `conditions` instead of staying stripped.)
+ *
+ * @param {{rowOperator?: string, conditions?: Array<{field: string, operator: string, value: unknown}>}} advancedFilter
+ * @param {Array<object>} columns - same shape `buildAdvancedFilterCriteria` takes
+ * @returns {{conditions: object, extraParams: string|null}} `conditions` is
+ *   safe to pass straight into `buildAdvancedFilterCriteria`; `extraParams`
+ *   is `null` or a `key=value[&key=value]` string (already URI-encoded)
+ *   that the caller forwards as raw query params.
+ */
+export function extractQueryParamConditions(advancedFilter, columns) {
+  if (!advancedFilter?.conditions?.length || !Array.isArray(columns)) {
+    return { conditions: advancedFilter, extraParams: null };
+  }
+  const colByKey = Object.fromEntries(columns.map((c) => [c.key, c]));
+  const kept = [];
+  const paramSegments = [];
+  // Tracks whether ANY row was actually intercepted by a `toQueryParams` hook —
+  // NOT whether that hook produced a usable segment. A hook is allowed to
+  // return `null` for a given operator/value combination (e.g. `notEqual`/
+  // `isNull` had no translation before RoleFilterNegate existed, and `isNull`
+  // still legitimately has nothing to translate for other future columns) —
+  // the row must still be stripped from `kept` in that case. Gating the
+  // early-return below on `paramSegments.length` instead of on this flag was
+  // the ETP-5188 bug: whenever the hook returned falsy for every intercepted
+  // row, this function discarded the correctly-built `kept` array and handed
+  // back the original, UNSTRIPPED `advancedFilter` — leaking the condition
+  // straight into `buildAdvancedFilterCriteria` for exactly the operators
+  // whose hook had no segment to offer.
+  let anyIntercepted = false;
+  for (const row of advancedFilter.conditions) {
+    const col = colByKey[row.field];
+    if (col && typeof col.toQueryParams === 'function') {
+      anyIntercepted = true;
+      const segment = col.toQueryParams(row);
+      if (segment) paramSegments.push(segment);
+      continue;
+    }
+    kept.push(row);
+  }
+  if (!anyIntercepted) return { conditions: advancedFilter, extraParams: null };
+  return {
+    conditions: { ...advancedFilter, conditions: kept },
+    extraParams: paramSegments.length > 0 ? paramSegments.join('&') : null,
+  };
+}
+
+const TEXTUAL_IDENTIFIER_OPS = new Set([
+  'iContains',
+  'iNotContains',
+  'iEquals',
+  'iNotEqual',
+  'iStartsWith',
+]);
 
 function buildRowCriteria(col, row) {
   if (typeof col.buildCriteria === 'function') return col.buildCriteria(row) ?? null;
@@ -494,17 +591,7 @@ function buildRowCriteria(col, row) {
   const val = row.value;
 
   if (op === 'between') {
-    if (!Array.isArray(val)) return null;
-    const [from, to] = val;
-    if (from === '' || from == null || to === '' || to == null) return null;
-    const toVal = (raw) => (mode === 'numeric' ? coerceNumeric(raw) : raw);
-    const fromV = toVal(from);
-    const toV = toVal(to);
-    if (fromV === null || toV === null) return null;
-    return [
-      { fieldName, operator: 'greaterOrEqual', value: fromV },
-      { fieldName, operator: 'lessOrEqual', value: toV },
-    ];
+    return buildBetweenCriteria(val, fieldName, mode);
   }
 
   if (op === 'inSet') {
@@ -540,7 +627,7 @@ function buildRowCriteria(col, row) {
   // ETP-4770: "Antes de" (Before) on a date column must exclude the entered
   // day itself. Backend stores datetime, so a raw `lessThan` on the entered
   // date still matches records at 00:00:00 of that same day. Mirror the
-  // fix already applied to the simple-text date parser above (line ~356):
+  // fix already applied to the simple-text date parser above (see `parseDateFilter`):
   // shift back one day and use `lessOrEqual` instead.
   if (mode === 'date' && op === 'lessThan') {
     return [{ fieldName, operator: 'lessOrEqual', value: shiftDate(val, -1) }];
@@ -551,6 +638,22 @@ function buildRowCriteria(col, row) {
 
 function createNullCriteria(fieldName, op) {
   return [{ fieldName, operator: op === 'isNull' ? 'isNull' : 'notNull' }];
+}
+
+// Extracted from buildRowCriteria (S3776 cognitive-complexity split, ETP-4770):
+// same logic, just out of the parent function's branch count.
+function buildBetweenCriteria(val, fieldName, mode) {
+  if (!Array.isArray(val)) return null;
+  const [from, to] = val;
+  if (from === '' || from == null || to === '' || to == null) return null;
+  const toVal = (raw) => (mode === 'numeric' ? coerceNumeric(raw) : raw);
+  const fromV = toVal(from);
+  const toV = toVal(to);
+  if (fromV === null || toV === null) return null;
+  return [
+    { fieldName, operator: 'greaterOrEqual', value: fromV },
+    { fieldName, operator: 'lessOrEqual', value: toV },
+  ];
 }
 
 // `inSet` ("Es cualquiera de") takes a manually-typed, comma-separated list of
