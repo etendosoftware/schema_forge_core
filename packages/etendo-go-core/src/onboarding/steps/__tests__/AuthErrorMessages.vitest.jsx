@@ -370,6 +370,8 @@ describe('every new-password screen shares the strength checklist (ETP-5258)', (
 
     typeInto(container, '#reg-password', STRONG_PASSWORD);
     typeInto(container, '#reg-sector', 'servicios');
+    // ETP-6363: the country is required too.
+    fireEvent.change(screen.getByTestId('country-select'), { target: { value: 'ES' } });
     ['minLength', 'uppercase', 'lowercase', 'number', 'special'].forEach((rule) => {
       expect(screen.getByTestId(`register-password-rule-${rule}`).dataset.met).toBe('true');
     });
