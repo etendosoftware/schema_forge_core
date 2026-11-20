@@ -30,11 +30,11 @@
  *     // ETP-5188 — opts a column's condition OUT of `criteria=` altogether (see
  *     // `extractQueryParamConditions` below), translating it into a raw
  *     // `key=value` query-string segment instead — for a synthetic field with no
- *     // backend property the generic criteria layer can resolve against (e.g.
- *     // Users' "Rol" field → `RoleIds=`/`NoRole=`). Also requires
+ *     // backend property the generic criteria layer can resolve against (e.g. a
+ *     // role selector sent as dedicated query params). Also requires
  *     // `filterable: true` (`isFilterableColumn`'s `type: 'custom'` opt-in) and,
  *     // when the column must not render as an actual grid cell,
- *     // `filterOnly: true` (see `isLineGridColumn`, `linesColumnWidth.js`).
+ *     // `filterOnly: true`.
  *
  *   // Sort config
  *   sortMode: 'raw' | 'identifier' | 'enumLabel' | 'booleanLabel',
@@ -509,11 +509,8 @@ export function buildAdvancedFilterCriteria(advancedFilter, columns) {
  * declares `col.toQueryParams` — a per-column hook symmetric to the
  * existing `col.buildCriteria` override above (see `buildRowCriteria`),
  * for a field that must never reach `criteria=` at all because it has no
- * backing AD column the backend HQL layer can resolve (e.g. Users' "Rol"
- * field, `UserHeaderTable.jsx`'s `roleFilterColumn`, which the backend
- * instead expects as dedicated `RoleIds=`/`NoRole=` params — see that
- * column's own `toQueryParams`, `buildRoleFilterQueryParams` in
- * `RoleChipsCell.jsx`).
+ * backing AD column the backend HQL layer can resolve (e.g. a role selector
+ * the backend expects as dedicated query params).
  *
  * A condition whose column declares `toQueryParams` is ALWAYS stripped out
  * of the returned `conditions`, regardless of what (or whether) the hook
@@ -529,9 +526,8 @@ export function buildAdvancedFilterCriteria(advancedFilter, columns) {
  * @param {Array<object>} columns - same shape `buildAdvancedFilterCriteria` takes
  * @returns {{conditions: object, extraParams: string|null}} `conditions` is
  *   safe to pass straight into `buildAdvancedFilterCriteria`; `extraParams`
- *   is `null` or a `key=value[&key=value]` string (already URI-encoded) —
- *   see `extractCriteriaFromFilter` in `useEntity.js`, which forwards any
- *   non-`criteria` segment of a filter string as a raw query param.
+ *   is `null` or a `key=value[&key=value]` string (already URI-encoded)
+ *   that the caller forwards as raw query params.
  */
 export function extractQueryParamConditions(advancedFilter, columns) {
   if (!advancedFilter?.conditions?.length || !Array.isArray(columns)) {
@@ -631,7 +627,7 @@ function buildRowCriteria(col, row) {
   // ETP-4770: "Antes de" (Before) on a date column must exclude the entered
   // day itself. Backend stores datetime, so a raw `lessThan` on the entered
   // date still matches records at 00:00:00 of that same day. Mirror the
-  // fix already applied to the simple-text date parser above (line ~354):
+  // fix already applied to the simple-text date parser above (see `parseDateFilter`):
   // shift back one day and use `lessOrEqual` instead.
   if (mode === 'date' && op === 'lessThan') {
     return [{ fieldName, operator: 'lessOrEqual', value: shiftDate(val, -1) }];
