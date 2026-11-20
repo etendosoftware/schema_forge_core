@@ -108,6 +108,20 @@ Functional reference for the first consumer: `docs/generated-custom-windows/prof
 - Each period is the existing `buildAccountReportTree` run on that period's own amounts (`buildPeriodAccountTree`), so roll-ups, formulas and ShowValueCond behave as in a single-range report. Consequence: a clamped period need not add up to the clamped total for a *P/N* summary node; each column equals the report for its own range.
 - **Split** (`splitBy` + `splitNodeId`, with `periods`): `{ kind: 'split', rows, periods, hiddenCount }`, each row `{ node_id, name, sign, amount, amount_ref, cells }`, signed like the account and sorted by the range's absolute amount.
 
+### Balance block and income-summary split (ETP-6083)
+
+Both are opt-in and structural (no report id in code); a contract without them answers exactly as before.
+
+**`balanceCheck: true`** (contract top level, server-side, not forwarded in the descriptor). The `/query` tree answer (plain or with `periods`) gets `balance: { balanced, activo, pnPasivo, diff }`: the rows with no `parentId` (the top of each side) summed per `group` in the displayed sign, the first group (Activo) against the second (Patrimonio Neto y Pasivo); `diff = activo - pnPasivo`, `balanced` when `|diff| < 0.005`. Anything but exactly two root groups -> `balance: null`. `balanceRef` is the same shape for the comparison: with `periods`, `{ sly, prev }` (bucket 0); without, the plain `amount_ref` block, present only with `compareTo=true`. `/render` ships the same as `meta.balance` / `meta.balanceRef`. Computed from the rows the answer shows, so a `showOnlyAccountsWithValue` that hides a whole side yields `null`.
+
+**Result split.** A query that returns `result_onthefly` (`result_onthefly_ref` for the comparison) on a node, or `own_result` / `own_result_sly` / `own_result_prev` in the period queries (the same columns in the split queries), marks the income-summary account: the amount it shows includes an unregularized result. The raw debit - credit goes through the row's sign multiplier and the row gets, in DISPLAYED sign, `result: { onTheFly, posted }` with `posted = amount - onTheFly`:
+
+- tree row: `result` (current) and `resultRef` (the comparison period) when `result_onthefly_ref` is returned;
+- period row: `cells[i].result = { onTheFly, posted, sly: {onTheFly, posted}, prev: {onTheFly, posted} }` (a missing `sly`/`prev` result column reads as on-the-fly 0); the row's own top-level `result` / `resultRef` are bucket 0 current / same period last year;
+- split rows (`kind: 'split'`), plain (`result`, `resultRef`) and with periods (`cells[i].result`).
+
+Summary and formula nodes get none: only the node whose query returned the columns.
+
 ### Render side (`/render`)
 
 Both engines pass `periodRows` and `periodSpec` from `runReportSql` into `buildRenderAccountTree(rows, operandRows, params, contract, period)`, which builds the same period tree and keeps the rows of the export's `compareMode` (`none`, `sly`, `prev`; anything else is `none`; `selectPeriodMode`). The `hiddenCount` / `columns` / `compareMode` params are read from the request like `periods`.
