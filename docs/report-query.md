@@ -136,6 +136,10 @@ The templates read them through the canonical helpers in `templates/reports/help
 
 Functional reference for the first consumer, with the client side (Columnas, the PDF pages, the 24-month export cap in the UI): `docs/generated-custom-windows/profit-loss.md` in `etendo_schema_forge`.
 
+### Export filter grid: `excludeFromSummary` (ETP-6083)
+
+`filterAndTransformParams` (`cli/src/report-filters.js`, used by `/render` and the dev plugin) builds the filter grid printed in PDF/HTML headers. A contract parameter with `"excludeFromSummary": true` stays a live control in the viewer but is never printed. Use it for a parameter that only drives the interactive view, such as the `ledgerStart` `dateFrom` of a point-in-time balance. Section-level `excludeFromSummary` works the same way for a whole section. Absent or `false`: unchanged.
+
 ## Shared DB pool, timeout and cancel (ETP-6146)
 
 `cli/src/report-db.js`. The report server (`tools/report-server/server.js`) keeps one module-level pool for `/render`, `/query`, the logo lookup and the selectors, so the DB never sees more than `REPORT_DB_POOL_MAX` connections from it. `handleReportQuery` takes `pool` (shared, never ended) instead of `createPool` (per request, ended: the dev engine); `createPool` still works.
