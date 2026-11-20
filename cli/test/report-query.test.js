@@ -731,3 +731,57 @@ describe('report-query — chart tree (ETP-6084)', () => {
     assert.equal(out.totals, undefined);
   });
 });
+
+describe('Balance Sheet answers (ETP-6083)', () => {
+  const bn = (id, parent, path, group, sign, extra = {}) => ({
+    node_id: id, parent_id: parent, sort_path: path, group_name: group, value: id, name: id,
+    elementlevel: parent ? 'C' : 'E', isalwaysshown: 'N', accountsign: sign, own_amt: 0, own_amt_ref: 0, issummary: parent ? 'N' : 'Y', ...extra,
+  });
+  const ROWS = [
+    bn('RA', null, '0', 'Activo', 'D'), bn('A', 'RA', '1', 'Activo', 'D'), bn('cash', 'A', '1.1', 'Activo', 'D', { own_amt: 100 }),
+    bn('RP', null, '2', 'PN', 'C'), bn('P', 'RP', '2.0', 'PN', 'C'), bn('r129', 'P', '2.1', 'PN', 'C', { own_amt: -100, result_onthefly: -40 }),
+  ];
+  const BS = { balanceCheck: true, sql: { operandsQuery: 'x' } };
+
+  it('/query tree carries balance only for a balanceCheck contract', () => {
+    const on = buildQueryResponse(BS, {}, { rows: ROWS, operandRows: [] });
+    assert.deepEqual(on.balance, { balanced: true, activo: 100, pnPasivo: 100, diff: 0 });
+    assert.equal(on.balanceRef, undefined);
+    assert.deepEqual(on.rows.find((r) => r.node_id === 'r129').result, { onTheFly: 40, posted: 60 });
+    const off = buildQueryResponse({ sql: { operandsQuery: 'x' } }, {}, { rows: ROWS, operandRows: [] });
+    assert.ok(!('balance' in off));
+  });
+
+  it('a period answer carries balance / balanceRef and the cell result', () => {
+    const periodRows = [
+      { account_id: 'cash', idx: 0, own_amt: 100, own_amt_sly: 80, own_amt_prev: 0 },
+      { account_id: 'r129', idx: 0, own_amt: -100, own_amt_sly: -80, own_amt_prev: 0, own_result: -40, own_result_sly: -30, own_result_prev: null },
+    ];
+    const periodSpec = { periods: [{ idx: 0, dateFrom: '2026-01-01', dateTo: '2026-03-31', partial: false }], hiddenCount: 0 };
+    const out = buildQueryResponse(BS, { columns: 'total' }, { rows: ROWS, operandRows: [], periodRows, periodSpec });
+    assert.equal(out.balance.balanced, true);
+    assert.equal(out.balanceRef.sly.balanced, true);
+    assert.deepEqual(out.rows.find((r) => r.node_id === 'r129').cells[0].result.sly, { onTheFly: 30, posted: 50 });
+  });
+
+  it('split rows of the income-summary node carry result in the split sign', async () => {
+    writeContract('balance-sheet-split', { ...BS, sql: { ...BS.sql, query: "SELECT 'T'", splitQuery: "SELECT 'BSSPLIT' WHERE n = '__SPLITNODEID__'" } });
+    const pool = fakePool({ BSSPLIT: [
+      { dimension_id: 'B1', dimension_name: 'Acme', own_amt: -100, own_amt_ref: 0, result_onthefly: -40 },
+      { dimension_id: 'B2', dimension_name: 'Beta', own_amt: -10, own_amt_ref: 0 },
+    ] });
+    const res = await call('balance-sheet-split', { pool, body: { params: { splitBy: 'bpartner', splitNodeId: 'r129', splitSign: 'C' } } });
+    const [acme, beta] = res.body.rows;
+    assert.deepEqual(acme.result, { onTheFly: 40, posted: 60 });
+    assert.ok(!('result' in beta));
+  });
+
+  it('a period split carries cells[i].result', async () => {
+    writeContract('balance-sheet-splitp', { ...BS, sql: { ...BS.sql, query: "SELECT 'T'", periodQuery: 'SELECT 1 FROM (VALUES __PERIODS__) b', splitQuery: 'x',
+      splitPeriodQuery: "SELECT 'BSSPLITP' WHERE n = '__SPLITNODEID__' AND z IN (VALUES __PERIODS__)" } });
+    const pool = fakePool({ BSSPLITP: [{ dimension_id: 'B1', dimension_name: 'Acme', idx: 0, own_amt: -100, own_amt_sly: -50, own_amt_prev: 0, own_result: -40, own_result_sly: -20, own_result_prev: null }] });
+    const res = await call('balance-sheet-splitp', { pool, body: { params: { periods: '2026-01-01..2026-03-31|2025-01-01..2025-03-31|2025-10-01..2025-12-31', columns: 'total', splitBy: 'bpartner', splitNodeId: 'r129', splitSign: 'C' } } });
+    assert.equal(res.status, 200, JSON.stringify(res.body));
+    assert.deepEqual(res.body.rows[0].cells[0].result, { onTheFly: 40, posted: 60, sly: { onTheFly: 20, posted: 30 }, prev: { onTheFly: 0, posted: 0 } });
+  });
+});
