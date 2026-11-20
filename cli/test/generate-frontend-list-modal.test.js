@@ -511,7 +511,7 @@ describe('generatePageComponent — allowCreate and placeholderKey in field line
 // that declare none (match-rule, …) regenerate byte-identical.
 // ---------------------------------------------------------------------------
 
-const OPT_IN_KEYS = ['modalVariant', 'hideBackButton', 'hideSearch', 'newButtonVariant', 'rowClickEdit', 'listVariant'];
+const OPT_IN_KEYS = ['modalVariant', 'hideBackButton', 'hideSearch', 'newButtonVariant', 'rowClickEdit', 'listVariant', 'viewTitleKey'];
 
 function listModalConfigOf(code) {
   const m = code.match(/const listModalConfig = (\{[\s\S]*?\n\});/);
@@ -554,6 +554,7 @@ describe('generateListModalPage — templateConfig opt-in keys', () => {
     const declared = {
       modalVariant: 'compact', hideBackButton: true, hideSearch: true,
       newButtonVariant: 'primary', rowClickEdit: true, listVariant: 'compact',
+      viewTitleKey: 'matchRuleViewTitle',
     };
     const cfg = listModalConfigOf(generateListModalPage('etgoMatchRuleHeader', withTemplateConfig(declared)));
     for (const [key, value] of Object.entries(declared)) assert.deepEqual(cfg[key], value, key);
@@ -574,6 +575,20 @@ describe('generateListModalPage — templateConfig opt-in keys', () => {
     const cfg = listModalConfigOf(generateListModalPage('etgoMatchRuleHeader', withTemplateConfig({ modalVariant: 'compact', rowClickEdit: true })));
     const keys = Object.keys(cfg);
     assert.deepEqual(keys.slice(-3), ['toolbarFilters', 'modalVariant', 'rowClickEdit']);
+  });
+
+  // viewTitleKey: the modal title a read-only role sees when it opens a record (view mode).
+  it('emits a declared viewTitleKey verbatim, beside the edit title', () => {
+    const cfg = listModalConfigOf(generateListModalPage('etgoMatchRuleHeader', withTemplateConfig({ viewTitleKey: 'matchRuleViewTitle' })));
+    assert.equal(cfg.viewTitleKey, 'matchRuleViewTitle');
+    assert.equal(cfg.editTitleKey, 'matchRuleEditTitle');
+    for (const key of OPT_IN_KEYS.filter(k => k !== 'viewTitleKey')) assert.equal(key in cfg, false, key);
+  });
+
+  it('omits viewTitleKey when the window does not declare it (the UI falls back to "view")', () => {
+    const code = generateListModalPage('etgoMatchRuleHeader', listModalContract());
+    assert.equal('viewTitleKey' in listModalConfigOf(code), false);
+    assert.doesNotMatch(code, /viewTitleKey/);
   });
 
   it('does not pass through an undeclared templateConfig key', () => {
