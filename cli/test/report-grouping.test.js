@@ -19,6 +19,8 @@ import {
   buildPeriodCell,
   buildPeriodAccountTree,
   selectPeriodMode,
+  buildBalanceBlock,
+  balanceFields,
   cleanAmount,
   TRIAL_BALANCE_AMOUNT_FIELDS,
   buildChartAccountTree,
@@ -1298,5 +1300,100 @@ describe('buildChartAccountTree (ETP-6084)', () => {
       assert.equal(out.meta.chartTotals.length, 1);
       assert.equal(typeof out.meta.chartBalance.balanced, 'boolean');
     });
+  });
+});
+
+describe('Balance Sheet: result split and balance block (ETP-6083)', () => {
+  const n = (id, parent, path, group, sign, extra = {}) => ({
+    node_id: id, parent_id: parent, sort_path: path, group_name: group, value: id, name: `N ${id}`,
+    elementlevel: parent ? 'C' : 'E', isalwaysshown: 'N', accountsign: sign, own_amt: 0, own_amt_ref: 0, issummary: parent ? 'N' : 'Y', ...extra,
+  });
+  // Activo (debit-normal): cash 1000; Pasivo/PN (credit-normal): capital -700 raw (700 shown) + 129 (raw -300, of which -120 on the fly).
+  const NODES = [
+    n('RA', null, '0', 'Activo', 'D'), // one container per side (never a row) carries the side's sign
+    n('A', 'RA', '1', 'Activo', 'D'),
+    n('cash', 'A', '1.1', 'Activo', 'D', { own_amt: 1000, own_amt_ref: 800 }),
+    n('RP', null, '2', 'PN', 'C'),
+    n('P', 'RP', '2.0', 'PN', 'C'),
+    n('cap', 'P', '2.1', 'PN', 'C', { own_amt: -700, own_amt_ref: -600 }),
+    n('r129', 'P', '2.2', 'PN', 'C', { own_amt: -300, own_amt_ref: -200, result_onthefly: -120, result_onthefly_ref: -50 }),
+  ];
+  const byId = (rows) => Object.fromEntries(rows.map((r) => [r.node_id, r]));
+
+  it('adds result { onTheFly, posted } in displayed sign to the account row only', () => {
+    const t = byId(buildAccountReportTree(NODES, [], {}));
+    assert.deepEqual(t.r129.result, { onTheFly: 120, posted: 180 });
+    assert.deepEqual(t.r129.resultRef, { onTheFly: 50, posted: 150 });
+    assert.equal(t.P.result, undefined, 'a summary parent carries no result');
+    assert.equal(t.cap.result, undefined);
+  });
+
+  it('adds cells[i].result with sly and prev for a period answer', () => {
+    const periodRows = [
+      { account_id: 'r129', idx: 0, own_amt: -300, own_amt_sly: -200, own_amt_prev: -100, own_result: -120, own_result_sly: -50, own_result_prev: null },
+      { account_id: 'cap', idx: 0, own_amt: -700, own_amt_sly: -600, own_amt_prev: -600 },
+      { account_id: 'cash', idx: 0, own_amt: 1000, own_amt_sly: 800, own_amt_prev: 700 },
+    ];
+    const t = byId(buildPeriodAccountTree(NODES, [], periodRows, { periods: [{ idx: 0 }] }));
+    assert.deepEqual(t.r129.cells[0].result, {
+      onTheFly: 120, posted: 180, sly: { onTheFly: 50, posted: 150 }, prev: { onTheFly: 0, posted: 100 },
+    });
+    assert.equal(t.cap.cells[0].result, undefined);
+    assert.equal(t.P.cells[0].result, undefined);
+  });
+
+  it('a contract without result columns is unchanged: no result anywhere', () => {
+    const plain = NODES.map(({ result_onthefly, result_onthefly_ref, ...rest }) => rest);
+    for (const r of buildAccountReportTree(plain, [], {})) assert.ok(!('result' in r) && !('resultRef' in r));
+    const rows = buildPeriodAccountTree(plain, [], [{ account_id: 'cap', idx: 0, own_amt: -1, own_amt_sly: 0, own_amt_prev: 0 }], { periods: [{ idx: 0 }] });
+    for (const r of rows) assert.ok(!('result' in r) && !('result' in r.cells[0]));
+  });
+
+  it('balance block: balanced, unbalanced and not-two-groups', () => {
+    const tree = buildAccountReportTree(NODES, [], {});
+    assert.deepEqual(buildBalanceBlock(tree), { balanced: true, activo: 1000, pnPasivo: 1000, diff: 0 });
+    const off = buildAccountReportTree(NODES.map((x) => (x.node_id === 'cash' ? { ...x, own_amt: 1000.5 } : x)), [], {});
+    assert.deepEqual(buildBalanceBlock(off), { balanced: false, activo: 1000.5, pnPasivo: 1000, diff: 0.5 });
+    assert.equal(buildBalanceBlock(tree.filter((r) => r.group === 'Activo')), null);
+    assert.equal(buildBalanceBlock([]), null);
+  });
+
+  it('balance block uses a side\'s TOTAL formula row instead of summing it with its siblings (real chart shape)', () => {
+    // Real chart: under each side's container the groups AND a TOTAL formula over them (A -> A.A, A.B, A.TOTAL).
+    const nodes = (cap) => [
+      n('RA', null, '0', 'Activo', 'D'),
+      n('A.A', 'RA', '0.1', 'Activo', 'D', { own_amt: 0 }),
+      n('A.B', 'RA', '0.2', 'Activo', 'D', { own_amt: 25849 }),
+      n('A.TOTAL', 'RA', '0.3', 'Activo', 'D'),
+      n('RP', null, '1', 'PN', 'C'),
+      n('P.A', 'RP', '1.1', 'PN', 'C', { own_amt: -22500 }),
+      n('P.C', 'RP', '1.2', 'PN', 'C', { own_amt: -cap }),
+      n('P.TOTAL', 'RP', '1.3', 'PN', 'C'),
+    ];
+    const ops = [
+      { owner_id: 'A.TOTAL', operand_id: 'A.A', sign: 1 }, { owner_id: 'A.TOTAL', operand_id: 'A.B', sign: 1 },
+      { owner_id: 'P.TOTAL', operand_id: 'P.A', sign: 1 }, { owner_id: 'P.TOTAL', operand_id: 'P.C', sign: 1 },
+    ];
+    const ok = buildBalanceBlock(buildAccountReportTree(nodes(3349), ops, {}));
+    assert.deepEqual(ok, { balanced: true, activo: 25849, pnPasivo: 25849, diff: 0 });
+    const off = buildBalanceBlock(buildAccountReportTree(nodes(3000), ops, {}));
+    assert.deepEqual(off, { balanced: false, activo: 25849, pnPasivo: 25500, diff: 349 });
+  });
+
+  it('balanceFields: opt-in only; plain ref only with compare; period tree gives sly / prev', () => {
+    const tree = buildAccountReportTree(NODES, [], {});
+    assert.deepEqual(balanceFields({}, tree), {});
+    assert.deepEqual(Object.keys(balanceFields({ balanceCheck: true }, tree)), ['balance']);
+    const withRef = balanceFields({ balanceCheck: true }, tree, { compare: true });
+    assert.deepEqual(withRef.balanceRef, { balanced: true, activo: 800, pnPasivo: 800, diff: 0 });
+    const periodRows = [
+      { account_id: 'cash', idx: 0, own_amt: 1000, own_amt_sly: 800, own_amt_prev: 500 },
+      { account_id: 'cap', idx: 0, own_amt: -1000, own_amt_sly: -800, own_amt_prev: -400 },
+    ];
+    const pt = buildPeriodAccountTree(NODES, [], periodRows, { periods: [{ idx: 0 }] });
+    const f = balanceFields({ balanceCheck: true }, pt, { periods: true });
+    assert.equal(f.balance.balanced, true);
+    assert.equal(f.balanceRef.sly.balanced, true);
+    assert.deepEqual(f.balanceRef.prev, { balanced: false, activo: 500, pnPasivo: 400, diff: 100 });
   });
 });

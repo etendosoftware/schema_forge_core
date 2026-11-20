@@ -72,6 +72,10 @@ export function filterAndTransformParams(params, contract, locale = 'en_US') {
       // `paramDef.hidden` above, which hides a param from BOTH the sidebar AND
       // this summary — this only ever affects the summary.
       const section = (contract.sections || []).find((s) => s.id === paramDef?.section);
+      // Same flag at parameter level: a param that only drives the interactive
+      // view (e.g. a `ledgerStart` dateFrom on a point-in-time balance) must
+      // not print in the export header, while staying a live control.
+      if (paramDef?.excludeFromSummary) return false;
       return !section?.excludeFromSummary;
     })
     .map(([k, v]) => {

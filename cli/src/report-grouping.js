@@ -293,6 +293,62 @@ export function accountSignMultiplier(sign) {
   return sign === 'C' ? -1 : 1;
 }
 
+export const hasResult = (v) => v !== undefined && v !== null && v !== '';
+
+/**
+ * ETP-6083: the on-the-fly / posted split of an amount that includes an unregularized result (the
+ * income-summary account of a Balance Sheet). `onTheFlyRaw` is the raw debit - credit the query
+ * reports; the split is in DISPLAYED sign (`multiplier`, the row's), and `posted = amount - onTheFly`.
+ */
+export function resultSplit(amount, onTheFlyRaw, multiplier) {
+  const onTheFly = cleanAmount((Number(onTheFlyRaw) || 0) * multiplier);
+  return { onTheFly, posted: cleanAmount((Number(amount) || 0) - onTheFly) };
+}
+
+/** `{ result, resultRef }` for a row whose query carried `result_onthefly` / `result_onthefly_ref`; `{}` otherwise (P&L et al. unchanged). */
+export function resultFields(row, amount, amountRef, multiplier) {
+  const out = {};
+  if (hasResult(row.result_onthefly)) out.result = resultSplit(amount, row.result_onthefly, multiplier);
+  if (hasResult(row.result_onthefly_ref)) out.resultRef = resultSplit(amountRef, row.result_onthefly_ref, multiplier);
+  return out;
+}
+
+/**
+ * ETP-6083: the balance check of a two-sided report (Balance Sheet): the roots of each report group
+ * summed in the displayed sign, the first group (Activo) against the second (Patrimonio Neto y
+ * Pasivo; named `activo` / `pnPasivo` for the UI, they are just the first / second group). A group's top
+ * formula row (its TOTAL) is the side's value when there is one. `pick(row)` reads the amount to total. Not exactly two root groups -> null.
+ * Structural: names no report.
+ */
+export function buildBalanceBlock(rows, pick = (r) => r.amount) {
+  const byGroup = new Map();
+  for (const r of (rows || []).filter((x) => !x.parentId)) {
+    if (!byGroup.has(r.group)) byGroup.set(r.group, { formula: 0, hasFormula: false, plain: 0 });
+    const g = byGroup.get(r.group);
+    const v = Number(pick(r)) || 0;
+    // A side's top rows may include its own TOTAL (a formula over its siblings): that row IS the side, summing both would double it.
+    if (r.isFormula) { g.formula += v; g.hasFormula = true; } else g.plain += v;
+  }
+  if (byGroup.size !== 2) return null;
+  const [activo, pnPasivo] = [...byGroup.values()].map((g) => cleanAmount(g.hasFormula ? g.formula : g.plain));
+  const diff = cleanAmount(activo - pnPasivo);
+  return { balanced: Math.abs(diff) < 0.005, activo, pnPasivo, diff };
+}
+
+/**
+ * ETP-6083: `{ balance, balanceRef }` for a tree answer, only for a contract with `balanceCheck: true`
+ * (`{}` otherwise). A period tree reads bucket 0: `balance` = current, `balanceRef` = `{ sly, prev }`;
+ * a plain tree's `balanceRef` is the comparison period's, present only with a comparison.
+ */
+export function balanceFields(contract, rows, { periods = false, compare = false } = {}) {
+  if (!contract?.balanceCheck) return {};
+  if (periods) {
+    return { balance: buildBalanceBlock(rows, (r) => r.cells[0].amount),
+      balanceRef: { sly: buildBalanceBlock(rows, (r) => r.cells[0].sly.amount), prev: buildBalanceBlock(rows, (r) => r.cells[0].prev.amount) } };
+  }
+  return { balance: buildBalanceBlock(rows), ...(compare ? { balanceRef: buildBalanceBlock(rows, (r) => r.amount_ref) } : {}) };
+}
+
 /**
  * Builds the indented account-report tree Profit & Loss AND Balance Sheet render
  * (ETP-4899), mirroring Classic's `AccountTree` engine (`GeneralAccountingReports`) —
@@ -502,6 +558,7 @@ export function buildAccountReportTree(nodeRows, operandRows, options = {}) {
         // the branch's effective sign the amounts were computed with.
         parentId: visibleParentId,
         sign: node.sign,
+        ...resultFields(node, amount, amountRef, accountSignMultiplier(node.sign)),
       });
       childParentId = node.node_id;
     }
@@ -617,7 +674,8 @@ function runPeriodTrees(nodeRows, operandRows, periods, amountsByPeriod, treeOpt
     const amounts = amountsByPeriod.get(period.idx);
     const feed = (refKey) => nodeRows.map((n) => {
       const a = amounts?.get(n.node_id);
-      return { ...n, own_amt: a?.own_amt ?? 0, own_amt_ref: a?.[refKey] ?? 0 };
+      return { ...n, own_amt: a?.own_amt ?? 0, own_amt_ref: a?.[refKey] ?? 0,
+        result_onthefly: a?.own_result ?? null, result_onthefly_ref: a?.[`own_result${refKey.slice('own_amt'.length)}`] ?? null };
     });
     const byId = (rows) => new Map(rows.map((r) => [r.node_id, r]));
     const sly = buildAccountReportTree(feed('own_amt_sly'), operandRows, treeOpts);
@@ -689,7 +747,12 @@ export function buildPeriodAccountTree(nodeRows, operandRows, periodRows, opts =
     const cells = runs.map((run) => {
       const s = run.slyById.get(base.node_id);
       const p = run.prevById.get(base.node_id);
-      return buildPeriodCell(s.amount, s.amount_ref, p.amount_ref, { sign: base.sign, trend });
+      const cell = buildPeriodCell(s.amount, s.amount_ref, p.amount_ref, { sign: base.sign, trend });
+      // ETP-6083: the result split of the income-summary account, per comparison.
+      if (s.result) {
+        cell.result = { ...s.result, sly: s.resultRef ?? { onTheFly: 0, posted: s.amount_ref }, prev: p.resultRef ?? { onTheFly: 0, posted: p.amount_ref } };
+      }
+      return cell;
     });
     const visible = visibilityByMode(cells, !showOnlyWithValue || alwaysShown.has(base.node_id), shown);
     const [first] = cells;
