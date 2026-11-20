@@ -24,7 +24,7 @@ import { readFileSync, readdirSync, existsSync } from 'node:fs';
 import { createRequire } from 'node:module';
 import { resolve, join, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { registerReportHelpers, computeDocumentQrDataUrl, buildJsreportHelpersString } from '../../templates/reports/helpers/report-html-helpers.js';
+import { registerReportHelpers, computeDocumentQrDataUrl, buildJsreportHelpersString } from '../../cli/src/report-html-helpers.js';
 import { listReportDescriptors } from '../../cli/src/report-descriptor.js';
 import { pickLabel, pickUiStrings, buildContractLabels } from '../../cli/src/report-i18n.js';
 import { resolveGrouping, buildNestedGroups, buildRenderAccountTree, buildRenderChartTree } from '../../cli/src/report-grouping.js';

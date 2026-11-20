@@ -7,7 +7,7 @@ import {
 
 // ETP-5032 — the fixture table is the CONTRACT three implementations are tested against
 // (this package's csvSerializer, the jsreport csvField source text in
-// templates/reports/helpers/report-html-helpers.js, and NeoCsvExportService.java). That
+// cli/src/report-html-helpers.js, and NeoCsvExportService.java). That
 // makes a bad row uniquely dangerous: a typo in an `expected` value would be adopted by
 // all three at once and every suite would go green against a WRONG contract, with nothing
 // left to catch it.

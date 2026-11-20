@@ -1,0 +1,76 @@
+{
+  "description": "Source paths that exist in both schema_forge_core and schema_forge (ETP-4980). `divergent`: copies that already drifted, NOT yet consolidated; each needs an owner decision and a call-site migration, never a whole-file copy. Each side is pinned by sha256: any further change fails the check and forces a reviewed update of this file. `identical`: copies still byte-equal; core is the owner and the schema_forge copy is deleted once it consumes the published package. `moved`: the module now lives in core's published CLI package; the copy still at that path in schema_forge must match it (report-i18n import aside) until schema_forge drops it. Remove an entry when its file is consolidated; the check fails on stale entries. DO NOT run `make sync-report-helpers` in schema_forge until its helper copies are removed: it would recreate templates/reports/helpers/ and parity.json in core.",
+  "divergent": {
+    "cli/src/db.js": {
+      "reason": "divergent API: core adds sweepCache/getCacheDrift/reportCacheDrift/resolveCacheDir/applyCacheModeFromEnv and renames DEFAULT_CACHE_PATH to DEFAULT_CACHE_DIR; schema_forge call sites must migrate",
+      "core": "01eccb6d44bc2396792d102f01be2acc83e6c51b869e361a9ef1c5f08c241203",
+      "schema_forge": "034b3c35bc24dfc104e5ccffd528201fa0dbec00fc4e43b90d071b41fd87a164"
+    },
+    "cli/src/lib/ad-cache.js": {
+      "reason": "divergent API: companion of cli/src/db.js",
+      "core": "045a0b4782ae7b3e4f50e7a4b0f928f97251f16e535137c5899c15b3678847b2",
+      "schema_forge": "5e25c821a89aa52dfbf3c174270b44e031d51312f2bd8aecbf570ae3ca9bf76f"
+    },
+    "cli/src/data-fixes/run.js": {
+      "reason": "divergent: schema_forge has features core lacks and vice versa; needs owner decision",
+      "core": "0fa17ad7c0675f3fb8844ab13e145cbf3bc7bc78ff173217e0c62f859c203388",
+      "schema_forge": "73ccc3dd7f31819d15368cade162966fe046b084d176452a4bde79e22ae96cc3"
+    },
+    "cli/src/data-fixes/tui.js": {
+      "reason": "divergent: needs owner decision",
+      "core": "87c9be217b0861a07c6245183f16a60bc8a4ff29e40f222e7cf7fe64326e76e6",
+      "schema_forge": "e1ff3340f70b4dfcbfadcbc1a2b9d9ddd0fb39a28db02332279cd0ac4dc9b7ab"
+    },
+    "cli/src/data-fixes/parse-fix.js": {
+      "reason": "divergent: needs owner decision",
+      "core": "ff4f8b6dd40163618826e61ec581316826155f2d40eca01a63fc419f32b33831",
+      "schema_forge": "ec7370a80dfbfc1ea1759959d25d75bc58de16b16285efab138f6f7280e4ac7e"
+    },
+    "scripts/add-data-testid.cjs": {
+      "reason": "divergent: needs owner decision",
+      "core": "9061c06995915b693187f2a1a47f08ab92fc285ecee96caee2500d00d61260ef",
+      "schema_forge": "9772d10df3289905539c8e6d87b5b8ab8f5a6b01e1bf3bb6bf73df33ca5bd8c3"
+    },
+    "cli/test/db.test.js": {
+      "reason": "follows cli/src/db.js",
+      "core": "e710b47237134eebf9e125002bc287ceaec99919306dd1f40fd2a1285c26bb15",
+      "schema_forge": "c00103755e2432df8eb8befa4b57235871e5007d1f2cf4da74dbfcac54831c83"
+    },
+    "cli/test/slice-labels.test.js": {
+      "reason": "divergent: needs owner decision",
+      "core": "7c634808076a7bc11d06eb8b4ef3b1d16f311acae314e4f378a68d318ae91cd9",
+      "schema_forge": "51491d9e1ff5336b6fa15cef9e4e8ddf0a2e74dccc68a936a09a63e5036492ff"
+    },
+    "cli/test/data-fixes-parse-fix.test.js": {
+      "reason": "follows cli/src/data-fixes/parse-fix.js",
+      "core": "51042ea82237725e75e25942b73ce69600d0c2982538aba8c7bbae5168d97513",
+      "schema_forge": "b9f26aeb9c6c56717dfd38f1e6a4764d5ff5c92a79f504a25b81e6e0aa9e1f86"
+    },
+    "cli/test/data-fixes-run.test.js": {
+      "reason": "follows cli/src/data-fixes/run.js",
+      "core": "af211ee809d6eff0be799a44181f818dc25efbed1e63120cc0ee6d1f29d8eb43",
+      "schema_forge": "0d841feccd46d20d7b983a311a516125fd5ecc9872cc61b1cd45286de7bfeca6"
+    }
+  },
+  "identical": {
+    "cli/src/data-fixes/lib/sampledata-xml.js": "owner: core (ships in the CLI package). schema_forge has no caller; its copy is deleted in the schema_forge change",
+    "cli/test/data-fixes-sampledata-xml.test.js": "follows sampledata-xml.js",
+    "scripts/etp-4177-tax-migration/gen-obtl-inserts.cjs": "one-off ETP-4177 migration; core is the single owner, the schema_forge copy is deleted in the schema_forge change",
+    "scripts/run-sequence-generator-cloud.mjs": "core owns it (has the unit test); the schema_forge copy is deleted in the schema_forge change",
+    "scripts/selector-inventory.js": "core owns it (has the unit test); the schema_forge copy is deleted in the schema_forge change"
+  },
+  "moved": {
+    "templates/reports/helpers/report-html-helpers.js": {
+      "core": "cli/src/report-html-helpers.js",
+      "reason": "moved to the published CLI package; schema_forge keeps its copy until it imports the package"
+    },
+    "templates/reports/helpers/common.js": {
+      "core": "cli/src/report-helpers/common.js",
+      "reason": "same"
+    },
+    "templates/reports/helpers/jsreport-helpers.js": {
+      "core": "cli/src/report-helpers/jsreport-helpers.js",
+      "reason": "same"
+    }
+  }
+}

@@ -6,7 +6,7 @@
  * referenced by ADR-0004 D2. Every JavaScript implementation of the policy is tested
  * against THIS array rather than against its own hand-written cases, so the two JS
  * runtimes (this package's `csvSerializer`, and the jsreport `csvField` source text in
- * `templates/reports/helpers/report-html-helpers.js`) cannot drift from each other or
+ * `cli/src/report-html-helpers.js`) cannot drift from each other or
  * from `NeoCsvExportService.java`.
  *
  * `expected` is the cell value AFTER neutralization and BEFORE CSV quoting.

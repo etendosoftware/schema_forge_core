@@ -13,12 +13,17 @@
  */
 
 import { readFile, writeFile } from 'node:fs/promises';
-import { join } from 'node:path';
+import { join, dirname } from 'node:path';
+import { fileURLToPath } from 'node:url';
 import { existsSync } from 'node:fs';
 import { isMainModule } from './utils.js';
 import { resolveRepoRoot } from './lib/repo-root.js';
 
 const ROOT = resolveRepoRoot();
+
+// The shared report helpers ship inside this package (ETP-4980), so they resolve from the
+// module location, not from the project root: the root's own `templates/` no longer holds them.
+const REPORT_HELPERS_DIR = join(dirname(fileURLToPath(import.meta.url)), 'report-helpers');
 
 const DEFAULT_PORT = 5488;
 const DEFAULT_LOCALE = 'en_US';
@@ -132,7 +137,7 @@ export function resolveTemplateFiles(root, artifact, report) {
     css: join(templatesReportDir, 'base.css'),
     overrideCss: join(artifactReportDir, 'style.css'),
     mockData: join(artifactReportDir, 'mockData.js'),
-    helpers: join(templatesReportDir, 'helpers', 'common.js'),
+    helpers: join(REPORT_HELPERS_DIR, 'common.js'),
   };
 }
 
@@ -307,7 +312,7 @@ if (isMain) {
   // Load Handlebars helpers code for jsreport
   let helpersCode = '';
   try {
-    const helpersPath = join(ROOT, 'templates', 'reports', 'helpers', 'jsreport-helpers.js');
+    const helpersPath = join(REPORT_HELPERS_DIR, 'jsreport-helpers.js');
     helpersCode = await readFile(helpersPath, 'utf8');
   } catch {
     console.warn('[report-preview] No jsreport-helpers.js found — helpers will not be available in template');

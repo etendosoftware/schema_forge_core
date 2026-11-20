@@ -14,7 +14,7 @@ import { readFileSync, existsSync, readdirSync } from 'node:fs';
 import { join, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { createRequire } from 'node:module';
-import { registerReportHelpers } from '../../../templates/reports/helpers/report-html-helpers.js';
+import { registerReportHelpers } from '../../src/report-html-helpers.js';
 
 const _require = createRequire(import.meta.url);
 const Handlebars = _require('handlebars');

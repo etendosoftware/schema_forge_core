@@ -1,12 +1,11 @@
-// @covers templates/reports/helpers/report-html-helpers.js
+// @covers cli/src/report-html-helpers.js
 import { describe, it } from 'node:test';
 import assert from 'node:assert/strict';
-import { createHash } from 'node:crypto';
 import { readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
-import { buildJsreportHelpersString, createReportHelpers } from '../../templates/reports/helpers/report-html-helpers.js';
+import { buildJsreportHelpersString, createReportHelpers } from '../src/report-html-helpers.js';
 
-const MODULE_PATH = fileURLToPath(new URL('../../templates/reports/helpers/report-html-helpers.js', import.meta.url));
+const MODULE_PATH = fileURLToPath(new URL('../src/report-html-helpers.js', import.meta.url));
 
 // The jsreport PDF/XLSX render path (`report-api.js`) sends a `helpers` STRING
 // over HTTP to the jsreport Docker container, which evaluates it in its own,
@@ -658,76 +657,6 @@ describe('buildJsreportHelpersString — source guard against the minification-u
     // comment was deleted; the guard above still works, but the next reader
     // loses the explanation of WHY. Kept as a canary, not as a hard rule.
     assert.match(fnSrc, /toString/);
-  });
-});
-
-// ─────────────────────────────────────────────────────────────────────────────
-// ETP-4910 — cross-repo parity contract for the report helper modules.
-//
-// `templates/` is not a published package, so `templates/reports/helpers/*.js`
-// exists as one physical copy per repo: the canonical one in
-// `etendosoftware/etendo_schema_forge` (the copy the assembled report-server
-// image carries — see that repo's `scripts/assemble-report-server-context.sh`)
-// and this mirror. They drifted silently once already: ETP-4908 synced them,
-// then ETP-5107 added the HALF_UP rounding to the canonical copy only, so this
-// one kept rendering half-cent amounts a cent lower for ~2.5 months.
-//
-// The contract is `templates/reports/helpers/parity.json`, committed with
-// identical bytes in both repos and regenerated ONLY by
-// `make sync-report-helpers` in the canonical repo: one canonical sha256 per
-// module. This check is deliberately self-contained (it reads this repo's own
-// copy and its own manifest, never the sibling checkout), so it also runs in a
-// standalone core CI checkout. Applying the recorded import-line normalisation
-// means a copy that differs from the canonical one by anything else — the
-// HALF_UP rule, a comment, a whole function — fails here.
-// ─────────────────────────────────────────────────────────────────────────────
-
-const PARITY_MANIFEST_PATH = fileURLToPath(
-  new URL('../../templates/reports/helpers/parity.json', import.meta.url),
-);
-const PARITY_MANIFEST = JSON.parse(readFileSync(PARITY_MANIFEST_PATH, 'utf8'));
-
-/** sha256 of this repo's copy of a helper module, reduced to the canonical form. */
-function mirrorDigest(moduleName) {
-  const raw = readFileSync(fileURLToPath(new URL(`../../templates/reports/helpers/${moduleName}`, import.meta.url)), 'utf8');
-  const canonical = raw
-    .replace(/\r\n/g, '\n')
-    .split(PARITY_MANIFEST.importLine.schema_forge_core)
-    .join(PARITY_MANIFEST.importLine.schema_forge);
-  return createHash('sha256').update(canonical, 'utf8').digest('hex');
-}
-
-describe('report helper modules — cross-repo parity contract (ETP-4910)', () => {
-  it('the manifest lists the mirrored modules and both import specifiers', () => {
-    assert.deepEqual(PARITY_MANIFEST.modules, ['common.js', 'jsreport-helpers.js', 'report-html-helpers.js']);
-    assert.ok(PARITY_MANIFEST.importLine.schema_forge);
-    assert.ok(PARITY_MANIFEST.importLine.schema_forge_core);
-  });
-
-  for (const moduleName of PARITY_MANIFEST.modules) {
-    it(`${moduleName} matches the canonical digest in parity.json`, () => {
-      assert.equal(
-        mirrorDigest(moduleName),
-        PARITY_MANIFEST.sha256[moduleName],
-        `${moduleName} no longer matches the canonical copy in etendo_schema_forge. `
-        + 'In that repo run `make sync-report-helpers` (it rewrites this repo\'s copy and both '
-        + 'parity.json files) and commit the result in BOTH repos.',
-      );
-    });
-  }
-
-  it('the mirrored helper module imports report-i18n relatively, as the contract records', () => {
-    // The one allowed difference: this repo ships report-i18n inside cli/src, the
-    // canonical repo imports it from the published CLI package.
-    const raw = readFileSync(
-      fileURLToPath(new URL('../../templates/reports/helpers/report-html-helpers.js', import.meta.url)),
-      'utf8',
-    );
-    assert.ok(
-      raw.includes(PARITY_MANIFEST.importLine.schema_forge_core),
-      'report-html-helpers.js must import report-i18n from ../../../cli/src/report-i18n.js in this repo',
-    );
-    assert.ok(!raw.includes(PARITY_MANIFEST.importLine.schema_forge));
   });
 });
 

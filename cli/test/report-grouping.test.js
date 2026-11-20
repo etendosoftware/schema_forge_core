@@ -294,7 +294,7 @@ describe('foldAggregateRows / resolveGrouping — is_root survives the fold (ETP
   });
 
   it('keeps the Total nonzero once rows go through resolveGrouping (the real render path)', async () => {
-    const { createReportHelpers } = await import('../../templates/reports/helpers/report-html-helpers.js');
+    const { createReportHelpers } = await import('../src/report-html-helpers.js');
     const { sumFieldWhere } = createReportHelpers();
     const sqlRows = [
       tbRow({ account_no: '43000000', is_root: true, activity_debit: 50, activity_credit: 20 }),

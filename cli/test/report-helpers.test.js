@@ -1,6 +1,6 @@
 import { describe, it } from 'node:test';
 import { strict as assert } from 'node:assert';
-import { formatDate, formatCurrency, formatBoolean, truncate } from '../../templates/reports/helpers/common.js';
+import { formatDate, formatCurrency, formatBoolean, truncate } from '../src/report-helpers/common.js';
 
 describe('report helpers', () => {
   describe('formatDate', () => {

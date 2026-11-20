@@ -3,7 +3,7 @@
  *
  * The report server renders document templates through ONLY the canonical
  * helper whitelist (`registerReportHelpers` in
- * `templates/reports/helpers/report-html-helpers.js`); per-report `helpers.js`
+ * `cli/src/report-html-helpers.js`); per-report `helpers.js`
  * text is read but never executed (post-ETP-4083, no `new Function`/`eval`).
  * A template that invokes a helper outside that whitelist (e.g. the old
  * per-report `qrCode` helper) fails at render time with
@@ -30,7 +30,7 @@ import { fileURLToPath } from 'node:url';
 import {
   registerReportHelpers,
   computeDocumentQrDataUrl,
-} from '../../../templates/reports/helpers/report-html-helpers.js';
+} from '../../../cli/src/report-html-helpers.js';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const _require = createRequire(import.meta.url);

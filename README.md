@@ -537,30 +537,22 @@ schema_forge/
 
 ### `templates/` — the one tree that must stay in sync with the other repo
 
-`templates/` belongs to no published package, so `templates/reports/helpers/*.js`
-exists as **one physical copy per repo**: this one is the mirror, and
-[`etendo_schema_forge`](https://github.com/etendosoftware/etendo_schema_forge) holds the
-canonical copy (the one the assembled report-server image actually carries — see that
-repo's `scripts/assemble-report-server-context.sh`). The copies are byte-identical
-except for the `report-i18n` import specifier (imported from the published CLI package
-there, reached relatively inside `cli/src` here).
+The shared report helpers live in the published `@etendosoftware/schema-forge-cli` package:
+`cli/src/report-html-helpers.js`, `cli/src/report-helpers/common.js` and
+`cli/src/report-helpers/jsreport-helpers.js`. `etendo_schema_forge` imports them from the
+package instead of keeping copies (ETP-4980), once it pins a release that contains them. The
+report-server image is assembled from a core checkout (`cli/src` is copied whole), so it
+does not depend on that pin. Until `etendo_schema_forge` drops its remaining copies under
+`templates/reports/helpers/`, the check below compares them with the moved modules. Do not run
+`make sync-report-helpers` there in the meantime: it would recreate the helpers and
+`parity.json` under core's `templates/`.
 
-They drifted silently once already: ETP-4908 synced them, then ETP-5107's HALF_UP
-rounding landed on the canonical copy only and this one kept rendering half-cent
-amounts a cent lower for ~2.5 months (ETP-4910).
-
-Never edit `templates/reports/helpers/*.js` here by hand. Run, in
-`etendo_schema_forge`:
-
-```bash
-make sync-report-helpers     # rewrites this repo's copy + both parity.json files
-```
-
-and commit the result in both repos. The contract (`templates/reports/helpers/parity.json`,
-one canonical sha256 per module) is verified by this repo's own
-`cli/test/report-jsreport-helpers-builder.test.js` — self-contained, so it runs in a
-standalone core CI checkout — and cross-checked against the sibling checkout by that
-repo's `tools/app-shell/test/report-template-helpers-contract.test.js`.
+`scripts/check-cross-repo-duplicates.mjs <schema_forge checkout>` (CI:
+`cross-repo-duplicates.yml`, on core PRs and daily) fails when a source path exists in both
+repos and is not registered in `scripts/cross-repo-duplicates.json`. Divergent pairs are
+pinned by per-side sha256, so any further change on either side needs a reviewed registry
+update. Never fix a divergence by copying a whole file over the other: port the missing
+hunk, or move the module into a published package.
 
 ## Documentation
 
