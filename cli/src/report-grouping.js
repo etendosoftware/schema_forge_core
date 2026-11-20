@@ -293,7 +293,7 @@ export function accountSignMultiplier(sign) {
   return sign === 'C' ? -1 : 1;
 }
 
-const hasResult = (v) => v !== undefined && v !== null && v !== '';
+export const hasResult = (v) => v !== undefined && v !== null && v !== '';
 
 /**
  * ETP-6083: the on-the-fly / posted split of an amount that includes an unregularized result (the
@@ -316,16 +316,21 @@ export function resultFields(row, amount, amountRef, multiplier) {
 /**
  * ETP-6083: the balance check of a two-sided report (Balance Sheet): the roots of each report group
  * summed in the displayed sign, the first group (Activo) against the second (Patrimonio Neto y
- * Pasivo). `pick(row)` reads the amount to total. Not exactly two root groups -> null.
+ * Pasivo; named `activo` / `pnPasivo` for the UI, they are just the first / second group). A group's top
+ * formula row (its TOTAL) is the side's value when there is one. `pick(row)` reads the amount to total. Not exactly two root groups -> null.
  * Structural: names no report.
  */
 export function buildBalanceBlock(rows, pick = (r) => r.amount) {
   const byGroup = new Map();
   for (const r of (rows || []).filter((x) => !x.parentId)) {
-    byGroup.set(r.group, (byGroup.get(r.group) || 0) + (Number(pick(r)) || 0));
+    if (!byGroup.has(r.group)) byGroup.set(r.group, { formula: 0, hasFormula: false, plain: 0 });
+    const g = byGroup.get(r.group);
+    const v = Number(pick(r)) || 0;
+    // A side's top rows may include its own TOTAL (a formula over its siblings): that row IS the side, summing both would double it.
+    if (r.isFormula) { g.formula += v; g.hasFormula = true; } else g.plain += v;
   }
   if (byGroup.size !== 2) return null;
-  const [activo, pnPasivo] = [...byGroup.values()].map(cleanAmount);
+  const [activo, pnPasivo] = [...byGroup.values()].map((g) => cleanAmount(g.hasFormula ? g.formula : g.plain));
   const diff = cleanAmount(activo - pnPasivo);
   return { balanced: Math.abs(diff) < 0.005, activo, pnPasivo, diff };
 }

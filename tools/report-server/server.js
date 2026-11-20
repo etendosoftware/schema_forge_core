@@ -27,7 +27,7 @@ import { fileURLToPath } from 'node:url';
 import { registerReportHelpers, computeDocumentQrDataUrl, buildJsreportHelpersString } from '../../templates/reports/helpers/report-html-helpers.js';
 import { listReportDescriptors } from '../../cli/src/report-descriptor.js';
 import { pickLabel, pickUiStrings, buildContractLabels } from '../../cli/src/report-i18n.js';
-import { resolveGrouping, buildNestedGroups, buildRenderAccountTree, buildRenderChartTree, balanceFields } from '../../cli/src/report-grouping.js';
+import { resolveGrouping, buildNestedGroups, buildRenderAccountTree, buildRenderChartTree } from '../../cli/src/report-grouping.js';
 import { applyPlaceholders } from '../../cli/src/report-sql.js';
 import { filterAndTransformParams } from '../../cli/src/report-filters.js';
 import { hydrateDocumentBranding, resolveCompanyLogoDataUrl } from '../../cli/src/report-branding.js';
@@ -366,11 +366,8 @@ function resolveReportData(result, params, locale) {
       result.periodRows ? { periodRows: result.periodRows, spec: result.periodSpec, compareMode: normalizeCompareMode(params.compareMode) } : null);
   }
 
-  // ETP-6083: a contract with `balanceCheck` ships the balance check as `meta.balance` (rides the chartMeta channel).
-  const balance = contract.balanceCheck && Array.isArray(rows)
-    ? balanceFields(contract, rows, { periods: Boolean(result.periodRows), compare: params.compareTo === 'true' }) : null;
   const grouped = resolveGrouping(contract, params, rows, locale);
-  return { ...grouped, openingRows, ...(balance ? { chartMeta: balance } : {}) };
+  return { ...grouped, openingRows };
 }
 
 /**

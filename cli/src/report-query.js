@@ -16,7 +16,7 @@
 import { readFileSync, existsSync } from 'node:fs';
 import { join } from 'node:path';
 import { applyPlaceholders } from './report-sql.js';
-import { buildAccountReportTree, buildChartAccountTree, parseExpandedNodeIds, buildPeriodAccountTree, buildPeriodCell, addVariation, accountSignMultiplier, cleanAmount, resultSplit, resultFields, balanceFields } from './report-grouping.js';
+import { buildAccountReportTree, buildChartAccountTree, parseExpandedNodeIds, buildPeriodAccountTree, buildPeriodCell, addVariation, accountSignMultiplier, cleanAmount, resultSplit, resultFields, balanceFields, hasResult } from './report-grouping.js';
 import { assertNoPeriodsToken, buildPeriodValues, comparedPeriodsFor, substitutePeriods, hasPeriods, hullParams, SCREEN_MAX_BUCKETS } from './report-periods.js';
 import { withReportClient, acquireTenantSlot, isStatementTimeout, ReportTimeoutError, ReportCancelledError } from './report-db.js';
 import { resolveReportSession, reportAuthErrorBody, assertReportOrgAccess, assertReportAccess, accessCheckSession } from './report-auth.js';
@@ -153,8 +153,8 @@ async function runPeriodSplit(pool, contract, { clientId, params, locale, period
       const r = byIdx.get(p.idx);
       const signed = (v) => (Number(v) || 0) * multiplier;
       const cell = buildPeriodCell(signed(r?.own_amt), signed(r?.own_amt_sly), signed(r?.own_amt_prev), { sign, trend });
-      if (hasResultValue(r?.own_result)) { // ETP-6083: the income-summary node's on-the-fly part
-        const part = (key, amount) => (hasResultValue(r[key]) ? resultSplit(amount, r[key], multiplier) : { onTheFly: 0, posted: amount });
+      if (hasResult(r?.own_result)) { // ETP-6083: the income-summary node's on-the-fly part
+        const part = (key, amount) => (hasResult(r[key]) ? resultSplit(amount, r[key], multiplier) : { onTheFly: 0, posted: amount });
         cell.result = { ...resultSplit(cell.amount, r.own_result, multiplier), sly: part('own_result_sly', cell.sly.amount), prev: part('own_result_prev', cell.prev.amount) };
       }
       return cell;
@@ -164,8 +164,6 @@ async function runPeriodSplit(pool, contract, { clientId, params, locale, period
   split.sort((a, b) => Math.abs(b.amount) - Math.abs(a.amount) || a.name.localeCompare(b.name));
   return { rows: split, periods: periodSpec.periods.map(publicPeriod), hiddenCount: periodSpec.hiddenCount };
 }
-
-const hasResultValue = (v) => v !== undefined && v !== null && v !== '';
 
 const publicPeriod = ({ idx, dateFrom, dateTo, partial }) => ({ idx, dateFrom, dateTo, partial });
 

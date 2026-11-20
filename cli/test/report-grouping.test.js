@@ -1358,6 +1358,28 @@ describe('Balance Sheet: result split and balance block (ETP-6083)', () => {
     assert.equal(buildBalanceBlock([]), null);
   });
 
+  it('balance block uses a side\'s TOTAL formula row instead of summing it with its siblings (real chart shape)', () => {
+    // Real chart: under each side's container the groups AND a TOTAL formula over them (A -> A.A, A.B, A.TOTAL).
+    const nodes = (cap) => [
+      n('RA', null, '0', 'Activo', 'D'),
+      n('A.A', 'RA', '0.1', 'Activo', 'D', { own_amt: 0 }),
+      n('A.B', 'RA', '0.2', 'Activo', 'D', { own_amt: 25849 }),
+      n('A.TOTAL', 'RA', '0.3', 'Activo', 'D'),
+      n('RP', null, '1', 'PN', 'C'),
+      n('P.A', 'RP', '1.1', 'PN', 'C', { own_amt: -22500 }),
+      n('P.C', 'RP', '1.2', 'PN', 'C', { own_amt: -cap }),
+      n('P.TOTAL', 'RP', '1.3', 'PN', 'C'),
+    ];
+    const ops = [
+      { owner_id: 'A.TOTAL', operand_id: 'A.A', sign: 1 }, { owner_id: 'A.TOTAL', operand_id: 'A.B', sign: 1 },
+      { owner_id: 'P.TOTAL', operand_id: 'P.A', sign: 1 }, { owner_id: 'P.TOTAL', operand_id: 'P.C', sign: 1 },
+    ];
+    const ok = buildBalanceBlock(buildAccountReportTree(nodes(3349), ops, {}));
+    assert.deepEqual(ok, { balanced: true, activo: 25849, pnPasivo: 25849, diff: 0 });
+    const off = buildBalanceBlock(buildAccountReportTree(nodes(3000), ops, {}));
+    assert.deepEqual(off, { balanced: false, activo: 25849, pnPasivo: 25500, diff: 349 });
+  });
+
   it('balanceFields: opt-in only; plain ref only with compare; period tree gives sly / prev', () => {
     const tree = buildAccountReportTree(NODES, [], {});
     assert.deepEqual(balanceFields({}, tree), {});
