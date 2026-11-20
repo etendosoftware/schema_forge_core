@@ -336,6 +336,7 @@ function mergeGroup(id, group, issues) {
   return {
     ...header.entry,
     symbols: unique(members.flatMap(({ entry }) => entry.symbols || [])),
+    headerSymbols: header.entry.symbols || [],
     deferredItems: members.flatMap(({ entry }) => entry.deferredItems || []),
     parts: members.map(({ source, entry }) => partOf(entry, source)),
     contributedBy: contributions.map(({ source }) => source.name),
@@ -499,7 +500,6 @@ export function collectTouchPoints(flag, context) {
   const scannedSources = [];
   const skippedSources = [];
   const parts = partsOf(flag, context);
-  const symbols = flag.symbols || [];
 
   for (const part of parts) {
     const { source } = part;
@@ -508,6 +508,10 @@ export function collectTouchPoints(flag, context) {
       continue;
     }
     scannedSources.push(source.name);
+    // The header's symbols are searched everywhere; a contribution's own symbols
+    // only in its own checkout, so a backend class name quoted in the frontend is
+    // not charged as a frontend touch point.
+    const symbols = unique([...(flag.headerSymbols || []), ...part.symbols]);
     const specPaths = specsOf(part).map((spec) => spec.path);
 
     // Checkouts can nest; a file under the inner one must not be visited a

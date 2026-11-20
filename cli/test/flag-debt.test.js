@@ -1147,7 +1147,6 @@ describe('contributions', () => {
   });
 
   it('scores its local dimensions and leaves the lifecycle to the header', () => {
-    write('src-test/placeholder.txt', 'x');
     const scored = scoreFlag(normalizeFeature({ ...contribution, symbols: ['tenant-upgrade'] }), context());
     assert.equal(scored.contribution, true);
     assert.equal(scored.key, 'tenant-upgrade');
@@ -1209,11 +1208,29 @@ describe('rollup — merge, then score', () => {
     assert.deepEqual(issues, { orphans: [], duplicateHeaders: [], flagKeyMismatches: [], unverifiable: [] });
   });
 
-  it('scans each checkout with the union of the symbols and its own owned paths', () => {
+  it('scans each checkout with the header symbols plus that part\'s own symbols', () => {
     const { features } = rollup();
     const touch = collectTouchPoints(features[0], { ...context(), sources: undefined });
     const paths = touch.files.map(f => `${f.source}:${f.path}`).sort();
     assert.deepEqual(paths, ['backend:Elsewhere.java', 'repo:app/menu.jsx', 'repo:app/routes.jsx']);
+  });
+
+  it('greps a contribution\'s own symbols only in its own checkout', () => {
+    write('app/quotes-backend-class.jsx', '// mentions PaywallServiceOnly\n');
+    writeFileSync(join(other, 'Uses.java'), 'class Uses { PaywallServiceOnly p; }\n');
+    const own = normalizeFeature({
+      id: 'tenant-upgrade-feature', flagKey: 'tenant-upgrade', symbols: ['PaywallServiceOnly'], paths: [],
+    });
+    const loaded = [
+      { source: sourceOf('repo', root), registry: { features: [header()] } },
+      { source: sourceOf('backend', other), registry: { features: [own] } },
+    ];
+    const touch = collectTouchPoints(mergeRegistries(loaded).features[0], { ...context(), sources: undefined });
+    const paths = touch.files.map(f => `${f.source}:${f.path}`);
+    assert.ok(paths.includes('backend:Uses.java'), 'found in its own checkout');
+    assert.ok(!paths.includes('repo:app/quotes-backend-class.jsx'), 'not charged in the header\'s checkout');
+    rmSync(join(root, 'app/quotes-backend-class.jsx'));
+    rmSync(join(other, 'Uses.java'));
   });
 
   it('charges a flat spec penalty once, not once per repo', () => {
