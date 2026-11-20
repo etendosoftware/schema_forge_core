@@ -628,11 +628,30 @@ export function generateFrontendContract(schema, rules = []) {
         required: f.required ?? !!match.required,
         type: match.type,
         reference: match.reference,
+        // ETP-4557: the entity field's constraints that apply to the RAW cell (see
+        // importCellValidation), so the review queue validates like the form and the grid.
+        ...importCellValidation(match),
       };
     });
   }
 
   return { window: reorderKeys(win, WINDOW_KEY_ORDER), entities };
+}
+
+// Import cells hold what the user typed, not the stored value: a boolean cell reads "Empresa" /
+// "Sí", an enum or foreign-key cell a label, a numeric cell a localized number. Length, range and
+// enum constraints describe the STORED value, so copying them would reject a template row filled
+// with its own examples. Only plain string fields keep the constraints that are about the text.
+const IMPORT_CELL_STRING_TYPES = new Set(['string', 'text']);
+const IMPORT_CELL_KEYS = ['maxLength', 'minLength', 'format', 'allowedSchemes'];
+
+export function importCellValidation(field) {
+  if (!field?.validation || !IMPORT_CELL_STRING_TYPES.has(field.type)) return {};
+  const picked = {};
+  for (const key of IMPORT_CELL_KEYS) {
+    if (field.validation[key] != null) picked[key] = field.validation[key];
+  }
+  return Object.keys(picked).length > 0 ? { validation: picked } : {};
 }
 
 function processCalloutMetadata(mapped, f, rules) {

@@ -9,8 +9,8 @@ same per-field `validation` object that flows through the Schema Forge pipeline
 returning **machine-readable error codes** — no i18n, no DOM, no field-name
 inference.
 
-This module **only builds the engine**. Wiring it into forms / grids / import is
-ETP-4557 (3/7).
+This module builds the engine. It is wired into forms / grids / import by ETP-4557
+(3/7) — see *Consumers (ETP-4557)* below.
 
 ## Location & import
 
@@ -162,3 +162,34 @@ node --test src/lib/validation/__tests__/*.test.js
 ```
 
 Also included in `npm test` for the package.
+
+
+## Consumers (ETP-4557)
+
+One contract, one code, every flow:
+
+| Flow | Entry point |
+|------|-------------|
+| Record create/edit save gate | `useEntity.getCoreFieldViolation` → `app-shell/src/lib/coreValidation.js` |
+| Form blur | `getFieldError` (same adapter) |
+| Native controls | `getNativeInputProps` (`maxLength`, `min`, `max`, `inputMode`, `aria-*`) |
+| Inline grid add-row / inline edit | `getFieldError` (DataTable, InlineLinesPanel) |
+| Import pre-validation + review-queue re-validation | `validateRow({ emailTargets, fieldConstraints, fieldIdentities })` (`lib/import/validateRows.js`); constraints come from `window.import.fields[].validation`, emitted by `generate-contract` |
+| Backend structured errors | `mapBackendFieldErrors` — only recognised codes are surfaced; raw messages never are |
+
+Presentation keys are shared (`fieldMaxLengthError`, `fieldMinLengthError`, `fieldMinValueError`,
+`fieldMaxValueError`, `sendModalInvalidEmail`, `phoneInvalidChars`, `websiteInsecureUrl`,
+`fieldInvalidValue`).
+
+### Compatibility policy for untouched legacy values
+
+- Forms validate only fields changed this session (plus, on a loaded record, a value equal to the
+  loaded one is skipped): a legacy-invalid value nobody touched never blocks an unrelated edit.
+- A changed value is always validated, as is every value of a new record.
+- Inline grid edits skip an unchanged cell and always validate a changed one.
+- Read-only / hidden fields are skipped. Contracts with no `validation` object only use the flat
+  `maxLength` / `min` the generated forms carry; flat `max` keeps its silent clamp.
+- `isEmailField` / `isWebsiteField` / `isPhoneField` in `recipientEdits.js` are **deprecated**; the
+  engine's temporary `compatAdapter` replaces them until contracts declare `format`.
+
+The code → i18n mapping is `describeValidationError` (exported from the engine); import only overrides the wording of the email and phone keys (`importErrorInvalidEmail`, `importErrorInvalidPhone`). `format: 'url'` now requires a domain-shaped host (two or more labels and an alphabetic TLD, or an IPv4 literal).

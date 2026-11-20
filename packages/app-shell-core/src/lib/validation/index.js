@@ -9,3 +9,4 @@ export { validateRecord } from './validateRecord.js';
 export { ERROR_CODES } from './errorCodes.js';
 export { inferFormatConstraints, applyCompatFormats } from './compatAdapter.js';
 export { KNOWN_FORMATS } from './formats.js';
+export { describeValidationError } from './describeError.js';
