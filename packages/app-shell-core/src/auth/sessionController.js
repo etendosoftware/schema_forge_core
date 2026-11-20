@@ -47,6 +47,9 @@ export function createSessionController(initialSession, storage, onSessionChange
   // populated. Until something persists, the in-memory session IS the identity; otherwise the
   // first persisting replace (the silent refresh) would flip the storage identity from empty to
   // populated and abandon every request in flight as a "superseded session".
+  // Both branches go through `identityFingerprint`, which normalizes first, and every storage
+  // adapter writes `normalizeAuthSession(session)` — so the fallback equals the stored identity
+  // once written (covered for the memory and JSON-backed local adapters in sessionControllerRestore).
   let restoredUnpersisted = false;
   const readStorageIdentity = () => {
     try {
