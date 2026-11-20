@@ -61,6 +61,8 @@ jobs:
         run: npm test --workspace=packages/schema-forge-agent-context
       - name: Schema Forge stack tests
         run: npm test --workspace=packages/schema-forge-stack
+      - name: API gateway core tests
+        run: npm test --workspace=packages/api-gateway-core
       - name: Schema Forge CLI tests
         run: npm test --workspace=cli
 
@@ -97,6 +99,7 @@ jobs:
             packages/schema-forge-agent-context \
             packages/schema-forge-stack \
             packages/etendo-go-core \
+            packages/api-gateway-core \
             cli; do
             NAME=$(node -p "require('./$WS/package.json').name")
             VERSION=$(node -p "require('./$WS/package.json').version")
