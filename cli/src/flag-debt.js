@@ -187,6 +187,10 @@ function entryProblems(entry) {
       problems.push(`${entry.id}: testSpec ${spec.path} declares "root" (v3 has a single implicit root)`);
     }
   }
+  const scope = entry.flag && entry.flag.scope;
+  if (scope !== undefined && scope !== 'backend') {
+    problems.push(`${entry.id}: flag.scope must be absent or "backend" (got ${JSON.stringify(scope)})`);
+  }
   if (isContribution(entry)) {
     for (const field of HEADER_ONLY_FIELDS) {
       if (entry[field] !== undefined) {
@@ -696,6 +700,17 @@ export function collectCoverage(flag, context) {
     return { status: 'unavailable', reason: 'sonar-coverage.sh not found', files: [], points: 0 };
   }
 
+  // The script's project roster comes from the registries being scored, not from
+  // where the script is installed: under node_modules its sibling directories
+  // are not the repos.
+  const rosterEntries = sourcesOf(context)
+    .filter((source) => source.root && source.sonarProject)
+    .map((source) => `${source.sonarProject}=${source.root}`);
+  const scriptEnv = {
+    ...env,
+    SONAR_PROJECT_ROOTS: [...rosterEntries, env.SONAR_PROJECT_ROOTS].filter(Boolean).join(','),
+  };
+
   const files = [];
   let points = 0;
   for (const owned of ownedFiles) {
@@ -705,7 +720,7 @@ export function collectCoverage(flag, context) {
       files.push({ ...entry, uncovered: null, points: 0, note: `no sonarProject declared for ${source.name}` });
       continue;
     }
-    const outcome = runner({ script, cwd: source.root, file: owned.path, project: source.sonarProject, env });
+    const outcome = runner({ script, cwd: source.root, file: owned.path, project: source.sonarProject, env: scriptEnv });
     if (outcome.uncovered === null) {
       files.push({ ...entry, uncovered: null, points: 0, note: outcome.reason || 'no analysis' });
       continue;

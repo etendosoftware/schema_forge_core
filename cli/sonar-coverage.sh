@@ -58,9 +58,8 @@ register_project() {
   PROJECT_NAMES+=("$name")
   PROJECT_ROOTS+=("$root")
 }
-register_project schema-forge-core "$SF_ROOT"
-register_project etendo-go "$GO_ROOT"
-register_project schema-forge "$FN_ROOT"
+# Env entries first: the caller (sf-flag-debt) knows where each registry's repo really is,
+# and root_of_project/auto-detect take the first match.
 if [[ -n "${SONAR_PROJECT_ROOTS:-}" ]]; then
   IFS=',' read -r -a EXTRA_PROJECTS <<<"$SONAR_PROJECT_ROOTS"
   for entry in "${EXTRA_PROJECTS[@]}"; do
@@ -68,6 +67,9 @@ if [[ -n "${SONAR_PROJECT_ROOTS:-}" ]]; then
   done
 fi
 
+register_project schema-forge-core "$SF_ROOT"
+register_project etendo-go "$GO_ROOT"
+register_project schema-forge "$FN_ROOT"
 root_of_project() {
   # root_of_project <name> → echoes the repo root, non-zero when not in the roster.
   local i

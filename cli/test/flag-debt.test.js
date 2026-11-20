@@ -1090,6 +1090,14 @@ describe('registry format v3', () => {
     assert.match(problems, /declares "root"/);
   });
 
+  it('accepts a flag scope of "backend" only', () => {
+    const feature = (scope) => ({ ...entry, flag: { key: 'k', scope } });
+    assert.deepEqual(registryProblems({ version: 3, features: [feature('backend'), feature(undefined)] }), []);
+    for (const bad of ['frontend', 'both', '']) {
+      assert.match(registryProblems({ version: 3, features: [feature(bad)] }).join(), /flag\.scope must be absent or "backend"/);
+    }
+  });
+
   it('rejects a non-string sonarProject', () => {
     assert.match(registryProblems({ version: 3, sonarProject: 7, features: [] }).join(), /sonarProject/);
   });
@@ -1295,6 +1303,22 @@ describe('rollup — merge, then score', () => {
     assert.deepEqual(calls.map(c => c.project).sort(), ['etendo-go', 'schema-forge-core', 'schema-forge-core']);
     assert.ok(calls.some(c => c.cwd === other && c.file === 'src/payment/Paywall.java'));
     rmSync(join(root, 'cli'), { recursive: true, force: true });
+  });
+
+  it('hands the script a roster built from the registries being scored', () => {
+    const { features, loaded } = rollup();
+    write('cli/sonar-coverage.sh', '#!/bin/sh\n');
+    const seen = [];
+    collectCoverage(features[0], {
+      ...context(),
+      sources: loaded.map(({ source }) => source),
+      env: { SONAR_TOKEN: 'squ_x' },
+      runner: ({ env }) => { seen.push(env.SONAR_PROJECT_ROOTS); return { uncovered: 0 }; },
+      repoRoot: root,
+    });
+    rmSync(join(root, 'cli'), { recursive: true, force: true });
+    assert.ok(seen.length > 0);
+    assert.equal(seen[0], `schema-forge-core=${root},etendo-go=${other}`);
   });
 
   it('does not run coverage for a source that declares no sonarProject', () => {
