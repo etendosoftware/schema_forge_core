@@ -45,6 +45,32 @@ describe('classifyCandidates', () => {
     assert.deepEqual(result, { status: 'needs-review', candidates: [] });
   });
 
+  it('resolves the one name equal to the value even when names containing it score higher', () => {
+    const result = classifyCandidates([
+      { id: 'CUBIC', name: 'Cubic Meter', similarityPercent: '100', matchType: 'fuzzy' },
+      { id: 'METER', name: 'Meter', similarityPercent: '100', matchType: 'exact' },
+    ]);
+    assert.deepEqual(result, { status: 'auto-resolved', id: 'METER', name: 'Meter' });
+  });
+
+  it('resolves a name that differs only by accents when no name is exactly equal', () => {
+    const result = classifyCandidates([
+      { id: 'A', name: 'Camión grúa', similarityPercent: '70', matchType: 'normalized' },
+      { id: 'B', name: 'Camion', similarityPercent: '80', matchType: 'fuzzy' },
+    ]);
+    assert.equal(result.status, 'auto-resolved');
+    assert.equal(result.id, 'A');
+  });
+
+  it('needs review when two records share the equal name', () => {
+    const result = classifyCandidates([
+      { id: 'A', name: 'IVA Normal', similarityPercent: '100', matchType: 'exact' },
+      { id: 'B', name: 'IVA Normal', similarityPercent: '100', matchType: 'exact' },
+    ]);
+    assert.equal(result.status, 'needs-review');
+    assert.equal(result.candidates.length, 2);
+  });
+
   // The real webhook formats this field as "NN.NNNN%", not the bare digit
   // strings used above — that's covered where the raw value actually enters
   // the system: simSearch.test.js's mapRow/parseSimSearchEnvelope regression
@@ -140,8 +166,16 @@ describe('strict matching (ETP-5730)', () => {
     assert.equal(scoreModeForField(undefined), undefined);
   });
 
-  it('keeps today\'s behaviour by default: three names at 100 is a tie, so it needs review', async () => {
+  it('resolves the exact name by default too: the endpoint marks it, so the 100s tie no longer blocks', async () => {
     const map = await resolveForeignKeyColumn({ values: ['IVA Normal'], matchEntity: 'FinancialMgmtTaxCategory', simSearchFn });
+    assert.equal(map.get('IVA Normal').status, 'auto-resolved');
+    assert.equal(map.get('IVA Normal').id, 'EXACT');
+  });
+
+  it('a backend without exact flags keeps the old answer: three names at 100 is a tie', async () => {
+    const legacy = { item_0: { data: envelope.item_0.data.map(({ id, name, similarity_percent: s }) => ({ id, name, similarity_percent: s })) } };
+    const fn = async ({ scoreMode }) => parseSimSearchEnvelope(legacy, 1, scoreMode);
+    const map = await resolveForeignKeyColumn({ values: ['IVA Normal'], matchEntity: 'FinancialMgmtTaxCategory', simSearchFn: fn });
     assert.equal(map.get('IVA Normal').status, 'needs-review');
   });
 

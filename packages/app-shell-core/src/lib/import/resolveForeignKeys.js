@@ -1,3 +1,5 @@
+import { matchRank } from '../simSearch.js';
+
 /**
  * The simSearch `scoreMode` an import field asks for (ETP-5730). `matchMode: 'strict'` in
  * `decisions.json` means the percentage shown and classified is the whole-string similarity, so an
@@ -13,12 +15,24 @@ export const FK_AMBIGUOUS_GAP = 15;
 /**
  * Decide whether a column of similarity candidates (best-first, as returned
  * by simSearch's `.candidates`) resolves automatically or needs the user's
- * review. Auto-resolves only when the top candidate clears the confidence
- * threshold AND there is no close runner-up to be ambiguous about.
+ * review.
+ *
+ * A name that equals the value (ETP-5895: `matchType` 'exact', or 'normalized' when only accents
+ * differ) decides on its own: one such name auto-resolves, two or more are a real ambiguity
+ * (duplicated names) and need review. The score cannot tell them apart, because every name that
+ * CONTAINS the value scores 100 too ("Meter" vs "Cubic Meter"). Without an equal name, the top
+ * candidate must clear the confidence threshold with no close runner-up.
  */
 export function classifyCandidates(candidates) {
   if (!candidates || candidates.length === 0) {
     return { status: 'needs-review', candidates: [] };
+  }
+  const bestRank = Math.max(...candidates.map(matchRank));
+  if (bestRank > 0) {
+    const equal = candidates.filter((c) => matchRank(c) === bestRank);
+    return equal.length === 1
+      ? { status: 'auto-resolved', id: equal[0].id, name: equal[0].name }
+      : { status: 'needs-review', candidates };
   }
   const top = Number(candidates[0].similarityPercent);
   if (top < FK_AUTO_RESOLVE_THRESHOLD) {
