@@ -44,6 +44,16 @@ export {
   writeHeaders,
 } from './sessionCredentials.js';
 export {
+  FEATURE_HEADER,
+  FEATURE_KEY_PATTERN,
+  buildFeatureKey,
+  clearActiveFeature,
+  featureRequestHeaders,
+  getActiveFeature,
+  isValidFeatureKey,
+  setActiveFeature,
+} from './featureContext.js';
+export {
   ACCOUNT_MISMATCH_MESSAGE,
   SESSION_CHANNEL_NAME,
   SESSION_RECHECK_INTERVAL_MS,
