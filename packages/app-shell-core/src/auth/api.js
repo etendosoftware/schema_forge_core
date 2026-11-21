@@ -12,6 +12,7 @@ import {
 } from './sessionCredentials.js';
 import { DEFAULT_API_TIMEOUT_MS, NetworkError } from './networkError.js';
 import { observeSessionConflictResponse } from './sessionConflict.js';
+import { staleSessionError } from './staleSessionError.js';
 
 export function detectBaseUrl() {
   // Guarded so this module can be imported outside a browser. `plain node --test` runs
@@ -1047,10 +1048,6 @@ function combineSignals(callerSignal, timeoutSignal) {
 /** A `TypeError` is the transport failing; everything else is not ours to reinterpret. */
 function toNetworkError(err) {
   return err instanceof TypeError ? new NetworkError({ reason: 'offline', cause: err }) : err;
-}
-
-function staleSessionError() {
-  return new DOMException('The request belongs to a superseded session.', 'AbortError');
 }
 
 // Guard body consumption too: fetch can finish before a logout while json() is pending.
