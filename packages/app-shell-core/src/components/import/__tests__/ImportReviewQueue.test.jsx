@@ -320,10 +320,11 @@ describe('ImportReviewQueue', () => {
     expect(screen.queryByTestId('SkipForward__a73779')).toBeNull();
   });
 
-  it('uses a Check icon (not Pencil) for the unskip / "Edit again" action', () => {
+  it('shows the unskip action as visible "Edit again" text with an undo icon (not Pencil)', () => {
     const skipped = { row: { name: 'Old', email: 'old@x.com' }, errors: [], status: 'skipped' };
     render(<ImportReviewQueue entries={[skipped]} statusFilter="all" onStatusFilterChange={() => {}} onEditField={() => {}} onRetryEntry={() => {}} onSkipEntry={() => {}} onUnskipEntry={() => {}} onDownloadErrors={() => {}} />);
-    expect(screen.getByTestId('Check__a73779')).toBeDefined();
+    expect(screen.getByTestId('Unskip__a73779')).toBeDefined();
+    expect(screen.getByTestId('ImportReviewQueue__unskip-0').textContent).toBe('Edit again');
     expect(screen.queryByTestId('Pencil__a73779')).toBeNull();
   });
 
@@ -512,7 +513,7 @@ describe('ImportReviewQueue', () => {
       render(
         <ImportReviewQueue entries={[okEntry, errorEntry]} fields={fields} statusFilter="error" onStatusFilterChange={() => {}} onEditField={() => {}} onRetryEntry={() => {}} onSkipEntry={() => {}} onDownloadErrors={() => {}} />
       );
-      expect(screen.queryByTestId(`ImportReviewQueue__value-0-name`)).toBeNull();
+      expect(screen.queryByTestId('ImportReviewQueue__input-0-name')).toBeNull();
     });
   });
 
@@ -858,12 +859,12 @@ describe('numeric column alignment (isNumeric)', () => {
   describe('value cell of an OK row', () => {
     it('right-aligns and tabularizes a numeric value', () => {
       renderQueue([okEntryNumeric]);
-      expectRightAligned(screen.getByTestId('ImportReviewQueue__value-0-amount'));
+      expectRightAligned(screen.getByTestId('ImportReviewQueue__input-0-amount'));
     });
 
     it('leaves a text value untouched', () => {
       renderQueue([okEntryNumeric]);
-      expectNotRightAligned(screen.getByTestId('ImportReviewQueue__value-0-name'));
+      expectNotRightAligned(screen.getByTestId('ImportReviewQueue__input-0-name'));
     });
   });
 
@@ -889,12 +890,12 @@ describe('numeric column alignment (isNumeric)', () => {
 
     it('right-aligns and tabularizes a non-failing numeric cell on the same row', () => {
       renderQueue([errorEntryNumeric]);
-      expectRightAligned(screen.getByTestId('ImportReviewQueue__value-0-quantity'));
+      expectRightAligned(screen.getByTestId('ImportReviewQueue__input-0-quantity'));
     });
 
     it('leaves a text cell on the same row untouched', () => {
       renderQueue([errorEntryNumeric]);
-      expectNotRightAligned(screen.getByTestId('ImportReviewQueue__value-0-name'));
+      expectNotRightAligned(screen.getByTestId('ImportReviewQueue__input-0-name'));
     });
 
     it('right-aligns every editable numeric input when a row-level error makes the whole row editable', () => {
@@ -1068,8 +1069,8 @@ describe('formatValue hook', () => {
   describe('without the prop (back-compat)', () => {
     it('renders raw values on an OK row', () => {
       renderQueue([okEntryFmt]);
-      expect(screen.getByTestId('ImportReviewQueue__value-0-amount').textContent).toBe('1.234');
-      expect(screen.getByTestId('ImportReviewQueue__value-0-name').textContent).toBe('Lucia');
+      expect(screen.getByTestId('ImportReviewQueue__input-0-amount').value).toBe('1.234');
+      expect(screen.getByTestId('ImportReviewQueue__input-0-name').value).toBe('Lucia');
     });
 
     it('renders raw values on a skipped row', () => {
@@ -1079,13 +1080,13 @@ describe('formatValue hook', () => {
 
     it('renders raw values in the error branch, span and input alike', () => {
       renderQueue([nameErrorEntryFmt]);
-      expect(screen.getByTestId('ImportReviewQueue__value-0-amount').textContent).toBe('1.234');
+      expect(screen.getByTestId('ImportReviewQueue__input-0-amount').value).toBe('1.234');
       expect(screen.getByTestId('ImportReviewQueue__input-0-name').value).toBe('Lucia');
     });
 
     it('renders a blank cell as empty rather than as "undefined"', () => {
       renderQueue([{ row: { name: 'Lucia' }, errors: [], status: 'pending' }]);
-      expect(screen.getByTestId('ImportReviewQueue__value-0-amount').textContent).toBe('');
+      expect(screen.getByTestId('ImportReviewQueue__input-0-amount').value).toBe('');
     });
   });
 });
@@ -1155,5 +1156,113 @@ describe('ImportReviewQueue — localized column captions', () => {
     expect(fieldError.className).toMatch(/\bwhitespace-normal\b/);
     expect(fieldError.textContent).toBe('Falta un campo obligatorio.');
     expect(fieldError.className).not.toMatch(/\btruncate\b/);
+  });
+});
+
+// ETP-5417
+describe('ETP-5417 review editing, actions and column resizing', () => {
+  const fields = [
+    { id: 'name', target: 'name', label: 'Nombre', required: true },
+    { id: 'email', target: 'email', label: 'Correo' },
+  ];
+  const baseProps = {
+    fields,
+    statusFilter: 'all',
+    onStatusFilterChange: () => {},
+    onEditField: () => {},
+    onRetryEntry: () => {},
+    onSkipEntry: () => {},
+    onUnskipEntry: () => {},
+    onDownloadErrors: () => {},
+  };
+
+  it('renders an input for every cell of a correct row and reports edits', () => {
+    const onEditField = vi.fn();
+    render(<ImportReviewQueue {...baseProps} entries={[okEntry]} onEditField={onEditField} />);
+    fireEvent.change(screen.getByTestId('ImportReviewQueue__input-0-name'), { target: { value: 'Lucia B' } });
+    expect(onEditField).toHaveBeenCalledWith(0, 'name', 'Lucia B');
+  });
+
+  it('does not make skipped rows editable', () => {
+    const skipped = { ...okEntry, status: 'skipped' };
+    render(<ImportReviewQueue {...baseProps} entries={[skipped]} />);
+    expect(screen.queryByTestId('ImportReviewQueue__input-0-name')).toBeNull();
+    expect(screen.getByTestId('ImportReviewQueue__value-0-name').textContent).toBe('Lucia');
+  });
+
+  it('keeps cells of correct rows read-only when editAll is off (post-send queue)', () => {
+    render(<ImportReviewQueue {...baseProps} entries={[okEntry]} editAll={false} />);
+    expect(screen.queryByTestId('ImportReviewQueue__input-0-name')).toBeNull();
+    expect(screen.getByTestId('ImportReviewQueue__value-0-name').textContent).toBe('Lucia');
+  });
+
+  it('keeps the focused input when a correct row turns into an error row', () => {
+    const view = render(<ImportReviewQueue {...baseProps} entries={[okEntry]} />);
+    const input = screen.getByTestId('ImportReviewQueue__input-0-name');
+    input.focus();
+    const broken = { row: { ...okEntry.row, name: '' }, errors: [{ target: 'name', message: 'Required' }], status: 'pending' };
+    view.rerender(<ImportReviewQueue {...baseProps} entries={[broken]} />);
+    expect(screen.getByTestId('ImportReviewQueue__input-0-name')).toBe(input);
+    expect(document.activeElement).toBe(input);
+  });
+
+  it('keeps the focused input of a failed row when editAll is off and its errors clear (post-send queue)', () => {
+    const failed = { row: { name: 'Lucia', email: 'x' }, errors: [{ target: '', message: 'Rejected' }], status: 'pending' };
+    const props = { ...baseProps, editAll: false, statusFilter: 'error' };
+    const view = render(<ImportReviewQueue {...props} entries={[failed]} />);
+    const input = screen.getByTestId('ImportReviewQueue__input-0-name');
+    input.focus();
+    const fixed = { ...failed, errors: [] };
+    view.rerender(<ImportReviewQueue {...props} entries={[fixed]} />);
+    expect(screen.getByTestId('ImportReviewQueue__input-0-name')).toBe(input);
+    expect(document.activeElement).toBe(input);
+  });
+
+  it('shows visible text on the Skip action', () => {
+    render(<ImportReviewQueue {...baseProps} entries={[okEntry]} />);
+    expect(screen.getByTestId('ImportReviewQueue__skip-0').textContent).toBe('Skip');
+  });
+
+  it('with formatValue, shows the formatted value until clicked and then edits the raw value', () => {
+    const formatValue = (field, raw) => (field.target === 'name' ? `«${raw}»` : undefined);
+    render(<ImportReviewQueue {...baseProps} entries={[okEntry]} formatValue={formatValue} />);
+    const span = screen.getByTestId('ImportReviewQueue__value-0-name');
+    expect(span.textContent).toBe('«Lucia»');
+    fireEvent.click(span);
+    expect(screen.getByTestId('ImportReviewQueue__input-0-name').value).toBe('Lucia');
+  });
+
+  describe('column resizing', () => {
+    const width = () => screen.getByTestId('TableHead__name').style.width;
+
+    it('widens a column while dragging its header handle', () => {
+      render(<ImportReviewQueue {...baseProps} entries={[okEntry]} />);
+      const handle = screen.getByTestId('ImportReviewQueue__resize-name');
+      fireEvent.mouseDown(handle, { clientX: 100 });
+      fireEvent.mouseMove(document, { clientX: 160 });
+      expect(width()).toBe('220px');
+      fireEvent.mouseUp(document);
+      fireEvent.mouseMove(document, { clientX: 400 });
+      expect(width()).toBe('220px');
+    });
+
+    it('stops at the 60px minimum', () => {
+      render(<ImportReviewQueue {...baseProps} entries={[okEntry]} />);
+      fireEvent.mouseDown(screen.getByTestId('ImportReviewQueue__resize-name'), { clientX: 500 });
+      fireEvent.mouseMove(document, { clientX: 0 });
+      expect(width()).toBe('60px');
+    });
+
+    it('resizes from the keyboard and removes its listeners when unmounted mid-drag', () => {
+      const removeSpy = vi.spyOn(document, 'removeEventListener');
+      const view = render(<ImportReviewQueue {...baseProps} entries={[okEntry]} />);
+      const handle = screen.getByTestId('ImportReviewQueue__resize-name');
+      fireEvent.keyDown(handle, { key: 'ArrowRight' });
+      expect(width()).toBe('170px');
+      fireEvent.mouseDown(handle, { clientX: 100 });
+      view.unmount();
+      expect(removeSpy).toHaveBeenCalledWith('mousemove', expect.any(Function));
+      removeSpy.mockRestore();
+    });
   });
 });

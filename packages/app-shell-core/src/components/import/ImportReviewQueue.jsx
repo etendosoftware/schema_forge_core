@@ -1,5 +1,5 @@
-import { useCallback, useRef, useState } from 'react';
-import { ArrowClockwiseIcon, ProhibitIcon, WarningCircleIcon, CaretDownIcon, CheckIcon } from '@phosphor-icons/react';
+import { useCallback, useEffect, useRef, useState } from 'react';
+import { ArrowClockwiseIcon, ProhibitIcon, WarningCircleIcon, CaretDownIcon, ArrowUUpLeftIcon, PlusIcon } from '@phosphor-icons/react';
 import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from '../ui/table.jsx';
 import { Input } from '../ui/input.jsx';
 import { Button } from '../ui/button.jsx';
@@ -15,6 +15,7 @@ const DEFAULT_LABELS = {
   filterOk: 'Correct',
   filterError: 'Errors',
   skip: 'Skip',
+  addRow: 'Add row',
   skipped: 'Skipped',
   unskip: 'Edit again',
   downloadErrors: 'Download errors',
@@ -91,8 +92,12 @@ const STATUS_FILTERS = [
 // tidy without either fixed widths or per-field configuration, which this
 // generic component doesn't have. In table-fixed layout, only the header
 // row's cells need the width class — every body cell in a column inherits it.
-const STATUS_COLUMN_WIDTH_CLASS = 'w-[190px]';
-const DATA_COLUMN_WIDTH_CLASS = 'w-[160px]';
+const STATUS_COLUMN_WIDTH_CLASS = 'w-[270px]';
+const DEFAULT_DATA_COLUMN_WIDTH = 160;
+const MIN_DATA_COLUMN_WIDTH = 60;
+const RESIZE_KEY_STEP = 10;
+// Text action buttons beside a row's status (Skip / Edit again).
+const ACTION_BUTTON_CLASS = 'h-6 gap-1 px-1.5 text-xs';
 // overflow-hidden text-ellipsis whitespace-nowrap (Tailwind's `truncate`),
 // applied to header labels and read-only values so long content shows "…"
 // instead of wrapping — combined with a `title` attribute for the full text.
@@ -412,6 +417,135 @@ export function buildErrorsCsv(entries, headers, mapping, errorHeader = 'Error',
   return lines.join('\n');
 }
 
+/**
+ * Per-column widths (px) for the review grid, adjustable by dragging a header handle or with
+ * the arrow keys on it. Widths live only as long as the grid and are never below
+ * MIN_DATA_COLUMN_WIDTH. The listeners of a drag in progress are detached on unmount.
+ */
+function useColumnResize() {
+  const [columnWidths, setColumnWidths] = useState({});
+  const dragCleanupRef = useRef(null);
+  useEffect(() => () => dragCleanupRef.current?.(), []);
+  const setColumnWidth = (target, width) => {
+    setColumnWidths((prev) => ({ ...prev, [target]: Math.max(MIN_DATA_COLUMN_WIDTH, Math.round(width)) }));
+  };
+  const startResize = (e, target) => {
+    e.preventDefault();
+    const startX = e.clientX;
+    const startWidth = e.currentTarget.parentElement.getBoundingClientRect().width || DEFAULT_DATA_COLUMN_WIDTH;
+    const onMove = (ev) => setColumnWidth(target, startWidth + ev.clientX - startX);
+    const stop = () => {
+      document.removeEventListener('mousemove', onMove);
+      document.removeEventListener('mouseup', stop);
+      dragCleanupRef.current = null;
+    };
+    dragCleanupRef.current = stop;
+    document.addEventListener('mousemove', onMove);
+    document.addEventListener('mouseup', stop);
+  };
+  const resizeByKey = (e, target) => {
+    if (e.key !== 'ArrowLeft' && e.key !== 'ArrowRight') return;
+    e.preventDefault();
+    const current = columnWidths[target] ?? DEFAULT_DATA_COLUMN_WIDTH;
+    setColumnWidth(target, current + (e.key === 'ArrowRight' ? RESIZE_KEY_STEP : -RESIZE_KEY_STEP));
+  };
+  return { columnWidths, startResize, resizeByKey };
+}
+
+/**
+ * One data cell of a live (not skipped) review row: the FK-mismatch picker, the editable
+ * input, or the read-only value.
+ *
+ * ETP-5417: every cell of a row is editable while `editAll` is on (the pre-send review). When
+ * the caller formats values for display, a clean cell shows that rendering until it is
+ * clicked, so the interpretation stays visible, and clicking swaps in the input on the raw
+ * text. `editAll` is off for the post-send queue, where rows already imported must not become
+ * editable. A module-level component (not an inline closure) so an input keeps its identity,
+ * and its focus, when the row moves between "Correctas" and "Errores".
+ */
+function EditableDataCell({
+  entry, index, field, rowLevelError, editAll, formatValue, focusedCell, setFocusedCell,
+  onEditField, cellRef, onFkSelect, simSearchFn, token, text,
+}) {
+  const fieldError = entry.errors.find((e) => e.target === field.target);
+  const isFocusedCell = focusedCell?.index === index && focusedCell?.target === field.target;
+  const formatted = typeof formatValue === 'function';
+  const isEditable = Boolean((editAll && !formatted) || rowLevelError || fieldError || isFocusedCell);
+  // Only the FK-lookup validator attaches `candidates` (possibly empty) —
+  // that's the signal this is a "pick the right record" error rather than
+  // a plain required/format error that just needs retyping.
+  const isFkMismatch = fieldError && !rowLevelError && fieldError.candidates !== undefined;
+  // Always recorded when an input takes focus (the focused-row exemption relies on it, also in
+  // the post-send queue); only the read-only span's click/tab-to-edit is gated on `editAll`.
+  const markFocused = () => setFocusedCell({ index, target: field.target });
+  const focusCell = editAll ? markFocused : undefined;
+  const blurCell = () => setFocusedCell((prev) => (
+    prev?.index === index && prev?.target === field.target ? null : prev
+  ));
+  const autoFocusInput = formatted && isFocusedCell && !fieldError && !rowLevelError;
+  return (
+    <TableCell key={field.target} ref={cellRef} data-testid={"TableCell__" + field.id}>
+      {isFkMismatch ? (
+        <FkMismatchCell
+          index={index}
+          field={field}
+          value={entry.row[field.target] ?? ''}
+          error={fieldError}
+          onSelect={onFkSelect}
+          simSearchFn={simSearchFn}
+          token={token}
+          text={text}
+          data-testid={"FkMismatchCell__" + field.id} />
+      ) : isEditable ? (
+        <div className="flex flex-col gap-1">
+          {fieldError && (
+            <span
+              // ETP-5223: this was `truncate`, so "Falta un campo obligatorio."
+              // rendered as "Falta un campo obligat…" in a narrow column and the
+              // only way to read it was to find the native title tooltip.
+              //
+              // `whitespace-normal` is what actually makes it wrap, and it is NOT
+              // redundant with `break-words`: since ETP-5281 every `TableCell`
+              // carries `whitespace-nowrap overflow-hidden text-ellipsis`, and
+              // `break-words` only chooses WHERE a long word may break — it does
+              // nothing while an ancestor forbids line breaks at all. Dropping
+              // `truncate` therefore fixed nothing on its own; the message stayed
+              // clipped, in every language, and the class-list test still passed.
+              // `title` stays as a belt-and-braces for anything still too long.
+              className="whitespace-normal break-words text-xs text-destructive"
+              title={fieldError.message}
+              data-testid={`ImportReviewQueue__fieldError-${index}-${field.target}`}
+            >
+              {fieldError.message}
+            </span>
+          )}
+          <Input
+            value={entry.row[field.target] ?? ''}
+            onChange={(e) => onEditField(index, field.target, e.target.value)}
+            onFocus={markFocused}
+            onBlur={blurCell}
+            autoFocus={autoFocusInput}
+            className={`h-8${numericCellClass(field)}`}
+            data-testid={`ImportReviewQueue__input-${index}-${field.target}`}
+          />
+        </div>
+      ) : (
+        <span
+          className={TRUNCATE_CLASS + numericCellClass(field)}
+          title={entry.row[field.target] ?? ''}
+          tabIndex={focusCell ? 0 : undefined}
+          onClick={focusCell}
+          onFocus={focusCell}
+          data-testid={`ImportReviewQueue__value-${index}-${field.target}`}
+        >
+          {displayValue(formatValue, field, entry.row[field.target])}
+        </span>
+      )}
+    </TableCell>
+
+  );
+}
+
 export function ImportReviewQueue({
   entries,
   fields = [],
@@ -419,6 +553,8 @@ export function ImportReviewQueue({
   statusFilter = 'all',
   onStatusFilterChange,
   onEditField,
+  onAddRow,
+  editAll = true,
   onRetryEntry,
   onSkipEntry,
   onUnskipEntry,
@@ -452,6 +588,8 @@ export function ImportReviewQueue({
   // silently dropped focus with no visible destination). Both `visibleEntries` and the OK
   // vs. error branch choice below exempt the focused row until it blurs.
   const [focusedCell, setFocusedCell] = useState(null);
+  // ETP-5417: per-column widths, set by dragging (or arrow keys on) a header's right edge.
+  const { columnWidths, startResize, resizeByKey } = useColumnResize();
   const visibleEntries = entries
     .map((entry, index) => ({ entry, index }))
     .filter(({ entry, index }) => {
@@ -551,9 +689,20 @@ export function ImportReviewQueue({
             </Button>
           ))}
         </div>
-        <Button type="button" variant="secondary" size="sm" onClick={onDownloadErrors} data-testid="ImportReviewQueue__download">
-          {text.downloadErrors}
-        </Button>
+        <div className="flex items-center gap-2">
+          {onAddRow && (
+            <Button type="button" variant="outline" size="sm" onClick={onAddRow} data-testid="ImportReviewQueue__addRow">
+              <PlusIcon
+                className="mr-1 h-3.5 w-3.5"
+                aria-hidden="true"
+                data-testid="PlusIcon__a73779" />
+              {text.addRow}
+            </Button>
+          )}
+          <Button type="button" variant="secondary" size="sm" onClick={onDownloadErrors} data-testid="ImportReviewQueue__download">
+            {text.downloadErrors}
+          </Button>
+        </div>
       </div>
       <ScrollPane data-testid="ScrollPane__a73779">
       {/* Table.jsx's own wrapper div has an independent, unbounded-height
@@ -572,8 +721,23 @@ export function ImportReviewQueue({
               data-testid="TableHead__a73779">{text.status}</TableHead>
             {dataColumns
               ? dataColumns.map((field) => (
-                <TableHead key={field.target} className={DATA_COLUMN_WIDTH_CLASS + numericCellClass(field)} data-testid={"TableHead__" + field.id}>
+                <TableHead
+                  key={field.target}
+                  className={`relative${numericCellClass(field)}`}
+                  style={{ width: columnWidths[field.target] ?? DEFAULT_DATA_COLUMN_WIDTH }}
+                  data-testid={"TableHead__" + field.id}>
                   <span className={TRUNCATE_CLASS} title={columnLabel(field)}>{columnLabel(field)}</span>
+                  <span
+                    role="separator"
+                    aria-orientation="vertical"
+                    aria-valuenow={columnWidths[field.target] ?? DEFAULT_DATA_COLUMN_WIDTH}
+                    aria-valuemin={MIN_DATA_COLUMN_WIDTH}
+                    tabIndex={0}
+                    onKeyDown={(e) => resizeByKey(e, field.target)}
+                    onMouseDown={(e) => startResize(e, field.target)}
+                    className="absolute right-0 top-0 h-full w-1.5 cursor-col-resize select-none hover:bg-border"
+                    data-testid={`ImportReviewQueue__resize-${field.target}`}
+                  />
                 </TableHead>
               ))
               : <TableHead data-testid="TableHead__a73779">Row</TableHead>}
@@ -614,14 +778,14 @@ export function ImportReviewQueue({
                           <Button
                             type="button"
                             variant="ghost"
-                            size="icon"
-                            className="h-6 w-6"
+                            size="sm"
+                            className={ACTION_BUTTON_CLASS}
                             onClick={() => onUnskipEntry(index)}
                             data-testid={`ImportReviewQueue__unskip-${index}`}
                             title={text.unskip}
                           >
-                            <CheckIcon className="h-3 w-3" aria-hidden="true" data-testid="Check__a73779" />
-                            <span className="sr-only">{text.unskip}</span>
+                            <ArrowUUpLeftIcon className="h-3 w-3" aria-hidden="true" data-testid="Unskip__a73779" />
+                            <span>{text.unskip}</span>
                           </Button>
                         )}
                       </div>
@@ -655,7 +819,33 @@ export function ImportReviewQueue({
               );
             }
 
-            if (entry.errors.length === 0 && focusedCell?.index !== index) {
+            // A blank error.target means BatchService rejected the whole operation, not
+            // one field — there is no single cell to flag, so every mapped field becomes
+            // editable rather than showing one useless blank-labeled input.
+            const rowLevelError = entry.errors.find((e) => !e.target);
+            const rowColumns = dataColumns ?? entry.errors.map((e) => ({ target: e.target, label: e.target }));
+
+            const dataCells = rowColumns.map((field) => (
+              <EditableDataCell
+                key={field.target}
+                entry={entry}
+                index={index}
+                field={field}
+                rowLevelError={rowLevelError}
+                editAll={editAll}
+                formatValue={formatValue}
+                focusedCell={focusedCell}
+                setFocusedCell={setFocusedCell}
+                onEditField={onEditField}
+                cellRef={registerCellRef(index, field.target)}
+                onFkSelect={(value, resolvedId) => handleFkValueSelected(index, field, value, resolvedId)}
+                simSearchFn={simSearchFn}
+                token={token}
+                text={text}
+                data-testid={"EditableDataCell__" + field.id} />
+            ));
+
+            if (entry.errors.length === 0) {
               return (
                 <TableRow key={index} data-testid="TableRow__a73779">
                   <TableCell className={STICKY_CELL_CLASS} data-testid="TableCell__a73779">
@@ -678,34 +868,30 @@ export function ImportReviewQueue({
                         <Button
                           type="button"
                           variant="ghost"
-                          size="icon"
-                          className="h-6 w-6"
+                          size="sm"
+                          className={ACTION_BUTTON_CLASS}
                           data-testid={`ImportReviewQueue__skip-${index}`}
                           onClick={() => onSkipEntry(index)}
                           title={text.skip}
                         >
                           <ProhibitIcon className="h-3 w-3" aria-hidden="true" data-testid="Ban__a73779" />
-                          <span className="sr-only">{text.skip}</span>
+                          <span>{text.skip}</span>
                         </Button>
                       </div>
                     </div>
                   </TableCell>
-                  <RowDataCells
-                    entry={entry}
-                    index={index}
-                    dataColumns={dataColumns}
-                    formatValue={formatValue}
-                    dataColumnCount={dataColumnCount}
-                    data-testid="RowDataCells__a73779" />
+                  {dataColumns ? dataCells : (
+                    <RowDataCells
+                      entry={entry}
+                      index={index}
+                      dataColumns={dataColumns}
+                      formatValue={formatValue}
+                      dataColumnCount={dataColumnCount}
+                      data-testid="RowDataCells__a73779" />
+                  )}
                 </TableRow>
               );
             }
-
-            // A blank error.target means BatchService rejected the whole operation, not
-            // one field — there is no single cell to flag, so every mapped field becomes
-            // editable rather than showing one useless blank-labeled input.
-            const rowLevelError = entry.errors.find((e) => !e.target);
-            const rowColumns = dataColumns ?? entry.errors.map((e) => ({ target: e.target, label: e.target }));
 
             const fieldErrorLabels = entry.errors
               .filter((e) => e.target)
@@ -763,14 +949,14 @@ export function ImportReviewQueue({
                         <Button
                           type="button"
                           variant="ghost"
-                          size="icon"
-                          className="h-6 w-6"
+                          size="sm"
+                          className={ACTION_BUTTON_CLASS}
                           data-testid={`ImportReviewQueue__skip-${index}`}
                           onClick={() => onSkipEntry(index)}
                           title={text.skip}
                         >
                           <ProhibitIcon className="h-3 w-3" aria-hidden="true" data-testid="Ban__a73779" />
-                          <span className="sr-only">{text.skip}</span>
+                          <span>{text.skip}</span>
                         </Button>
                       </div>
                     </div>
@@ -789,73 +975,7 @@ export function ImportReviewQueue({
                     )}
                   </div>
                 </TableCell>
-                {rowColumns.map((field) => {
-                  const fieldError = entry.errors.find((e) => e.target === field.target);
-                  const isFocusedCell = focusedCell?.index === index && focusedCell?.target === field.target;
-                  const isEditable = Boolean(rowLevelError || fieldError || isFocusedCell);
-                  // Only the FK-lookup validator attaches `candidates` (possibly empty) —
-                  // that's the signal this is a "pick the right record" error rather than
-                  // a plain required/format error that just needs retyping.
-                  const isFkMismatch = fieldError && !rowLevelError && fieldError.candidates !== undefined;
-                  return (
-                    <TableCell key={field.target} ref={registerCellRef(index, field.target)} data-testid={"TableCell__" + field.id}>
-                      {isFkMismatch ? (
-                        <FkMismatchCell
-                          index={index}
-                          field={field}
-                          value={entry.row[field.target] ?? ''}
-                          error={fieldError}
-                          onSelect={(value, resolvedId) => handleFkValueSelected(index, field, value, resolvedId)}
-                          simSearchFn={simSearchFn}
-                          token={token}
-                          text={text}
-                          data-testid={"FkMismatchCell__" + field.id} />
-                      ) : isEditable ? (
-                        <div className="flex flex-col gap-1">
-                          {fieldError && (
-                            <span
-                              // ETP-5223: this was `truncate`, so "Falta un campo obligatorio."
-                              // rendered as "Falta un campo obligat…" in a narrow column and the
-                              // only way to read it was to find the native title tooltip.
-                              //
-                              // `whitespace-normal` is what actually makes it wrap, and it is NOT
-                              // redundant with `break-words`: since ETP-5281 every `TableCell`
-                              // carries `whitespace-nowrap overflow-hidden text-ellipsis`, and
-                              // `break-words` only chooses WHERE a long word may break — it does
-                              // nothing while an ancestor forbids line breaks at all. Dropping
-                              // `truncate` therefore fixed nothing on its own; the message stayed
-                              // clipped, in every language, and the class-list test still passed.
-                              // `title` stays as a belt-and-braces for anything still too long.
-                              className="whitespace-normal break-words text-xs text-destructive"
-                              title={fieldError.message}
-                              data-testid={`ImportReviewQueue__fieldError-${index}-${field.target}`}
-                            >
-                              {fieldError.message}
-                            </span>
-                          )}
-                          <Input
-                            value={entry.row[field.target] ?? ''}
-                            onChange={(e) => onEditField(index, field.target, e.target.value)}
-                            onFocus={() => setFocusedCell({ index, target: field.target })}
-                            onBlur={() => setFocusedCell((prev) => (
-                              prev?.index === index && prev?.target === field.target ? null : prev
-                            ))}
-                            className={`h-8${numericCellClass(field)}`}
-                            data-testid={`ImportReviewQueue__input-${index}-${field.target}`}
-                          />
-                        </div>
-                      ) : (
-                        <span
-                          className={TRUNCATE_CLASS + numericCellClass(field)}
-                          title={entry.row[field.target] ?? ''}
-                          data-testid={`ImportReviewQueue__value-${index}-${field.target}`}
-                        >
-                          {displayValue(formatValue, field, entry.row[field.target])}
-                        </span>
-                      )}
-                    </TableCell>
-                  );
-                })}
+                {dataCells}
               </TableRow>
             );
           })}
