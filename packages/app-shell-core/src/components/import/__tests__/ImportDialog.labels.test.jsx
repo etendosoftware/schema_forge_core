@@ -47,13 +47,6 @@ vi.mock('../ImportReviewQueue.jsx', () => ({
   },
 }));
 
-vi.mock('../ImportConfirmStep.jsx', () => ({
-  ImportConfirmStep: (props) => {
-    captured.confirm = props;
-    return <button type="button" data-testid="mock-confirm" onClick={() => props.onConfirm()} />;
-  },
-}));
-
 vi.mock('../ImportProgressStep.jsx', () => ({
   ImportProgressStep: (props) => {
     captured.progress = props;
@@ -180,24 +173,17 @@ describe('ImportDialog — label forwarding to every child', () => {
     // on the real Import button, proving importButton() is called with the count, not a constant.
     expect(captured.reviewQueue.retryLabel).toBeUndefined();
     expect(screen.getByTestId('ImportDialog__importButton').textContent).toBe('L_import_1');
-  });
-
-  it('forwards labels.confirm to ImportConfirmStep', async () => {
-    renderDialog();
-    await driveToMapping();
-    fireEvent.click(screen.getByTestId('ImportDialog__importButton'));
-    await waitFor(() => screen.getByTestId('mock-confirm'));
-    expect(captured.confirm.labels).toBe(labels.confirm);
+    // labels.confirm.willImport / willSkip feed the counts beside the Import button.
+    expect(screen.getByTestId('ImportDialog__rowSummary').textContent).toContain('L_willImport_1');
   });
 
   it('forwards labels.progress to ImportProgressStep while a send is in flight', async () => {
     // A postBatch that never resolves pins the dialog on the SENDING step so the progress
-    // child is deterministically observable (not a transient flash between confirm and result).
+    // child is deterministically observable (not a transient flash between review and result).
     const postBatch = vi.fn(() => new Promise(() => {}));
     renderDialog({ postBatch });
     await driveToMapping();
     fireEvent.click(screen.getByTestId('ImportDialog__importButton'));
-    fireEvent.click(await screen.findByTestId('mock-confirm'));
     await waitFor(() => expect(captured.progress).toBeTruthy());
     expect(captured.progress.labels).toBe(labels.progress);
   });
@@ -209,7 +195,6 @@ describe('ImportDialog — label forwarding to every child', () => {
     renderDialog({ postBatch });
     await driveToMapping();
     fireEvent.click(screen.getByTestId('ImportDialog__importButton'));
-    fireEvent.click(await screen.findByTestId('mock-confirm'));
     await waitFor(() => expect(captured.systemError.open).toBe(true));
     expect(captured.reviewQueue.labels).toBe(labels.reviewQueue);
     expect(captured.reviewQueue.retryLabel).toBe(labels.reviewQueue.retry);
