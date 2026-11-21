@@ -92,7 +92,7 @@ const STATUS_FILTERS = [
 // tidy without either fixed widths or per-field configuration, which this
 // generic component doesn't have. In table-fixed layout, only the header
 // row's cells need the width class — every body cell in a column inherits it.
-const STATUS_COLUMN_WIDTH_CLASS = 'w-[190px]';
+const STATUS_COLUMN_WIDTH_CLASS = 'w-[270px]';
 const DEFAULT_DATA_COLUMN_WIDTH = 160;
 const MIN_DATA_COLUMN_WIDTH = 60;
 const RESIZE_KEY_STEP = 10;
