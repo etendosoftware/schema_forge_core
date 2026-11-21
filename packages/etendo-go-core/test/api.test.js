@@ -73,6 +73,28 @@ describe('onboarding session API — identity cluster (ETP-4576)', () => {
       assert.deepEqual(result, { token: 'new-account' });
     });
 
+    it('carries the lead attribution of the visitor, when the browser has it (ETP-6363)', async () => {
+      const { calls, fetchImpl } = recordingFetch(jsonResponse({ token: 'new-account' }));
+      const previous = { document: globalThis.document, window: globalThis.window };
+      globalThis.document = { cookie: 'hubspotutk=0123456789abcdef0123456789abcdef', title: 'Etendo' };
+      globalThis.window = { location: { href: 'https://app.etendo.ai/onboarding?utm_source=google&token=x' } };
+      try {
+        await registerAccount(fetchImpl, '/etendo', { email: 'ada@example.com' });
+      } finally {
+        globalThis.document = previous.document;
+        globalThis.window = previous.window;
+      }
+
+      assert.deepEqual(JSON.parse(calls[0].options.body), {
+        email: 'ada@example.com',
+        hubspotContext: {
+          hutk: '0123456789abcdef0123456789abcdef',
+          pageUri: 'https://app.etendo.ai/onboarding?utm_source=google',
+          pageName: 'Etendo',
+        },
+      });
+    });
+
     it('throws with the registerFailed code on an HTTP error', async () => {
       const { fetchImpl } = recordingFetch(
         jsonResponse({ error: { message: 'boom' } }, { ok: false, status: 400 }),

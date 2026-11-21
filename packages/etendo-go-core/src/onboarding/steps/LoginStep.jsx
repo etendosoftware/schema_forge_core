@@ -105,10 +105,14 @@ export function LoginStep({ config, stepData, onNext, onBack, goToStep, setToken
       // branch below for why this is not "just in case".
       const credential = data.csrfToken ?? data.token;
       if (credential) {
+        // ETP-6363: the account and whether the provider's sign-in created it, for marketing's
+        // sign_up / login and user_identified (the host's GTM dataLayer). Not sent to Mixpanel.
         trackOnboarding(config, 'onboarding_auth_succeeded', {
           action: 'sso',
           provider,
           status: 'success',
+          accountCreated: data.accountCreated === true,
+          accountId: data.account?.id,
         });
         // The epic's `completeAuthentication` centralises the persist +
         // hand-off pair; its `token` parameter is the generic credential slot,
@@ -200,6 +204,7 @@ export function LoginStep({ config, stepData, onNext, onBack, goToStep, setToken
         trackOnboarding(config, 'onboarding_auth_succeeded', {
           action: 'login',
           status: 'success',
+          accountId: data.account?.id,
         });
         // Keep the loading state on: routeByEnvironments always ends by either
         // navigating away (window.location.href) or switching to another
