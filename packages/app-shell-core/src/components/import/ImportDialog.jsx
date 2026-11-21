@@ -17,6 +17,7 @@ import { mapColumns } from '../../lib/import/mapColumns.js';
 import { dedupeRows } from '../../lib/import/dedupeRows.js';
 import { resolveForeignKeys, resolveForeignKeyColumn, scoreModeForField } from '../../lib/import/resolveForeignKeys.js';
 import { validateRow } from '../../lib/import/validateRows.js';
+import { buildFieldConstraints, buildFieldIdentities } from '../../lib/import/fieldConstraints.js';
 import { buildOperations } from '../../lib/import/buildOperations.js';
 import { runImport, sendRow, SEND_STATUS } from '../../lib/import/importEngine.js';
 import { buildTemplateCsv, resolveTemplateHeaders } from '../../lib/import/buildTemplateCsv.js';
@@ -195,6 +196,10 @@ export function ImportDialog({ open, onOpenChange, config, token, postBatch, sim
   // the field name: this dialog is shared, and an unrelated "*phone*" field must not get its
   // whitespace stripped.
   const phoneTargets = useMemo(() => config.fields.filter((f) => f.isPhone).map((f) => f.target), [config.fields]);
+  // Declarative `validation` and field identity per import field (ETP-4557), the same contract
+  // metadata the form and the grid validate with.
+  const fieldConstraints = useMemo(() => buildFieldConstraints(config.fields), [config.fields]);
+  const fieldIdentities = useMemo(() => buildFieldIdentities(config.fields), [config.fields]);
   const numericTargets = useMemo(() => config.fields.filter((f) => f.isNumeric).map((f) => f.target), [config.fields]);
 
   /**
@@ -415,11 +420,13 @@ export function ImportDialog({ open, onOpenChange, config, token, postBatch, sim
     emailTargets,
     numericTargets,
     phoneTargets,
+    fieldConstraints,
+    fieldIdentities,
     fkTargets,
     fkResolutions: resolutions,
     extraErrors: runImportRowValidator(config.descriptor, row, { translate, config }),
     translate,
-  }), [requiredTargets, emailTargets, numericTargets, phoneTargets, fkTargets, config, translate]);
+  }), [requiredTargets, emailTargets, numericTargets, phoneTargets, fieldConstraints, fieldIdentities, fkTargets, config, translate]);
 
   // Maps a failed send onto the row's columns (ETP-6225): each field-keyed backend validation
   // error marks its column. Messages for keys with no column stay as a row-level error, next

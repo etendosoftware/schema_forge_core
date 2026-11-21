@@ -2600,6 +2600,56 @@ describe('generateFrontendContract — window.import', () => {
     assert.equal(field.type, 'string');
   });
 
+  it('carries the matched field validation onto the import field (ETP-4557)', () => {
+    const schema = {
+      ...minimalSchema,
+      entities: [{
+        ...minimalSchema.entities[0],
+        fields: minimalSchema.entities[0].fields.map((f) => (f.name === 'documentNo'
+          ? { ...f, validation: { maxLength: 30 } } : f)),
+      }],
+      window: { ...minimalSchema.window, import: { enabled: true, spec: 's', entity: 'order', fields: [{ target: 'documentNo' }] } },
+    };
+    const fc = generateFrontendContract(schema);
+    const entityField = fc.entities.order.fields.find((f) => f.name === 'documentNo');
+    assert.deepEqual(entityField.validation, { maxLength: 30 });
+    assert.deepEqual(fc.window.import.fields[0].validation, { maxLength: 30 });
+  });
+
+  it('does not copy length/range constraints onto boolean, enum or foreign-key import fields (ETP-4557)', () => {
+    const mk = (type, validation) => ({ name: 'probe', column: 'Probe', type, visibility: 'editable', required: false, grid: true, form: true, validation });
+    for (const type of ['boolean', 'enum', 'foreignKey', 'amount', 'date']) {
+      const schema = {
+        ...minimalSchema,
+        entities: [{ ...minimalSchema.entities[0], fields: [...minimalSchema.entities[0].fields, mk(type, { maxLength: 1, minimum: 0 })] }],
+        window: { ...minimalSchema.window, import: { enabled: true, spec: 's', entity: 'order', fields: [{ target: 'probe' }] } },
+      };
+      const field = generateFrontendContract(schema).window.import.fields[0];
+      assert.equal('validation' in field, false, `${type} import field must not carry validation`);
+    }
+  });
+
+  it('keeps only text constraints on a string import field (ETP-4557)', () => {
+    const schema = {
+      ...minimalSchema,
+      entities: [{
+        ...minimalSchema.entities[0],
+        fields: minimalSchema.entities[0].fields.map((f) => (f.name === 'documentNo'
+          ? { ...f, validation: { required: true, maxLength: 30, minimum: 5 } } : f)),
+      }],
+      window: { ...minimalSchema.window, import: { enabled: true, spec: 's', entity: 'order', fields: [{ target: 'documentNo' }] } },
+    };
+    assert.deepEqual(generateFrontendContract(schema).window.import.fields[0].validation, { maxLength: 30 });
+  });
+
+  it('omits validation on an import field whose entity field declares none (ETP-4557)', () => {
+    const schema = {
+      ...minimalSchema,
+      window: { ...minimalSchema.window, import: { enabled: true, spec: 's', entity: 'order', fields: [{ target: 'dateOrdered' }] } },
+    };
+    assert.equal('validation' in generateFrontendContract(schema).window.import.fields[0], false);
+  });
+
   it('keeps an explicit decisions.json label over the auto-derived one for a matched field', () => {
     // A composite import (e.g. Contacts splitting one row across businessPartner +
     // contact) routinely maps two different targets whose underlying AD columns
