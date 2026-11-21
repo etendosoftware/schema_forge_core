@@ -6,7 +6,6 @@ import { Button } from '../ui/button.jsx';
 import { ImportDropzone } from './ImportDropzone.jsx';
 import { ImportColumnMapping } from './ImportColumnMapping.jsx';
 import { ImportReviewQueue, buildErrorsCsv } from './ImportReviewQueue.jsx';
-import { ImportConfirmStep } from './ImportConfirmStep.jsx';
 import { ImportProgressStep } from './ImportProgressStep.jsx';
 import { ImportFileErrorDialog } from './ImportFileErrorDialog.jsx';
 import { ImportSystemErrorDialog } from './ImportSystemErrorDialog.jsx';
@@ -31,9 +30,9 @@ import { runImportRowValidator } from '../../lib/import/rowValidators.js';
 import { findExistingKeys, buildLookupKey } from '../../lib/import/existingRecordLookup.js';
 
 // Root-level labels for ImportDialog's own chrome. `importButton` is a function of the
-// valid-row count, mirroring the (n) => string labels the confirm step already uses, so the
+// valid-row count, mirroring the other (n) => string labels, so the
 // whole flow's button text is translatable rather than the hardcoded `Import ${n}` it was.
-const DEFAULT_LABELS = { title: 'Import', reading: 'Reading file…', revalidating: 'Revalidating rows…', downloadTemplate: 'Download CSV template', downloadTemplateCsv: 'Download CSV template', downloadTemplateXlsx: 'Download Excel template', importButton: (n) => `Import ${n}` };
+const DEFAULT_LABELS = { title: 'Import', reading: 'Reading file…', revalidating: 'Revalidating rows…', downloadTemplate: 'Download CSV template', downloadTemplateCsv: 'Download CSV template', downloadTemplateXlsx: 'Download Excel template', importButton: (n) => `Import ${n}`, willImport: (n) => `${n} records will be imported`, willSkip: (n) => `${n} rows will be skipped due to errors` };
 
 /**
  * Why a row was skipped. Skipping is not an error — nothing is wrong with the file and
@@ -47,6 +46,9 @@ const SKIP_MESSAGES = {
   alreadyExists: { key: 'importSkipAlreadyExists', fallback: 'This record already exists and will not be imported again.' },
 };
 
+// A row the send will include: not skipped, no outstanding error.
+const isSendable = (e) => e.status === 'pending' && e.errors.length === 0;
+
 /**
  * Shape of the optional `labels` prop — a NESTED object: root-level keys for this dialog's
  * own chrome, plus one sub-slice per child component, each matching that child's own
@@ -59,7 +61,7 @@ const SKIP_MESSAGES = {
  *     dropzone:     { dropHere, dropHint },                                  // ImportDropzone
  *     progress:     { title, subtitle, counter },// ImportProgressStep
  *     mapping:      { notImported, mappedSummary, editMatch, editTitle, save, cancel }, // ImportColumnMapping
- *     confirm:      { title, willImport: (n) => string, willSkip: (n) => string, cancel, confirm }, // ImportConfirmStep
+ *     confirm:      { willImport: (n) => string, willSkip: (n) => string }, // the counts beside the Import button
  *     fileError:    { title, cancel, retry },                                // ImportFileErrorDialog
  *     reviewQueue:  { filterAll, filterOk, filterError, skip, skipped, unskip, downloadErrors,
  *                     status, statusOk, statusError, fieldErrorsTooltip, bulkApplyTitle,
@@ -76,7 +78,7 @@ const SKIP_MESSAGES = {
  * (e.g. useUI's `ui`) injected into the send pipeline so backend errors get localized too.
  */
 
-const STEP = { DROPZONE: 'dropzone', MAPPING: 'mapping', CONFIRM: 'confirm', SENDING: 'sending', FILE_ERROR: 'fileError', RESULT: 'result' };
+const STEP = { DROPZONE: 'dropzone', MAPPING: 'mapping', SENDING: 'sending', FILE_ERROR: 'fileError', RESULT: 'result' };
 
 function downloadBlob(blob, filename) {
   const url = URL.createObjectURL(blob);
@@ -149,11 +151,9 @@ export function ImportDialog({ open, onOpenChange, config, token, postBatch, sim
   const processingFileRef = useRef(false);
   // Two independent filters, not one shared value — the design spec is explicit that
   // the preview (pre-send) and result (post-send) review queues each remember their own
-  // filter state. 'ok' is the default so a newly loaded file opens on the happy
-  // path: users can immediately review the rows that will be imported. Errors
-  // remain available through the Errors tab and are still highlighted by the
-  // row validation state.
-  const [statusFilterPreSend, setStatusFilterPreSend] = useState('ok');
+  // filter state. 'all' is the default (ETP-5417) so a newly loaded file shows the
+  // correct and the erroring rows together.
+  const [statusFilterPreSend, setStatusFilterPreSend] = useState('all');
   const [statusFilterPostSend, setStatusFilterPostSend] = useState('error');
   // { done, total } of the running send. Percent and counter both derive from it. The engine
   // reports once per row; handleSend throttles the updates so a 2,000-row file re-renders the
@@ -313,7 +313,7 @@ export function ImportDialog({ open, onOpenChange, config, token, postBatch, sim
    *  - `existing` — of those, the ones that came back. Needed because a row can ADOPT a key
    *    that some other row already had checked; the verdict is about the key, not the row.
    *
-   * Refs, not state: nothing renders from them, and `handleProceedToConfirm` reads them inside
+   * Refs, not state: nothing renders from them, and `handleImport` reads them inside
    * an async callback where a state snapshot would be the one captured at click time.
    */
   const lookupCacheRef = useRef({ checked: new Set(), existing: new Set() });
@@ -506,7 +506,7 @@ export function ImportDialog({ open, onOpenChange, config, token, postBatch, sim
     try {
       // A new file starts a fresh review session. Do not carry a previous
       // Errors/All selection into the next upload.
-      setStatusFilterPreSend('ok');
+      setStatusFilterPreSend('all');
       // ETP-5348: the FIRST thing that happens to an upload is a format check, because nothing
       // downstream performs one. The dropzone's `accept` attribute only filters the OS picker's
       // default view — drag-and-drop bypasses it — and `parseDelimited` cannot refuse a binary
@@ -641,6 +641,15 @@ export function ImportDialog({ open, onOpenChange, config, token, postBatch, sim
     }));
   }, [fkResolutions, revalidate, simSearchFn, token]);
 
+  // ETP-5417: appends an empty row, validated like any other (required fields -> "Errors").
+  const handleAddRow = useCallback(() => {
+    setEntries((prev) => {
+      const row = Object.fromEntries((config.fields ?? []).map((f) => [f.target, '']));
+      const { valid, errors } = revalidate(row, fkResolutions);
+      return [...prev, { row, errors: valid ? [] : errors, status: 'pending' }];
+    });
+  }, [config.fields, revalidate, fkResolutions]);
+
   const handleSkipEntry = useCallback((index) => {
     setEntries((prev) => prev.map((e, i) => (i === index ? { ...e, status: 'skipped' } : e)));
   }, []);
@@ -654,86 +663,16 @@ export function ImportDialog({ open, onOpenChange, config, token, postBatch, sim
     setEntries((prev) => prev.map((e, i) => (i === index ? { ...e, status: 'pending' } : e)));
   }, []);
 
-  const validCount = entries.filter((e) => e.status === 'pending' && e.errors.length === 0).length;
+  const validCount = entries.filter(isSendable).length;
   const skipCount = entries.length - validCount;
 
-  /**
-   * ETP-5350 / IC-18 — the last chance to notice a row is already in the database.
-   *
-   * Runs on the way from the review to the confirm step, NOT on every edit: the lookup is a
-   * batched network call (~136 requests for a full file since ETP-5374), and the field it
-   * watches is wired to the row input's `onChange`, so per-keystroke would be absurd. Once per
-   * confirm is enough because the confirm step is the only thing between an edit and the send.
-   *
-   * It must run BEFORE the confirm step renders, not inside `handleSend`: that step's whole
-   * job is to state how many rows will be imported and how many skipped. Re-checking after the
-   * user has read those numbers would make the dialog's one factual claim a lie — the same
-   * "the row counts they confirmed were a lie" that motivated the pre-flight check itself.
-   *
-   * Only rows that would actually be sent are considered, and only keys nobody has asked about
-   * yet are sent to the server, so the common case — nothing edited — costs zero requests.
-   *
-   * Deliberately one-directional: a row is moved INTO Saltada, never back out. A row already
-   * marked as existing may have been skipped by hand instead, and un-skipping rows behind the
-   * user's back is a worse failure than leaving one they can un-skip themselves.
-   */
-  const handleProceedToConfirm = useCallback(async () => {
-    if (!dedupesAgainstDatabase || typeof existingKeyFetchFn !== 'function') {
-      setStep(STEP.CONFIRM);
-      return;
-    }
-    const candidates = entries
-      .map((entry, index) => ({ entry, index, key: buildLookupKey(entry.row, dedupeKeyTargets) }))
-      .filter(({ entry, key }) => key !== null && entry.status === 'pending' && entry.errors.length === 0);
-
-    const { checked, existing } = lookupCacheRef.current;
-    const unasked = candidates.filter(({ key }) => !checked.has(key));
-
-    if (unasked.length > 0) {
-      setIsRevalidating(true);
-      try {
-        const found = await findExistingKeys({
-          rows: unasked.map(({ entry }) => entry.row),
-          keyTargets: dedupeKeyTargets,
-          fetchFn: existingKeyFetchFn,
-        });
-        // Merged, not replaced: the batches answered during `runValidation` are still true, and
-        // `findExistingKeys` was only asked about the new keys.
-        unasked.forEach(({ key }) => checked.add(key));
-        found.existing.forEach((key) => existing.add(key));
-      } catch {
-        // The initial lookup has always been best-effort: an unavailable server must not
-        // turn a reviewable file into an impossible import. Keep that posture for the
-        // pre-confirm re-check too. Send-time duplicate handling remains the backstop.
-      } finally {
-        setIsRevalidating(false);
-      }
-    }
-
-    // Re-derived over EVERY candidate, not just the ones just asked about: a row can have been
-    // edited onto a key some other row had already established as existing, and that verdict is
-    // about the key, not about the row that first carried it.
-    const nowExisting = new Set(
-      candidates.filter(({ key }) => existing.has(key)).map(({ index }) => index),
-    );
-    if (nowExisting.size > 0) {
-      setEntries((prev) => prev.map((entry, i) => (nowExisting.has(i)
-        ? {
-          ...entry,
-          errors: [{ target: dedupeKeyTargets[0] ?? '', message: labelFor('alreadyExists'), isSkipReason: true }],
-          status: 'skipped',
-        }
-        : entry)));
-    }
-    setStep(STEP.CONFIRM);
-  }, [dedupesAgainstDatabase, dedupeKeyTargets, entries, existingKeyFetchFn, labelFor]);
-
-  const handleSend = useCallback(async () => {
+  const handleSend = useCallback(async (toSend = entries.filter(isSendable)) => {
+    // Nothing left to send (e.g. the duplicate re-check skipped every remaining row).
+    if (toSend.length === 0) return;
     setStep(STEP.SENDING);
     // A previous run's unanswered question must not resurface over this one.
     setPendingCloseWhileSending(false);
     closedWhileSendingRef.current = false;
-    const toSend = entries.filter((e) => e.status === 'pending' && e.errors.length === 0);
     // Every send — the first one and a resend of fixed rows from the result step — starts its
     // counter at zero over ITS OWN rows. (The engine caps a run at `maxRows`.)
     setProgress({ done: 0, total: Math.min(toSend.length, maxRows) });
@@ -859,6 +798,78 @@ export function ImportDialog({ open, onOpenChange, config, token, postBatch, sim
       ));
     }
   }, [entries, operationsConfig, concurrency, maxRows, batchSize, postBatch, onImported, translate, localize, labelFor, localizeError, failureErrors, cancelProgressFlush, reportImportFinished]);
+
+  /**
+   * ETP-5350 / IC-18 — the last chance to notice a row is already in the database.
+   *
+   * Runs when the user presses Import, NOT on every edit: the lookup is a batched network
+   * call (~136 requests for a full file since ETP-5374), and the field it watches is wired to
+   * the row input's `onChange`, so per-keystroke would be absurd. Once per press is enough.
+   *
+   * ETP-5417: the confirm step is gone, so this is now the checkpoint. When the re-check
+   * finds NEW duplicates it marks them skipped and stays on the review with updated counts,
+   * sending nothing — the user sees what was dropped and presses Import again. Otherwise the
+   * rows are sent straight away, passed to `handleSend` explicitly rather than read from
+   * state.
+   *
+   * Only rows that would actually be sent are considered, and only keys nobody has asked about
+   * yet are sent to the server, so the common case — nothing edited — costs zero requests.
+   *
+   * Deliberately one-directional: a row is moved INTO Saltada, never back out. A row already
+   * marked as existing may have been skipped by hand instead, and un-skipping rows behind the
+   * user's back is a worse failure than leaving one they can un-skip themselves.
+   */
+  const handleImport = useCallback(async () => {
+    if (!dedupesAgainstDatabase || typeof existingKeyFetchFn !== 'function') {
+      handleSend();
+      return;
+    }
+    const candidates = entries
+      .map((entry, index) => ({ entry, index, key: buildLookupKey(entry.row, dedupeKeyTargets) }))
+      .filter(({ entry, key }) => key !== null && isSendable(entry));
+
+    const { checked, existing } = lookupCacheRef.current;
+    const unasked = candidates.filter(({ key }) => !checked.has(key));
+
+    if (unasked.length > 0) {
+      setIsRevalidating(true);
+      try {
+        const found = await findExistingKeys({
+          rows: unasked.map(({ entry }) => entry.row),
+          keyTargets: dedupeKeyTargets,
+          fetchFn: existingKeyFetchFn,
+        });
+        // Merged, not replaced: the batches answered during `runValidation` are still true, and
+        // `findExistingKeys` was only asked about the new keys.
+        unasked.forEach(({ key }) => checked.add(key));
+        found.existing.forEach((key) => existing.add(key));
+      } catch {
+        // The initial lookup has always been best-effort: an unavailable server must not
+        // turn a reviewable file into an impossible import. Keep that posture for the
+        // pre-send re-check too. Send-time duplicate handling remains the backstop.
+      } finally {
+        setIsRevalidating(false);
+      }
+    }
+
+    // Re-derived over EVERY candidate, not just the ones just asked about: a row can have been
+    // edited onto a key some other row had already established as existing, and that verdict is
+    // about the key, not about the row that first carried it.
+    const nowExisting = new Set(
+      candidates.filter(({ key }) => existing.has(key)).map(({ index }) => index),
+    );
+    if (nowExisting.size > 0) {
+      setEntries((prev) => prev.map((entry, i) => (nowExisting.has(i)
+        ? {
+          ...entry,
+          errors: [{ target: dedupeKeyTargets[0] ?? '', message: labelFor('alreadyExists'), isSkipReason: true }],
+          status: 'skipped',
+        }
+        : entry)));
+      return;
+    }
+    handleSend(entries.filter(isSendable));
+  }, [dedupesAgainstDatabase, dedupeKeyTargets, entries, existingKeyFetchFn, labelFor, handleSend]);
 
   const handleRetryEntryPostSend = useCallback(async (index) => {
     const entry = entries[index];
@@ -1028,6 +1039,7 @@ export function ImportDialog({ open, onOpenChange, config, token, postBatch, sim
                   statusFilter={statusFilterPreSend}
                   onStatusFilterChange={setStatusFilterPreSend}
                   onEditField={handleEditField}
+                  onAddRow={handleAddRow}
                   showRetry={false}
                   onSkipEntry={handleSkipEntry}
                   onUnskipEntry={handleUnskipEntry}
@@ -1039,10 +1051,14 @@ export function ImportDialog({ open, onOpenChange, config, token, postBatch, sim
                   token={token}
                   data-testid="ImportReviewQueue__38a6c3" />
               </div>
-              <div className="flex justify-end">
+              <div className="flex items-center justify-end gap-3">
+                <span className="text-sm text-muted-foreground" data-testid="ImportDialog__rowSummary">
+                  {(labels?.confirm?.willImport ?? DEFAULT_LABELS.willImport)(validCount)}
+                  {skipCount > 0 && ` · ${(labels?.confirm?.willSkip ?? DEFAULT_LABELS.willSkip)(skipCount)}`}
+                </span>
                 <Button
                   type="button"
-                  onClick={handleProceedToConfirm}
+                  onClick={handleImport}
                   disabled={validCount === 0 || isRevalidating}
                   data-testid="ImportDialog__importButton"
                 >
@@ -1050,16 +1066,6 @@ export function ImportDialog({ open, onOpenChange, config, token, postBatch, sim
                 </Button>
               </div>
             </div>
-          )}
-
-          {step === STEP.CONFIRM && (
-            <ImportConfirmStep
-              importCount={validCount}
-              skipCount={skipCount}
-              onCancel={() => setStep(STEP.MAPPING)}
-              onConfirm={handleSend}
-              labels={labels?.confirm}
-              data-testid="ImportConfirmStep__38a6c3" />
           )}
 
           {step === STEP.SENDING && <ImportProgressStep percent={progress.total > 0 ? Math.round((progress.done / progress.total) * 100) : 0} processed={progress.done} total={progress.total} labels={labels?.progress} data-testid="ImportProgressStep__38a6c3" />}
@@ -1070,6 +1076,7 @@ export function ImportDialog({ open, onOpenChange, config, token, postBatch, sim
                 <ImportReviewQueue
                   entries={entries}
                   fields={config.fields}
+                  editAll={false}
                   statusFilter={statusFilterPostSend}
                   onStatusFilterChange={setStatusFilterPostSend}
                   onEditField={handleEditField}
@@ -1088,7 +1095,7 @@ export function ImportDialog({ open, onOpenChange, config, token, postBatch, sim
               <div className="flex justify-end">
                 <Button
                   type="button"
-                  onClick={handleSend}
+                  onClick={() => handleSend()}
                   disabled={validCount === 0}
                   data-testid="ImportDialog__importButton"
                 >

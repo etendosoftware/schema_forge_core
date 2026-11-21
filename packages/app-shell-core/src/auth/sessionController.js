@@ -43,8 +43,20 @@ export function createSessionController(initialSession, storage, onSessionChange
   const readStorage = () => {
     try { return fingerprint(config.storage?.read()); } catch { return null; }
   };
+  // ETP-5645 — after a `persist: false` restore the storage is empty while `state.session` is
+  // populated. Until something persists, the in-memory session IS the identity; otherwise the
+  // first persisting replace (the silent refresh) would flip the storage identity from empty to
+  // populated and abandon every request in flight as a "superseded session".
+  // Both branches go through `identityFingerprint`, which normalizes first, and every storage
+  // adapter writes `normalizeAuthSession(session)` — so the fallback equals the stored identity
+  // once written (covered for the memory and JSON-backed local adapters in sessionControllerRestore).
+  let restoredUnpersisted = false;
   const readStorageIdentity = () => {
-    try { return identityFingerprint(config.storage?.read()); } catch { return null; }
+    try {
+      const stored = config.storage?.read();
+      if (restoredUnpersisted && !normalizeAuthSession(stored).token) return identityFingerprint(state.session);
+      return identityFingerprint(stored);
+    } catch { return null; }
   };
   const capture = () => {
     const claims = decodeJwtPayload(state.session.token);
@@ -115,6 +127,7 @@ export function createSessionController(initialSession, storage, onSessionChange
       menuAccess: access?.menuAccess ?? {},
       accessLoaded: access !== undefined,
     };
+    restoredUnpersisted = !clear && !persist && !!session.token;
     try {
       if (clear) config.storage?.clear();
       else if (persist) config.storage?.write(session);

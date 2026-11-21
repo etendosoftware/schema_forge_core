@@ -108,6 +108,20 @@ Functional reference for the first consumer: `docs/generated-custom-windows/prof
 - Each period is the existing `buildAccountReportTree` run on that period's own amounts (`buildPeriodAccountTree`), so roll-ups, formulas and ShowValueCond behave as in a single-range report. Consequence: a clamped period need not add up to the clamped total for a *P/N* summary node; each column equals the report for its own range.
 - **Split** (`splitBy` + `splitNodeId`, with `periods`): `{ kind: 'split', rows, periods, hiddenCount }`, each row `{ node_id, name, sign, amount, amount_ref, cells }`, signed like the account and sorted by the range's absolute amount.
 
+### Balance block and income-summary split (ETP-6083)
+
+Both are opt-in and structural (no report id in code); a contract without them answers exactly as before.
+
+**`balanceCheck: true`** (contract top level, server-side, not forwarded in the descriptor). The `/query` tree answer (plain or with `periods`) gets `balance: { balanced, activo, pnPasivo, diff }`: the rows with no `parentId` (the top of each side) per `group` in the displayed sign, the first group (Activo) against the second (Patrimonio Neto y Pasivo); `diff = activo - pnPasivo`, `balanced` when `|diff| < 0.005`. Anything but exactly two root groups -> `balance: null`. `balanceRef` is the same shape for the comparison: with `periods`, `{ sly, prev }` (bucket 0); without, the plain `amount_ref` block, present only with `compareTo=true`. `/query` only: `/render` does not ship it (no template prints it). Computed from the rows the answer shows. The roots of a side may include its TOTAL, a formula row (`isFormula`) over its siblings: when a side has one, that row is the side's value, otherwise the non-formula roots are summed. `activo` / `pnPasivo` are simply the first / second root group (document order), not looked up by name.
+
+**Result split.** A query that returns `result_onthefly` (`result_onthefly_ref` for the comparison) on a node, or `own_result` / `own_result_sly` / `own_result_prev` in the period queries (the same columns in the split queries), marks the income-summary account: the amount it shows includes an unregularized result. The raw debit - credit goes through the row's sign multiplier and the row gets, in DISPLAYED sign, `result: { onTheFly, posted }` with `posted = amount - onTheFly`:
+
+- tree row: `result` (current) and `resultRef` (the comparison period) when `result_onthefly_ref` is returned;
+- period row: `cells[i].result = { onTheFly, posted, sly: {onTheFly, posted}, prev: {onTheFly, posted} }` (a missing `sly`/`prev` result column reads as on-the-fly 0); the row's own top-level `result` / `resultRef` are bucket 0 current / same period last year;
+- split rows (`kind: 'split'`), plain (`result`, `resultRef`) and with periods (`cells[i].result`).
+
+Summary and formula nodes get none: only the node whose query returned the columns.
+
 ### Render side (`/render`)
 
 Both engines pass `periodRows` and `periodSpec` from `runReportSql` into `buildRenderAccountTree(rows, operandRows, params, contract, period)`, which builds the same period tree and keeps the rows of the export's `compareMode` (`none`, `sly`, `prev`; anything else is `none`; `selectPeriodMode`). The `hiddenCount` / `columns` / `compareMode` params are read from the request like `periods`.
@@ -121,6 +135,10 @@ Both engines pass `periodRows` and `periodSpec` from `runReportSql` into `buildR
 The templates read them through the canonical helpers in `templates/reports/helpers/report-html-helpers.js` (`createReportHelpers`, mirrored in `JSREPORT_HELPER_SOURCES` so they cross into the jsreport container; the parity test and `parity.json` guard it): `periodLabel(period, columns, locale, totalLabel)` (`sep 26`, `T3 26` / `Q3 26`, `*` when partial, the caller's label for the range), `periodOrder(periods)` (indexes with the range last, for Excel/CSV), `periodPages(columnPages, pageSize)` (the PDF pages with the range last, cut at `meta.columnPageSize`), `periodCompared(periodsParam, idx, mode, columns, locale)` (what a Comparado group is compared against: `ene 25`, `T1 25` or the compared dates) and `periodComparedHeader(caption, ...)` (`Comparado (ene 25)`, for the single Excel / CSV header cell), `periodMode(value)` (`sly`/`prev`, else empty) and `periodSpan(groups, mode)` (columns a group header spans). Never write a second copy in a report's own `helpers.js`.
 
 Functional reference for the first consumer, with the client side (Columnas, the PDF pages, the 24-month export cap in the UI): `docs/generated-custom-windows/profit-loss.md` in `etendo_schema_forge`.
+
+### Export filter grid: `excludeFromSummary` (ETP-6083)
+
+`filterAndTransformParams` (`cli/src/report-filters.js`, used by `/render` and the dev plugin) builds the filter grid printed in PDF/HTML headers. A contract parameter with `"excludeFromSummary": true` stays a live control in the viewer but is never printed. Use it for a parameter that only drives the interactive view, such as the `ledgerStart` `dateFrom` of a point-in-time balance. Section-level `excludeFromSummary` works the same way for a whole section. Absent or `false`: unchanged.
 
 ## Shared DB pool, timeout and cancel (ETP-6146)
 

@@ -87,16 +87,14 @@ describe('ImportDialog', () => {
     expect(screen.getByTestId('ImportColumnMapping__chip-Email').textContent).toContain('Email');
   });
 
-  it('opens a newly loaded file on the Correct rows tab', async () => {
+  it('opens a newly loaded file on the All rows tab, showing correct and erroring rows together', async () => {
     render(<ImportDialog open config={config} token="t" postBatch={vi.fn()} simSearchFn={vi.fn()} onImported={() => {}} />);
-    await uploadFile('Name,Email\nLucia,lucia@x.com');
+    await uploadFile('Name,Email\nLucia,lucia@x.com\n,andres@x.com');
 
-    // The happy path is the useful first view for a clean import. Errors are
-    // still counted and available through the Errors tab when a row needs
-    // correction.
-    expect(screen.getByTestId('ImportReviewQueue__statusFilter-ok')).toBeDefined();
-    expect(screen.getByTestId('ImportReviewQueue__value-0-name')).toBeDefined();
-    expect(screen.queryByTestId('ImportReviewQueue__rowError-0')).toBeNull();
+    // Row 0 is correct, row 1 misses its required name; under 'ok' only row 0 would be listed.
+    expect(screen.getByTestId('ImportReviewQueue__input-0-name')).toBeDefined();
+    expect(screen.getByTestId('ImportReviewQueue__input-1-name')).toBeDefined();
+    expect(screen.getByTestId('ImportReviewQueue__fieldError-1-name')).toBeDefined();
   });
 
   it('regression: does not collapse distinct rows into duplicates of each other (config.dedupe.key, not a flat dedupeKeyTargets)', async () => {
@@ -138,7 +136,6 @@ describe('ImportDialog', () => {
     render(<ImportDialog open config={config} token="t" postBatch={postBatch} simSearchFn={vi.fn()} onImported={onImported} />);
     await uploadFile('Name,Email\nLucia,lucia@x.com');
     fireEvent.click(screen.getByTestId('ImportDialog__importButton'));
-    fireEvent.click(screen.getByTestId('ImportConfirmStep__confirm'));
     await waitFor(() => expect(onImported).toHaveBeenCalledWith({ okCount: 1, failedCount: 0 }));
   });
 
@@ -155,7 +152,6 @@ describe('ImportDialog', () => {
     render(<ImportDialog open config={config} token="t" postBatch={postBatch} simSearchFn={vi.fn()} onImported={onImported} />);
     await uploadFile('Name,Email\nLucia,lucia@x.com');
     fireEvent.click(screen.getByTestId('ImportDialog__importButton'));
-    fireEvent.click(screen.getByTestId('ImportConfirmStep__confirm'));
     await waitFor(() => expect(onImported).toHaveBeenCalledWith({ okCount: 0, failedCount: 1 }));
     // The dialog itself must still be showing the review queue at this point, not
     // already torn down — this is what a caller closing on every onImported call hides.
@@ -173,7 +169,6 @@ describe('ImportDialog', () => {
     render(<ImportDialog open config={descriptorConfig} token="t" postBatch={postBatch} simSearchFn={vi.fn()} onImported={() => {}} />);
     await uploadFile('Name,Email\nLucia,lucia@x.com');
     fireEvent.click(screen.getByTestId('ImportDialog__importButton'));
-    fireEvent.click(screen.getByTestId('ImportConfirmStep__confirm'));
 
     await waitFor(() => expect(screen.getByTestId('ImportReviewQueue__rowError-0')).toBeDefined());
     expect(screen.getByTestId('ImportReviewQueue__rowError-0').textContent).toContain('Category is ambiguous');
@@ -196,7 +191,6 @@ describe('ImportDialog', () => {
     render(<ImportDialog open config={config} token="t" postBatch={postBatch} simSearchFn={vi.fn()} onImported={() => {}} />);
     await uploadFile('Name,Email\nLucia,lucia@x.com');
     fireEvent.click(screen.getByTestId('ImportDialog__importButton'));
-    fireEvent.click(screen.getByTestId('ImportConfirmStep__confirm'));
     await waitFor(() => screen.getByTestId('ImportSystemErrorDialog__title'));
     // ETP-4669: the prominent message is the friendly, classified text — never the raw
     // wrapper ("Operation 'bp' rejected by server"). The raw trace still carries the real
@@ -218,8 +212,8 @@ describe('ImportDialog', () => {
     render(<ImportDialog open config={config} token="t" postBatch={postBatch} simSearchFn={vi.fn()} onImported={() => {}} />);
     await uploadFile('Name,Email\nLucia,lucia@x.com');
     fireEvent.click(screen.getByTestId('ImportDialog__importButton'));
-    fireEvent.click(screen.getByTestId('ImportConfirmStep__confirm'));
     await waitFor(() => expect(postBatch).toHaveBeenCalled());
+    await waitFor(() => expect(screen.queryByTestId('ImportDialog__rowSummary')).toBeNull());
     expect(screen.queryByTestId('ImportSystemErrorDialog__title')).toBeNull();
   });
 
@@ -240,7 +234,6 @@ describe('ImportDialog', () => {
     render(<ImportDialog open config={descriptorConfig} token="t" postBatch={postBatch} simSearchFn={vi.fn()} onImported={() => {}} />);
     await uploadFile('Name,Email\nLucia,lucia@x.com');
     fireEvent.click(screen.getByTestId('ImportDialog__importButton'));
-    fireEvent.click(screen.getByTestId('ImportConfirmStep__confirm'));
     await waitFor(() => expect(descriptorFn).toHaveBeenCalled());
     // Prove postBatch received the descriptor's own resolved two-op array, not a flat
     // one-op default and not an unresolved Promise serialized as "{}".
@@ -261,7 +254,6 @@ describe('ImportDialog', () => {
     render(<ImportDialog open config={descriptorConfig} token="real-token-123" postBatch={postBatch} simSearchFn={vi.fn()} onImported={() => {}} />);
     await uploadFile('Name,Email\nLucia,lucia@x.com');
     fireEvent.click(screen.getByTestId('ImportDialog__importButton'));
-    fireEvent.click(screen.getByTestId('ImportConfirmStep__confirm'));
     await waitFor(() => expect(descriptorFn).toHaveBeenCalled());
     const [, receivedConfig] = descriptorFn.mock.calls[0];
     expect(receivedConfig.token).toBe('real-token-123');
@@ -272,7 +264,6 @@ describe('ImportDialog', () => {
     render(<ImportDialog open config={config} token="t" postBatch={postBatch} simSearchFn={vi.fn()} onImported={() => {}} />);
     await uploadFile('Name,Email\nLucia,lucia@x.com');
     fireEvent.click(screen.getByTestId('ImportDialog__importButton'));
-    fireEvent.click(screen.getByTestId('ImportConfirmStep__confirm'));
     await waitFor(() => screen.getByTestId('ImportReviewQueue__rowError-0'));
     postBatch.mockResolvedValueOnce({ committed: true, operations: [{ id: 'row', ok: true, recordId: 'REC-2' }] });
     fireEvent.click(screen.getByTestId('ImportReviewQueue__retry-0'));
@@ -285,7 +276,6 @@ describe('ImportDialog', () => {
     render(<ImportDialog open config={config} token="t" postBatch={postBatch} simSearchFn={vi.fn()} onImported={onImported} />);
     await uploadFile('Name,Email\nLucia,lucia@x.com');
     fireEvent.click(screen.getByTestId('ImportDialog__importButton'));
-    fireEvent.click(screen.getByTestId('ImportConfirmStep__confirm'));
     await waitFor(() => screen.getByTestId('ImportReviewQueue__rowError-0'));
     // Editing the failed row clears its row-level error (validateRow re-runs and the
     // edited row still passes required/email validation), making it "pending" with no
@@ -302,7 +292,6 @@ describe('ImportDialog', () => {
     render(<ImportDialog open config={config} token="t" postBatch={postBatch} simSearchFn={vi.fn()} onImported={() => {}} />);
     await uploadFile('Name,Email\nLucia,lucia@x.com');
     fireEvent.click(screen.getByTestId('ImportDialog__importButton'));
-    fireEvent.click(screen.getByTestId('ImportConfirmStep__confirm'));
     await waitFor(() => screen.getByTestId('ImportReviewQueue__rowError-0'));
     expect(screen.getByTestId('ImportDialog__importButton').disabled).toBe(true);
   });
@@ -318,7 +307,6 @@ describe('ImportDialog', () => {
     render(<ImportDialog open config={descriptorConfig} token="t" postBatch={postBatch} simSearchFn={vi.fn()} onImported={() => {}} />);
     await uploadFile('Name,Email\nLucia,lucia@x.com');
     fireEvent.click(screen.getByTestId('ImportDialog__importButton'));
-    fireEvent.click(screen.getByTestId('ImportConfirmStep__confirm'));
     await waitFor(() => screen.getByTestId('ImportReviewQueue__rowError-0'));
     postBatch.mockResolvedValueOnce({ committed: true, operations: [{ id: 'bp', ok: true, recordId: 'REC-2' }] });
     fireEvent.click(screen.getByTestId('ImportReviewQueue__retry-0'));
@@ -341,7 +329,6 @@ describe('ImportDialog', () => {
     render(<ImportDialog open config={config} token="t" postBatch={postBatch} simSearchFn={vi.fn()} onImported={onImported} />);
     await uploadFile('Name,Email\nLucia,lucia@x.com');
     fireEvent.click(screen.getByTestId('ImportDialog__importButton'));
-    fireEvent.click(screen.getByTestId('ImportConfirmStep__confirm'));
     await waitFor(() => screen.getByTestId('ImportReviewQueue__skippedLabel-0'));
     expect(screen.queryByTestId('ImportReviewQueue__rowError-0')).toBeNull();
     expect(screen.queryByTestId('ImportSystemErrorDialog__title')).toBeNull();
@@ -364,7 +351,6 @@ describe('ImportDialog', () => {
     render(<ImportDialog open config={unregisteredDescriptorConfig} token="t" postBatch={postBatch} simSearchFn={vi.fn()} onImported={() => {}} />);
     await uploadFile('Name,Email\nLucia,lucia@x.com');
     fireEvent.click(screen.getByTestId('ImportDialog__importButton'));
-    fireEvent.click(screen.getByTestId('ImportConfirmStep__confirm'));
     // Even with an unregistered descriptor (buildOperations throws per-row, which
     // runImport already isolates), the dialog must reach a terminal, visible state —
     // never stay stuck on the progress step.
@@ -642,7 +628,6 @@ describe('ImportDialog — closing while the send is running', () => {
     );
     await uploadFile('Name,Email\nLucia,lucia@x.com');
     fireEvent.click(screen.getByTestId('ImportDialog__importButton'));
-    fireEvent.click(screen.getByTestId('ImportConfirmStep__confirm'));
     await waitFor(() => screen.getByTestId('ImportProgressStep__title'));
   }
 
@@ -730,7 +715,6 @@ describe('ImportDialog — closing while the send is running', () => {
     );
     await uploadFile('Name,Email\nLucia,lucia@x.com');
     fireEvent.click(screen.getByTestId('ImportDialog__importButton'));
-    fireEvent.click(screen.getByTestId('ImportConfirmStep__confirm'));
 
     // The row and its reason are on screen; a toast here would restate it, less usefully.
     await waitFor(() => screen.getByTestId('ImportReviewQueue__rowError-0'));
@@ -839,9 +823,13 @@ describe('ImportDialog — ETP-5348 file rejection', () => {
  * typed in. The contacts dedupe key is `taxID`, which is also a required column, so the real
  * shape of the bug is: the row lands in Errores for the missing key, the user fills it, the row
  * turns Correcta, and it is imported as new however many copies of it the database already has.
- * The re-check runs on the way to the confirm step, so the counts that step states are true.
+ * The re-check runs when Import is pressed, before anything is sent, so the counts are true.
  */
 describe('ImportDialog — ETP-5350 dedupe re-check after editing the key', () => {
+  registerImportDescriptor('etp5350-demo', async (row) => [
+    { id: 'row', spec: 'product', entity: 'product', body: row },
+  ]);
+
   const keyedConfig = {
     spec: 'product',
     entity: 'product',
@@ -871,7 +859,8 @@ describe('ImportDialog — ETP-5350 dedupe re-check after editing the key', () =
     const existingKeyFetchFn = vi.fn(async (criteria) => criteria.criteria
       .filter((term) => term.value === 'SKU-1001')
       .map((term) => ({ searchKey: term.value })));
-    render(<ImportDialog open config={keyedConfig} token="t" postBatch={vi.fn()}
+    const postBatch = vi.fn();
+    render(<ImportDialog open config={keyedConfig} token="t" postBatch={postBatch}
       simSearchFn={vi.fn()} existingKeyFetchFn={existingKeyFetchFn} onImported={() => {}} />);
     // Arrives with no key at all: nothing to look up, and nothing was looked up.
     await uploadTo('codigo,nombre\n,Tornillo');
@@ -883,10 +872,14 @@ describe('ImportDialog — ETP-5350 dedupe re-check after editing the key', () =
     });
     fireEvent.click(screen.getByTestId('ImportDialog__importButton'));
 
-    await waitFor(() => screen.getByTestId('ImportConfirmStep__title'));
+    await waitFor(() => screen.getByTestId('ImportDialog__rowSummary'));
     expect(askedKeys(existingKeyFetchFn)).toContain('SKU-1001');
-    // The count the confirm step states must already account for the row it just disqualified.
-    expect(screen.getByTestId('ImportConfirmStep__importCount').textContent).toContain('0');
+    // The dialog stays on the review: the row is now Skipped, the counts account for it, and
+    // nothing was sent.
+    expect(screen.getByTestId('ImportReviewQueue__skippedLabel-0')).toBeDefined();
+    expect(screen.getByTestId('ImportDialog__rowSummary').textContent).toContain('0 records');
+    expect(screen.getByTestId('ImportDialog__importButton').disabled).toBe(true);
+    expect(postBatch).not.toHaveBeenCalled();
   });
 
   it('applies a verdict the lookup already gave when a row is edited ONTO a known key', async () => {
@@ -897,10 +890,10 @@ describe('ImportDialog — ETP-5350 dedupe re-check after editing the key', () =
     const existingKeyFetchFn = vi.fn(async (criteria) => criteria.criteria
       .filter((term) => term.value === 'SKU-1001')
       .map((term) => ({ searchKey: term.value })));
-    render(<ImportDialog open config={keyedConfig} token="t" postBatch={vi.fn()}
+    const postBatch = vi.fn();
+    render(<ImportDialog open config={keyedConfig} token="t" postBatch={postBatch}
       simSearchFn={vi.fn()} existingKeyFetchFn={existingKeyFetchFn} onImported={() => {}} />);
-    // Row 1 arrives with no key, so it is an error row — which is also the only kind the queue
-    // lets you edit: a clean cell is read-only until something is wrong with it.
+    // Row 1 arrives with no key, so it is an error row, edited below onto the key row 0 holds.
     await uploadTo('codigo,nombre\nSKU-1001,Existente\n,Sin clave');
     const callsAfterUpload = existingKeyFetchFn.mock.calls.length;
 
@@ -910,16 +903,18 @@ describe('ImportDialog — ETP-5350 dedupe re-check after editing the key', () =
     });
     fireEvent.click(screen.getByTestId('ImportDialog__importButton'));
 
-    await waitFor(() => screen.getByTestId('ImportConfirmStep__title'));
+    await waitFor(() => screen.getByTestId('ImportDialog__rowSummary'));
     expect(existingKeyFetchFn.mock.calls.length).toBe(callsAfterUpload);
-    expect(screen.getByTestId('ImportConfirmStep__importCount').textContent).toContain('0');
+    expect(screen.getByTestId('ImportDialog__rowSummary').textContent).toContain('0 records');
+    expect(postBatch).not.toHaveBeenCalled();
   });
 
   it('costs no extra request when nothing was edited', async () => {
+    const postBatch = vi.fn().mockResolvedValue({});
     // The lookup is ~136 requests for a full file (ETP-5374). Re-asking about keys the first
-    // pass already answered would double that on every confirm, for nothing.
+    // pass already answered would double that on every press of Import, for nothing.
     const existingKeyFetchFn = vi.fn(async () => []);
-    render(<ImportDialog open config={keyedConfig} token="t" postBatch={vi.fn()}
+    render(<ImportDialog open config={keyedConfig} token="t" postBatch={postBatch}
       simSearchFn={vi.fn()} existingKeyFetchFn={existingKeyFetchFn} onImported={() => {}} />);
     await uploadTo('codigo,nombre\nSKU-1,Uno\nSKU-2,Dos');
     const callsAfterUpload = existingKeyFetchFn.mock.calls.length;
@@ -927,15 +922,15 @@ describe('ImportDialog — ETP-5350 dedupe re-check after editing the key', () =
 
     fireEvent.click(screen.getByTestId('ImportDialog__importButton'));
 
-    await waitFor(() => screen.getByTestId('ImportConfirmStep__title'));
+    await waitFor(() => expect(postBatch).toHaveBeenCalledTimes(2));
     expect(existingKeyFetchFn.mock.calls.length).toBe(callsAfterUpload);
-    expect(screen.getByTestId('ImportConfirmStep__importCount').textContent).toContain('2');
   });
 
   it('does not re-check a window that never opted into database dedupe', async () => {
+    const postBatch = vi.fn().mockResolvedValue({});
     const existingKeyFetchFn = vi.fn(async () => []);
     render(<ImportDialog open config={{ ...keyedConfig, dedupe: { scope: 'file', key: ['searchKey'] } }}
-      token="t" postBatch={vi.fn()} simSearchFn={vi.fn()} existingKeyFetchFn={existingKeyFetchFn} onImported={() => {}} />);
+      token="t" postBatch={postBatch} simSearchFn={vi.fn()} existingKeyFetchFn={existingKeyFetchFn} onImported={() => {}} />);
     await uploadTo('codigo,nombre\n,Tornillo');
 
     fireEvent.click(screen.getByTestId('ImportReviewQueue__statusFilter-error'));
@@ -944,15 +939,16 @@ describe('ImportDialog — ETP-5350 dedupe re-check after editing the key', () =
     });
     fireEvent.click(screen.getByTestId('ImportDialog__importButton'));
 
-    await waitFor(() => screen.getByTestId('ImportConfirmStep__title'));
+    await waitFor(() => expect(postBatch).toHaveBeenCalledTimes(1));
     expect(existingKeyFetchFn).not.toHaveBeenCalled();
   });
 
-  it('still reaches the confirm step when the re-check fails', async () => {
+  it('still sends when the re-check fails', async () => {
     // Unchanged posture: a pre-flight check that cannot reach the server must never block an
     // import the server would have accepted. Send-time duplicate handling stays the backstop.
     const existingKeyFetchFn = vi.fn(async () => { throw new Error('network down'); });
-    render(<ImportDialog open config={keyedConfig} token="t" postBatch={vi.fn()}
+    const postBatch = vi.fn().mockResolvedValue({});
+    render(<ImportDialog open config={keyedConfig} token="t" postBatch={postBatch}
       simSearchFn={vi.fn()} existingKeyFetchFn={existingKeyFetchFn} onImported={() => {}} />);
     await uploadTo('codigo,nombre\n,Tornillo');
 
@@ -962,8 +958,7 @@ describe('ImportDialog — ETP-5350 dedupe re-check after editing the key', () =
     });
     fireEvent.click(screen.getByTestId('ImportDialog__importButton'));
 
-    await waitFor(() => screen.getByTestId('ImportConfirmStep__title'));
-    expect(screen.getByTestId('ImportConfirmStep__importCount').textContent).toContain('1');
+    await waitFor(() => expect(postBatch).toHaveBeenCalledTimes(1));
   });
 });
 
@@ -1051,9 +1046,9 @@ describe('ImportDialog — initialFile and the processing state', () => {
     rerender(dialog({ ...props, initialFile: second.file }));
     held.resolve([]);
 
-    await waitFor(() => screen.getByTestId('ImportReviewQueue__value-0-name'));
+    await waitFor(() => screen.getByTestId('ImportReviewQueue__input-0-name'));
     expect(screen.queryByTestId('ImportDialog__reading')).toBeNull();
-    expect(screen.getByTestId('ImportReviewQueue__value-0-name').textContent).toContain('Lucia');
+    expect(screen.getByTestId('ImportReviewQueue__input-0-name').value).toContain('Lucia');
     expect(second.parse).not.toHaveBeenCalled();
     expect(existingKeyFetchFn).toHaveBeenCalledTimes(1);
   });
@@ -1097,7 +1092,6 @@ describe('ImportDialog — previewed FK resolutions reach the send phase', () =>
     await waitFor(() => screen.getByTestId('ImportDialog__importButton'));
     if (pick) await pick();
     fireEvent.click(screen.getByTestId('ImportDialog__importButton'));
-    fireEvent.click(screen.getByTestId('ImportConfirmStep__confirm'));
     await waitFor(() => expect(descriptorFn).toHaveBeenCalled());
     return { descriptorFn, simSearchFn };
   }
@@ -1155,7 +1149,6 @@ describe('ImportDialog — processed counter while sending', () => {
     render(<ImportDialog open config={config} token="t" postBatch={postBatch} simSearchFn={vi.fn()} onImported={() => {}} />);
     await uploadFile(rows(n));
     fireEvent.click(screen.getByTestId('ImportDialog__importButton'));
-    fireEvent.click(screen.getByTestId('ImportConfirmStep__confirm'));
     await waitFor(() => screen.getByTestId('ImportProgressStep__counter'));
   }
 
@@ -1195,7 +1188,6 @@ describe('ImportDialog — rows per request (limit.batchSize)', () => {
     render(<ImportDialog open config={{ ...config, dedupe: undefined, limit }} batchSize={batchSize} token="t" postBatch={postBatch} simSearchFn={vi.fn()} onImported={okAll} />);
     await uploadFile(csv);
     fireEvent.click(screen.getByTestId('ImportDialog__importButton'));
-    fireEvent.click(screen.getByTestId('ImportConfirmStep__confirm'));
     await waitFor(() => expect(okAll).toHaveBeenCalled());
     return postBatch;
   }
@@ -1236,7 +1228,6 @@ describe('ImportDialog — counter after a burst of settles', () => {
     const view = render(<ImportDialog open config={bigConfig} token="t" postBatch={postBatch} simSearchFn={vi.fn()} onImported={() => {}} />);
     await uploadFile(csv);
     fireEvent.click(screen.getByTestId('ImportDialog__importButton'));
-    fireEvent.click(screen.getByTestId('ImportConfirmStep__confirm'));
     await waitFor(() => screen.getByTestId('ImportProgressStep__counter'));
     return { view, first, second };
   }
@@ -1253,7 +1244,6 @@ describe('ImportDialog — counter after a burst of settles', () => {
     render(<ImportDialog open config={bigConfig} token="t" postBatch={postBatch} simSearchFn={vi.fn()} onImported={onImported} />);
     await uploadFile(csv);
     fireEvent.click(screen.getByTestId('ImportDialog__importButton'));
-    fireEvent.click(screen.getByTestId('ImportConfirmStep__confirm'));
     await waitFor(() => expect(onImported).toHaveBeenCalledWith({ okCount: 20, failedCount: 0 }));
   });
 
@@ -1333,7 +1323,6 @@ describe('ImportDialog — onImportFinished summary', () => {
       simSearchFn={vi.fn()} onImported={() => {}} onImportFinished={onImportFinished} />);
     await uploadFile(csv);
     fireEvent.click(screen.getByTestId('ImportDialog__importButton'));
-    fireEvent.click(screen.getByTestId('ImportConfirmStep__confirm'));
     await waitFor(() => expect(onImportFinished).toHaveBeenCalledTimes(1));
     const summary = onImportFinished.mock.calls[0][0];
     expect(summary).toMatchObject({
@@ -1378,6 +1367,104 @@ describe('ImportDialog — onImportFinished summary', () => {
   });
 });
 
+describe('ImportDialog — ETP-5417 review improvements', () => {
+  const sentOk = () => vi.fn().mockResolvedValue({ committed: true, operations: [{ id: 'row', ok: true, recordId: 'REC-1' }] });
+  const mount = (postBatch = sentOk()) => {
+    render(<ImportDialog open config={config} token="t" postBatch={postBatch} simSearchFn={vi.fn()} onImported={() => {}} />);
+    return postBatch;
+  };
+  const count = (key) => screen.getByTestId(`ImportReviewQueue__statusFilterCount-${key}`).textContent;
+
+  it('keeps a row in Correctas and stores the change when a valid value is edited', async () => {
+    mount();
+    await uploadFile('Name,Email\nLucia,lucia@x.com');
+    fireEvent.change(screen.getByTestId('ImportReviewQueue__input-0-name'), { target: { value: 'Lucia B' } });
+    expect(screen.getByTestId('ImportReviewQueue__input-0-name').value).toBe('Lucia B');
+    expect(count('ok')).toBe('1');
+    expect(count('error')).toBe('0');
+  });
+
+  it('moves a correct row to Errors, with its message, when a required value is cleared', async () => {
+    mount();
+    await uploadFile('Name,Email\nLucia,lucia@x.com');
+    expect(count('error')).toBe('0');
+    fireEvent.change(screen.getByTestId('ImportReviewQueue__input-0-name'), { target: { value: '' } });
+    expect(count('error')).toBe('1');
+    expect(screen.getByTestId('ImportReviewQueue__fieldError-0-name').textContent).not.toBe('');
+  });
+
+  it('adds an empty row that stays in Errors until filled, then imports it with the file rows', async () => {
+    const postBatch = mount();
+    await uploadFile('Name,Email\nLucia,lucia@x.com');
+    fireEvent.click(screen.getByTestId('ImportReviewQueue__addRow'));
+    await waitFor(() => screen.getByTestId('ImportReviewQueue__input-1-name'));
+    expect(count('error')).toBe('1');
+    fireEvent.change(screen.getByTestId('ImportReviewQueue__input-1-name'), { target: { value: 'Andres' } });
+    expect(count('ok')).toBe('2');
+    expect(count('error')).toBe('0');
+    fireEvent.click(screen.getByTestId('ImportDialog__importButton'));
+    await waitFor(() => expect(postBatch).toHaveBeenCalledTimes(2));
+    const bodies = postBatch.mock.calls.map(([ops]) => JSON.stringify(ops));
+    expect(bodies.some((b) => b.includes('Lucia'))).toBe(true);
+    expect(bodies.some((b) => b.includes('Andres'))).toBe(true);
+  });
+
+  it('keeps the counts beside Import in step with edits, skip and unskip, and disables Import at 0', async () => {
+    mount();
+    await uploadFile('Name,Email\nLucia,lucia@x.com');
+    const summary = () => screen.getByTestId('ImportDialog__rowSummary').textContent;
+    expect(summary()).toBe('1 records will be imported');
+    fireEvent.click(screen.getByTestId('ImportReviewQueue__addRow'));
+    await waitFor(() => screen.getByTestId('ImportReviewQueue__input-1-name'));
+    expect(summary()).toContain('1 rows will be skipped');
+    fireEvent.click(screen.getByTestId('ImportReviewQueue__skip-0'));
+    expect(summary()).toContain('0 records');
+    expect(screen.getByTestId('ImportDialog__importButton').disabled).toBe(true);
+    fireEvent.click(screen.getByTestId('ImportReviewQueue__unskip-0'));
+    expect(summary()).toContain('1 records');
+    expect(screen.getByTestId('ImportDialog__importButton').disabled).toBe(false);
+  });
+
+  it('shows visible Skip / Edit again text and no inputs on a skipped row', async () => {
+    mount();
+    await uploadFile('Name,Email\nLucia,lucia@x.com');
+    expect(screen.getByTestId('ImportReviewQueue__skip-0').textContent).toContain('Skip');
+    fireEvent.click(screen.getByTestId('ImportReviewQueue__skip-0'));
+    expect(screen.getByTestId('ImportReviewQueue__unskip-0').textContent).toContain('Edit again');
+    expect(screen.queryByTestId('ImportReviewQueue__input-0-name')).toBeNull();
+  });
+
+  it('opens the post-send queue on Errors, listing only the failed row (sent rows leave the queue)', async () => {
+    const postBatch = vi.fn()
+      .mockResolvedValueOnce({ committed: true, operations: [{ id: 'row', ok: true, recordId: 'REC-1' }] })
+      .mockResolvedValueOnce({ message: 'boom-unrecognized' });
+    mount(postBatch);
+    await uploadFile('Name,Email\nLucia,lucia@x.com\nAndres,andres@x.com');
+    fireEvent.click(screen.getByTestId('ImportDialog__importButton'));
+    await waitFor(() => screen.getByTestId('ImportReviewQueue__rowError-0'));
+    expect(screen.queryByTestId('ImportReviewQueue__lineNumber-1')).toBeNull();
+    expect(screen.getByTestId('ImportReviewQueue__statusFilterCount-all').textContent).toBe('1');
+    // The Errors pill is the selected one (the 'default' variant; the others are 'ghost').
+    expect(screen.getByTestId('ImportReviewQueue__statusFilter-error').className).not.toContain('hover:bg-accent');
+    expect(screen.getByTestId('ImportReviewQueue__statusFilter-all').className).toContain('hover:bg-accent');
+    fireEvent.click(screen.getByTestId('ImportReviewQueue__statusFilter-ok'));
+    expect(screen.queryByTestId('ImportReviewQueue__rowError-0')).toBeNull();
+  });
+
+  it('resets the filter to All when a second file is loaded', async () => {
+    const csv = 'Name,Email\nLucia,lucia@x.com\n,andres@x.com';
+    const props = { open: true, config, token: 't', postBatch: vi.fn(), simSearchFn: vi.fn(), onImported: () => {} };
+    const first = makeFile(csv, 'one.csv');
+    const view = render(<ImportDialog {...props} initialFile={first} />);
+    await waitFor(() => screen.getByTestId('ImportReviewQueue__input-1-name'));
+    fireEvent.click(screen.getByTestId('ImportReviewQueue__statusFilter-ok'));
+    expect(screen.queryByTestId('ImportReviewQueue__input-1-name')).toBeNull();
+    view.rerender(<ImportDialog {...props} initialFile={makeFile(csv, 'two.csv')} />);
+    await waitFor(() => screen.getByTestId('ImportReviewQueue__input-1-name'));
+    expect(screen.getByTestId('ImportReviewQueue__input-0-name')).toBeDefined();
+  });
+});
+
 describe('backend field validation errors land on their column (ETP-6225)', () => {
   const phoneConfig = {
     ...config,
@@ -1394,7 +1481,6 @@ describe('backend field validation errors land on their column (ETP-6225)', () =
     render(<ImportDialog open config={phoneConfig} token="t" postBatch={postBatch} simSearchFn={vi.fn()} onImported={() => {}} />);
     await uploadFile('Name,Email,Phone\nLucia,lucia@x.com,+34 910 565 400');
     fireEvent.click(screen.getByTestId('ImportDialog__importButton'));
-    fireEvent.click(screen.getByTestId('ImportConfirmStep__confirm'));
     await waitFor(() => screen.getByTestId('ImportReviewQueue__fieldError-0-etgoPhone'));
     expect(screen.getByTestId('ImportReviewQueue__fieldError-0-etgoPhone').textContent).toMatch(/Bad phone from server/);
     expect(screen.getByTestId('ImportReviewQueue__fieldError-0-email').textContent).toMatch(/Bad email from server/);
@@ -1405,7 +1491,6 @@ describe('backend field validation errors land on their column (ETP-6225)', () =
     render(<ImportDialog open config={phoneConfig} token="t" postBatch={postBatch} simSearchFn={vi.fn()} onImported={() => {}} />);
     await uploadFile('Name,Email,Phone\nLucia,lucia@x.com,+34 910 565 400');
     fireEvent.click(screen.getByTestId('ImportDialog__importButton'));
-    fireEvent.click(screen.getByTestId('ImportConfirmStep__confirm'));
     await waitFor(() => expect(postBatch).toHaveBeenCalled());
     expect(postBatch.mock.calls[0][0][0].body.etgoPhone).toBe('+34910565400');
   });
@@ -1425,7 +1510,6 @@ describe('backend field validation errors land on their column (ETP-6225)', () =
     render(<ImportDialog open config={phoneConfig} token="t" postBatch={postBatch} simSearchFn={vi.fn()} onImported={() => {}} />);
     await uploadFile('Name,Email,Phone\nLucia,lucia@x.com,+34 910 565 400');
     fireEvent.click(screen.getByTestId('ImportDialog__importButton'));
-    fireEvent.click(screen.getByTestId('ImportConfirmStep__confirm'));
     await waitFor(() => screen.getByTestId('ImportReviewQueue__fieldError-0-etgoPhone'));
     postBatch.mockResolvedValue(fieldFailure({ etgoPhone: 'Still bad phone' }));
     fireEvent.click(screen.getByTestId('ImportReviewQueue__retry-0'));
@@ -1438,7 +1522,6 @@ describe('backend field validation errors land on their column (ETP-6225)', () =
     render(<ImportDialog open config={phoneConfig} token="t" postBatch={postBatch} simSearchFn={vi.fn()} onImported={() => {}} />);
     await uploadFile('Name,Email,Phone\nLucia,lucia@x.com,+34 910 565 400');
     fireEvent.click(screen.getByTestId('ImportDialog__importButton'));
-    fireEvent.click(screen.getByTestId('ImportConfirmStep__confirm'));
     await waitFor(() => screen.getByTestId('ImportReviewQueue__fieldError-0-etgoPhone'));
     expect(screen.getByTestId('ImportReviewQueue__rowError-0').textContent).toMatch(/unknownField: Odd rule/);
   });
