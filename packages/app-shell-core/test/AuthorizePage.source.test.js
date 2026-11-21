@@ -57,15 +57,16 @@ test('AuthorizePage posts to the OAuth authorize endpoint with the cookie sessio
 test('AuthorizePage handles a successful authorization by following the redirect', async () => {
   const src = await readSource();
   assert.match(src, /data\.redirect_url/);
-  assert.match(src, /window\.location\.href\s*=\s*data\.redirect_url/);
+  assert.match(src, /parseSafeUrl\(data\.redirect_url/);
+  assert.match(src, /window\.location\.href\s*=\s*safeRedirectUrl/);
   assert.match(src, /setStatus\('success'\)/);
 });
 
 test('AuthorizePage handles deny by redirecting with access_denied error', async () => {
   const src = await readSource();
-  assert.match(src, /error=access_denied/);
-  assert.match(src, /User\+denied\+the\+request/);
-  assert.match(src, /state=\$\{state\}/);
+  assert.match(src, /searchParams\.set\('error', 'access_denied'\)/);
+  assert.match(src, /User denied the request/);
+  assert.match(src, /searchParams\.set\('state', state\)/);
 });
 
 test('AuthorizePage tracks status through the authorization lifecycle', async () => {
