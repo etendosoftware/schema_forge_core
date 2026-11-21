@@ -11,7 +11,7 @@ import { mkdtempSync, mkdirSync, writeFileSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 
-import { handleReportQuery, buildQueryResponse, runReportSql } from '../src/report-query.js';
+import { handleReportQuery, buildQueryResponse, runReportSql, isChartTreeRender } from '../src/report-query.js';
 import { buildAccountReportTree, ELEMENT_LEVEL_RANK } from '../src/report-grouping.js';
 import { maxPeriodBucketsFor } from '../src/report-periods.js';
 
@@ -101,6 +101,83 @@ function call(reportId, { body = {}, headers = { cookie: COOKIE, 'x-go-csrf': CS
     { artifactsDir, etendoBase: 'http://etendo.test', createPool: () => pool, fetchImpl: sessionFetch({ roleOrgs }) },
   ).then((res) => ({ ...res, pool }));
 }
+
+describe('handleReportQuery — session and access in parallel (ETP-6146)', () => {
+  const okSession = { ok: true, status: 200, json: async () => ({ environment: { clientId: 'C1', orgId: 'O1', roleId: 'R1', userId: 'U1' }, roleList: [{ id: 'R1', orgList: [{ id: '0' }] }], csrfToken: CSRF }) };
+  const okAccess = { ok: true, status: 200, json: async () => ({ result: JSON.stringify({ governed: [], reportAccess: {} }) }) };
+  const run = (fetchImpl) => handleReportQuery(
+    { reportId: 'profit-loss', headers: { cookie: COOKIE, 'x-go-csrf': CSRF }, method: 'POST', body: {} },
+    { artifactsDir, etendoBase: 'x', createPool: () => fakePool(), fetchImpl },
+  );
+
+  it('starts both Tomcat calls before either resolves', async () => {
+    const started = [];
+    const release = [];
+    const fetchImpl = (url) => new Promise((resolve) => {
+      started.push(String(url));
+      release.push(() => resolve(String(url).endsWith('/sws/neo/myreportaccess') ? okAccess : okSession));
+    });
+    const done = run(fetchImpl);
+    await new Promise((r) => setImmediate(r));
+    assert.equal(started.length, 2, 'both calls in flight');
+    release.forEach((r) => r());
+    assert.equal((await done).status, 200);
+  });
+
+  it('an error from the session lookup is still answered', async () => {
+    const res = await run(async (url) => (String(url).endsWith('/sws/neo/myreportaccess') ? okAccess : { ok: false, status: 401, json: async () => ({}) }));
+    assert.equal(res.status, 401);
+    assert.equal(res.body.code, 'NO_SESSION');
+  });
+
+  it('an error from the access check is still answered', async () => {
+    const res = await run(async (url) => (String(url).endsWith('/sws/neo/myreportaccess') ? { ok: false, status: 500, json: async () => ({}) } : okSession));
+    assert.equal(res.status, 502);
+    assert.equal(res.body.code, 'REPORT_ACCESS_UNAVAILABLE');
+  });
+});
+
+describe('handleReportQuery — shared pool (ETP-6146)', () => {
+  const sharedPool = (queryImpl) => {
+    const client = { processID: 7, released: [], query: queryImpl, release: (a) => client.released.push(a) };
+    return { client, connect: async () => client, query: async () => ({ rows: [] }), end: () => assert.fail('shared pool ended') };
+  };
+  const run = (pool, signal) => handleReportQuery(
+    { reportId: 'profit-loss', headers: { cookie: COOKIE, 'x-go-csrf': CSRF }, method: 'POST', body: {} },
+    { artifactsDir, etendoBase: 'x', pool, signal, fetchImpl: sessionFetch() },
+  );
+
+  it('uses a client of the shared pool, releases it and never ends the pool', async () => {
+    const pool = sharedPool(async () => ({ rows: [] }));
+    const res = await run(pool);
+    assert.equal(res.status, 200);
+    assert.deepEqual(pool.client.released, [undefined]);
+  });
+
+  it('a statement timeout answers 504 REPORT_TIMEOUT', async () => {
+    const pool = sharedPool(async (sql) => {
+      if (sql.includes('ad_org')) return { rows: [{ '?column?': 1 }] };
+      throw Object.assign(new Error('canceling statement due to statement timeout'), { code: '57014' });
+    });
+    const res = await run(pool);
+    assert.deepEqual(res, { status: 504, body: { error: 'REPORT_TIMEOUT', code: 'REPORT_TIMEOUT' } });
+  });
+
+  it('an abort during the SQL cancels the backend and answers REPORT_CANCELLED', async () => {
+    const ac = new AbortController();
+    const cancels = [];
+    const pool = sharedPool(async (sql) => {
+      if (sql.includes('ad_org')) return { rows: [{ '?column?': 1 }] };
+      ac.abort();
+      throw Object.assign(new Error('canceling statement due to user request'), { code: '57014' });
+    });
+    pool.query = async (sql, args) => { cancels.push([sql, args]); return { rows: [] }; };
+    const res = await run(pool, ac.signal);
+    assert.equal(res.body.code, 'REPORT_CANCELLED');
+    assert.deepEqual(cancels, [['SELECT pg_cancel_backend($1)', [7]]]);
+    assert.deepEqual(pool.client.released, [true]);
+  });
+});
 
 describe('handleReportQuery — access', () => {
   it('401 without a session, and never opens a pool', async () => {
@@ -572,5 +649,139 @@ describe('report-query — periods (ETP-6239)', () => {
       assert.equal(res.status, 400);
       assert.equal(sql(pool, 'SPLITP').length, 0);
     });
+  });
+});
+
+describe('report-query — chart tree (ETP-6084)', () => {
+  const TB = {
+    tree: 'chart',
+    parameters: [{ name: 'orgId' }, { name: 'dateFrom' }, { name: 'dateTo' }, { name: 'compareTo' }, { name: 'showOnlyAccountsWithValue' }],
+    sql: {
+      query: "SELECT 'OLDQ' WHERE ('__DATEFROM__' = '' OR d >= '__DATEFROM__')",
+      treeQuery: "SELECT 'TREEQ' WHERE ('__DATEFROM__' = '' OR d >= '__DATEFROM__') AND ('__DATETO__' = '' OR d <= '__DATETO__') AND '__COMPARETO__' = 'false'",
+      periodQuery: "SELECT 'PERIODQ' FROM (VALUES __PERIODS__) b WHERE '__DATEFROM__' <> '' AND '__DATETO__' <> ''",
+    },
+  };
+  const CHART = (id, parent, amounts = {}) => ({
+    node_id: id, parent_id: parent, sort_path: id, value: id, name: id, elementlevel: parent ? 'S' : 'E', account_id: id, dimension_id: null,
+    opening_balance: 0, activity_debit: 0, activity_credit: 0, closing_balance: 0, ...amounts,
+  });
+  const TREE = [CHART('E1', null), CHART('S1', 'E1', { activity_debit: 10, closing_balance: 10 }), CHART('S2', 'E1', { activity_credit: 10, closing_balance: -10 })];
+  const PERIODS = '2026-01-01..2026-02-28|2025-01-01..2025-02-28|2025-11-01..2025-12-31';
+
+  before(() => {
+    writeContract('trial-balance-chart', TB);
+    writeContract('trial-balance-old', { ...TB, tree: undefined });
+  });
+
+  it('/query runs sql.treeQuery (not sql.query) and answers a tree with rows, totals and the balance check', async () => {
+    const pool = fakePool({ TREEQ: TREE });
+    const { status, body } = await call('trial-balance-chart', { pool, body: { params: { dateFrom: '2026-01-01', dateTo: '2026-02-28' } } });
+    assert.equal(status, 200);
+    assert.equal(body.kind, 'tree');
+    assert.ok(pool.queries.some((q) => q.includes('TREEQ')));
+    assert.ok(!pool.queries.some((q) => q.includes('OLDQ')));
+    assert.deepEqual(body.rows.map((r) => r.node_id), ['E1', 'S1', 'S2']);
+    assert.equal(body.totals[0].debit.amount, 10);
+    assert.equal(body.balance.balanced, true);
+  });
+
+  it('a contract without tree: chart still runs sql.query as before', async () => {
+    const pool = fakePool({ OLDQ: [{ a: 1 }] });
+    const { body } = await call('trial-balance-old', { pool, body: { params: {} } });
+    assert.equal(body.kind, 'rows');
+    assert.ok(!pool.queries.some((q) => q.includes('TREEQ')));
+  });
+
+  it('with periods it runs periodQuery on the date hull and treeQuery on the hull too, without comparison', async () => {
+    const pool = fakePool({ TREEQ: TREE, PERIODQ: [{ idx: 0, account_id: 'S1', dimension_id: null, activity_debit: 10, closing_balance: 10 }] });
+    const params = { dateFrom: '2026-01-01', dateTo: '2026-02-28', compareTo: 'true', columns: 'total', periods: PERIODS };
+    const { body } = await call('trial-balance-chart', { pool, body: { params } });
+    const tree = pool.queries.find((q) => q.includes('TREEQ'));
+    assert.ok(tree.includes("d >= '2025-01-01'") && tree.includes("d <= '2026-02-28'")); // hull of every range
+    assert.ok(tree.includes("'false' = 'false'"));
+    assert.ok(pool.queries.find((q) => q.includes('PERIODQ')).includes('(0, '));
+    assert.equal(body.periods.length, 1);
+    assert.equal(body.rows.find((r) => r.node_id === 'S1').cells[0].debit.amount, 10);
+    assert.equal(body.totals[0].debit.amount, 10);
+  });
+
+  it('does not cap treeQuery with the limit (a cap would drop chart nodes)', async () => {
+    const pool = fakePool({ TREEQ: TREE });
+    await runReportSql(pool, TB, { clientId: 'C', params: {}, limit: 5, chartTree: true });
+    assert.ok(!pool.queries.some((q) => /LIMIT/.test(q)));
+  });
+
+  it('refuses a chart tree contract with no treeQuery', async () => {
+    await assert.rejects(runReportSql(fakePool(), { tree: 'chart', sql: { query: 'SELECT 1' } }, { clientId: 'C', chartTree: true }), /treeQuery/);
+  });
+
+  it('/render takes the tree path only for a chart contract with expandedNodeIds', () => {
+    assert.equal(isChartTreeRender(TB, { expandedNodeIds: 'E1' }), true);
+    assert.equal(isChartTreeRender(TB, { expandedNodeIds: 'none' }), true);
+    assert.equal(isChartTreeRender(TB, { expandedNodeIds: '' }), false); // the old viewer sends '' for what it has none of
+    assert.equal(isChartTreeRender(TB, { visibleNodeIds: 'E1,S1' }), true);
+    assert.equal(isChartTreeRender(TB, {}), false);
+    assert.equal(isChartTreeRender({ ...TB, tree: undefined }, { expandedNodeIds: 'E1' }), false);
+  });
+
+  it('buildQueryResponse leaves the PyG answer untouched', () => {
+    const out = buildQueryResponse({ sql: { operandsQuery: 'x' } }, {}, { rows: TREE_ROWS, operandRows: OPERANDS });
+    assert.equal(out.kind, 'tree');
+    assert.equal(out.totals, undefined);
+  });
+});
+
+describe('Balance Sheet answers (ETP-6083)', () => {
+  const bn = (id, parent, path, group, sign, extra = {}) => ({
+    node_id: id, parent_id: parent, sort_path: path, group_name: group, value: id, name: id,
+    elementlevel: parent ? 'C' : 'E', isalwaysshown: 'N', accountsign: sign, own_amt: 0, own_amt_ref: 0, issummary: parent ? 'N' : 'Y', ...extra,
+  });
+  const ROWS = [
+    bn('RA', null, '0', 'Activo', 'D'), bn('A', 'RA', '1', 'Activo', 'D'), bn('cash', 'A', '1.1', 'Activo', 'D', { own_amt: 100 }),
+    bn('RP', null, '2', 'PN', 'C'), bn('P', 'RP', '2.0', 'PN', 'C'), bn('r129', 'P', '2.1', 'PN', 'C', { own_amt: -100, result_onthefly: -40 }),
+  ];
+  const BS = { balanceCheck: true, sql: { operandsQuery: 'x' } };
+
+  it('/query tree carries balance only for a balanceCheck contract', () => {
+    const on = buildQueryResponse(BS, {}, { rows: ROWS, operandRows: [] });
+    assert.deepEqual(on.balance, { balanced: true, activo: 100, pnPasivo: 100, diff: 0 });
+    assert.equal(on.balanceRef, undefined);
+    assert.deepEqual(on.rows.find((r) => r.node_id === 'r129').result, { onTheFly: 40, posted: 60 });
+    const off = buildQueryResponse({ sql: { operandsQuery: 'x' } }, {}, { rows: ROWS, operandRows: [] });
+    assert.ok(!('balance' in off));
+  });
+
+  it('a period answer carries balance / balanceRef and the cell result', () => {
+    const periodRows = [
+      { account_id: 'cash', idx: 0, own_amt: 100, own_amt_sly: 80, own_amt_prev: 0 },
+      { account_id: 'r129', idx: 0, own_amt: -100, own_amt_sly: -80, own_amt_prev: 0, own_result: -40, own_result_sly: -30, own_result_prev: null },
+    ];
+    const periodSpec = { periods: [{ idx: 0, dateFrom: '2026-01-01', dateTo: '2026-03-31', partial: false }], hiddenCount: 0 };
+    const out = buildQueryResponse(BS, { columns: 'total' }, { rows: ROWS, operandRows: [], periodRows, periodSpec });
+    assert.equal(out.balance.balanced, true);
+    assert.equal(out.balanceRef.sly.balanced, true);
+    assert.deepEqual(out.rows.find((r) => r.node_id === 'r129').cells[0].result.sly, { onTheFly: 30, posted: 50 });
+  });
+
+  it('split rows of the income-summary node carry result in the split sign', async () => {
+    writeContract('balance-sheet-split', { ...BS, sql: { ...BS.sql, query: "SELECT 'T'", splitQuery: "SELECT 'BSSPLIT' WHERE n = '__SPLITNODEID__'" } });
+    const pool = fakePool({ BSSPLIT: [
+      { dimension_id: 'B1', dimension_name: 'Acme', own_amt: -100, own_amt_ref: 0, result_onthefly: -40 },
+      { dimension_id: 'B2', dimension_name: 'Beta', own_amt: -10, own_amt_ref: 0 },
+    ] });
+    const res = await call('balance-sheet-split', { pool, body: { params: { splitBy: 'bpartner', splitNodeId: 'r129', splitSign: 'C' } } });
+    const [acme, beta] = res.body.rows;
+    assert.deepEqual(acme.result, { onTheFly: 40, posted: 60 });
+    assert.ok(!('result' in beta));
+  });
+
+  it('a period split carries cells[i].result', async () => {
+    writeContract('balance-sheet-splitp', { ...BS, sql: { ...BS.sql, query: "SELECT 'T'", periodQuery: 'SELECT 1 FROM (VALUES __PERIODS__) b', splitQuery: 'x',
+      splitPeriodQuery: "SELECT 'BSSPLITP' WHERE n = '__SPLITNODEID__' AND z IN (VALUES __PERIODS__)" } });
+    const pool = fakePool({ BSSPLITP: [{ dimension_id: 'B1', dimension_name: 'Acme', idx: 0, own_amt: -100, own_amt_sly: -50, own_amt_prev: 0, own_result: -40, own_result_sly: -20, own_result_prev: null }] });
+    const res = await call('balance-sheet-splitp', { pool, body: { params: { periods: '2026-01-01..2026-03-31|2025-01-01..2025-03-31|2025-10-01..2025-12-31', columns: 'total', splitBy: 'bpartner', splitNodeId: 'r129', splitSign: 'C' } } });
+    assert.equal(res.status, 200, JSON.stringify(res.body));
+    assert.deepEqual(res.body.rows[0].cells[0].result, { onTheFly: 40, posted: 60, sly: { onTheFly: 20, posted: 30 }, prev: { onTheFly: 0, posted: 0 } });
   });
 });

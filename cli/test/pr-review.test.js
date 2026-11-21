@@ -4,7 +4,7 @@ import { strict as assert } from 'node:assert';
 import { execFileSync } from 'node:child_process';
 import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
-import { join } from 'node:path';
+import { dirname, join } from 'node:path';
 import {
   detectDuplicatedBlocks,
   analyzeChangedFiles,
@@ -578,6 +578,69 @@ describe('reviewPullRequest', () => {
       process.chdir(originalCwd);
       rmSync(repoDir, { recursive: true, force: true });
     }
+  });
+
+  // Commits `files` (path -> content) on a feature branch over a one-commit base and
+  // returns the finding codes reviewPullRequest raises for that PR.
+  function reviewCodesForAddedFiles(files) {
+    const originalCwd = process.cwd();
+    const repoDir = mkdtempSync(join(tmpdir(), 'pr-review-added-'));
+
+    try {
+      execFileSync('git', ['init', '-b', 'develop'], { cwd: repoDir });
+      execFileSync('git', ['config', 'user.name', 'Test User'], { cwd: repoDir });
+      execFileSync('git', ['config', 'user.email', 'test@example.com'], { cwd: repoDir });
+      writeFileSync(join(repoDir, 'shared.txt'), 'base\n');
+      execFileSync('git', ['add', 'shared.txt'], { cwd: repoDir });
+      execFileSync('git', ['commit', '-m', 'base'], { cwd: repoDir });
+
+      execFileSync('git', ['checkout', '-b', 'feature/added-files'], { cwd: repoDir });
+      for (const [path, content] of Object.entries(files)) {
+        mkdirSync(join(repoDir, dirname(path)), { recursive: true });
+        writeFileSync(join(repoDir, path), content);
+      }
+      execFileSync('git', ['add', '.'], { cwd: repoDir });
+      execFileSync('git', ['commit', '-m', 'add files'], { cwd: repoDir });
+
+      const baseSha = execFileSync('git', ['rev-parse', 'develop'], { cwd: repoDir, encoding: 'utf8' }).trim();
+      const headSha = execFileSync('git', ['rev-parse', 'HEAD'], { cwd: repoDir, encoding: 'utf8' }).trim();
+
+      process.chdir(repoDir);
+      return reviewPullRequest(baseSha, headSha).findings.map((finding) => finding.code);
+    } finally {
+      process.chdir(originalCwd);
+      rmSync(repoDir, { recursive: true, force: true });
+    }
+  }
+
+  const E2E_SUITE = "import { test } from 'vitest';\n\ntest('reference data', () => {});\n";
+  const PLAIN_SOURCE = 'export const answer = 42;\n';
+
+  it('counts a new *.e2e.ts suite under an e2e/ directory as a test, not as untested source', () => {
+    // Same shape as the PR that got a false MISSING_TESTS: a lone new e2e suite.
+    const codes = reviewCodesForAddedFiles({ 'gateway/e2e/reference-data.e2e.ts': E2E_SUITE });
+
+    assert.ok(!codes.includes('MISSING_TESTS'), `unexpected MISSING_TESTS: ${codes.join(', ')}`);
+    assert.ok(!codes.includes('WRONG_DIRECTORY'), `unexpected WRONG_DIRECTORY: ${codes.join(', ')}`);
+  });
+
+  it('still treats a plain source file as untested source', () => {
+    // MISSING_TESTS is PR-level (any new test suppresses it), so the source file is added alone.
+    const codes = reviewCodesForAddedFiles({ 'gateway/src/x.ts': PLAIN_SOURCE });
+
+    assert.ok(codes.includes('MISSING_TESTS'), `expected MISSING_TESTS, got: ${codes.join(', ')}`);
+  });
+
+  it('flags a *.e2e.ts suite outside any test or e2e directory as WRONG_DIRECTORY', () => {
+    const codes = reviewCodesForAddedFiles({ 'src/foo.e2e.ts': E2E_SUITE });
+
+    assert.ok(codes.includes('WRONG_DIRECTORY'), `expected WRONG_DIRECTORY, got: ${codes.join(', ')}`);
+  });
+
+  it('does not treat a directory merely ending in -e2e as a test directory', () => {
+    const codes = reviewCodesForAddedFiles({ 'notes-e2e/x.ts': PLAIN_SOURCE });
+
+    assert.ok(codes.includes('MISSING_TESTS'), `expected MISSING_TESTS, got: ${codes.join(', ')}`);
   });
 });
 

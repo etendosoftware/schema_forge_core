@@ -552,6 +552,10 @@ export function OnboardingFlow({ steps = [], config = {} }) {
       setAccountName={setAccountName}
       accountEmail={accountEmail}
       capabilities={capabilities}
+      // ETP-5806 — LoginStep/RegisterStep refresh this from the login/register/SSO
+      // response right after authenticating (see their handleAuthSuccess), the same
+      // signal GET /sws/go/session already carries on the mount-time bootstrap above.
+      setCapabilities={setCapabilities}
       // Not `askSector`: every step gets these props, and RegisterStep already has one by that name.
       accountSectorMissing={sectorMissing}
       draftNotice={draftNotice}

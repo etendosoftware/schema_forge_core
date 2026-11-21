@@ -3,6 +3,7 @@ import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { renderHook, cleanup, act, waitFor } from '@testing-library/react';
 import { createLocalAuthStorage, createMemoryAuthStorage } from '../session.js';
 import { AuthProvider, useAuth } from '../AuthContext.jsx';
+import { notifyAmbientUnauthorized } from '../api.js';
 import { CREDENTIAL_MODES } from '../sessionCredentials.js';
 
 afterEach(cleanup);
@@ -536,6 +537,93 @@ describe('AuthContext — session restore (ETP-4576)', () => {
       expect(result.current.csrfToken).toBe('csrf-from-default-fetcher');
       expect(result.current.username).toBe('Ada');
       expect(result.current.isAuthenticated).toBe(true);
+    });
+
+    it('exposes the environment user and owner account of the restored session (ETP-6228)', async () => {
+      fetchStub.mockResolvedValue({
+        ok: true,
+        status: 200,
+        json: async () => ({
+          account: { id: 'member-account', name: 'Ada' },
+          environment: { userId: 'user-1', clientId: 'client-1', etgoAccountId: 'owner-account' },
+          roleList: [],
+          csrfToken: 'csrf',
+        }),
+      });
+
+      const { result } = renderHook(() => useAuth(), {
+        wrapper: ({ children }) => (
+          <AuthProvider credentialMode={CREDENTIAL_MODES.cookie} storage={createMemoryAuthStorage()}>{children}</AuthProvider>
+        ),
+      });
+
+      await waitFor(() => {
+        expect(result.current.status).toBe('authenticated');
+      });
+      expect(result.current.userId).toBe('user-1');
+      expect(result.current.etgoAccountId).toBe('owner-account');
+      expect(result.current.account.id).toBe('member-account');
+    });
+
+    it('resets the analytics ids to null on logout (ETP-6228)', async () => {
+      const restored = {
+        ok: true,
+        status: 200,
+        json: async () => ({
+          account: { id: 'member-account', name: 'Ada' },
+          environment: { userId: 'user-1', clientId: 'client-1', etgoAccountId: 'owner-account' },
+          roleList: [],
+          csrfToken: 'csrf',
+        }),
+      };
+      fetchStub.mockResolvedValue(restored);
+
+      const { result } = renderHook(() => useAuth(), {
+        wrapper: ({ children }) => (
+          <AuthProvider credentialMode={CREDENTIAL_MODES.cookie} storage={createMemoryAuthStorage()}>{children}</AuthProvider>
+        ),
+      });
+      await waitFor(() => {
+        expect(result.current.userId).toBe('user-1');
+      });
+
+      act(() => {
+        result.current.logout();
+      });
+
+      expect(result.current.userId).toBeNull();
+      expect(result.current.etgoAccountId).toBeNull();
+    });
+
+    // An expired session reaches the 401 handler while the shell is still mounted.
+    it('resets the analytics ids to null when the session answers 401 (ETP-6228)', async () => {
+      fetchStub.mockResolvedValue({
+        ok: true,
+        status: 200,
+        json: async () => ({
+          account: { id: 'member-account', name: 'Ada' },
+          environment: { userId: 'user-1', clientId: 'client-1', etgoAccountId: 'owner-account' },
+          roleList: [],
+          csrfToken: 'csrf',
+        }),
+      });
+
+      const { result } = renderHook(() => useAuth(), {
+        wrapper: ({ children }) => (
+          <AuthProvider credentialMode={CREDENTIAL_MODES.cookie} storage={createMemoryAuthStorage()}>{children}</AuthProvider>
+        ),
+      });
+      await waitFor(() => {
+        expect(result.current.userId).toBe('user-1');
+      });
+
+      act(() => {
+        notifyAmbientUnauthorized();
+      });
+
+      expect(result.current.userId).toBeNull();
+      expect(result.current.etgoAccountId).toBeNull();
+      expect(result.current.status).toBe('anonymous');
     });
 
     it('asks GET /sws/go/session with the cookie attached and never sends an Authorization/Bearer header', async () => {

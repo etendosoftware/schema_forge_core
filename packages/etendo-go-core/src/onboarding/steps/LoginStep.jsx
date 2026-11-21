@@ -26,7 +26,7 @@ function maskEmail(email) {
   return `${email[0]}******${email.slice(at)}`;
 }
 
-export function LoginStep({ config, stepData, onNext, onBack, goToStep, setToken, setAccountName, routeByEnvironments, draftSaveWarning, initialEmail, emailReadOnly = false, onAuthenticated, onAccountChange }) {
+export function LoginStep({ config, stepData, onNext, onBack, goToStep, setToken, setAccountName, setCapabilities, routeByEnvironments, draftSaveWarning, initialEmail, emailReadOnly = false, onAuthenticated, onAccountChange }) {
   const ui = useUI();
   const { locale, setLocale } = useLocaleSwitch();
 
@@ -72,10 +72,14 @@ export function LoginStep({ config, stepData, onNext, onBack, goToStep, setToken
     }
   }, []);
 
-  const handleAuthSuccess = useCallback((csrfToken, account, { route = true, authMethod = 'password' } = {}) => {
+  const handleAuthSuccess = useCallback((csrfToken, account, { route = true, authMethod = 'password', capabilities } = {}) => {
     persistAuthMethod(authMethod);
     if (setToken) setToken(csrfToken);
     if (setAccountName) setAccountName(account?.name || account?.email || null);
+    // ETP-5806 — a login (password or SSO) can land back on onboarding just like a fresh
+    // register, when the account has no environment yet (routeByEnvironments below). Without
+    // this the `capabilities` state stays at its pre-session `{}` default for that path too.
+    if (setCapabilities) setCapabilities(capabilities ?? {});
     // ETP-5675 — bind the onboarding to the account that just signed in before routing.
     if (onAccountChange) onAccountChange(account);
     setShowLoginPassword(false);
@@ -84,7 +88,7 @@ export function LoginStep({ config, stepData, onNext, onBack, goToStep, setToken
     if (route && routeByEnvironments) {
       return routeByEnvironments(csrfToken);
     }
-  }, [setToken, setAccountName, routeByEnvironments, onAccountChange]);
+  }, [setToken, setAccountName, setCapabilities, routeByEnvironments, onAccountChange]);
 
   const handleSsoProviderLogin = useCallback(async (provider, payload) => {
     trackOnboarding(config, 'onboarding_auth_submitted', {
@@ -101,10 +105,14 @@ export function LoginStep({ config, stepData, onNext, onBack, goToStep, setToken
       // branch below for why this is not "just in case".
       const credential = data.csrfToken ?? data.token;
       if (credential) {
+        // ETP-6363: the account and whether the provider's sign-in created it, for marketing's
+        // sign_up / login and user_identified (the host's GTM dataLayer). Not sent to Mixpanel.
         trackOnboarding(config, 'onboarding_auth_succeeded', {
           action: 'sso',
           provider,
           status: 'success',
+          accountCreated: data.accountCreated === true,
+          accountId: data.account?.id,
         });
         // The epic's `completeAuthentication` centralises the persist +
         // hand-off pair; its `token` parameter is the generic credential slot,
@@ -114,6 +122,7 @@ export function LoginStep({ config, stepData, onNext, onBack, goToStep, setToken
           account: data.account,
           authMethod: 'sso',
           scheme: credentialSchemeFromLoginResponse(data),
+          capabilities: data.capabilities,
           persistAuth: handleAuthSuccess,
           onAuthenticated,
         });
@@ -195,6 +204,7 @@ export function LoginStep({ config, stepData, onNext, onBack, goToStep, setToken
         trackOnboarding(config, 'onboarding_auth_succeeded', {
           action: 'login',
           status: 'success',
+          accountId: data.account?.id,
         });
         // Keep the loading state on: routeByEnvironments always ends by either
         // navigating away (window.location.href) or switching to another
@@ -216,6 +226,7 @@ export function LoginStep({ config, stepData, onNext, onBack, goToStep, setToken
           account: data.account,
           authMethod: 'password',
           scheme: credentialSchemeFromLoginResponse(data),
+          capabilities: data.capabilities,
           persistAuth: handleAuthSuccess,
           onAuthenticated,
         });

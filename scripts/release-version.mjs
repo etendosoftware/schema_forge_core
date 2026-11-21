@@ -31,6 +31,7 @@ export const PACKAGE_FILES = [
   'packages/schema-forge-agent-context/package.json',
   'packages/schema-forge-stack/package.json',
   'packages/etendo-go-core/package.json',
+  'packages/api-gateway-core/package.json',
   'cli/package.json',
 ];
 

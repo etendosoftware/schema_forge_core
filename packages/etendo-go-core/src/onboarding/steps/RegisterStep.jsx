@@ -1,5 +1,5 @@
-import React, { useState, useEffect, useRef, useCallback } from 'react';
-import { UserPlusIcon, EnvelopeSimpleIcon, LockIcon, EyeIcon, EyeSlashIcon, CheckIcon, WarningCircleIcon, CircleNotchIcon, GiftIcon, PhoneIcon } from '@phosphor-icons/react';
+import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
+import { UserPlusIcon, EnvelopeSimpleIcon, LockIcon, EyeIcon, EyeSlashIcon, CheckIcon, WarningCircleIcon, CircleNotchIcon, GiftIcon, PhoneIcon, CaretDownIcon } from '@phosphor-icons/react';
 import { Button } from '@etendosoftware/app-shell-core/components/ui/button';
 import { Label } from '@etendosoftware/app-shell-core/components/ui/label';
 import { useUI, useLocaleSwitch } from '@etendosoftware/app-shell-core/i18n';
@@ -22,29 +22,35 @@ import { TermsDialog } from '../components/TermsDialog.jsx';
 import {
   buildPhonePrefixOptions,
   composePhone,
-  defaultPhonePrefix,
+  COUNTRY_DIAL_CODES,
   isValidPhoneNumber,
   PHONE_NUMBER_MAX_LENGTH,
 } from '../phonePrefixes.js';
 import { BUSINESS_SECTORS, isBusinessSector } from '../businessSectors.js';
+import { toDisplayNamesLocale } from '../countries.js';
 
 export const MARKETING_CONSENT_DEFAULT = true;
 
 const AUTH_FEATURE_KEYS = ['onboardingAuthFeatureNoCard', 'onboardingAuthFeatureTrial', 'onboardingAuthFeatureInstantAccess'];
 
-export function RegisterStep({ config, stepData, onNext, onBack, goToStep, setToken, setAccountName, handleRegisterSuccess, initialName, initialEmail, emailReadOnly = false, registerHandler, onRegistered, askPhone = true, askPassword = false, askMarketingConsent = askPhone, askSector = askPhone }) {
+export function RegisterStep({ config, stepData, onNext, onBack, goToStep, setToken, setAccountName, setCapabilities, handleRegisterSuccess, initialName, initialEmail, emailReadOnly = false, registerHandler, onRegistered, askPhone = true, askPassword = false, askMarketingConsent = askPhone, askSector = askPhone, askCountry = askPhone }) {
   const ui = useUI();
   const { locale, setLocale } = useLocaleSwitch();
 
   const [registerForm, setRegisterForm] = useState({ name: initialName || stepData?.name || '', email: initialEmail || stepData?.email || '', password: '' });
+  // ETP-6363 — required country, empty until the visitor picks one, for marketing (HubSpot). It
+  // is not the organization's: the onboarding keeps that one on its own. It also gives the phone
+  // its dialling code. Asked only of a sign-up lead, like the phone and the sector.
+  const [country, setCountry] = useState('');
+  const countryDialCode = COUNTRY_DIAL_CODES[country] || null;
+  const countryMissing = askCountry && !countryDialCode;
   // ETP-6081 — optional phone, asked here so it is on the account from the start. Kept apart from
-  // registerForm: only its composed "+<code> <number>" value travels. Not asked for an invitation
-  // (askPhone=false): the invitee joins a company, they are not a sign-up lead.
-  const [phonePrefix, setPhonePrefix] = useState(() => defaultPhonePrefix(
-    config.defaultForm?.countryCode || config.countryCodes?.[0] || 'ES'));
+  // registerForm: only its composed "+<code> <number>" value travels, the code being the chosen
+  // country's. Not asked for an invitation (askPhone=false): the invitee joins a company, they are
+  // not a sign-up lead.
   const [phoneNumber, setPhoneNumber] = useState('');
   const phoneNumberInvalid = askPhone && !isValidPhoneNumber(phoneNumber);
-  const phone = askPhone ? composePhone(phonePrefix, phoneNumber) : '';
+  const phone = askPhone ? composePhone(country, phoneNumber) : '';
   // ETP-6082 — required business sector, for marketing's ideal-customer profile. Asked only of a
   // sign-up lead, like the phone: an invitee joins a company that already has one.
   const [sector, setSector] = useState('');
@@ -98,17 +104,21 @@ export function RegisterStep({ config, stepData, onNext, onBack, goToStep, setTo
   const registerEmailTouched = registerForm.email.trim().length > 0;
   const registerEmailValid = isValidEmailFormat(registerForm.email);
 
-  const handleAuthSuccess = useCallback((csrfToken, account, { route = true, authMethod = 'password' } = {}) => {
+  const handleAuthSuccess = useCallback((csrfToken, account, { route = true, authMethod = 'password', capabilities } = {}) => {
     persistAuthMethod(authMethod);
     if (setToken) setToken(csrfToken);
     if (setAccountName) setAccountName(account?.name || account?.email || null);
+    // ETP-5806 — the register/SSO response now carries `capabilities` (same backend field
+    // session-restore already populated); without this, CompanyStep kept reading the
+    // pre-session `{}` default for the rest of onboarding, regardless of the flag's real value.
+    if (setCapabilities) setCapabilities(capabilities ?? {});
     setShowRegisterPassword(false);
     setSsoError(null);
     setSsoLoadingProvider(null);
     if (route && handleRegisterSuccess) {
       handleRegisterSuccess(csrfToken, account);
     }
-  }, [setToken, setAccountName, handleRegisterSuccess]);
+  }, [setToken, setAccountName, setCapabilities, handleRegisterSuccess]);
 
   const handleSsoProviderLogin = useCallback(async (provider, payload) => {
     trackOnboarding(config, 'onboarding_auth_submitted', {
@@ -128,12 +138,16 @@ export function RegisterStep({ config, stepData, onNext, onBack, goToStep, setTo
       // gating on csrfToken alone made a bearer SSO registration report failure.
       const ssoCredential = data.csrfToken ?? data.token;
       if (ssoCredential) {
+        // ETP-6363: the account and whether the provider's sign-in created it, for marketing's
+        // sign_up / login and user_identified (the host's GTM dataLayer). Not sent to Mixpanel.
         trackOnboarding(config, 'onboarding_auth_succeeded', {
           action: 'sso',
           provider,
           status: 'success',
+          accountCreated: data.accountCreated === true,
+          accountId: data.account?.id,
         });
-        handleAuthSuccess(ssoCredential, data.account, { authMethod: 'sso' });
+        handleAuthSuccess(ssoCredential, data.account, { authMethod: 'sso', capabilities: data.capabilities });
       } else {
         trackOnboarding(config, 'onboarding_auth_failed', {
           action: 'sso',
@@ -200,6 +214,7 @@ export function RegisterStep({ config, stepData, onNext, onBack, goToStep, setTo
       const phoneField = phone ? { phone } : {};
       const marketingConsentField = askMarketingConsent ? { marketingConsent } : {};
       const sectorField = askSector && sector ? { sector } : {};
+      const countryField = askCountry && countryDialCode ? { countryCode: country } : {};
       const credentials = askPassword
         ? registerForm
         : { name: registerForm.name, email: registerForm.email };
@@ -210,6 +225,7 @@ export function RegisterStep({ config, stepData, onNext, onBack, goToStep, setTo
           ...termsField,
           ...phoneField,
           ...sectorField,
+          ...countryField,
           ...marketingConsentField,
           language: locale || config.defaultForm?.language || '',
         });
@@ -234,8 +250,9 @@ export function RegisterStep({ config, stepData, onNext, onBack, goToStep, setTo
         trackOnboarding(config, 'onboarding_auth_succeeded', {
           action: 'register',
           status: 'success',
+          accountId: data.account?.id,
         });
-        handleAuthSuccess(credential, data.account, { route: !onRegistered });
+        handleAuthSuccess(credential, data.account, { route: !onRegistered, capabilities: data.capabilities });
         if (onRegistered) await onRegistered(credential, data.account);
       } else {
         trackOnboarding(config, 'onboarding_auth_failed', {
@@ -264,7 +281,13 @@ export function RegisterStep({ config, stepData, onNext, onBack, goToStep, setTo
   };
 
   const authFeatureLabels = AUTH_FEATURE_KEYS.map((key) => ui(key));
-  const phonePrefixOptions = askPhone ? buildPhonePrefixOptions(locale) : [];
+  // ETP-6363 — the open list names each country in full, sorted by that name; the closed field
+  // shows only the flag and code (countrySelected, laid over the select) to fit next to the phone.
+  const countryOptions = useMemo(() => (askCountry
+    ? buildPhonePrefixOptions(locale)
+      .sort((a, b) => a.name.localeCompare(b.name, toDisplayNamesLocale(locale)))
+    : []), [askCountry, locale]);
+  const countrySelected = countryOptions.find(option => option.value === country);
 
   const setOnboardingLocale = (nextLocale) => {
     if (setLocale) setLocale(nextLocale);
@@ -382,45 +405,77 @@ export function RegisterStep({ config, stepData, onNext, onBack, goToStep, setTo
           </div>
         )}
 
-        {askPhone && (
-          <div>
-            <Label
-              htmlFor="reg-phone"
-              className="mb-2 block text-sm font-medium leading-6 text-[#121217]"
-              data-testid="Label__phone">
-              {ui('onboardingPhoneLabel')}
-              <span className="ml-2 font-normal text-slate-500">{ui('onboardingOptionalHint')}</span>
-            </Label>
-            <div className="flex gap-3">
-              <select
-                id="reg-phone-prefix"
-                aria-label={ui('onboardingPhonePrefixLabel')}
-                value={phonePrefix}
-                onChange={e => setPhonePrefix(e.target.value)}
-                disabled={registerLoading}
-                className="h-10 w-32 shrink-0 rounded-lg border border-[#D1D4DB] bg-white px-3 text-sm text-[#121217] shadow-[0_1px_2px_rgba(18,18,23,0.05)] transition-colors hover:border-slate-400 focus:outline-none focus:border-slate-400"
-                data-testid="phone-prefix-select">
-                <option value="">{ui('onboardingPhonePrefixPlaceholder')}</option>
-                {phonePrefixOptions.map(option => (
-                  <option key={option.value} value={option.value} title={option.name}>
-                    {`${option.flag} ${option.label}`}
-                  </option>
-                ))}
-              </select>
-              <AuthField
-                id="reg-phone"
-                type="tel"
-                className="flex-1"
-                icon={PhoneIcon}
-                value={phoneNumber}
-                onChange={e => setPhoneNumber(e.target.value)}
-                disabled={registerLoading}
-                placeholder={ui('onboardingPhonePlaceholder')}
-                autoComplete="tel-national"
-                maxLength={PHONE_NUMBER_MAX_LENGTH}
-                error={phoneNumberInvalid ? ui('onboardingPhoneInvalid') : null}
-                data-testid="phone-number-input" />
-            </div>
+        {(askCountry || askPhone) && (
+          <div className="flex gap-3">
+            {askCountry && (
+              <div className="w-32 shrink-0">
+                <Label
+                  htmlFor="reg-country"
+                  className="mb-2 block text-sm font-medium leading-6 text-[#121217]"
+                  data-testid="Label__country">
+                  {ui('onboardingCountryLabel')}
+                  <span className="ml-1 text-[#F53D6B]">*</span>
+                </Label>
+                <div className="relative">
+                  {/* The select's own text is transparent: what shows when closed is this label.
+                      Each option sets its colour back, so the open list stays readable. */}
+                  <select
+                    id="reg-country"
+                    value={country}
+                    onChange={e => setCountry(e.target.value)}
+                    disabled={registerLoading}
+                    required
+                    aria-required="true"
+                    className="h-10 w-full appearance-none rounded-lg border border-[#D1D4DB] bg-white pl-3 pr-8 text-sm text-transparent shadow-[0_1px_2px_rgba(18,18,23,0.05)] transition-colors hover:border-slate-400 focus:outline-none focus:border-slate-400"
+                    data-testid="country-select">
+                    <option value="" disabled className="text-[#121217]">{ui('onboardingCountryPlaceholder')}</option>
+                    {countryOptions.map(option => (
+                      <option key={option.value} value={option.value} className="text-[#121217]">
+                        {`${option.flag} ${option.name}`}
+                      </option>
+                    ))}
+                  </select>
+                  <span
+                    aria-hidden="true"
+                    className="pointer-events-none absolute inset-y-0 left-3 right-8 flex items-center truncate text-sm text-[#121217]"
+                    data-testid="country-select-display">
+                    {countrySelected
+                      ? `${countrySelected.flag} ${countrySelected.value}`
+                      : ui('onboardingCountryPlaceholder')}
+                  </span>
+                  {/* appearance-none drops the browser's arrow, which takes the transparent colour. */}
+                  <CaretDownIcon
+                    aria-hidden="true"
+                    className="pointer-events-none absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[#121217]"
+                    data-testid="CaretDown__country" />
+
+                </div>
+              </div>
+            )}
+            {askPhone && (
+              <div className="min-w-0 flex-1">
+                <Label
+                  htmlFor="reg-phone"
+                  className="mb-2 block text-sm font-medium leading-6 text-[#121217]"
+                  data-testid="Label__phone">
+                  {ui('onboardingPhoneLabel')}
+                  <span className="ml-2 font-normal text-slate-500">{ui('onboardingOptionalHint')}</span>
+                </Label>
+                <AuthField
+                  id="reg-phone"
+                  type="tel"
+                  icon={countryDialCode ? undefined : PhoneIcon}
+                  leading={countryDialCode ? `+${countryDialCode}` : null}
+                  value={phoneNumber}
+                  onChange={e => setPhoneNumber(e.target.value)}
+                  disabled={registerLoading}
+                  placeholder={ui('onboardingPhonePlaceholder')}
+                  autoComplete="tel-national"
+                  maxLength={PHONE_NUMBER_MAX_LENGTH}
+                  error={phoneNumberInvalid ? ui('onboardingPhoneInvalid') : null}
+                  data-testid="phone-number-input" />
+              </div>
+            )}
           </div>
         )}
 
@@ -466,7 +521,7 @@ export function RegisterStep({ config, stepData, onNext, onBack, goToStep, setTo
         <Button
           type="submit"
           data-testid="action-register-submit"
-          disabled={registerLoading || !registerPasswordStrong || !registerEmailValid || phoneNumberInvalid || sectorMissing}
+          disabled={registerLoading || !registerPasswordStrong || !registerEmailValid || phoneNumberInvalid || sectorMissing || countryMissing}
           className="h-12 w-full rounded-lg bg-[#121217] text-base font-medium text-white hover:bg-accent-highlight hover:text-accent-highlight-foreground"
         >
           {registerLoading

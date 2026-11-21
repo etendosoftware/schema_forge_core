@@ -57,6 +57,9 @@ export function buildReportDescriptor(contract) {
     // Drives `useAccordion` in ReportViewerPage — omitting it silently
     // downgrades the sidebar to the legacy flat layout.
     sections: contract.sections || [],
+    // ETP-6084: chart-tree reports; forwarded only when declared so other descriptors stay as they were.
+    ...(contract.tree !== undefined ? { tree: contract.tree } : {}),
+    ...(contract.amountColumns !== undefined ? { amountColumns: contract.amountColumns } : {}),
   };
 }
 

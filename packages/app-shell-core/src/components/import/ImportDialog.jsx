@@ -191,6 +191,10 @@ export function ImportDialog({ open, onOpenChange, config, token, postBatch, sim
   // Declared in decisions.json as `isNumeric: true`. Drives the review-queue check that a
   // malformed amount ("abc" in a price column) fails its row BEFORE the send rather than
   // inside buildOperations, where the user only saw it after confirming the import.
+  // Declared in the window's import config as `isPhone: true` (ETP-6225). Never inferred from
+  // the field name: this dialog is shared, and an unrelated "*phone*" field must not get its
+  // whitespace stripped.
+  const phoneTargets = useMemo(() => config.fields.filter((f) => f.isPhone).map((f) => f.target), [config.fields]);
   const numericTargets = useMemo(() => config.fields.filter((f) => f.isNumeric).map((f) => f.target), [config.fields]);
 
   /**
@@ -273,13 +277,14 @@ export function ImportDialog({ open, onOpenChange, config, token, postBatch, sim
     entity: config.entity,
     descriptorName: config.descriptor,
     targets: config.fields.map((f) => f.target),
+    phoneTargets,
     token,
     translate,
     // ETP-5676: the preview's answers (popover picks included, stored by id). Descriptors hand
     // them to their registered FK resolvers, which answer from them instead of asking the
     // backend again for every row.
     fkResolutions,
-  }), [config.spec, config.entity, config.descriptor, config.fields, token, translate, fkResolutions]);
+  }), [config.spec, config.entity, config.descriptor, config.fields, phoneTargets, token, translate, fkResolutions]);
 
   // The real config shape (decisions.json → window.import, verified against
   // artifacts/contacts/decisions.json) is `dedupe: { scope, key: string[] }`, not a flat
@@ -409,11 +414,30 @@ export function ImportDialog({ open, onOpenChange, config, token, postBatch, sim
     requiredTargets,
     emailTargets,
     numericTargets,
+    phoneTargets,
     fkTargets,
     fkResolutions: resolutions,
     extraErrors: runImportRowValidator(config.descriptor, row, { translate, config }),
     translate,
-  }), [requiredTargets, emailTargets, numericTargets, fkTargets, config, translate]);
+  }), [requiredTargets, emailTargets, numericTargets, phoneTargets, fkTargets, config, translate]);
+
+  // Maps a failed send onto the row's columns (ETP-6225): each field-keyed backend validation
+  // error marks its column. Messages for keys with no column stay as a row-level error, next
+  // to the column ones, so nothing is dropped.
+  const failureErrors = useCallback((error) => {
+    const mapped = [];
+    const unmatched = [];
+    for (const [field, msg] of Object.entries(error?.fieldErrors ?? {})) {
+      const target = config.fields.find((f) => f.target === field)?.target;
+      if (target) mapped.push({ target, message: String(msg) });
+      else unmatched.push(`${field}: ${msg}`);
+    }
+    if (mapped.length === 0) {
+      return [{ target: '', message: error?.message || localize('importErrorUnknown', 'Unknown error.') }];
+    }
+    if (unmatched.length > 0) mapped.push({ target: '', message: unmatched.join('; ') });
+    return mapped;
+  }, [config.fields, localize]);
 
   const runValidation = useCallback(async (mappedRows) => {
     const { uniqueRows, duplicates } = dedupeKeyTargets.length > 0
@@ -710,7 +734,7 @@ export function ImportDialog({ open, onOpenChange, config, token, postBatch, sim
     const trueFailures = results.filter((r) => r.status !== 'ok' && r.status !== SEND_STATUS.DUPLICATE);
     const resultEntries = [
       ...duplicateResults.map((r) => ({ row: r.row, errors: [{ target: '', message: r.error?.message || labelFor('alreadyExists') }], status: 'skipped' })),
-      ...trueFailures.map((r) => ({ row: r.row, errors: [{ target: '', message: r.error?.message || localize('importErrorUnknown', 'Unknown error.') }], status: 'pending' })),
+      ...trueFailures.map((r) => ({ row: r.row, errors: failureErrors(r.error), status: 'pending' })),
     ];
     setEntries(resultEntries);
     setStep(STEP.RESULT);
@@ -722,7 +746,9 @@ export function ImportDialog({ open, onOpenChange, config, token, postBatch, sim
     // A descriptor/build failure (operations === null) is actionable row data,
     // not an unexpected backend/system failure. Keep it in the result queue so
     // users get the row-specific message without a misleading support dialog.
-    const lastSystemFailure = lastFailure?.operations !== null ? lastFailure : null;
+    // A failure already shown on its column (ETP-6225) needs no technical-report dialog either.
+    const shownOnColumn = (lastFailure?.error?.fieldErrors && failureErrors(lastFailure.error).some((e) => e.target)) || false;
+    const lastSystemFailure = lastFailure?.operations !== null && !shownOnColumn ? lastFailure : null;
     setSystemError(lastSystemFailure ? {
       message: lastSystemFailure.error?.message || 'Unknown error',
       raw: lastSystemFailure.error?.raw,
@@ -771,7 +797,7 @@ export function ImportDialog({ open, onOpenChange, config, token, postBatch, sim
         { count: trueFailures.length },
       ));
     }
-  }, [entries, operationsConfig, concurrency, maxRows, batchSize, postBatch, onImported, translate, localize, labelFor, localizeError, cancelProgressFlush, reportImportFinished]);
+  }, [entries, operationsConfig, concurrency, maxRows, batchSize, postBatch, onImported, translate, localize, labelFor, localizeError, failureErrors, cancelProgressFlush, reportImportFinished]);
 
   /**
    * ETP-5350 / IC-18 — the last chance to notice a row is already in the database.
@@ -849,6 +875,7 @@ export function ImportDialog({ open, onOpenChange, config, token, postBatch, sim
     const entry = entries[index];
     const operations = await buildOperations(entry.row, operationsConfig);
     const result = await sendRow(operations, { postBatch, translate });
+    const failureEntryErrors = failureErrors(result.error);
     setEntries((prev) => {
       const next = [...prev];
       if (result.status === 'ok') {
@@ -858,14 +885,16 @@ export function ImportDialog({ open, onOpenChange, config, token, postBatch, sim
         // re-flagging as an actionable failure.
         next[index] = { ...next[index], errors: [{ target: '', message: result.error?.message || 'Already exists' }], status: 'skipped' };
       } else {
-        next[index] = { ...next[index], errors: [{ target: '', message: result.error?.message || 'Unknown error' }] };
+        next[index] = { ...next[index], errors: failureEntryErrors };
       }
       return next;
     });
-    if (result.status !== 'ok' && result.status !== SEND_STATUS.DUPLICATE) {
+    // A failure already shown on its column needs no technical-report dialog.
+    const shownOnColumn = failureEntryErrors.some((e) => e.target);
+    if (result.status !== 'ok' && result.status !== SEND_STATUS.DUPLICATE && !shownOnColumn) {
       setSystemError({ message: result.error?.message || 'Unknown error', raw: result.error?.raw, row: entry.row, operations });
     }
-  }, [entries, operationsConfig, postBatch, translate]);
+  }, [entries, operationsConfig, postBatch, translate, failureErrors]);
 
   // Which template formats to offer. Derived from the window's `formats` declaration, never
   // declared separately, so the dialog can only hand out a file the same dialog can read back.

@@ -22,13 +22,25 @@
 export const ADDRESS_LINE_MAX_LENGTH = 60;
 
 /**
- * DB column lengths of the 3 structured SEPA fields themselves
- * (`org.openbravo.sepa.iso20022`'s `AD_COLUMN.FIELDLENGTH` for
- * `EM_OBSEPA_StrtNm`/`BldgNb`/`BldgNm`: VARCHAR(70)/(16)/(35)). Mirror
- * `StructuredAddressComposer`'s constants of the same name; the backend
- * (`fieldsExceedingMaxLength`) rejects an over-length value with a 400.
+ * `BUILDING_NUMBER_MAX_LENGTH`/`BUILDING_NAME_MAX_LENGTH` mirror the DB column lengths of
+ * `org.openbravo.sepa.iso20022`'s `AD_COLUMN.FIELDLENGTH` for `EM_OBSEPA_BldgNb`/`BldgNm`
+ * (VARCHAR(16)/(35)) — `StructuredAddressComposer`'s constants of the same name.
+ *
+ * `STREET_NAME_MAX_LENGTH` is deliberately NOT the matching 70 of `EM_OBSEPA_StrtNm` (that column
+ * stays VARCHAR(70) in the DB — other SEPA consumers, e.g. the actual SEPA XML export, legitimately
+ * need up to 70 chars, and the column is never altered for this). It is Etendo Go's own, stricter
+ * business-rule cap: capping it at 60 — the same width as `ADDRESS_LINE_MAX_LENGTH` — guarantees
+ * `composeAddressLines` below never needs to cut a street mid-value to fit Address1/Address2,
+ * because the street alone can never exceed the line it would have to share. QA (Isa, Pasada 2)
+ * confirmed a 70-char street still produced a mid-word cut in the composed preview; rather than
+ * widening the UI or accepting silent truncation, the fix is to reject a street over 60 chars up
+ * front (see `fieldsExceedingMaxLength` in `StructuredAddressComposer`), so the overflow branch in
+ * `composeAddressLines` that truncates `street` is now structurally unreachable through any
+ * validated caller — see the note on that branch below, which it does NOT contradict: the
+ * truncation logic is kept as a defensive fallback for a direct/unvalidated call, it simply never
+ * fires for input that passed validation.
  */
-export const STREET_NAME_MAX_LENGTH = 70;
+export const STREET_NAME_MAX_LENGTH = 60;
 export const BUILDING_NUMBER_MAX_LENGTH = 16;
 export const BUILDING_NAME_MAX_LENGTH = 35;
 
@@ -78,6 +90,14 @@ function appendPart(base, sep, part) {
  * - `"Street, Number - Name"` when it fits in 60 chars; otherwise `"Street, Number"` on line 1 and
  *   the name (cut to 60) on line 2; when even `"Street, Number"` overflows, the street cut to 60 on
  *   line 1 and `"Number - Name"` cut to 60 on line 2.
+ *
+ * The street-cut branch above (CP-6, restored in ETP-5806 to match Classic's
+ * `LocationSEPA.fillAddressLines`) is kept as a defensive fallback for a caller that bypasses
+ * validation, but it is now structurally unreachable for any validated input: since
+ * `STREET_NAME_MAX_LENGTH` (60) caps `street` itself at the same width as `ADDRESS_LINE_MAX_LENGTH`,
+ * `street` can never be long enough to need cutting. A 70-char street (the old cap) is rejected
+ * up front by validation instead of ever reaching this function and being cut mid-word — the
+ * failure QA (Isa, Pasada 2) confirmed against the old 70-char limit.
  *
  * @param {string|number|null|undefined} streetName
  * @param {string|number|null|undefined} buildingNumber

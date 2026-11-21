@@ -778,3 +778,24 @@ describe('runImport — per-row job results (async batch)', () => {
     assert.equal(calls[0].length, 1);
   });
 });
+
+describe('sendRow field validation errors (ETP-6225)', () => {
+  it('exposes detail.response.errors as error.fieldErrors', async () => {
+    const postBatch = async () => ({
+      committed: false,
+      failedAt: { index: 0, id: 'bp' },
+      error: {
+        status: 400,
+        message: "Operation 'bp' rejected by server",
+        detail: { response: { status: -4, errors: { etgoPhone: 'Invalid phone', etgoEmail: 'Invalid email' } } },
+      },
+    });
+    const result = await sendRow([{ id: 'bp' }], { postBatch });
+    assert.deepEqual(result.error.fieldErrors, { etgoPhone: 'Invalid phone', etgoEmail: 'Invalid email' });
+  });
+  it('has no fieldErrors for a plain failure', async () => {
+    const postBatch = async () => ({ committed: false, error: { message: 'boom', status: 500 } });
+    const result = await sendRow([{ id: 'bp' }], { postBatch });
+    assert.equal(result.error.fieldErrors, undefined);
+  });
+});

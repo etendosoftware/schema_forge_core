@@ -12,6 +12,7 @@ import {
 } from './sessionCredentials.js';
 import { DEFAULT_API_TIMEOUT_MS, NetworkError } from './networkError.js';
 import { observeSessionConflictResponse } from './sessionConflict.js';
+import { featureRequestHeaders } from './featureContext.js';
 
 export function detectBaseUrl() {
   // Guarded so this module can be imported outside a browser. `plain node --test` runs
@@ -400,6 +401,8 @@ function harvestReadVersions(res, path, isOurs = () => true) {
  *   `stale_record` ETP-5255 exists to prevent, because the client's cached token then goes
  *   stale with nothing to refresh it. The caller opting in owns that verification; this flag
  *   does not and cannot check it.
+ * - `feature` — ETP-5646: an explicit feature key (see ./featureContext.js) for this request, in
+ *   place of the tab's active one. Sent only on first-party requests; an invalid key is dropped.
  * - `timeout` — ms to wait for a response before rejecting with `NetworkError('timeout')`.
  *   Default {@link DEFAULT_API_TIMEOUT_MS} for a safe method (GET, HEAD, OPTIONS; no method
  *   means GET) and none for any other method — see `TIMEOUT_BY_DEFAULT_METHODS`. `0` disables
@@ -627,7 +630,7 @@ export function createApiFetch(baseUrl, getToken, onUnauthorized, scope) {
   return async function apiFetch(path, options = {}) {
     const {
       on401, credentials, baseUrl: baseUrlOverride, token: tokenOverride,
-      headers: extraHeaders, refreshVersion = true, timeout, ...rest
+      headers: extraHeaders, refreshVersion = true, timeout, feature, ...rest
     } = options;
     // Legacy three-argument clients inherit the registered scope, including host wrappers
     // with a captured token. Explicit null opts out (bootstrap refresh owns its guard).
@@ -831,6 +834,7 @@ export function createApiFetch(baseUrl, getToken, onUnauthorized, scope) {
       const headers = {
         ...canonical,
         ...credentialHeadersForToken(token),
+        ...featureRequestHeaders({ url: resolveApiUrl(base, path), base, explicit: feature, scope: getSessionAccountId() }),
         ...extraHeaders,
       };
       // ETP-4576 — every unsafe request carries the proof whenever one is held, WITHOUT

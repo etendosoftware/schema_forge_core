@@ -498,7 +498,7 @@ function EditableDataCell({
           data-testid={"FkMismatchCell__" + field.id} />
       ) : isEditable ? (
         <div className="flex flex-col gap-1">
-          {fieldError && !rowLevelError && (
+          {fieldError && (
             <span
               // ETP-5223: this was `truncate`, so "Falta un campo obligatorio."
               // rendered as "Falta un campo obligat…" in a narrow column and the

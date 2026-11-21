@@ -1779,7 +1779,8 @@ function buildListModalFields(formFields) {
  * catalog/master-data window that opts in.
  */
 // ETP-5978 — list-modal templateConfig keys passed through only when the window declares them.
-const LIST_MODAL_OPT_IN_KEYS = ['modalVariant', 'hideBackButton', 'hideSearch', 'newButtonVariant', 'rowClickEdit', 'listVariant'];
+// viewTitleKey: i18n key for the modal title when a read-only role opens the record (view mode).
+const LIST_MODAL_OPT_IN_KEYS = ['modalVariant', 'hideBackButton', 'hideSearch', 'newButtonVariant', 'rowClickEdit', 'listVariant', 'viewTitleKey'];
 
 function pickDefined(source, keys) {
   const out = {};
@@ -1875,7 +1876,9 @@ export function generateListModalPage(headerEntity, contract) {
     toolbarFilters: tc.toolbarFilters ?? [],
     // ETP-5978 — opt-in look keys, emitted ONLY when declared so every existing list-modal
     // page stays byte-identical: modalVariant ("compact"), hideBackButton, hideSearch,
-    // newButtonVariant ("primary"), rowClickEdit, listVariant ("compact").
+    // newButtonVariant ("primary"), rowClickEdit, listVariant ("compact"), viewTitleKey (i18n
+    // key for the modal title when a read-only role opens a record — view mode; the UI falls
+    // back to ui('view') when it is absent).
     ...pickDefined(tc, LIST_MODAL_OPT_IN_KEYS),
   }, null, 2);
 

@@ -127,11 +127,7 @@ export async function resolveReportSession(headers, {
     throw new ReportAuthError(401, 'NO_SESSION', 'Session has no resolvable clientId');
   }
 
-  const forwardHeaders = { Cookie: sessionCookie };
-  const origin = getHeader(headers, 'origin');
-  const referer = getHeader(headers, 'referer');
-  if (origin) forwardHeaders.Origin = origin;
-  else if (referer) forwardHeaders.Referer = referer;
+  const { forwardHeaders } = accessCheckSession(headers);
 
   const isUnsafe = !SAFE_METHODS.has(String(method).toUpperCase());
   if (isUnsafe) {
@@ -277,6 +273,23 @@ export async function assertReportAccess(session, reportId, { etendoBase, fetchI
   if (data.governed.includes(reportId) && !data.reportAccess?.[reportId]) {
     throw new ReportAuthError(403, 'REPORT_ACCESS_DENIED', 'The role has no access to this report');
   }
+}
+
+/**
+ * The headers `assertReportAccess` needs, built from the request alone so the
+ * access check can start without waiting for the session lookup (ETP-6146).
+ * @param {object} headers incoming request headers
+ * @returns {{forwardHeaders: object}|null} null when there is no session cookie
+ */
+export function accessCheckSession(headers) {
+  const sessionCookie = extractSessionCookie(getHeader(headers, 'cookie'));
+  if (!sessionCookie) return null;
+  const forwardHeaders = { Cookie: sessionCookie };
+  const origin = getHeader(headers, 'origin');
+  const referer = getHeader(headers, 'referer');
+  if (origin) forwardHeaders.Origin = origin;
+  else if (referer) forwardHeaders.Referer = referer;
+  return { forwardHeaders };
 }
 
 /**

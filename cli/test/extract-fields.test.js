@@ -267,6 +267,27 @@ describe('buildSchema', () => {
     assert.equal(qty.type, 'quantity');
   });
 
+  it('types every numeric AD reference (Long/BigDecimal domain) as a numeric schema type', () => {
+    // AD_Reference 800019 ("General Quantity", BigDecimalDomainType$GeneralQuantity) backs the
+    // rate columns (C_Conversion_Rate.MultiplyRate/DivideRate, Finacc_Txn_Convert_Rate, ...).
+    // It was missing from the map and fell back to 'string', so the rates reached the
+    // contract and the public API manifest typed as strings.
+    const numericRefs = { 11: 'integer', 12: 'amount', 22: 'decimal', 29: 'quantity', 800008: 'price', 800019: 'decimal' };
+    const rows = Object.keys(numericRefs).map((refId, index) => makeRow({
+      columnname: `Numeric_${refId}`,
+      field_name: `Numeric ${refId}`,
+      ad_reference_id: Number(refId),
+      field_seq: (index + 1) * 10,
+    }));
+
+    const fields = buildSchema(rows, systemColumns, refMap).entities[0].fields;
+
+    for (const [refId, expectedType] of Object.entries(numericRefs)) {
+      const field = fields.find((f) => f.columnName === `Numeric_${refId}`);
+      assert.equal(field.type, expectedType, `AD_Reference ${refId}`);
+    }
+  });
+
   it('returns empty schema for empty rows', () => {
     const schema = buildSchema([], systemColumns, refMap);
     assert.equal(schema.window, null);

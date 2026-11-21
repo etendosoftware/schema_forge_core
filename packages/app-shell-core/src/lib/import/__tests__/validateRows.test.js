@@ -130,3 +130,16 @@ describe('validateRow — ETP-4996: numeric format, descriptor errors, i18n', ()
     assert.equal(errors[0].message, 'Required field is missing.');
   });
 });
+
+describe('validateRow phoneTargets (ETP-6225)', () => {
+  it('marks the phone column for an invalid phone', () => {
+    const result = validateRow({ phone: "'+34 910" }, { phoneTargets: ['phone'] });
+    assert.equal(result.valid, false);
+    assert.equal(result.errors[0].target, 'phone');
+  });
+  it('adds no error for a spaced, valid or empty phone', () => {
+    for (const phone of ['+34 910 565 400', '653120012', '']) {
+      assert.equal(validateRow({ phone }, { phoneTargets: ['phone'] }).valid, true, phone);
+    }
+  });
+});
