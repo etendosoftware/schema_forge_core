@@ -490,6 +490,101 @@ describe('AuthorizePage', () => {
       window.location = originalLocation;
     });
 
+    // ETP-4561 — window.location is stubbed per test and always restored, even when an
+    // expectation throws, so a failure cannot leak the stub into later tests.
+    describe('ETP-4561 redirect URL policy', () => {
+      let originalLocation;
+      beforeEach(() => {
+        originalLocation = window.location;
+        delete window.location;
+        window.location = { ...originalLocation, href: 'about:initial' };
+      });
+      afterEach(() => {
+        window.location = originalLocation;
+      });
+
+      const withRedirectUri = (redirect_uri, extra = {}) => {
+        mockSearchParams = new URLSearchParams({
+          client_id: 'c',
+          redirect_uri,
+          code_challenge: 'x',
+          response_type: 'code',
+          ...extra,
+        });
+      };
+
+      it('deny shows an error and does not navigate to a javascript: redirect_uri', async () => {
+        const user = userEvent.setup();
+        withRedirectUri('javascript:alert(document.domain)');
+        renderPage();
+        await user.click(screen.getByTestId('oauth-deny'));
+        // A 1s redirect timer leaked by an earlier success test can still fire into this
+        // stub, so assert on the hostile scheme rather than on an untouched href.
+        expect(window.location.href).not.toMatch(/^\s*javascript:/i);
+        expect(screen.getByText('Invalid redirect URL received')).toBeInTheDocument();
+      });
+
+      it('deny navigates to an http loopback redirect_uri (RFC 8252)', async () => {
+        const user = userEvent.setup();
+        withRedirectUri('http://127.0.0.1:53682/cb', { state: 's1' });
+        renderPage();
+        await user.click(screen.getByTestId('oauth-deny'));
+        const url = new URL(window.location.href);
+        expect(url.origin).toBe('http://127.0.0.1:53682');
+        expect(url.pathname).toBe('/cb');
+        expect(url.searchParams.get('error')).toBe('access_denied');
+        expect(url.searchParams.get('state')).toBe('s1');
+      });
+
+      it('deny encodes a hostile state and keeps the fragment last', async () => {
+        const user = userEvent.setup();
+        withRedirectUri('https://example.com/cb?a=1#frag', { state: 'x&error=foo#y' });
+        renderPage();
+        await user.click(screen.getByTestId('oauth-deny'));
+        const url = new URL(window.location.href);
+        expect(url.searchParams.getAll('error')).toEqual(['access_denied']);
+        expect(url.searchParams.get('state')).toBe('x&error=foo#y');
+        expect(url.searchParams.get('a')).toBe('1');
+        expect(url.hash).toBe('#frag');
+      });
+
+      it('authorize navigates to an http loopback redirect_url', async () => {
+        vi.useFakeTimers({ shouldAdvanceTime: true });
+        try {
+          const user = userEvent.setup({ advanceTimers: vi.advanceTimersByTime });
+          withRedirectUri('http://127.0.0.1:53682/cb');
+          globalThis.fetch = vi.fn().mockResolvedValue({
+            ok: true,
+            json: async () => ({ redirect_url: 'http://127.0.0.1:53682/cb?code=abc' }),
+          });
+          renderPage();
+          await user.click(screen.getByTestId('oauth-authorize-submit'));
+          await waitFor(() => expect(screen.getByText('oauthAuthorizedRedirecting')).toBeInTheDocument());
+          await vi.advanceTimersByTimeAsync(1100);
+          expect(window.location.href).toBe('http://127.0.0.1:53682/cb?code=abc');
+        } finally {
+          vi.useRealTimers();
+        }
+      });
+
+      it('authorize refuses a javascript: redirect_url returned by the server', async () => {
+        const user = userEvent.setup();
+        withRedirectUri('https://example.com/cb');
+        globalThis.fetch = vi.fn().mockResolvedValue({
+          ok: true,
+          json: async () => ({ redirect_url: ' JavaScript:alert(1)' }),
+        });
+        renderPage();
+        await user.click(screen.getByTestId('oauth-authorize-submit'));
+        await waitFor(() => {
+          expect(screen.getByText('Invalid redirect URL received')).toBeInTheDocument();
+        });
+        // A 1s redirect timer leaked by an earlier success test can still fire into this
+        // stub, so assert on the hostile scheme rather than on an untouched href.
+        expect(window.location.href).not.toMatch(/^\s*javascript:/i);
+      });
+    });
+
     it('handles error response where json parsing fails', async () => {
       const user = userEvent.setup();
       globalThis.fetch = vi.fn().mockResolvedValue({
