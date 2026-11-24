@@ -5,7 +5,7 @@ import { Label } from '@etendosoftware/app-shell-core/components/ui/label';
 import { useUI } from '@etendosoftware/app-shell-core/i18n';
 import { isCompanyStepValid, isSampleDataOffered, isAddressBlockStarted } from '../state.js';
 import { BUSINESS_SECTORS, isBusinessSector } from '../businessSectors.js';
-import { ONBOARDING_FIELD_LIMITS, CLIENT_NAME_INPUT_MAX_LENGTH, exceedsLimit } from '../fieldLimits.js';
+import { ONBOARDING_FIELD_LIMITS, CLIENT_NAME_INPUT_MAX_LENGTH, STREET_NAME_INPUT_MAX_LENGTH, exceedsLimit } from '../fieldLimits.js';
 import { trackOnboarding } from '../tracking.js';
 import { SetupShell } from '../components/SetupShell.jsx';
 import { OnboardingSessionAction } from '../components/OnboardingSessionAction.jsx';
@@ -93,6 +93,24 @@ export function CompanyStep({ config, stepData, onNext, onBack, goToStep, onChan
   const addressStarted = isAddressBlockStarted(form);
   const streetNameMissing = addressStarted && !form.streetName?.trim();
   const cityMissing = addressStarted && !form.city?.trim();
+
+  // ETP-5806 CP-13 (QA finding) — the address fields capped themselves through the input's own
+  // `maxLength` alone, which drops the extra characters with no feedback whatsoever: pasting a
+  // 200-character street left 60 of it, cut mid-word, and said nothing. Same treatment as
+  // `clientNameTooLong` below (ETP-5638) and as LocationEditorModal's LimitedTextField: the limit
+  // is stated continuously by AddressCell's counter, reaching it is announced, and an over-long
+  // value is kept and flagged rather than truncated. Trimmed to match `isCompanyStepValid`, so the
+  // inline error and the Start button never disagree.
+  //
+  // Only Street can actually be over its limit: `STREET_NAME_INPUT_MAX_LENGTH` (70, the real
+  // `EM_OBSEPA_StrtNm` width) leaves typing headroom above the composer's 60-char cap. The other
+  // three caps ARE their column widths, so nothing above them could be stored and their check is
+  // defensive symmetry — the same reason LocationEditorModal's save gate covers all three.
+  const streetNameTooLong = exceedsLimit(form.streetName?.trim(), ONBOARDING_FIELD_LIMITS.streetName);
+  const buildingNumberTooLong = exceedsLimit(form.buildingNumber?.trim(), ONBOARDING_FIELD_LIMITS.buildingNumber);
+  const buildingNameTooLong = exceedsLimit(form.buildingName?.trim(), ONBOARDING_FIELD_LIMITS.buildingName);
+  const cityTooLong = exceedsLimit(form.city?.trim(), ONBOARDING_FIELD_LIMITS.city);
+  const tooLongMessage = (max) => ui('onboardingFieldTooLong', { max });
 
   const askSector = accountSectorMissing;
   const sectorMissing = askSector && !isBusinessSector(form.sector);
@@ -214,8 +232,10 @@ export function CompanyStep({ config, stepData, onNext, onBack, goToStep, onChan
                   value={form.streetName}
                   onChange={e => updateField('streetName', e.target.value)}
                   placeholder={ui('streetNamePlaceholder')}
-                  maxLength={ONBOARDING_FIELD_LIMITS.streetName}
-                  error={streetNameMissing ? ui('fieldRequiredMessage') : null}
+                  max={ONBOARDING_FIELD_LIMITS.streetName}
+                  maxLength={STREET_NAME_INPUT_MAX_LENGTH}
+                  error={streetNameMissing ? ui('fieldRequiredMessage')
+                    : streetNameTooLong ? tooLongMessage(ONBOARDING_FIELD_LIMITS.streetName) : null}
                   // ETP-5806 — browser autofill is wanted here (it genuinely speeds up this
                   // step), so we declare the standard HTML autocomplete token instead of
                   // disabling it. Chrome paints its own blue/grey highlight on an autofilled
@@ -230,8 +250,9 @@ export function CompanyStep({ config, stepData, onNext, onBack, goToStep, onChan
                   value={form.buildingNumber}
                   onChange={e => updateField('buildingNumber', e.target.value)}
                   placeholder={ui('buildingNumberEmptyPlaceholder')}
+                  max={ONBOARDING_FIELD_LIMITS.buildingNumber}
                   maxLength={ONBOARDING_FIELD_LIMITS.buildingNumber}
-                  error={null}
+                  error={buildingNumberTooLong ? tooLongMessage(ONBOARDING_FIELD_LIMITS.buildingNumber) : null}
                   // The WHATWG autocomplete spec has no dedicated "house/door number" token —
                   // address-line1/2/3 are full line values, not line sub-fields — so there is no
                   // reasonable standard token to offer the browser for this field specifically.
@@ -245,7 +266,9 @@ export function CompanyStep({ config, stepData, onNext, onBack, goToStep, onChan
                   trailingLabel={`(${ui('optional')})`}
                   value={form.buildingName}
                   onChange={e => updateField('buildingName', e.target.value)}
+                  max={ONBOARDING_FIELD_LIMITS.buildingName}
                   maxLength={ONBOARDING_FIELD_LIMITS.buildingName}
+                  error={buildingNameTooLong ? tooLongMessage(ONBOARDING_FIELD_LIMITS.buildingName) : null}
                   // address-line2 is the standard token for an additional address line —
                   // apartment, suite, unit or building name — which is exactly this field,
                   // and a closer fit than overloading it onto the house/door number.
@@ -257,8 +280,10 @@ export function CompanyStep({ config, stepData, onNext, onBack, goToStep, onChan
                   required={addressStarted}
                   value={form.city}
                   onChange={e => updateField('city', e.target.value)}
+                  max={ONBOARDING_FIELD_LIMITS.city}
                   maxLength={ONBOARDING_FIELD_LIMITS.city}
-                  error={cityMissing ? ui('fieldRequiredMessage') : null}
+                  error={cityMissing ? ui('fieldRequiredMessage')
+                    : cityTooLong ? tooLongMessage(ONBOARDING_FIELD_LIMITS.city) : null}
                   autoComplete="address-level2"
                   data-testid="AddressCell__city" />
               </div>

@@ -36,6 +36,7 @@ const { CompanyStep } = await import('../CompanyStep.jsx');
 const {
   ONBOARDING_FIELD_LIMITS,
   CLIENT_NAME_INPUT_MAX_LENGTH,
+  STREET_NAME_INPUT_MAX_LENGTH,
 } = await import('../../fieldLimits.js');
 
 const CONFIG = { apiBase: '', brandLabel: 'Etendo', defaultForm: {} };
@@ -167,10 +168,51 @@ describe('CompanyStep field limits (ETP-4665 / ETP-5638)', () => {
     );
 
     expect(container.querySelector('#fiscalIdValue').maxLength).toBe(ONBOARDING_FIELD_LIMITS.fiscalId);
-    expect(container.querySelector('#streetName').maxLength).toBe(ONBOARDING_FIELD_LIMITS.streetName);
+    // ETP-5806 CP-13 — Street keeps typing headroom up to the real EM_OBSEPA_StrtNm width, so an
+    // over-long paste is flagged inline instead of truncated mid-word with no signal (the same
+    // deal clientName has had since ETP-5638). The other three caps ARE their column widths, so
+    // there is nothing above them that could be stored and no headroom to give.
+    expect(container.querySelector('#streetName').maxLength).toBe(STREET_NAME_INPUT_MAX_LENGTH);
+    expect(STREET_NAME_INPUT_MAX_LENGTH).toBeGreaterThan(ONBOARDING_FIELD_LIMITS.streetName);
     expect(container.querySelector('#buildingNumber').maxLength).toBe(ONBOARDING_FIELD_LIMITS.buildingNumber);
     expect(container.querySelector('#buildingName').maxLength).toBe(ONBOARDING_FIELD_LIMITS.buildingName);
     expect(container.querySelector('#city').maxLength).toBe(ONBOARDING_FIELD_LIMITS.city);
+  });
+
+  /**
+   * ETP-5806 CP-13 (QA finding) — the repro. Pasting a 200-character street used to leave 60 of
+   * it, cut mid-word, with no counter, no message and no aria-invalid: the exact CP-6 symptom, in
+   * the one address pop-up that does not use LocationEditorModal. jsdom does not enforce
+   * `maxLength` on a programmatic value, which is what lets this assert the over-limit state
+   * directly.
+   */
+  it('keeps an over-long street, flags it inline and blocks Start instead of truncating', () => {
+    const { container } = renderCompanyStep(
+      { businessType: 'company', clientName: 'Acme', city: 'Madrid' },
+      { structuredAddressForSepa: true },
+    );
+
+    const street = container.querySelector('#streetName');
+    fireEvent.change(street, { target: { value: 'D'.repeat(200) } });
+
+    expect(street.getAttribute('aria-invalid')).toBe('true');
+    expect(screen.getByTestId('AddressCell-error__79cf84')).toBeInTheDocument();
+    expect(startButton()).toBeDisabled();
+  });
+
+  it('announces the limit once the street reaches it, before anything is dropped', () => {
+    const { container } = renderCompanyStep(
+      { businessType: 'company', clientName: 'Acme', city: 'Madrid' },
+      { structuredAddressForSepa: true },
+    );
+
+    const street = container.querySelector('#streetName');
+    fireEvent.change(street, { target: { value: 'D'.repeat(ONBOARDING_FIELD_LIMITS.streetName - 1) } });
+    expect(screen.queryByTestId('AddressCell-at-limit__streetName')).not.toBeInTheDocument();
+
+    fireEvent.change(street, { target: { value: 'D'.repeat(ONBOARDING_FIELD_LIMITS.streetName) } });
+    expect(screen.getByTestId('AddressCell-at-limit__streetName')).toBeInTheDocument();
+    expect(screen.getByTestId('AddressCell-counter__streetName')).toBeInTheDocument();
   });
 });
 

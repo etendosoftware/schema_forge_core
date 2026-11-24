@@ -218,7 +218,13 @@ describe('the forms wire the limits to the inputs (ETP-4665)', () => {
     assert.match(step, /ui\('onboardingFieldTooLong', \{ max: ONBOARDING_FIELD_LIMITS\.clientName \}\)/);
     assert.match(step, /maxLength=\{ONBOARDING_FIELD_LIMITS\.fiscalId\}/);
     // ETP-5806: the free-text address field was replaced by Street/Number/Building Name.
-    assert.match(step, /maxLength=\{ONBOARDING_FIELD_LIMITS\.streetName\}/);
+    // CP-13: Street carries typing headroom up to the real EM_OBSEPA_StrtNm width, exactly like
+    // the company name does (ETP-5638), so an over-long paste is flagged inline instead of being
+    // truncated mid-word with no signal. `max` stays the ENFORCED cap, which is what the counter
+    // and the Start gate use.
+    assert.match(step, /max=\{ONBOARDING_FIELD_LIMITS\.streetName\}/);
+    assert.match(step, /maxLength=\{STREET_NAME_INPUT_MAX_LENGTH\}/);
+    assert.match(step, /exceedsLimit\(form\.streetName\?\.trim\(\), ONBOARDING_FIELD_LIMITS\.streetName\)/);
     assert.match(step, /maxLength=\{ONBOARDING_FIELD_LIMITS\.buildingNumber\}/);
     assert.match(step, /maxLength=\{ONBOARDING_FIELD_LIMITS\.buildingName\}/);
   });
@@ -265,9 +271,14 @@ describe('the forms wire the limits to the inputs (ETP-4665)', () => {
     assert.match(cityCell, /required=\{addressStarted\}/);
     assert.doesNotMatch(numberCell, /required=/);
 
-    assert.match(streetCell, /error=\{streetNameMissing \? ui\('fieldRequiredMessage'\) : null\}/);
-    assert.match(cityCell, /error=\{cityMissing \? ui\('fieldRequiredMessage'\) : null\}/);
-    assert.match(numberCell, /error=\{null\}/);
+    // ETP-5806 CP-13 — "missing" still wins over "too long" on the two mandatory cells, and
+    // Number, which is never mandatory, now reports only its (defensive) over-limit state.
+    assert.match(streetCell, /error=\{streetNameMissing \? ui\('fieldRequiredMessage'\)/);
+    assert.match(streetCell, /streetNameTooLong \? tooLongMessage\(ONBOARDING_FIELD_LIMITS\.streetName\) : null\}/);
+    assert.match(cityCell, /error=\{cityMissing \? ui\('fieldRequiredMessage'\)/);
+    assert.match(cityCell, /cityTooLong \? tooLongMessage\(ONBOARDING_FIELD_LIMITS\.city\) : null\}/);
+    assert.doesNotMatch(numberCell, /fieldRequiredMessage/);
+    assert.match(numberCell, /error=\{buildingNumberTooLong \? tooLongMessage\(ONBOARDING_FIELD_LIMITS\.buildingNumber\) : null\}/);
 
     // The now-unused "missing" flag for Number must not linger in the component either.
     assert.doesNotMatch(step, /buildingNumberMissing/);

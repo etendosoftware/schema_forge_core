@@ -77,6 +77,39 @@ canonical browser copy of the rule: it exports the length constants, `effectiveB
 (the `"s/n"` fallback, `EMPTY_BUILDING_NUMBER_FALLBACK`) and `composeAddressLines` (empty lines
 when there is no street).
 
+### ETP-5806 CP-13 — the address limits are COMMUNICATED, not silently enforced (QA pass 4)
+
+All four address cells enforced their cap through the input's own `maxLength` alone. That drops
+every character past the cap with no feedback of any kind: pasting a 200-character street left 60
+of it, cut mid-word, with no counter, no message and no `aria-invalid`. It is the same defect
+ETP-5806 CP-6 had just fixed in `LocationEditorModal` — this is the one address pop-up that does
+not use that modal, so it was missed.
+
+`AddressCell` now takes `max` (the enforced cap) alongside `maxLength` (the input's hard stop) and
+renders a character counter beside the label plus a "limit reached" note once the value gets there.
+Over the cap, the counter turns red and the caller supplies the inline error
+(`ui('onboardingFieldTooLong')`, the same message an over-long company name uses).
+`isCompanyStepValid` already refused an over-limit value, so Start was already blocked — what was
+missing was any way for the user to find out.
+
+**Street is the one field with typing headroom.** `STREET_NAME_INPUT_MAX_LENGTH` = **70**, the real
+width of `EM_OBSEPA_StrtNm`, above the enforced cap of 60 — exactly the `CLIENT_NAME_INPUT_MAX_LENGTH`
+arrangement from ETP-5638 (input 60, real limit 40). Everything between 61 and 70 is kept, flagged
+and blocks Start instead of vanishing, and the headroom can never produce a value that fails to
+store because it stops at the column. The other three caps **are** their column widths (16/35/60),
+so there is nothing above them that could be stored and no headroom to give: for them the counter
+and the note are the whole signal.
+
+**Accessibility.** The counter is wired into the input's `aria-describedby` rather than being a
+live region — it changes on every keystroke, and announcing "31/60", "32/60"… would bury everything
+else — while the "limit reached" note is `role="status"` / `aria-live="polite"`, and `aria-invalid`
+tracks the error or the over-limit state. Same contract as `LimitedTextField.jsx` in the functional
+repo, so the two address surfaces behave identically for a screen-reader user.
+
+i18n: `charactersUsedCounter` and `fieldMaxLengthReached` (generic, interpolating the field name)
+come from the app's `genericLabels`; the over-limit error reuses the existing
+`onboardingFieldTooLong`.
+
 ### Step 1's name is pinned to step 2's, not to its column
 
 `ETGO_ACCOUNT.NAME` could hold 255 characters, but the register field is capped at 60 like the

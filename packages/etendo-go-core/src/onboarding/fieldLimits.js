@@ -85,6 +85,27 @@ export const BUILDING_NUMBER_MAX_LENGTH = 16;
 export const BUILDING_NAME_MAX_LENGTH = 35;
 
 /**
+ * ETP-5806 CP-13 (QA finding) — hard cap of the Street input, looser than
+ * STREET_NAME_MAX_LENGTH on purpose and for exactly the reason
+ * CLIENT_NAME_INPUT_MAX_LENGTH exists (ETP-5638): a `maxLength` AT the real
+ * limit silently truncates a pasted value, so the user never learns why it was
+ * cut. Pasting a 200-character street dropped it to 60 mid-word with no signal
+ * of any kind — the same defect CP-6 had just fixed in LocationEditorModal, in
+ * the one address pop-up that does not use that modal.
+ *
+ * 70 is NOT a round number: it is the real width of `EM_OBSEPA_StrtNm`, the
+ * column this value lands in, so the headroom can never produce a value that
+ * fails to store. Everything between 61 and 70 is kept, flagged inline as an
+ * error and blocks Start (`isCompanyStepValid` already refuses it), exactly
+ * like an over-long company name.
+ *
+ * The other three fields have NO headroom by design: their caps ARE their
+ * column widths (16/35/60), so there is nothing above the cap that could ever
+ * be stored. For them the counter and the "limit reached" note are the signal.
+ */
+export const STREET_NAME_INPUT_MAX_LENGTH = 70;
+
+/**
  * ETP-5806 — City, mandatory together with Street/Number once the address block is started (see
  * `isAddressBlockStarted`/`isCompanyStepValid` below). `C_Location.City` (DAL property `cityName`)
  * is a plain NVARCHAR(60) AD column — not one of `org.openbravo.sepa.iso20022`'s SEPA columns —
