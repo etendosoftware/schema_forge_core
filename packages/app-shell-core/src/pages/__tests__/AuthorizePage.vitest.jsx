@@ -12,8 +12,9 @@ vi.mock('../../i18n/index.js', () => ({
 // In core, both useAuth and createApiFetch come from the auth barrel.
 // AuthorizePage no longer destructures `token`/`logout` (cookie-session migration,
 // ADR-0001) — the mock reflects the new useAuth() contract: username + csrfToken.
+const mockRefreshToken = vi.fn(() => Promise.resolve());
 vi.mock('../../auth/index.js', () => ({
-  useAuth: () => ({ username: 'testuser', csrfToken: 'test-csrf-token' }),
+  useAuth: () => ({ username: 'testuser', csrfToken: 'test-csrf-token', refreshToken: mockRefreshToken }),
   createApiFetch: vi.fn(() => vi.fn()),
 }));
 
@@ -53,7 +54,7 @@ vi.mock('react-router-dom', () => ({
   useSearchParams: () => [mockSearchParams],
 }));
 
-import { render, screen, waitFor } from '@testing-library/react';
+import { render, screen, waitFor, fireEvent, act } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { ObservabilityProvider } from '../../observability/index.js';
 import AuthorizePage from '../AuthorizePage.jsx';
@@ -149,6 +150,104 @@ describe('AuthorizePage', () => {
     });
   });
 
+  // Kept before the real-timer consent tests: those leave a pending 1 s redirect timer that would
+  // otherwise fire into this block's fake window.location.
+  describe('ETP-5386 grant refresh before the redirect', () => {
+    const REDIRECT = 'https://example.com/callback?code=abc';
+    let originalLocation;
+
+    beforeEach(() => {
+      mockSearchParams = new URLSearchParams({
+        client_id: 'test-client',
+        redirect_uri: 'https://example.com/callback',
+        code_challenge: 'challenge123',
+        response_type: 'code',
+      });
+      vi.useFakeTimers();
+      originalLocation = window.location;
+      delete window.location;
+      window.location = { ...originalLocation, href: '' };
+      mockRefreshToken.mockReset();
+    });
+
+    afterEach(() => {
+      window.location = originalLocation;
+      vi.useRealTimers();
+    });
+
+    const authorize = async (response = { ok: true, json: async () => ({ redirect_url: REDIRECT }) }) => {
+      globalThis.fetch = vi.fn().mockResolvedValue(response);
+      renderPage();
+      await act(async () => { fireEvent.click(screen.getByTestId('oauth-authorize-submit')); });
+    };
+    const advance = (ms) => act(async () => { await vi.advanceTimersByTimeAsync(ms); });
+
+    it('redirects after the 1 s success display when the refresh settles at once', async () => {
+      mockRefreshToken.mockResolvedValue(undefined);
+      await authorize();
+      expect(mockRefreshToken).toHaveBeenCalledTimes(1);
+      await advance(999);
+      expect(window.location.href).toBe('');
+      await advance(1);
+      expect(window.location.href).toBe(REDIRECT);
+    });
+
+    it('waits for a slow refresh before redirecting', async () => {
+      let resolveRefresh;
+      mockRefreshToken.mockReturnValue(new Promise((resolve) => { resolveRefresh = resolve; }));
+      await authorize();
+      await advance(2500);
+      expect(window.location.href).toBe('');
+      await act(async () => { resolveRefresh(); });
+      await advance(0);
+      expect(window.location.href).toBe(REDIRECT);
+    });
+
+    it('redirects at the 3 s cap when the refresh never settles', async () => {
+      mockRefreshToken.mockReturnValue(new Promise(() => {}));
+      await authorize();
+      await advance(2999);
+      expect(window.location.href).toBe('');
+      await advance(1);
+      expect(window.location.href).toBe(REDIRECT);
+    });
+
+    it('still redirects when the refresh rejects', async () => {
+      mockRefreshToken.mockRejectedValue(new Error('refresh failed'));
+      await authorize();
+      await advance(1000);
+      expect(window.location.href).toBe(REDIRECT);
+      expect(screen.queryByText('XCircle')).not.toBeInTheDocument();
+    });
+
+    it('still redirects when the refresh throws synchronously', async () => {
+      mockRefreshToken.mockImplementation(() => { throw new Error('boom'); });
+      await authorize();
+      await advance(1000);
+      expect(window.location.href).toBe(REDIRECT);
+    });
+
+    it('does not refresh when the server rejects the authorization', async () => {
+      await authorize({ ok: false, status: 400, json: async () => ({ error: 'invalid_request' }) });
+      await advance(5000);
+      expect(mockRefreshToken).not.toHaveBeenCalled();
+      expect(window.location.href).toBe('');
+    });
+
+    it('does not refresh when the response has no redirect_url', async () => {
+      await authorize({ ok: true, json: async () => ({}) });
+      await advance(5000);
+      expect(mockRefreshToken).not.toHaveBeenCalled();
+      expect(window.location.href).toBe('');
+    });
+
+    it('does not refresh when the user denies', async () => {
+      renderPage();
+      fireEvent.click(screen.getByTestId('oauth-deny'));
+      expect(mockRefreshToken).not.toHaveBeenCalled();
+    });
+  });
+
   describe('OAuth consent view', () => {
     beforeEach(() => {
       mockSearchParams = new URLSearchParams({
@@ -213,6 +312,8 @@ describe('AuthorizePage', () => {
       await waitFor(() => {
         expect(screen.getByText('oauthAuthorizedRedirecting')).toBeInTheDocument();
       });
+      // ETP-5386 — the grant state is refreshed once the link completes.
+      expect(mockRefreshToken).toHaveBeenCalledTimes(1);
 
       window.location = originalLocation;
     });
