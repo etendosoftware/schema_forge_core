@@ -4,7 +4,8 @@
  *
  * One pool per process (never one per request): the DB sees at most `max`
  * connections from the report server however many requests are in flight,
- * plus the short-lived connections that send a cancel (see `cancelBackend`).
+ * plus at most `max` dedicated connections that send a cancel (see
+ * `cancelBackend`). A checked-out client is held until its cancel finishes.
  */
 
 const intEnv = (name, dflt) => {
@@ -52,7 +53,8 @@ export function getSharedPool(PoolClass, baseConfig, ClientClass) {
   if (!sharedPool) {
     sharedPool = new PoolClass({ ...baseConfig, ...getPoolLimits() });
     sharedPool.on?.('error', (e) => console.error('[report-db] idle client error:', e?.message));
-    cancelConfig = ClientClass ? { ClientClass, config: { ...baseConfig, application_name: 'etendo-report-cancel', connectionTimeoutMillis: getPoolLimits().connectionTimeoutMillis } } : undefined;
+    const cancelTimeoutMs = getPoolLimits().connectionTimeoutMillis;
+    cancelConfig = ClientClass ? { ClientClass, config: { ...baseConfig, application_name: 'etendo-report-cancel', connectionTimeoutMillis: cancelTimeoutMs, statement_timeout: cancelTimeoutMs, query_timeout: cancelTimeoutMs } } : undefined;
   }
   return sharedPool;
 }
@@ -76,10 +78,10 @@ export async function closeSharedPool() {
   await p?.end();
 }
 
-/** The statement ran past the statement timeout. */
+/** A statement or tenant queue wait ran past its timeout. */
 export class ReportTimeoutError extends Error {
-  constructor() {
-    super('Report query exceeded the statement timeout');
+  constructor(message = 'Report query exceeded the statement timeout') {
+    super(message);
     this.name = 'ReportTimeoutError';
   }
 }
@@ -127,8 +129,8 @@ async function cancelBackend(pool, pid) {
     return;
   }
   const c = new cancelConfig.ClientClass(cancelConfig.config);
-  await c.connect();
   try {
+    await c.connect();
     await c.query('SELECT pg_cancel_backend($1)', [pid]);
   } finally {
     await c.end();
@@ -164,9 +166,9 @@ export async function withReportClient(pool, signal, fn, { statementTimeoutMs } 
     discard = isQueryCanceled(e);
     throw mapQueryError(e, signal);
   } finally {
-    watch.stop();
+    await watch.stop();
     // A connection that was sent a cancel, or whose timeout cannot be reset, is not trusted back.
-    if (!discard && statementTimeoutMs) discard = !(await resetStatementTimeout(client));
+    if (!discard && !watch.cancelSent() && statementTimeoutMs) discard = !(await resetStatementTimeout(client));
     client.release(discard || watch.cancelSent() ? true : undefined);
   }
 }
@@ -207,18 +209,26 @@ function guardedDb(client, signal) {
  * @param {object} pool
  * @param {object} client pg client (its processID names the backend)
  * @param {AbortSignal|undefined} signal
- * @returns {{start: () => void, stop: () => void, cancelSent: () => boolean}}
+ * `stop()` waits for a dedicated cancel before the pooled client is released:
+ * there can be at most one dedicated cancel per checked-out pool connection.
+ * The pool fallback must not be awaited here: it may need this client's slot.
+ * @returns {{start: () => void, stop: () => Promise<void>, cancelSent: () => boolean}}
  */
 function watchAbort(pool, client, signal) {
   let sent = false;
+  const dedicatedCancel = Boolean(cancelConfig);
+  let pendingCancel = Promise.resolve();
   const onAbort = () => {
     if (client.processID == null) return;
     sent = true;
-    cancelBackend(pool, client.processID).catch((e) => console.error('[report-db] cancel failed:', e?.message));
+    pendingCancel = cancelBackend(pool, client.processID).catch((e) => console.error('[report-db] cancel failed:', e?.message));
   };
   return {
     start: () => signal?.addEventListener('abort', onAbort, { once: true }),
-    stop: () => signal?.removeEventListener('abort', onAbort),
+    stop: async () => {
+      signal?.removeEventListener('abort', onAbort);
+      if (dedicatedCancel) await pendingCancel;
+    },
     cancelSent: () => sent,
   };
 }
@@ -252,13 +262,15 @@ const tenantState = new Map(); // clientId -> { active, waiters: [] }
 /**
  * Per-tenant concurrency cap: at most `limit` in-flight report queries per
  * ad_client_id; the rest wait their turn (a released slot is handed straight
- * to the next waiter). A waiting request leaves the queue when `signal` aborts.
+ * to the next waiter). A waiting request leaves the queue when `signal` aborts
+ * or REPORT_TENANT_WAIT_TIMEOUT_MS elapses (default 30000).
  *
  * @param {string} clientId the tenant (ad_client_id)
  * @param {AbortSignal} [signal]
  * @param {number} [limit] defaults to REPORT_TENANT_CONCURRENCY (2)
  * @returns {Promise<() => void>} the release function; call it exactly once
  * @throws {ReportCancelledError} aborted before or while waiting
+ * @throws {ReportTimeoutError} the tenant queue wait timed out
  */
 export async function acquireTenantSlot(clientId, signal, limit = intEnv('REPORT_TENANT_CONCURRENCY', 2)) {
   if (signal?.aborted) throw new ReportCancelledError();
@@ -278,12 +290,19 @@ export async function acquireTenantSlot(clientId, signal, limit = intEnv('REPORT
     return release;
   }
   await new Promise((resolve, reject) => {
-    const waiter = () => { signal?.removeEventListener('abort', onAbort); resolve(); };
-    const onAbort = () => {
+    const cleanup = () => {
+      clearTimeout(timer);
+      signal?.removeEventListener('abort', onAbort);
+    };
+    const waiter = () => { cleanup(); resolve(); };
+    const remove = (error) => {
       const i = st.waiters.indexOf(waiter);
       if (i !== -1) st.waiters.splice(i, 1);
-      reject(new ReportCancelledError());
+      cleanup();
+      reject(error);
     };
+    const onAbort = () => remove(new ReportCancelledError());
+    const timer = setTimeout(() => remove(new ReportTimeoutError('Report tenant queue wait exceeded its timeout')), intEnv('REPORT_TENANT_WAIT_TIMEOUT_MS', 30000));
     signal?.addEventListener('abort', onAbort, { once: true });
     st.waiters.push(waiter);
   });

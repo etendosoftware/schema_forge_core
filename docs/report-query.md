@@ -142,7 +142,7 @@ Functional reference for the first consumer, with the client side (Columnas, the
 
 ## Shared DB pool, timeout and cancel (ETP-6146)
 
-`cli/src/report-db.js`. The report server (`tools/report-server/server.js`) keeps one module-level pool for `/render`, `/query`, the logo lookup and the selectors, so the DB never sees more than `REPORT_DB_POOL_MAX` connections from it. `handleReportQuery` takes `pool` (shared, never ended) instead of `createPool` (per request, ended: the dev engine); `createPool` still works.
+`cli/src/report-db.js`. The report server (`tools/report-server/server.js`) keeps one module-level pool for `/render`, `/query`, the logo lookup and the selectors, capped at `REPORT_DB_POOL_MAX` pooled connections. Dedicated cancellation connections are an explicit exception to that cap, described below. `handleReportQuery` takes `pool` (shared, never ended) instead of `createPool` (per request, ended: the dev engine); `createPool` still works.
 
 | Env | Default | Meaning |
 |---|---|---|
@@ -152,7 +152,10 @@ Functional reference for the first consumer, with the client side (Columnas, the
 | `REPORT_STATEMENT_TIMEOUT_MS` | 30000 | `statement_timeout` of the pool's connections (`/query`, selectors); past it `/query` answers `504 REPORT_TIMEOUT` |
 | `REPORT_RENDER_STATEMENT_TIMEOUT_MS` | 120000 | `statement_timeout` for `/render` (large PDF/XLSX/CSV exports), set on its connection and reset afterwards; past it `/render` answers `504 REPORT_TIMEOUT` |
 | `REPORT_TENANT_CONCURRENCY` | 2 | in-flight `/query` per `ad_client_id`; the rest wait |
+| `REPORT_TENANT_WAIT_TIMEOUT_MS` | 30000 | maximum tenant queue wait; past it `/query` answers `504 REPORT_TIMEOUT` without starting SQL |
 
-`/query` checks out one connection per request. When the browser aborts (`res` closes before the answer is finished), the backend query is cancelled with `pg_cancel_backend(processID)` and the connection is destroyed instead of reused. An abort before the connection is ready, or between the statements of one report, stops the next statement from running. The cancel goes over a short-lived dedicated connection (application_name `etendo-report-cancel`), not the pool, so it works when the pool is saturated: the connection budget is `REPORT_DB_POOL_MAX` plus one transient connection per cancel in flight. A 57014 (SQLSTATE, language independent) after our own abort is `REPORT_CANCELLED`; any other 57014 is `REPORT_TIMEOUT`. The pool logs an idle-client error instead of crashing, and is closed on SIGTERM/SIGINT.
+`/query` checks out one connection per request. When the browser aborts (`res` closes before the answer is finished), the backend query is cancelled with `pg_cancel_backend(processID)` and the connection is destroyed instead of reused. An abort before the connection is ready, or between the statements of one report, stops the next statement from running. The cancel goes over a short-lived dedicated connection (application_name `etendo-report-cancel`), not the pool, so it works when the pool is saturated. The pooled connection is held until that cancel finishes, including cleanup after failure. Each checked-out client can have only one cancel, so the per-process connection budget is at most **2 × `REPORT_DB_POOL_MAX`** (20 by default), including dedicated cancels. Cancellation connections use `REPORT_DB_CONNECT_TIMEOUT_MS` for connection, statement and client query timeouts. A 57014 (SQLSTATE, language independent) after our own abort is `REPORT_CANCELLED`; any other 57014 is `REPORT_TIMEOUT`. The pool logs an idle-client error instead of crashing, and is closed on SIGTERM/SIGINT.
+
+Tenant waiters leave the queue on abort or after `REPORT_TENANT_WAIT_TIMEOUT_MS`; either path removes the waiter without consuming a slot, preserving FIFO handoff for remaining requests. This bounds queue residence time even when a browser stays connected. It does not impose a maximum queue length for a burst of simultaneous requests.
 
 The session lookup and the report-access check of `/query` run in parallel; a session failure still wins over an access one.
