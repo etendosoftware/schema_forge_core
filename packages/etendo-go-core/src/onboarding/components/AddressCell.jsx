@@ -1,5 +1,6 @@
 import React from 'react';
 import { useUI } from '@etendosoftware/app-shell-core/i18n';
+import { exceedsLimit } from '../fieldLimits.js';
 
 /**
  * ETP-5806 design follow-up — one cell of the "compound address field" used by
@@ -27,11 +28,14 @@ import { useUI } from '@etendosoftware/app-shell-core/i18n';
  */
 export function AddressCell({ id, label, trailingLabel, required = false, error, max, className = '', ...props }) {
   const ui = useUI();
-  // Code points, not UTF-16 units, so this agrees with `exceedsLimit` — which is what
-  // actually gates the Start button — on an emoji or an astral character.
-  const length = [...String(props.value ?? '')].length;
+  // Measured exactly as the Start gate (`isCompanyStepValid`) and the backend measure it: on
+  // the TRIMMED value, and in code points through `exceedsLimit`. Counting the raw value made a
+  // 60-char street plus one trailing space read as a red "61/60" with aria-invalid while no
+  // error rendered and Start stayed enabled — the field and the gate disagreed.
+  const measured = String(props.value ?? '').trim();
+  const length = [...measured].length;
   const showCounter = Number.isFinite(max);
-  const overLimit = showCounter && length > max;
+  const overLimit = showCounter && exceedsLimit(measured, max);
   const atLimit = showCounter && length === max;
 
   const counterId = `${id}-counter`;

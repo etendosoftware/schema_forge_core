@@ -200,6 +200,27 @@ describe('CompanyStep field limits (ETP-4665 / ETP-5638)', () => {
     expect(startButton()).toBeDisabled();
   });
 
+  /**
+   * ETP-5806 (QA finding) — the cell must measure what the Start gate measures: the trimmed value.
+   * A street at exactly the cap plus one trailing space used to show a red "61/60" and
+   * aria-invalid="true" while no error rendered and Start stayed enabled.
+   */
+  it('measures the street on its trimmed value, matching the Start gate', () => {
+    const { container } = renderCompanyStep(
+      { businessType: 'company', clientName: 'Acme', city: 'Madrid' },
+      { structuredAddressForSepa: true },
+    );
+
+    const street = container.querySelector('#streetName');
+    fireEvent.change(street, { target: { value: `${'D'.repeat(ONBOARDING_FIELD_LIMITS.streetName)} ` } });
+
+    expect(street.getAttribute('aria-invalid')).not.toBe('true');
+    expect(screen.getByTestId('AddressCell-counter__streetName').className).not.toContain('text-rose-500');
+    expect(screen.queryByTestId('AddressCell-error__79cf84')).not.toBeInTheDocument();
+    expect(screen.getByTestId('AddressCell-at-limit__streetName')).toBeInTheDocument();
+    expect(startButton()).not.toBeDisabled();
+  });
+
   it('announces the limit once the street reaches it, before anything is dropped', () => {
     const { container } = renderCompanyStep(
       { businessType: 'company', clientName: 'Acme', city: 'Madrid' },
