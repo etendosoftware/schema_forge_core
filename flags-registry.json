@@ -1,0 +1,6 @@
+{
+  "version": 3,
+  "$comment": "schema_forge_core's own flag registry (format v3: one implicit root, flat paths). Empty on purpose — none of core's packages carry a flag today; this registry exists so core code CAN register one. A flag spanning repos keeps its header in etendo_schema_forge and declares a contribution (id + flagKey + symbols/paths/testSpecs/deferredItems) here. ttl/ttlNote/defaultValue are forbidden in contributions. See docs/flag-debt.md in etendo_schema_forge.",
+  "sonarProject": "schema-forge-core",
+  "features": []
+}
