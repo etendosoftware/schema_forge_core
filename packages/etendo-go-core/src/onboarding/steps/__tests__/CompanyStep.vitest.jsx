@@ -292,8 +292,8 @@ describe('CompanyStep structured-address-for-sepa flag gating (ETP-5806)', () =>
     // Start the address block via Street, leaving Number and City blank.
     fireEvent.change(container.querySelector('#streetName'), { target: { value: 'Main St' } });
 
-    const numberCell = container.querySelector('label[for="buildingNumber"]').closest('div');
-    const cityCell = container.querySelector('label[for="city"]').closest('div');
+    const numberCell = container.querySelector('#buildingNumber').closest('div');
+    const cityCell = container.querySelector('#city').closest('div');
 
     // Street and City show the required-field asterisk once the block is started; Number never does.
     expect(cityCell.textContent).toContain('*');
