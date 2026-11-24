@@ -12,6 +12,10 @@ import { useUI } from '../i18n/index.js';
 import { buildMcpClients, deriveServerName, mcpUrlFor } from '../lib/mcpClients.js';
 import { useObservability } from '../observability/index.js';
 
+const SUCCESS_DISPLAY_MS = 1000;
+const REFRESH_WAIT_CAP_MS = 3000;
+const delay = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
+
 function detectMcpUrl() {
   return mcpUrlFor(window.location.origin);
 }
@@ -31,7 +35,7 @@ for (const [name, info] of Object.entries({ ...SCOPE_LABELS })) {
 }
 
 export default function AuthorizePage() {
-  const { username, csrfToken } = useAuth();
+  const { username, csrfToken, refreshToken } = useAuth();
   const [searchParams] = useSearchParams();
   const [status, setStatus] = useState('idle'); // idle | authorizing | success | error
   const [errorMessage, setErrorMessage] = useState('');
@@ -78,9 +82,18 @@ export default function AuthorizePage() {
       const data = await res.json();
       if (data.redirect_url) {
         setStatus('success');
-        setTimeout(() => {
-          window.location.href = data.redirect_url;
-        }, 1000);
+        // ETP-5386 — the link just changed what this account can reach; reload the cached
+        // grant/role maps now instead of leaving the UI on the pre-link snapshot ("no access
+        // to the window") until a manual reload. The redirect is a full navigation that would
+        // cancel an in-flight refresh, so it waits for the refresh up to REFRESH_WAIT_CAP_MS
+        // (and at least SUCCESS_DISPLAY_MS). A failed or hanging refresh never blocks the
+        // redirect: rejections are swallowed and the cap bounds the wait.
+        const refresh = Promise.race([
+          Promise.resolve().then(() => refreshToken?.()).catch(() => {}),
+          delay(REFRESH_WAIT_CAP_MS),
+        ]);
+        await Promise.all([delay(SUCCESS_DISPLAY_MS), refresh]);
+        window.location.href = data.redirect_url;
       } else {
         throw new Error('No redirect URL received');
       }
