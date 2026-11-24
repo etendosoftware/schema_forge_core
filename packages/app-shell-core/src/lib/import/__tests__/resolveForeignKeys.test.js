@@ -1,3 +1,4 @@
+// @covers packages/app-shell-core/src/lib/import/resolveForeignKeys.js
 import { describe, it } from 'node:test';
 import assert from 'node:assert/strict';
 import {
@@ -51,6 +52,49 @@ describe('classifyCandidates', () => {
   // tests. By the time a candidate reaches classifyCandidates in production
   // it has already gone through that normalization, so a "%"-suffixed input
   // here would test a shape this function never actually receives.
+
+  describe('exactMatch flag (ETP-5730)', () => {
+    const superReducido = (flags) => [
+      { id: 'EX', name: 'IVA Super Reducido', similarityPercent: '100', exactMatch: flags[0] },
+      { id: 'P2', name: 'IVA Super Reducido 2%', similarityPercent: '90', exactMatch: flags[1] },
+      { id: 'RD', name: 'IVA Reducido', similarityPercent: '68', exactMatch: flags[2] },
+    ];
+
+    it('auto-resolves a single exact candidate despite a runner-up inside the ambiguity gap', () => {
+      const result = classifyCandidates(superReducido([true, false, false]));
+      assert.deepEqual(result, { status: 'auto-resolved', id: 'EX', name: 'IVA Super Reducido' });
+    });
+
+    it('picks the exact candidate even when it is not the first one', () => {
+      const result = classifyCandidates([
+        { id: 'A', name: 'IVA Normal ISP', similarityPercent: '100', exactMatch: false },
+        { id: 'EX', name: 'IVA Normal', similarityPercent: '100', exactMatch: true },
+        { id: 'B', name: 'IVA Normal Servicios', similarityPercent: '100', exactMatch: false },
+      ]);
+      assert.deepEqual(result, { status: 'auto-resolved', id: 'EX', name: 'IVA Normal' });
+    });
+
+    it('needs review with the candidates attached when two candidates are exact (duplicate names)', () => {
+      const candidates = [
+        { id: 'D1', name: 'Dup', similarityPercent: '100', exactMatch: true },
+        { id: 'D2', name: 'Dup', similarityPercent: '100', exactMatch: true },
+      ];
+      const result = classifyCandidates(candidates);
+      assert.equal(result.status, 'needs-review');
+      assert.deepEqual(result.candidates, candidates);
+    });
+
+    it('needs review when no exactMatch field is sent and the runner-up is 10 points behind', () => {
+      const result = classifyCandidates(superReducido([undefined, undefined, undefined]));
+      assert.equal(result.status, 'needs-review');
+      assert.equal(result.candidates.length, 3);
+    });
+
+    it('needs review when every candidate is exactMatch false and the runner-up is close', () => {
+      const result = classifyCandidates(superReducido([false, false, false]));
+      assert.equal(result.status, 'needs-review');
+    });
+  });
 });
 
 describe('resolveForeignKeyColumn', () => {
@@ -140,9 +184,49 @@ describe('strict matching (ETP-5730)', () => {
     assert.equal(scoreModeForField(undefined), undefined);
   });
 
-  it('keeps today\'s behaviour by default: three names at 100 is a tie, so it needs review', async () => {
+  it('also resolves a unique exact name with the default score, even though three names score 100', async () => {
     const map = await resolveForeignKeyColumn({ values: ['IVA Normal'], matchEntity: 'FinancialMgmtTaxCategory', simSearchFn });
+    const resolution = map.get('IVA Normal');
+    assert.equal(resolution.status, 'auto-resolved');
+    assert.equal(resolution.id, 'EXACT');
+  });
+
+  it('keeps the tie guarantee when no name is flagged exact: three names at 100 need review', async () => {
+    const noExact = { item_0: { data: envelope.item_0.data.map((row) => ({ ...row, exact_match: false })) } };
+    const fn = async ({ scoreMode }) => parseSimSearchEnvelope(noExact, 1, scoreMode);
+    const map = await resolveForeignKeyColumn({ values: ['IVA Normal'], matchEntity: 'FinancialMgmtTaxCategory', simSearchFn: fn });
     assert.equal(map.get('IVA Normal').status, 'needs-review');
+  });
+
+  it('resolves "IVA Super Reducido" through the wire envelope, with and without scoreMode text', async () => {
+    const family = { item_0: { data: [
+      { id: 'EX', name: 'IVA Super Reducido', similarity_percent: '100.0000%', text_similarity_percent: '100.0000%', exact_match: true },
+      { id: 'P2', name: 'IVA Super Reducido 2%', similarity_percent: '90.0000%', text_similarity_percent: '90.0000%', exact_match: false },
+      { id: 'RD', name: 'IVA Reducido', similarity_percent: '68.0000%', text_similarity_percent: '68.0000%', exact_match: false },
+    ] } };
+    const fn = async ({ scoreMode }) => parseSimSearchEnvelope(family, 1, scoreMode);
+    for (const scoreMode of [undefined, 'text']) {
+      const map = await resolveForeignKeyColumn({
+        values: ['IVA Super Reducido'], matchEntity: 'FinancialMgmtTaxCategory', simSearchFn: fn, scoreMode,
+      });
+      const resolution = map.get('IVA Super Reducido');
+      assert.equal(resolution.status, 'auto-resolved', `scoreMode=${scoreMode}`);
+      assert.equal(resolution.id, 'EX');
+    }
+  });
+
+  it('asks for review on the same family when nothing is flagged exact', async () => {
+    const family = { item_0: { data: [
+      { id: 'A', name: 'IVA Super Reducido 2%', similarity_percent: '100.0000%', text_similarity_percent: '90.0000%', exact_match: false },
+      { id: 'B', name: 'IVA Super Reducido 4%', similarity_percent: '95.0000%', text_similarity_percent: '88.0000%', exact_match: false },
+    ] } };
+    const fn = async ({ scoreMode }) => parseSimSearchEnvelope(family, 1, scoreMode);
+    for (const scoreMode of [undefined, 'text']) {
+      const map = await resolveForeignKeyColumn({
+        values: ['IVA Super Reducido'], matchEntity: 'FinancialMgmtTaxCategory', simSearchFn: fn, scoreMode,
+      });
+      assert.equal(map.get('IVA Super Reducido').status, 'needs-review', `scoreMode=${scoreMode}`);
+    }
   });
 
   it('resolves the exact name on its own when the whole-string score is used', async () => {
