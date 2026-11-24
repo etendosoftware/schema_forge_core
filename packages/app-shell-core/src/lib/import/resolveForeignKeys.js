@@ -15,10 +15,20 @@ export const FK_AMBIGUOUS_GAP = 15;
  * by simSearch's `.candidates`) resolves automatically or needs the user's
  * review. Auto-resolves only when the top candidate clears the confidence
  * threshold AND there is no close runner-up to be ambiguous about.
+ *
+ * One exception, ahead of both rules: a candidate the backend flags `exactMatch` (the cell equals
+ * its name, ignoring case) resolves on its own when it is the ONLY such candidate, however close the
+ * runner-up is. "IVA Super Reducido" sits at 100 next to "IVA Super Reducido 2%" at 90, and the gap
+ * rule alone sent that exact name to review (ETP-5730). Two or more exact candidates are duplicate
+ * names and still need the user's pick; a backend that does not send the flag keeps the rules above.
  */
 export function classifyCandidates(candidates) {
   if (!candidates || candidates.length === 0) {
     return { status: 'needs-review', candidates: [] };
+  }
+  const exact = candidates.filter((c) => c.exactMatch === true);
+  if (exact.length === 1) {
+    return { status: 'auto-resolved', id: exact[0].id, name: exact[0].name };
   }
   const top = Number(candidates[0].similarityPercent);
   if (top < FK_AUTO_RESOLVE_THRESHOLD) {
